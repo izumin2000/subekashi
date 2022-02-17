@@ -4,3 +4,6 @@ from django.shortcuts import render, redirect
 
 def root(request):
     return render(request, 'izuminapp/root.html')
+
+def inca(request):
+    return render(request, 'inca/inca.html')
