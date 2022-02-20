@@ -1,0 +1,26 @@
+.clImg {
+    position: relative;
+}
+
+.clImg img {
+    position: absolute;
+    height: calc(100vh - 64px);
+    left: 0;
+    width: 100%;
+    object-fit: cover;
+}
+
+@media (max-width: 850px) {
+    .clImg img {
+        height: calc(100vh - 64px);
+    }
+}
+
+.top-title {
+    position: absolute;
+    top: 150px;
+    right: 20px;
+    text-align: right;
+    font-family: 'Microsoft Sans Serif';
+    font-size: 30px;
+}
