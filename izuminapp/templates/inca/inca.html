@@ -42,10 +42,10 @@
             <div class="header-margin"></div>
 
             <div class="clImg">
-                <img src="{% static 'image/top2.jpg' %}">
                 <img src="{% static 'image/top1.jpg' %}">
-                <h1 class="top-title">画像は仮のものです</h1>
+                <img src="{% static 'image/top2.jpg' %}">
             </div>
+            <h1 class="top-title">画像は仮のものです</h1>
 
 
         </div>
@@ -83,5 +83,15 @@
 
         toastr.warning("このページはまだ存在しません!")
     };
+</script>
+
+<script>
+    // 複数画像をフェードインフェードアウトで切替
+    $(document).ready(function(){
+    $('.clImg img:gt(0)').hide();
+    setInterval(function() {
+        $('.clImg :first-child').fadeOut().next('img').fadeIn().end().appendTo('.clImg');
+    },5000);
+});
 </script>
 </html>
