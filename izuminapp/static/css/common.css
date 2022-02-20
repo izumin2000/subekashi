@@ -8,6 +8,8 @@ html {
 }
 
 body {
+    margin: 0;
+    padding: 0;
     -webkit-text-size-adjust: 100%;
 }
 
@@ -140,20 +142,11 @@ footer {
     color: white;
 }
 
-.twitter {
-    height: 16px;
+.footer-left {
     position: relative;
-    bottom: 22px;
-    left: 205px;
-}
-
-@media (max-width: 480px) {
-    .twitter {
-        height: 16px;
-        position: relative;
-        bottom: 22px;
-        left: 5px;
-    }
+    top: 7px;
+    left: 7px;
+    height: 25px;    
 }
 
 .footer-right img {
