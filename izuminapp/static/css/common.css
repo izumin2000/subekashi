@@ -1,0 +1,173 @@
+* {
+    margin: 0px;
+    padding: 0px;
+}
+
+html {
+    background-color: #eee;
+}
+
+body {
+    -webkit-text-size-adjust: 100%;
+}
+
+.header {
+    z-index: 9999;
+    height: 64px;
+    width: 100%;
+    /* background: linear-gradient(90deg, #FF84A3, #eee, 75%, #eee); */
+    background-color: #eee;
+    border-bottom: solid 4px #BB002D;
+    position: fixed;        /* 最上部に固定 */
+    top: 0px        /*0pxに*/
+}
+
+.header-left {
+    margin-left: 8px;
+    float: left;
+}
+
+.header-right {
+    margin-right: 8px;
+    float: right;
+}
+
+@media (max-width: 850px)  {
+    .header {
+        height: 128px;
+        margin-bottom: 128px;
+        position: absolute;
+        top: 0px;
+    }
+
+    .header-left {
+        position: relative;
+        top: 6px;
+        margin-top: 4px;
+        float: none;
+        text-align: center;
+    }
+
+    .header-right {
+        float: none;
+        text-align: center;
+    }
+
+    .header-right a {
+        margin-right: calc(8% - 40px);
+    }
+
+    .header-margin {
+        height: 128px;
+    }
+}
+
+@media (max-width: 480px)  {
+    .header-right {
+        position: relative;
+        left: -4px;
+        margin-right: 4px;
+    }
+
+    .header-right a {
+        font-size: calc(12px + 4%);
+    }
+
+    .footer-left p {
+        visibility:hidden;
+    }
+
+    .contents h2 {
+        font-size: 35px;
+    }
+
+}
+
+.header-right a {
+    padding: 8px 8px;
+    line-height: 64px;
+    margin-right: 8px;
+    text-decoration: none;
+    font-size: 20px;
+    color: #101010;
+    border-radius: 10px;
+    transition: color 0.5s
+}
+
+.header-right a:hover {
+    text-decoration: underline #840021;
+    text-underline-offset: 3px;
+    color: #BB002D;
+    transition: color 0.5s;
+}
+
+.header-margin {
+    height: 64px;
+}
+
+.clear {
+    clear: both;
+}
+
+.logo {
+    height: 50px;
+    margin-top: 6px;
+}
+
+.underline {
+    text-align: center;
+    height: 8px;
+    width: 150px;
+    margin:0 auto;
+    background-color: #101010;
+}
+
+footer {
+    margin-top: auto;
+    width: 100%;
+    background-color: #2f3a44;
+}
+
+.footer-container {
+    height: 32px;
+}
+
+.footer-left {
+    position: relative;
+    bottom: 16px;
+    height: 32px;
+    float: left;
+}
+
+.footer-left p {
+    margin: 20px 0px 0px 10px;
+    color: white;
+}
+
+.twitter {
+    height: 16px;
+    position: relative;
+    bottom: 22px;
+    left: 205px;
+}
+
+@media (max-width: 480px) {
+    .twitter {
+        height: 16px;
+        position: relative;
+        bottom: 22px;
+        left: 5px;
+    }
+}
+
+.footer-right img {
+    float: right;
+    height: 32px;
+    color: white;
+}
+
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
