@@ -32,7 +32,25 @@ body {
     float: right;
 }
 
-@media (max-width: 850px)  {
+.header-right a {
+    font-size: 20px;
+    padding: 8px 8px;
+    line-height: 64px;
+    margin-right: 8px;
+    text-decoration: none;
+    color: #101010;
+    border-radius: 10px;
+    transition: color 0.5s
+}
+
+.header-right a:hover {
+    text-decoration: underline #840021;
+    text-underline-offset: 3px;
+    color: #BB002D;
+    transition: color 0.5s;
+}
+
+@media (max-width: 650px)  {
     .header {
         height: 128px;
         margin-bottom: 128px;
@@ -70,35 +88,13 @@ body {
     }
 
     .header-right a {
-        font-size: calc(12px + 4%);
+        margin-right: calc(8% - 30px);
+        font-size: 18px;
     }
 
     .footer-left p {
         visibility:hidden;
     }
-
-    .contents h2 {
-        font-size: 35px;
-    }
-
-}
-
-.header-right a {
-    padding: 8px 8px;
-    line-height: 64px;
-    margin-right: 8px;
-    text-decoration: none;
-    font-size: 20px;
-    color: #101010;
-    border-radius: 10px;
-    transition: color 0.5s
-}
-
-.header-right a:hover {
-    text-decoration: underline #840021;
-    text-underline-offset: 3px;
-    color: #BB002D;
-    transition: color 0.5s;
 }
 
 .header-margin {

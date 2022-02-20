@@ -33,7 +33,7 @@
                 <div class="header-right">
                     <a onclick="notfound()">トップ</a>
                     <a onclick="notfound()">Wiki</a>
-                    <a onclick="notfound()">統計情報</a>
+                    <a onclick="notfound()">統計</a>
                     <a onclick="notfound()">国民申請</a>
                 </div>
                 <div class="clear"></div>
@@ -53,7 +53,7 @@
     <footer>
         <div class="footer-container">
             <div class="footer-left">
-                <p>このサイトをシェアする</p>
+                <p>ここに何か表示</p>
                 <!-- <div class="twitter"><iframe id="twitter-widget-0" scrolling="no" frameborder="0" allowtransparency="true" allowfullscreen="true" class="twitter-share-button twitter-share-button-rendered twitter-tweet-button" style="position: static; visibility: visible; width: 73px; height: 20px;" title="Twitter Tweet Button" src="./MINEAD HUB-2_files/tweet_button.a58e82e150afc25eb5372dd55a98b778.en.html" data-url="https://minead.html.xdomain.jp"></iframe><script async="" src="./MINEAD HUB-2_files/widgets.js.ダウンロード" charset="utf-8"></script></div> -->
             </div>
             <div class="footer-right">
@@ -68,10 +68,10 @@
     // toastrの実装
     function notfound(){
         toastr.options = {
-            "closeButton": true,
+            "closeButton": false,
             "debug": false,
             "newestOnTop": false,
-            "progressBar": false,
+            "progressBar": true,
             "positionClass": "toast-bottom-right",
             "preventDuplicates": false,
             "onclick": null,
