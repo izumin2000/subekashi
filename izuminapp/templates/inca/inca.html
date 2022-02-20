@@ -24,68 +24,85 @@
         <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastrに必要なファイルの読み込み -->
         <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> <!-- jqueryの読み込み -->
     </head>
+
+
     <body>
-        <div class="wrapper">
-            <div class="header">
-                <div class="header-left">
-                    <a href="{% url 'inca' %}"><img class="logo" src="{% static 'image/flag.png' %}" alt="MINEAD"></a>
-                </div>
-                <div class="header-right">
+        <header>
+            <div class="header-left">
+                <a href="{% url 'inca' %}"><img name="thumbnail" class="logo" src="{% static 'image/flag.png' %}" alt="インカ帝国の国旗"></a>
+            </div>
+
+            <div class="header-right">
+                <nav>
                     <a onclick="notfound()">トップ</a>
                     <a onclick="notfound()">Wiki</a>
                     <a onclick="notfound()">統計</a>
                     <a onclick="notfound()">国民申請</a>
+                </nav>
+            </div>
+
+            <div class="clear"></div>
+        </header>
+
+
+        <main>
+            <article class="firstview">
+                <div class="clImg">
+                    <img src="{% static 'image/top1.jpg' %}" alt="">
+                    <img src="{% static 'image/top2.jpg' %}" alt="">
                 </div>
+
+                <p class="top-title">画像は仮のものです</p>
+            </article>
+            
+            <article class="welcome">
+                <section>
+                    <h1>見出し</h1>
+                    <div class="underline"></div>
+                    <p>説明</p>
+                </section>
+            </article>
+
+        </main>
+
+
+        <footer>
+            <div class="footer-container">
+                <div class="footer-left">
+                    <!-- <p>シェア</p> -->
+                    <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+                </div>
+
+                <div class="footer-right">
+                    <img src="{% static 'image/mit.png' %}" alt="著作権はMITライセンスに属します。">
+                </div>
+
                 <div class="clear"></div>
             </div>
-          
-            <div class="header-margin"></div>
-
-            <div class="clImg">
-                <img src="{% static 'image/top1.jpg' %}">
-                <img src="{% static 'image/top2.jpg' %}">
-            </div>
-            <h1 class="top-title">画像は仮のものです</h1>
-
-        <div class="contents">
-            
-        </div>
-        </div>
+        </footer>
     </body>
-    <footer>
-        <div class="footer-container">
-            <div class="footer-left">
-                <!-- <p>シェア</p> -->
-                <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-            </div>
-            <div class="footer-right">
-                <img src="{% static 'image/mit.png' %}" alt="著作権はMITライセンスに属します。">
-            </div>
-            <div class="clear"></div>
-        </div>
-    </footer>
 
     <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
-<script>
-    // toastrの実装
-    function notfound(){
-        toastr.options = {
-            "closeButton": false,
-            "debug": false,
-            "newestOnTop": false,
-            "progressBar": true,
-            "positionClass": "toast-bottom-right",
-            "preventDuplicates": false,
-            "onclick": null,
-            "timeOut": "3000",
-            "extendedTimeOut": "0",
-            "showEasing": "swing",
-            "hideEasing": "linear",
-        }
+    <script>
+        // toastrの実装
+        function notfound(){
+            toastr.options = {
+                "closeButton": false,
+                "debug": false,
+                "newestOnTop": false,
+                "progressBar": true,
+                "positionClass": "toast-bottom-right",
+                "preventDuplicates": false,
+                "onclick": null,
+                "timeOut": "3000",
+                "extendedTimeOut": "0",
+                "showEasing": "swing",
+                "hideEasing": "linear",
+            }
 
-        toastr.warning("このページはまだ存在しません!")
-    };
-</script>
+            toastr.warning("このページはまだ存在しません!")
+        };
+    </script>
 
 <script>
     // 複数画像をフェードインフェードアウトで切替
