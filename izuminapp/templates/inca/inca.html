@@ -83,8 +83,30 @@
     </body>
 
     <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+
     <script>
-        // toastrの実装
+        window.onload = function() {
+            toastr.options = {
+                "closeButton": false,
+                "debug": false,
+                "newestOnTop": false,
+                "progressBar": true,
+                "positionClass": "toast-bottom-right",
+                "preventDuplicates": false,
+                "onclick": null,
+                "timeOut": "5000",
+                "extendedTimeOut": "0",
+                "showEasing": "swing",
+                "hideEasing": "linear",
+            }
+
+            "{% if nodata %}"
+            toastr.warning("EarthMCのデータの読み込みに失敗しました")
+            "{% endif %}"
+        };
+    </script>
+
+    <script>
         function notfound(){
             toastr.options = {
                 "closeButton": false,
@@ -100,7 +122,7 @@
                 "hideEasing": "linear",
             }
 
-            toastr.warning("このページはまだ存在しません!")
+            toastr.info("このページはまだ存在しません!")
         };
     </script>
 
