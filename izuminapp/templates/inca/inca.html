@@ -55,17 +55,18 @@
 
                 <h1 class="index_title">インカ帝国 公式ホームページ</h1>
                 <div class="photo_info">
-                    <p id="photo_title"><i class="fas fa-image"></i> サンプル画像1</p>
-                    <p id="photo_player"><i class="fas fa-user"></i> KANATA2000</p>
-                    <p id="photo_progress">1枚目 / 2枚</p>
+                    <p id="photo_title"><i class="fas fa-image"></i> {{ clTitle.0 }}</p>
+                    <p id="photo_player"><i class="fas fa-user"></i> {{ clPlayers.0 }}</p>
+                    <p id="photo_progress">1枚目 / {{ clTitle|length }}枚</p>
                 </div>
             </article>
             
             <article class="welcome">
                 <section>
-                    <h2>見出し</h2>
+                    <h2>インカ帝国とは</h2>
                     <div class="underline"></div>
-                    <p>説明</p>
+                    <h3>概要</h3>
+                    <p>インカすごいまちだよ!</p>
                 </section>
             </article>
 
@@ -137,8 +138,8 @@
     $(document).ready(function(){
     $('.clImg img:gt(0)').hide();
     var cli = 1;
-    var clPlayers = ["KANATA2000", "KANATA2000"];
-    var clTitle = ["サンプル画像1", "サンプル画像2"];
+    var clTitle = "{{ clTitle|safe }}".replace(/\'/g, "").slice(1, -1).split("\, ");
+    var clPlayers = "{{ clPlayers|safe }}".replace(/\'/g, "").slice(1, -1).split("\, ");
     var clLen = clPlayers.length;
     setInterval(function() {
         $('.clImg :first-child').fadeOut().next('img').fadeIn().end().appendTo('.clImg');

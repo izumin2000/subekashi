@@ -10,9 +10,9 @@
     object-fit: cover;
 }
 
-@media (max-width: 850px) {
+@media (max-width: 640px) {
     .clImg img {
-        height: calc(100vh - 64px);
+        height: calc(100vh - 128px);
     }
 }
 
@@ -20,9 +20,15 @@
     padding-bottom: 95vh;
 }
 
+@media (max-width: 640px) {
+    .firstview {
+        padding-bottom: 85vh;
+    }
+}
+
 .index_title {
     position: absolute;
-    top: 50%;
+    top: 48%;
     right: 30px;
     text-align: right;
     font-family: 'Microsoft Sans Serif';
@@ -33,11 +39,19 @@
     background-color: #00000077;
 }
 
+@media (max-width: 480px) {
+    .index_title {
+        font-size: 40px;
+        top: 45%;
+        width: 300px;
+    }
+}
+
 .photo_info {
     position: absolute;
     bottom: 40px;
-    left: 70%;
-    width: 25%;
+    right: 30px;
+    width: 200px;
     padding: 2.5px 10px;
     border-radius: 5px;
     color: #bbb;
@@ -55,7 +69,7 @@
 }
 
 #photo_player i {
-    padding: 0 5px 0 1px;
+    padding: 0 5px 0 0px;
 }
 
 #photo_progress {
