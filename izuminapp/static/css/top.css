@@ -16,15 +16,50 @@
     }
 }
 
-.top-title {
+.firstview {
+    padding-bottom: 95vh;
+}
+
+.index_title {
     position: absolute;
-    top: 150px;
-    right: 20px;
+    top: 50%;
+    right: 30px;
     text-align: right;
     font-family: 'Microsoft Sans Serif';
     font-size: 30px;
+    padding: 10px;
+    border-radius: 5px;
+    color: #fff;
+    background-color: #00000077;
 }
 
-.firstview {
-    padding-bottom: 95vh;
+.photo_info {
+    position: absolute;
+    bottom: 40px;
+    left: 70%;
+    width: 25%;
+    padding: 2.5px 10px;
+    border-radius: 5px;
+    color: #bbb;
+    background-color: #00000055;
+}
+
+#photo_title, #photo_player {
+    font-family: 'Microsoft Sans Serif';
+    font-size: 15px;
+    margin: 5px 0;
+}
+
+#photo_title i {
+    padding-right: 2px;
+}
+
+#photo_player i {
+    padding: 0 5px 0 1px;
+}
+
+#photo_progress {
+    font-family: 'Microsoft Sans Serif';
+    font-size: 10px;
+    margin: 5px 0 5px 75%;
 }

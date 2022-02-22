@@ -20,9 +20,10 @@
         <link rel="stylesheet" type="text/css" href="{% static 'css/common.css'%}">
         <link rel="stylesheet" type="text/css" href="{% static 'css/top.css'%}">
         <link rel="shortcut icon" href="{% static 'image/flag.ico' %}">
-        <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" /> <!-- toastrに必要なファイルの読み込み -->
-        <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastrに必要なファイルの読み込み -->
-        <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> <!-- jqueryの読み込み -->
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
+        <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" /> <!-- toastr -->
+        <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
+        <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> <!-- jquery -->
     </head>
 
 
@@ -48,16 +49,21 @@
         <main>
             <article class="firstview">
                 <div class="clImg">
-                    <img src="{% static 'image/top1.jpg' %}" alt="">
-                    <img src="{% static 'image/top2.jpg' %}" alt="">
+                    <img src="{% static 'image/top1.jpg' %}" alt="インカ帝国に関する画像">
+                    <img src="{% static 'image/top2.jpg' %}" alt="インカ帝国に関する画像">
                 </div>
 
-                <p class="top-title">画像は仮のものです</p>
+                <h1 class="index_title">インカ帝国 公式ホームページ</h1>
+                <div class="photo_info">
+                    <p id="photo_title"><i class="fas fa-image"></i> サンプル画像1</p>
+                    <p id="photo_player"><i class="fas fa-user"></i> KANATA2000</p>
+                    <p id="photo_progress">1枚目 / 2枚</p>
+                </div>
             </article>
             
             <article class="welcome">
                 <section>
-                    <h1>見出し</h1>
+                    <h2>見出し</h2>
                     <div class="underline"></div>
                     <p>説明</p>
                 </section>
@@ -130,8 +136,16 @@
     // 複数画像をフェードインフェードアウトで切替
     $(document).ready(function(){
     $('.clImg img:gt(0)').hide();
+    var cli = 1;
+    var clPlayers = ["KANATA2000", "KANATA2000"];
+    var clTitle = ["サンプル画像1", "サンプル画像2"];
+    var clLen = clPlayers.length;
     setInterval(function() {
         $('.clImg :first-child').fadeOut().next('img').fadeIn().end().appendTo('.clImg');
+        document.getElementById('photo_title').innerHTML = "<i class='fas fa-image'></i> " + clTitle[cli % clLen];
+        document.getElementById('photo_player').innerHTML = "<i class='fas fa-user'></i> " + clPlayers[cli % clLen];
+        document.getElementById('photo_progress').innerHTML = String((cli % clLen) + 1) + "枚目 / " + String(clLen) + "枚";
+        cli += 1;
     },5000);
 });
 </script>
