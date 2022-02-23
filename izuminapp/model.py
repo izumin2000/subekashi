@@ -9,6 +9,6 @@ class Player(models.Model) :
     online = models.BooleanField(default = False)
 
 class Firstview(models.Model) :
-    images = models.ImageField(upload_to='')
+    images = models.ImageField(upload_to='', null=True, blank=True)
     title = models.CharField(default = "", max_length = 100)
     player = models.CharField(default = "", max_length = 100)
