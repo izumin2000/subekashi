@@ -98,7 +98,7 @@
                 "debug": false,
                 "newestOnTop": false,
                 "progressBar": true,
-                "positionClass": "toast-bottom-right",
+                "positionClass": "toast-bottom-left",
                 "preventDuplicates": false,
                 "onclick": null,
                 "timeOut": "5000",
@@ -108,7 +108,7 @@
             }
 
             "{% if nodata %}"
-            toastr.warning("EarthMCのデータの読み込みに失敗しているか無効になっています")
+            toastr.warning("EarthMCのデータが読み込まれなかった為、一部情報が存在しないか不正確です。")
             "{% endif %}"
         };
     </script>
