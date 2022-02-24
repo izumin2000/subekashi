@@ -12,3 +12,4 @@ class Firstview(models.Model) :
     images = models.ImageField(upload_to='', null=True, blank=True)
     title = models.CharField(default = "", max_length = 100)
     player = models.CharField(default = "", max_length = 100)
+    display = models.BooleanField(default = False)
