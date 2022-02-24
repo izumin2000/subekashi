@@ -2,9 +2,10 @@ from cgitb import reset
 from sys import platlibdir
 from turtle import title
 from django.shortcuts import render
-import requests
 from izuminapp.forms import FirstviewForm
 from izuminapp.model import Oldjson, Player, Firstview, Siteinfo
+import requests
+import datetime
 
 API_URL = "https://earthmc-api.herokuapp.com/api/v1"
 SAMPLE_TITLE = ["サンプル画像1", "サンプル画像2"]

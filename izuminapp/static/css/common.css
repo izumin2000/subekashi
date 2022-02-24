@@ -126,7 +126,7 @@ h3 {
     font-size: 25px;
     margin: 10px 0 10px 20px;
     width: 30%;
-    border-bottom: solid 2px #888;
+    border-bottom: solid 2px #BB002D;
 }
 
 section p {
@@ -140,7 +140,7 @@ section p {
     height: 8px;
     width: 150px;
     margin:0 auto;
-    background-color: #101010;
+    background-color: #BB002D;
 }
 
 @media (max-width: 640px) {
@@ -177,8 +177,9 @@ footer {
     height: 24px;    
 }
 
-.footer-right img {
+.footer-right a img {
     float: right;
-    height: 32px;
-    color: white;
+    display: inline;
+    margin: 2.5px 2.5px 0 2.5px;
+    height: 26px;
 }
