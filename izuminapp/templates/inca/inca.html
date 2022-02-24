@@ -50,8 +50,9 @@
             <article>
                 <section class="firstview">
                     <div class="clImg">
-                        <img src="{% static 'image/top1.jpg' %}" alt="インカ帝国に関する画像">
-                        <img src="{% static 'image/top2.jpg' %}" alt="インカ帝国に関する画像">
+                        {% for image in images %}
+                            <img src="media/{{ image }}" alt="インカ帝国に関する画像">
+                        {% endfor %}
                     </div>
 
                     <h1>インカ帝国 公式ホームページ</h1>
@@ -81,6 +82,7 @@
 
                 <div class="footer-right">
                     <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.ja"><img src="https://creativecommons.org/images/deed/zero_white_x2.png" alt="このサイトはパブリックドメインです"><img src="https://creativecommons.org/images/deed/cc_icon_white_x2.png" alt="このサイトはクリエイティブ・コモンズに属しています。"></a>
+                    <p>created by <a>KANATA2000</a></p>
                 </div>
 
                 <div class="clear"></div>

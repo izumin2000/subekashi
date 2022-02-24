@@ -177,6 +177,15 @@ footer {
     height: 24px;    
 }
 
+.footer-right p {
+    font-family: sans-serif;
+    float: right;
+    display: inline;
+    margin: 5px 5px 0 0;
+    font-size: 15px;
+    color: #eee;
+}
+
 .footer-right a img {
     float: right;
     display: inline;

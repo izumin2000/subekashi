@@ -8,16 +8,18 @@ import requests
 import datetime
 
 API_URL = "https://earthmc-api.herokuapp.com/api/v1"
-SAMPLE_TITLE = ["サンプル画像1", "サンプル画像2"]
-SAMPLE_PLAYER = ["KANATA2000", "かなた"]
+NUMBER_OF_FIRSTVIEWS = 5
 
 def root(request):
     return render(request, 'izuminapp/root.html')
 
 def inca(request):
     inca_info = {}
-    inca_info["clTitle"] = SAMPLE_TITLE
-    inca_info["clPlayers"] = SAMPLE_PLAYER
+    firstviews = Firstview.objects.order_by('?')[:min(Firstview.objects.count(), NUMBER_OF_FIRSTVIEWS)]
+    firstviews = list(firstviews.values())
+    inca_info["images"] = [d.get('image') for d in firstviews]
+    inca_info["clTitle"] = [d.get('title') for d in firstviews]
+    inca_info["clPlayers"] = [d.get('player') for d in firstviews]
 
     try :
         nations = requests.get(API_URL + "/nations/Inca_Empire")
