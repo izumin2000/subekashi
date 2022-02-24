@@ -2,3 +2,5 @@
 *.pyc
 __pycache__/
 db-volumes/
+db.sqlite3
+izuminapp\note.py
