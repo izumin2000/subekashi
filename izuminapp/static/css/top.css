@@ -22,11 +22,11 @@
 
 @media (max-width: 640px) {
     .firstview {
-        padding-bottom: 85vh;
+        padding-bottom: 87.5vh;
     }
 }
 
-.index_title {
+.firstview h1 {
     position: absolute;
     top: 48%;
     right: 30px;
@@ -40,7 +40,7 @@
 }
 
 @media (max-width: 480px) {
-    .index_title {
+    .firstview h1 {
         font-size: 40px;
         top: 45%;
         width: 300px;

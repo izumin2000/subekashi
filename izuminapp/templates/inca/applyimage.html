@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+
+{% load static %}
+
+<html lang="ja">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="author" content="KANATA2000">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:site" content="@KANATA20002">
+        <meta name="og:type" content="website">
+        <meta name="og:title" content="インカ帝国へようこそ">
+        <meta name="og:image" content="{% static 'image/flag.png' %}">
+        <meta name="og:description" content="EarthMCの南アメリカ大陸にある国、インカ帝国の紹介サイトです。">
+        <meta name="og:url" content="https://izuminapp.pythonanywhere.com/inca">
+        <meta name="description" content="EarthMCの南アメリカ大陸にある国、インカ帝国の紹介サイトです。">
+        <meta meta="" name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
+        <meta charset="utf-8">
+        <title>インカ帝国 - トップ</title>
+        <link rel="stylesheet" type="text/css" href="{% static 'css/common.css'%}">
+        <link rel="stylesheet" type="text/css" href="{% static 'css/applyimage.css'%}">
+        <link rel="shortcut icon" href="{% static 'image/flag.ico' %}">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
+        <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" /> <!-- toastr -->
+        <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
+        <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> <!-- jquery -->
+    </head>
+
+
+    <body>
+        <header>
+            <div class="header-left">
+                <a href="{% url 'inca' %}"><img name="thumbnail" class="logo" src="{% static 'image/flag.png' %}" alt="インカ帝国の国旗"></a>
+            </div>
+
+            <div class="header-right">
+                <nav>
+                    <a onclick="notfound()">トップ</a>
+                    <a onclick="notfound()">Wiki</a>
+                    <a onclick="notfound()">統計</a>
+                    <a onclick="notfound()">国民申請</a>
+                </nav>
+            </div>
+
+            <div class="clear"></div>
+        </header>
+
+
+        <main>
+            <article>
+                <section class="discribe_applyimage">
+                    <p>{{ title }} をアップロードしました</p>
+                    <br />
+                    <form method="POST" class="post-form" enctype="multipart/form-data">{% csrf_token %}
+                        {{ form.as_p }}
+                        <button type="submit" class="save btn btn-default">Save</button>
+                    </form>
+                </section>
+            </article>
+        </main>
+
+
+        <footer>
+            <div class="footer-container">
+                <div class="footer-left">
+                    <!-- <p>シェア</p> -->
+                    <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+                </div>
+
+                <div class="footer-right">
+                    <img src="{% static 'image/mit.png' %}" alt="著作権はMITライセンスに属します。">
+                </div>
+
+                <div class="clear"></div>
+            </div>
+        </footer>
+    </body>

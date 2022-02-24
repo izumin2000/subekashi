@@ -47,29 +47,28 @@
 
 
         <main>
-            <article class="firstview">
-                <div class="clImg">
-                    <img src="{% static 'image/top1.jpg' %}" alt="インカ帝国に関する画像">
-                    <img src="{% static 'image/top2.jpg' %}" alt="インカ帝国に関する画像">
-                </div>
+            <article>
+                <section class="firstview">
+                    <div class="clImg">
+                        <img src="{% static 'image/top1.jpg' %}" alt="インカ帝国に関する画像">
+                        <img src="{% static 'image/top2.jpg' %}" alt="インカ帝国に関する画像">
+                    </div>
 
-                <h1 class="index_title">インカ帝国 公式ホームページ</h1>
-                <div class="photo_info">
-                    <p id="photo_title"><i class="fas fa-image"></i> {{ clTitle.0 }}</p>
-                    <p id="photo_player"><i class="fas fa-user"></i> {{ clPlayers.0 }}</p>
-                    <p id="photo_progress">1枚目 / {{ clTitle|length }}枚</p>
-                </div>
-            </article>
+                    <h1>インカ帝国 公式ホームページ</h1>
+                    <div class="photo_info">
+                        <p id="photo_title"><i class="fas fa-image"></i> {{ clTitle.0 }}</p>
+                        <p id="photo_player"><i class="fas fa-user"></i> {{ clPlayers.0 }}</p>
+                        <p id="photo_progress">1枚目 / {{ clTitle|length }}枚</p>
+                    </div>
+                </section>
             
-            <article class="welcome">
-                <section>
+                <section class="welcome">
                     <h2>インカ帝国とは</h2>
                     <div class="underline"></div>
                     <h3>概要</h3>
                     <p>インカすごいまちだよ!</p>
                 </section>
             </article>
-
         </main>
 
 
