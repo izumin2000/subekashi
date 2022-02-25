@@ -119,26 +119,29 @@ h2 {
     text-align: center;
     font-family: sans-serif;
     font-size: 40px;
+    line-height: 40px;
 }
 
 h3 {
-    font-family: sans-serif;
     font-size: 25px;
+    line-height: 25px;
     margin: 15px 20px;
-    padding: 5px 0 0 10px;
+    padding: 10px 0 5px 10px;
     background: linear-gradient(90deg, #FFD1DC, #eee, 75%, #eee);
     border-radius: 5px;
 }
 
 section p {
     font-family: sans-serif;
-    font-size: px;
-    margin-left: 18px;
+    font-size: 16px;
+    margin-left: 24px;
 }
 
 section p a {
     color: #000;
     text-decoration: underline 2px #BB002D;
+    font-family: sans-serif;
+    line-height: 16px;
 }
 
 .underline {
