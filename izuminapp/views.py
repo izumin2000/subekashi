@@ -24,14 +24,15 @@ def inca(request):
     try :
         nations = requests.get(API_URL + "/nations/Inca_Empire")
     except Exception :      # ProxyErrorなら
-        inca_info["nodata"] = True
+        inca_info["ableAPI"] = False
     else :
+        inca_info["ableAPI"] = True
         if (nations.status_code == 200) :
             nations_info = dict(nations.json())
             inca_info.update(nations_info)
             # print(Oldjson.objects.all().count())
         else :
-            inca_info["nodata"] = True
+            inca_info["ableAPI"] = False
 
     return render(request, 'inca/inca.html', inca_info)
 
