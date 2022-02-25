@@ -64,7 +64,7 @@
                 </section>
             
                 <section class="welcome">
-                    <h2>インカ帝国について</h2>
+                    <h2>インカ帝国とは</h2>
                     <div class="underline"></div>
                     <h3>概要</h3>
                     <p>インカ帝国とは<a href="https://earthmc.net/">Earth MC</a>の<a href="https://earthmc.net/map/?worldname=earth&mapname=flat&zoom=6&x=-13140&y=64&z=2710">南米チチカカ湖の北岸に位置する</a>日本人勢による国です。</p>
@@ -107,9 +107,9 @@
                             <p class="basicinfo_title">人口</p>
                             <div class="basicinfo_underline"></div>
                             {% if ableAPI %}
-                                <p class="basicinfo_info">?? 人</p>
+                                <p class="basicinfo_info">{{ population }}人</p>
                             {% else %}
-                                <p class="basicinfo_info">?? 人</p>
+                                <p class="basicinfo_info">61人</p>
                                 <p class="basicinfo_warning">この情報は古い可能性があります。</p>
                             {% endif %}
                             <i class="fas fa-user-friends"></i>

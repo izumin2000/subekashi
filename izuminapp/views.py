@@ -29,8 +29,8 @@ def inca(request):
         inca_info["ableAPI"] = True
         if (nations.status_code == 200) :
             nations_info = dict(nations.json())
+            inca_info["population"] = len(nations_info["residents"])
             inca_info.update(nations_info)
-            # print(Oldjson.objects.all().count())
         else :
             inca_info["ableAPI"] = False
 
