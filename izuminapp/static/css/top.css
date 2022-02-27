@@ -155,3 +155,10 @@
     width: 60px;
     margin: 10px auto;
 }
+
+#dynamap {
+    display: block;
+    height: 65vh;
+    width: 65vw;
+    margin: 0 auto;
+}
