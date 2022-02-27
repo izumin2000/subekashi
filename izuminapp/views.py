@@ -6,9 +6,11 @@ from izuminapp.forms import FirstviewForm
 from izuminapp.model import Oldjson, Player, Firstview, Siteinfo
 import requests
 import datetime
+import json
 
 API_URL = "https://earthmc-api.herokuapp.com/api/v1"
 NUMBER_OF_FIRSTVIEWS = 5
+ERROR_JSON = '{"population":"error","area":"error","king":"error","capitalName":"error"}'
 
 def root(request):
     return render(request, 'izuminapp/root.html')
@@ -25,14 +27,25 @@ def inca(request):
         nations = requests.get(API_URL + "/nations/Inca_Empire")
     except Exception :      # ProxyErrorなら
         inca_info["ableAPI"] = False
+        newOldjson, _ = Oldjson.objects.get_or_create(pk = 0, defaults = {"nations" : ERROR_JSON})
+        inca_info.update(dict(json.loads(newOldjson.nations)))      # 辞書型の結合
+
     else :
         inca_info["ableAPI"] = True
         if (nations.status_code == 200) :
             nations_info = dict(nations.json())
-            inca_info["population"] = len(nations_info["residents"])
-            inca_info.update(nations_info)
+            nations_info["population"] = len(nations_info["residents"])
+            inca_info.update(nations_info)      # 辞書型の結合
+
+            newOldjson, _ = Oldjson.objects.update_or_create(pk = 0, defaults = {"nations" : json.dumps(nations_info)})
+            if newOldjson.nations == ERROR_JSON :
+                newOldjson.nations = json.dumps(nations_info)
+                newOldjson.save()
+
         else :
             inca_info["ableAPI"] = False
+            newOldjson, _ = Oldjson.objects.get_or_create(pk = 0, defaults = {"nations" : ERROR_JSON})
+            inca_info.update(dict(json.loads(newOldjson.nations)))
 
     return render(request, 'inca/inca.html', inca_info)
 

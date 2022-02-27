@@ -81,10 +81,8 @@
                         <div class="basicinfo_item">
                             <p class="basicinfo_title">国王</p>
                             <div class="basicinfo_underline"></div>
-                            {% if ableAPI %}
-                                <p class="basicinfo_info">{{ king }}</p>
-                            {% else %}
-                                <p class="basicinfo_info">??</p>
+                            <p class="basicinfo_info">{{ king }}</p>
+                            {% if not ableAPI %}
                                 <p class="basicinfo_warning">この情報は古い可能性があります。</p>
                             {% endif %}
                             <p>//ここにテンプレート\{\{ king \}\}のスキンを表示(uuidからスキンを解決)</p>
@@ -93,10 +91,8 @@
                         <div class="basicinfo_item">
                             <p class="basicinfo_title">首都</p>
                             <div class="basicinfo_underline"></div>
-                            {% if ableAPI %}
-                                <p class="basicinfo_info">{{ capitalName }}</p>
-                            {% else %}
-                                <p class="basicinfo_info">??</p>
+                            <p class="basicinfo_info">{{ capitalName }}</p>
+                            {% if not ableAPI %}
                                 <p class="basicinfo_warning">この情報は古い可能性があります。</p>
                             {% endif %}
                             <i class="fas fa-building"></i>
@@ -106,10 +102,8 @@
                         <div class="basicinfo_item">
                             <p class="basicinfo_title">人口</p>
                             <div class="basicinfo_underline"></div>
-                            {% if ableAPI %}
-                                <p class="basicinfo_info">{{ population }}人</p>
-                            {% else %}
-                                <p class="basicinfo_info">61人</p>
+                            <p class="basicinfo_info">{{ population }}人</p>
+                            {% if not ableAPI %}
                                 <p class="basicinfo_warning">この情報は古い可能性があります。</p>
                             {% endif %}
                             <i class="fas fa-user-friends"></i>
@@ -119,10 +113,8 @@
                         <div class="basicinfo_item">
                             <p class="basicinfo_title">面積</p>
                             <div class="basicinfo_underline"></div>
-                            {% if ableAPI %}
-                                <p class="basicinfo_info">{{ area }}チャンク</p>
-                            {% else %}
-                                <p class="basicinfo_info">?? 人</p>
+                            <p class="basicinfo_info">{{ area }}チャンク</p>
+                            {% if not ableAPI %}
                                 <p class="basicinfo_warning">この情報は古い可能性があります。</p>
                             {% endif %}
                             <i class="fas fa-cubes"></i>
