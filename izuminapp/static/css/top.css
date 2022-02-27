@@ -40,7 +40,7 @@
 }
 
 @media (max-width: 480px) {
-    .firstview h1 {
+    .firstview b {
         font-size: 40px;
         top: 45%;
         width: 300px;
@@ -148,4 +148,10 @@
     display: block;
     width: 150px;
     margin: 70px auto 0 auto;
+}
+
+.skin {    
+    display: block;
+    width: 60px;
+    margin: 10px auto;
 }

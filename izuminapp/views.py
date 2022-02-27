@@ -8,9 +8,10 @@ import requests
 import datetime
 import json
 
-API_URL = "https://earthmc-api.herokuapp.com/api/v1"
+EMC_API_URL = "https://earthmc-api.herokuapp.com/api/v1"
+UUID_API_URL = "https://api.mojang.com/users/profiles/minecraft/"
 NUMBER_OF_FIRSTVIEWS = 5
-ERROR_JSON = '{"population":"error","area":"error","king":"error","capitalName":"error"}'
+ERROR_JSON = '{"population":"error","area":"error","king":"error","capitalName":"error","skin":"error"}'
 
 def root(request):
     return render(request, 'izuminapp/root.html')
@@ -24,7 +25,7 @@ def inca(request):
     inca_info["clPlayers"] = [d.get('player') for d in firstviews]
 
     try :
-        nations = requests.get(API_URL + "/nations/Inca_Empire")
+        nations = requests.get(EMC_API_URL + "/nations/Inca_Empire")
     except Exception :      # ProxyErrorなら
         inca_info["ableAPI"] = False
         newOldjson, _ = Oldjson.objects.get_or_create(pk = 0, defaults = {"nations" : ERROR_JSON})
@@ -32,11 +33,16 @@ def inca(request):
 
     else :
         inca_info["ableAPI"] = True
-        if (nations.status_code == 200) :
+        if nations.status_code == 200 :
             nations_info = dict(nations.json())
             nations_info["population"] = len(nations_info["residents"])
-            inca_info.update(nations_info)      # 辞書型の結合
 
+            uuid = requests.get(UUID_API_URL + nations_info["king"])
+            if uuid.status_code == 200 :
+                nations_info["skin"] = dict(uuid.json())["id"]
+            
+            inca_info.update(nations_info)      # 辞書型の結合
+            
             newOldjson, _ = Oldjson.objects.update_or_create(pk = 0, defaults = {"nations" : json.dumps(nations_info)})
             if newOldjson.nations == ERROR_JSON :
                 newOldjson.nations = json.dumps(nations_info)
