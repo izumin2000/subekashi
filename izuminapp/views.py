@@ -31,7 +31,7 @@ def inca(request):
 
     # APIの処理
     try :
-        nations = requests.get(EMC_API_URL + "/nations/Inca_Empire")
+        nations_get = requests.get(EMC_API_URL + "/nations/Inca_Empire")
     except Exception :      # ProxyErrorなら
         # jsonアーカイブからのアーカイブを読み込み
         inca_info["ableAPI"] = False
@@ -40,21 +40,21 @@ def inca(request):
 
     else :      #正常にAPIを取得できたら
         inca_info["ableAPI"] = True
-        if nations.status_code == 200 :
+        if nations_get.status_code != 200 :
             # nationデータの取得
-            nations_info = dict(nations.json())
-            nations_info["population"] = len(nations_info["residents"])     # 人口の取得
+            nations_json = dict(nations_get.json())
+            nations_json["population"] = len(nations_json["residents"])     # 人口の取得
 
             # スキンの取得
-            king_uuid = requests.get(UUID_API_URL + nations_info["king"])
-            if king_uuid.status_code == 200 :
-                nations_info["skin"] = dict(king_uuid.json())["id"]
+            uuid_get = requests.get(UUID_API_URL + nations_json["king"])
+            if uuid_get.status_code == 200 :
+                nations_json["skin"] = dict(uuid_get.json())["id"]
             
-            inca_info.update(nations_info)      # 辞書型の結合
+            inca_info.update(nations_json)      # 辞書型の結合
 
             # 国民の登録
-            online = requests.get(EMC_API_URL + "/online")
-            for player in nations_info["residents"] :
+            online_get = requests.get(EMC_API_URL + "/online")
+            for player in nations_json["residents"] :
                 newPlayer, _ = Player.objects.get_or_create(name = player, defaults = {"name" : player})
                 if player in primary :      # 大臣なら
                     newPlayer.primary = True
@@ -62,9 +62,9 @@ def inca(request):
                     newPlayer.primary = False
                 
                 # onlineカラムの切り替え
-                if online.status_code == 200 :
-                    online_info = online.json()
-                    online_players = [d.get('name') for d in online_info]
+                if online_get.status_code == 200 :
+                    online_json = online_get.json()
+                    online_players = [d.get('name') for d in online_json]
                     if player in online_players :
                         newPlayer.online = True
                     else :
@@ -72,9 +72,9 @@ def inca(request):
                 newPlayer.save()
 
             # jsonのアーカイブ
-            newOldjson, _ = Oldjson.objects.update_or_create(pk = 0, defaults = {"nations" : json.dumps(nations_info)})
+            newOldjson, _ = Oldjson.objects.update_or_create(pk = 0, defaults = {"nations" : json.dumps(nations_json)})
             if newOldjson.nations == ERROR_JSON :
-                newOldjson.nations = json.dumps(nations_info)
+                newOldjson.nations = json.dumps(nations_json)
                 newOldjson.save()
 
         # jsonアーカイブからのアーカイブを読み込み
@@ -82,6 +82,12 @@ def inca(request):
             inca_info["ableAPI"] = False
             newOldjson, _ = Oldjson.objects.get_or_create(pk = 0, defaults = {"nations" : ERROR_JSON})
             inca_info.update(dict(json.loads(newOldjson.nations)))
+
+    # スキンを一度も読み込んでいなかった際の処理
+    if inca_info["skin"] != "error" :
+        inca_info["loadedSkin"] = True
+    else :
+        inca_info["loadedSkin"] = False
 
     return render(request, 'inca/inca.html', inca_info)
 

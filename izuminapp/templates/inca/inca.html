@@ -37,7 +37,7 @@
                 <nav>
                     <a onclick="notfound()">トップ</a>
                     <a onclick="notfound()">Wiki</a>
-                    <a onclick="notfound()">統計</a>
+                    <a onclick="notfound()">情報</a>
                     <a onclick="notfound()">国民申請</a>
                 </nav>
             </div>
@@ -79,18 +79,6 @@
                         </div>
 
                         <div class="basicinfo_item">
-                            <p class="basicinfo_title">国王</p>
-                            <div class="basicinfo_underline"></div>
-                            <p class="basicinfo_info">{{ king }}</p>
-                            {% if ableAPI %}
-                                <img class="skin" src="https://crafatar.com/renders/body/{{ skin }}">
-                            {% else %}
-                                <img class="skin" src="{% static 'image/default_skin.png' %}">
-                                <p class="basicinfo_warning">この情報は古い可能性があります。</p>
-                            {% endif %}
-                        </div>
-
-                        <div class="basicinfo_item">
                             <p class="basicinfo_title">首都</p>
                             <div class="basicinfo_underline"></div>
                             <p class="basicinfo_info">{{ capitalName }}</p>
@@ -98,13 +86,13 @@
                                 <p class="basicinfo_warning">この情報は古い可能性があります。</p>
                             {% endif %}
                             <i class="fas fa-building"></i>
-                            <a href="https://earthmc.net/map/?worldname=earth&mapname=flat&zoom=6&x=-13140&y=64&z=2710">Dynamapで見る</a>
+                            <a href="https://earthmc.net/map/?worldname=earth&mapname=flat&zoom=6&x=-13140&y=64&z=2710">DynMapで見る</a>
                         </div>
 
                         <div class="basicinfo_item">
                             <p class="basicinfo_title">人口</p>
                             <div class="basicinfo_underline"></div>
-                            <p class="basicinfo_info">{{ population }}人</p>
+                            <p class="basicinfo_info">{{ population }} 人</p>
                             {% if not ableAPI %}
                                 <p class="basicinfo_warning">この情報は古い可能性があります。</p>
                             {% endif %}
@@ -115,7 +103,7 @@
                         <div class="basicinfo_item">
                             <p class="basicinfo_title">面積</p>
                             <div class="basicinfo_underline"></div>
-                            <p class="basicinfo_info">{{ area }}チャンク</p>
+                            <p class="basicinfo_info">{{ area }} チャンク</p>
                             {% if not ableAPI %}
                                 <p class="basicinfo_warning">この情報は古い可能性があります。</p>
                             {% endif %}
@@ -129,6 +117,22 @@
                             <i class="fas fa-cross"></i>
                         </div>
                     </div>
+
+                    <h2>主要プレイヤー</h2>
+                    <div class="container">
+                        <div class="basicinfo_item">
+                            <p class="basicinfo_title">国王</p>
+                            <div class="basicinfo_underline"></div>
+                            <p class="basicinfo_info">{{ king }}</p>
+                            {% if loadedSkin %}
+                                <img class="skin" src="https://crafatar.com/renders/body/{{ skin }}">
+                            {% else %}
+                                <img class="unknown_skin" src="{% static 'image/unknown_skin.png' %}">
+                            {% endif %}
+                            <a onclick="notfound()">詳しく見る</a>
+                        </div>
+                    </div>
+                    <p class="others">他のプレイヤーは<a onclick="notfound()">こちらから</a>閲覧できます。</p>
 
                     <h2>地図</h2>
                     <iframe id="dynamap" src="https://earthmc.net/map/?worldname=earth&mapname=flat&zoom=5&x=-13112&y=64&z=2675"></iframe>
