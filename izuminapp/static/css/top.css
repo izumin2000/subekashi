@@ -124,20 +124,20 @@
 }
 
 .basicinfo_item i {
-    margin-top: 20px;
+    margin-top: 25px;
     display: flex;
 	text-decoration: none;
 	align-items: center;
 	justify-content: center;
     text-align: center;
     color: #000;
-    font-size: 100px;
+    font-size: 110px;
 }
 
 .basicinfo_item a {
     display: block;
     color: #000;
-    margin-top: 10px;
+    margin-top: 15px;
     text-align: center;
     text-decoration: underline 2px #BB002D;
     font-family: sans-serif;
@@ -152,14 +152,14 @@
 
 .skin {
     display: block;
-    width: 60px;
-    margin: 10px auto;
+    width: 120px;
+    margin: 20px auto;
 }
 
 .unknown_skin {
     display: block;
-    width: 100px;
-    margin: 25px auto;
+    width: 120px;
+    margin: 20px auto;
 }
 
 #dynamap {

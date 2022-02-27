@@ -120,17 +120,19 @@
 
                     <h2>主要プレイヤー</h2>
                     <div class="container">
-                        <div class="basicinfo_item">
-                            <p class="basicinfo_title">国王</p>
-                            <div class="basicinfo_underline"></div>
-                            <p class="basicinfo_info">{{ king }}</p>
-                            {% if loadedSkin %}
-                                <img class="skin" src="https://crafatar.com/renders/body/{{ skin }}">
-                            {% else %}
-                                <img class="unknown_skin" src="{% static 'image/unknown_skin.png' %}">
-                            {% endif %}
-                            <a onclick="notfound()">詳しく見る</a>
-                        </div>
+                        {% for primary in primaries %}
+                            <div class="basicinfo_item">
+                                <p class="basicinfo_title">{{ primary.name }}</p>
+                                <div class="basicinfo_underline"></div>
+                                <p class="basicinfo_info">{{ primary.rank }}</p>
+                                {% if primary.uuid %}
+                                    <img class="skin" src="https://crafatar.com/renders/head/{{ primary.uuid }}">
+                                {% else %}
+                                    <img class="unknown_skin" src="{% static 'image/unknown_skin.png' %}">
+                                {% endif %}
+                                <a onclick="notfound()">詳しく見る</a>
+                            </div>
+                        {% endfor %}
                     </div>
                     <p class="others">他のプレイヤーは<a onclick="notfound()">こちらから</a>閲覧できます。</p>
 
