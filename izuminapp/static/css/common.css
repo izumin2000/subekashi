@@ -159,11 +159,11 @@ section p a {
 }
 
 .isonline {
-    color: #D1340A;
+    color: #D1340A !important;
 }
 
 .isoffline {
-    color: #4E01C7;
+    color: #4E01C7 !important;
 }
 
 footer {

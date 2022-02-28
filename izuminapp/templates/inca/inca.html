@@ -119,11 +119,18 @@
                     </div>
 
                     <h2>主要プレイヤー</h2>
-                    <p>※他のプレイヤーは<a onclick="notfound()">こちらから</a>閲覧できます。</p>
+                    <p>ユーザー名が<span class="isonline">赤色</span>ならオンライン、<span class="isoffline">青色</span>ならオフライン、黒色ならオンライン情報の未取得を示しています。</p>
+                    <p>他のプレイヤーは<a onclick="notfound()">こちらから</a>閲覧できます。</p>
                     <div class="container">
                         {% for primary in primaries %}
                             <div class="info_item">
-                                <p class="info_title">{{ primary.name }}</p>
+                                {% if not ableAPI %}
+                                    <p class="info_title">{{ primary.name }}</p>
+                                {% elif primary.online %}
+                                    <p class="info_title isonline">{{ primary.name }}</p>
+                                {% else %}
+                                    <p class="info_title isoffline">{{ primary.name }}</p>
+                                {% endif %}
                                 <div class="info_underline"></div>
                                 <p class="info_info">{{ primary.rank }}</p>
                                 {% if primary.uuid %}
