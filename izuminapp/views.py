@@ -54,7 +54,7 @@ def inca(request):
                     newPlayer.rank = PRIMARIES[player]
                 else :
                     newPlayer.primary = False
-                    newPlayer.rank = ""
+                    newPlayer.rank = "国民"
 
                 # UUIDの登録
                 if newPlayer.uuid == "" :
@@ -71,6 +71,13 @@ def inca(request):
                     else :
                         newPlayer.online = False
                 newPlayer.save()
+            
+            # 他の国に移住した国民の非表示
+            immigrants = set(Player.objects.values_list('name', flat = True)) - set(nations_json["residents"])
+            for immigrant in immigrants :
+                immigrant_player = Player.objects.filter(name = immigrant)[0]
+                immigrant_player.leave = True
+                immigrant_player.save()
 
             # jsonのアーカイブ
             if newSiteinfo.nations in ["", ERROR_JSON] :
