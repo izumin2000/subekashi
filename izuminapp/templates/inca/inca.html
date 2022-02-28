@@ -55,7 +55,7 @@
                         {% endfor %}
                     </div>
 
-                    <b>インカ帝国 公式ホームページ</b>
+                    <b><img src="{% static 'image/EMClogo.png'%}"><span id="top_title">インカ帝国 公式ホームページ</span></b>
                     <div class="photo_info">
                         <p id="photo_title"><i class="fas fa-image"></i> {{ clTitle.0 }}</p>
                         <p id="photo_player"><i class="fas fa-user"></i> {{ clPlayers.0 }}</p>
@@ -67,64 +67,65 @@
                     <h1>インカ帝国とは</h1>
                     <div class="underline"></div>
                     <h2>概要</h2>
-                    <p>インカ帝国とは<a href="https://earthmc.net/">Earth MC</a>の<a href="#dynamap">南米チチカカ湖の北岸に位置する</a>日本人勢による国です。</p>
+                    <p>インカ帝国(Inca_Emperor)とは<a href="https://earthmc.net/">Earth MC</a>の<a href="#dynamap">南米チチカカ湖の北岸に位置する</a>日本人勢による国です。</p>
                     <p>元は<a href="https://earthmc.fandom.com/wiki/Peru">ペルー</a>に所属していて、首都であるクスコを差し置いて同国内最大の土地でしたが、2022年1月5日独立しました。</p>
 
                     <h2>基本情報</h2>
                     <div class="container">
-                        <div class="basicinfo_item">
-                            <p class="basicinfo_title">国旗</p>
-                            <div class="basicinfo_underline"></div>
-                            <img class="basicinfo_flag" src="{% static 'image/flag.png' %}">
+                        <div class="info_item">
+                            <p class="info_title">国旗</p>
+                            <div class="info_underline"></div>
+                            <img class="info_flag" src="{% static 'image/flag.png' %}">
                         </div>
 
-                        <div class="basicinfo_item">
-                            <p class="basicinfo_title">首都</p>
-                            <div class="basicinfo_underline"></div>
-                            <p class="basicinfo_info">{{ capitalName }}</p>
+                        <div class="info_item">
+                            <p class="info_title">首都</p>
+                            <div class="info_underline"></div>
+                            <p class="info_info">{{ capitalName }}</p>
                             {% if not ableAPI %}
-                                <p class="basicinfo_warning">この情報は古い可能性があります。</p>
+                                <p class="info_warning">この情報は古い可能性があります。</p>
                             {% endif %}
                             <i class="fas fa-building"></i>
                             <a href="https://earthmc.net/map/?worldname=earth&mapname=flat&zoom=6&x=-13140&y=64&z=2710">DynMapで見る</a>
                         </div>
 
-                        <div class="basicinfo_item">
-                            <p class="basicinfo_title">人口</p>
-                            <div class="basicinfo_underline"></div>
-                            <p class="basicinfo_info">{{ population }} 人</p>
+                        <div class="info_item">
+                            <p class="info_title">人口</p>
+                            <div class="info_underline"></div>
+                            <p class="info_info">{{ population }} 人</p>
                             {% if not ableAPI %}
-                                <p class="basicinfo_warning">この情報は古い可能性があります。</p>
+                                <p class="info_warning">この情報は古い可能性があります。</p>
                             {% endif %}
                             <i class="fas fa-user-friends"></i>
                             <a onclick="notfound()">国民情報を見る</a>
                         </div>
 
-                        <div class="basicinfo_item">
-                            <p class="basicinfo_title">面積</p>
-                            <div class="basicinfo_underline"></div>
-                            <p class="basicinfo_info">{{ area }} チャンク</p>
+                        <div class="info_item">
+                            <p class="info_title">面積</p>
+                            <div class="info_underline"></div>
+                            <p class="info_info">{{ area }} チャンク</p>
                             {% if not ableAPI %}
-                                <p class="basicinfo_warning">この情報は古い可能性があります。</p>
+                                <p class="info_warning">この情報は古い可能性があります。</p>
                             {% endif %}
                             <i class="fas fa-cubes"></i>
                         </div>
 
-                        <div class="basicinfo_item">
-                            <p class="basicinfo_title">国教</p>
-                            <div class="basicinfo_underline"></div>
-                            <p class="basicinfo_info">太陽神教</p>
+                        <div class="info_item">
+                            <p class="info_title">国教</p>
+                            <div class="info_underline"></div>
+                            <p class="info_info">太陽神教</p>
                             <i class="fas fa-cross"></i>
                         </div>
                     </div>
 
                     <h2>主要プレイヤー</h2>
+                    <p>※他のプレイヤーは<a onclick="notfound()">こちらから</a>閲覧できます。</p>
                     <div class="container">
                         {% for primary in primaries %}
-                            <div class="basicinfo_item">
-                                <p class="basicinfo_title">{{ primary.name }}</p>
-                                <div class="basicinfo_underline"></div>
-                                <p class="basicinfo_info">{{ primary.rank }}</p>
+                            <div class="info_item">
+                                <p class="info_title">{{ primary.name }}</p>
+                                <div class="info_underline"></div>
+                                <p class="info_info">{{ primary.rank }}</p>
                                 {% if primary.uuid %}
                                     <img class="skin" src="https://crafatar.com/renders/head/{{ primary.uuid }}">
                                 {% else %}
@@ -134,7 +135,6 @@
                             </div>
                         {% endfor %}
                     </div>
-                    <p class="others">他のプレイヤーは<a onclick="notfound()">こちらから</a>閲覧できます。</p>
 
                     <h2>地図</h2>
                     <iframe id="dynamap" src="https://earthmc.net/map/?worldname=earth&mapname=flat&zoom=5&x=-13112&y=64&z=2675"></iframe>
@@ -179,11 +179,30 @@
                 "hideEasing": "linear",
             }
 
+            // toasterの表示
             "{% if not ableAPI %}"
             toastr.warning("EarthMCのデータが読み込まれなかった為、一部情報が存在しないか不正確です。")
             "{% endif %}"
-        };
+
+            // 画面幅によるtop_titleの変更(onload)
+            if (window.innerWidth > 540) {
+                document.getElementById('top_title').innerHTML = "インカ帝国 公式ホームページ";
+            } else {
+                document.getElementById('top_title').innerHTML = "インカ帝国<br>公式ホームページ";
+            }
+            };
     </script>
+
+<script>
+// 画面幅によるtop_titleの変更(onresize)
+    window.onresize = function() {
+        if (window.innerWidth > 540) {
+            document.getElementById('top_title').innerHTML = "インカ帝国 公式ホームページ";
+        } else {
+            document.getElementById('top_title').innerHTML = "インカ帝国<br>公式ホームページ";
+        }
+    }    
+</script>
 
     <script>
         function notfound(){

@@ -158,6 +158,14 @@ section p a {
     }
 }
 
+.isonline {
+    color: #D1340A;
+}
+
+.isoffline {
+    color: #4E01C7;
+}
+
 footer {
     width: 100%;
     bottom: 0;

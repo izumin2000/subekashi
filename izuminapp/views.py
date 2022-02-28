@@ -9,8 +9,7 @@ EMC_API_URL = "https://earthmc-api.herokuapp.com/api/v1"
 UUID_API_URL = "https://api.mojang.com/users/profiles/minecraft/"
 NUMBER_OF_FIRSTVIEWS = 5
 ERROR_JSON = '{"population":"error","area":"error","king":"error","capitalName":"error","skin":"error"}'
-PRIMARIES = ["Ryo5Syo5", "RyoK3", "KANATA2000", "sakira1996", "hiroshi4872", "ramuate"]
-PRIMARY_RANKS = {"Ryo5Syo5":"国王", "RyoK3":"財務大臣", "KANATA2000":"メディア大臣", "sakira1996":"外交大臣 副国王", "hiroshi4872":"国土交通大臣", "ramuate":"法務大臣"}
+PRIMARIES = {"Ryo5Syo5":"国王", "RyoK3":"財務大臣", "KANATA2000":"メディア大臣", "sakira1996":"外交大臣 副国王", "hiroshi4872":"国土交通大臣", "ramuate":"法務大臣"}
 
 
 def root(request):
@@ -50,9 +49,12 @@ def inca(request):
             online_get = requests.get(EMC_API_URL + "/online")
             for player in nations_json["residents"] :
                 newPlayer, _ = Player.objects.get_or_create(name = player, defaults = {"name" : player})
-                if player in PRIMARIES :      # 大臣なら
+                if player in PRIMARIES.keys() :      # 大臣なら
                     newPlayer.primary = True
-                    newPlayer.rank = PRIMARY_RANKS[player]
+                    newPlayer.rank = PRIMARIES[player]
+                else :
+                    newPlayer.primary = False
+                    newPlayer.rank = ""
 
                 # UUIDの登録
                 if newPlayer.uuid == "" :
@@ -69,7 +71,6 @@ def inca(request):
                     else :
                         newPlayer.online = False
                 newPlayer.save()
-            inca_info["primaries"] = Player.objects.filter(primary = True)
 
             # jsonのアーカイブ
             if newSiteinfo.nations in ["", ERROR_JSON] :
@@ -81,6 +82,7 @@ def inca(request):
             inca_info["ableAPI"] = False
             inca_info.update(dict(json.loads(newSiteinfo.nations)))      # 辞書型の結合
 
+    inca_info["primaries"] = Player.objects.filter(primary = True)
     return render(request, 'inca/inca.html', inca_info)
 
 def applyimage(request) :
