@@ -14,6 +14,8 @@ body {
     -webkit-text-size-adjust: 100%;
 }
 
+
+/* ヘッダー */
 header {
     z-index: 9999;
     height: 64px;
@@ -105,6 +107,8 @@ header {
     margin-top: 6px;
 }
 
+
+/* 基礎 */
 main {
     margin-top: 64px;
 }
@@ -144,6 +148,14 @@ section p a {
     line-height: 16px;
 }
 
+.isonline {
+    color: #D1340A !important;
+}
+
+.isoffline {
+    color: #4E01C7 !important;
+}
+
 .underline {
     text-align: center;
     height: 8px;
@@ -158,14 +170,154 @@ section p a {
     }
 }
 
-.isonline {
-    color: #D1340A !important;
+
+/* タイル */
+.container {
+    margin: 10px 0 0 24px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+.info_item {
+    height: 300px;
+    width: 200px;
+    border: 5px solid #BB002D;
+    border-radius: 5px;
+    margin: 0 15px 15px 0;
 }
 
-.isoffline {
-    color: #4E01C7 !important;
+.info_title, #popup_name {
+    color: #000;
+    margin: 10px 0;
+    text-align: center;
+    font-size: 25px;
 }
 
+.info_underline {
+    height: 5px;
+    width: 205px;
+    background-color: #BB002D;
+}
+
+.info_info {
+    margin-left: 0;
+    color: #000;
+    margin-top: 15px;
+    text-align: center;
+    font-size: 25px;
+}
+
+.info_warning {
+    margin-left: 0;
+    color: #f2a744;
+    text-align: center;
+    font-family: sans-serif;
+    font-size: 9px;
+    line-height: 10px;
+}
+
+.info_item i {
+    margin-top: 25px;
+    display: flex;
+	text-decoration: none;
+	align-items: center;
+	justify-content: center;
+    text-align: center;
+    color: #000;
+    font-size: 110px;
+}
+
+.info_item a, .info_item label {
+    display: block;
+    color: #000;
+    margin-top: 15px;
+    text-align: center;
+    text-decoration: underline 2px #BB002D;
+    font-family: sans-serif;
+    line-height: 16px;
+}
+
+
+/* ポップアップ */
+.popup_wrap input {
+    display: none;
+}
+
+.popup_overlay {
+    display: flex;
+    justify-content: center;
+    overflow: auto;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #00000088;
+    opacity: 0;
+    transition: opacity 0.5s, transform 0s 0.5s;
+    transform: scale(0);
+}
+
+.popup_trigger {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.popup_content {
+    position: relative;
+    align-self: center;
+    width: 75%;
+    max-width: 800px;
+    box-sizing: border-box;
+    background: #fff;
+    line-height: 1.4em;
+    transition: 0.5s;
+    border-radius: 12px;
+    box-shadow: 0 0 5px #00000088;
+}
+
+.popup_content p {
+    padding: 20px 20px 5px 20px;
+    text-align: center;
+}
+
+.close_btn {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    font-size: 30px;
+    cursor: pointer;
+    text-decoration: none !important;
+}
+
+.popup_wrap input:checked ~ .popup_overlay {
+    opacity: 1;
+    transform: scale(1);
+    transition: opacity 0.5s;
+}
+
+.open_btn {
+    color: #BB002D;
+    cursor: pointer;
+    transition: .3s ease;
+    padding: 5px 15px;
+}
+
+#popup_skin {
+    display: block;
+    width: 120px;
+    margin: 10px auto;
+}
+
+#popup_info {
+    font-family: sans-serif;
+    margin: 20px 10px;
+    font-size: 16px;
+}
+
+/* フッダー */
 footer {
     width: 100%;
     bottom: 0;
@@ -184,6 +336,7 @@ footer {
 }
 
 .footer-left p {
+    font-family: sans-serif;
     margin: 20px 0px 0px 10px;
     color: white;
 }

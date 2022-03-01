@@ -22,8 +22,6 @@
         <link rel="shortcut icon" href="{% static 'image/flag.ico' %}">
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
         <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" /> <!-- toastr -->
-        <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
-        <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> <!-- jquery -->
     </head>
 
 
@@ -35,10 +33,9 @@
 
             <div class="header-right">
                 <nav>
-                    <a onclick="notfound()">トップ</a>
-                    <a onclick="notfound()">Wiki</a>
+                    <a href="{% url 'inca' %}">トップ</a>
                     <a onclick="notfound()">情報</a>
-                    <a onclick="notfound()">国民申請</a>
+                    <a onclick="notfound()">インカへの所属申請</a>
                 </nav>
             </div>
 
@@ -97,7 +94,7 @@
                                 <p class="info_warning">この情報は古い可能性があります。</p>
                             {% endif %}
                             <i class="fas fa-user-friends"></i>
-                            <a onclick="notfound()">国民情報を見る</a>
+                            <a onclick="notfound()">プレイヤー情報を見る</a>
                         </div>
 
                         <div class="info_item">
@@ -138,7 +135,20 @@
                                 {% else %}
                                     <img class="unknown_skin" src="{% static 'image/unknown_skin.png' %}">
                                 {% endif %}
-                                <a onclick="notfound()">詳しく見る</a>
+                                <label for="trigger" class="open_btn" onclick="playerpopup('{{ primary.uuid }}', '{{ primary.name }}', '{{ primary.online }}', '{{ primary.info }}')">詳しく見る</label>
+                                <div class="popup_wrap">
+                                <input id="trigger" type="checkbox">
+                                <div class="popup_overlay">
+                                    <label for="trigger" class="popup_trigger"></label>
+                                    <div class="popup_content">
+                                        <label for="trigger" class="close_btn">x</label>
+                                        <p id="popup_name"></p>                                      
+                                        <img id="popup_skin">
+                                        <hr id="popup_hr">
+                                        <p id="popup_info"></p>
+                                    </div>
+                                </div>
+                                </div>
                             </div>
                         {% endfor %}
                     </div>
@@ -168,7 +178,12 @@
         </footer>
     </body>
 
-    <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
+
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> <!-- jquery -->
+
+    <script src="{% static 'js/playerpopup.js' %}"></script>
 
     <script>
         window.onload = function() {
@@ -200,16 +215,16 @@
             };
     </script>
 
-<script>
-// 画面幅によるtop_titleの変更(onresize)
-    window.onresize = function() {
-        if (window.innerWidth > 540) {
-            document.getElementById('top_title').innerHTML = "インカ帝国 公式ホームページ";
-        } else {
-            document.getElementById('top_title').innerHTML = "インカ帝国<br>公式ホームページ";
-        }
-    }    
-</script>
+    <script>
+    // 画面幅によるtop_titleの変更(onresize)
+        window.onresize = function() {
+            if (window.innerWidth > 540) {
+                document.getElementById('top_title').innerHTML = "インカ帝国 公式ホームページ";
+            } else {
+                document.getElementById('top_title').innerHTML = "インカ帝国<br>公式ホームページ";
+            }
+        }    
+    </script>
 
     <script>
         function notfound(){
@@ -248,4 +263,6 @@
     },5000);
 });
 </script>
+
+
 </html>
