@@ -35,7 +35,8 @@
                 <nav>
                     <a href="{% url 'inca' %}">トップ</a>
                     <a onclick="notfound()">情報</a>
-                    <a onclick="notfound()">インカへの所属申請</a>
+                    <a onclick="notfound()">指名手配</a>
+                    <a onclick="notfound()">所属申請</a>
                 </nav>
             </div>
 
@@ -52,7 +53,7 @@
                         {% endfor %}
                     </div>
 
-                    <b><img src="{% static 'image/EMClogo.png'%}"><span id="top_title">インカ帝国 公式ホームページ</span></b>
+                    <b><span id="top_title">インカ帝国 公式ホームページ</span></b>
                     <div class="photo_info">
                         <p id="photo_title"><i class="fas fa-image"></i> {{ clTitle.0 }}</p>
                         <p id="photo_player"><i class="fas fa-user"></i> {{ clPlayers.0 }}</p>
@@ -61,7 +62,7 @@
                 </section>
             
                 <section class="welcome">
-                    <h1>インカ帝国とは</h1>
+                    <h1>インカ帝国について</h1>
                     <div class="underline"></div>
                     <h2>概要</h2>
                     <p>インカ帝国(Inca_Emperor)とは<a href="https://earthmc.net/">Earth MC</a>の<a href="#dynamap">南米チチカカ湖の北岸に位置する</a>日本人勢による国です。</p>
@@ -78,7 +79,7 @@
                         <div class="info_item">
                             <p class="info_title">首都</p>
                             <div class="info_underline"></div>
-                            <p class="info_info">{{ capitalName }}</p>
+                            <p class="info_data">{{ capitalName }}</p>
                             {% if not ableAPI %}
                                 <p class="info_warning">この情報は古い可能性があります。</p>
                             {% endif %}
@@ -89,7 +90,7 @@
                         <div class="info_item">
                             <p class="info_title">人口</p>
                             <div class="info_underline"></div>
-                            <p class="info_info">{{ population }} 人</p>
+                            <p class="info_data">{{ population }} 人</p>
                             {% if not ableAPI %}
                                 <p class="info_warning">この情報は古い可能性があります。</p>
                             {% endif %}
@@ -100,7 +101,7 @@
                         <div class="info_item">
                             <p class="info_title">面積</p>
                             <div class="info_underline"></div>
-                            <p class="info_info">{{ area }} チャンク</p>
+                            <p class="info_data">{{ area }} チャンク</p>
                             {% if not ableAPI %}
                                 <p class="info_warning">この情報は古い可能性があります。</p>
                             {% endif %}
@@ -110,7 +111,7 @@
                         <div class="info_item">
                             <p class="info_title">国教</p>
                             <div class="info_underline"></div>
-                            <p class="info_info">太陽神教</p>
+                            <p class="info_data">太陽神教</p>
                             <i class="fas fa-cross"></i>
                         </div>
                     </div>
@@ -129,13 +130,13 @@
                                     <p class="info_title isoffline">{{ primary.name }}</p>
                                 {% endif %}
                                 <div class="info_underline"></div>
-                                <p class="info_info">{{ primary.rank }}</p>
+                                <p class="info_data">{{ primary.rank }}</p>
                                 {% if primary.uuid %}
                                     <img class="skin" src="https://crafatar.com/renders/head/{{ primary.uuid }}">
                                 {% else %}
                                     <img class="unknown_skin" src="{% static 'image/unknown_skin.png' %}">
                                 {% endif %}
-                                <label for="trigger" class="open_btn" onclick="playerpopup('{{ primary.uuid }}', '{{ primary.name }}', '{{ primary.online }}', '{{ primary.info }}')">詳しく見る</label>
+                                <label for="trigger" class="open_btn" onclick="playerpopup('{{ primary.uuid }}', '{{ primary.name }}', '{{ ableAPI }}', '{{ primary.online }}', '{{ primary.info }}')">詳しく見る</label>
                                 <div class="popup_wrap">
                                 <input id="trigger" type="checkbox">
                                 <div class="popup_overlay">
@@ -179,9 +180,9 @@
     </body>
 
 
-    <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
-
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> <!-- jquery -->
+    
+    <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
 
     <script src="{% static 'js/playerpopup.js' %}"></script>
 
@@ -205,25 +206,7 @@
             "{% if not ableAPI %}"
             toastr.warning("EarthMCのデータが読み込まれなかった為、一部情報が存在しないか不正確です。")
             "{% endif %}"
-
-            // 画面幅によるtop_titleの変更(onload)
-            if (window.innerWidth > 540) {
-                document.getElementById('top_title').innerHTML = "インカ帝国 公式ホームページ";
-            } else {
-                document.getElementById('top_title').innerHTML = "インカ帝国<br>公式ホームページ";
-            }
-            };
-    </script>
-
-    <script>
-    // 画面幅によるtop_titleの変更(onresize)
-        window.onresize = function() {
-            if (window.innerWidth > 540) {
-                document.getElementById('top_title').innerHTML = "インカ帝国 公式ホームページ";
-            } else {
-                document.getElementById('top_title').innerHTML = "インカ帝国<br>公式ホームページ";
-            }
-        }    
+        };
     </script>
 
     <script>
