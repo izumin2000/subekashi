@@ -10,7 +10,7 @@ UUID_API_URL = "https://api.mojang.com/users/profiles/minecraft/"
 NUMBER_OF_FIRSTVIEWS = 5
 ERROR_JSON = '{"population":"error","area":"error","king":"error","capitalName":"error","skin":"error"}'
 PRIMARIES = {"Ryo5Syo5":"国王", "RyoK3":"財務大臣", "KANATA2000":"メディア大臣", "sakira1996":"外交大臣 副国王", "hiroshi4872":"国土交通大臣", "ramuate":"法務大臣"}
-
+# メモ：Player.infoに記号や改行を含めない
 
 def root(request):
     return render(request, 'izuminapp/root.html')
