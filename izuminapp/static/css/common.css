@@ -77,11 +77,11 @@ header {
     }
 
     .header-right nav a {
-        margin-right: calc(8% - 30px);
+        margin-right: calc(8% - 40px);
     }
 }
 
-@media (max-width: 360px) {
+@media (max-width: 480px) {
     .header-right {
         position: relative;
         left: -4px;
@@ -89,8 +89,8 @@ header {
     }
 
     .header-right nav a {
-        margin-right: calc(8% - 25px);
-        font-size: 15px;
+        margin-right: calc(8% - 30px);
+        font-size: 18px;
     }
 
     .footer-left p {
@@ -124,13 +124,6 @@ h1 {
     font-family: sans-serif;
     font-size: 40px;
     line-height: 40px;
-    margin: 0 10px;
-}
-
-@media (max-width: 480px) {
-    h1 {
-        font-size: 9vw;
-    }
 }
 
 h2 {
@@ -138,14 +131,14 @@ h2 {
     line-height: 25px;
     margin: 15px 20px;
     padding: 10px 0 5px 10px;
-    background: linear-gradient(90deg, #FFD1DC, #eee, calc(30vw + 300px), #eee);
+    background: linear-gradient(90deg, #FFD1DC, #eee, 75%, #eee);
     border-radius: 5px;
 }
 
 section p {
     font-family: sans-serif;
     font-size: 16px;
-    margin: 0 24px;
+    margin-left: 24px;
 }
 
 section p a {
@@ -207,8 +200,8 @@ section p a {
     background-color: #BB002D;
 }
 
-.info_data {
-    margin: 0;
+.info_info {
+    margin-left: 0;
     color: #000;
     margin-top: 15px;
     text-align: center;
