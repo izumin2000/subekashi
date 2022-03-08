@@ -1,7 +1,9 @@
+from email.policy import default
 from pathlib import Path
 import os
 import dj_database_url
 import django_heroku
+from dotenv import find_dotenv, load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -72,19 +74,15 @@ WSGI_APPLICATION = 'izuminapp.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
+load_dotenv(find_dotenv())
+# {'NAME': 'pj_db', 'USER': 'root', 'PASSWORD': 'Class9Team5', 'HOST': 'localhost', 'PORT': '', 'CONN_MAX_AGE': 600, 'ENGINE': 'django.db.backends.mysql'}
+default = dj_database_url.config(conn_max_age=600)
+default['OPTIONS'] = {'init_command': "SET sql_mode='STRICT_TRANS_TABLES'", 'charset': 'utf8mb4'}
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'name',
-        'USER': 'user',
-        'PASSWORD': '',
-        'HOST': 'host',
-        'PORT': '',
-    }
+    'default': default,
 }
 
-db_from_env = dj_database_url.config(conn_max_age=600, ssl_require=True)
-DATABASES['default'].update(db_from_env)
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
