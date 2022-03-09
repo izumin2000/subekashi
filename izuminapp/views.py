@@ -1,12 +1,14 @@
 from django.shortcuts import render
 from izuminapp.forms import FirstviewForm
 from izuminapp.model import Player, Firstview, Siteinfo
+from .settings import STATIC_URL
 import requests
 import datetime
 import json
 
 EMC_API_URL = "https://earthmc-api.herokuapp.com/api/v1"
 UUID_API_URL = "https://api.mojang.com/users/profiles/minecraft/"
+UPLOAD_URL = "uploadfiles/"
 NUMBER_OF_FIRSTVIEWS = 5
 ERROR_JSON = '{"population":"error","area":"error","king":"error","capitalName":"error","skin":"error"}'
 PRIMARIES = {"Ryo5Syo5":"国王", "RyoK3":"財務大臣", "KANATA2000":"メディア大臣", "sakira1996":"外交大臣 副国王", "hiroshi4872":"国土交通大臣", "ramuate":"法務大臣"}
@@ -98,11 +100,11 @@ def applyimage(request) :
         newImage = request.FILES.get("image")
         newtitle = request.POST["title"]
         newPlayer = request.POST["player"]
-        firstview = Firstview.objects.create(image = newImage, title = newtitle, player = newPlayer)
+        firstview = Firstview.objects.create(image = STATIC_URL + UPLOAD_URL + str(newImage), title = newtitle, player = newPlayer)
         firstview.save()
         result["title"] = newtitle
     else :
-        result["title"] = "upload images..."
+        result["title"] = ""
 
     form = FirstviewForm()
     result["form"] = form
