@@ -125,9 +125,16 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD='django.db.models.AutoField'
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATIC_URL = '/static/'
+STATIC_URL = 'static/'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-if not DEBUG:
+if DEBUG :
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        }
+    }
+else :
     SECRET_KEY = os.environ['SECRET_KEY']
     django_heroku.settings(locals())
