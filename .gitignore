@@ -4,3 +4,4 @@ __pycache__/
 db-volumes/
 db.sqlite3
 izuminapp\note.py
+local_settings.py
