@@ -124,8 +124,8 @@ USE_TZ = True
 
 DEFAULT_AUTO_FIELD='django.db.models.AutoField'
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'IOfiles/image/')
+STATIC_URL = 'IOfiles/image/'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 

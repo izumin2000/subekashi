@@ -1,7 +1,6 @@
 from django.shortcuts import render
 from izuminapp.forms import FirstviewForm
 from izuminapp.model import Player, Firstview, Siteinfo
-from .settings import STATIC_URL
 import requests
 import datetime
 import json
