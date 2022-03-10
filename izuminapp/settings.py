@@ -136,5 +136,6 @@ if DEBUG :
         }
     }
 else :
-    SECRET_KEY = os.environ['SECRET_KEY']
     django_heroku.settings(locals())
+
+SECRET_KEY = SECRET_KEY
