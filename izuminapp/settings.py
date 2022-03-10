@@ -74,17 +74,6 @@ WSGI_APPLICATION = 'izuminapp.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
-print("!!!!!!" ,DEBUG)
-if DEBUG :
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-        }
-    }
-else :
-    django_heroku.settings(locals())
-
 load_dotenv(find_dotenv())
 # {'NAME': 'pj_db', 'USER': 'root', 'PASSWORD': 'Class9Team5', 'HOST': 'localhost', 'PORT': '', 'CONN_MAX_AGE': 600, 'ENGINE': 'django.db.backends.mysql'}
 default = dj_database_url.config(conn_max_age=600)
@@ -139,4 +128,15 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATIC_URL = 'static/'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-SECRET_KEY = SECRET_KEY
+
+if DEBUG :
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        }
+    }
+    SECRET_KEY = SECRET_KEY
+else :
+    django_heroku.settings(locals())
+    SECRET_KEY = 'q93+xpfmw33@ug#5xea$z6i1p!yhn(qxi4-88=-npj^ppftd+a'

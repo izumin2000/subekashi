@@ -6,3 +6,4 @@ db-volumes/
 db.sqlite3
 izuminapp/.py
 izuminapp/static/uploadfiles/*
+local_settings.py
