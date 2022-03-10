@@ -10,7 +10,7 @@ class Player(models.Model) :
     leave = models.BooleanField(default = False)
 
 class Firstview(models.Model) :
-    image = models.ImageField(upload_to="izuminapp/static/uploadfiles/", null = True, blank = True)
+    image = models.ImageField(upload_to="IOfiles/image/", null = True, blank = True)
     title = models.CharField(default = "", max_length = 20)
     player = models.CharField(default = "", max_length = 20)
 

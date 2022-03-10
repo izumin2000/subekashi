@@ -100,7 +100,7 @@ def applyimage(request) :
         newImage = request.FILES.get("image")
         newtitle = request.POST["title"]
         newPlayer = request.POST["player"]
-        firstview = Firstview.objects.create(image = STATIC_URL + UPLOAD_URL + str(newImage), title = newtitle, player = newPlayer)
+        firstview = Firstview.objects.create(image = newImage, title = newtitle, player = newPlayer)
         firstview.save()
         result["title"] = newtitle
     else :
