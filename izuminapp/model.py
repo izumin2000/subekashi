@@ -11,7 +11,7 @@ class Player(models.Model) :
     crime = models.BooleanField(default = False)
 
 class Firstview(models.Model) :
-    image = models.ImageField(upload_to="", null = True, blank = True)
+    image = models.CharField(default = "", max_length = 100)
     title = models.CharField(default = "", max_length = 20)
     player = models.CharField(default = "", max_length = 20)
 
