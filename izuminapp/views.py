@@ -103,7 +103,7 @@ def applyimage(request) :
         firstview_dir = BASE_DIR + "/static/firstview/*.png"
     print("!!!!!!", firstview_dir)
     for filename_dir in glob(firstview_dir) :
-        filename = filename.replace(BASE_DIR, '').replace("izuminapp\\", '')
+        filename = filename_dir.replace(BASE_DIR, '').replace("izuminapp\\", '')
         print("!!!!!!", filename)
         _, _ = Firstview.objects.get_or_create(name = filename, defaults = {"name" : filename})
     """
