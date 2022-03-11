@@ -105,7 +105,7 @@ def applyimage(request) :
     for filename_dir in glob(firstview_dir) :
         filename = filename_dir.replace(BASE_DIR, '').replace("izuminapp\\", '')
         print("!!!!!!", filename)
-        _, _ = Firstview.objects.get_or_create(name = filename, defaults = {"name" : filename})
+        _, _ = Firstview.objects.get_or_create(image = filename, defaults = {"image" : filename})
     """
     if request.method == 'POST':
         newtitle = request.POST["image"]
