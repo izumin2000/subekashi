@@ -1,9 +1,11 @@
 from django.shortcuts import render
+from izuminapp.settings import BASE_DIR, DEBUG
 from izuminapp.forms import FirstviewForm
 from izuminapp.model import Player, Firstview, Singleton, Analyze
 import requests
 import datetime
 import json
+from glob import glob
 
 EMC_API_URL = "https://earthmc-api.herokuapp.com/api/v1"
 UUID_API_URL = "https://api.mojang.com/users/profiles/minecraft/"
@@ -95,15 +97,25 @@ def inca(request):
 
 def applyimage(request) :
     result = {}
+    if DEBUG :
+        firstview_dir = BASE_DIR + "\\izuminapp\\static\\firstview\\*.png"
+    else :
+        firstview_dir = BASE_DIR + "/static/firstview/*.png"
+    print("!!!!!!", firstview_dir)
+    for filename_dir in glob(firstview_dir) :
+        filename = filename.replace(BASE_DIR, '').replace("izuminapp\\", '')
+        print("!!!!!!", filename)
+        _, _ = Firstview.objects.get_or_create(name = filename, defaults = {"name" : filename})
+    """
     if request.method == 'POST':
-        newImage = request.FILES.get("image")
+        newtitle = request.POST["image"]
         newtitle = request.POST["title"]
         newPlayer = request.POST["player"]
-        firstview = Firstview.objects.create(image = newImage, title = newtitle, player = newPlayer)
+        firstview = Firstview.objects.create(title = newtitle, player = newPlayer)
         firstview.save()
         result["title"] = newtitle
     else :
-        result["title"] = ""
+        result["title"] = """
 
     form = FirstviewForm()
     result["form"] = form

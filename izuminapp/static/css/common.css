@@ -216,7 +216,7 @@ section p a {
 }
 
 .info_warning {
-    margin-left: 0;
+    margin: 0 !important;
     color: #f2a744;
     text-align: center;
     font-family: sans-serif;

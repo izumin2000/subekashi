@@ -2,7 +2,7 @@ function playerpopup(uuid, name, ableapi, online, info) {
     document.getElementById("popup_skin").removeAttribute("src");
     document.getElementById("popup_name").innerHTML = name;
     document.getElementById("popup_name").removeAttribute("class");
-    if (ableapi) {
+    if (ableapi == "True") {
         if (online == "True") {
             document.getElementById("popup_name").setAttribute("class", "isonline");
         } else {
