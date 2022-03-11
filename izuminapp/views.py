@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from izuminapp.forms import FirstviewForm
-from izuminapp.model import Player, Firstview, Siteinfo
+from izuminapp.model import Player, Firstview, Singleton, Analyze
 import requests
 import datetime
 import json
@@ -20,7 +20,7 @@ def inca(request):
     inca_info = {}
 
     # シングルトンインスタンスの生成
-    newSiteinfo, _ = Siteinfo.objects.get_or_create(pk = 0, defaults = {"nations" : ERROR_JSON})
+    newNation, _ = Singleton.objects.get_or_create(name = "nations" , defaults = {"value" : ERROR_JSON})
 
     # ファーストビューの処理
     firstviews = Firstview.objects.order_by('?')[:min(Firstview.objects.count(), NUMBER_OF_FIRSTVIEWS)]     # ランダムにNUMBER_OF_FIRSTVIEWS個取り出す
@@ -35,7 +35,7 @@ def inca(request):
     except Exception :      # ProxyErrorなら
         # jsonアーカイブからのアーカイブを読み込み
         inca_info["ableAPI"] = False
-        inca_info.update(dict(json.loads(newSiteinfo.nations)))      # 辞書型の結合
+        inca_info.update(dict(json.loads(newNation.value)))      # 辞書型の結合
 
     else :      #正常にAPIを取得できたら
         inca_info["ableAPI"] = True
@@ -81,14 +81,14 @@ def inca(request):
                 immigrant_player.save()
 
             # jsonのアーカイブ
-            if newSiteinfo.nations in ["", ERROR_JSON] :
-                newSiteinfo.nations = json.dumps(nations_json)
-                newSiteinfo.save()
+            if newNation.value in ["", ERROR_JSON] :
+                newNation.value = json.dumps(nations_json)
+                newNation.save()
 
         # jsonアーカイブからのアーカイブを読み込み
         else :      # EMCサーバー側の問題なら
             inca_info["ableAPI"] = False
-            inca_info.update(dict(json.loads(newSiteinfo.nations)))      # 辞書型の結合
+            inca_info.update(dict(json.loads(newNation.value)))      # 辞書型の結合
 
     inca_info["primaries"] = Player.objects.filter(primary = True)
     return render(request, 'inca/inca.html', inca_info)
