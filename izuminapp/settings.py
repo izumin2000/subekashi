@@ -22,7 +22,6 @@ try:
 except ImportError:
     pass
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 # ALLOWED_HOSTS = ['127.0.0.1', '.herokuapp.com']
 ALLOWED_HOSTS = ['*']
 
@@ -124,8 +123,10 @@ USE_TZ = True
 
 DEFAULT_AUTO_FIELD='django.db.models.AutoField'
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'IOfiles/image/')
-STATIC_URL = 'IOfiles/image/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_URL = 'static/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'IOfiles/image/')
+MEDIA_URL = 'IOfiles/image/'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
