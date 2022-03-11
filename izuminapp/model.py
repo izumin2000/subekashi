@@ -8,6 +8,7 @@ class Player(models.Model) :
     online = models.BooleanField(default = False)
     primary = models.BooleanField(default = False)
     leave = models.BooleanField(default = False)
+    crime = models.BooleanField(default = False)
 
 class Firstview(models.Model) :
     image = models.ImageField(upload_to="", null = True, blank = True)
@@ -15,7 +16,10 @@ class Firstview(models.Model) :
     player = models.CharField(default = "", max_length = 20)
 
 # シングルトン
-class Siteinfo(models.Model) :
+class Singleton(models.Model) :
+    name = models.CharField(default = "", max_length = 20)
+    value = models.CharField(default = "", max_length = 10000)
+
+class Analyze(models.Model) :
     date = models.DateField(null = True, blank = True)
-    visit = models.IntegerField(default = 0)
-    nations = models.CharField(default = "", max_length = 10000)
+    pv = models.IntegerField(default = 0)
