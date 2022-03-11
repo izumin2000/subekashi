@@ -1,3 +1,3 @@
 web: gunicorn izuminapp.wsgi
-python manage.py collectstatic --noinput
-python manage.py migrate
+release: python manage.py collectstatic --noinput
+release: python manage.py migrate
