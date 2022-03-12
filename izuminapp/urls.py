@@ -9,7 +9,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.root, name = 'root'),
     path('inca', views.inca, name = 'inca'),
-    path('applyimage', views.applyimage, name = 'applyimage'),
+    path('firstview', views.firstview, name = 'firstview'),
 ]
 
 if settings.DEBUG:

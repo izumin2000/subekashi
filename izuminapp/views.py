@@ -5,7 +5,6 @@ from izuminapp.model import Player, Firstview, Singleton, Analyze
 import requests
 import datetime
 import json
-from glob import glob
 
 EMC_API_URL = "https://earthmc-api.herokuapp.com/api/v1"
 UUID_API_URL = "https://api.mojang.com/users/profiles/minecraft/"
@@ -95,28 +94,22 @@ def inca(request):
     inca_info["primaries"] = Player.objects.filter(primary = True)
     return render(request, 'inca/inca.html', inca_info)
 
-def applyimage(request) :
+def firstview(request) :
     result = {}
-    if DEBUG :
-        firstview_dir = BASE_DIR + "\\izuminapp\\static\\firstview\\*.png"
-    else :
-        firstview_dir = BASE_DIR + "/static/firstview/*.png"
-    print("!!!!!!", firstview_dir)
-    for filename_dir in glob(firstview_dir) :
-        filename = filename_dir.replace(BASE_DIR, '').replace("izuminapp\\", '')
-        print("!!!!!!", filename)
-        _, _ = Firstview.objects.get_or_create(image = filename, defaults = {"image" : filename})
-    """
+
     if request.method == 'POST':
-        newtitle = request.POST["image"]
+        newimage = request.POST["image"]
         newtitle = request.POST["title"]
         newPlayer = request.POST["player"]
-        firstview = Firstview.objects.create(title = newtitle, player = newPlayer)
-        firstview.save()
-        result["title"] = newtitle
-    else :
-        result["title"] = """
+        newimage = "firstview/" + newimage + ".png"
+        insFirstview, _ = Firstview.objects.get_or_create(image = newimage, defaults = {"image" : newimage})
+        insFirstview.title = newtitle
+        insFirstview.player = newPlayer
+        insFirstview.save()
+        result["title"] = newtitle + "をアップロードしました"
+    
+    result["images"] = Firstview.objects.all()
 
     form = FirstviewForm()
     result["form"] = form
-    return render(request, 'inca/applyimage.html', result)
+    return render(request, 'inca/firstview.html', result)

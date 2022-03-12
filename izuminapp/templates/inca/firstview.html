@@ -4,18 +4,25 @@
 
 <html lang="ja">
     <head>
-        <title>applyimage</title>
+        <title>firstview</title>
     </head>
 
 
     <body>
         <main>
-            <p>{{ title }} をアップロードしました</p>
+            <p>{{ title }}</p>
             <br />
             <form method="POST" class="post-form" enctype="multipart/form-data">{% csrf_token %}
                 {{ form.as_p }}
                 <button type="submit" class="save btn btn-default">Save</button>
             </form>
+
+            
+            {% for image in images %}
+                <img src="{% static image.image %}" style="width: 200px;">
+                <p style="display: inline;">{{ image.title }} | {{ image.player}}</p>
+                <br>
+            {% endfor %}
         </main>
     </body>
 </html>
