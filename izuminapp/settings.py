@@ -127,8 +127,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = 'static/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = 'media/'
-if not DEBUG :
-    STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
@@ -142,4 +140,4 @@ if DEBUG :
     SECRET_KEY = SECRET_KEY
 else :
     django_heroku.settings(locals())
-    SECRET_KEY = 'q93+xpfmw33@ug#5xea$z6i1p!yhn(qxi4-88=-npj^ppftd+a'
+    SECRET_KEY = os.environ['SECRET_KEY']
