@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from izuminapp.settings import BASE_DIR, DEBUG
-from izuminapp.forms import FirstviewForm
+from izuminapp.forms import FirstviewForm, PlayerForm
 from izuminapp.model import Player, Firstview, Singleton, Analyze
 import requests
 import datetime
@@ -33,7 +33,7 @@ def inca(request):
     # APIの処理
     try :
         nations_get = requests.get(EMC_API_URL + "/nations/Inca_Empire")
-    except Exception :      # ProxyErrorなら
+    except :      # ProxyErrorなら
         # jsonアーカイブからのアーカイブを読み込み
         inca_info["ableAPI"] = False
         inca_info.update(dict(json.loads(newNation.value)))      # 辞書型の結合
@@ -42,49 +42,57 @@ def inca(request):
         inca_info["ableAPI"] = True
         if nations_get.status_code == 200 :
             # nationデータの取得
-            nations_json = dict(nations_get.json())
-            nations_json["population"] = len(nations_json["residents"])     # 人口の取得
-            
-            inca_info.update(nations_json)      # 辞書型の結合
-
-            # 国民の登録
-            online_get = requests.get(EMC_API_URL + "/online")
-            for player in nations_json["residents"] :
-                newPlayer, _ = Player.objects.get_or_create(name = player, defaults = {"name" : player})
-                if player in PRIMARIES.keys() :      # 大臣なら
-                    newPlayer.primary = True
-                    newPlayer.rank = PRIMARIES[player]
-                else :
-                    newPlayer.primary = False
-                    newPlayer.rank = "国民"
-
-                # UUIDの登録
-                if newPlayer.uuid == "" :
-                    uuid_get = requests.get(UUID_API_URL + player)
-                    if uuid_get.status_code == 200 :
-                        newPlayer.uuid = dict(uuid_get.json())["id"]
+            try :
+                nations_json = dict(nations_get.json())
+            except :
+                inca_info["ableAPI"] = False
+                inca_info.update(dict(json.loads(newNation.value)))      # 辞書型の結合
+            else :
+                nations_json["population"] = len(nations_json["residents"])     # 人口の取得
                 
-                # onlineカラムの切り替え
-                if online_get.status_code == 200 :
-                    online_json = online_get.json()
-                    online_players = [d.get('name') for d in online_json]
-                    if player in online_players :
-                        newPlayer.online = True
-                    else :
-                        newPlayer.online = False
-                newPlayer.save()
-            
-            # 他の国に移住した国民の非表示
-            immigrants = set(Player.objects.values_list('name', flat = True)) - set(nations_json["residents"])
-            for immigrant in immigrants :
-                immigrant_player = Player.objects.filter(name = immigrant)[0]
-                immigrant_player.leave = True
-                immigrant_player.save()
+                inca_info.update(nations_json)      # 辞書型の結合
 
-            # jsonのアーカイブ
-            if newNation.value in ["", ERROR_JSON] :
-                newNation.value = json.dumps(nations_json)
-                newNation.save()
+                # 国民の登録
+                online_get = requests.get(EMC_API_URL + "/online")
+                for player in nations_json["residents"] :
+                    newPlayer, _ = Player.objects.get_or_create(name = player, defaults = {"name" : player})
+                    if player in PRIMARIES.keys() :      # 大臣なら
+                        newPlayer.primary = True
+                        newPlayer.rank = PRIMARIES[player]
+                    else :
+                        newPlayer.primary = False
+                        newPlayer.rank = "国民"
+
+                    # UUIDの登録
+                    if newPlayer.uuid == "" :
+                        uuid_get = requests.get(UUID_API_URL + player)
+                        if uuid_get.status_code == 200 :
+                            try :
+                                newPlayer.uuid = dict(uuid_get.json())["id"]
+                            except :
+                                inca_info["ableAPI"] = False
+
+                    # onlineカラムの切り替え
+                    if online_get.status_code == 200 :
+                        online_json = online_get.json()
+                        online_players = [d.get('name') for d in online_json]
+                        if player in online_players :
+                            newPlayer.online = True
+                        else :
+                            newPlayer.online = False
+                    newPlayer.save()
+            
+                # 他の国に移住した国民の登録
+                immigrants = set(Player.objects.values_list('name', flat = True)) - set(nations_json["residents"])
+                for immigrant in immigrants :
+                    immigrant_player = Player.objects.filter(name = immigrant)[0]
+                    immigrant_player.leave = True
+                    immigrant_player.save()
+
+                # jsonのアーカイブ
+                if newNation.value in ["", ERROR_JSON] :
+                    newNation.value = json.dumps(nations_json)
+                    newNation.save()
 
         # jsonアーカイブからのアーカイブを読み込み
         else :      # EMCサーバー側の問題なら
@@ -93,6 +101,7 @@ def inca(request):
 
     inca_info["primaries"] = Player.objects.filter(primary = True)
     return render(request, 'inca/inca.html', inca_info)
+
 
 def firstview(request) :
     result = {}
