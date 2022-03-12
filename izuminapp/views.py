@@ -124,11 +124,24 @@ def firstview(request) :
     return render(request, 'inca/firstview.html', result)
 
 def firstviewdelete(request, imageid) :
-    Firstview.objects.filter(pk = imageid).delete()
-
     result = {}
-    result["images"] = Firstview.objects.all()
-    form = FirstviewForm()
-    result["form"] = form
+    try :
+        insFirstview = Firstview.objects.filter(pk = imageid)[0]
+    except :     # 削除した直後に画像を追加したら
+        return firstview(request)
+    else :
+        result["title"] = insFirstview.image + "を削除しました"
+        insFirstview.delete()
+        form = FirstviewForm()
 
-    return render(request, 'inca/firstview.html', result)
+        result["images"] = Firstview.objects.all()
+        result["form"] = form
+        return render(request, 'inca/firstview.html', result)
+
+
+def editplayer(request) :
+    result = {}
+    form = PlayerForm()
+    result["form"] = form
+    result["players"] = Player.objects.all()
+    return render(request, 'inca/editplayer.html', result)

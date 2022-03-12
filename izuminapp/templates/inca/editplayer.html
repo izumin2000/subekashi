@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+
+{% load static %}
+
+<html lang="ja">
+    <head>
+        <title>editplayer</title>
+    </head>
+
+
+    <body style="margin-left: 40px;">
+        <main>
+            <p>{{ title }}</p>
+            <br />
+            <form method="POST" class="post-form" id="PlayerForm">{% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="save btn btn-default">Save</button>
+            </form>
+
+            <table border="1">
+                <th>プレイヤー名</th>
+                <th>身分</th>
+                <th>大臣？</th>
+                <th>指名手配犯？</th>
+                <th>説明</th>
+                {% for player in players %}
+                <tr>
+                    <td><a href="#PlayerForm" onclick="copyinfo()">{{ player.name }}</a></td>
+                    <td>{{ player.rank }}</td>
+                    {% if player.primary %}
+                        <td>はい</td>
+                    {% else %}
+                        <td>いいえ</td>
+                    {% endif %}
+                    {% if player.crime %}
+                        <td>はい</td>
+                    {% else %}
+                        <td>いいえ</td>
+                    {% endif %}
+                    <td>{{ player.info }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </main>
+    </body>
+</html>
