@@ -16,11 +16,17 @@
                 {{ form.as_p }}
                 <input type="submit" value="送信">
             </form>
-
+            <p>ファイル名とパスワードの入力は必須でそれ以外は任意です。</p>
+            <p>「表示する」に設定した画像のうち、ランダムで数枚トップページに表示されます。</p>
+            <p>ファイル名の「firstview/」と「.png」は入力時に省略できます。</p>
             <hr>
             {% for image in images %}
-                <img src="{% static image.image %}" style="width: 200px;">
-                <p style="display: inline;">{{ image.image }} | {{ image.title }} | {{ image.player}}</p>
+                <img src="{% static image.name %}" style="width: 200px;">
+                {% if image.display %}
+                    <p style="display: inline;">{{ image.name }} | {{ image.title }} | {{ image.player }} | 表示中</p>
+                {% else %}
+                    <p style="display: inline;">{{ image.name }} | {{ image.title }} | {{ image.player }} | 非表示中</p>
+                {% endif %}
                 <hr>
             {% endfor %}
         </main>

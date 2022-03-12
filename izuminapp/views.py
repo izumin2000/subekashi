@@ -24,9 +24,9 @@ def inca(request):
     insSingleton, _ = Singleton.objects.get_or_create(name = "nations" , defaults = {"value" : ERROR_JSON})
 
     # ファーストビューの処理
-    insFirstviews = Firstview.objects.order_by('?')[:min(Firstview.objects.count(), NUMBER_OF_FIRSTVIEWS)]     # ランダムにNUMBER_OF_FIRSTVIEWS個取り出す
+    insFirstviews = Firstview.objects.filter(display = True).order_by('?')[:min(Firstview.objects.count(), NUMBER_OF_FIRSTVIEWS)]     # ランダムにNUMBER_OF_FIRSTVIEWS個取り出す
     insFirstviews = list(insFirstviews.values())
-    inca_info["images"] = [d.get('image') for d in insFirstviews]
+    inca_info["names"] = [d.get('name') for d in insFirstviews]
     inca_info["clTitle"] = [d.get('title') for d in insFirstviews]
     inca_info["clPlayers"] = [d.get('player') for d in insFirstviews]
 
@@ -108,25 +108,36 @@ def firstview(request) :
     result = {}
 
     if request.method == 'POST':
-        image = request.POST.get("image")       # form.pyにおいてid冒頭のid_はidに含まない
+        name = request.POST.get("name")       # form.pyにおいてid冒頭のid_はidに含まない
         title = request.POST.get("title")
         player = request.POST.get("player")
+        displayon = request.POST.get("displayon")
+        displayoff = request.POST.get("displayoff")
         delete = request.POST.get("delete")
         password = request.POST.get("password")
+        print(type(name), type(title), type(player), type(displayon), type(displayoff), type(delete))
         if password == "incagold" :
-            image = image.replace("firstview/", "").replace(".png", "")
-            image = "firstview/" + image + ".png"
-            insFirstview, created = Firstview.objects.get_or_create(image = image, defaults = {"image" : image})
+            filename = name.replace("firstview/", "").replace(".png", "")
+            name = "firstview/" + filename + ".png"
+            insFirstview, created = Firstview.objects.get_or_create(name = name, defaults = {"name" : name})
             if delete :        # 削除する場合は
                 if not created :        #   Firstviewレコードが新規作成された場合は
-                    deleted_path = insFirstview.image
+                    deleted_path = insFirstview.name
                     insFirstview.delete()
                     result["title"] = deleted_path + "を削除しました"
             else :
-                insFirstview.title = title
-                insFirstview.player = player
+                if title != "" :
+                    insFirstview.title = title
+                if player != "" :
+                    insFirstview.player = player
+                if displayon :
+                    insFirstview.display = True
+                if displayoff :
+                    insFirstview.display = False
                 insFirstview.save()
-                result["title"] = title + "をアップロードしました"
+
+                result["title"] = filename + "をアップロードしました"
+                    
         else :
             result["title"] = "パスワードが違います"
     
