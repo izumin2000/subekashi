@@ -25,7 +25,7 @@
                 <th>説明</th>
                 {% for player in players %}
                 <tr>
-                    <td><a href="#PlayerForm" onclick="copyinfo()">{{ player.name }}</a></td>
+                    <td><a href="#PlayerForm" onclick="copyinfo('{{ player.name }}', '{{ player.rank }}', '{{ player.primary }}', '{{ player.crime }}', '{{ player.info }}')">{{ player.name }}</a></td>
                     <td>{{ player.rank }}</td>
                     {% if player.primary %}
                         <td>はい</td>
@@ -43,4 +43,21 @@
             </table>
         </main>
     </body>
+    <script>
+        function copyinfo(name, rank, primary, crime, info){
+            document.getElementById("id_name").value = name;
+            document.getElementById("id_rank").value = rank;
+            if (primary == "True") {
+                document.getElementById("id_primary").checked = true;
+            } else {
+                document.getElementById("id_primary").checked = false;
+            }
+            if (crime == "True") {
+                document.getElementById("id_crime").checked = true;
+            } else {
+                document.getElementById("id_crime").checked = false;
+            }
+            document.getElementById("id_info").value = info;
+        }
+    </script>
 </html>

@@ -15,5 +15,5 @@ class PlayerForm(forms.Form) :
     rank = forms.CharField(label="身分")
     primary = forms.BooleanField(label="大臣？", required=False)
     crime = forms.BooleanField(label="指名手配犯？", required=False)
-    info = forms.CharField(label="説明", required=False)
+    info = forms.CharField(label="説明", required=False, widget=forms.Textarea())
     password = forms.CharField(label="パスワード")
