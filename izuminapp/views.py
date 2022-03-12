@@ -11,7 +11,6 @@ UUID_API_URL = "https://api.mojang.com/users/profiles/minecraft/"
 UPLOAD_URL = "uploadfiles/"
 NUMBER_OF_FIRSTVIEWS = 5
 ERROR_JSON = '{"population":"error","area":"error","king":"error","capitalName":"error","skin":"error"}'
-PRIMARIES = {"Ryo5Syo5":"国王", "RyoK3":"財務大臣", "KANATA2000":"メディア大臣", "sakira1996":"外交大臣 副国王", "hiroshi4872":"国土交通大臣", "ramuate":"法務大臣"}
 
 
 def root(request):
@@ -56,12 +55,6 @@ def inca(request):
                 online_get = requests.get(EMC_API_URL + "/online")
                 for player in nations_json["residents"] :
                     insPlayer, _ = Player.objects.get_or_create(name = player, defaults = {"name" : player})
-                    if player in PRIMARIES.keys() :      # 大臣なら
-                        insPlayer.primary = True
-                        insPlayer.rank = PRIMARIES[player]
-                    else :
-                        insPlayer.primary = False
-                        insPlayer.rank = "国民"
 
                     # UUIDの登録
                     if insPlayer.uuid == "" :
@@ -150,6 +143,25 @@ def firstview(request) :
 
 def editplayer(request) :
     result = {}
+
+    name = request.POST.get("name")
+    rank = request.POST.get("rank")
+    primary = request.POST.get("primary")
+    crime = request.POST.get("crime")
+    info = request.POST.get("info")
+    password = request.POST.get("password")
+    if password == "incagold" :
+        insPlayer, _ = Player.objects.get_or_create(name = name, defaults = {"name" : name})
+        if rank != "" :
+            insPlayer.rank = rank
+        insPlayer.primary = bool(primary)
+        insPlayer.crime = bool(crime)
+        insPlayer.info = info
+        insPlayer.save()
+        result["title"] = name + "の情報が変更されました"
+    else :
+        result["title"] = "パスワードが違います"
+
     form = PlayerForm()
     result["form"] = form
     result["players"] = Player.objects.all()
