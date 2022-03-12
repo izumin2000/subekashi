@@ -3,8 +3,9 @@ from django import forms
 
 class FirstviewForm(forms.Form) :
     image = forms.CharField(label="ファイル名")
-    title = forms.CharField(label="タイトル")
-    player = forms.CharField(label="プレイヤー")
+    title = forms.CharField(label="タイトル", required=False)
+    player = forms.CharField(label="プレイヤー", required=False)
+    delete = forms.BooleanField(label="削除する", required=False)
     password = forms.CharField(label="パスワード")
 
 class PlayerForm(forms.Form) :

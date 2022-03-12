@@ -20,7 +20,7 @@
             <hr>
             {% for image in images %}
                 <img src="{% static image.image %}" style="width: 200px;">
-                <p style="display: inline;">{{ image.image }} | {{ image.title }} | {{ image.player}} | <a href="{% url 'firstviewdelete' image.id %}">削除</a></p>
+                <p style="display: inline;">{{ image.image }} | {{ image.title }} | {{ image.player}}</p>
                 <hr>
             {% endfor %}
         </main>

@@ -110,15 +110,23 @@ def firstview(request) :
     if request.method == 'POST':
         image = request.POST.get("image")       # form.pyにおいてid冒頭のid_はidに含まない
         title = request.POST.get("title")
-        insPlayer = request.POST.get("player")
+        player = request.POST.get("player")
+        delete = request.POST.get("delete")
         password = request.POST.get("password")
         if password == "incagold" :
+            image = image.replace("firstview/", "").replace(".png", "")
             image = "firstview/" + image + ".png"
-            insFirstview, _ = Firstview.objects.get_or_create(image = image, defaults = {"image" : image})
-            insFirstview.title = title
-            insFirstview.player = insPlayer
-            insFirstview.save()
-            result["title"] = title + "をアップロードしました"
+            insFirstview, created = Firstview.objects.get_or_create(image = image, defaults = {"image" : image})
+            if delete :        # 削除する場合は
+                if not created :        #   Firstviewレコードが新規作成された場合は
+                    deleted_path = insFirstview.image
+                    insFirstview.delete()
+                    result["title"] = deleted_path + "を削除しました"
+            else :
+                insFirstview.title = title
+                insFirstview.player = player
+                insFirstview.save()
+                result["title"] = title + "をアップロードしました"
         else :
             result["title"] = "パスワードが違います"
     
@@ -127,21 +135,6 @@ def firstview(request) :
     form = FirstviewForm()
     result["form"] = form
     return render(request, 'inca/firstview.html', result)
-
-def firstviewdelete(request, imageid) :
-    result = {}
-    try :
-        insFirstview = Firstview.objects.filter(pk = imageid)[0]
-    except :     # 削除した直後に画像を追加したら
-        return firstview(request)
-    else :
-        result["title"] = insFirstview.image + "を削除しました"
-        insFirstview.delete()
-        form = FirstviewForm()
-
-        result["images"] = Firstview.objects.all()
-        result["form"] = form
-        return render(request, 'inca/firstview.html', result)
 
 
 def editplayer(request) :
