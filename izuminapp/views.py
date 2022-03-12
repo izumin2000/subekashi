@@ -1,9 +1,8 @@
 from django.shortcuts import render
-from izuminapp.settings import BASE_DIR, DEBUG
 from izuminapp.forms import FirstviewForm, PlayerForm
 from izuminapp.model import Player, Firstview, Singleton, Analyze
 import requests
-import datetime
+from datetime import date
 import json
 
 EMC_API_URL = "https://earthmc-api.herokuapp.com/api/v1"
@@ -13,21 +12,11 @@ NUMBER_OF_FIRSTVIEWS = 5
 ERROR_JSON = '{"population":"error","area":"error","king":"error","capitalName":"error","skin":"error"}'
 
 
-def root(request):
-    return render(request, 'izuminapp/root.html')
-
-def inca(request):
+def updateinfo() : 
     inca_info = {}
 
     # シングルトンインスタンスの生成
     insSingleton, _ = Singleton.objects.get_or_create(name = "nations" , defaults = {"value" : ERROR_JSON})
-
-    # ファーストビューの処理
-    insFirstviews = Firstview.objects.filter(display = True).order_by('?')[:min(Firstview.objects.count(), NUMBER_OF_FIRSTVIEWS)]     # ランダムにNUMBER_OF_FIRSTVIEWS個取り出す
-    insFirstviews = list(insFirstviews.values())
-    inca_info["names"] = [d.get('name') for d in insFirstviews]
-    inca_info["clTitle"] = [d.get('title') for d in insFirstviews]
-    inca_info["clPlayers"] = [d.get('player') for d in insFirstviews]
 
     # APIの処理
     try :
@@ -92,8 +81,30 @@ def inca(request):
         else :      # EMCサーバー側の問題なら
             inca_info["ableAPI"] = False
             inca_info.update(dict(json.loads(insSingleton.value)))      # 辞書型の結合
+        
+        # PV数のカウント
+        today = date.today()
+        insAnalyze, _ = Analyze.objects.get_or_create(date = today, defaults = {"date" : today})
+        insAnalyze.pv += 1
+        insAnalyze.save()
 
+    return inca_info
+
+
+def root(request):
+    return render(request, 'izuminapp/root.html')
+
+def inca(request):
+    inca_info = updateinfo()
+
+    # ファーストビューの処理
+    insFirstviews = Firstview.objects.filter(display = True).order_by('?')[:min(Firstview.objects.count(), NUMBER_OF_FIRSTVIEWS)]     # ランダムにNUMBER_OF_FIRSTVIEWS個取り出す
+    insFirstviews = list(insFirstviews.values())
+    inca_info["names"] = [d.get('name') for d in insFirstviews]
+    inca_info["clTitle"] = [d.get('title') for d in insFirstviews]
+    inca_info["clPlayers"] = [d.get('player') for d in insFirstviews]
     inca_info["primaries"] = Player.objects.filter(primary = True)
+
     return render(request, 'inca/inca.html', inca_info)
 
 
