@@ -11,6 +11,7 @@ urlpatterns = [
     path('inca', views.inca, name = 'inca'),
     path('inca/firstview', views.firstview, name = 'firstview'),
     path('inca/editplayer', views.editplayer, name = 'editplayer'),
+    path('inca/pv', views.pv, name = 'pv'),
 ]
 
 if settings.DEBUG:

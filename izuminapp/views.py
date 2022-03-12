@@ -177,3 +177,11 @@ def editplayer(request) :
     result["form"] = form
     result["players"] = Player.objects.all()
     return render(request, 'inca/editplayer.html', result)
+
+def pv(request) :
+    pv = Analyze.objects.values_list("pv", flat=True)
+    pv = list(pv)
+
+    result = {"pv" : pv}
+    print(result)
+    return render(request, 'inca/pv.html', result)
