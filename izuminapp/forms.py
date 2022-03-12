@@ -1,7 +1,7 @@
-from django.forms import ModelForm
-from izuminapp.model import Firstview
+from distutils.log import info
+from django import forms
 
-class FirstviewForm (ModelForm) :
-    class Meta :
-        model = Firstview
-        fields = ("image", "title", "player")
+class FirstviewForm(forms.Form) :
+    image = forms.CharField()
+    title = forms.CharField()
+    player = forms.CharField()
