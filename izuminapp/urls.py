@@ -10,6 +10,7 @@ urlpatterns = [
     path('', views.root, name = 'root'),
     path('inca', views.inca, name = 'inca'),
     path('firstview', views.firstview, name = 'firstview'),
+    path('firstviewdelete/<int:imageid>', views.firstviewdelete, name = 'firstviewdelete'),
 ]
 
 if settings.DEBUG:

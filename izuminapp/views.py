@@ -113,3 +113,13 @@ def firstview(request) :
     form = FirstviewForm()
     result["form"] = form
     return render(request, 'inca/firstview.html', result)
+
+def firstviewdelete(request, imageid) :
+    Firstview.objects.filter(pk = imageid).delete()
+
+    result = {}
+    result["images"] = Firstview.objects.all()
+    form = FirstviewForm()
+    result["form"] = form
+
+    return render(request, 'inca/firstview.html', result)
