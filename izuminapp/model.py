@@ -1,7 +1,9 @@
+from fileinput import filename
 from django.db import models
 
 class Player(models.Model) :
     name = models.CharField(default = "", max_length = 50)
+    nickname = models.CharField(default = "", max_length = 50)
     uuid = models.CharField(default = "", max_length = 50)
     info = models.CharField(default = "", max_length = 200)
     rank = models.CharField(default = "国民", max_length = 20)
@@ -11,9 +13,10 @@ class Player(models.Model) :
     crime = models.BooleanField(default = False)
 
 class Firstview(models.Model) :
-    image = models.CharField(default = "", max_length = 100)
+    name = models.CharField(default = "", max_length = 100)
     title = models.CharField(default = "", max_length = 20)
     player = models.CharField(default = "", max_length = 20)
+    display = models.BooleanField(default = True)
 
 # シングルトン
 class Singleton(models.Model) :

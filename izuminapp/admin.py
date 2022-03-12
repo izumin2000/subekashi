@@ -3,13 +3,13 @@ from izuminapp.model import Player, Firstview, Singleton, Analyze
 
 
 class PlayerAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "rank", "online", "leave", "crime", "uuid", "info")
+    list_display = ("id", "name", "nickname", "rank", "online", "leave", "crime", "uuid", "info")
     list_display_links = ("id", "name")
     ordering = ("id", )
 
 class FirstviewAdmin(admin.ModelAdmin):
-    list_display = ("id", "image", "title", "player")
-    list_display_links = ("id", "image")
+    list_display = ("id", "name", "title", "player", "display")
+    list_display_links = ("id", "name")
     ordering = ("id", )
 
 class SingletonAdmin(admin.ModelAdmin):
