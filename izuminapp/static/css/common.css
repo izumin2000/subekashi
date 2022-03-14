@@ -145,6 +145,7 @@ h2 {
 section p {
     font-family: sans-serif;
     font-size: 16px;
+    line-height: 16px;
     margin: 0 24px;
 }
 
@@ -205,6 +206,7 @@ section p a {
     margin: 10px 0;
     text-align: center;
     font-size: 25px;
+    line-height: 25px;
 }
 
 .info_underline {
@@ -219,6 +221,7 @@ section p a {
     margin-top: 15px;
     text-align: center;
     font-size: 25px;
+    line-height: 25px;
 }
 
 .info_warning {
@@ -227,7 +230,7 @@ section p a {
     text-align: center;
     font-family: sans-serif;
     font-size: 9px;
-    line-height: 10px;
+    line-height: 9px;
 }
 
 .info_item i {
@@ -239,6 +242,7 @@ section p a {
     text-align: center;
     color: #000;
     font-size: 110px;
+    line-height: 110px;
 }
 
 .info_item a, .info_item label {
@@ -333,7 +337,17 @@ section p a {
 /* アイテムリスト */
 .itemlist {
     list-style-type: disc;
-    margin-left: 50px;
+    margin: 15px 50px;
+}
+
+.itemlist li {
+    font-size: 16px;
+    line-height: 20px;
+}
+
+.itemlist li img, .itemlist li i {
+    height: 16px;
+    margin-right: 4px;
 }
 
 /* フッダー */
