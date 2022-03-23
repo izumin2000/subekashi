@@ -7,3 +7,4 @@ db.sqlite3
 izuminapp/.py
 local_settings.py
 media/
+izuminapp/templates/circle/

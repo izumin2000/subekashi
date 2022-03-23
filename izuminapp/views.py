@@ -65,7 +65,9 @@ def updateinfo() :
                     insPlayer.save()
             
                 # 他の国に移住した国民の登録
-                immigrants = set(Player.objects.values_list('name', flat = True)) - set(nations_json["residents"])
+                immigrants = set(Player.objects.values_list('name', flat = True))
+                immigrants -= set(nations_json["residents"])        # 現在所属している国民は除外
+                immigrants -= set(Player.objects.filter(primary = True))       # 大臣を除く
                 for immigrant in immigrants :
                     immigrant_player = Player.objects.filter(name = immigrant)[0]
                     immigrant_player.leave = True
