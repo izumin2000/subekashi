@@ -172,6 +172,38 @@
                         <li><img src="{% static 'image/potato.png' %}">食料 64個</li>
                         <li><i class="fas fa-cubes"></i>土地 1チャンク</li>
                     </ul>
+
+                    <h2>インカ国民になるには</h2>
+                    <ul class="itemlist">
+                        <li><a href="#major_players">大臣</a>が<span clss="isonline">ログイン</span>している場合</li>
+                        <ol>
+                            <li>EarthMCに参加してください</li>
+                            <li>チャットを開き<code onclick="copyCode('/ch join japanese')">/ch join japanese</code>と入力してください。</li>
+                            <li><code onclick="copyCode('インカ帝国に入りたいです')">インカ帝国に入りたいです</code>とチャットで話してください。</li>
+                            <li>招待が届くので、<code onclick="copyCode('/accept')">/accept</code>と入力してください。これでインカ国民になれます。</li>
+                            <li><code onclick="copyCode('/n spawn Inca_Emperor')">/n spawn Inca_Emperor</code>でインカにテレポートできます。</li>
+                        </ol>
+                        <li><a href="#major_players">大臣</a>が<span clss="isonline">ログイン</span>していない場合</li>
+                        <ul class="liindent">
+                            <li>Discordを使える場合</li>
+                            <ol>
+                                <li>インカ帝国のDiscordに参加します URL:<a>https://???</a></li>
+                                <li><code onclick="copyCode('#雑談チャンネル')">#雑談チャンネル</code>にて<code onclick="copyCode('@大臣 インカ帝国に入りたいです')">@大臣 インカ帝国に入りたいです</code>とチャットで話してください。</li>
+                                <li>しばらくすると大臣より案内が来ますので指示に従ってください。</li>
+                            </ol>
+                            <li>Discordを使えない場合</li>
+                            <ol>
+                                <li>当サイトの<a onclick="notfound()">所属申請</a>のページを開いてください</li>
+                                <li>フォームが表示されるので、各欄を埋めてください。</li>
+                                <li>「回答を送る」ボタンを押して、回答を送信してください。</li>
+                                <li>EarthMCログイン時に<a href="#major_players">大臣</a>がログインしている場合、案内が来ますので指示に従ってください。</li>
+                            </ol>
+                        </ul>
+                    </ul>
+                    <p>※<code onclick="copyCode('')">このような見た目の文字</code>はクリック・タップすることでコピーをすることができます。</p>
+                    
+                    <h2>各種リンク</h2>
+
                 </section>
             </article>
         </main>
@@ -261,5 +293,27 @@
     });
     </script>
 
+    <script>
+        function copyCode(text) {
+            if(navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(function() {
+            });}
+            toastr.options = {
+                "closeButton": false,
+                "debug": false,
+                "newestOnTop": false,
+                "progressBar": true,
+                "positionClass": "toast-bottom-left",
+                "preventDuplicates": false,
+                "onclick": null,
+                "timeOut": "3000",
+                "extendedTimeOut": "0",
+                "showEasing": "swing",
+                "hideEasing": "linear",
+            }
+
+            toastr.success("テキストをコピーしました!")
+        }
+    </script>
 
 </html>
