@@ -200,15 +200,21 @@ code {
     flex-wrap: wrap;
 }
 
-@media (max-width: 490px) {
+@media (max-width: 758px) {
+    .container {
+        margin-left: calc(50%  - 240px);
+    }
+}
+
+@media (max-width: 520px) {
     .container {
         margin-left: calc(50%  - 105px);
     }
 }
 
 .info_item {
-    height: 300px;
-    width: 200px;
+    height: 280px;
+    width: 220px;
     border: 5px solid #BB002D;
     border-radius: 5px;
     margin: 0 15px 15px 0;
@@ -216,7 +222,7 @@ code {
 
 .info_title, #popup_name {
     color: #000;
-    margin: 10px 0;
+    margin: 12px 0 10px 0;
     text-align: center;
     font-size: 25px;
     line-height: 25px;
@@ -224,7 +230,7 @@ code {
 
 .info_underline {
     height: 5px;
-    width: 207px;
+    width: 227px;
     margin-left: -2px;
     background-color: #BB002D;
 }
@@ -232,7 +238,7 @@ code {
 .info_data {
     margin: 0;
     color: #000;
-    margin-top: 15px;
+    margin-top: 20px;
     text-align: center;
     font-size: 25px;
     line-height: 25px;
