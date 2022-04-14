@@ -181,14 +181,14 @@
                             <li>チャットを開き<code onclick="copyCode('/ch join japanese')">/ch join japanese</code>と入力してください。</li>
                             <li><code onclick="copyCode('インカ帝国に入りたいです')">インカ帝国に入りたいです</code>とチャットで話してください。</li>
                             <li>招待が届くので、<code onclick="copyCode('/accept')">/accept</code>と入力してください。これでインカ国民になれます。</li>
-                            <li><code onclick="copyCode('/n spawn Inca_Emperor')">/n spawn Inca_Emperor</code>でインカにテレポートできます。</li>
+                            <li><code onclick="copyCode('/n spawn Inca_Empire')">/n spawn Inca_Empire</code>でインカにテレポートできます。</li>
                         </ol>
                         <li><a href="#major_players">大臣</a>が<span clss="isonline">ログイン</span>していない場合</li>
                         <ul class="liindent">
                             <li>Discordを使える場合</li>
                             <ol>
-                                <li>インカ帝国のDiscordに参加します  URL:<a herf="https://discord.gg/nem8eNuu">https://discord.gg/nem8eNuu</a></li>
-                                <li><code onclick="copyCode('#雑談チャンネル')">#雑談チャンネル</code>にて<code onclick="copyCode('@大臣 インカ帝国に入りたいです')">@大臣 インカ帝国に入りたいです</code>とチャットで話してください。</li>
+                                <li>インカ帝国のDiscordに参加します　URL:<a herf="https://discord.gg/nem8eNuu">https://discord.gg/nem8eNuu</a></li>
+                                <li>雑談チャンネルにて<code onclick="copyCode('@大臣 インカ帝国に入りたいです')">@大臣 インカ帝国に入りたいです</code>とチャットで話してください。</li>
                                 <li>しばらくすると大臣より案内が来ますので指示に従ってください。</li>
                             </ol>
                             <li>Discordを使えない場合</li>
@@ -203,7 +203,11 @@
                     <p>※<code onclick="copyCode('このような見た目の文字')">このような見た目の文字</code>はクリック・タップすることでコピーをすることができます。</p>
                     
                     <h2>各種リンク</h2>
-
+                    <ul class="itemlist" id="links">
+                        <li><i class="fab fa-youtube"></i>インカ放送局[公式]　URL:<a href="https://www.youtube.com/channel/UCbjn-i9H4iem98rTWYeZZ8w">https://www.youtube.com/channel/UCbjn-i9H4iem98rTWYeZZ8w</a></li>
+                        <li>インカ帝国に来ないかい？　URL:<a href="https://sites.google.com/view/inca-teikoku/">https://sites.google.com/view/inca-teikoku</a></li>
+                        <li>鬼山幕府参加届　URL:<a href="https://docs.google.com/forms/u/1/d/e/1FAIpQLSfH-1NMt3r48_TtYfmfTRHvwaemBAc9HAhtvn0PY4pTPLdZYg/viewform">https://docs.google.com/forms/u/1/d/e/1FAIpQLSfH-1NMt3r48_TtYfmfTRHvwaemBAc9HAhtvn0PY4pTPLdZYg/viewform</a></li>
+                    </ul>
                 </section>
             </article>
         </main>
@@ -271,7 +275,7 @@
                 "hideEasing": "linear",
             }
 
-            toastr.info("このページはまだ存在しません!")
+            toastr.info("このページはまだ存在しません！")
         };
     </script>
 
@@ -312,7 +316,7 @@
                 "hideEasing": "linear",
             }
 
-            toastr.success("\"" + text + "\"" + "をコピーしました!")
+            toastr.success(text + "　をコピーしました！")
         }
     </script>
 

@@ -136,7 +136,7 @@ h1 {
 h2 {
     font-size: 25px;
     line-height: 25px;
-    margin: 15px 20px;
+    margin: 40px 20px 20px 20px;
     padding: 10px 0 5px 10px;
     background: linear-gradient(90deg, #FFD1DC, #eee, calc(40vw + 300px), #eee);
     border-radius: 5px;
@@ -159,10 +159,16 @@ a {
 
 code {
     display: inline-block;
-    margin: 0.2em;
-    background-color: #E7E9F3;
+    padding: 0 0.2em;
+    margin: 0.2em 0.4em;
+    background-color: #e3e4ff;
     border-radius: 5px;
     cursor: pointer;
+}
+
+.fa-youtube {
+    color: #FF0000;
+    margin-right: 5px;
 }
 
 .liindent {
