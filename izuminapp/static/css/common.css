@@ -176,8 +176,16 @@ code {
     margin-right: 5px;
 }
 
-.liindent {
+.liindent1 {
+    margin-bottom: 20px;
+}
+
+.liindent2 {
     margin-left: 40px;
+}
+
+.liindent3 {
+    margin-bottom: 10px;
 }
 
 .isonline {
@@ -374,6 +382,8 @@ code {
 .itemlist li {
     font-size: 18px;
     line-height: 32px;
+    word-wrap:break-word;
+    overflow-wrap: break-word;
 }
 
 .itemlist li img {
