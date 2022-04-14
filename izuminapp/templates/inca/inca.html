@@ -35,7 +35,7 @@
                 <nav>
                     <a href="{% url 'inca' %}">トップ</a>
                     <a onclick="notfound()">情報</a>
-                    <a onclick="notfound()">指名手配</a>
+                    <a onclick="notfound()">外国</a>
                     <a onclick="notfound()">所属申請</a>
                 </nav>
             </div>
@@ -67,6 +67,7 @@
                     <h2>概要</h2>
                     <p>インカ帝国(Inca_Emperor)とは<a href="https://earthmc.net/">Earth MC</a>の<a href="#dynamap">南米チチカカ湖の北岸に位置する</a>日本人勢による国です。</p>
                     <p>元は<a href="https://earthmc.fandom.com/wiki/Peru">ペルー</a>に所属していて、首都であるクスコを差し置いて同国内最大の土地でしたが、2022年1月5日独立しました。</p>
+                    <p>現在は<a onclick="notfound()">鬼山幕府</a>の参加に入っています。</p>
 
                     <h2>基本情報</h2>
                     <div class="container">
@@ -116,7 +117,7 @@
                         </div>
                     </div>
 
-                    <h2>主要プレイヤー</h2>
+                    <h2 id="major_players">大臣紹介</h2>
                     <p>ユーザー名が<span class="isonline">赤色</span>ならオンライン、<span class="isoffline">青色</span>ならオフライン、黒色ならオンライン情報の未取得を示しています。</p>
                     <p>他のプレイヤーは<a onclick="notfound()">こちらから</a>閲覧できます。</p>
                     <div class="container">
@@ -171,7 +172,6 @@
                         <li><img src="{% static 'image/potato.png' %}">食料 64個</li>
                         <li><i class="fas fa-cubes"></i>土地 1チャンク</li>
                     </ul>
-
                 </section>
             </article>
         </main>
@@ -180,13 +180,12 @@
         <footer>
             <div class="footer-container">
                 <div class="footer-left">
-                    <!-- <p>シェア</p> -->
                     <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
                 </div>
 
                 <div class="footer-right">
-                    <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.ja"><img src="https://creativecommons.org/images/deed/zero_white_x2.png" alt="このサイトはパブリックドメインです"><img src="https://creativecommons.org/images/deed/cc_icon_white_x2.png" alt="このサイトはクリエイティブ・コモンズに属しています。"></a>
-                    <p>created by <a>KANATA2000</a></p>
+                    <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.ja"><img src="https://creativecommons.org/images/deed/zero_white_x2.png"><img src="https://creativecommons.org/images/deed/cc_icon_white_x2.png"></a>
+                    <p>created by <a id="author">KANATA2000</a></p>
                 </div>
 
                 <div class="clear"></div>
@@ -244,23 +243,23 @@
         };
     </script>
 
-<script>
-    // 複数画像をフェードインフェードアウトで切替
-    $(document).ready(function(){
-    $('.clImg img:gt(0)').hide();
-    var cli = 1;
-    var clTitle = "{{ clTitle|safe }}".replace(/\'/g, "").slice(1, -1).split("\, ");
-    var clPlayers = "{{ clPlayers|safe }}".replace(/\'/g, "").slice(1, -1).split("\, ");
-    var clLen = clPlayers.length;
-    setInterval(function() {
-        $('.clImg :first-child').fadeOut().next('img').fadeIn().end().appendTo('.clImg');
-        document.getElementById('photo_title').innerHTML = "<i class='fas fa-image'></i> " + clTitle[cli % clLen];
-        document.getElementById('photo_player').innerHTML = "<i class='fas fa-user'></i> " + clPlayers[cli % clLen];
-        document.getElementById('photo_progress').innerHTML = String((cli % clLen) + 1) + "枚目 / " + String(clLen) + "枚";
-        cli += 1;
-    },5000);
-});
-</script>
+    <script>
+        // 複数画像をフェードインフェードアウトで切替
+        $(document).ready(function(){
+        $('.clImg img:gt(0)').hide();
+        var cli = 1;
+        var clTitle = "{{ clTitle|safe }}".replace(/\'/g, "").slice(1, -1).split("\, ");
+        var clPlayers = "{{ clPlayers|safe }}".replace(/\'/g, "").slice(1, -1).split("\, ");
+        var clLen = clPlayers.length;
+        setInterval(function() {
+            $('.clImg :first-child').fadeOut().next('img').fadeIn().end().appendTo('.clImg');
+            document.getElementById('photo_title').innerHTML = "<i class='fas fa-image'></i> " + clTitle[cli % clLen];
+            document.getElementById('photo_player').innerHTML = "<i class='fas fa-user'></i> " + clPlayers[cli % clLen];
+            document.getElementById('photo_progress').innerHTML = String((cli % clLen) + 1) + "枚目 / " + String(clLen) + "枚";
+            cli += 1;
+        },5000);
+    });
+    </script>
 
 
 </html>

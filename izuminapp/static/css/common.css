@@ -138,22 +138,35 @@ h2 {
     line-height: 25px;
     margin: 15px 20px;
     padding: 10px 0 5px 10px;
-    background: linear-gradient(90deg, #FFD1DC, #eee, calc(30vw + 300px), #eee);
+    background: linear-gradient(90deg, #FFD1DC, #eee, calc(40vw + 300px), #eee);
     border-radius: 5px;
 }
 
 section p {
     font-family: sans-serif;
-    font-size: 16px;
-    line-height: 16px;
+    font-size: 18px;
+    line-height: 30px;
     margin: 0 24px;
 }
 
-section p a {
+a {
     color: #000;
     text-decoration: underline 2px #BB002D;
     font-family: sans-serif;
     line-height: 16px;
+    margin: 0 5px;
+}
+
+code {
+    display: inline-block;
+    margin: 0.2em;
+    background-color: #E7E9F3;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.liindent {
+    margin-left: 40px;
 }
 
 .isonline {
@@ -211,7 +224,8 @@ section p a {
 
 .info_underline {
     height: 5px;
-    width: 205px;
+    width: 207px;
+    margin-left: -2px;
     background-color: #BB002D;
 }
 
@@ -225,12 +239,12 @@ section p a {
 }
 
 .info_warning {
-    margin: 0 !important;
+    margin: 5px !important;
     color: #f2a744;
     text-align: center;
     font-family: sans-serif;
-    font-size: 9px;
-    line-height: 9px;
+    font-size: 11px;
+    line-height: 11px;
 }
 
 .info_item i {
@@ -341,13 +355,24 @@ section p a {
 }
 
 .itemlist li {
-    font-size: 16px;
-    line-height: 20px;
+    font-size: 18px;
+    line-height: 32px;
 }
 
-.itemlist li img, .itemlist li i {
-    height: 16px;
-    margin-right: 4px;
+.itemlist li img {
+    vertical-align: top;
+    height: 24px;
+    margin-right: 6px;
+}
+
+.itemlist li i {
+    height: 32px;
+    margin: 0 6px 0 4px;
+}
+
+ol {
+    list-style:decimal !important;
+    margin-left: 40px;
 }
 
 /* フッダー */
@@ -361,24 +386,21 @@ footer {
     height: 32px;
 }
 
-.footer-left {
-    position: relative;
-    bottom: 16px;
-    height: 32px;
-    float: left;
-}
-
 .footer-left p {
     font-family: sans-serif;
     margin: 20px 0px 0px 10px;
     color: white;
 }
+.footer-left .twitter-share-button {
+    color: #fff;
+}
 
 .footer-left {
     position: relative;
+    float: left;
     top: 6px;
     left: 6px;
-    height: 24px;    
+    height: 24px;   
 }
 
 .footer-right p {
@@ -395,4 +417,8 @@ footer {
     display: inline;
     margin:4px 2px 0 2px;
     height: 24px;
+}
+
+.footer-right p #author {
+    color: #fff;
 }

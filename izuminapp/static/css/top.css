@@ -17,12 +17,12 @@
 }
 
 .firstview {
-    padding-bottom: 95vh;
+    padding-bottom: calc(100vh - 64px);
 }
 
 @media (max-width: 640px) {
     .firstview {
-        padding-bottom: 87.5vh;
+        padding-bottom: calc(100vh - 128px);
     }
 }
 
@@ -69,6 +69,7 @@
     color: #ffffffaa;
     font-family: 'Microsoft Sans Serif';
     font-size: 15px;
+    line-height: 18px;
     margin: 5px 0;
 }
 
@@ -83,7 +84,7 @@
 #photo_progress {
     font-family: 'Microsoft Sans Serif';
     font-size: 10px;
-    margin: 5px 0 5px 75%;
+    margin: 0 0 5px 75%;
 }
 
 .info_flag {
