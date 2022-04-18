@@ -11,8 +11,9 @@
 
     <body>
         <main>
-            <div style="width:90%;" >
+            <div style="width:80%;" >
                 <canvas id="chart"></canvas>
+                <p>総閲覧数：{{ allpv }}</p>
             </div>
         </main>
     </body>
@@ -22,6 +23,7 @@
         var myLineChart = new Chart(ctx, {
             type: 'line',
             data: {
+                labels: JSON.parse("{{axisxlist | safe}}"),
                 datasets: [
                 {
                     label: 'PV数',

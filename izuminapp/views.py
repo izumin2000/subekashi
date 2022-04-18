@@ -186,7 +186,9 @@ def editplayer(request) :
 def pv(request) :
     pv = Analyze.objects.values_list("pv", flat=True)
     pv = list(pv)
+    allpv = sum(pv)
+    axisxlist = list(range(len(pv)))
 
-    result = {"pv" : pv}
+    result = {"pv" : pv, "allpv" : allpv, "axisxlist" : axisxlist}
     print(result)
     return render(request, 'inca/pv.html', result)
