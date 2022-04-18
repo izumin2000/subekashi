@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+
+{% load static %}
+
+<html lang="ja">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="author" content="KANATA2000">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:site" content="@KANATA20002">
+        <meta name="og:type" content="website">
+        <meta name="og:title" content="インカ帝国 - 外国の紹介">
+        <meta name="og:image" content="{% static 'image/flag.png' %}">
+        <meta name="og:description" content="EarthMCの南アメリカ大陸にある国、インカ帝国の紹介サイトです。">
+        <meta name="og:url" content="https://izuminapp.pythonanywhere.com/inca">
+        <meta name="description" content="EarthMCの南アメリカ大陸にある国、インカ帝国の紹介サイトです。">
+        <meta meta="" name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
+        <meta charset="utf-8">
+        <title>インカ帝国 - 外国の紹介</title>
+        <link rel="stylesheet" type="text/css" href="{% static 'css/common.css'%}">
+        <link rel="stylesheet" type="text/css" href="{% static 'css/abroad.css'%}">
+        <link rel="shortcut icon" href="{% static 'image/flag.ico' %}">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
+        <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" /> <!-- toastr -->
+    </head>
+
+
+    <body>
+        <header>
+            <div class="header-left">
+                <a href="{% url 'inca' %}"><img name="thumbnail" class="logo" src="{% static 'image/flag.png' %}" alt="インカ帝国の国旗"></a>
+            </div>
+
+            <div class="header-right">
+                <nav>
+                    <a href="{% url 'inca' %}">トップ</a>
+                    <a onclick="notfound()">情報</a>
+                    <a href="{% url 'abroad' %}">外国</a>
+                    <a onclick="notfound()">所属申請</a>
+                </nav>
+            </div>
+
+            <div class="clear"></div>
+        </header>
+
+
+        <main>
+            <article>
+            </article>
+        </main>
+
+
+        <footer>
+            <div class="footer-container">
+                <div class="footer-left">
+                    <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+                </div>
+
+                <div class="footer-right">
+                    <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.ja"><img src="https://creativecommons.org/images/deed/zero_white_x2.png"><img src="https://creativecommons.org/images/deed/cc_icon_white_x2.png"></a>
+                    <p>created by <a id="author" onclick="notfound()">KANATA2000</a></p>
+                </div>
+
+                <div class="clear"></div>
+            </div>
+        </footer>
+    </body>
+
+
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> <!-- jquery -->
+    
+    <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
+
+    <script src="{% static 'js/playerpopup.js' %}"></script>
+
+    <script>
+        function notfound(){
+            toastr.options = {
+                "closeButton": false,
+                "debug": false,
+                "newestOnTop": false,
+                "progressBar": true,
+                "positionClass": "toast-bottom-right",
+                "preventDuplicates": false,
+                "onclick": null,
+                "timeOut": "3000",
+                "extendedTimeOut": "0",
+                "showEasing": "swing",
+                "hideEasing": "linear",
+            }
+
+            toastr.info("このページはまだ存在しません！")
+        };
+    </script>
+
+</html>

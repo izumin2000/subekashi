@@ -109,6 +109,9 @@ def inca(request):
 
     return render(request, 'inca/inca.html', inca_info)
 
+def abroad(request) :
+    return render(request, 'inca/abroad.html')
+
 
 def firstview(request) :
     result = {}

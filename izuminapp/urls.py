@@ -9,6 +9,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.root, name = 'root'),
     path('inca', views.inca, name = 'inca'),
+    path('inca/abroad', views.abroad, name = 'abroad'),
     path('inca/firstview', views.firstview, name = 'firstview'),
     path('inca/editplayer', views.editplayer, name = 'editplayer'),
     path('inca/pv', views.pv, name = 'pv'),
