@@ -1,113 +1,207 @@
 from django.shortcuts import render
 from izuminapp.forms import FirstviewForm, PlayerForm
-from izuminapp.model import Player, Firstview, Singleton, Analyze
+from izuminapp.model import Player, Citizen, Minister, Criminal, Gold, Tour, Town, Nation, Firstview, Analyze
 import requests
 from datetime import date
 import json
+from time import sleep
 
-EMC_API_URL = "https://earthmc-api.herokuapp.com/api/v1"
+
+OUR_TOWN = "Juliaca"
+OUR_NATION = "Inca_Empire"
+EMC_API_URL = "https://earthmc-api.herokuapp.com/api/v1/"
 UUID_API_URL = "https://api.mojang.com/users/profiles/minecraft/"
 UPLOAD_URL = "uploadfiles/"
 NUMBER_OF_FIRSTVIEWS = 5
-ERROR_JSON = '{"population":"error","area":"error","king":"error","capitalName":"error","skin":"error"}'
+ERROR_JSON = '{"population":"error", "area":"error", "king":"error", "capitalName":"error"}'
 
 
-def updateinfo() : 
-    inca_info = {}
-
-    # シングルトンインスタンスの生成
-    insSingleton, _ = Singleton.objects.get_or_create(name = "nations" , defaults = {"value" : ERROR_JSON})
-
-    # APIの処理
+# 成功時にAPIのjsonを出力。失敗すると空文字を出力。
+def get_API(url, route) :
+    sleep(0.1)
     try :
-        nations_get = requests.get(EMC_API_URL + "/nations/Inca_Empire")
-    except :      # ProxyErrorなら
-        # jsonアーカイブからのアーカイブを読み込み
-        inca_info["ableAPI"] = False
-        inca_info.update(dict(json.loads(insSingleton.value)))      # 辞書型の結合
+        get = requests.get(url + route)
+    except :
+        return ""
 
-    else :      #正常にAPIを取得できたら
-        inca_info["ableAPI"] = True
-        if nations_get.status_code == 200 :
-            # nationデータの取得
-            try :
-                nations_json = dict(nations_get.json())
-            except :
-                inca_info["ableAPI"] = False
-                inca_info.update(dict(json.loads(insSingleton.value)))      # 辞書型の結合
+    if (get.status_code == 200) :
+        try :
+            get_dict = get.json()
+        except :
+            return ""
+
+        if hasattr(get_dict, "error") :     # dictのキーにerrorがあったら
+            return ""
+        else :
+            return get_dict
+
+    else :
+        return ""
+
+
+# 国の情報を更新しDBに登録
+def set_erea(nation, isnation): 
+    ableAPI = True      # APIを取得できたかどうか
+
+    # 国のデータを取得
+    if isnation :
+        nation_dict = get_API(EMC_API_URL, "nations/" + nation)
+        if nation_dict :
+            capital = nation_dict["capital"]
+            king = nation_dict["king"]
+        else :
+            ableAPI = False
+
+    # 首都のデータを取得
+    town_dict = get_API(EMC_API_URL, "towns/" + capital)
+    if town_dict :
+        mayor = town_dict["mayor"]
+    else :
+        ableAPI = False
+
+    # 市長のデータを取得
+    if ableAPI :
+        ins_mayor, _ = Player.objects.get_or_create(name = mayor, defaults = {"name" : mayor})
+        mayor_dict = get_API(EMC_API_URL, "allplayers/" + mayor)
+        if not mayor_dict :
+            ableAPI = False
+    
+    # 国王のデータを取得
+    if ableAPI and isnation :
+        ins_king, _ = Player.objects.get_or_create(name = king, defaults = {"name" : king})
+        king_dict = get_API(EMC_API_URL, "allplayers/" + king)            
+        if not king_dict :
+            ableAPI = False
+
+    # 首都のデータの登録
+    ins_capital, _ = Town.objects.get_or_create(name = capital, defaults = {"name" : capital})
+    if ableAPI :
+        if not ins_capital.nickname :      # nicknameが空白のとき、nameと同じにする
+            ins_capital.nickname = town_dict["name"]
+        ins_capital.population = len(town_dict["residents"])
+        ins_capital.area = town_dict["area"]
+        ins_capital.x = town_dict["x"]
+        ins_capital.z = town_dict["z"]
+        ins_capital.mayor = ins_mayor
+        ins_capital.save()
+    else :
+        ins_capital.mayor = None
+
+    # 国のデータの登録
+    ins_nation, _ = Nation.objects.get_or_create(name = nation, defaults = {"name" : nation})
+    if ableAPI and isnation :
+        if not ins_nation.nickname :      # nicknameが空白のとき、nameと同じにする
+            ins_nation.nickname = nation_dict["name"]
+        ins_nation.population = len(nation_dict["residents"])
+        ins_nation.area = nation_dict["area"]
+        ins_nation.capital = ins_capital
+        ins_nation.x = nation_dict["x"]
+        ins_nation.z = nation_dict["z"]
+        ins_nation.king = ins_king
+        ins_nation.save()        
+    else :
+        ins_nation.capital = None
+    
+    return ableAPI, ins_mayor, ins_king, ins_capital, ins_nation
+
+
+# プレイヤーの情報を更新しDBに登録
+def set_player(player, isnested):
+    ableAPI = True      # APIを取得できたかどうか
+    ins_player, _ = Player.objects.get_or_create(name = player, defaults = {"name" : player})
+
+    # オンラインのプレイヤーの情報を取得
+    online_dict = get_API(EMC_API_URL, "onlineplayers/" + player)
+    if online_dict :
+        ins_player.nickname = online_dict["nickname"]
+        ins_player.online = True
+    else :
+        ins_player.online = False
+    
+    # プレイヤーの情報を取得
+    player_dict = get_API(EMC_API_URL, "allplayers/" + player)
+    if player_dict :        
+        # UUIDの取得と登録
+        uuid_dict = get_API(UUID_API_URL, player)
+        if uuid_dict :
+            ins_player.uuid = uuid_dict["id"]
+        else :
+            ableAPI = False
+
+        # プレイヤーの町と国の情報を登録
+        nation = player_dict["nation"]
+        if nation:      # 国なら
+            ableAPIerea, ins_mayor, ins_king, ins_town, ins_nation = set_erea(nation, True)
+            ableAPI &= ableAPIerea
+            if ableAPI :
+                ins_player.town = ins_town
+                ins_player.nation = ins_nation
+                if not isnested :       # 市長と国王のみフラグが立つ
+                    set_player(ins_mayor.name, True)
+                    set_player(ins_king.name, True)
             else :
-                nations_json["population"] = len(nations_json["residents"])     # 人口の取得
-                
-                inca_info.update(nations_json)      # 辞書型の結合
-
-                # 国民の登録
-                online_get = requests.get(EMC_API_URL + "/online")
-                for player in nations_json["residents"] :
-                    insPlayer, _ = Player.objects.get_or_create(name = player, defaults = {"name" : player})
-
-                    # UUIDの登録
-                    if insPlayer.uuid == "" :
-                        uuid_get = requests.get(UUID_API_URL + player)
-                        if uuid_get.status_code == 200 :
-                            try :
-                                insPlayer.uuid = dict(uuid_get.json())["id"]
-                            except :
-                                inca_info["ableAPI"] = False
-
-                    # onlineカラムの切り替え
-                    if online_get.status_code == 200 :
-                        online_json = online_get.json()
-                        online_players = [d.get('name') for d in online_json]
-                        if player in online_players :
-                            insPlayer.online = True
-                        else :
-                            insPlayer.online = False
-                    insPlayer.save()
+                ins_player.town = None
+                ins_player.nation = None
+                ableAPI = False
+        else :      # 町なら
+            ableAPIerea, ins_mayor, _, ins_town, _ = set_erea(nation, False)
+            ableAPI &= ableAPIerea
+            if ableAPI :
+                ins_player.town = ins_town
+                ins_player.nation = None
+                if not isnested :       # 市長と国王のみフラグが立つ
+                    set_player(ins_mayor.name, True)
+            else :
+                ins_player.town = None
+                ins_player.nation = None
+                ableAPI = False
             
-                # 他の国に移住した国民の登録
-                immigrants = set(Player.objects.values_list('name', flat = True))
-                immigrants -= set(nations_json["residents"])        # 現在所属している国民は除外
-                immigrants -= set(Player.objects.filter(primary = True))       # 大臣を除く
-                for immigrant in immigrants :
-                    immigrant_player = Player.objects.filter(name = immigrant)[0]
-                    immigrant_player.leave = True
-                    immigrant_player.rank = "元国民"
-                    immigrant_player.save()
+            # OUR_NATION市民の登録
+            if nation == OUR_NATION :
+                ins_citizen, _ = Citizen.get_or_create(name = player, defaults = {"name" : player})
+                ins_citizen.player = ins_player
+                ins_citizen.save()
+    else :
+        ins_player.town = None
+        ins_player.nation = None
+        ableAPI = False
 
-                # jsonのアーカイブ
-                if insSingleton.value in ["", ERROR_JSON] :
-                    insSingleton.value = json.dumps(nations_json)
-                    insSingleton.save()
+    ins_player.save()
+    return ableAPI
 
-        # jsonアーカイブからのアーカイブを読み込み
-        else :      # EMCサーバー側の問題なら
-            inca_info["ableAPI"] = False
-            inca_info.update(dict(json.loads(insSingleton.value)))      # 辞書型の結合
-        
-        # PV数のカウント
-        today = date.today()
-        insAnalyze, _ = Analyze.objects.get_or_create(date = today, defaults = {"date" : today})
-        insAnalyze.pv += 1
-        insAnalyze.save()
-
-    return inca_info
+"""
+# PV数のカウント
+today = date.today()
+insAnalyze, _ = Analyze.objects.get_or_create(date = today, defaults = {"date" : today})
+insAnalyze.pv += 1
+insAnalyze.save()
+"""
 
 
 def root(request):
     return render(request, 'izuminapp/root.html')
 
 def inca(request):
-    inca_info = updateinfo()
+    our_info = {}       # テンプレートに渡す辞書
+    ableAPI = True
+
+    # 大臣の情報の更新
+    ministers = Minister.objects.all()
+    our_info["ministers"] = ministers
+    for minister in ministers :
+        ableAPIplayer = set_player(minister, False)
+        ableAPI &= ableAPIplayer
 
     # ファーストビューの処理
     insFirstviews = Firstview.objects.filter(display = True).order_by('?')[:min(Firstview.objects.count(), NUMBER_OF_FIRSTVIEWS)]     # ランダムにNUMBER_OF_FIRSTVIEWS個取り出す
     insFirstviews = list(insFirstviews.values())
-    inca_info["names"] = [d.get('name') for d in insFirstviews]
-    inca_info["clTitle"] = [d.get('title') for d in insFirstviews]
-    inca_info["clPlayers"] = [d.get('player') for d in insFirstviews]
-    inca_info["primaries"] = Player.objects.filter(primary = True)
+    our_info["clTitle"] = [d.get('title') for d in insFirstviews]
+    our_info["clPlayers"] = [d.get('player') for d in insFirstviews]
 
-    return render(request, 'inca/inca.html', inca_info)
+    # APIが正常に処理できたかどうかの情報の登録
+    our_info["ableAPI"] = ableAPI
+
+    return render(request, 'inca/inca.html', our_info)
 
 def abroad(request) :
     return render(request, 'inca/abroad.html')
@@ -183,6 +277,8 @@ def editplayer(request) :
     result["players"] = Player.objects.all()
     return render(request, 'inca/editplayer.html', result)
 
+
+# ゼロ埋め 31レコード表示
 def pv(request) :
     pv = Analyze.objects.values_list("pv", flat=True)
     pv = list(pv)
