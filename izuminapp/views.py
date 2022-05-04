@@ -207,6 +207,7 @@ def abroad(request) :
     return render(request, 'inca/abroad.html')
 
 
+"""
 def firstview(request) :
     result = {}
 
@@ -276,6 +277,7 @@ def editplayer(request) :
     result["form"] = form
     result["players"] = Player.objects.all()
     return render(request, 'inca/editplayer.html', result)
+"""
 
 
 # ゼロ埋め 31レコード表示
