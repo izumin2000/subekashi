@@ -1,0 +1,12 @@
+.name-search {
+    margin-top: 150px;
+}
+
+
+
+#dynamap {
+    display: block;
+    height: 65vh;
+    width: 65vw;
+    margin: 0 auto;
+}

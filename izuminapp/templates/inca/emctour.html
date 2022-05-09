@@ -18,7 +18,7 @@
         <meta charset="utf-8">
         <title>インカ帝国 - 外国の紹介</title>
         <link rel="stylesheet" type="text/css" href="{% static 'css/common.css'%}">
-        <link rel="stylesheet" type="text/css" href="{% static 'css/abroad.css'%}">
+        <link rel="stylesheet" type="text/css" href="{% static 'css/emctour.css'%}">
         <link rel="shortcut icon" href="{% static 'image/flag.ico' %}">
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
         <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" /> <!-- toastr -->
@@ -28,24 +28,39 @@
     <body>
         <header>
             <div class="header-left">
-                <a href="{% url 'inca' %}"><img name="thumbnail" class="logo" src="{% static 'image/flag.png' %}" alt="インカ帝国の国旗"></a>
+                <a href="{% url 'inca' %}"><img name="thumbnail" class="logo" src="{% static 'image/emctourlogo.png' %}" alt="EMC tourのロゴ"></a>
             </div>
 
             <div class="header-right">
                 <nav>
                     <a href="{% url 'inca' %}">トップ</a>
-                    <a onclick="notfound()">情報</a>
-                    <a href="{% url 'abroad' %}">外国</a>
-                    <a onclick="notfound()">所属申請</a>
+                    <a onclick="notfound()">国一覧</a>
+                    <a onclick="notfound()">使い方</a>
                 </nav>
             </div>
 
             <div class="clear"></div>
         </header>
 
-
         <main>
             <article>
+                <section class="name-search">
+                    <h1>国名検索</h1>
+                    <div class="underline"></div>
+                    {% csrf_token %}
+                    <input type="text" id="formChatBeat" class="beats-input" name="formChatBeat">
+                    <button class="submitButton">検索</button>
+                </section>
+                
+                <section class="map-search">
+                    <h1>地図検索</h1>
+                    <div class="underline"></div>
+                    <iframe id="dynamap" src="https://earthmc.net/map/nova/?worldname=earth&mapname=flat" on></iframe>
+                    <input type="text" id="formX" class="beats-input" name="formX">
+                    <input type="text" id="formZ" class="beats-input" name="formZ">
+                    <button id="submitButton">検索</button>
+                </section>
+
             </article>
         </main>
 

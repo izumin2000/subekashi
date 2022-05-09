@@ -7,9 +7,9 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('emctour/', views.emctour, name = 'emctour'),
     path('', views.root, name = 'root'),
-    path('inca', views.inca, name = 'inca'),
-    path('inca/abroad', views.abroad, name = 'abroad'),
+    path('inca/', views.inca, name = 'inca'),
     path('inca/pv', views.pv, name = 'pv'),
 ]
 
