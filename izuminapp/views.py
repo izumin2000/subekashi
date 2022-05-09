@@ -9,11 +9,10 @@ from time import sleep
 
 OUR_TOWN = "Juliaca"
 OUR_NATION = "Inca_Empire"
-EMC_API_URL = "https://earthmc-api.herokuapp.com/api/v1/"
+EMC_API_URL = "https://earthmc-api.herokuapp.com/api/v1/nova/"
 UUID_API_URL = "https://api.mojang.com/users/profiles/minecraft/"
 UPLOAD_URL = "uploadfiles/"
 NUMBER_OF_FIRSTVIEWS = 5
-ERROR_JSON = '{"population":"error", "area":"error", "king":"error", "capitalName":"error"}'
 
 
 # 成功時にAPIのjsonを出力。失敗すると空文字を出力。
@@ -30,7 +29,7 @@ def get_API(url, route) :
         except :
             return ""
 
-        if hasattr(get_dict, "error") :     # dictのキーにerrorがあったら
+        if "error" in get_dict :     # dictのキーにerrorがあったら
             return ""
         else :
             return get_dict
@@ -47,17 +46,18 @@ def set_erea(nation, isnation):
     if isnation :
         nation_dict = get_API(EMC_API_URL, "nations/" + nation)
         if nation_dict :
-            capital = nation_dict["capital"]
+            capital = nation_dict["capitalName"]
             king = nation_dict["king"]
         else :
             ableAPI = False
 
     # 首都のデータを取得
-    town_dict = get_API(EMC_API_URL, "towns/" + capital)
-    if town_dict :
-        mayor = town_dict["mayor"]
-    else :
-        ableAPI = False
+    if ableAPI :
+        town_dict = get_API(EMC_API_URL, "towns/" + capital)
+        if town_dict :
+            mayor = town_dict["mayor"]
+        else :
+            ableAPI = False
 
     # 市長のデータを取得
     if ableAPI :
@@ -65,6 +65,8 @@ def set_erea(nation, isnation):
         mayor_dict = get_API(EMC_API_URL, "allplayers/" + mayor)
         if not mayor_dict :
             ableAPI = False
+    else :
+        ins_mayor = None
     
     # 国王のデータを取得
     if ableAPI and isnation :
@@ -72,10 +74,12 @@ def set_erea(nation, isnation):
         king_dict = get_API(EMC_API_URL, "allplayers/" + king)            
         if not king_dict :
             ableAPI = False
+    else :
+        ins_king = None
 
     # 首都のデータの登録
-    ins_capital, _ = Town.objects.get_or_create(name = capital, defaults = {"name" : capital})
     if ableAPI :
+        ins_capital, _ = Town.objects.get_or_create(name = capital, defaults = {"name" : capital})
         if not ins_capital.nickname :      # nicknameが空白のとき、nameと同じにする
             ins_capital.nickname = town_dict["name"]
         ins_capital.population = len(town_dict["residents"])
@@ -85,22 +89,22 @@ def set_erea(nation, isnation):
         ins_capital.mayor = ins_mayor
         ins_capital.save()
     else :
-        ins_capital.mayor = None
+        ins_capital = None
 
     # 国のデータの登録
-    ins_nation, _ = Nation.objects.get_or_create(name = nation, defaults = {"name" : nation})
     if ableAPI and isnation :
+        ins_nation, _ = Nation.objects.get_or_create(name = nation, defaults = {"name" : nation})
         if not ins_nation.nickname :      # nicknameが空白のとき、nameと同じにする
             ins_nation.nickname = nation_dict["name"]
         ins_nation.population = len(nation_dict["residents"])
         ins_nation.area = nation_dict["area"]
         ins_nation.capital = ins_capital
-        ins_nation.x = nation_dict["x"]
-        ins_nation.z = nation_dict["z"]
+        ins_nation.x = nation_dict["capitalX"]
+        ins_nation.z = nation_dict["capitalZ"]
         ins_nation.king = ins_king
         ins_nation.save()        
     else :
-        ins_nation.capital = None
+        ins_nation = None
     
     return ableAPI, ins_mayor, ins_king, ins_capital, ins_nation
 
@@ -185,18 +189,36 @@ def inca(request):
     our_info = {}       # テンプレートに渡す辞書
     ableAPI = True
 
-    # 大臣の情報の更新
+    # 大臣情報の取得と更新
     ministers = Minister.objects.all()
+
+    ## 大臣が一人も居なかったら
+    if not ministers.count() :
+        ableAPI, _, _, _, _ = set_erea(OUR_NATION, True)
+
+    ## 大臣の情報の更新
     our_info["ministers"] = ministers
     for minister in ministers :
         ableAPIplayer = set_player(minister, False)
         ableAPI &= ableAPIplayer
 
+    # OUR_NATIONの情報の取得
+    our_nation = Nation.objects.filter(name = OUR_NATION)
+    if our_nation.count() :     # DBにOUR_NATIONがあったら
+        ins_captial = our_nation.first().capital
+        our_dict = our_nation.values()[0]
+        our_info.update(our_dict)
+        our_info.update({"capitalName":ins_captial.name})
+    else :
+        our_info.update({"population":"エラー", "area":"エラー", "king":"エラー", "capitalName":"エラー"})
+        ableAPI = False
+
     # ファーストビューの処理
-    insFirstviews = Firstview.objects.filter(display = True).order_by('?')[:min(Firstview.objects.count(), NUMBER_OF_FIRSTVIEWS)]     # ランダムにNUMBER_OF_FIRSTVIEWS個取り出す
-    insFirstviews = list(insFirstviews.values())
-    our_info["clTitle"] = [d.get('title') for d in insFirstviews]
-    our_info["clPlayers"] = [d.get('player') for d in insFirstviews]
+    firstviews = Firstview.objects.filter(display = True).order_by('?')[:min(Firstview.objects.count(), NUMBER_OF_FIRSTVIEWS)]     # ランダムにNUMBER_OF_FIRSTVIEWS個取り出す
+    firstviews = list(firstviews.values())
+    if len(firstviews) :
+        our_info["clTitle"] = [d.get('title') for d in firstviews]
+        # our_info["clPlayers"] = [d.get('player') for d in firstviews]
 
     # APIが正常に処理できたかどうかの情報の登録
     our_info["ableAPI"] = ableAPI
@@ -288,5 +310,4 @@ def pv(request) :
     axisxlist = list(range(len(pv)))
 
     result = {"pv" : pv, "allpv" : allpv, "axisxlist" : axisxlist}
-    print(result)
     return render(request, 'inca/pv.html', result)

@@ -34,7 +34,6 @@ class Gold(models.Model) :
 class Tour(models.Model) :
     nation = models.ForeignKey("Nation", on_delete = models.DO_NOTHING, blank = True, null = True)
     info = models.CharField(default = "", max_length = 500)
-    
 
 class Town(models.Model) :
     name = models.CharField(default = "", max_length = 50)
