@@ -32,6 +32,7 @@ class Gold(models.Model) :
     amount = models.IntegerField(default = 0)
 
 class Tour(models.Model) :
+    name = models.CharField(default = "", max_length = 500)
     nation = models.ForeignKey("Nation", on_delete = models.DO_NOTHING, blank = True, null = True)
     info = models.CharField(default = "", max_length = 500)
 
