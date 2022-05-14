@@ -273,7 +273,26 @@ def emctour(request) :
 
     return render(request, 'inca/emctour.html', emctour_dict)
 
+# 新しい記事の作成
+def modarticle(request, nation) :
+    modarticle_dict = {"nation" : nation}        # テンプレートに渡す辞書
 
+    # 記事の登録
+    if request.method == 'POST':
+        ins_tour, _ = Tour.objects.get_or_create(name = nation, defaults = {"name" : nation})
+
+        ableAPI, _, _, _, ins_nation = set_erea(nation, True)
+        if ableAPI :
+            ins_tour.nation = ins_nation
+            ins_tour.info = request.POST['info']
+            ins_tour.save()
+            render(request, 'inca/modarticle.html', modarticle_dict)
+        else :
+            modarticle_dict["error"] = "APIの取得に失敗しました。再度時間を置いて登録してください。"
+            return render(request, 'inca/emctour.html', modarticle_dict)
+
+
+    return render(request, 'inca/modarticle.html', modarticle_dict)
 
 """
 def firstview(request) :

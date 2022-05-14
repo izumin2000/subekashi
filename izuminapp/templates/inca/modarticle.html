@@ -45,7 +45,7 @@
         <main>
             <article>                
                 <section class="map-search">
-                    <form  action="{% url 'emctour' %}" method="POST">
+                    <form  action="{% url 'modarticle' nation %}" method="POST">
                         {% csrf_token %}
                         <input type="text" id="nation" name="nation" value="{{ nation }}">
                         <input type="text" id="info" name="info">
@@ -56,4 +56,14 @@
             </article>
         </main>
     </body>
+
+    <!-- nation inputの中身が"new"なら消す -->
+    <script>
+        window.onload = function() {
+            let nation = document.getElementById('nation');
+            if (nation.value == "new") {
+                nation.value = "";
+            }
+        };
+    </script>
 </html>
