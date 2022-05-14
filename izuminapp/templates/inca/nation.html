@@ -45,6 +45,47 @@
         <main>
             <article>
                 <section class="nation_info">
+                    <div class="topmargin"></div>
+                    <h1>{{ tour.nation.nickname }}</h1>
+                    <div class="underline"></div>
+                    <h2>概要</h2>
+                    <p>{{ tour.info }}</p>
+
+                    <h2>基本情報</h2>
+                    {% if not ableAPI %}
+                        <p class="info_warning">この情報は古い可能性があります。</p>
+                    {% endif %}
+                    <div class="container">
+
+                        <div class="info_item">
+                            <p class="info_title">正式名称</p>
+                            <div class="info_underline"></div>
+                            <p class="info_data">{{ tour.nation.name }}</p>
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+
+                        <div class="info_item">
+                            <p class="info_title">首都</p>
+                            <div class="info_underline"></div>
+                            <p class="info_data">{{ tour.nation.capital.name }}</p>
+                            <i class="fas fa-building"></i>
+                            <a href="https://earthmc.net/map/?worldname=earth&mapname=flat&zoom=6&x={{ tour.nation.capital.x }}&y=64&z={{ tour.nation.capital.z }}">DynMapで見る</a>
+                        </div>
+
+                        <div class="info_item">
+                            <p class="info_title">人口</p>
+                            <div class="info_underline"></div>
+                            <p class="info_data">{{ tour.nation.population }} 人</p>
+                            <i class="fas fa-user-friends"></i>
+                        </div>
+
+                        <div class="info_item">
+                            <p class="info_title">面積</p>
+                            <div class="info_underline"></div>
+                            <p class="info_data">{{ tour.nation.area }} チャンク</p>
+                            <i class="fas fa-cubes"></i>
+                        </div>
+                    </div>
                 </section>
             </article>
         </main>

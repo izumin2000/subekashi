@@ -298,23 +298,19 @@ def modarticle(request, nation) :
 def nation(request, nation) :
     nation_dict = {}        # テンプレートに渡す辞書
 
-    return render(request, 'inca/emctour.html', nation_dict)
+    ins_tours = Tour.objects.filter(name = nation)
+    if ins_tours.count() :     # Tour DBにnationがあったら
+        ins_tour = ins_tours.first()
+        ableAPI, _, _, _, ins_nation = set_erea(nation, True)
+        ins_tour.nation = ins_nation
+        ins_tour.save()
+        nation_dict["tour"] = ins_tour
+        nation_dict["ableAPI"] = ableAPI
 
-
-    """
-    # OUR_NATIONの情報の取得
-    our_nation = Nation.objects.filter(name = OUR_NATION)
-    if our_nation.count() :     # DBにOUR_NATIONがあったら
-        ins_captial = our_nation.first().capital        # 首都データを取得
-        our_dict = our_nation.values()[0]
-        our_info.update(our_dict)
-        our_info.update({"capitalName":ins_captial.name})
+        return render(request, 'inca/nation.html', nation_dict)
     else :
-        our_info.update({"population":"エラー", "area":"エラー", "king":"エラー", "capitalName":"エラー"})
-        ableAPI = False
-    """
-    return render(request, 'inca/nation.html', nation_dict)
-
+        nation_dict["error"] = nation + "はEMC上に存在しません。"
+        return render(request, 'inca/emctour.html', nation_dict)
 
 
 """
