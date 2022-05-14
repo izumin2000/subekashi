@@ -45,6 +45,7 @@
         <main>
             <article>
                 <section class="name-search">
+                    <div class="topmargin"></div>
                     <h1>国名検索</h1>
                     <div class="underline"></div>
                     <form  action="{% url 'emctour' %}" method="POST">{% csrf_token %}
@@ -99,19 +100,25 @@
                 "extendedTimeOut": "50000",
                 "showEasing": "swing",
                 "hideEasing": "linear",
-            }
+            };
 
             toastr.options.onclick = function () {
-                window.location.href = "{% url 'modarticle' nation %}"
-            }
+                window.location.href = "{% url 'modarticle' nation %}";
+            };
 
-            // toasterの表示
+            // toastrのerror表示
             "{% if error %}"
-            toastr.warning("{{ error }}")
+                toastr.warning("{{ error }}");
             "{% endif %}"
             
+            // toastrの記事作成案内ページ
             "{% if noArticle %}"
-            toastr.info("{{ nation }}の記事を作成する場合は<a class='modarticle' href={% url 'modarticle' nation %}>こちら</a>をクリックしてください")
+                toastr.info("{{ nation }}の記事を作成する場合は<a class='modarticle' href={% url 'modarticle' nation %}>こちら</a>をクリックしてください");
+            "{% endif %}"
+            
+            // nationのリダイレクト
+            "{% if jump %}"
+                window.location.href = "{% url 'nation' jump %}";
             "{% endif %}"
         };
     </script>
