@@ -222,41 +222,57 @@ def inca(request):
         # our_info["clPlayers"] = [d.get('player') for d in firstviews]
 
     # APIが正常に処理できたかどうかの情報の登録
+    our_info["ableAPI"] = ableAPI
     if not ableAPI :
         our_info["error"] = "EarthMCのデータが読み込まれなかった為、一部情報が存在しないか不正確です。"
 
     return render(request, 'inca/inca.html', our_info)
 
 def emctour(request) :
-    emctour_dict = {}
+    emctour_dict = {"nation" : "new"}
     if request.method == 'POST':
-        input_nation = request.POST['nation']
+        input_nation_raw = request.POST['nation']
+        input_nation = input_nation_raw.replace(" ", "")
+        input_nation = input_nation.replace("_", "")
+        input_nation = input_nation.lower()
 
         # EMC上にinput_nationの国が存在するか確認
         nations_dict_list = get_API(EMC_API_URL, "nations")
         emc_nations = []
         for nation_dict in nations_dict_list :
-            emc_nations.append(nation_dict["name"])
+            nation_name = nation_dict["name"]
+            nation_name = nation_name.replace("_", "")
+            nation_name = nation_name.lower()
+            emc_nations.append(nation_name)
 
         if input_nation in emc_nations :        # EMC上にinput_nationの国があった場合
 
             # TourDB上にinput_nationの国が存在するか確認
             nation_dict = Tour.objects.all()
             for nation_ins in nation_dict :
-                if nation_ins.nation.name == input_nation :     # TourDB上にinput_nationの国があった場合
-                    emctour_dict["nation"] = nation_ins
-                    return render(request, 'inca/emctour.html')
+                nation_name = nation_ins.name
+                nation_name = nation_name.replace("_", "")
+                nation_name = nation_name.lower()
+                if nation_name == input_nation :     # TourDB上にinput_nationの国があった場合
+                    emctour_dict["nation"] = nation_ins.name
+                    emctour_dict["nation_ins"] = nation_ins
+                    print("OK")
+                    return render(request, 'inca/emctour.html', emctour_dict)
             
             # TourDB上にinput_nationの国が無かった場合
-            emctour_dict["error"] = "その国の記事が存在しません。"
-            return render(request, 'inca/inca.html', emctour_dict)
+            if input_nation_raw :
+                emctour_dict["nation"] = input_nation_raw
+                emctour_dict["error"] = input_nation_raw + "の記事が存在しません。"
+                emctour_dict["noArticle"] = True
+            return render(request, 'inca/emctour.html', emctour_dict)
 
         # EMC上にinput_nationの国が無かった場合
         else :
-            emctour_dict["error"] = "その国は存在しません。"
-            return render(request, 'inca/inca.html', emctour_dict)
+            emctour_dict["error"] = input_nation_raw + "はEMC上に存在しません。"
+            return render(request, 'inca/emctour.html', emctour_dict)
 
-    return render(request, 'inca/emctour.html')
+    return render(request, 'inca/emctour.html', emctour_dict)
+
 
 
 """
