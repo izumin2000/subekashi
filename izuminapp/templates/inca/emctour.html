@@ -9,14 +9,14 @@
         <meta name="twitter:card" content="summary">
         <meta name="twitter:site" content="@KANATA20002">
         <meta name="og:type" content="website">
-        <meta name="og:title" content="インカ帝国 - 外国の紹介">
+        <meta name="og:title" content="EMC tour">
         <meta name="og:image" content="{% static 'image/flag.png' %}">
-        <meta name="og:description" content="EarthMCの南アメリカ大陸にある国、インカ帝国の紹介サイトです。">
+        <meta name="og:description" content="EarthMCの国に関する情報を掲載しているサイトです。">
         <meta name="og:url" content="https://izuminapp.pythonanywhere.com/inca">
-        <meta name="description" content="EarthMCの南アメリカ大陸にある国、インカ帝国の紹介サイトです。">
+        <meta name="description" content="EarthMCの国に関する情報を掲載しているサイトです。">
         <meta meta="" name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
         <meta charset="utf-8">
-        <title>インカ帝国 - 外国の紹介</title>
+        <title>EMC tour</title>
         <link rel="stylesheet" type="text/css" href="{% static 'css/common.css'%}">
         <link rel="stylesheet" type="text/css" href="{% static 'css/emctour.css'%}">
         <link rel="shortcut icon" href="{% static 'image/flag.ico' %}">
@@ -45,20 +45,18 @@
         <main>
             <article>
                 <section class="name-search">
-                    <h1>国名検索</h1>
-                    <div class="underline"></div>
-                    {% csrf_token %}
-                    <input type="text" id="formChatBeat" class="beats-input" name="formChatBeat">
-                    <button class="submitButton">検索</button>
+                    <form  action="{% url 'emctour' %}" method="POST">
+                        <h1>国名検索</h1>
+                        <div class="underline"></div>
+                        {% csrf_token %}
+                        <input type="text" id="nation" name="nation">
+                        <button class="submitButton">検索</button>
+                    </form>
                 </section>
                 
                 <section class="map-search">
-                    <h1>地図検索</h1>
-                    <div class="underline"></div>
-                    <iframe id="dynamap" src="https://earthmc.net/map/nova/?worldname=earth&mapname=flat" on></iframe>
-                    <input type="text" id="formX" class="beats-input" name="formX">
-                    <input type="text" id="formZ" class="beats-input" name="formZ">
-                    <button id="submitButton">検索</button>
+                    <h1>ランダムイメージ</h1>
+                    <div class="underline" onclick="map2input()"></div>
                 </section>
 
             </article>

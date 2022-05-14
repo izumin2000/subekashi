@@ -1,3 +1,4 @@
+import re
 from django.shortcuts import render
 from izuminapp.forms import FirstviewForm, PlayerForm
 from izuminapp.model import Player, Citizen, Minister, Criminal, Gold, Tour, Town, Nation, Firstview, Analyze
@@ -205,7 +206,7 @@ def inca(request):
     # OUR_NATIONの情報の取得
     our_nation = Nation.objects.filter(name = OUR_NATION)
     if our_nation.count() :     # DBにOUR_NATIONがあったら
-        ins_captial = our_nation.first().capital
+        ins_captial = our_nation.first().capital        # 首都データを取得
         our_dict = our_nation.values()[0]
         our_info.update(our_dict)
         our_info.update({"capitalName":ins_captial.name})
@@ -221,11 +222,40 @@ def inca(request):
         # our_info["clPlayers"] = [d.get('player') for d in firstviews]
 
     # APIが正常に処理できたかどうかの情報の登録
-    our_info["ableAPI"] = ableAPI
+    if not ableAPI :
+        our_info["error"] = "EarthMCのデータが読み込まれなかった為、一部情報が存在しないか不正確です。"
 
     return render(request, 'inca/inca.html', our_info)
 
 def emctour(request) :
+    emctour_dict = {}
+    if request.method == 'POST':
+        input_nation = request.POST['nation']
+
+        # EMC上にinput_nationの国が存在するか確認
+        nations_dict_list = get_API(EMC_API_URL, "nations")
+        emc_nations = []
+        for nation_dict in nations_dict_list :
+            emc_nations.append(nation_dict["name"])
+
+        if input_nation in emc_nations :        # EMC上にinput_nationの国があった場合
+
+            # TourDB上にinput_nationの国が存在するか確認
+            nation_dict = Tour.objects.all()
+            for nation_ins in nation_dict :
+                if nation_ins.nation.name == input_nation :     # TourDB上にinput_nationの国があった場合
+                    emctour_dict["nation"] = nation_ins
+                    return render(request, 'inca/emctour.html')
+            
+            # TourDB上にinput_nationの国が無かった場合
+            emctour_dict["error"] = "その国の記事が存在しません。"
+            return render(request, 'inca/inca.html', emctour_dict)
+
+        # EMC上にinput_nationの国が無かった場合
+        else :
+            emctour_dict["error"] = "その国は存在しません。"
+            return render(request, 'inca/inca.html', emctour_dict)
+
     return render(request, 'inca/emctour.html')
 
 

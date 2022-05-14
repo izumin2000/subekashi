@@ -35,7 +35,7 @@
                 <nav>
                     <a href="{% url 'inca' %}">トップ</a>
                     <a onclick="notfound()">情報</a>
-                    <a href="{% url 'abroad' %}">外国</a>
+                    <a href="{% url 'emctour' %}">外国</a>
                     <a onclick="notfound()">所属申請</a>
                 </nav>
             </div>
@@ -258,8 +258,8 @@
             }
 
             // toasterの表示
-            "{% if not ableAPI %}"
-            toastr.warning("EarthMCのデータが読み込まれなかった為、一部情報が存在しないか不正確です。")
+            "{% if error %}"
+            toastr.warning("{{ error }}")
             "{% endif %}"
         };
     </script>
