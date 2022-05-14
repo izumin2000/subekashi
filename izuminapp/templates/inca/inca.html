@@ -70,6 +70,9 @@
                     <p>現在は<a href="https://discord.gg/83sTah7Jcu">鬼山幕府</a>の傘下に入っています。</p>
 
                     <h2>基本情報</h2>
+                    {% if not ableAPI %}
+                        <p class="info_warning">この情報は古い可能性があります。</p>
+                    {% endif %}
                     <div class="container">
                         <div class="info_item">
                             <p class="info_title">国旗</p>
@@ -81,9 +84,6 @@
                             <p class="info_title">首都</p>
                             <div class="info_underline"></div>
                             <p class="info_data">{{ capitalName }}</p>
-                            {% if not ableAPI %}
-                                <p class="info_warning">この情報は古い可能性があります。</p>
-                            {% endif %}
                             <i class="fas fa-building"></i>
                             <a href="https://earthmc.net/map/?worldname=earth&mapname=flat&zoom=6&x=-13140&y=64&z=2710">DynMapで見る</a>
                         </div>
@@ -92,9 +92,6 @@
                             <p class="info_title">人口</p>
                             <div class="info_underline"></div>
                             <p class="info_data">{{ population }} 人</p>
-                            {% if not ableAPI %}
-                                <p class="info_warning">この情報は古い可能性があります。</p>
-                            {% endif %}
                             <i class="fas fa-user-friends"></i>
                             <a onclick="notfound()">プレイヤー情報を見る</a>
                         </div>
@@ -103,9 +100,6 @@
                             <p class="info_title">面積</p>
                             <div class="info_underline"></div>
                             <p class="info_data">{{ area }} チャンク</p>
-                            {% if not ableAPI %}
-                                <p class="info_warning">この情報は古い可能性があります。</p>
-                            {% endif %}
                             <i class="fas fa-cubes"></i>
                         </div>
 

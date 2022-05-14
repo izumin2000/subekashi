@@ -264,12 +264,11 @@ code {
 }
 
 .info_warning {
-    margin: 5px !important;
+    margin: 10px 25px !important;
     color: #f2a744;
-    text-align: center;
     font-family: sans-serif;
-    font-size: 11px;
-    line-height: 11px;
+    font-size: 15px;
+    line-height: 15px;
 }
 
 .info_item i {

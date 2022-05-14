@@ -8,3 +8,12 @@
     width: 65vw;
     margin: 0 auto;
 }
+
+.modarticle {
+    margin: 0px;
+    color: #70e2ff;
+    text-decoration: underline 2px #70e2ff;
+    text-decoration-line: underline;
+    font-weight: bold;
+    text-underline-offset:0.2em;
+}
