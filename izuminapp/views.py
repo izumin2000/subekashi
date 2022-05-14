@@ -1,5 +1,5 @@
 import re
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from izuminapp.forms import FirstviewForm, PlayerForm
 from izuminapp.model import Player, Citizen, Minister, Criminal, Gold, Tour, Town, Nation, Firstview, Analyze
 import requests
@@ -190,7 +190,7 @@ def inca(request):
     our_info = {}       # テンプレートに渡す辞書
     ableAPI = True
 
-    # 大臣情報の取得と更新
+    # 大臣情報の取得と更新・OUR_NATIONの更新
     ministers = Minister.objects.all()
 
     ## 大臣が一人も居なかったら
@@ -204,6 +204,7 @@ def inca(request):
         ableAPI &= ableAPIplayer
 
     # OUR_NATIONの情報の取得
+    ## TODO リファクタリング
     our_nation = Nation.objects.filter(name = OUR_NATION)
     if our_nation.count() :     # DBにOUR_NATIONがあったら
         ins_captial = our_nation.first().capital        # 首都データを取得
@@ -246,18 +247,17 @@ def emctour(request) :
             emc_nations.append(nation_name)
 
         if input_nation in emc_nations :        # EMC上にinput_nationの国があった場合
-
             # TourDB上にinput_nationの国が存在するか確認
+            
             nation_dict = Tour.objects.all()
             for nation_ins in nation_dict :
                 nation_name = nation_ins.name
                 nation_name = nation_name.replace("_", "")
                 nation_name = nation_name.lower()
                 if nation_name == input_nation :     # TourDB上にinput_nationの国があった場合
-                    emctour_dict["nation"] = nation_ins.name
-                    emctour_dict["nation_ins"] = nation_ins
-                    print("OK")
-                    return render(request, 'inca/emctour.html', emctour_dict)
+                    emctour_dict["jump"] = nation_ins.name      # リダイレクト先のnation
+                    return render(request, 'inca/emctour.html', emctour_dict)        # js側でリダイレクトの処理
+                    # return redirect("./nation/" + nation_ins.name)
             
             # TourDB上にinput_nationの国が無かった場合
             if input_nation_raw :
@@ -273,16 +273,16 @@ def emctour(request) :
 
     return render(request, 'inca/emctour.html', emctour_dict)
 
+
 # 新しい記事の作成
 def modarticle(request, nation) :
     modarticle_dict = {"nation" : nation}        # テンプレートに渡す辞書
 
     # 記事の登録
     if request.method == 'POST':
-        ins_tour, _ = Tour.objects.get_or_create(name = nation, defaults = {"name" : nation})
-
         ableAPI, _, _, _, ins_nation = set_erea(nation, True)
         if ableAPI :
+            ins_tour, _ = Tour.objects.get_or_create(name = nation, defaults = {"name" : nation})
             ins_tour.nation = ins_nation
             ins_tour.info = request.POST['info']
             ins_tour.save()
@@ -291,8 +291,31 @@ def modarticle(request, nation) :
             modarticle_dict["error"] = "APIの取得に失敗しました。再度時間を置いて登録してください。"
             return render(request, 'inca/emctour.html', modarticle_dict)
 
-
     return render(request, 'inca/modarticle.html', modarticle_dict)
+
+
+# 国の記事
+def nation(request, nation) :
+    nation_dict = {}        # テンプレートに渡す辞書
+
+    return render(request, 'inca/emctour.html', nation_dict)
+
+
+    """
+    # OUR_NATIONの情報の取得
+    our_nation = Nation.objects.filter(name = OUR_NATION)
+    if our_nation.count() :     # DBにOUR_NATIONがあったら
+        ins_captial = our_nation.first().capital        # 首都データを取得
+        our_dict = our_nation.values()[0]
+        our_info.update(our_dict)
+        our_info.update({"capitalName":ins_captial.name})
+    else :
+        our_info.update({"population":"エラー", "area":"エラー", "king":"エラー", "capitalName":"エラー"})
+        ableAPI = False
+    """
+    return render(request, 'inca/nation.html', nation_dict)
+
+
 
 """
 def firstview(request) :
@@ -306,7 +329,6 @@ def firstview(request) :
         displayoff = request.POST.get("displayoff")
         delete = request.POST.get("delete")
         password = request.POST.get("password")
-        print(type(name), type(title), type(player), type(displayon), type(displayoff), type(delete))
         if password == "incagold" :
             filename = name.replace("firstview/", "").replace(".png", "")
             name = "firstview/" + filename + ".png"
@@ -367,7 +389,7 @@ def editplayer(request) :
 """
 
 
-# ゼロ埋め 31レコード表示
+# TODO ゼロ埋め 31レコード表示
 def pv(request) :
     pv = Analyze.objects.values_list("pv", flat=True)
     pv = list(pv)
