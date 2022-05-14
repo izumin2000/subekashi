@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+
+{% load static %}
+
+<html lang="ja">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="author" content="KANATA2000">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:site" content="@KANATA20002">
+        <meta name="og:type" content="website">
+        <meta name="og:title" content="EMC tour">
+        <meta name="og:image" content="{% static 'image/flag.png' %}">
+        <meta name="og:description" content="EarthMCの国に関する情報を掲載しているサイトです。">
+        <meta name="og:url" content="https://izuminapp.pythonanywhere.com/inca">
+        <meta name="description" content="EarthMCの国に関する情報を掲載しているサイトです。">
+        <meta meta="" name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
+        <meta charset="utf-8">
+        <title>EMC tour</title>
+        <link rel="stylesheet" type="text/css" href="{% static 'css/common.css'%}">
+        <link rel="stylesheet" type="text/css" href="{% static 'css/modarticle.css'%}">
+        <link rel="shortcut icon" href="{% static 'image/flag.ico' %}">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
+        <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" /> <!-- toastr -->
+    </head>
+
+
+    <body>
+        <header>
+            <div class="header-left">
+                <a href="{% url 'inca' %}"><img name="thumbnail" class="logo" src="{% static 'image/emctourlogo.png' %}" alt="EMC tourのロゴ"></a>
+            </div>
+
+            <div class="header-right">
+                <nav>
+                    <a href="{% url 'inca' %}">トップ</a>
+                    <a onclick="notfound()">国一覧</a>
+                    <a onclick="notfound()">使い方</a>
+                </nav>
+            </div>
+
+            <div class="clear"></div>
+        </header>
+
+        <main>
+            <article>                
+                <section class="map-search">
+                    <form  action="{% url 'emctour' %}" method="POST">
+                        {% csrf_token %}
+                        <input type="text" id="nation" name="nation" value="{{ nation }}">
+                        <input type="text" id="info" name="info">
+                        <button class="submitButton">登録</button>
+                    </form>
+                </section>
+
+            </article>
+        </main>
+    </body>
+</html>

@@ -8,6 +8,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('emctour/', views.emctour, name = 'emctour'),
+    path('emctour/modarticle/<str:nation>', views.modarticle, name = 'modarticle'),
     path('', views.root, name = 'root'),
     path('inca/', views.inca, name = 'inca'),
     path('inca/pv', views.pv, name = 'pv'),
