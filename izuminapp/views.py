@@ -18,24 +18,29 @@ NUMBER_OF_FIRSTVIEWS = 5
 
 # 成功時にAPIのjsonを出力。失敗すると空文字を出力。
 def get_API(url, route) :
-    sleep(0.1)
+    sleep(2)
     try :
         get = requests.get(url + route)
     except :
+        print("5xx Error", route)
         return ""
 
     if (get.status_code == 200) :
         try :
             get_dict = get.json()
         except :
+            print("Not JSON Error", route)
             return ""
 
         if "error" in get_dict :     # dictのキーにerrorがあったら
+            print("Invalid path Error", route)
             return ""
         else :
+            print("OK", route)
             return get_dict
 
     else :
+        print("not 2xx Error", route)
         return ""
 
 
@@ -247,8 +252,8 @@ def emctour(request) :
             emc_nations.append(nation_name)
 
         if input_nation in emc_nations :        # EMC上にinput_nationの国があった場合
+
             # TourDB上にinput_nationの国が存在するか確認
-            
             nation_dict = Tour.objects.all()
             for nation_ins in nation_dict :
                 nation_name = nation_ins.name
@@ -268,6 +273,7 @@ def emctour(request) :
 
         # EMC上にinput_nationの国が無かった場合
         else :
+            print("!!!!!!!!")
             emctour_dict["error"] = input_nation_raw + "はEMC上に存在しません。"
             return render(request, 'inca/emctour.html', emctour_dict)
 
