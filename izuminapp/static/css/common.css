@@ -297,6 +297,12 @@ code {
     line-height: 16px;
 }
 
+.unknown_skin {
+    display: block;
+    width: 120px;
+    margin: 20px auto;
+}
+
 
 /* ポップアップ */
 .popup_wrap input {

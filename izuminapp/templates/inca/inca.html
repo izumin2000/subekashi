@@ -133,17 +133,17 @@
                                 {% endif %}
                                 <label for="trigger" class="open_btn" onclick="playerpopup('{{ primary.uuid }}', '{{ primary.name }}', '{{ ableAPI }}', '{{ primary.online }}', '{{ primary.info }}')">詳しく見る</label>
                                 <div class="popup_wrap">
-                                <input id="trigger" type="checkbox">
-                                <div class="popup_overlay">
-                                    <label for="trigger" class="popup_trigger"></label>
-                                    <div class="popup_content">
-                                        <label for="trigger" class="close_btn">x</label>
-                                        <p id="popup_name"></p>                                      
-                                        <img id="popup_skin">
-                                        <hr id="popup_hr">
-                                        <p id="popup_info"></p>
+                                    <input id="trigger" type="checkbox">
+                                    <div class="popup_overlay">
+                                        <label for="trigger" class="popup_trigger"></label>
+                                        <div class="popup_content">
+                                            <label for="trigger" class="close_btn">x</label>
+                                            <p id="popup_name"></p>                                      
+                                            <img id="popup_skin">
+                                            <hr id="popup_hr">
+                                            <p id="popup_info"></p>
+                                        </div>
                                     </div>
-                                </div>
                                 </div>
                             </div>
                         {% endfor %}
@@ -233,8 +233,9 @@
     
     <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
 
-    <script src="{% static 'js/playerpopup.js' %}"></script>
+    <script src="{% static 'js/playerpopup.js' %}"></script>        <!-- プレイヤーポップアップ -->
 
+    <!-- エラーポップアップ -->
     <script>
         window.onload = function() {
             toastr.options = {
@@ -258,6 +259,7 @@
         };
     </script>
 
+    <!-- 存在しないページのtoastr -->
     <script>
         function notfound(){
             toastr.options = {
@@ -278,8 +280,8 @@
         };
     </script>
 
+    <!-- 複数画像をフェードインフェードアウトで切替 -->
     <script>
-        // 複数画像をフェードインフェードアウトで切替
         $(document).ready(function(){
         $('.clImg img:gt(0)').hide();
         var cli = 1;
@@ -296,6 +298,7 @@
     });
     </script>
 
+    <!-- コピーのtoastr -->
     <script>
         function copyCode(text) {
             if(navigator.clipboard) {

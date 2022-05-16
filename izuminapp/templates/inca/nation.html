@@ -57,6 +57,37 @@
                     {% endif %}
                     <div class="container">
                         <div class="info_item">
+                            <p class="info_title">国王</p>
+                            <div class="info_underline"></div>
+                            {% if not ableAPI %}
+                                <p class="info_data">{{ king.name }}</p>
+                            {% elif primary.online %}
+                                <p class="info_data isonline">{{ king.name }}</p>
+                            {% else %}
+                                <p class="info_data isoffline">{{ king.name }}</p>
+                            {% endif %}
+                            {% if primary.uuid %}
+                                <img class="skin" src="https://crafatar.com/renders/head/{{ primary.uuid }}">
+                            {% else %}
+                                <img class="unknown_skin" src="{% static 'image/unknown_skin.png' %}">
+                            {% endif %}
+                            <label for="trigger" class="open_btn" onclick="playerpopup('{{ king.uuid }}', '{{ king.name }}', '{{ ableAPI }}', '{{ king.online }}', '{{ king.info }}')">詳しく見る</label>
+                            <div class="popup_wrap">
+                                <input id="trigger" type="checkbox">
+                                <div class="popup_overlay">
+                                    <label for="trigger" class="popup_trigger"></label>
+                                    <div class="popup_content">
+                                        <label for="trigger" class="close_btn">x</label>
+                                        <p id="popup_name"></p>                                      
+                                        <img id="popup_skin">
+                                        <hr id="popup_hr">
+                                        <p id="popup_info"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="info_item">
                             <p class="info_title">首都</p>
                             <div class="info_underline"></div>
                             <p class="info_data">{{ tour.nation.capital.name }}</p>
@@ -83,6 +114,5 @@
         </main>
     </body>
 
-    <script>
-    </script>
+    <script src="{% static 'js/playerpopup.js' %}"></script>        <!-- プレイヤーポップアップ -->
 </html>
