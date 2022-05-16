@@ -3,6 +3,7 @@ from pathlib import Path
 import os
 import dj_database_url
 import django_heroku
+import cloudinary
 from dotenv import find_dotenv, load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -36,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'cloudinary',
 ]
 
 MIDDLEWARE = [
@@ -141,3 +143,8 @@ if DEBUG :
 else :
     django_heroku.settings(locals())
     SECRET_KEY = os.environ['SECRET_KEY']
+    cloudinary.config(
+        cloud_name = 'hha8k6kh9',
+        api_key = os.environ['CLOUDINARY_API_KEY'],
+        api_secret = os.environ['CLOUDINARY_API_SECRET']
+    )
