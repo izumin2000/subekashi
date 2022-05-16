@@ -311,11 +311,23 @@ def nation(request, nation) :
     ins_tours = Tour.objects.filter(name = nation)
     if ins_tours.count() :     # Tour DBにnationがあったら
         ins_tour = ins_tours.first()
-        ableAPI, _, _, _, ins_nation = set_erea(nation, True)
+        ableAPInation, _, ins_king, _, ins_nation = set_erea(nation, True)
+        if ableAPInation :
+            ableAPIplayer = set_player(ins_king.name, False)
+
         ins_tour.nation = ins_nation
         ins_tour.save()
         nation_dict["tour"] = ins_tour
-        nation_dict["ableAPI"] = ableAPI
+        nation_dict["king"] = ins_king
+        if ableAPInation :
+            nation_dict["ableAPI"] = ableAPIplayer
+        else :
+            nation_dict["ableAPI"] = False
+        
+        if not nation_dict["ableAPI"] :
+            nation_dict["error"] = "APIの取得に失敗しました。再度時間を置いて登録してください。"
+            nation_dict["nation"] = "new"
+            return render(request, 'inca/emctour.html', nation_dict)
 
         return render(request, 'inca/nation.html', nation_dict)
     else :
