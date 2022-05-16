@@ -296,7 +296,7 @@ def modarticle(request, nation) :
             modarticle_dict["jump"] = nation      # リダイレクト先のnation
             return render(request, 'inca/modarticle.html', modarticle_dict)        # js側でリダイレクトの処理
         else :
-            modarticle_dict["error"] = "APIの取得に失敗しました。再度時間を置いて登録してください。"
+            modarticle_dict["error"] = "APIの取得に失敗しました。再度時間を置いてアクセスしてください。"
             return render(request, 'inca/emctour.html', modarticle_dict)
 
     # infoの取得
@@ -331,13 +331,16 @@ def nation(request, nation) :
             nation_dict["ableAPI"] = False
         
         if not nation_dict["ableAPI"] :
-            nation_dict["error"] = "APIの取得に失敗しました。再度時間を置いて登録してください。"
+            nation_dict["error"] = "APIの取得に失敗しました。再度時間を置いてアクセスしてください。"
             nation_dict["nation"] = "new"
             return render(request, 'inca/emctour.html', nation_dict)
 
         return render(request, 'inca/nation.html', nation_dict)
     else :
-        nation_dict["error"] = nation + "はEMC上に存在しません。"
+        if ins_tour :
+            nation_dict["error"] = nation + "はEMC上に存在しません。"
+        else :
+            nation_dict["error"] = "APIの取得に失敗しました。再度時間を置いてアクセスしてください。"
         return render(request, 'inca/emctour.html', nation_dict)
 
 

@@ -1,12 +1,35 @@
-.name-search {
-    margin-top: 100px;
+.nation-form {
+    position:absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    -webkit-transform: translate(-50%, -50%);
+    -ms-transform: translate(-50%, -50%);
 }
 
-#dynamap {
-    display: block;
-    height: 65vh;
-    width: 65vw;
-    margin: 0 auto;
+.nation-name {
+    height: 50px;
+    width: 250px;
+    font-size: 20px;
+    text-align: center;
+    border: none;
+    /* appearance: none; */
+    box-shadow: 0 0 0 1px #ccc inset;
+}
+
+.nation-name:focus {
+    outline: 0;
+    box-shadow: 0 0 0 2px #BB002D inset;
+}
+
+input:focus::placeholder {
+    color: transparent;
+}
+
+.nation-submit {
+    height: 50px;
+    width: 100px;
+    font-size: 20px;
 }
 
 .modarticle {

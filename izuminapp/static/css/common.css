@@ -123,6 +123,12 @@ main {
     margin-top: 100px;
 }
 
+@media (max-width: 640px) {
+.topmargin {
+    margin-top: 172px;
+}
+}
+
 h1 {
     text-align: center;
     font-family: sans-serif;
@@ -211,6 +217,56 @@ code {
 @media (max-width: 640px) {
     .underline {
         margin-bottom: 15px;
+    }
+}
+
+/* ファーストビュー */
+@media (max-width: 640px) {
+    .firstview {
+        padding-bottom: calc(100vh - 128px);
+    }
+}
+
+.firstview b {
+    position: absolute;
+    top: 48%;
+    right: 30px;
+    text-align: right;
+    font-family: 'Microsoft Sans Serif';
+    font-size: 30px;
+    padding: 10px;
+    border-radius: 5px;
+    color: #fff;
+    background-color: #00000077;
+    line-height: 40px
+}
+
+.clImg {
+    position: relative;
+}
+
+.clImg img {
+    position: absolute;
+    height: calc(100vh - 64px);
+    left: 0;
+    width: 100%;
+    object-fit: cover;
+}
+
+@media (max-width: 640px) {
+    .clImg img {
+        height: calc(100vh - 128px);
+    }
+}
+
+.firstview {
+    padding-bottom: calc(100vh - 64px);
+}
+
+@media (max-width: 640px) {
+    .firstview b {
+        top: 40%;
+        width: 220px;
     }
 }
 
