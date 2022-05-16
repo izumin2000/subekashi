@@ -57,13 +57,21 @@
         </main>
     </body>
 
-    <!-- nation inputの中身が"new"なら消す -->
+    
     <script>
         window.onload = function() {
+            // nationのリダイレクト
+
+            // nation inputの中身が"new"なら消す
             let nation = document.getElementById('nation');
             if (nation.value == "new") {
                 nation.value = "";
             }
+
+            // nationのリダイレクト
+            "{% if jump %}"
+                window.location.href = "{% url 'nation' jump %}";
+            "{% endif %}"
         };
     </script>
 </html>

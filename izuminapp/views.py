@@ -216,10 +216,10 @@ def inca(request):
         ableAPI = False
 
     # ファーストビューの処理
-    firstviews = Firstview.objects.filter(display = True).order_by('?')[:min(Firstview.objects.count(), NUMBER_OF_FIRSTVIEWS)]     # ランダムにNUMBER_OF_FIRSTVIEWS個取り出す
-    firstviews = list(firstviews.values())
-    if len(firstviews) :
-        our_info["clTitle"] = [d.get('title') for d in firstviews]
+    # firstviews = Firstview.objects.filter(display = True).order_by('?')[:min(Firstview.objects.count(), NUMBER_OF_FIRSTVIEWS)]     # ランダムにNUMBER_OF_FIRSTVIEWS個取り出す
+    # firstviews = list(firstviews.values())
+    # if len(firstviews) :
+        # our_info["clTitle"] = [d.get('title') for d in firstviews]
         # our_info["clPlayers"] = [d.get('player') for d in firstviews]
 
     # APIが正常に処理できたかどうかの情報の登録
@@ -257,13 +257,13 @@ def emctour(request) :
                 if nation_name == input_nation :     # TourDB上にinput_nationの国があった場合
                     emctour_dict["jump"] = nation_ins.name      # リダイレクト先のnation
                     return render(request, 'inca/emctour.html', emctour_dict)        # js側でリダイレクトの処理
-                    # return redirect("./nation/" + nation_ins.name)
             
             # TourDB上にinput_nationの国が無かった場合
             if input_nation_raw :
                 emctour_dict["nation"] = input_nation_raw
                 emctour_dict["error"] = input_nation_raw + "の記事が存在しません。"
                 emctour_dict["noArticle"] = True
+
             return render(request, 'inca/emctour.html', emctour_dict)
 
         # EMC上にinput_nationの国が無かった場合
@@ -286,7 +286,8 @@ def modarticle(request, nation) :
             ins_tour.nation = ins_nation
             ins_tour.info = request.POST['info']
             ins_tour.save()
-            render(request, 'inca/modarticle.html', modarticle_dict)
+            modarticle_dict["jump"] = nation      # リダイレクト先のnation
+            return render(request, 'inca/modarticle.html', modarticle_dict)        # js側でリダイレクトの処理
         else :
             modarticle_dict["error"] = "APIの取得に失敗しました。再度時間を置いて登録してください。"
             return render(request, 'inca/emctour.html', modarticle_dict)
