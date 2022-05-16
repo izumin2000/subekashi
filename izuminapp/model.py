@@ -1,4 +1,5 @@
 from django.db import models
+from cloudinary.models import CloudinaryField
 
 class Player(models.Model) :
     name = models.CharField(default = "", max_length = 50)
@@ -56,6 +57,11 @@ class Nation(models.Model) :
     z = models.IntegerField(default = 0)
     info = models.CharField(default = "", max_length = 200)
     king = models.ForeignKey("Player", on_delete = models.DO_NOTHING, blank = True, null = True, related_name = "nation_king")
+
+class Screenshot(models.Model) :
+    title = models.CharField(default = "無題", max_length = 20)
+    image = CloudinaryField('image', blank=True, null=True, folder="images/")
+    display = models.BooleanField(default = True)
 
 class Firstview(models.Model) :
     name = models.CharField(default = "", max_length = 100)
