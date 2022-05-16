@@ -274,7 +274,7 @@ def emctour(request) :
     return render(request, 'inca/emctour.html', emctour_dict)
 
 
-# 新しい記事の作成
+# 記事の作成・編集
 def modarticle(request, nation) :
     modarticle_dict = {"nation" : nation}        # テンプレートに渡す辞書
 
@@ -286,11 +286,20 @@ def modarticle(request, nation) :
             ins_tour.nation = ins_nation
             ins_tour.info = request.POST['info']
             ins_tour.save()
+            modarticle_dict["info"] = ins_tour.info
             modarticle_dict["jump"] = nation      # リダイレクト先のnation
             return render(request, 'inca/modarticle.html', modarticle_dict)        # js側でリダイレクトの処理
         else :
             modarticle_dict["error"] = "APIの取得に失敗しました。再度時間を置いて登録してください。"
             return render(request, 'inca/emctour.html', modarticle_dict)
+
+    # infoの取得
+    ins_tours = Tour.objects.filter(name = nation)
+    if ins_tours.count() :     # DBにOnationがあったら
+        ins_tour = ins_tours.first()
+        modarticle_dict["info"] = ins_tour.info
+    else:
+        modarticle_dict["info"] = ""
 
     return render(request, 'inca/modarticle.html', modarticle_dict)
 

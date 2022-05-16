@@ -48,7 +48,7 @@
                     <div class="topmargin"></div>
                     <h1>{{ tour.nation.name }}</h1>
                     <div class="underline"></div>
-                    <h2>概要</h2>
+                    <h2>概要 <a href="{% url 'modarticle' tour.nation.name %}"><i class="fas fa-pencil-alt"></i></a></h2>
                     <p>{{ tour.info }}</p>
 
                     <h2>基本情報</h2>
