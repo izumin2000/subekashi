@@ -1,5 +1,5 @@
 from django.contrib import admin
-from izuminapp.model import Player, Citizen, Minister, Criminal, Gold, Tour, Town, Nation, Firstview, Analyze
+from izuminapp.model import Player, Citizen, Minister, Criminal, Gold, Tour, Nation, Firstview, Analyze
 
 
 class PlayerAdmin(admin.ModelAdmin) :
@@ -8,8 +8,6 @@ class PlayerAdmin(admin.ModelAdmin) :
     ordering = ["id"]
     def nation(self, obj) :
         return obj.nation.name
-    def town(self, obj) :
-        return obj.town.name
 
 class CitizenAdmin(admin.ModelAdmin) :
     list_display = ["player", "iscitizen"]
@@ -46,19 +44,12 @@ class TourAdmin(admin.ModelAdmin) :
     def nation(self, obj) :
         return obj.nation.name
 
-class TownAdmin(admin.ModelAdmin) :
-    list_display = ["name", "nickname", "population", "area", "x", "z", "info", "mayor"]
-    list_display_links = ["name", "nickname"]
-    ordering = ["name"]
-    def mayor(self, obj) :
-        return obj.mayor.name
-
 class NationAdmin(admin.ModelAdmin) :
-    list_display = ["name", "nickname", "population", "area", "capital", "x", "z", "info", "king"]
+    list_display = ["name", "nickname", "population", "area", "capital", "x", "z", "king"]
     list_display_links = ["name", "nickname"]
     ordering = ["name"]
-    def capital(self, obj) :
-        return obj.capital.name
+    def king(self, obj) :
+        return obj.king.name
 
 class FirstviewAdmin(admin.ModelAdmin) :
     list_display = ["id", "name", "title", "display"]
@@ -77,7 +68,6 @@ admin.site.register(Minister, MinisterAdmin)
 admin.site.register(Criminal, CriminalAdmin)
 admin.site.register(Gold, GoldAdmin)
 admin.site.register(Tour, TourAdmin)
-admin.site.register(Town, TourAdmin)
 admin.site.register(Nation, NationAdmin)
 admin.site.register(Firstview, FirstviewAdmin)
 admin.site.register(Analyze, AnalyzeAdmin)

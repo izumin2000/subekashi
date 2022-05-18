@@ -5,7 +5,7 @@ class Player(models.Model) :
     name = models.CharField(default = "", max_length = 50)
     nickname = models.CharField(default = "", max_length = 50)
     uuid = models.CharField(default = "", max_length = 50)
-    town = models.ForeignKey("Town", on_delete = models.DO_NOTHING, blank = True, null = True, related_name = "player_town")
+    town = models.CharField(default = "", max_length = 50)
     nation = models.ForeignKey("Nation", on_delete = models.DO_NOTHING, blank = True, null = True, related_name = "player_nation")
     info = models.CharField(default = "", max_length = 200)
     online = models.BooleanField(default = False)
@@ -37,25 +37,14 @@ class Tour(models.Model) :
     nation = models.ForeignKey("Nation", on_delete = models.DO_NOTHING, blank = True, null = True)
     info = models.CharField(default = "", max_length = 500)
 
-class Town(models.Model) :
-    name = models.CharField(default = "", max_length = 50)
-    nickname = models.CharField(default = "", max_length = 50)
-    population = models.IntegerField(default = 0)
-    area = models.IntegerField(default = 0)
-    x = models.IntegerField(default = 0)
-    z = models.IntegerField(default = 0)
-    info = models.CharField(default = "", max_length = 200)
-    mayor = models.ForeignKey("Player", on_delete = models.DO_NOTHING, blank = True, null = True, related_name = "town_mayor")
-
 class Nation(models.Model) :
     name = models.CharField(default = "", max_length = 50)
     nickname = models.CharField(default = "", max_length = 50)
     population = models.IntegerField(default = 0)
     area = models.IntegerField(default = 0)
-    capital = models.ForeignKey("Town", on_delete = models.DO_NOTHING, blank = True, null = True)
+    capital = models.CharField(default = "", max_length = 50)
     x = models.IntegerField(default = 0)
     z = models.IntegerField(default = 0)
-    info = models.CharField(default = "", max_length = 200)
     king = models.ForeignKey("Player", on_delete = models.DO_NOTHING, blank = True, null = True, related_name = "nation_king")
 
 class Screenshot(models.Model) :
