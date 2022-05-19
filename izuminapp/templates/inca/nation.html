@@ -28,13 +28,13 @@
     <body>
         <header>
             <div class="header-left">
-                <a href="{% url 'inca' %}"><img name="thumbnail" class="logo" src="{% static 'image/emctourlogo.png' %}" alt="EMC tourのロゴ"></a>
+                <a href="{% url 'emctour' %}"><img name="thumbnail" class="logo" src="{% static 'image/emctourlogo.png' %}" alt="EMC tourのロゴ"></a>
             </div>
 
             <div class="header-right">
                 <nav>
                     <a href="{% url 'emctour' %}">トップ</a>
-                    <a href="{% url 'modarticle' 'new' %}">記事を書く</a>
+                    <a href="{% url 'modarticle' 'new' %}">作成・編集</a>
                     <a onclick="notfound()">国一覧</a>
                 </nav>
             </div>
@@ -53,7 +53,7 @@
 
                     <h2>基本情報</h2>
                     {% if not ableAPI %}
-                        <p class="info_warning">この情報は古い可能性があります。</p>
+                        <p class="info_warning">この情報は最新ではありません。</p>
                     {% endif %}
                     <div class="container">
                         <div class="info_item">
@@ -66,8 +66,8 @@
                             {% else %}
                                 <p class="info_data isoffline">{{ king.name }}</p>
                             {% endif %}
-                            {% if primary.uuid %}
-                                <img class="skin" src="https://crafatar.com/renders/head/{{ primary.uuid }}">
+                            {% if king.uuid %}
+                                <img class="skin" src="https://crafatar.com/renders/head/{{ king.uuid }}">
                             {% else %}
                                 <img class="unknown_skin" src="{% static 'image/unknown_skin.png' %}">
                             {% endif %}
@@ -90,7 +90,7 @@
                         <div class="info_item">
                             <p class="info_title">首都</p>
                             <div class="info_underline"></div>
-                            <p class="info_data">{{ tour.nation.capital.name }}</p>
+                            <p class="info_data">{{ tour.nation.capital }}</p>
                             <i class="fas fa-building"></i>
                             <a href="https://earthmc.net/map/nova/?worldname=earth&mapname=flat&zoom=6&x={{ tour.nation.capital.x }}&y=64&z={{ tour.nation.capital.z }}">DynMapで見る</a>
                         </div>

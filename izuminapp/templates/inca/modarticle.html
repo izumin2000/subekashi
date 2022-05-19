@@ -28,13 +28,13 @@
     <body>
         <header>
             <div class="header-left">
-                <a href="{% url 'inca' %}"><img name="thumbnail" class="logo" src="{% static 'image/emctourlogo.png' %}" alt="EMC tourのロゴ"></a>
+                <a href="{% url 'emctour' %}"><img name="thumbnail" class="logo" src="{% static 'image/emctourlogo.png' %}" alt="EMC tourのロゴ"></a>
             </div>
 
             <div class="header-right">
                 <nav>
                     <a href="{% url 'emctour' %}">トップ</a>
-                    <a href="{% url 'modarticle' nation %}">記事を書く</a>
+                    <a href="{% url 'modarticle' nation %}">作成・編集</a>
                     <a onclick="notfound()">国一覧</a>
                 </nav>
             </div>
@@ -56,9 +56,34 @@
         </main>
     </body>
 
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> <!-- jquery -->
+    
+    <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
 
     <script>
         window.onload = function() {
+            toastr.options = {
+                "closeButton": true,
+                "debug": false,
+                "newestOnTop": false,
+                "progressBar": false,
+                "positionClass": "toast-bottom-left",
+                "preventDuplicates": false,
+                "onclick": null,
+                "timeOut": "50000",
+                "extendedTimeOut": "50000",
+                "showEasing": "swing",
+                "hideEasing": "linear",
+            };
+
+            toastr.options.onclick = function () {
+                window.location.href = "{% url 'modarticle' nation %}";
+            };
+
+            // toastrのerror表示
+            "{% if error %}"
+                toastr.warning("{{ error }}");
+            "{% endif %}"
             // nationのリダイレクト
 
             // nation inputの中身が"new"なら消す

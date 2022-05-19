@@ -71,7 +71,7 @@
 
                     <h2>基本情報</h2>
                     {% if not ableAPI %}
-                        <p class="info_warning">この情報は古い可能性があります。</p>
+                        <p class="info_warning">この情報は最新ではありません。</p>
                     {% endif %}
                     <div class="container">
                         <div class="info_item">
@@ -83,7 +83,7 @@
                         <div class="info_item">
                             <p class="info_title">首都</p>
                             <div class="info_underline"></div>
-                            <p class="info_data">{{ capitalName }}</p>
+                            <p class="info_data">{{ our.capital }}</p>
                             <i class="fas fa-building"></i>
                             <a href="https://earthmc.net/map/nova/?worldname=earth&mapname=flat&zoom=6&x=-13140&y=64&z=2710">DynMapで見る</a>
                         </div>
@@ -91,7 +91,7 @@
                         <div class="info_item">
                             <p class="info_title">人口</p>
                             <div class="info_underline"></div>
-                            <p class="info_data">{{ population }} 人</p>
+                            <p class="info_data">{{ our.population }} 人</p>
                             <i class="fas fa-user-friends"></i>
                             <a onclick="notfound()">プレイヤー情報を見る</a>
                         </div>
@@ -99,7 +99,7 @@
                         <div class="info_item">
                             <p class="info_title">面積</p>
                             <div class="info_underline"></div>
-                            <p class="info_data">{{ area }} チャンク</p>
+                            <p class="info_data">{{ our.area }} チャンク</p>
                             <i class="fas fa-cubes"></i>
                         </div>
 

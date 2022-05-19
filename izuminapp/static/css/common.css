@@ -220,6 +220,7 @@ code {
     }
 }
 
+
 /* ファーストビュー */
 @media (max-width: 640px) {
     .firstview {
@@ -279,7 +280,7 @@ code {
     flex-wrap: wrap;
 }
 
-@media (max-width: 758px) {
+@media (max-width: 780px) {
     .container {
         margin-left: calc(50%  - 240px);
     }
@@ -355,7 +356,7 @@ code {
 
 .unknown_skin {
     display: block;
-    width: 120px;
+    width: 105px;
     margin: 20px auto;
 }
 
@@ -462,10 +463,17 @@ code {
     margin: 0 6px 0 4px;
 }
 
+.skin {
+    display: block;
+    width: 120px;
+    margin: 20px auto;
+}
+
 ol {
     list-style:decimal !important;
     margin-left: 40px;
 }
+
 
 /* フッダー */
 footer {
