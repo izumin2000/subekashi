@@ -1,183 +1,209 @@
-import re
 from django.shortcuts import redirect, render
 from izuminapp.forms import FirstviewForm, PlayerForm
-from izuminapp.model import Player, Citizen, Minister, Criminal, Gold, Tour, Town, Nation, Firstview, Analyze
+from izuminapp.model import Player, Citizen, Minister, Criminal, Gold, Tour, Nation, Firstview, Analyze
 import requests
 from datetime import date
 import json
 from time import sleep
 
 
-OUR_TOWN = "Juliaca"
 OUR_NATION = "Inca_Empire"
 EMC_API_URL = "https://earthmc-api.herokuapp.com/api/v1/nova/"
 UUID_API_URL = "https://api.mojang.com/users/profiles/minecraft/"
+WORLD_URL = "nova/"     # "aurora/"
 UPLOAD_URL = "uploadfiles/"
 NUMBER_OF_FIRSTVIEWS = 5
+
+# デバッグ用
+ERROR_API_URL = "https://.com/"
+EMC_API_URL = ERROR_API_URL
 
 
 # 成功時にAPIのjsonを出力。失敗すると空文字を出力。
 def get_API(url, route) :
     sleep(2)
+
+    # allplayers/の取得の処理
+    if "allplayers" in route :
+        url = url.replace("nova/", "")      # nova/を削除
+
     try :
         get = requests.get(url + route)
-    except :
+    except :        # プロキシエラー等のエラーが発生したら
         print("5xx Error", route)
         return ""
 
     if (get.status_code == 200) :
         try :
             get_dict = get.json()
-        except :
-            print("Not JSON Error", route)
+        except :        # JSON形式ではなかったら（メンテナンス等）
+            print("Not JSON Error", get.status_code, route)
             return ""
 
         if "error" in get_dict :     # dictのキーにerrorがあったら
-            print("Invalid path Error", route)
+            print("Invalid path Error", get.status_code,  route)
             return ""
-        else :
-            print("OK", route)
+        else :      # 正常に取得できたら
+            print("OK", get.status_code, route)
             return get_dict
 
-    else :
-        print("not 2xx Error", route)
+    else :      # エラーステータスコードを受け取ったら（HEROKU error等）
+        print("not 2xx Error", get.status_code, route)
         return ""
 
 
+# Player DB上にplayerが存在するか確認
+def isExistDBPlayer(nation) :
+    ins_players = Player.objects.filter(name = nation)
+    if ins_players :
+        return ins_players.first()
+    return None
+
+
+# Nation DB上にnationが存在するか確認
+def isExistDBNation(nation) :
+    ins_nations = Nation.objects.filter(name = nation)
+    if ins_nations :
+        return ins_nations.first()
+    return None
+
+
+# Tour DB上にnationが存在するか確認
+def isExistDBTour(nation) :
+    nation = nation.replace(" ", "")
+    nation = nation.replace("_", "")
+    nation = nation.lower()
+
+    nation_dict = Tour.objects.all()
+    for nation_ins in nation_dict :
+        tour_nation = nation_ins.name
+        tour_nation = tour_nation.replace("_", "")
+        tour_nation = tour_nation.lower()
+        if tour_nation == nation :     # Tour DB上にnationがあった場合
+            return nation_ins
+    return None
+
+
+# EMC上にnationが存在するか確認
+def isExistEMCNation(nation) :
+    nation = nation.replace(" ", "")
+    nation = nation.replace("_", "")
+    nation = nation.lower()
+
+    # EMC上にinput_nationの国が存在するか確認
+    nations_dict_list = get_API(EMC_API_URL, "nations")
+    if nations_dict_list :      # APIの取得に成功したら
+        # EMC上の全ての国の名前を取得
+        for nation_dict in nations_dict_list :
+            emc_nation = nation_dict["name"]
+            emc_nation = emc_nation.replace("_", "")
+            emc_nation = emc_nation.lower()
+
+            if nation == emc_nation :        # EMC上にnationがあった場合
+                return nation_dict["name"], True
+        
+        # EMC上にnationが無かった場合
+        return False, True
+
+    else :      # APIの取得に失敗したら
+        return False, False
+
+
 # 国の情報を更新しDBに登録
-def set_erea(nation, isnation): 
+def set_nation(nation): 
     ableAPI = True      # APIを取得できたかどうか
 
     # 国のデータを取得
-    if isnation :
-        nation_dict = get_API(EMC_API_URL, "nations/" + nation)
-        if nation_dict :
-            capital = nation_dict["capitalName"]
-            king = nation_dict["king"]
-        else :
-            ableAPI = False
+    nation_dict = get_API(EMC_API_URL, "nations/" + nation)
+    if nation_dict :
+        king = nation_dict["king"]
+    else :      # nations/の取得に失敗したら
+        ableAPI = False
 
-    # 首都のデータを取得
-    if ableAPI :
-        town_dict = get_API(EMC_API_URL, "towns/" + capital)
-        if town_dict :
-            mayor = town_dict["mayor"]
-        else :
-            ableAPI = False
-
-    # 市長のデータを取得
-    if ableAPI :
-        ins_mayor, _ = Player.objects.get_or_create(name = mayor, defaults = {"name" : mayor})
-        mayor_dict = get_API(EMC_API_URL, "allplayers/" + mayor)
-        if not mayor_dict :
-            ableAPI = False
-    else :
-        ins_mayor = None
-    
     # 国王のデータを取得
-    if ableAPI and isnation :
-        ins_king, _ = Player.objects.get_or_create(name = king, defaults = {"name" : king})
-        king_dict = get_API(EMC_API_URL, "allplayers/" + king)            
-        if not king_dict :
-            ableAPI = False
-    else :
-        ins_king = None
-
-    # 首都のデータの登録
     if ableAPI :
-        ins_capital, _ = Town.objects.get_or_create(name = capital, defaults = {"name" : capital})
-        if not ins_capital.nickname :      # nicknameが空白のとき、nameと同じにする
-            ins_capital.nickname = town_dict["name"]
-        ins_capital.population = len(town_dict["residents"])
-        ins_capital.area = town_dict["area"]
-        ins_capital.x = town_dict["x"]
-        ins_capital.z = town_dict["z"]
-        ins_capital.mayor = ins_mayor
-        ins_capital.save()
-    else :
-        ins_capital = None
+        ins_king, _ = Player.objects.get_or_create(name = king, defaults = {"name" : king})
+        king_dict = get_API(EMC_API_URL, "allplayers/" + king)       
+
+        if not king_dict :      # allplayers/の取得に失敗したら
+            ins_king = isExistDBPlayer(king)      # Player DBからアーカイブを読み取り
+            ableAPI = False
 
     # 国のデータの登録
-    if ableAPI and isnation :
+    if ableAPI :
         ins_nation, _ = Nation.objects.get_or_create(name = nation, defaults = {"name" : nation})
+
         if not ins_nation.nickname :      # nicknameが空白のとき、nameと同じにする
             ins_nation.nickname = nation_dict["name"]
         ins_nation.population = len(nation_dict["residents"])
         ins_nation.area = nation_dict["area"]
-        ins_nation.capital = ins_capital
+        ins_nation.capital = nation_dict["capitalName"]
         ins_nation.x = nation_dict["capitalX"]
         ins_nation.z = nation_dict["capitalZ"]
-        ins_nation.king = ins_king
+        ins_nation.king = ins_king      # ins_kingの情報は後にset_player関数にて取得する
         ins_nation.save()        
-    else :
-        ins_nation = None
+    else :      # 今までにAPIの取得に失敗していたら
+        ins_nation = isExistDBNation(nation)      # Nation DBからアーカイブを読み取り
+        if ins_nation :
+            ins_king = ins_nation.king      # Nation DBのアーカイブからkingインスタンスを読み取り
+        else :
+            ins_king = None
     
-    return ableAPI, ins_mayor, ins_king, ins_capital, ins_nation
+    return ableAPI, ins_king, ins_nation
 
 
 # プレイヤーの情報を更新しDBに登録
-def set_player(player, isnested):
+def set_player(player):
     ableAPI = True      # APIを取得できたかどうか
     ins_player, _ = Player.objects.get_or_create(name = player, defaults = {"name" : player})
 
     # オンラインのプレイヤーの情報を取得
     online_dict = get_API(EMC_API_URL, "onlineplayers/" + player)
-    if online_dict :
+    if online_dict :        # onlineplayers/の取得に成功したら
         ins_player.nickname = online_dict["nickname"]
         ins_player.online = True
-    else :
+    else :      # onlineplayers/の取得に失敗したら
         ins_player.online = False
+
+    # UUIDの取得と登録
+    uuid_dict = get_API(UUID_API_URL, player)
+    if uuid_dict :      # APIの取得に成功したら
+        ins_player.uuid = uuid_dict["id"]
+    else :
+        ableAPI = False
     
     # プレイヤーの情報を取得
     player_dict = get_API(EMC_API_URL, "allplayers/" + player)
-    if player_dict :        
-        # UUIDの取得と登録
-        uuid_dict = get_API(UUID_API_URL, player)
-        if uuid_dict :
-            ins_player.uuid = uuid_dict["id"]
-        else :
-            ableAPI = False
+    if player_dict :        # allplayers/の取得に成功したら
 
-        # プレイヤーの町と国の情報を登録
+        # プレイヤーの国の情報を登録
         nation = player_dict["nation"]
-        if nation:      # 国なら
-            ableAPIerea, ins_mayor, ins_king, ins_town, ins_nation = set_erea(nation, True)
+        if nation != "No Nation":       # 国に所属していたら
+            ableAPIerea, ins_king, ins_nation = set_nation(nation)
             ableAPI &= ableAPIerea
-            if ableAPI :
-                ins_player.town = ins_town
+
+            if ableAPI :        # 今までにAPIの取得に成功していたら
                 ins_player.nation = ins_nation
-                if not isnested :       # 市長と国王のみフラグが立つ
-                    set_player(ins_mayor.name, True)
-                    set_player(ins_king.name, True)
-            else :
-                ins_player.town = None
-                ins_player.nation = None
+                if player != ins_king.name :        # 国王だったら
+                    ableAPItmp = set_player(ins_king.name)      # 再帰させる
+                    ableAPI &= ableAPItmp
+
+            else :      # 今までにAPIが取得できないことがあったら
+                ins_player.nation = isExistEMCNation(nation)
                 ableAPI = False
-        else :      # 町なら
-            ableAPIerea, ins_mayor, _, ins_town, _ = set_erea(nation, False)
-            ableAPI &= ableAPIerea
-            if ableAPI :
-                ins_player.town = ins_town
-                ins_player.nation = None
-                if not isnested :       # 市長と国王のみフラグが立つ
-                    set_player(ins_mayor.name, True)
-            else :
-                ins_player.town = None
-                ins_player.nation = None
-                ableAPI = False
-            
-            # OUR_NATION市民の登録
+                
+            # OUR_NATION国民の登録
             if nation == OUR_NATION :
                 ins_citizen, _ = Citizen.get_or_create(name = player, defaults = {"name" : player})
                 ins_citizen.player = ins_player
                 ins_citizen.save()
-    else :
-        ins_player.town = None
-        ins_player.nation = None
+                
+    else :      # allplayers/の取得に失敗したら
         ableAPI = False
 
     ins_player.save()
     return ableAPI
+        
 
 """
 # PV数のカウント
@@ -195,29 +221,26 @@ def inca(request):
     our_info = {}       # テンプレートに渡す辞書
     ableAPI = True
 
-    # 大臣情報の取得と更新・OUR_NATIONの更新
     ministers = Minister.objects.all()
+    if ministers.count() :      # 大臣が一人以上いたら
+        our_info["ministers"] = ministers
 
-    ## 大臣が一人も居なかったら
-    if not ministers.count() :
-        ableAPI, _, _, _, _ = set_erea(OUR_NATION, True)
+        # 大臣の情報とOUR_NATIONの更新
+        for minister in ministers :
+            ableAPIplayer = set_player(minister)
+            ableAPI &= ableAPIplayer
 
-    ## 大臣の情報の更新
-    our_info["ministers"] = ministers
-    for minister in ministers :
-        ableAPIplayer = set_player(minister, False)
-        ableAPI &= ableAPIplayer
+    else :      # 大臣が一人もいなかったら
+        ableAPI, _, _ = set_nation(OUR_NATION)        # OUR_NATIONの更新
 
     # OUR_NATIONの情報の取得
-    ## TODO リファクタリング
-    our_nation = Nation.objects.filter(name = OUR_NATION)
-    if our_nation.count() :     # DBにOUR_NATIONがあったら
-        ins_captial = our_nation.first().capital        # 首都データを取得
-        our_dict = our_nation.values()[0]
-        our_info.update(our_dict)
-        our_info.update({"capitalName":ins_captial.name})
-    else :
-        our_info.update({"population":"エラー", "area":"エラー", "king":"エラー", "capitalName":"エラー"})
+    ins_ournation = isExistDBNation(OUR_NATION)
+
+    if ins_ournation :     # DBにOUR_NATIONがあったら
+        our_info["our"] = ins_ournation
+
+    else :      # DBにOUR_NATIONが無かったら
+        # our_info.update({"population":"エラー", "area":"エラー", "king":"エラー", "capitalName":"エラー"})
         ableAPI = False
 
     # ファーストビューの処理
@@ -229,53 +252,49 @@ def inca(request):
 
     # APIが正常に処理できたかどうかの情報の登録
     our_info["ableAPI"] = ableAPI
-    if not ableAPI :
-        our_info["error"] = "EarthMCのデータが読み込まれなかった為、一部情報が存在しないか不正確です。"
+    if not ableAPI :        # いままでにAPIの取得に失敗していたら
+        our_info["error"] = "Earth MCからの情報の取得に失敗した為、アーカイブ記事を表示します。"
 
     return render(request, 'inca/inca.html', our_info)
 
 def emctour(request) :
     emctour_dict = {"nation" : "new"}
+
     if request.method == 'POST':
-        input_nation_raw = request.POST['nation']
-        input_nation = input_nation_raw.replace(" ", "")
-        input_nation = input_nation.replace("_", "")
-        input_nation = input_nation.lower()
 
-        # EMC上にinput_nationの国が存在するか確認
-        nations_dict_list = get_API(EMC_API_URL, "nations")
-        emc_nations = []
-        for nation_dict in nations_dict_list :
-            nation_name = nation_dict["name"]
-            nation_name = nation_name.replace("_", "")
-            nation_name = nation_name.lower()
-            emc_nations.append(nation_name)
+        # フォームの読み取り
+        input_nation = request.POST['nation']
 
-        if input_nation in emc_nations :        # EMC上にinput_nationの国があった場合
+        # Tour DB上にinput_nationの国が存在するか確認
+        ins_tour = isExistDBTour(input_nation)
+        if ins_tour :     # input_nationがTour DBにあったら
+            emctour_dict["jump"] = ins_tour.name
+            return render(request, 'inca/emctour.html', emctour_dict)        # js側でリダイレクトの処理
 
-            # TourDB上にinput_nationの国が存在するか確認
-            nation_dict = Tour.objects.all()
-            for nation_ins in nation_dict :
-                nation_name = nation_ins.name
-                nation_name = nation_name.replace("_", "")
-                nation_name = nation_name.lower()
-                if nation_name == input_nation :     # TourDB上にinput_nationの国があった場合
-                    emctour_dict["jump"] = nation_ins.name      # リダイレクト先のnation
-                    return render(request, 'inca/emctour.html', emctour_dict)        # js側でリダイレクトの処理
-            
-            # TourDB上にinput_nationの国が無かった場合
-            if input_nation_raw :
-                emctour_dict["nation"] = input_nation_raw
-                emctour_dict["error"] = input_nation_raw + "の記事が存在しません。"
-                emctour_dict["noArticle"] = True
+        # input_nationがTour DBに無かった場合、EMC上にinput_nationの国が存在するか確認
+        is_nation, ableAPI = isExistEMCNation(input_nation)
+        if ableAPI :        # APIの取得に成功したら
+            if is_nation :      # input_nationがEMC上にあったら
+                emctour_dict["nation"] = is_nation
+                emctour_dict["error"] = input_nation + "の記事が存在しません。"
+                emctour_dict["noArticle"] = True        # 記事を作成しますか？トーストを表示する
+
+            else :      # input_nationがEMC上に無かったら
+                emctour_dict["error"] = input_nation + "はEarth MC上に存在しません。"
 
             return render(request, 'inca/emctour.html', emctour_dict)
 
-        # EMC上にinput_nationの国が無かった場合
-        else :
-            print("!!!!!!!!")
-            emctour_dict["error"] = input_nation_raw + "はEMC上に存在しません。"
-            return render(request, 'inca/emctour.html', emctour_dict)
+        else :      # APIの取得に失敗したら
+            # Tour DB からアーカイブがあるか確認
+            ins_tour = isExistDBTour(input_nation)
+            if ins_tour :       # Tour DBにアーカイブがあるのなら
+                emctour_dict["error"] = "Earth MCからの情報の取得に失敗した為、アーカイブ記事を表示します。"  
+                emctour_dict["info"] = ins_tour.info
+                emctour_dict["jump"] = ins_tour.name        # リダイレクト先のnation    
+                return render(request, 'inca/emctour.html', emctour_dict)
+            else :          # Tour DBにアーカイブが無いのなら
+                emctour_dict["error"] = "Earth MCからのデータの取得に失敗し、" + input_nation + "のアーカイブ記事もありません。再度時間を置いてアクセスしてください。"
+                return render(request, 'inca/emctour.html', emctour_dict)
 
     return render(request, 'inca/emctour.html', emctour_dict)
 
@@ -286,22 +305,53 @@ def modarticle(request, nation) :
 
     # 記事の登録
     if request.method == 'POST':
-        ableAPI, _, _, _, ins_nation = set_erea(nation, True)
-        if ableAPI :
-            ins_tour, _ = Tour.objects.get_or_create(name = nation, defaults = {"name" : nation})
-            ins_tour.nation = ins_nation
-            ins_tour.info = request.POST['info']
-            ins_tour.save()
-            modarticle_dict["info"] = ins_tour.info
-            modarticle_dict["jump"] = nation      # リダイレクト先のnation
-            return render(request, 'inca/modarticle.html', modarticle_dict)        # js側でリダイレクトの処理
-        else :
-            modarticle_dict["error"] = "APIの取得に失敗しました。再度時間を置いてアクセスしてください。"
-            return render(request, 'inca/emctour.html', modarticle_dict)
+        # フォームの読み取り
+        input_nation = request.POST['nation']
+        input_info = request.POST['info']
+
+        # EMC上にinput_nationの国が存在するか確認
+        nation, ableAPI = isExistEMCNation(input_nation)
+        if ableAPI :        # APIの取得に成功したら
+            if nation :      # input_nationがEMC上にあったら
+
+                # Tourレコードの作成・更新
+                ableAPI, _, ins_nation = set_nation(nation)
+                if ableAPI :        # APIの取得に成功したら
+                    ins_tour, _ = Tour.objects.get_or_create(name = nation, defaults = {"name" : nation})
+                    ins_tour.nation = ins_nation
+                    ins_tour.info = request.POST['info']
+                    ins_tour.save()
+
+                    modarticle_dict["info"] = ins_tour.info
+                    modarticle_dict["jump"] = nation      # リダイレクト先のnation
+                    # TODO 作成完了トーストの表示
+                    return render(request, 'inca/modarticle.html', modarticle_dict)        # js側でリダイレクトの処理
+
+            else :      # input_nationがEMC上に無かった場合
+                modarticle_dict["error"] = input_nation + "はEarth MC上に存在しません。"
+                modarticle_dict["info"] = input_info
+                return render(request, 'inca/modarticle.html', modarticle_dict)
+
+        if not ableAPI :      # 今までにAPIの取得に失敗したら
+            # Tour DB からアーカイブがあるか確認
+            ins_tour = isExistDBTour(input_nation)
+            if ins_tour :       # Tour DBにアーカイブがあるのなら
+                nation = ins_tour.name
+                ins_tour, _ = Tour.objects.get_or_create(name = nation, defaults = {"name" : nation})
+                ins_tour.info = request.POST['info']
+                ins_tour.save()
+
+                modarticle_dict["error"] = "Earth MCからの情報の取得に失敗した為、アーカイブ記事を表示します。"  
+                modarticle_dict["info"] = ins_tour.info
+                modarticle_dict["jump"] = nation        # リダイレクト先のnation    
+                return render(request, 'inca/modarticle.html', modarticle_dict)
+            else :          # Tour DBにアーカイブが無いのなら
+                modarticle_dict["error"] = "Earth MCからのデータの取得に失敗し、" + input_nation + "のアーカイブ記事もありません。再度時間を置いてアクセスしてください。"
+                return render(request, 'inca/emctour.html', modarticle_dict)
 
     # infoの取得
     ins_tours = Tour.objects.filter(name = nation)
-    if ins_tours.count() :     # DBにOnationがあったら
+    if ins_tours.count() :     # Tour DBにnationがあったら
         ins_tour = ins_tours.first()
         modarticle_dict["info"] = ins_tour.info
     else:
@@ -314,33 +364,43 @@ def modarticle(request, nation) :
 def nation(request, nation) :
     nation_dict = {}        # テンプレートに渡す辞書
 
-    ins_tours = Tour.objects.filter(name = nation)
-    if ins_tours.count() :     # Tour DBにnationがあったら
-        ins_tour = ins_tours.first()
-        ableAPInation, _, ins_king, _, ins_nation = set_erea(nation, True)
-        if ableAPInation :
-            ableAPIplayer = set_player(ins_king.name, False)
-
-        ins_tour.nation = ins_nation
-        ins_tour.save()
-        nation_dict["tour"] = ins_tour
-        nation_dict["king"] = ins_king
-        if ableAPInation :
-            nation_dict["ableAPI"] = ableAPIplayer
+    ins_tour = isExistDBTour(nation)
+    if ins_tour :       # Tour DBにnationがあったら
+        nation = ins_tour.name
+        ableAPInation, ins_king, ins_nation = set_nation(nation)
+        if ins_king :
+            ableAPIplayer = set_player(ins_king.name)
+            ableAPI = ableAPInation & ableAPIplayer
         else :
-            nation_dict["ableAPI"] = False
+            ableAPI = False
+
+        if ableAPI :        # APIを取得できたら
+            # Tour レコードの登録
+            ins_tour.nation = ins_nation
+            ins_tour.save()
+
+            nation_dict["tour"] = ins_tour
+            nation_dict["king"] = ins_king
+            nation_dict["ableAPI"] = ableAPI
+            return render(request, 'inca/nation.html', nation_dict)
         
-        if not nation_dict["ableAPI"] :
-            nation_dict["error"] = "APIの取得に失敗しました。再度時間を置いてアクセスしてください。"
-            nation_dict["nation"] = "new"
-            return render(request, 'inca/emctour.html', nation_dict)
+        else :      # APIの取得に失敗したら
+            # Tour DB からアーカイブがあるか確認
+            ins_tour = isExistDBTour(nation)
+            if ins_tour :       # Tour DBにアーカイブがあるのなら
+                nation_dict["error"] = "Earth MCからの情報の取得に失敗した為、アーカイブ記事を表示します。"  
+                nation_dict["tour"] = ins_tour
+                nation_dict["king"] = ins_king
+                nation_dict["ableAPI"] = ableAPI  
+                return render(request, 'inca/nation.html', nation_dict)
+            else :          # Tour DBにアーカイブが無いのなら
+                nation_dict["error"] = "Earth MCからのデータの取得に失敗しました。再度時間を置いてアクセスしてください。"      
+                nation_dict["nation"] = "new"
+                return render(request, 'inca/modarticle.html', nation_dict)
 
-        return render(request, 'inca/nation.html', nation_dict)
-    else :
-        if ins_tour :
-            nation_dict["error"] = nation + "はEMC上に存在しません。"
-        else :
-            nation_dict["error"] = "APIの取得に失敗しました。再度時間を置いてアクセスしてください。"
+    else :      # Tour DBにnationが無かったら
+        nation_dict["nation"] = nation
+        nation_dict["error"] = nation + "の記事が存在しません。"
         return render(request, 'inca/emctour.html', nation_dict)
 
 
