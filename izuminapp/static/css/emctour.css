@@ -1,20 +1,32 @@
 .nation-form {
     display:inline-flex;
     position:absolute;
-    top: 50%;
+    top: calc(50% + 32px);
     left: 50%;
     transform: translate(-50%, -50%);
     -webkit-transform: translate(-50%, -50%);
     -ms-transform: translate(-50%, -50%);
 }
 
+@media (max-width: 640px) {
+    .nation-form {
+        top: calc(50% + 64px);
+    }
+}
+
 #nation {
     height: 50px;
-    width: 250px;
+    width: 240px;
     font-size: 20px;
     text-align: center;
     border: none;
     box-shadow: 0 0 0 1px #ccc inset;
+}
+
+@media (max-width: 360px) {
+    #nation {
+        width: 180px;
+    }
 }
 
 #nation:focus {
@@ -31,11 +43,24 @@
     width: 100px;
     border: none;
     font-size: 20px;
+    cursor: pointer;
+}
+
+@media (max-width: 360px) {
+    .nation-submit {
+        width: 80px;
+    }
+}
+
+.nation-submit:hover {
+    background-color: #ddd;
+
 }
 
 .nation-submit:active {
     border: none;
     box-shadow: 0 0 0 2px #BB002D inset;
+    background-color: #eee;
 }
 
 .modarticle {

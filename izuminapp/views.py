@@ -269,6 +269,7 @@ def emctour(request) :
         ins_tour = isExistDBTour(input_nation)
         if ins_tour :     # input_nationがTour DBにあったら
             emctour_dict["jump"] = ins_tour.name
+            emctour_dict["info"] = ins_tour.name + "の記事を読み込んでいます"
             return render(request, 'inca/emctour.html', emctour_dict)        # js側でリダイレクトの処理
 
         # input_nationがTour DBに無かった場合、EMC上にinput_nationの国が存在するか確認
@@ -288,8 +289,8 @@ def emctour(request) :
             # Tour DB からアーカイブがあるか確認
             ins_tour = isExistDBTour(input_nation)
             if ins_tour :       # Tour DBにアーカイブがあるのなら
-                emctour_dict["error"] = "Earth MCからの情報の取得に失敗した為、アーカイブ記事を表示します。"  
-                emctour_dict["info"] = ins_tour.info
+                emctour_dict["error"] = "Earth MCからの情報の取得に失敗しました。"  
+                emctour_dict["info"] = ins_tour.name + "のアーカイブ記事を表示します。"
                 emctour_dict["jump"] = ins_tour.name        # リダイレクト先のnation    
                 return render(request, 'inca/emctour.html', emctour_dict)
             else :          # Tour DBにアーカイブが無いのなら
@@ -341,8 +342,8 @@ def modarticle(request, nation) :
                 ins_tour.info = request.POST['info']
                 ins_tour.save()
 
-                modarticle_dict["error"] = "Earth MCからの情報の取得に失敗した為、アーカイブ記事を表示します。"  
-                modarticle_dict["info"] = ins_tour.info
+                modarticle_dict["error"] = "Earth MCからの情報の取得に失敗しました。"  
+                modarticle_dict["info"] = nation + "のアーカイブ記事を表示します。"
                 modarticle_dict["jump"] = nation        # リダイレクト先のnation    
                 return render(request, 'inca/modarticle.html', modarticle_dict)
             else :          # Tour DBにアーカイブが無いのなら
@@ -387,6 +388,7 @@ def nation(request, nation) :
         else :      # APIの取得に失敗したら
             # Tour DB からアーカイブがあるか確認
             ins_tour = isExistDBTour(nation)
+            print("!!!!!!!!!!!!!!", ins_tour)
             if ins_tour :       # Tour DBにアーカイブがあるのなら
                 nation_dict["error"] = "Earth MCからの情報の取得に失敗した為、アーカイブ記事を表示します。"  
                 nation_dict["tour"] = ins_tour

@@ -466,7 +466,7 @@ code {
 .skin {
     display: block;
     width: 120px;
-    margin: 20px auto;
+    margin: 20px auto 10px auto;
 }
 
 ol {

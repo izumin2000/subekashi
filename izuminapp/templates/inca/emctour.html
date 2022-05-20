@@ -93,23 +93,28 @@
                 "debug": false,
                 "newestOnTop": false,
                 "progressBar": false,
-                "positionClass": "toast-bottom-left",
+                "positionClass": "toast-bottom-right",
                 "preventDuplicates": false,
                 "onclick": null,
-                "timeOut": "50000",
-                "extendedTimeOut": "50000",
+                "timeOut": "20000",
+                "extendedTimeOut": "20000",
                 "showEasing": "swing",
                 "hideEasing": "linear",
-            };
-
-            toastr.options.onclick = function () {
-                window.location.href = "{% url 'modarticle' nation %}";
             };
 
             // toastrのerror表示
             "{% if error %}"
                 toastr.warning("{{ error }}");
             "{% endif %}"
+
+            // toastrのinfo表示
+            "{% if info %}"
+                toastr.info("{{ info }}");
+            "{% endif %}"
+
+            toastr.options.onclick = function () {
+                window.location.href = "{% url 'modarticle' nation %}";
+            };
             
             // toastrの記事作成案内ページ
             "{% if noArticle %}"
