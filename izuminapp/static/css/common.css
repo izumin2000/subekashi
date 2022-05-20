@@ -344,7 +344,7 @@ code {
     line-height: 110px;
 }
 
-.info_item a, .info_item label {
+.info_item a, .info_item label, .info_memo {
     display: block;
     color: #000;
     margin-top: 15px;
@@ -352,6 +352,12 @@ code {
     text-decoration: underline 2px #BB002D;
     font-family: sans-serif;
     line-height: 16px;
+}
+
+.info_memo {
+    font-size: 14px !important;
+    text-decoration: none;
+    margin: 15px 0 5px 0;
 }
 
 .unknown_skin {

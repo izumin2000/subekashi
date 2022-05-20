@@ -203,8 +203,27 @@ def set_player(player):
 
     ins_player.save()
     return ableAPI
-        
 
+
+# dynmapの拡大率
+def mapzoom(erea) :
+    zoom = 8 - int(erea**0.2)
+    if zoom > 8 :
+        zoom = 8
+    if zoom < 1 :
+        zoom = 1
+    
+    return zoom
+
+
+# テンプレートに渡す用のテレポートコマンドの生成
+def teleport(nation) :
+    if len(nation) > 5 :
+        nation = nation[:3]
+    
+    return "/n spawn " + nation
+
+    
 """
 # PV数のカウント
 today = date.today()
@@ -382,21 +401,26 @@ def nation(request, nation) :
 
             nation_dict["tour"] = ins_tour
             nation_dict["king"] = ins_king
+            nation_dict["mapzoom"] = mapzoom(ins_tour.nation.area)
+            nation_dict["teleport"] = "/n spawn " + teleport(nation)
+            nation_dict["km2"] = ins_tour.nation.area * 256 / 1000
             nation_dict["ableAPI"] = ableAPI
             return render(request, 'inca/nation.html', nation_dict)
         
         else :      # APIの取得に失敗したら
             # Tour DB からアーカイブがあるか確認
             ins_tour = isExistDBTour(nation)
-            print("!!!!!!!!!!!!!!", ins_tour)
             if ins_tour :       # Tour DBにアーカイブがあるのなら
                 nation_dict["error"] = "Earth MCからの情報の取得に失敗した為、アーカイブ記事を表示します。"  
                 nation_dict["tour"] = ins_tour
                 nation_dict["king"] = ins_king
-                nation_dict["ableAPI"] = ableAPI  
+                nation_dict["mapzoom"] = mapzoom(ins_tour.nation.area)
+                nation_dict["teleport"] = teleport(nation)
+                nation_dict["km2"] = ins_tour.nation.area * 256 / 1000
+                nation_dict["ableAPI"] = ableAPI 
                 return render(request, 'inca/nation.html', nation_dict)
             else :          # Tour DBにアーカイブが無いのなら
-                nation_dict["error"] = "Earth MCからのデータの取得に失敗しました。再度時間を置いてアクセスしてください。"      
+                nation_dict["error"] = "Earth MCからのデータの取得にし、" + nation + "のアーカイブ記事もありません。再度時間を置いてアクセスしてください。"      
                 nation_dict["nation"] = "new"
                 return render(request, 'inca/modarticle.html', nation_dict)
 

@@ -48,8 +48,10 @@
                     <div class="topmargin"></div>
                     <h1>{{ tour.nation.name }}</h1>
                     <div class="underline"></div>
-                    <h2>概要 <a href="{% url 'modarticle' tour.nation.name %}"><i class="fas fa-pencil-alt"></i></a></h2>
+                    <h2>概要</h2>
                     <p>{{ tour.info }}</p>
+                    <br />
+                    <a class="edit-article" href="{% url 'modarticle' tour.nation.name %}"><i class="fas fa-pencil-alt"></i>記事を編集する</a>
 
                     <h2>基本情報</h2>
                     {% if not ableAPI %}
@@ -92,7 +94,23 @@
                             <div class="info_underline"></div>
                             <p class="info_data">{{ tour.nation.capital }}</p>
                             <i class="fas fa-building"></i>
-                            <a href="https://earthmc.net/map/nova/?worldname=earth&mapname=flat&zoom=6&x={{ tour.nation.capital.x }}&y=64&z={{ tour.nation.capital.z }}">DynMapで見る</a>
+                            <a href="#dynmap">DynMapで見る</a>
+                        </div>
+
+                        <div class="info_item">
+                            <p class="info_title">面積</p>
+                            <div class="info_underline"></div>
+                            <p class="info_data">{{ tour.nation.area }} チャンク</p>
+                            <i class="fas fa-cubes"></i>
+                            <a onclick="whatIsChank()">チャンクとは</a>
+                        </div>
+
+                        <div class="info_item">
+                            <p class="info_title">テレポート</p>
+                            <div class="info_underline"></div>
+                            <p class="info_data"><code onclick="copyTeleport()">{{ teleport }}</code></p>
+                            <i class="fas fa-share"></i>
+                            <p class="info_memo"><code onclick="copyTeleport()">コマンド</code>をクリックでコピー</p>
                         </div>
 
                         <div class="info_item">
@@ -101,16 +119,32 @@
                             <p class="info_data">{{ tour.nation.population }} 人</p>
                             <i class="fas fa-user-friends"></i>
                         </div>
-
-                        <div class="info_item">
-                            <p class="info_title">面積</p>
-                            <div class="info_underline"></div>
-                            <p class="info_data">{{ tour.nation.area }} チャンク</p>
-                            <i class="fas fa-cubes"></i>
-                        </div>
                     </div>
+                    <p>ユーザー名が<span class="isonline">赤色</span>ならオンライン、<span class="isoffline">青色</span>ならオフライン、黒色ならオンライン情報の未取得を示しています。</p>
+
+                    <h2>マップ</h2>
+                    <iframe id="dynmap" src="https://earthmc.net/map/nova/?worldname=earth&mapname=flat&zoom={{ mapzoom }}&x={{ tour.nation.x }}&y=64&z={{ tour.nation.z }}"></iframe>
+
+                    <h2>画像</h2>
+
                 </section>
             </article>
+
+            <footer>
+                <div class="footer-container">
+                    <div class="footer-left">
+                        <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+                    </div>
+    
+                    <div class="footer-right">
+                        <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.ja"><img src="https://creativecommons.org/images/deed/zero_white_x2.png"><img src="https://creativecommons.org/images/deed/cc_icon_white_x2.png"></a>
+                        <p>created by KANATA2000</p>
+                        <!-- <a id="author" onclick="notfound()">KANATA2000</a> -->
+                    </div>
+    
+                    <div class="clear"></div>
+                </div>
+            </footer>
         </main>
     </body>
 
@@ -146,5 +180,50 @@
                 toastr.info("{{ info }}");
             "{% endif %}"
         };
+    </script>
+
+    <script>
+        function whatIsChank() {
+            toastr.options = {
+                "closeButton": true,
+                "debug": false,
+                "newestOnTop": false,
+                "progressBar": true,
+                "positionClass": "toast-bottom-right",
+                "preventDuplicates": false,
+                "onclick": null,
+                "timeOut": "20000",
+                "extendedTimeOut": "20000",
+                "showEasing": "swing",
+                "hideEasing": "linear",
+            };
+
+            toastr.info("チャンクとはMinecraftで使われる広さの単位で、1チャンクは16ブロック×16ブロックです。");
+            toastr.info("1ブロックは1メートルなので、{{ tour.nation.name }}の国土面積は{{ km2 }}km²になります。")
+        }
+
+        //コピーtoastr
+        function copyTeleport() {
+            text = "/n spawn {{ tour.nation.name }}"
+            if(navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(function() {
+            });}
+            toastr.options = {
+                "closeButton": false,
+                "debug": false,
+                "newestOnTop": false,
+                "progressBar": true,
+                "positionClass": "toast-bottom-right",
+                "preventDuplicates": false,
+                "onclick": null,
+                "timeOut": "3000",
+                "extendedTimeOut": "0",
+                "showEasing": "swing",
+                "hideEasing": "linear",
+            }
+
+            toastr.success(text + " をコピーしました！")
+        }
+
     </script>
 </html>

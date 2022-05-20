@@ -1,6 +1,14 @@
+.edit-article {
+    font-size: 14px;
+    margin-left: 30px;
+}
 
+.fa-share {
+    font-size: 95px !important;
+    margin: 10px 0 5px 0 !important;
+}
 
-#dynamap {
+#dynmap {
     display: block;
     height: 65vh;
     width: 65vw;
