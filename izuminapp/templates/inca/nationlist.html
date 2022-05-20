@@ -9,16 +9,16 @@
         <meta name="twitter:card" content="summary">
         <meta name="twitter:site" content="@KANATA20002">
         <meta name="og:type" content="website">
-        <meta name="og:title" content="EMC tour">
+        <meta name="og:title" content="EMC tour | 国一覧">
         <meta name="og:image" content="{% static 'image/flag.png' %}">
         <meta name="og:description" content="EarthMCの国に関する情報を掲載しているサイトです。">
         <meta name="og:url" content="https://izuminapp.pythonanywhere.com/inca">
         <meta name="description" content="EarthMCの国に関する情報を掲載しているサイトです。">
         <meta meta="" name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
         <meta charset="utf-8">
-        <title>EMC tour</title>
+        <title>EMC tour | {{ tour.nation.name }}</title>
         <link rel="stylesheet" type="text/css" href="{% static 'css/common.css'%}">
-        <link rel="stylesheet" type="text/css" href="{% static 'css/modarticle.css'%}">
+        <link rel="stylesheet" type="text/css" href="{% static 'css/nationlist.css'%}">
         <link rel="shortcut icon" href="{% static 'image/flag.ico' %}">
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
         <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" /> <!-- toastr -->
@@ -34,7 +34,7 @@
             <div class="header-right">
                 <nav>
                     <a href="{% url 'emctour' %}">トップ</a>
-                    <a href="{% url 'modarticle' nation %}">作成・編集</a>
+                    <a href="{% url 'modarticle' 'new' %}">作成・編集</a>
                     <a href="{% url 'nationlist' %}">国一覧</a>
                 </nav>
             </div>
@@ -43,21 +43,36 @@
         </header>
 
         <main>
-            <article>                
-                <section id="articleform">
-                    <form action="{% url 'modarticle' nation %}" method="POST">
-                        {% csrf_token %}
-                        <label>国名<input type="text" id="nationInput" name="nation" value="{{ nation }}"></label>
-                        <label>概要<input type="text" id="infomationInput" name="info" value="{{ info }}"></label>
-                        <button class="formbutton">登録</button>
-                    </form>
+            <article>
+                <section class="nation_info">
+                    <div class="topmargin"></div>
+                    <h1>国一覧</h1>
+
                 </section>
             </article>
+
+            <footer>
+                <div class="footer-container">
+                    <div class="footer-left">
+                        <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+                    </div>
+    
+                    <div class="footer-right">
+                        <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.ja"><img src="https://creativecommons.org/images/deed/zero_white_x2.png"><img src="https://creativecommons.org/images/deed/cc_icon_white_x2.png"></a>
+                        <p>created by KANATA2000</p>
+                        <!-- <a id="author" onclick="notfound()">KANATA2000</a> -->
+                    </div>
+    
+                    <div class="clear"></div>
+                </div>
+            </footer>
         </main>
     </body>
 
+    <script src="{% static 'js/playerpopup.js' %}"></script>        <!-- プレイヤーポップアップ -->
+
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> <!-- jquery -->
-    
+
     <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
 
     <script>
@@ -85,26 +100,12 @@
             "{% if infomation %}"
                 toastr.info("{{ infomation }}");
             "{% endif %}"
-
-            toastr.options.onclick = function () {
-                window.location.href = "{% url 'modarticle' nation %}";
-            };
-
-            // toastrの記事作成案内ページ
-            "{% if noArticle %}"
-                toastr.info("{{ nation }}の記事を作成する場合は<a class='modarticle' href={% url 'modarticle' nation %}>こちら</a>をクリックしてください");
-            "{% endif %}"
-
-            // nation inputの中身が"new"なら消す
-            let nation = document.getElementById('nationInput');
-            if (nation.value == "new") {
-                nation.value = "";
-            }
-
-            // nationのリダイレクト
-            "{% if jump %}"
-                window.location.href = "{% url 'nation' jump %}";
-            "{% endif %}"
         };
+    </script>
+
+    <script>
+        function whatIsChank() {
+            
+        }
     </script>
 </html>

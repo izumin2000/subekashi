@@ -302,9 +302,7 @@
     <!-- コピーのtoastr -->
     <script>
         function copyCode(text) {
-            if(navigator.clipboard) {
-                navigator.clipboard.writeText(text).then(function() {
-            });}
+            navigator.clipboard.writeText(text);
             toastr.options = {
                 "closeButton": false,
                 "debug": false,

@@ -207,7 +207,7 @@ def set_player(player):
 
 # dynmapの拡大率
 def mapzoom(erea) :
-    zoom = 8 - int(erea**0.2)
+    zoom = 8 - int(erea**0.22)
     if zoom > 8 :
         zoom = 8
     if zoom < 1 :
@@ -428,6 +428,11 @@ def nation(request, nation) :
         nation_dict["nation"] = nation
         nation_dict["error"] = nation + "の記事が存在しません。"
         return render(request, 'inca/emctour.html', nation_dict)
+
+# 国一覧
+def nationlist(request) :
+    nationlist_dict = {"nations" : Tour.objects.all()}
+    return render(request, 'inca/nationlist.html', nationlist_dict)
 
 
 """

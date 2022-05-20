@@ -35,7 +35,7 @@
                 <nav>
                     <a href="{% url 'emctour' %}">トップ</a>
                     <a href="{% url 'modarticle' 'new' %}">作成・編集</a>
-                    <a onclick="notfound()">国一覧</a>
+                    <a href="{% url 'nationlist' %}">国一覧</a>
                 </nav>
             </div>
 
@@ -58,6 +58,13 @@
                         <p class="info_warning">この情報は最新ではありません。</p>
                     {% endif %}
                     <div class="container">
+                        <div class="info_item">
+                            <p class="info_title">人口</p>
+                            <div class="info_underline"></div>
+                            <p class="info_data">{{ tour.nation.population }} 人</p>
+                            <i class="fas fa-user-friends"></i>
+                        </div>
+
                         <div class="info_item">
                             <p class="info_title">国王</p>
                             <div class="info_underline"></div>
@@ -111,13 +118,6 @@
                             <p class="info_data"><code onclick="copyTeleport()">{{ teleport }}</code></p>
                             <i class="fas fa-share"></i>
                             <p class="info_memo"><code onclick="copyTeleport()">コマンド</code>をクリックでコピー</p>
-                        </div>
-
-                        <div class="info_item">
-                            <p class="info_title">人口</p>
-                            <div class="info_underline"></div>
-                            <p class="info_data">{{ tour.nation.population }} 人</p>
-                            <i class="fas fa-user-friends"></i>
                         </div>
                     </div>
                     <p>ユーザー名が<span class="isonline">赤色</span>ならオンライン、<span class="isoffline">青色</span>ならオフライン、黒色ならオンライン情報の未取得を示しています。</p>
@@ -205,9 +205,7 @@
         //コピーtoastr
         function copyTeleport() {
             text = "/n spawn {{ tour.nation.name }}"
-            if(navigator.clipboard) {
-                navigator.clipboard.writeText(text).then(function() {
-            });}
+            navigator.clipboard.writeText(text);       // 参考：https://webfrontend.ninja/js-clipboard-write/
             toastr.options = {
                 "closeButton": false,
                 "debug": false,
