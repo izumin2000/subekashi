@@ -14,55 +14,6 @@
     }
 }
 
-#nation {
-    height: 50px;
-    width: 240px;
-    font-size: 20px;
-    text-align: center;
-    border: none;
-    box-shadow: 0 0 0 1px #ccc inset;
-}
-
-@media (max-width: 360px) {
-    #nation {
-        width: 180px;
-    }
-}
-
-#nation:focus {
-    outline: 0;
-    box-shadow: 0 0 0 2px #BB002D inset;
-}
-
-#nation:focus::placeholder {
-    color: transparent;
-}
-
-.nation-submit {
-    height: 49.5px;
-    width: 100px;
-    border: none;
-    font-size: 20px;
-    cursor: pointer;
-}
-
-@media (max-width: 360px) {
-    .nation-submit {
-        width: 80px;
-    }
-}
-
-.nation-submit:hover {
-    background-color: #ddd;
-
-}
-
-.nation-submit:active {
-    border: none;
-    box-shadow: 0 0 0 2px #BB002D inset;
-    background-color: #eee;
-}
-
 .modarticle {
     margin: 0px;
     color: #70e2ff;

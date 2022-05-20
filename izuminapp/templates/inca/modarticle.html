@@ -44,12 +44,12 @@
 
         <main>
             <article>                
-                <section class="map-search">
-                    <form  action="{% url 'modarticle' nation %}" method="POST">
+                <section id="articleform">
+                    <form action="{% url 'modarticle' nation %}" method="POST">
                         {% csrf_token %}
-                        <input type="text" id="nation" name="nation" value="{{ nation }}">
-                        <input type="text" id="info" name="info" value="{{ info }}">
-                        <button class="submitButton">登録</button>
+                        <label>国名<input type="text" id="nationInput" name="nation" value="{{ nation }}"></label>
+                        <label>概要<input type="text" id="infomationInput" name="info" value="{{ info }}"></label>
+                        <button class="formbutton">登録</button>
                     </form>
                 </section>
             </article>
@@ -82,8 +82,8 @@
             "{% endif %}"
 
             // toastrのinfo表示
-            "{% if info %}"
-                toastr.info("{{ info }}");
+            "{% if infomation %}"
+                toastr.info("{{ infomation }}");
             "{% endif %}"
 
             toastr.options.onclick = function () {
@@ -96,7 +96,7 @@
             "{% endif %}"
 
             // nation inputの中身が"new"なら消す
-            let nation = document.getElementById('nation');
+            let nation = document.getElementById('nationInput');
             if (nation.value == "new") {
                 nation.value = "";
             }

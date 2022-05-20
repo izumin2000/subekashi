@@ -223,7 +223,7 @@ def teleport(nation) :
     
     return "/n spawn " + nation
 
-    
+
 """
 # PV数のカウント
 today = date.today()
@@ -288,7 +288,7 @@ def emctour(request) :
         ins_tour = isExistDBTour(input_nation)
         if ins_tour :     # input_nationがTour DBにあったら
             emctour_dict["jump"] = ins_tour.name
-            emctour_dict["info"] = ins_tour.name + "の記事を読み込んでいます"
+            emctour_dict["infomation"] = ins_tour.name + "の記事を読み込んでいます"
             return render(request, 'inca/emctour.html', emctour_dict)        # js側でリダイレクトの処理
 
         # input_nationがTour DBに無かった場合、EMC上にinput_nationの国が存在するか確認
@@ -309,7 +309,7 @@ def emctour(request) :
             ins_tour = isExistDBTour(input_nation)
             if ins_tour :       # Tour DBにアーカイブがあるのなら
                 emctour_dict["error"] = "Earth MCからの情報の取得に失敗しました。"  
-                emctour_dict["info"] = ins_tour.name + "のアーカイブ記事を表示します。"
+                emctour_dict["infomation"] = ins_tour.name + "のアーカイブ記事を表示します。"
                 emctour_dict["jump"] = ins_tour.name        # リダイレクト先のnation    
                 return render(request, 'inca/emctour.html', emctour_dict)
             else :          # Tour DBにアーカイブが無いのなら
@@ -362,7 +362,7 @@ def modarticle(request, nation) :
                 ins_tour.save()
 
                 modarticle_dict["error"] = "Earth MCからの情報の取得に失敗しました。"  
-                modarticle_dict["info"] = nation + "のアーカイブ記事を表示します。"
+                modarticle_dict["infomation"] = nation + "のアーカイブ記事を表示します。"
                 modarticle_dict["jump"] = nation        # リダイレクト先のnation    
                 return render(request, 'inca/modarticle.html', modarticle_dict)
             else :          # Tour DBにアーカイブが無いのなら

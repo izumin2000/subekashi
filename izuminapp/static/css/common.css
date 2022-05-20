@@ -445,6 +445,7 @@ code {
     font-size: 16px;
 }
 
+
 /* アイテムリスト */
 .itemlist {
     list-style-type: disc;
@@ -481,6 +482,56 @@ ol {
 }
 
 
+/* フォーム */
+input {
+    height: 50px;
+    width: 240px;
+    font-size: 20px;
+    text-align: center;
+    border: none;
+    box-shadow: 0 0 0 1px #ccc inset;
+}
+
+@media (max-width: 360px) {
+    input {
+        width: 180px;
+    }
+}
+
+input:focus {
+    outline: 0;
+    box-shadow: 0 0 0 2px #BB002D inset;
+}
+
+input:focus::placeholder {
+    color: transparent;
+}
+
+.formbutton {
+    height: 49.5px;
+    width: 100px;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+@media (max-width: 360px) {
+    .formbutton {
+        width: 80px;
+    }
+}
+
+.formbutton:hover {
+    background-color: #ddd;
+}
+
+.formbutton:active {
+    border: none;
+    box-shadow: 0 0 0 2px #BB002D inset;
+    background-color: #eee;
+}
+
+
 /* フッダー */
 footer {
     width: 100%;
@@ -497,7 +548,7 @@ footer {
     margin: 20px 0px 0px 10px;
     color: white;
 }
-.footer-left .twitter-share-button {
+.footer-left .twitter-share-.formbutton {
     color: #fff;
 }
 

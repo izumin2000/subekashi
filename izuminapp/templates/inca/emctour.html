@@ -51,7 +51,7 @@
                 </section>
                 <form action="{% url 'emctour' %}" method="POST" class="nation-form">{% csrf_token %}
                     <input type="text" id="nation" name="nation" placeholder="国名を検索" value="{{ nation }}">
-                    <button class="nation-submit">検索</button>
+                    <button class="formbutton">検索</button>
                 </form>
                 
                 <section class="map-search">
@@ -108,8 +108,8 @@
             "{% endif %}"
 
             // toastrのinfo表示
-            "{% if info %}"
-                toastr.info("{{ info }}");
+            "{% if infomation %}"
+                toastr.info("{{ infomation }}");
             "{% endif %}"
 
             toastr.options.onclick = function () {
