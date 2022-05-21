@@ -1,0 +1,22 @@
+.nationstable {
+	border-collapse: collapse;
+    margin: 30px auto;
+}
+
+th, td {
+    padding: 10px;
+    font-size: 20px;
+}
+
+.nationstable th, .nationstable td {
+	border: 1px solid #000;
+}
+
+.nationstable tr:nth-child(even) {
+	background: #ddd;
+}
+
+footer {
+    position: absolute !important;
+    bottom: 0 !important;
+}

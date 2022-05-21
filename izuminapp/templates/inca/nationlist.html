@@ -19,7 +19,7 @@
         <title>EMC tour | 国一覧</title>
         <link rel="stylesheet" type="text/css" href="{% static 'css/common.css'%}">
         <link rel="stylesheet" type="text/css" href="{% static 'css/nationlist.css'%}">
-        <link rel="shortcut icon" href="{% static 'image/flag.ico' %}">
+        <link rel="shortcut icon" href="{% static 'image/emctour.ico' %}">
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
         <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" /> <!-- toastr -->
     </head>
@@ -47,18 +47,22 @@
                 <section class="nation_info">
                     <div class="topmargin"></div>
                     <h1>国一覧</h1>
+                    <div  class="underline"></div>
 
-                    <table border="0">
+                    <table class="nationstable">
                         <tr>
                             <th>国名</th>
                             <th>面積</th>
                             <th>人口</th>
+                            <th>座標</th>
                         </tr>
                     {% for nation in nations %}
                         <tr>
-                            <th>{{ nation.name }} <img class="flag" src="https://countryflagsapi.com/png/{{ nation.name }}"></th>
-                            <th>{{ nation.area }}</th>
-                            <th>{{ nation.population}}</th>
+                            <td><a href="{% url 'nation' nation.name %}">{{ nation.name }}</a></td>
+                            <td>{{ nation.area }}</td>
+                            <td>{{ nation.population }}</td>
+                            <td>({{ nation.x }}, {{ nation.z }})</td>
+
                         </tr>
                     {% endfor %}
                     </table>
