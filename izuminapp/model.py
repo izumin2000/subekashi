@@ -2,6 +2,7 @@ from django.db import models
 from cloudinary.models import CloudinaryField
 
 class Player(models.Model) :
+    moddate = models.DateField(null = True, blank = True)
     name = models.CharField(default = "", max_length = 50)
     nickname = models.CharField(default = "", max_length = 50)
     uuid = models.CharField(default = "", max_length = 50)
@@ -36,16 +37,18 @@ class Tour(models.Model) :
     name = models.CharField(default = "", max_length = 500)
     nation = models.ForeignKey("Nation", on_delete = models.DO_NOTHING, blank = True, null = True)
     info = models.CharField(default = "", max_length = 500)
+    screenshot = models.ForeignKey("Screenshot", on_delete = models.DO_NOTHING, blank = True, null = True, related_name = "tour_screenshot")
 
 class Nation(models.Model) :
+    moddate = models.DateField(null = True, blank = True)
     name = models.CharField(default = "", max_length = 50)
-    nickname = models.CharField(default = "", max_length = 50)
     population = models.IntegerField(default = 0)
     area = models.IntegerField(default = 0)
     capital = models.CharField(default = "", max_length = 50)
     x = models.IntegerField(default = 0)
     z = models.IntegerField(default = 0)
     king = models.ForeignKey("Player", on_delete = models.DO_NOTHING, blank = True, null = True, related_name = "nation_king")
+    istour = models.BooleanField(default = False)
 
 class Screenshot(models.Model) :
     title = models.CharField(default = "無題", max_length = 20)
