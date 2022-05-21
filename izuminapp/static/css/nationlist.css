@@ -1,6 +1,22 @@
+#sortnations {
+    font-size: 20px;
+}
+
+label {
+    display: inline-block;
+    margin: 40px 5px 10px calc(50% - 230px);
+    font-size: 20px;
+}
+
+@media (max-width: 480px) {
+    label {
+        margin-left: calc(50% - 145px);
+    }
+}
+
 .nationstable {
 	border-collapse: collapse;
-    margin: 30px auto;
+    margin: 10px auto;
 }
 
 th, td {

@@ -48,20 +48,26 @@
                     <div class="topmargin"></div>
                     <h1>国一覧</h1>
                     <div  class="underline"></div>
-
+                    
+                    <label>並び替え</label>
+                    <select id="sortnations">
+                        <option value="moddate">更新日時</option>
+                        <option value="erea">面積</option>
+                        <option value="population">人口</option>
+                    </select>
                     <table class="nationstable">
                         <tr>
                             <th>国名</th>
                             <th>面積</th>
                             <th>人口</th>
-                            <th>座標</th>
+                            <th id="thposition">座標</th>
                         </tr>
                     {% for nation in nations %}
                         <tr>
                             <td><a href="{% url 'nation' nation.name %}">{{ nation.name }}</a></td>
                             <td>{{ nation.area }}</td>
                             <td>{{ nation.population }}</td>
-                            <td>({{ nation.x }}, {{ nation.z }})</td>
+                            <td class="tdposition">({{ nation.x }}, {{ nation.z }})</td>
 
                         </tr>
                     {% endfor %}
@@ -94,6 +100,24 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
 
     <script>
+        // windowの幅が480px未満のとき座標カラムを消す
+        function window_load() {
+            if (window.innerWidth < 480) {
+                document.getElementById("thposition").style.display ="none";
+                var tdpostions = document.getElementsByClassName("tdposition");
+                for (var i = 0; i < tdpostions.length; i++) {
+                    tdpostions[i].style.display = "none";
+                }
+            } else {
+                document.getElementById("thposition").style.display ="table-cell";
+                var tdpostions = document.getElementsByClassName("tdposition");
+                for (var i = 0; i < tdpostions.length; i++) {
+                    tdpostions[i].style.display = "table-cell";
+                }
+            };
+        }
+
+        // 読み込み時に実行
         window.onload = function() {
             toastr.options = {
                 "closeButton": true,
@@ -118,12 +142,10 @@
             "{% if infomation %}"
                 toastr.info("{{ infomation }}");
             "{% endif %}"
-        };
-    </script>
 
-    <script>
-        function whatIsChank() {
-            
-        }
+            // 読み込み時に画面サイズを取得
+            window_load();
+            window.onresize = window_load;
+        };
     </script>
 </html>
