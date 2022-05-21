@@ -427,10 +427,12 @@ def nation(request, nation) :
 # 国一覧
 def nationlist(request, order) :
     nationlist_dict = {}
-    order_item = {"更新日時":"moddate", "面積":"area", "人口":"population"}
+    order_item = ["moddate", "area", "population"]
 
-    if order in order_item :
-        nations = Nation.objects.filter(istour = True).order_by(order_item[order])
+    if not order in order_item :
+        nation = "moddate"
+
+    nations = Nation.objects.filter(istour = True).order_by(order).reverse()
     nationlist_dict["nations"] = nations
 
     return render(request, 'inca/nationlist.html', nationlist_dict)

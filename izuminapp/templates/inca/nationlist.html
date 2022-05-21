@@ -35,7 +35,7 @@
                 <nav>
                     <a href="{% url 'emctour' %}">トップ</a>
                     <a href="{% url 'modarticle' 'new' %}">作成・編集</a>
-                    <a href="{% url 'nationlist' '更新日時' %}">国一覧</a>
+                    <a href="{% url 'nationlist' 'moddate' %}">国一覧</a>
                 </nav>
             </div>
 
@@ -50,9 +50,9 @@
                     <div  class="underline"></div>
                     
                     <label>並び替え</label>
-                    <select id="sortnations">
+                    <select id="sortnations" onchange="sort()">
                         <option value="moddate">更新日時</option>
-                        <option value="erea">面積</option>
+                        <option value="area">面積</option>
                         <option value="population">人口</option>
                     </select>
                     <table class="nationstable">
@@ -114,6 +114,21 @@
                 for (var i = 0; i < tdpostions.length; i++) {
                     tdpostions[i].style.display = "table-cell";
                 }
+            };
+        }
+
+
+        // プルダウンのソートが変更されたらURLを変更
+        function sort() {
+            var sorturl = document.getElementById('sortnations').value;
+
+            // TODO 要リファクタリング
+            if (sorturl == "moddata") {
+                window.location.href = "{% url 'nationlist' 'moddata' %}";
+            } else if (sorturl == "area") {
+                window.location.href = "{% url 'nationlist' 'area' %}";
+            } else if (sorturl == "population") {
+                window.location.href = "{% url 'nationlist' 'population' %}";
             };
         }
 
