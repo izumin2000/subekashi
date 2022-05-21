@@ -19,7 +19,7 @@
         <title>EMC tour | {{ tour.nation.name }}</title>
         <link rel="stylesheet" type="text/css" href="{% static 'css/common.css'%}">
         <link rel="stylesheet" type="text/css" href="{% static 'css/nation.css'%}">
-        <link rel="shortcut icon" href="{% static 'image/flag.ico' %}">
+        <link rel="shortcut icon" href="{% static 'image/emctour.ico' %}">
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
         <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" /> <!-- toastr -->
     </head>
@@ -204,8 +204,6 @@
 
         //コピーtoastr
         function copyTeleport() {
-            text = "/n spawn {{ tour.nation.name }}"
-            navigator.clipboard.writeText(text);       // 参考：https://webfrontend.ninja/js-clipboard-write/
             toastr.options = {
                 "closeButton": false,
                 "debug": false,
@@ -220,7 +218,13 @@
                 "hideEasing": "linear",
             }
 
-            toastr.success(text + " をコピーしました！")
+            if (Boolean(navigator.clipboard)) {
+                text = "/n spawn {{ tour.nation.name }}"
+                navigator.clipboard.writeText(text);
+                toastr.success(text + " をコピーしました！")
+            } else {
+                toastr.warning("この機能はセキュリティの関係上、HTTPS環境上でしか動作しません。")
+            }
         }
 
     </script>

@@ -302,7 +302,6 @@
     <!-- コピーのtoastr -->
     <script>
         function copyCode(text) {
-            navigator.clipboard.writeText(text);
             toastr.options = {
                 "closeButton": false,
                 "debug": false,
@@ -317,7 +316,13 @@
                 "hideEasing": "linear",
             }
 
-            toastr.success(text + " をコピーしました！")
+            if (Boolean(navigator.clipboard)) {
+                text = "/n spawn {{ tour.nation.name }}"
+                navigator.clipboard.writeText(text);
+                toastr.success(text + " をコピーしました！")
+            } else {
+                toastr.warning("この機能はセキュリティの関係上、HTTPS環境上でしか動作しません。")
+            }
         }
     </script>
 
