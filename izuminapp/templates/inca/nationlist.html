@@ -16,7 +16,7 @@
         <meta name="description" content="EarthMCの国に関する情報を掲載しているサイトです。">
         <meta meta="" name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
         <meta charset="utf-8">
-        <title>EMC tour | {{ tour.nation.name }}</title>
+        <title>EMC tour | 国一覧</title>
         <link rel="stylesheet" type="text/css" href="{% static 'css/common.css'%}">
         <link rel="stylesheet" type="text/css" href="{% static 'css/nationlist.css'%}">
         <link rel="shortcut icon" href="{% static 'image/flag.ico' %}">
@@ -35,7 +35,7 @@
                 <nav>
                     <a href="{% url 'emctour' %}">トップ</a>
                     <a href="{% url 'modarticle' 'new' %}">作成・編集</a>
-                    <a href="{% url 'nationlist' %}">国一覧</a>
+                    <a href="{% url 'nationlist' '更新日時' %}">国一覧</a>
                 </nav>
             </div>
 
@@ -48,6 +48,20 @@
                     <div class="topmargin"></div>
                     <h1>国一覧</h1>
 
+                    <table border="0">
+                        <tr>
+                            <th>国名</th>
+                            <th>面積</th>
+                            <th>人口</th>
+                        </tr>
+                    {% for nation in nations %}
+                        <tr>
+                            <th>{{ nation.name }} <img class="flag" src="https://countryflagsapi.com/png/{{ nation.name }}"></th>
+                            <th>{{ nation.area }}</th>
+                            <th>{{ nation.population}}</th>
+                        </tr>
+                    {% endfor %}
+                    </table>
                 </section>
             </article>
 

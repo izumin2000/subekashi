@@ -15,17 +15,16 @@ UPLOAD_URL = "uploadfiles/"
 NUMBER_OF_FIRSTVIEWS = 5
 
 # デバッグ用
-ERROR_API_URL = "https://.com/"
-EMC_API_URL = ERROR_API_URL
+ERROR_API_URL = "https://error"
+EMC_API_URL = ERROR_API_URL     # コメントアウトを外すとEMC APIを取得
 
 
 # 成功時にAPIのjsonを出力。失敗すると空文字を出力。
 def get_API(url, route) :
-    sleep(2)
+    sleep(3)
 
-    # allplayers/の取得の処理
-    if "allplayers" in route :
-        url = url.replace("nova/", "")      # nova/を削除
+    # if "allplayers" in route :
+        # url = url.replace("nova/", "")      # nova/を削除
 
     try :
         get = requests.get(url + route)
@@ -181,6 +180,7 @@ def set_player(player):
         if nation != "No Nation":       # 国に所属していたら
             ableAPIerea, ins_king, ins_nation = set_nation(nation)
             ableAPI &= ableAPIerea
+            print(ableAPIerea, ins_king, ins_nation)
 
             if ableAPI :        # 今までにAPIの取得に成功していたら
                 ins_player.nation = ins_nation
@@ -338,6 +338,7 @@ def modarticle(request, nation) :
                 ableAPI, _, ins_nation = set_nation(nation)
                 if ableAPI :        # APIの取得に成功したら
                     ins_tour, _ = Tour.objects.get_or_create(name = nation, defaults = {"name" : nation})
+                    ins_nation.istour = True
                     ins_tour.nation = ins_nation
                     ins_tour.info = request.POST['info']
                     ins_tour.save()
@@ -356,8 +357,6 @@ def modarticle(request, nation) :
             # Tour DB からアーカイブがあるか確認
             ins_tour = isExistDBTour(input_nation)
             if ins_tour :       # Tour DBにアーカイブがあるのなら
-                nation = ins_tour.name
-                ins_tour, _ = Tour.objects.get_or_create(name = nation, defaults = {"name" : nation})
                 ins_tour.info = request.POST['info']
                 ins_tour.save()
 
@@ -387,12 +386,7 @@ def nation(request, nation) :
     ins_tour = isExistDBTour(nation)
     if ins_tour :       # Tour DBにnationがあったら
         nation = ins_tour.name
-        ableAPInation, ins_king, ins_nation = set_nation(nation)
-        if ins_king :
-            ableAPIplayer = set_player(ins_king.name)
-            ableAPI = ableAPInation & ableAPIplayer
-        else :
-            ableAPI = False
+        ableAPI, ins_king, ins_nation = set_nation(nation)
 
         if ableAPI :        # APIを取得できたら
             # Tour レコードの登録
@@ -429,9 +423,16 @@ def nation(request, nation) :
         nation_dict["error"] = nation + "の記事が存在しません。"
         return render(request, 'inca/emctour.html', nation_dict)
 
+
 # 国一覧
-def nationlist(request) :
-    nationlist_dict = {"nations" : Tour.objects.all()}
+def nationlist(request, order) :
+    nationlist_dict = {}
+    order_item = {"更新日時":"moddate", "面積":"area", "人口":"population"}
+
+    if order in order_item :
+        nations = Nation.objects.filter(istour = True).order_by(order_item[order])
+    nationlist_dict["nations"] = nations
+
     return render(request, 'inca/nationlist.html', nationlist_dict)
 
 
