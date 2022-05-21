@@ -16,7 +16,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 try:
     from .local_settings import *
@@ -148,3 +148,5 @@ else :
         api_key = os.environ['CLOUDINARY_API_KEY'],
         api_secret = os.environ['CLOUDINARY_API_SECRET']
     )
+
+DEBUG = True
