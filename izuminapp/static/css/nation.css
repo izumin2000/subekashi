@@ -21,13 +21,13 @@
 
 #imagefile {
     height: 28.4px;
-    width: 300px;
+    width: 360px;
     margin-left: 25px;
     font-size: 15px;
 }
 
 @media (max-width: 480px) {
-    #id_image {
+    #imagefile {
         width: 240px;
     }
 }
@@ -61,12 +61,13 @@
 }
 
 .imagelist {
-    height: 240px;
+    width: 460px;
     margin: 10px;
 }
 
-@media (max-width: 925px) {
+@media (max-width: 992px) {
     .imagelist {
         margin: 10px auto;
+        width: 60%;
     }
 }

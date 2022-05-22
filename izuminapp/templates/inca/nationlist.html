@@ -35,7 +35,7 @@
                 <nav>
                     <a href="{% url 'emctour' %}">トップ</a>
                     <a href="{% url 'modarticle' 'new' %}">作成・編集</a>
-                    <a href="{% url 'nationlist' 'moddate' %}">国一覧</a>
+                    <a href="{% url 'nationlist' 'name' %}">国一覧</a>
                 </nav>
             </div>
 
@@ -51,8 +51,8 @@
                     
                     <label>並び替え</label>
                     <select id="sortnations" onchange="sort()">
-                        <option value="moddate">選択してください</option>
-                        <option value="moddate">更新日時順</option>
+                        <option value="name">選択してください</option>
+                        <option value="name">名前順</option>
                         <option value="area">面積順</option>
                         <option value="population">人口順</option>
                     </select>
@@ -108,8 +108,8 @@
             var sorturl = document.getElementById('sortnations').value;
 
             // TODO 要リファクタリング
-            if (sorturl == "moddate") {
-                window.location.href = "{% url 'nationlist' 'moddate' %}";
+            if (sorturl == "name") {
+                window.location.href = "{% url 'nationlist' 'name' %}";
             } else if (sorturl == "area") {
                 window.location.href = "{% url 'nationlist' 'area' %}";
             } else if (sorturl == "population") {

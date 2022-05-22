@@ -451,14 +451,14 @@ def nation(request, nation) :
 # 国一覧
 def nationlist(request, order) :
     nationlist_dict = {}
-    order_item = ["moddate", "area", "population"]
+    order_item = ["name", "area", "population"]
 
     if not order in order_item :
-        order = "moddate"
+        order = "name"
 
     nations = Nation.objects.filter(istour = True).order_by(order)
 
-    if order != "moddate" :
+    if order != "name" :
         nations = nations.reverse()
 
     nationlist_dict["nations"] = nations
