@@ -16,12 +16,13 @@ NUMBER_OF_FIRSTVIEWS = 5
 
 # デバッグ用
 ERROR_API_URL = "https://error"
-EMC_API_URL = ERROR_API_URL     # コメントアウトを外すとEMC APIを取得
+# EMC_API_URL = ERROR_API_URL     # コメントアウトを外すとEMC APIを取得
 
 
 # 成功時にAPIのjsonを出力。失敗すると空文字を出力。
 def get_API(url, route) :
-    sleep(3)
+    if url == EMC_API_URL :
+        sleep(2)
 
     # if "allplayers" in route :
         # url = url.replace("nova/", "")      # nova/を削除
@@ -132,8 +133,6 @@ def set_nation(nation):
     if ableAPI :
         ins_nation, _ = Nation.objects.get_or_create(name = nation, defaults = {"name" : nation})
 
-        if not ins_nation.nickname :      # nicknameが空白のとき、nameと同じにする
-            ins_nation.nickname = nation_dict["name"]
         ins_nation.population = len(nation_dict["residents"])
         ins_nation.area = nation_dict["area"]
         ins_nation.capital = nation_dict["capitalName"]
@@ -152,7 +151,7 @@ def set_nation(nation):
 
 
 # プレイヤーの情報を更新しDBに登録
-def set_player(player):
+def set_player(player, isget_nation):
     ableAPI = True      # APIを取得できたかどうか
     ins_player, _ = Player.objects.get_or_create(name = player, defaults = {"name" : player})
 
@@ -177,7 +176,7 @@ def set_player(player):
 
         # プレイヤーの国の情報を登録
         nation = player_dict["nation"]
-        if nation != "No Nation":       # 国に所属していたら
+        if (nation != "No Nation") and isget_nation:        # 国に所属していてnationの情報を取得するのなら
             ableAPIerea, ins_king, ins_nation = set_nation(nation)
             ableAPI &= ableAPIerea
             print(ableAPIerea, ins_king, ins_nation)
@@ -185,7 +184,7 @@ def set_player(player):
             if ableAPI :        # 今までにAPIの取得に成功していたら
                 ins_player.nation = ins_nation
                 if player != ins_king.name :        # 国王だったら
-                    ableAPItmp = set_player(ins_king.name)      # 再帰させる
+                    ableAPItmp = set_player(ins_king.name, False)      # 再帰させる
                     ableAPI &= ableAPItmp
 
             else :      # 今までにAPIが取得できないことがあったら
@@ -219,7 +218,7 @@ def mapzoom(erea) :
 # テンプレートに渡す用のテレポートコマンドの生成
 def teleport(nation) :
     if len(nation) > 5 :
-        nation = nation[:3]
+        nation = nation[:3] + "..."
     
     return "/n spawn " + nation
 
@@ -246,7 +245,7 @@ def inca(request):
 
         # 大臣の情報とOUR_NATIONの更新
         for minister in ministers :
-            ableAPIplayer = set_player(minister)
+            ableAPIplayer = set_player(minister, True)
             ableAPI &= ableAPIplayer
 
     else :      # 大臣が一人もいなかったら
@@ -386,17 +385,23 @@ def nation(request, nation) :
     ins_tour = isExistDBTour(nation)
     if ins_tour :       # Tour DBにnationがあったら
         nation = ins_tour.name
-        ableAPI, ins_king, ins_nation = set_nation(nation)
+        ableAPInation, ins_king, ins_nation = set_nation(nation)
+
+        ableAPIplayer = set_player(ins_king.name, False)
+        ableAPI = ableAPInation & ableAPIplayer
 
         if ableAPI :        # APIを取得できたら
             # Tour レコードの登録
             ins_tour.nation = ins_nation
             ins_tour.save()
 
+            ins_nation.istour = True
+            ins_nation.save()
+
             nation_dict["tour"] = ins_tour
             nation_dict["king"] = ins_king
             nation_dict["mapzoom"] = mapzoom(ins_tour.nation.area)
-            nation_dict["teleport"] = "/n spawn " + teleport(nation)
+            nation_dict["teleport"] = teleport(nation)
             nation_dict["km2"] = ins_tour.nation.area * 256 / 1000
             nation_dict["ableAPI"] = ableAPI
             return render(request, 'inca/nation.html', nation_dict)
@@ -419,7 +424,7 @@ def nation(request, nation) :
                 return render(request, 'inca/modarticle.html', nation_dict)
 
     else :      # Tour DBにnationが無かったら
-        nation_dict["nation"] = nation
+        nation_dict["jump"] = nation
         nation_dict["error"] = nation + "の記事が存在しません。"
         return render(request, 'inca/emctour.html', nation_dict)
 
@@ -430,10 +435,15 @@ def nationlist(request, order) :
     order_item = ["moddate", "area", "population"]
 
     if not order in order_item :
-        nation = "moddate"
+        order = "moddate"
 
-    nations = Nation.objects.filter(istour = True).order_by(order).reverse()
+    nations = Nation.objects.filter(istour = True).order_by(order)
+
+    if order != "moddate" :
+        nations = nations.reverse()
+
     nationlist_dict["nations"] = nations
+    nationlist_dict["order"] = order
 
     return render(request, 'inca/nationlist.html', nationlist_dict)
 

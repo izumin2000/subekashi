@@ -3,6 +3,10 @@
     margin-left: 30px;
 }
 
+.whatIsChank {
+    cursor: pointer;
+}
+
 .fa-share {
     font-size: 95px !important;
     margin: 10px 0 5px 0 !important;

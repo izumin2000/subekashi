@@ -51,9 +51,10 @@
                     
                     <label>並び替え</label>
                     <select id="sortnations" onchange="sort()">
-                        <option value="moddate">更新日時</option>
-                        <option value="area">面積</option>
-                        <option value="population">人口</option>
+                        <option value="moddate">選択してください</option>
+                        <option value="moddate">更新日時順</option>
+                        <option value="area">面積順</option>
+                        <option value="population">人口順</option>
                     </select>
                     <table class="nationstable">
                         <tr>
@@ -123,8 +124,8 @@
             var sorturl = document.getElementById('sortnations').value;
 
             // TODO 要リファクタリング
-            if (sorturl == "moddata") {
-                window.location.href = "{% url 'nationlist' 'moddata' %}";
+            if (sorturl == "moddate") {
+                window.location.href = "{% url 'nationlist' 'moddate' %}";
             } else if (sorturl == "area") {
                 window.location.href = "{% url 'nationlist' 'area' %}";
             } else if (sorturl == "population") {
