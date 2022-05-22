@@ -1,6 +1,7 @@
+from turtle import Screen
 from django.shortcuts import redirect, render
 from izuminapp.forms import FirstviewForm, PlayerForm
-from izuminapp.model import Player, Citizen, Minister, Criminal, Gold, Tour, Nation, Firstview, Analyze
+from izuminapp.model import Player, Citizen, Minister, Criminal, Gold, Screenshot, Tour, Nation, Firstview, Analyze
 import requests
 from datetime import date
 import json
@@ -50,7 +51,7 @@ def get_API(url, route) :
             return get_dict
 
     else :      # エラーステータスコードを受け取ったら（HEROKU error等）
-        print("not 2xx Error", get.status_code, route)
+        print("not 2xx", get.status_code, route)
         return ""
 
 
@@ -181,7 +182,6 @@ def set_player(player, isget_nation):
         if (nation != "No Nation") and isget_nation:        # 国に所属していてnationの情報を取得するのなら
             ableAPIerea, ins_king, ins_nation = set_nation(nation)
             ableAPI &= ableAPIerea
-            print(ableAPIerea, ins_king, ins_nation)
 
             if ableAPI :        # 今までにAPIの取得に成功していたら
                 ins_player.nation = ins_nation
@@ -386,10 +386,16 @@ def modarticle(request, nation) :
 
 # 国の記事
 def nation(request, nation) :
-    nation_dict = {}        # テンプレートに渡す辞書
+    nation_dict = {"nation" : nation}       # テンプレートに渡す辞書
 
     ins_tour = isExistDBTour(nation)
     if ins_tour :       # Tour DBにnationがあったら
+        # TODO 画像のアップロード
+        if request.method == "POST":
+            inp_image = request.FILES.getlist('imagefile')      # 何故かNoneが返ってくる。
+            # Screenshot.objects.create(image = inp_image, tour = ins_tour)
+            nation_dict["infomation"] = "この機能はまだ実装してません"
+
         nation = ins_tour.name
         ableAPInation, ins_king, ins_nation = set_nation(nation)
 
@@ -411,10 +417,10 @@ def nation(request, nation) :
 
             nation_dict["tour"] = ins_tour
             nation_dict["king"] = ins_king
-            print(ins_king.uuid, "!!!!!!!!!!!!!!!!!!!!!!!!")
             nation_dict["mapzoom"] = mapzoom(ins_tour.nation.area)
             nation_dict["teleport"] = teleport(nation)
             nation_dict["km2"] = ins_tour.nation.area * 256 / 1000
+            nation_dict["screenshots"] = ins_tour.screenshot_tour.all()
             nation_dict["ableAPI"] = ableAPI
             return render(request, 'inca/nation.html', nation_dict)
         
@@ -428,6 +434,7 @@ def nation(request, nation) :
                 nation_dict["mapzoom"] = mapzoom(ins_tour.nation.area)
                 nation_dict["teleport"] = teleport(nation)
                 nation_dict["km2"] = ins_tour.nation.area * 256 / 1000
+                nation_dict["screenshots"] = ins_tour.screenshot_tour.all()
                 nation_dict["ableAPI"] = ableAPI 
                 return render(request, 'inca/nation.html', nation_dict)
             else :          # Tour DBにアーカイブが無いのなら

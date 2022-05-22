@@ -126,7 +126,20 @@
                     <iframe id="dynmap" src="https://earthmc.net/map/nova/?worldname=earth&mapname=flat&zoom={{ mapzoom }}&x={{ tour.nation.x }}&y=64&z={{ tour.nation.z }}"></iframe>
 
                     <h2>画像</h2>
-
+                    
+                    <form method="POST" action="{% url 'nation' nation %}">
+                        {% csrf_token %}
+                        <input type="file" id="imagefile" required>
+                        <input type="submit" value="送信" id="imagesubmit">
+                    </form>
+                    
+                    <!--
+                    {% load cloudinary %}
+                    {% for screenshot in screenshots %}
+                        {% cloudinary screenshot.image.url width=300 height=300 %}
+                    {% endfor %}
+                    -->
+                    <p>※画像のアップロード機能は未実装です！</p>
                 </section>
             </article>
 
@@ -179,6 +192,10 @@
             "{% if infomation %}"
                 toastr.info("{{ infomation }}");
             "{% endif %}"
+
+            // #errorlistの非表示
+            // document.getElementsByClassName("errorlist")[0].style.display = "none";
+
         };
     </script>
 
