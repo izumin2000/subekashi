@@ -23,6 +23,8 @@ ERROR_API_URL = "https://error"
 def get_API(url, route) :
     if url == EMC_API_URL :
         sleep(2)
+    else :
+        sleep(0.5)
 
     # if "allplayers" in route :
         # url = url.replace("nova/", "")      # nova/を削除
@@ -336,15 +338,19 @@ def modarticle(request, nation) :
                 # Tourレコードの作成・更新
                 ableAPI, _, ins_nation = set_nation(nation)
                 if ableAPI :        # APIの取得に成功したら
-                    ins_tour, _ = Tour.objects.get_or_create(name = nation, defaults = {"name" : nation})
+                    ins_tour, iscreated = Tour.objects.get_or_create(name = nation, defaults = {"name" : nation})
                     ins_nation.istour = True
                     ins_tour.nation = ins_nation
                     ins_tour.info = request.POST['info']
                     ins_tour.save()
 
+                    if iscreated :
+                        modarticle_dict["infomation"] = ins_nation.name + "の記事を作成しています"
+                    else :
+                        modarticle_dict["infomation"] = ins_nation.name + "の記事を更新しています"
+
                     modarticle_dict["info"] = ins_tour.info
                     modarticle_dict["jump"] = nation      # リダイレクト先のnation
-                    # TODO 作成完了トーストの表示
                     return render(request, 'inca/modarticle.html', modarticle_dict)        # js側でリダイレクトの処理
 
             else :      # input_nationがEMC上に無かった場合
@@ -398,8 +404,14 @@ def nation(request, nation) :
             ins_nation.istour = True
             ins_nation.save()
 
+            uuid_dict = get_API(UUID_API_URL, ins_king.name)        # 何故か書かないと動かない
+            if uuid_dict :      # APIの取得に成功したら
+                ins_king.uuid = uuid_dict["id"]
+                ins_king.save()
+
             nation_dict["tour"] = ins_tour
             nation_dict["king"] = ins_king
+            print(ins_king.uuid, "!!!!!!!!!!!!!!!!!!!!!!!!")
             nation_dict["mapzoom"] = mapzoom(ins_tour.nation.area)
             nation_dict["teleport"] = teleport(nation)
             nation_dict["km2"] = ins_tour.nation.area * 256 / 1000
@@ -424,7 +436,8 @@ def nation(request, nation) :
                 return render(request, 'inca/modarticle.html', nation_dict)
 
     else :      # Tour DBにnationが無かったら
-        nation_dict["jump"] = nation
+        nation_dict["noArticle"] = True
+        nation_dict["nation"] = nation
         nation_dict["error"] = nation + "の記事が存在しません。"
         return render(request, 'inca/emctour.html', nation_dict)
 
