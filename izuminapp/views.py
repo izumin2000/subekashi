@@ -1,4 +1,3 @@
-from turtle import Screen
 from django.shortcuts import redirect, render
 from izuminapp.forms import FirstviewForm, PlayerForm
 from izuminapp.model import Player, Citizen, Minister, Criminal, Gold, Screenshot, Tour, Nation, Firstview, Analyze
