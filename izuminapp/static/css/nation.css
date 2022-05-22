@@ -18,3 +18,55 @@
     width: 65vw;
     margin: 0 auto;
 }
+
+#imagefile {
+    height: 28.4px;
+    width: 300px;
+    margin-left: 25px;
+    font-size: 15px;
+}
+
+@media (max-width: 480px) {
+    #id_image {
+        width: 240px;
+    }
+}
+
+#imagesubmit {
+    background-color: #ccc;
+    margin: 10px 0 0 24px;
+    height: 28.4px;
+    font-size: 14px;
+    width: 160px;
+}
+
+@media (max-width: 360px) {
+    #imagesubmit {
+        width: 100px;
+    }
+}
+
+#imagesubmit:hover {
+    background-color: #bbb;
+}
+
+#imagesubmit:active {
+    border: none;
+    box-shadow: 0 0 0 2px #BB002D inset;
+    background-color: #ddd;
+}
+
+.container {
+    margin-left: 15px;
+}
+
+.imagelist {
+    height: 240px;
+    margin: 10px;
+}
+
+@media (max-width: 925px) {
+    .imagelist {
+        margin: 10px auto;
+    }
+}
