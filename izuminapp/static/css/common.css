@@ -288,7 +288,7 @@ code {
 
 @media (max-width: 520px) {
     .container {
-        margin-left: calc(50%  - 105px);
+        margin-left: calc(50%  - 115px);
     }
 }
 

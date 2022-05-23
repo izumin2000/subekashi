@@ -448,7 +448,7 @@ def nation(request, nation) :
         return render(request, 'inca/emctour.html', nation_dict)
 
 
-# 国一覧
+# 記事一覧
 def nationlist(request, order) :
     nationlist_dict = {}
     order_item = ["name", "area", "population"]
