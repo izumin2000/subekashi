@@ -58,9 +58,9 @@
                     </select>
                     <table class="nationstable">
                         <tr>
-                            <th>国名</th>
-                            <th>面積</th>
-                            <th>人口</th>
+                            <th><a href = "{% url 'nationlist' 'name' %}" class="sortlink">国名</a></th>
+                            <th><a href = "{% url 'nationlist' 'area' %}" class="sortlink">面積</a></th>
+                            <th><a href = "{% url 'nationlist' 'population' %}" class="sortlink">人口</a></th>
                             <th id="thposition">座標</th>
                         </tr>
                     {% for nation in nations %}
