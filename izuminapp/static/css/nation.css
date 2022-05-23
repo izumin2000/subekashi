@@ -60,8 +60,11 @@
     background-color: #ddd;
 }
 
-.container {
-    margin-left: 15px;
+.containerimage {
+    margin: 10px 0 0 10px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
 }
 
 .imagelist {
