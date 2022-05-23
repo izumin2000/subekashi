@@ -300,6 +300,12 @@ code {
     margin: 0 15px 15px 0;
 }
 
+@media (max-width: 520px) {
+    .info_item {
+        margin-right: 0;
+    }
+}
+
 .info_title, #popup_name {
     color: #000;
     margin: 12px 0 10px 0;
