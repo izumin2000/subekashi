@@ -7,9 +7,13 @@
     cursor: pointer;
 }
 
+.info_data code {
+    margin: 0 2.5px;
+    font-size: 23px;
+}
+
 .fa-share {
-    font-size: 95px !important;
-    margin: 10px 0 5px 0 !important;
+    margin: 20px 0 15px 0 !important;
 }
 
 #dynmap {
