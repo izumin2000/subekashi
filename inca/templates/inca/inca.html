@@ -10,16 +10,16 @@
         <meta name="twitter:site" content="@KANATA20002">
         <meta name="og:type" content="website">
         <meta name="og:title" content="インカ帝国へようこそ">
-        <meta name="og:image" content="{% static 'image/flag.png' %}">
+        <meta name="og:image" content="{% static 'inca/image/flag.png' %}">
         <meta name="og:description" content="EarthMCの南アメリカ大陸にある国、インカ帝国の紹介サイトです。">
-        <meta name="og:url" content="https://izuminapp.pythonanywhere.com/inca">
+        <meta name="og:url" content="https://config.pythonanywhere.com/inca">
         <meta name="description" content="EarthMCの南アメリカ大陸にある国、インカ帝国の紹介サイトです。">
         <meta meta="" name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
         <meta charset="utf-8">
         <title>インカ帝国 - トップ</title>
-        <link rel="stylesheet" type="text/css" href="{% static 'css/common.css'%}">
-        <link rel="stylesheet" type="text/css" href="{% static 'css/top.css'%}">
-        <link rel="shortcut icon" href="{% static 'image/flag.ico' %}">
+        <link rel="stylesheet" type="text/css" href="{% static 'inca/css/common.css'%}">
+        <link rel="stylesheet" type="text/css" href="{% static 'inca/css/top.css'%}">
+        <link rel="shortcut icon" href="{% static 'inca/image/flag.ico' %}">
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
         <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" /> <!-- toastr -->
     </head>
@@ -28,7 +28,7 @@
     <body>
         <header>
             <div class="header-left">
-                <a href="{% url 'inca' %}"><img name="thumbnail" class="logo" src="{% static 'image/flag.png' %}" alt="インカ帝国の国旗"></a>
+                <a href="{% url 'inca' %}"><img name="thumbnail" class="logo" src="{% static 'inca/image/flag.png' %}" alt="インカ帝国の国旗"></a>
             </div>
 
             <div class="header-right">
@@ -77,7 +77,7 @@
                         <div class="info_item">
                             <p class="info_title">国旗</p>
                             <div class="info_underline"></div>
-                            <img class="info_flag" src="{% static 'image/flag.png' %}">
+                            <img class="info_flag" src="{% static 'inca/image/flag.png' %}">
                         </div>
 
                         <div class="info_item">
@@ -129,7 +129,7 @@
                                 {% if primary.uuid %}
                                     <img class="skin" src="https://crafatar.com/renders/head/{{ primary.uuid }}">
                                 {% else %}
-                                    <img class="unknown_skin" src="{% static 'image/unknown_skin.png' %}">
+                                    <img class="unknown_skin" src="{% static 'inca/image/unknown_skin.png' %}">
                                 {% endif %}
                                 <label for="trigger" class="open_btn" onclick="playerpopup('{{ primary.uuid }}', '{{ primary.name }}', '{{ ableAPI }}', '{{ primary.online }}', '{{ primary.info }}')">詳しく見る</label>
                                 <div class="popup_wrap">
@@ -160,10 +160,10 @@
                     <h2>素敵な特典</h2>
                     <p>インカ国民になると初期装備として以下の特典が貰えます！</p>
                     <ul class="itemlist">
-                        <li><img src="{% static 'image/oak.png' %}">原木 64個</li>
-                        <li><img src="{% static 'image/iron.png' %}">鉄インゴット 64個</li>
-                        <li><img src="{% static 'image/diamond.png' %}">ダイヤモンド 32個</li>
-                        <li><img src="{% static 'image/potato.png' %}">食料 64個</li>
+                        <li><img src="{% static 'inca/image/oak.png' %}">原木 64個</li>
+                        <li><img src="{% static 'inca/image/iron.png' %}">鉄インゴット 64個</li>
+                        <li><img src="{% static 'inca/image/diamond.png' %}">ダイヤモンド 32個</li>
+                        <li><img src="{% static 'inca/image/potato.png' %}">食料 64個</li>
                         <li><i class="fas fa-cubes"></i>土地 1チャンク</li>
                     </ul>
 
@@ -234,7 +234,7 @@
     
     <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
 
-    <script src="{% static 'js/playerpopup.js' %}"></script>        <!-- プレイヤーポップアップ -->
+    <script src="{% static 'inca/js/playerpopup.js' %}"></script>        <!-- プレイヤーポップアップ -->
 
     <!-- エラーポップアップ -->
     <script>

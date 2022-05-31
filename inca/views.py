@@ -1,6 +1,6 @@
 from django.shortcuts import redirect, render
-from izuminapp.forms import FirstviewForm, PlayerForm
-from izuminapp.model import Player, Citizen, Minister, Criminal, Gold, Screenshot, Tour, Nation, Firstview, Analyze
+from inca.forms import FirstviewForm, PlayerForm
+from inca.model import Player, Citizen, Minister, Criminal, Gold, Screenshot, Tour, Nation, Firstview, Analyze
 import requests
 from datetime import date
 import json
@@ -234,7 +234,7 @@ insAnalyze.save()
 
 
 def root(request):
-    return render(request, 'izuminapp/root.html')
+    return render(request, 'inca/root.html')
 
 def inca(request):
     our_info = {}       # テンプレートに渡す辞書

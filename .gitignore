@@ -4,7 +4,6 @@
 __pycache__/
 db-volumes/
 db.sqlite3
-izuminapp/.py
+inca/.py
 local_settings.py
 media/
-izuminapp/templates/circle/

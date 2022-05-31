@@ -9,17 +9,17 @@
         <meta name="twitter:card" content="summary">
         <meta name="twitter:site" content="@KANATA20002">
         <meta name="og:type" content="website">
-        <meta name="og:title" content="EMC tour">
-        <meta name="og:image" content="{% static 'image/emctour.png' %}">
+        <meta name="og:title" content="EMC tour | 作成・編集">
+        <meta name="og:image" content="{% static 'inca/image/emctour.png' %}">
         <meta name="og:description" content="EarthMCの国に関する情報を掲載しているサイトです。">
-        <meta name="og:url" content="https://izuminapp.pythonanywhere.com/inca">
+        <meta name="og:url" content="https://config.pythonanywhere.com/inca">
         <meta name="description" content="EarthMCの国に関する情報を掲載しているサイトです。">
         <meta meta="" name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
         <meta charset="utf-8">
-        <title>EMC tour</title>
-        <link rel="stylesheet" type="text/css" href="{% static 'css/common.css'%}">
-        <link rel="stylesheet" type="text/css" href="{% static 'css/emctour.css'%}">
-        <link rel="shortcut icon" href="{% static 'image/emctour.ico' %}">
+        <title>EMC tour | 作成・編集</title>
+        <link rel="stylesheet" type="text/css" href="{% static 'inca/css/common.css'%}">
+        <link rel="stylesheet" type="text/css" href="{% static 'inca/css/modarticle.css'%}">
+        <link rel="shortcut icon" href="{% static 'inca/image/emctour.ico' %}">
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
         <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" /> <!-- toastr -->
     </head>
@@ -28,7 +28,7 @@
     <body>
         <header>
             <div class="header-left">
-                <a href="{% url 'emctour' %}"><img name="thumbnail" class="logo" src="{% static 'image/emctourlogo.png' %}" alt="EMC tourのロゴ"></a>
+                <a href="{% url 'emctour' %}"><img name="thumbnail" class="logo" src="{% static 'inca/image/emctourlogo.png' %}" alt="EMC tourのロゴ"></a>
             </div>
 
             <div class="header-right">
@@ -43,42 +43,22 @@
         </header>
 
         <main>
-            <article>
-                <section class="firstview">
-                    <div class="clImg">
-                        <img src="{% static 'image/backgroundmap.png' %}" alt="EMCの世界地図">
-                    </div>
+            <article>                
+                <section id="articleform">
+                    <form action="{% url 'modarticle' nation %}" method="POST">
+                        {% csrf_token %}
+                        <label>国名<input type="text" id="nationInput" name="nation" value="{{ nation }}"></label>
+                        <label>概要<input type="text" id="infomationInput" name="info" value="{{ info }}"></label>
+                        <button class="formbutton">登録</button>
+                    </form>
                 </section>
-                <form action="{% url 'emctour' %}" method="POST" class="nation-form">{% csrf_token %}
-                    <input type="text" id="nation" name="nation" placeholder="国名を検索" value="{{ nation }}">
-                    <button class="formbutton">検索</button>
-                </form>
             </article>
         </main>
-
-
-        <footer>
-            <div class="footer-container">
-                <div class="footer-left">
-                    <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-                </div>
-
-                <div class="footer-right">
-                    <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.ja"><img src="https://creativecommons.org/images/deed/zero_white_x2.png"><img src="https://creativecommons.org/images/deed/cc_icon_white_x2.png"></a>
-                    <p>2022 KANATA</p>
-                </div>
-
-                <div class="clear"></div>
-            </div>
-        </footer>
     </body>
-
 
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> <!-- jquery -->
     
     <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
-
-    <script src="{% static 'js/playerpopup.js' %}"></script>
 
     <script>
         window.onload = function() {
@@ -109,43 +89,22 @@
             toastr.options.onclick = function () {
                 window.location.href = "{% url 'modarticle' nation %}";
             };
-            
+
             // toastrの記事作成案内ページ
             "{% if noArticle %}"
                 toastr.info("{{ nation }}の記事を作成する場合は<a class='modarticle' href={% url 'modarticle' nation %}>こちら</a>をクリックしてください");
             "{% endif %}"
-            
+
+            // nation inputの中身が"new"なら消す
+            let nation = document.getElementById('nationInput');
+            if (nation.value == "new") {
+                nation.value = "";
+            }
+
             // nationのリダイレクト
             "{% if jump %}"
                 window.location.href = "{% url 'nation' jump %}";
             "{% endif %}"
-
-            // nation inputの中身が"new"なら消す
-            let nation = document.getElementById('nation');
-            if (nation.value == "new") {
-                nation.value = "";
-            }
         };
     </script>
-
-    <script>
-        function notfound(){
-            toastr.options = {
-                "closeButton": false,
-                "debug": false,
-                "newestOnTop": false,
-                "progressBar": true,
-                "positionClass": "toast-bottom-right",
-                "preventDuplicates": false,
-                "onclick": null,
-                "timeOut": "3000",
-                "extendedTimeOut": "0",
-                "showEasing": "swing",
-                "hideEasing": "linear",
-            }
-
-            toastr.info("このページはまだ存在しません！")
-        };
-    </script>
-
 </html>
