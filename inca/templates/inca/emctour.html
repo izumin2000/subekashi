@@ -28,14 +28,14 @@
     <body>
         <header>
             <div class="header-left">
-                <a href="{% url 'emctour' %}"><img name="thumbnail" class="logo" src="{% static 'inca/image/emctourlogo.png' %}" alt="EMC tourのロゴ"></a>
+                <a href="{% url 'inca:emctour' %}"><img name="thumbnail" class="logo" src="{% static 'inca/image/emctourlogo.png' %}" alt="EMC tourのロゴ"></a>
             </div>
 
             <div class="header-right">
                 <nav>
-                    <a href="{% url 'emctour' %}">トップ</a>
-                    <a href="{% url 'modarticle' nation %}">作成・編集</a>
-                    <a href="{% url 'nationlist' 'name' %}">記事一覧</a>
+                    <a href="{% url 'inca:emctour' %}">トップ</a>
+                    <a href="{% url 'inca:modarticle' nation %}">作成・編集</a>
+                    <a href="{% url 'inca:nationlist' 'name' %}">記事一覧</a>
                 </nav>
             </div>
 
@@ -49,7 +49,7 @@
                         <img src="{% static 'inca/image/backgroundmap.png' %}" alt="EMCの世界地図">
                     </div>
                 </section>
-                <form action="{% url 'emctour' %}" method="POST" class="nation-form">{% csrf_token %}
+                <form action="{% url 'inca:emctour' %}" method="POST" class="nation-form">{% csrf_token %}
                     <input type="text" id="nation" name="nation" placeholder="国名を入力" value="{{ nation }}">
                     <button class="formbutton">検索</button>
                 </form>
@@ -107,17 +107,17 @@
             "{% endif %}"
 
             toastr.options.onclick = function () {
-                window.location.href = "{% url 'modarticle' nation %}";
+                window.location.href = "{% url 'inca:modarticle' nation %}";
             };
             
             // toastrの記事作成案内ページ
             "{% if noArticle %}"
-                toastr.info("{{ nation }}の記事を作成する場合は<a class='modarticle' href={% url 'modarticle' nation %}>こちら</a>をクリックしてください");
+                toastr.info("{{ nation }}の記事を作成する場合は<a class='modarticle' href={% url 'inca:modarticle' nation %}>こちら</a>をクリックしてください");
             "{% endif %}"
             
             // nationのリダイレクト
             "{% if jump %}"
-                window.location.href = "{% url 'nation' jump %}";
+                window.location.href = "{% url 'inca:nation' jump %}";
             "{% endif %}"
 
             // nation inputの中身が"new"なら消す

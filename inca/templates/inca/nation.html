@@ -28,14 +28,14 @@
     <body>
         <header>
             <div class="header-left">
-                <a href="{% url 'emctour' %}"><img name="thumbnail" class="logo" src="{% static 'inca/image/emctourlogo.png' %}" alt="EMC tourのロゴ"></a>
+                <a href="{% url 'inca:emctour' %}"><img name="thumbnail" class="logo" src="{% static 'inca/image/emctourlogo.png' %}" alt="EMC tourのロゴ"></a>
             </div>
 
             <div class="header-right">
                 <nav>
-                    <a href="{% url 'emctour' %}">トップ</a>
-                    <a href="{% url 'modarticle' 'new' %}">作成・編集</a>
-                    <a href="{% url 'nationlist' 'name' %}">記事一覧</a>
+                    <a href="{% url 'inca:emctour' %}">トップ</a>
+                    <a href="{% url 'inca:modarticle' 'new' %}">作成・編集</a>
+                    <a href="{% url 'inca:nationlist' 'name' %}">記事一覧</a>
                 </nav>
             </div>
 
@@ -51,7 +51,7 @@
                     <h2>概要</h2>
                     <p>{{ tour.info }}</p>
                     <br />
-                    <a class="edit-article" href="{% url 'modarticle' tour.nation.name %}"><i class="fas fa-pencil-alt"></i>記事を編集する</a>
+                    <a class="edit-article" href="{% url 'inca:modarticle' tour.nation.name %}"><i class="fas fa-pencil-alt"></i>記事を編集する</a>
 
                     <h2>基本情報</h2>
                     {% if not ableAPI %}
@@ -127,7 +127,7 @@
 
                     <h2>画像</h2>
                     
-                    <form method="POST" action="{% url 'nation' nation %}">
+                    <form method="POST" action="{% url 'inca:nation' nation %}">
                         {% csrf_token %}
                         <input type="file" id="imagefile" required>
                         <input type="submit" value="送信" id="imagesubmit">

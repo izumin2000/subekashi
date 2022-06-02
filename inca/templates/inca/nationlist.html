@@ -28,14 +28,14 @@
     <body>
         <header>
             <div class="header-left">
-                <a href="{% url 'emctour' %}"><img name="thumbnail" class="logo" src="{% static 'inca/image/emctourlogo.png' %}" alt="EMC tourのロゴ"></a>
+                <a href="{% url 'inca:emctour' %}"><img name="thumbnail" class="logo" src="{% static 'inca/image/emctourlogo.png' %}" alt="EMC tourのロゴ"></a>
             </div>
 
             <div class="header-right">
                 <nav>
-                    <a href="{% url 'emctour' %}">トップ</a>
-                    <a href="{% url 'modarticle' 'new' %}">作成・編集</a>
-                    <a href="{% url 'nationlist' 'name' %}">記事一覧</a>
+                    <a href="{% url 'inca:emctour' %}">トップ</a>
+                    <a href="{% url 'inca:modarticle' 'new' %}">作成・編集</a>
+                    <a href="{% url 'inca:nationlist' 'name' %}">記事一覧</a>
                 </nav>
             </div>
 
@@ -58,14 +58,14 @@
                     </select>
                     <table class="nationstable">
                         <tr>
-                            <th><a href = "{% url 'nationlist' 'name' %}" class="sortlink">国名</a></th>
-                            <th><a href = "{% url 'nationlist' 'area' %}" class="sortlink">面積</a></th>
-                            <th><a href = "{% url 'nationlist' 'population' %}" class="sortlink">人口</a></th>
+                            <th><a href = "{% url 'inca:nationlist' 'name' %}" class="sortlink">国名</a></th>
+                            <th><a href = "{% url 'inca:nationlist' 'area' %}" class="sortlink">面積</a></th>
+                            <th><a href = "{% url 'inca:nationlist' 'population' %}" class="sortlink">人口</a></th>
                             <th id="thposition">座標</th>
                         </tr>
                     {% for nation in nations %}
                         <tr>
-                            <td><a href="{% url 'nation' nation.name %}">{{ nation.name }}</a></td>
+                            <td><a href="{% url 'inca:nation' nation.name %}">{{ nation.name }}</a></td>
                             <td>{{ nation.area }}</td>
                             <td>{{ nation.population }}</td>
                             <td class="tdposition">({{ nation.x }}, {{ nation.z }})</td>
@@ -110,11 +110,11 @@
 
             // TODO 要リファクタリング
             if (sorturl == "name") {
-                window.location.href = "{% url 'nationlist' 'name' %}";
+                window.location.href = "{% url 'inca:nationlist' 'name' %}";
             } else if (sorturl == "area") {
-                window.location.href = "{% url 'nationlist' 'area' %}";
+                window.location.href = "{% url 'inca:nationlist' 'area' %}";
             } else if (sorturl == "population") {
-                window.location.href = "{% url 'nationlist' 'population' %}";
+                window.location.href = "{% url 'inca:nationlist' 'population' %}";
             };
         }
 

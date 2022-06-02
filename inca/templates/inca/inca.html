@@ -28,14 +28,14 @@
     <body>
         <header>
             <div class="header-left">
-                <a href="{% url 'inca' %}"><img name="thumbnail" class="logo" src="{% static 'inca/image/flag.png' %}" alt="インカ帝国の国旗"></a>
+                <a href="{% url 'inca:inca' %}"><img name="thumbnail" class="logo" src="{% static 'inca/image/flag.png' %}" alt="インカ帝国の国旗"></a>
             </div>
 
             <div class="header-right">
                 <nav>
-                    <a href="{% url 'inca' %}">トップ</a>
+                    <a href="{% url 'inca:inca' %}">トップ</a>
                     <a onclick="notfound()">情報</a>
-                    <a href="{% url 'emctour' %}">外国</a>
+                    <a href="{% url 'inca:emctour' %}">外国</a>
                     <a onclick="notfound()">所属申請</a>
                 </nav>
             </div>
