@@ -4,6 +4,7 @@ from django.db import models
 class Channel(models.Model) :
     name = models.CharField(default = "", max_length = 50)
     isexist = models.BooleanField(default = True)
+    url = models.CharField(default = "", max_length = 50, blank = True, null = True)
 
     def __str__(self):
         return self.name
@@ -18,3 +19,10 @@ class Song(models.Model) :
     
     def __str__(self):
         return self.title
+
+class Ai(models.Model) :
+    lyrics = models.CharField(default="", max_length = 50)
+    isgood = models.BooleanField(default = False)
+    
+    def __str__(self):
+        return self.lyrics

@@ -149,4 +149,4 @@ else :
         api_secret = os.environ['CLOUDINARY_API_SECRET']
     )
 
-DEBUG = True
+# DEBUG = True
