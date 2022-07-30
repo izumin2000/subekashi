@@ -16,28 +16,6 @@
     }
 }
 
-#photo_title, #photo_player {
-    color: #ffffffaa;
-    font-family: 'Microsoft Sans Serif';
-    font-size: 15px;
-    line-height: 18px;
-    margin: 5px 0;
-}
-
-#photo_title i {
-    padding-right: 2px;
-}
-
-#photo_player i {
-    padding: 0 5px 0 0px;
-}
-
-#photo_progress {
-    font-family: 'Microsoft Sans Serif';
-    font-size: 10px;
-    margin: 0 0 5px 75%;
-}
-
 .info_flag {
     display: block;
     width: 150px;

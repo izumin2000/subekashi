@@ -29,6 +29,7 @@
         <header>
             <div class="header-left">
                 <a href="{% url 'xia:top' %}"><img name="thumbnail" class="logo" src="{% static 'xia/image/flag.png' %}" alt="Xiaの国旗"></a>
+                <p class="logomoji">Xia</p>
             </div>
 
             <div class="header-right">
@@ -48,26 +49,17 @@
             <article>
                 <section class="firstview">
                     <div class="clImg">
-                        {% for name in names %}
-                            <img src="{% static name %}" alt="Xiaに関する画像">
-                        {% endfor %}
+                        <img src="{% static 'xia/image/top1.png' %}" alt="Xiaに関する画像">
+                        <img src="{% static 'xia/image/top2.png' %}" alt="Xiaに関する画像">
                     </div>
-
                     <b><span id="top_title">Xia 公式ホームページ</span></b>
-                    <div class="photo_info">
-                        <p id="photo_title"><i class="fas fa-image"></i> {{ clTitle.0 }}</p>
-                        <p id="photo_player"><i class="fas fa-user"></i> {{ clPlayers.0 }}</p>
-                        <p id="photo_progress">1枚目 / {{ clTitle|length }}枚</p>
-                    </div>
                 </section>
             
                 <section class="welcome">
                     <h1>Xiaについて</h1>
                     <div class="underline"></div>
                     <h2>概要</h2>
-                    <p>Xia(Xia)とは<a href="https://earthmc.net/">EarthMC</a>の<a href="#dynmap">南米チチカカ湖の北岸に位置する</a>日本人勢による国です。</p>
-                    <p>元は<a href="https://earthmc.fandom.com/wiki/Peru">ペルー</a>に所属していて、首都であるクスコを差し置いて同国内最大の土地でしたが、2022年1月5日独立しました。</p>
-                    <p>現在は<a href="https://discord.gg/83sTah7Jcu">鬼山幕府</a>の傘下に入っています。</p>
+                    <p>Xiaは<a href="https://earthmc.net/">EarthMC</a>の<a href="#dynmap">運城市に位置する</a>日本人勢による国です。</p>
 
                     <h2>基本情報</h2>
                     {% if not ableAPI %}
@@ -83,9 +75,9 @@
                         <div class="info_item">
                             <p class="info_title">首都</p>
                             <div class="info_underline"></div>
-                            <p class="info_data">{{ our.capital }}</p>
+                            <p class="info_data info_data_small">{{ our.capital }}</p>
                             <i class="fas fa-building"></i>
-                            <a href="https://earthmc.net/map/nova/?worldname=earth&mapname=flat&zoom=6&x=-13140&y=64&z=2710">DynMapで見る</a>
+                            <a href="https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=6&x=20617&y=64&z=-7085">DynMapで見る</a>
                         </div>
 
                         <div class="info_item">
@@ -112,8 +104,9 @@
                     </div>
 
                     <h2 id="major_players">大臣紹介</h2>
-                    <p>ユーザー名が<span class="isonline">赤色</span>ならオンライン、<span class="isoffline">青色</span>ならオフライン、黒色ならオンライン情報の未取得を示しています。</p>
-                    <p>他のプレイヤーは<a onclick="notfound()">こちらから</a>閲覧できます。</p>
+                    <!-- <p>ユーザー名が<span class="isonline">赤色</span>ならオンライン、<span class="isoffline">青色</span>ならオフライン、黒色ならオンライン情報の未取得を示しています。</p> -->
+                    <!-- <p>他のプレイヤーは<a onclick="notfound()">こちらから</a>閲覧できます。</p> -->
+                    <p>準備中...</p>
                     <div class="container">
                         {% for primary in primaries %}
                             <div class="info_item">
@@ -150,7 +143,7 @@
                     </div>
 
                     <h2>地図</h2>
-                    <iframe id="dynmap" src="https://earthmc.net/map/nova/?worldname=earth&mapname=flat&zoom=5&x=-13112&y=64&z=2675"></iframe>
+                    <iframe id="dynmap" src="https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=6&x=20620&y=64&z=-7094"></iframe>
 
                     <h2>その他の情報</h2>
                     <p>その他の情報については<a onclick="notfound()">こちらのページ</a>からご覧になることができます</p>
@@ -158,14 +151,14 @@
                     <h1>Xia国民になろう！</h1>
                     <div class="underline"></div>
                     <h2>素敵な特典</h2>
-                    <p>Xia国民になると初期装備として以下の特典が貰えます！</p>
-                    <ul class="itemlist">
+                    <p>準備中...</p>
+                    <!-- <ul class="itemlist">
                         <li><img src="{% static 'xia/image/oak.png' %}">原木 64個</li>
                         <li><img src="{% static 'xia/image/iron.png' %}">鉄インゴット 64個</li>
                         <li><img src="{% static 'xia/image/diamond.png' %}">ダイヤモンド 32個</li>
                         <li><img src="{% static 'xia/image/potato.png' %}">食料 64個</li>
                         <li><i class="fas fa-cubes"></i>土地 1チャンク</li>
-                    </ul>
+                    </ul> -->
 
                     <h2>Xia国民になるには</h2>
                     <ul class="itemlist">
@@ -181,7 +174,7 @@
                         <ul class="liindent2">
                             <li>Discordを使える場合</li>
                             <ol class="liindent3">
-                                <li>XiaのDiscordに参加します　URL:<a href="https://discord.gg/nem8eNuu">https://discord.gg/nem8eNuu</a></li>
+                                <li>XiaのDiscordに参加します　URL:<a href="https://discord.gg/n9237pup6C">https://discord.gg/n9237pup6C</a></li>
                                 <li>雑談チャンネルにて<code onclick="copyCode('@大臣 Xiaに入りたいです')">@大臣 Xiaに入りたいです</code>とチャットで話してください。</li>
                                 <li>しばらくすると大臣より案内が来ますので指示に従ってください。</li>
                             </ol>
@@ -198,12 +191,9 @@
                     
                     <h2>各種リンク</h2>
                     <ul class="itemlist" id="links">
-                        <li><i class="fab fa-youtube"></i>Xia放送局[公式]　URL:<a href="https://www.youtube.com/channel/UCbjn-i9H4iem98rTWYeZZ8w">https://www.youtube.com/channel/UCbjn-i9H4iem98rTWYeZZ8w</a></li>
-                        <li><i class="fab fa-discord"></i>Xia(Xia) Discord　URL:<a href="https://discord.gg/nem8eNuu">https://discord.gg/nem8eNuu</a></li>
-                        <li><i class="fab fa-discord"></i>鬼山幕府 Discord　URL:<a href="https://discord.gg/83sTah7Jcu">https://discord.gg/83sTah7Jcu</a></li>
-                        <li>君もXiaに来なXia？　URL:<a href="https://sites.google.com/view/xia-teikoku/">https://sites.google.com/view/xia-teikoku</a></li>
-                        <li>Xia　法律　URL:<a href="https://sites.google.com/view/xia-houritu/">https://sites.google.com/view/xia-houritu/</a></li>
-                        <li>鬼山幕府参加届　URL:<a href="https://docs.google.com/forms/u/1/d/e/1FAIpQLSfH-1NMt3r48_TtYfmfTRHvwaemBAc9HAhtvn0PY4pTPLdZYg/viewform">https://docs.google.com/forms/u/1/d/e/1FAIpQLSfH-1NMt3r48_TtYfmfTRHvwaemBAc9HAhtvn0PY4pTPLdZYg/viewform</a></li>
+                        <li><i class="fab fa-discord"></i>Xia Discord　URL:<a href="https://discord.gg/n9237pup6C">https://discord.gg/n9237pup6C</a></li>
+                        <li><i class="fab fa-youtube"></i>インカ放送局[公式]　URL:<a href="https://www.youtube.com/channel/UCbjn-i9H4iem98rTWYeZZ8w">https://www.youtube.com/channel/UCbjn-i9H4iem98rTWYeZZ8w</a></li>
+                        <li>インカ法務省公式ページ　URL:<a href="https://sites.google.com/view/inca-houmu-syou-koushiki">https://sites.google.com/view/inca-houmu-syou-koushiki</a></li>
                         <li>EarthMC　URL:<a href="https://earthmc.net/">https://earthmc.net/</a></li>
                         <!-- <li><i class=""></i>　URL:<a href=""></a></li> -->
                     </ul>
@@ -285,15 +275,8 @@
     <script>
         $(document).ready(function(){
         $('.clImg img:gt(0)').hide();
-        var cli = 1;
-        var clTitle = "{{ clTitle|safe }}".replace(/\'/g, "").slice(1, -1).split("\, ");
-        var clPlayers = "{{ clPlayers|safe }}".replace(/\'/g, "").slice(1, -1).split("\, ");
-        var clLen = clPlayers.length;
         setInterval(function() {
             $('.clImg :first-child').fadeOut().next('img').fadeIn().end().appendTo('.clImg');
-            document.getElementById('photo_title').innerHTML = "<i class='fas fa-image'></i> " + clTitle[cli % clLen];
-            document.getElementById('photo_player').innerHTML = "<i class='fas fa-user'></i> " + clPlayers[cli % clLen];
-            document.getElementById('photo_progress').innerHTML = String((cli % clLen) + 1) + "枚目 / " + String(clLen) + "枚";
             cli += 1;
         },5000);
     });

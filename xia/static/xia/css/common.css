@@ -28,6 +28,7 @@ header {
 
 .header-left {
     margin-left: 8px;
+    display: flex;
     float: left;
 }
 
@@ -105,6 +106,13 @@ header {
 .logo {
     height: 50px;
     margin-top: 6px;
+}
+
+.logomoji {
+    margin: 9px 0 0 5px ;
+    font-size: 35px;
+    font-weight: 600;
+    color: #BB002D;
 }
 
 
@@ -328,6 +336,10 @@ code {
     text-align: center;
     font-size: 25px;
     line-height: 25px;
+}
+
+.info_data_small {
+    font-size: 20px !important;
 }
 
 .info_warning {
