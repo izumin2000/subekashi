@@ -112,7 +112,7 @@ def isExistEMCNation(nation) :
 
 
 # 国の情報を更新しDBに登録
-def set_nation(nation): 
+def set_nation(nation, getPlayer): 
     ableAPI = True      # APIを取得できたかどうか
 
     # 国のデータを取得
@@ -125,9 +125,11 @@ def set_nation(nation):
     # 国王のデータを取得
     if ableAPI :
         ins_king, _ = Player.objects.get_or_create(name = king, defaults = {"name" : king})
-        king_dict = get_API(EMC_API_URL, "allplayers/" + king)       
 
-        if not king_dict :      # allplayers/の取得に失敗したら
+        if getPlayer :
+            ableAPI, ins_king = set_player(king, False)
+
+        if not ableAPI :      # allplayers/の取得に失敗したら
             ins_king = isExistDBPlayer(king)      # Player DBからアーカイブを読み取り
             ableAPI = False
 
@@ -152,8 +154,17 @@ def set_nation(nation):
     return ableAPI, ins_king, ins_nation
 
 
+# プレイヤーの情報を取得
+def get_player(player) :
+    players_dict = get_API(EMC_API_URL, "allplayers/")
+    if players_dict :
+        for player_dict in players_dict :
+            if player_dict["name"] == player :
+                return player_dict
+        
+
 # プレイヤーの情報を更新しDBに登録
-def set_player(player, isget_nation):
+def set_player(player, getNation):
     ableAPI = True      # APIを取得できたかどうか
     ins_player, _ = Player.objects.get_or_create(name = player, defaults = {"name" : player})
 
@@ -164,6 +175,8 @@ def set_player(player, isget_nation):
         ins_player.online = True
     else :      # onlineplayers/の取得に失敗したら
         ins_player.online = False
+        if not ins_player.nickname :
+            ins_player.nickname = player
 
     # UUIDの取得と登録
     uuid_dict = get_API(UUID_API_URL, player)
@@ -172,37 +185,37 @@ def set_player(player, isget_nation):
     else :
         ableAPI = False
     
-    # プレイヤーの情報を取得
-    player_dict = get_API(EMC_API_URL, "allplayers/" + player)
+    # player_dict = get_API(EMC_API_URL, "allplayers/" + player)
+    player_dict = get_player(player)
     if player_dict :        # allplayers/の取得に成功したら
-
+        ins_player.town = player_dict["town"]
         # プレイヤーの国の情報を登録
         nation = player_dict["nation"]
-        if (nation != "No Nation") and isget_nation:        # 国に所属していてnationの情報を取得するのなら
-            ableAPIerea, ins_king, ins_nation = set_nation(nation)
+        if (nation != "No Nation") and (getNation or ins_player.nation == None):        # 国に所属していてnationの情報を取得するのなら
+            ableAPIerea, ins_king, ins_nation = set_nation(nation, False)
             ableAPI &= ableAPIerea
 
             if ableAPI :        # 今までにAPIの取得に成功していたら
                 ins_player.nation = ins_nation
                 if player != ins_king.name :        # 国王だったら
-                    ableAPItmp = set_player(ins_king.name, False)      # 再帰させる
+                    ableAPItmp, _= set_player(ins_king.name, False)      # 再帰させる
                     ableAPI &= ableAPItmp
 
             else :      # 今までにAPIが取得できないことがあったら
-                ins_player.nation = isExistEMCNation(nation)
+                nation, _ = isExistEMCNation(nation)
+                ins_player.nation = Nation.objects.filter(name = nation).first()
                 ableAPI = False
                 
             # OUR_NATION国民の登録
             if nation == OUR_NATION :
-                ins_citizen, _ = Citizen.get_or_create(name = player, defaults = {"name" : player})
-                ins_citizen.player = ins_player
+                ins_citizen, _ = Citizen.objects.get_or_create(player = ins_player, defaults = {"player" : ins_player})
                 ins_citizen.save()
                 
     else :      # allplayers/の取得に失敗したら
         ableAPI = False
 
     ins_player.save()
-    return ableAPI
+    return ableAPI, ins_player
 
 
 # dynmapの拡大率
@@ -246,11 +259,11 @@ def top(request):
 
         # 大臣の情報とOUR_NATIONの更新
         for minister in ministers :
-            ableAPIplayer = set_player(minister, True)
+            ableAPIplayer, _ = set_player(minister, True)
             ableAPI &= ableAPIplayer
 
     else :      # 大臣が一人もいなかったら
-        ableAPI, _, _ = set_nation(OUR_NATION)        # OUR_NATIONの更新
+        ableAPI, _, _ = set_nation(OUR_NATION, True)        # OUR_NATIONの更新
 
     # OUR_NATIONの情報の取得
     ins_ournation = isExistDBNation(OUR_NATION)
@@ -328,7 +341,7 @@ def modarticle(request, nation) :
             if nation :      # input_nationがEMC上にあったら
 
                 # Tourレコードの作成・更新
-                ableAPI, _, ins_nation = set_nation(nation)
+                ableAPI, _, ins_nation = set_nation(nation, True)
                 if ableAPI :        # APIの取得に成功したら
                     ins_tour, iscreated = Tour.objects.get_or_create(name = nation, defaults = {"name" : nation})
                     ins_nation.istour = True
@@ -389,9 +402,9 @@ def nation(request, nation) :
             nation_dict["infomation"] = "この機能はまだ実装してません"
 
         nation = ins_tour.name
-        ableAPInation, ins_king, ins_nation = set_nation(nation)
+        ableAPInation, ins_king, ins_nation = set_nation(nation, True)
 
-        ableAPIplayer = set_player(ins_king.name, False)
+        ableAPIplayer, _ = set_player(ins_king.name, False)
         ableAPI = ableAPInation & ableAPIplayer
 
         if ableAPI :        # APIを取得できたら
