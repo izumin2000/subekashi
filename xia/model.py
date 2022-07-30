@@ -54,11 +54,6 @@ class Screenshot(models.Model) :
     # display = models.BooleanField(default = True)
     tour = models.ForeignKey("Tour", on_delete = models.CASCADE, blank = True, null = True, related_name = "screenshot_tour")
 
-class Firstview(models.Model) :
-    name = models.CharField(default = "", max_length = 100)
-    title = models.CharField(default = "無題", max_length = 20)
-    display = models.BooleanField(default = True)
-
 class Analyze(models.Model) :
     date = models.DateField(null = True, blank = True)
     pv = models.IntegerField(default = 0)

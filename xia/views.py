@@ -1,6 +1,6 @@
 from django.shortcuts import redirect, render
 from xia.forms import FirstviewForm, PlayerForm
-from xia.model import Player, Citizen, Minister, Criminal, Gold, Screenshot, Tour, Nation, Firstview, Analyze
+from xia.model import Player, Citizen, Minister, Criminal, Gold, Screenshot, Tour, Nation, Analyze
 import requests
 from datetime import date
 import json
@@ -259,15 +259,8 @@ def top(request):
         our_info["our"] = ins_ournation
 
     else :      # DBにOUR_NATIONが無かったら
-        # our_info.update({"population":"エラー", "area":"エラー", "king":"エラー", "capitalName":"エラー"})
+        our_info.update({"population":"エラー", "area":"エラー", "king":"エラー", "capitalName":"エラー"})
         ableAPI = False
-
-    # ファーストビューの処理
-    # firstviews = Firstview.objects.filter(display = True).order_by('?')[:min(Firstview.objects.count(), NUMBER_OF_FIRSTVIEWS)]     # ランダムにNUMBER_OF_FIRSTVIEWS個取り出す
-    # firstviews = list(firstviews.values())
-    # if len(firstviews) :
-        # our_info["clTitle"] = [d.get('title') for d in firstviews]
-        # our_info["clPlayers"] = [d.get('player') for d in firstviews]
 
     # APIが正常に処理できたかどうかの情報の登録
     our_info["ableAPI"] = ableAPI
