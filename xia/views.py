@@ -1,14 +1,14 @@
 from django.shortcuts import redirect, render
-from inca.forms import FirstviewForm, PlayerForm
-from inca.model import Player, Citizen, Minister, Criminal, Gold, Screenshot, Tour, Nation, Firstview, Analyze
+from xia.forms import FirstviewForm, PlayerForm
+from xia.model import Player, Citizen, Minister, Criminal, Gold, Screenshot, Tour, Nation, Firstview, Analyze
 import requests
 from datetime import date
 import json
 from time import sleep
 
 
-OUR_NATION = "Inca_Empire"
-EMC_API_URL = "https://earthmc-api.herokuapp.com/api/v1/nova/"
+OUR_NATION = "Xia"
+EMC_API_URL = "https://emc-toolkit.vercel.app/api/aurora/"
 UUID_API_URL = "https://api.mojang.com/users/profiles/minecraft/"
 WORLD_URL = "nova/"     # "aurora/"
 UPLOAD_URL = "uploadfiles/"
@@ -234,9 +234,9 @@ insAnalyze.save()
 
 
 def root(request):
-    return render(request, 'inca/root.html')
+    return render(request, 'xia/root.html')
 
-def inca(request):
+def top(request):
     our_info = {}       # テンプレートに渡す辞書
     ableAPI = True
 
@@ -274,7 +274,7 @@ def inca(request):
     if not ableAPI :        # いままでにAPIの取得に失敗していたら
         our_info["error"] = "Earth MCからの情報の取得に失敗した為、アーカイブ記事を表示します。"
 
-    return render(request, 'inca/inca.html', our_info)
+    return render(request, 'xia/top.html', our_info)
 
 def emctour(request) :
     emctour_dict = {"nation" : "new"}
@@ -289,7 +289,7 @@ def emctour(request) :
         if ins_tour :     # input_nationがTour DBにあったら
             emctour_dict["jump"] = ins_tour.name
             emctour_dict["infomation"] = ins_tour.name + "の記事を読み込んでいます"
-            return render(request, 'inca/emctour.html', emctour_dict)        # js側でリダイレクトの処理
+            return render(request, 'xia/emctour.html', emctour_dict)        # js側でリダイレクトの処理
 
         # input_nationがTour DBに無かった場合、EMC上にinput_nationの国が存在するか確認
         is_nation, ableAPI = isExistEMCNation(input_nation)
@@ -302,7 +302,7 @@ def emctour(request) :
             else :      # input_nationがEMC上に無かったら
                 emctour_dict["error"] = input_nation + "はEarth MC上に存在しません。"
 
-            return render(request, 'inca/emctour.html', emctour_dict)
+            return render(request, 'xia/emctour.html', emctour_dict)
 
         else :      # APIの取得に失敗したら
             # Tour DB からアーカイブがあるか確認
@@ -311,12 +311,12 @@ def emctour(request) :
                 emctour_dict["error"] = "Earth MCからの情報の取得に失敗しました。"  
                 emctour_dict["infomation"] = ins_tour.name + "のアーカイブ記事を表示します。"
                 emctour_dict["jump"] = ins_tour.name        # リダイレクト先のnation    
-                return render(request, 'inca/emctour.html', emctour_dict)
+                return render(request, 'xia/emctour.html', emctour_dict)
             else :          # Tour DBにアーカイブが無いのなら
                 emctour_dict["error"] = "Earth MCからのデータの取得に失敗し、" + input_nation + "のアーカイブ記事もありません。再度時間を置いてアクセスしてください。"
-                return render(request, 'inca/emctour.html', emctour_dict)
+                return render(request, 'xia/emctour.html', emctour_dict)
 
-    return render(request, 'inca/emctour.html', emctour_dict)
+    return render(request, 'xia/emctour.html', emctour_dict)
 
 
 # 記事の作成・編集
@@ -350,12 +350,12 @@ def modarticle(request, nation) :
 
                     modarticle_dict["info"] = ins_tour.info
                     modarticle_dict["jump"] = nation      # リダイレクト先のnation
-                    return render(request, 'inca/modarticle.html', modarticle_dict)        # js側でリダイレクトの処理
+                    return render(request, 'xia/modarticle.html', modarticle_dict)        # js側でリダイレクトの処理
 
             else :      # input_nationがEMC上に無かった場合
                 modarticle_dict["error"] = input_nation + "はEarth MC上に存在しません。"
                 modarticle_dict["info"] = input_info
-                return render(request, 'inca/modarticle.html', modarticle_dict)
+                return render(request, 'xia/modarticle.html', modarticle_dict)
 
         if not ableAPI :      # 今までにAPIの取得に失敗したら
             # Tour DB からアーカイブがあるか確認
@@ -367,10 +367,10 @@ def modarticle(request, nation) :
                 modarticle_dict["error"] = "Earth MCからの情報の取得に失敗しました。"  
                 modarticle_dict["infomation"] = nation + "のアーカイブ記事を表示します。"
                 modarticle_dict["jump"] = nation        # リダイレクト先のnation    
-                return render(request, 'inca/modarticle.html', modarticle_dict)
+                return render(request, 'xia/modarticle.html', modarticle_dict)
             else :          # Tour DBにアーカイブが無いのなら
                 modarticle_dict["error"] = "Earth MCからのデータの取得に失敗し、" + input_nation + "のアーカイブ記事もありません。再度時間を置いてアクセスしてください。"
-                return render(request, 'inca/emctour.html', modarticle_dict)
+                return render(request, 'xia/emctour.html', modarticle_dict)
 
     # infoの取得
     ins_tours = Tour.objects.filter(name = nation)
@@ -380,7 +380,7 @@ def modarticle(request, nation) :
     else:
         modarticle_dict["info"] = ""
 
-    return render(request, 'inca/modarticle.html', modarticle_dict)
+    return render(request, 'xia/modarticle.html', modarticle_dict)
 
 
 # 国の記事
@@ -421,7 +421,7 @@ def nation(request, nation) :
             nation_dict["km2"] = ins_tour.nation.area * 256 / 1000
             nation_dict["screenshots"] = ins_tour.screenshot_tour.all()
             nation_dict["ableAPI"] = ableAPI
-            return render(request, 'inca/nation.html', nation_dict)
+            return render(request, 'xia/nation.html', nation_dict)
         
         else :      # APIの取得に失敗したら
             # Tour DB からアーカイブがあるか確認
@@ -435,17 +435,17 @@ def nation(request, nation) :
                 nation_dict["km2"] = ins_tour.nation.area * 256 / 1000
                 nation_dict["screenshots"] = ins_tour.screenshot_tour.all()
                 nation_dict["ableAPI"] = ableAPI 
-                return render(request, 'inca/nation.html', nation_dict)
+                return render(request, 'xia/nation.html', nation_dict)
             else :          # Tour DBにアーカイブが無いのなら
                 nation_dict["error"] = "Earth MCからのデータの取得にし、" + nation + "のアーカイブ記事もありません。再度時間を置いてアクセスしてください。"      
                 nation_dict["nation"] = "new"
-                return render(request, 'inca/modarticle.html', nation_dict)
+                return render(request, 'xia/modarticle.html', nation_dict)
 
     else :      # Tour DBにnationが無かったら
         nation_dict["noArticle"] = True
         nation_dict["nation"] = nation
         nation_dict["error"] = nation + "の記事が存在しません。"
-        return render(request, 'inca/emctour.html', nation_dict)
+        return render(request, 'xia/emctour.html', nation_dict)
 
 
 # 記事一覧
@@ -464,7 +464,7 @@ def nationlist(request, order) :
     nationlist_dict["nations"] = nations
     nationlist_dict["order"] = order
 
-    return render(request, 'inca/nationlist.html', nationlist_dict)
+    return render(request, 'xia/nationlist.html', nationlist_dict)
 
 
 """
@@ -479,7 +479,7 @@ def firstview(request) :
         displayoff = request.POST.get("displayoff")
         delete = request.POST.get("delete")
         password = request.POST.get("password")
-        if password == "incagold" :
+        if password == "xiagold" :
             filename = name.replace("firstview/", "").replace(".png", "")
             name = "firstview/" + filename + ".png"
             insFirstview, created = Firstview.objects.get_or_create(name = name, defaults = {"name" : name})
@@ -508,7 +508,7 @@ def firstview(request) :
 
     form = FirstviewForm()
     result["form"] = form
-    return render(request, 'inca/firstview.html', result)
+    return render(request, 'xia/firstview.html', result)
 
 
 def editplayer(request) :
@@ -520,7 +520,7 @@ def editplayer(request) :
     crime = request.POST.get("crime")
     info = request.POST.get("info")
     password = request.POST.get("password")
-    if password == "incagold" :
+    if password == "xiagold" :
         insPlayer, _ = Player.objects.get_or_create(name = name, defaults = {"name" : name})
         if rank != "" :
             insPlayer.rank = rank
@@ -535,7 +535,7 @@ def editplayer(request) :
     form = PlayerForm()
     result["form"] = form
     result["players"] = Player.objects.all()
-    return render(request, 'inca/editplayer.html', result)
+    return render(request, 'xia/editplayer.html', result)
 """
 
 
@@ -547,4 +547,4 @@ def pv(request) :
     axisxlist = list(range(len(pv)))
 
     result = {"pv" : pv, "allpv" : allpv, "axisxlist" : axisxlist}
-    return render(request, 'inca/pv.html', result)
+    return render(request, 'xia/pv.html', result)

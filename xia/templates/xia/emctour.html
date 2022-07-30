@@ -10,16 +10,16 @@
         <meta name="twitter:site" content="@KANATA20002">
         <meta name="og:type" content="website">
         <meta name="og:title" content="EMC tour">
-        <meta name="og:image" content="{% static 'inca/image/emctour.png' %}">
+        <meta name="og:image" content="{% static 'xia/image/emctour.png' %}">
         <meta name="og:description" content="EarthMCの国に関する情報を掲載しているサイトです。">
-        <meta name="og:url" content="https://config.pythonanywhere.com/inca">
+        <meta name="og:url" content="https://config.pythonanywhere.com/xia">
         <meta name="description" content="EarthMCの国に関する情報を掲載しているサイトです。">
         <meta meta="" name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
         <meta charset="utf-8">
         <title>EMC tour</title>
-        <link rel="stylesheet" type="text/css" href="{% static 'inca/css/common.css'%}">
-        <link rel="stylesheet" type="text/css" href="{% static 'inca/css/emctour.css'%}">
-        <link rel="shortcut icon" href="{% static 'inca/image/emctour.ico' %}">
+        <link rel="stylesheet" type="text/css" href="{% static 'xia/css/common.css'%}">
+        <link rel="stylesheet" type="text/css" href="{% static 'xia/css/emctour.css'%}">
+        <link rel="shortcut icon" href="{% static 'xia/image/emctour.ico' %}">
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
         <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" /> <!-- toastr -->
     </head>
@@ -28,14 +28,14 @@
     <body>
         <header>
             <div class="header-left">
-                <a href="{% url 'inca:emctour' %}"><img name="thumbnail" class="logo" src="{% static 'inca/image/emctourlogo.png' %}" alt="EMC tourのロゴ"></a>
+                <a href="{% url 'xia:emctour' %}"><img name="thumbnail" class="logo" src="{% static 'xia/image/emctourlogo.png' %}" alt="EMC tourのロゴ"></a>
             </div>
 
             <div class="header-right">
                 <nav>
-                    <a href="{% url 'inca:emctour' %}">トップ</a>
-                    <a href="{% url 'inca:modarticle' nation %}">作成・編集</a>
-                    <a href="{% url 'inca:nationlist' 'name' %}">記事一覧</a>
+                    <a href="{% url 'xia:emctour' %}">トップ</a>
+                    <a href="{% url 'xia:modarticle' nation %}">作成・編集</a>
+                    <a href="{% url 'xia:nationlist' 'name' %}">記事一覧</a>
                 </nav>
             </div>
 
@@ -46,10 +46,10 @@
             <article>
                 <section class="firstview">
                     <div class="clImg">
-                        <img src="{% static 'inca/image/backgroundmap.png' %}" alt="EMCの世界地図">
+                        <img src="{% static 'xia/image/backgroundmap.png' %}" alt="EMCの世界地図">
                     </div>
                 </section>
-                <form action="{% url 'inca:emctour' %}" method="POST" class="nation-form">{% csrf_token %}
+                <form action="{% url 'xia:emctour' %}" method="POST" class="nation-form">{% csrf_token %}
                     <input type="text" id="nation" name="nation" placeholder="国名を入力" value="{{ nation }}">
                     <button class="formbutton">検索</button>
                 </form>
@@ -78,7 +78,7 @@
     
     <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
 
-    <script src="{% static 'inca/js/playerpopup.js' %}"></script>
+    <script src="{% static 'xia/js/playerpopup.js' %}"></script>
 
     <script>
         window.onload = function() {
@@ -107,17 +107,17 @@
             "{% endif %}"
 
             toastr.options.onclick = function () {
-                window.location.href = "{% url 'inca:modarticle' nation %}";
+                window.location.href = "{% url 'xia:modarticle' nation %}";
             };
             
             // toastrの記事作成案内ページ
             "{% if noArticle %}"
-                toastr.info("{{ nation }}の記事を作成する場合は<a class='modarticle' href={% url 'inca:modarticle' nation %}>こちら</a>をクリックしてください");
+                toastr.info("{{ nation }}の記事を作成する場合は<a class='modarticle' href={% url 'xia:modarticle' nation %}>こちら</a>をクリックしてください");
             "{% endif %}"
             
             // nationのリダイレクト
             "{% if jump %}"
-                window.location.href = "{% url 'inca:nation' jump %}";
+                window.location.href = "{% url 'xia:nation' jump %}";
             "{% endif %}"
 
             // nation inputの中身が"new"なら消す

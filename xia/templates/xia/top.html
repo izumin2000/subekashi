@@ -9,17 +9,17 @@
         <meta name="twitter:card" content="summary">
         <meta name="twitter:site" content="@KANATA20002">
         <meta name="og:type" content="website">
-        <meta name="og:title" content="インカ帝国へようこそ">
-        <meta name="og:image" content="{% static 'inca/image/flag.png' %}">
-        <meta name="og:description" content="EarthMCの南アメリカ大陸にある国、インカ帝国の紹介サイトです。">
-        <meta name="og:url" content="https://config.pythonanywhere.com/inca">
-        <meta name="description" content="EarthMCの南アメリカ大陸にある国、インカ帝国の紹介サイトです。">
+        <meta name="og:title" content="Xiaへようこそ">
+        <meta name="og:image" content="{% static 'xia/image/flag.png' %}">
+        <meta name="og:description" content="EarthMCの南アメリカ大陸にある国、Xiaの紹介サイトです。">
+        <meta name="og:url" content="https://config.pythonanywhere.com/xia">
+        <meta name="description" content="EarthMCの南アメリカ大陸にある国、Xiaの紹介サイトです。">
         <meta meta="" name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
         <meta charset="utf-8">
-        <title>インカ帝国 - トップ</title>
-        <link rel="stylesheet" type="text/css" href="{% static 'inca/css/common.css'%}">
-        <link rel="stylesheet" type="text/css" href="{% static 'inca/css/top.css'%}">
-        <link rel="shortcut icon" href="{% static 'inca/image/flag.ico' %}">
+        <title>Xia - トップ</title>
+        <link rel="stylesheet" type="text/css" href="{% static 'xia/css/common.css'%}">
+        <link rel="stylesheet" type="text/css" href="{% static 'xia/css/top.css'%}">
+        <link rel="shortcut icon" href="{% static 'xia/image/flag.ico' %}">
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
         <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" /> <!-- toastr -->
     </head>
@@ -28,14 +28,14 @@
     <body>
         <header>
             <div class="header-left">
-                <a href="{% url 'inca:inca' %}"><img name="thumbnail" class="logo" src="{% static 'inca/image/flag.png' %}" alt="インカ帝国の国旗"></a>
+                <a href="{% url 'xia:top' %}"><img name="thumbnail" class="logo" src="{% static 'xia/image/flag.png' %}" alt="Xiaの国旗"></a>
             </div>
 
             <div class="header-right">
                 <nav>
-                    <a href="{% url 'inca:inca' %}">トップ</a>
+                    <a href="{% url 'xia:top' %}">トップ</a>
                     <a onclick="notfound()">情報</a>
-                    <a href="{% url 'inca:emctour' %}">外国</a>
+                    <a href="{% url 'xia:emctour' %}">外国</a>
                     <a onclick="notfound()">所属申請</a>
                 </nav>
             </div>
@@ -49,11 +49,11 @@
                 <section class="firstview">
                     <div class="clImg">
                         {% for name in names %}
-                            <img src="{% static name %}" alt="インカ帝国に関する画像">
+                            <img src="{% static name %}" alt="Xiaに関する画像">
                         {% endfor %}
                     </div>
 
-                    <b><span id="top_title">インカ帝国 公式ホームページ</span></b>
+                    <b><span id="top_title">Xia 公式ホームページ</span></b>
                     <div class="photo_info">
                         <p id="photo_title"><i class="fas fa-image"></i> {{ clTitle.0 }}</p>
                         <p id="photo_player"><i class="fas fa-user"></i> {{ clPlayers.0 }}</p>
@@ -62,10 +62,10 @@
                 </section>
             
                 <section class="welcome">
-                    <h1>インカ帝国について</h1>
+                    <h1>Xiaについて</h1>
                     <div class="underline"></div>
                     <h2>概要</h2>
-                    <p>インカ帝国(Inca_Empire)とは<a href="https://earthmc.net/">EarthMC</a>の<a href="#dynmap">南米チチカカ湖の北岸に位置する</a>日本人勢による国です。</p>
+                    <p>Xia(Xia)とは<a href="https://earthmc.net/">EarthMC</a>の<a href="#dynmap">南米チチカカ湖の北岸に位置する</a>日本人勢による国です。</p>
                     <p>元は<a href="https://earthmc.fandom.com/wiki/Peru">ペルー</a>に所属していて、首都であるクスコを差し置いて同国内最大の土地でしたが、2022年1月5日独立しました。</p>
                     <p>現在は<a href="https://discord.gg/83sTah7Jcu">鬼山幕府</a>の傘下に入っています。</p>
 
@@ -77,7 +77,7 @@
                         <div class="info_item">
                             <p class="info_title">国旗</p>
                             <div class="info_underline"></div>
-                            <img class="info_flag" src="{% static 'inca/image/flag.png' %}">
+                            <img class="info_flag" src="{% static 'xia/image/flag.png' %}">
                         </div>
 
                         <div class="info_item">
@@ -129,7 +129,7 @@
                                 {% if primary.uuid %}
                                     <img class="skin" src="https://crafatar.com/renders/head/{{ primary.uuid }}">
                                 {% else %}
-                                    <img class="unknown_skin" src="{% static 'inca/image/unknown_skin.png' %}">
+                                    <img class="unknown_skin" src="{% static 'xia/image/unknown_skin.png' %}">
                                 {% endif %}
                                 <label for="trigger" class="open_btn" onclick="playerpopup('{{ primary.uuid }}', '{{ primary.name }}', '{{ ableAPI }}', '{{ primary.online }}', '{{ primary.info }}')">詳しく見る</label>
                                 <div class="popup_wrap">
@@ -155,34 +155,34 @@
                     <h2>その他の情報</h2>
                     <p>その他の情報については<a onclick="notfound()">こちらのページ</a>からご覧になることができます</p>
 
-                    <h1>インカ国民になろう！</h1>
+                    <h1>Xia国民になろう！</h1>
                     <div class="underline"></div>
                     <h2>素敵な特典</h2>
-                    <p>インカ国民になると初期装備として以下の特典が貰えます！</p>
+                    <p>Xia国民になると初期装備として以下の特典が貰えます！</p>
                     <ul class="itemlist">
-                        <li><img src="{% static 'inca/image/oak.png' %}">原木 64個</li>
-                        <li><img src="{% static 'inca/image/iron.png' %}">鉄インゴット 64個</li>
-                        <li><img src="{% static 'inca/image/diamond.png' %}">ダイヤモンド 32個</li>
-                        <li><img src="{% static 'inca/image/potato.png' %}">食料 64個</li>
+                        <li><img src="{% static 'xia/image/oak.png' %}">原木 64個</li>
+                        <li><img src="{% static 'xia/image/iron.png' %}">鉄インゴット 64個</li>
+                        <li><img src="{% static 'xia/image/diamond.png' %}">ダイヤモンド 32個</li>
+                        <li><img src="{% static 'xia/image/potato.png' %}">食料 64個</li>
                         <li><i class="fas fa-cubes"></i>土地 1チャンク</li>
                     </ul>
 
-                    <h2>インカ国民になるには</h2>
+                    <h2>Xia国民になるには</h2>
                     <ul class="itemlist">
                         <li><a href="#major_players">大臣</a>が<span clss="isonline">ログイン</span>している場合</li>
                         <ol class="liindent1">
                             <li>EarthMCに参加してください</li>
                             <li>チャットを開き<code onclick="copyCode('/ch join japanese')">/ch join japanese</code>と入力してください。</li>
-                            <li><code onclick="copyCode('インカ帝国に入りたいです')">インカ帝国に入りたいです</code>とチャットで話してください。</li>
-                            <li>招待が届くので、<code onclick="copyCode('/accept')">/accept</code>と入力してください。これでインカ国民になれます。</li>
-                            <li><code onclick="copyCode('/n spawn Inca_Empire')">/n spawn Inca_Empire</code>でインカにテレポートできます。</li>
+                            <li><code onclick="copyCode('Xiaに入りたいです')">Xiaに入りたいです</code>とチャットで話してください。</li>
+                            <li>招待が届くので、<code onclick="copyCode('/accept')">/accept</code>と入力してください。これでXia国民になれます。</li>
+                            <li><code onclick="copyCode('/n spawn Xia')">/n spawn Xia</code>でXiaにテレポートできます。</li>
                         </ol>
                         <li><a href="#major_players">大臣</a>が<span clss="isonline">ログイン</span>していない場合</li>
                         <ul class="liindent2">
                             <li>Discordを使える場合</li>
                             <ol class="liindent3">
-                                <li>インカ帝国のDiscordに参加します　URL:<a href="https://discord.gg/nem8eNuu">https://discord.gg/nem8eNuu</a></li>
-                                <li>雑談チャンネルにて<code onclick="copyCode('@大臣 インカ帝国に入りたいです')">@大臣 インカ帝国に入りたいです</code>とチャットで話してください。</li>
+                                <li>XiaのDiscordに参加します　URL:<a href="https://discord.gg/nem8eNuu">https://discord.gg/nem8eNuu</a></li>
+                                <li>雑談チャンネルにて<code onclick="copyCode('@大臣 Xiaに入りたいです')">@大臣 Xiaに入りたいです</code>とチャットで話してください。</li>
                                 <li>しばらくすると大臣より案内が来ますので指示に従ってください。</li>
                             </ol>
                             <li>Discordを使えない場合</li>
@@ -198,11 +198,11 @@
                     
                     <h2>各種リンク</h2>
                     <ul class="itemlist" id="links">
-                        <li><i class="fab fa-youtube"></i>インカ放送局[公式]　URL:<a href="https://www.youtube.com/channel/UCbjn-i9H4iem98rTWYeZZ8w">https://www.youtube.com/channel/UCbjn-i9H4iem98rTWYeZZ8w</a></li>
-                        <li><i class="fab fa-discord"></i>インカ帝国(Inca_Empire) Discord　URL:<a href="https://discord.gg/nem8eNuu">https://discord.gg/nem8eNuu</a></li>
+                        <li><i class="fab fa-youtube"></i>Xia放送局[公式]　URL:<a href="https://www.youtube.com/channel/UCbjn-i9H4iem98rTWYeZZ8w">https://www.youtube.com/channel/UCbjn-i9H4iem98rTWYeZZ8w</a></li>
+                        <li><i class="fab fa-discord"></i>Xia(Xia) Discord　URL:<a href="https://discord.gg/nem8eNuu">https://discord.gg/nem8eNuu</a></li>
                         <li><i class="fab fa-discord"></i>鬼山幕府 Discord　URL:<a href="https://discord.gg/83sTah7Jcu">https://discord.gg/83sTah7Jcu</a></li>
-                        <li>君もインカ帝国に来なインカ？　URL:<a href="https://sites.google.com/view/inca-teikoku/">https://sites.google.com/view/inca-teikoku</a></li>
-                        <li>インカ帝国　法律　URL:<a href="https://sites.google.com/view/inca-houritu/">https://sites.google.com/view/inca-houritu/</a></li>
+                        <li>君もXiaに来なXia？　URL:<a href="https://sites.google.com/view/xia-teikoku/">https://sites.google.com/view/xia-teikoku</a></li>
+                        <li>Xia　法律　URL:<a href="https://sites.google.com/view/xia-houritu/">https://sites.google.com/view/xia-houritu/</a></li>
                         <li>鬼山幕府参加届　URL:<a href="https://docs.google.com/forms/u/1/d/e/1FAIpQLSfH-1NMt3r48_TtYfmfTRHvwaemBAc9HAhtvn0PY4pTPLdZYg/viewform">https://docs.google.com/forms/u/1/d/e/1FAIpQLSfH-1NMt3r48_TtYfmfTRHvwaemBAc9HAhtvn0PY4pTPLdZYg/viewform</a></li>
                         <li>EarthMC　URL:<a href="https://earthmc.net/">https://earthmc.net/</a></li>
                         <!-- <li><i class=""></i>　URL:<a href=""></a></li> -->
@@ -234,7 +234,7 @@
     
     <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
 
-    <script src="{% static 'inca/js/playerpopup.js' %}"></script>        <!-- プレイヤーポップアップ -->
+    <script src="{% static 'xia/js/playerpopup.js' %}"></script>        <!-- プレイヤーポップアップ -->
 
     <!-- エラーポップアップ -->
     <script>

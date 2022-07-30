@@ -4,6 +4,7 @@
 __pycache__/
 db-volumes/
 db.sqlite3
-inca/.py
+.py
+vp.py
 local_settings.py
 media/

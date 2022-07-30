@@ -10,16 +10,16 @@
         <meta name="twitter:site" content="@KANATA20002">
         <meta name="og:type" content="website">
         <meta name="og:title" content="EMC tour | {{ tour.nation.name }}">
-        <meta name="og:image" content="{% static 'inca/image/emctour.png' %}">
+        <meta name="og:image" content="{% static 'xia/image/emctour.png' %}">
         <meta name="og:description" content="EarthMCの国に関する情報を掲載しているサイトです。">
-        <meta name="og:url" content="https://config.pythonanywhere.com/inca">
+        <meta name="og:url" content="https://config.pythonanywhere.com/xia">
         <meta name="description" content="EarthMCの国に関する情報を掲載しているサイトです。">
         <meta meta="" name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
         <meta charset="utf-8">
         <title>EMC tour | {{ tour.nation.name }}</title>
-        <link rel="stylesheet" type="text/css" href="{% static 'inca/css/common.css'%}">
-        <link rel="stylesheet" type="text/css" href="{% static 'inca/css/nation.css'%}">
-        <link rel="shortcut icon" href="{% static 'inca/image/emctour.ico' %}">
+        <link rel="stylesheet" type="text/css" href="{% static 'xia/css/common.css'%}">
+        <link rel="stylesheet" type="text/css" href="{% static 'xia/css/nation.css'%}">
+        <link rel="shortcut icon" href="{% static 'xia/image/emctour.ico' %}">
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
         <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" /> <!-- toastr -->
     </head>
@@ -28,14 +28,14 @@
     <body>
         <header>
             <div class="header-left">
-                <a href="{% url 'inca:emctour' %}"><img name="thumbnail" class="logo" src="{% static 'inca/image/emctourlogo.png' %}" alt="EMC tourのロゴ"></a>
+                <a href="{% url 'xia:emctour' %}"><img name="thumbnail" class="logo" src="{% static 'xia/image/emctourlogo.png' %}" alt="EMC tourのロゴ"></a>
             </div>
 
             <div class="header-right">
                 <nav>
-                    <a href="{% url 'inca:emctour' %}">トップ</a>
-                    <a href="{% url 'inca:modarticle' 'new' %}">作成・編集</a>
-                    <a href="{% url 'inca:nationlist' 'name' %}">記事一覧</a>
+                    <a href="{% url 'xia:emctour' %}">トップ</a>
+                    <a href="{% url 'xia:modarticle' 'new' %}">作成・編集</a>
+                    <a href="{% url 'xia:nationlist' 'name' %}">記事一覧</a>
                 </nav>
             </div>
 
@@ -51,7 +51,7 @@
                     <h2>概要</h2>
                     <p>{{ tour.info }}</p>
                     <br />
-                    <a class="edit-article" href="{% url 'inca:modarticle' tour.nation.name %}"><i class="fas fa-pencil-alt"></i>記事を編集する</a>
+                    <a class="edit-article" href="{% url 'xia:modarticle' tour.nation.name %}"><i class="fas fa-pencil-alt"></i>記事を編集する</a>
 
                     <h2>基本情報</h2>
                     {% if not ableAPI %}
@@ -78,7 +78,7 @@
                             {% if king.uuid %}
                                 <img class="skin" src="https://crafatar.com/renders/head/{{ king.uuid }}">
                             {% else %}
-                                <img class="unknown_skin" src="{% static 'inca/image/unknown_skin.png' %}">
+                                <img class="unknown_skin" src="{% static 'xia/image/unknown_skin.png' %}">
                             {% endif %}
                             <label for="trigger" class="open_btn" onclick="playerpopup('{{ king.uuid }}', '{{ king.name }}', '{{ ableAPI }}', '{{ king.online }}', '{{ king.info }}')">詳しく見る</label>
                             <div class="popup_wrap">
@@ -127,7 +127,7 @@
 
                     <h2>画像</h2>
                     
-                    <form method="POST" action="{% url 'inca:nation' nation %}">
+                    <form method="POST" action="{% url 'xia:nation' nation %}">
                         {% csrf_token %}
                         <input type="file" id="imagefile" required>
                         <input type="submit" value="送信" id="imagesubmit">
@@ -142,9 +142,9 @@
                     <p>※画像のアップロード機能は未実装です！</p>
 
                     <div class="containerimage">
-                        <img class="imagelist" src="{% static 'inca/image/japan1.png' %}">
-                        <img class="imagelist" src="{% static 'inca/image/japan2.png' %}">
-                        <img class="imagelist" src="{% static 'inca/image/japan3.png' %}">
+                        <img class="imagelist" src="{% static 'xia/image/japan1.png' %}">
+                        <img class="imagelist" src="{% static 'xia/image/japan2.png' %}">
+                        <img class="imagelist" src="{% static 'xia/image/japan3.png' %}">
                     </div>
                 </section>
             </article>
@@ -167,7 +167,7 @@
         </main>
     </body>
 
-    <script src="{% static 'inca/js/playerpopup.js' %}"></script>        <!-- プレイヤーポップアップ -->
+    <script src="{% static 'xia/js/playerpopup.js' %}"></script>        <!-- プレイヤーポップアップ -->
 
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> <!-- jquery -->
 

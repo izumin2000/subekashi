@@ -31,7 +31,7 @@ ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'config',
-    'inca',
+    'xia',
     'subeana',
     'django.contrib.admin',
     'django.contrib.auth',
