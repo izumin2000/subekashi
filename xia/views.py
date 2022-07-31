@@ -237,17 +237,13 @@ def teleport(nation) :
     return "/n spawn " + nation
 
 
-"""
 # PV数のカウント
-today = date.today()
-insAnalyze, _ = Analyze.objects.get_or_create(date = today, defaults = {"date" : today})
-insAnalyze.pv += 1
-insAnalyze.save()
-"""
+def pv() :
+    today = date.today()
+    insAnalyze, _ = Analyze.objects.get_or_create(date = today, defaults = {"date" : today})
+    insAnalyze.pv += 1
+    insAnalyze.save()
 
-
-def root(request):
-    return render(request, 'xia/root.html')
 
 def top(request):
     our_info = {}       # テンプレートに渡す辞書
@@ -280,8 +276,12 @@ def top(request):
     if not ableAPI :        # いままでにAPIの取得に失敗していたら
         our_info["error"] = "Earth MCからの情報の取得に失敗した為、アーカイブ記事を表示します。"
 
+    pv()
+
     return render(request, 'xia/top.html', our_info)
 
+
+"""
 def emctour(request) :
     emctour_dict = {"nation" : "new"}
 
@@ -395,7 +395,6 @@ def nation(request, nation) :
 
     ins_tour = isExistDBTour(nation)
     if ins_tour :       # Tour DBにnationがあったら
-        # TODO 画像のアップロード
         if request.method == "POST":
             inp_image = request.FILES.getlist('imagefile')      # 何故かNoneが返ってくる。
             # Screenshot.objects.create(image = inp_image, tour = ins_tour)
@@ -471,52 +470,9 @@ def nationlist(request, order) :
     nationlist_dict["order"] = order
 
     return render(request, 'xia/nationlist.html', nationlist_dict)
-
+"""
 
 """
-def firstview(request) :
-    result = {}
-
-    if request.method == 'POST':
-        name = request.POST.get("name")       # form.pyにおいてid冒頭のid_はidに含まない
-        title = request.POST.get("title")
-        player = request.POST.get("player")
-        displayon = request.POST.get("displayon")
-        displayoff = request.POST.get("displayoff")
-        delete = request.POST.get("delete")
-        password = request.POST.get("password")
-        if password == "xiagold" :
-            filename = name.replace("firstview/", "").replace(".png", "")
-            name = "firstview/" + filename + ".png"
-            insFirstview, created = Firstview.objects.get_or_create(name = name, defaults = {"name" : name})
-            if delete :        # 削除する場合は
-                if not created :        #   Firstviewレコードが新規作成された場合は
-                    deleted_path = insFirstview.name
-                    insFirstview.delete()
-                    result["title"] = deleted_path + "を削除しました"
-            else :
-                if title != "" :
-                    insFirstview.title = title
-                if player != "" :
-                    insFirstview.player = player
-                if displayon :
-                    insFirstview.display = True
-                if displayoff :
-                    insFirstview.display = False
-                insFirstview.save()
-
-                result["title"] = filename + "をアップロードしました"
-                    
-        else :
-            result["title"] = "パスワードが違います"
-    
-    result["images"] = Firstview.objects.all()
-
-    form = FirstviewForm()
-    result["form"] = form
-    return render(request, 'xia/firstview.html', result)
-
-
 def editplayer(request) :
     result = {}
 
