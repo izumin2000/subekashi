@@ -48,12 +48,6 @@ class Nation(models.Model) :
     king = models.ForeignKey("Player", on_delete = models.DO_NOTHING, blank = True, null = True, related_name = "nation_king")
     istour = models.BooleanField(default = False)
 
-class Screenshot(models.Model) :
-    # title = models.CharField(default = "無題", max_length = 20)
-    image = CloudinaryField('image', blank=True, null=True, folder="images/")
-    # display = models.BooleanField(default = True)
-    tour = models.ForeignKey("Tour", on_delete = models.CASCADE, blank = True, null = True, related_name = "screenshot_tour")
-
 class Analyze(models.Model) :
     date = models.DateField(null = True, blank = True)
     pv = models.IntegerField(default = 0)
