@@ -66,10 +66,18 @@ header {
 
     .header-left {
         position: relative;
+        display: block;
         top: 6px;
         margin-top: 4px;
         float: none;
         text-align: center;
+        white-space: nowrap;
+    }
+    
+    .header-left p {
+        display: inline-block;
+        position: relative;
+        bottom: 10px;
     }
 
     .header-right {
