@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+
+{% load static %}
+
+<html lang="ja">
+    <head>
+        <title>大臣の編集</title>
+    </head>
+
+
+    <body style="margin-left: 40px;">
+        <main>
+            <p>{{ title }}</p>
+            <br />
+            <form method="POST" class="post-form" id="PlayerForm">{% csrf_token %}
+                {{ form.as_p }}
+                <input type="submit" value="送信">
+            </form>
+            
+            <p>大臣の情報の追加や編集ができます。</p>
+            <p>プレイヤー名をクリックすることで、フォームに大臣の情報がコピーされます。</p>
+            <table border="1">
+                <th>大臣名</th>
+                <th>役所名</th>
+                {% for minister in ministers %}
+                <tr>
+                    <td><a href="#PlayerForm" onclick="copyinfo('{{ minister.citizen.player.name }}', '{{ minister.title }}')">{{ minister.citizen.player.name }}</a></td>
+                    <td>{{ minister.title }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </main>
+    </body>
+    <script>
+        function copyinfo(name, title){
+            document.getElementById("id_name").value = name;
+            document.getElementById("id_title").value = title;
+        }
+    </script>
+</html>

@@ -338,6 +338,47 @@ def editplayerdelete(request, player_id) :
     return render(request, 'xia/editplayer.html', result)
 
 
+# 大臣の情報の編集
+def editminister(request) :
+    result = {}
+
+    if request.method == "POST":
+        name = request.POST.get("name")
+        title = request.POST.get("title")
+        password = request.POST.get("password")
+        if hashlib.sha256(password.encode()).hexdigest() == SHA256a :
+            ins_player, _ = Player.objects.get_or_create(name = name, defaults = {"name" : name})
+            ins_player.save()
+            ins_citizen, _ = Citizen.objects.get_or_create(player = ins_player, defaults = {"player" : ins_player})
+            ins_citizen.save()
+            insMinister, _ = Minister.objects.get_or_create(citizen = ins_citizen, defaults = {"citizen" : ins_citizen})
+            insMinister.title = title
+            insMinister.isminister = True
+            insMinister.save()
+            result["title"] = name + "の情報が変更されました"
+        else :
+            result["title"] = "パスワードが違います"
+
+    form = MinisterForm()
+    result["form"] = form
+    result["ministers"] = Minister.objects.all()
+    return render(request, 'xia/editminister.html', result)
+
+
+# 大臣の情報の削除
+def editministerdelete(request, minister_id) :
+    result = {}
+    insMinister = Minister.objects.get(minister_id)
+
+    result["title"] = insMinister.citizen.player.name + "大臣の情報の削除しました"
+    insMinister.delete()
+
+    form = MinisterForm()
+    result["form"] = form
+    result["minister"] = Minister.objects.all()
+    return render(request, 'xia/editminister.html', result)
+
+
 """
 def emctour(request) :
     emctour_dict = {"nation" : "new"}
