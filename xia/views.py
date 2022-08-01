@@ -1,16 +1,18 @@
+from cgitb import reset
+from unittest import result
 from django.shortcuts import redirect, render
-from xia.forms import FirstviewForm, PlayerForm
-from xia.model import Player, Citizen, Minister, Criminal, Gold, Screenshot, Tour, Nation, Analyze
+from xia.forms import PlayerForm, MinisterForm
+from xia.model import Player, Citizen, Minister, Criminal, Gold, Tour, Nation, Analyze
 import requests
 from datetime import date
 import json
 from time import sleep
+import hashlib
 
 
 OUR_NATION = "Xia"
 EMC_API_URL = "https://emc-toolkit.vercel.app/api/aurora/"
 UUID_API_URL = "https://api.mojang.com/users/profiles/minecraft/"
-WORLD_URL = "nova/"     # "aurora/"
 UPLOAD_URL = "uploadfiles/"
 NUMBER_OF_FIRSTVIEWS = 5
 
@@ -18,16 +20,14 @@ NUMBER_OF_FIRSTVIEWS = 5
 ERROR_API_URL = "https://error"
 # EMC_API_URL = ERROR_API_URL     # コメントアウトを外すとEMC APIを取得
 
+#パスワード関連
+SHA256a = "917d6bfe7c48bc2870732e241fc211f5a50816863aea945443e409610a7ca46a"
+
 
 # 成功時にAPIのjsonを出力。失敗すると空文字を出力。
 def get_API(url, route) :
     if url == EMC_API_URL :
-        sleep(2)
-    else :
-        sleep(0.5)
-
-    # if "allplayers" in route :
-        # url = url.replace("nova/", "")      # nova/を削除
+        sleep(1)
 
     try :
         get = requests.get(url + route)
@@ -238,7 +238,7 @@ def teleport(nation) :
 
 
 # PV数のカウント
-def pv() :
+def pv_increment() :
     today = date.today()
     insAnalyze, _ = Analyze.objects.get_or_create(date = today, defaults = {"date" : today})
     insAnalyze.pv += 1
@@ -251,12 +251,23 @@ def top(request):
 
     ministers = Minister.objects.all()
     if ministers.count() :      # 大臣が一人以上いたら
-        our_info["ministers"] = ministers
+        # オンラインのプレイヤーの列挙
+        online_dict_list = get_API(EMC_API_URL, "onlineplayers/")
+        online_players = []
+        for online_dict in online_dict_list :
+            online_players.append(online_dict["name"])
+        if not online_dict_list :
+            ableAPI = False
 
         # 大臣の情報とOUR_NATIONの更新
         for minister in ministers :
-            ableAPIplayer, _ = set_player(minister, True)
-            ableAPI &= ableAPIplayer
+            if minister.citizen.player.name in online_players :
+                minister.citizen.player.online = True
+            else :
+                minister.citizen.player.online = False
+            minister.save()
+
+        our_info["ministers"] = ministers
 
     else :      # 大臣が一人もいなかったら
         ableAPI, _, _ = set_nation(OUR_NATION, True)        # OUR_NATIONの更新
@@ -276,9 +287,55 @@ def top(request):
     if not ableAPI :        # いままでにAPIの取得に失敗していたら
         our_info["error"] = "Earth MCからの情報の取得に失敗した為、アーカイブ記事を表示します。"
 
-    pv()
+    pv_increment()
 
     return render(request, 'xia/top.html', our_info)
+
+
+# プレイヤーの編集
+def editplayer(request) :
+    result = {}
+
+    # 市民を登録
+    nation_dict = get_API(EMC_API_URL, "nations/" + OUR_NATION)
+    citizens = nation_dict["residents"]
+    for citizen in citizens :
+
+        ins_player, _ = Player.objects.get_or_create(name = citizen, defaults = {"name" : citizen})
+        ins_citizen, _ = Citizen.objects.get_or_create(player = ins_player, defaults = {"player" : ins_player})
+        ins_citizen.iscitizen = True
+        ins_citizen.save()
+
+    if request.method == "POST":
+        name = request.POST.get("name")
+        info = request.POST.get("info")
+        password = request.POST.get("password")
+        if hashlib.sha256(password.encode()).hexdigest() == SHA256a :       # パスワードが合っていたら
+            ins_player, _ = Player.objects.get_or_create(name = name, defaults = {"name" : name})
+            ins_player.info = info
+            ins_player.save()
+            result["title"] = name + "の情報が変更されました"
+        else :
+            result["title"] = "パスワードが違います"
+
+    form = PlayerForm()
+    result["form"] = form
+    result["players"] = Player.objects.all()
+    return render(request, 'xia/editplayer.html', result)
+
+
+# プレイヤーの情報の削除
+def editplayerdelete(request, player_id) :
+    result = {}
+    ins_player = Minister.objects.get(player_id)
+
+    result["title"] = ins_player.name + "の情報の削除しました"
+    ins_player.delete()
+
+    form = PlayerForm()
+    result["form"] = form
+    result["players"] = Minister.objects.all()
+    return render(request, 'xia/editplayer.html', result)
 
 
 """
@@ -470,34 +527,6 @@ def nationlist(request, order) :
     nationlist_dict["order"] = order
 
     return render(request, 'xia/nationlist.html', nationlist_dict)
-"""
-
-"""
-def editplayer(request) :
-    result = {}
-
-    name = request.POST.get("name")
-    rank = request.POST.get("rank")
-    primary = request.POST.get("primary")
-    crime = request.POST.get("crime")
-    info = request.POST.get("info")
-    password = request.POST.get("password")
-    if password == "xiagold" :
-        insPlayer, _ = Player.objects.get_or_create(name = name, defaults = {"name" : name})
-        if rank != "" :
-            insPlayer.rank = rank
-        insPlayer.primary = bool(primary)
-        insPlayer.crime = bool(crime)
-        insPlayer.info = info
-        insPlayer.save()
-        result["title"] = name + "の情報が変更されました"
-    else :
-        result["title"] = "パスワードが違います"
-
-    form = PlayerForm()
-    result["form"] = form
-    result["players"] = Player.objects.all()
-    return render(request, 'xia/editplayer.html', result)
 """
 
 

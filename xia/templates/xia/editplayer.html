@@ -22,24 +22,16 @@
             <p>Xia国民は自動で表に追加されますが、それ以外のプレイヤーは手動で追加する必要があります。</p>
             <table border="1">
                 <th>プレイヤー名</th>
-                <th>身分</th>
-                <th>大臣？</th>
-                <th>指名手配犯？</th>
+                <th>ニックネーム</th>
+                <th>国</th>
+                <th>町</th>
                 <th>説明</th>
                 {% for player in players %}
                 <tr>
-                    <td><a href="#PlayerForm" onclick="copyinfo('{{ player.name }}', '{{ player.rank }}', '{{ player.primary }}', '{{ player.crime }}', '{{ player.info }}')">{{ player.name }}</a></td>
-                    <td>{{ player.rank }}</td>
-                    {% if player.primary %}
-                        <td>はい</td>
-                    {% else %}
-                        <td>いいえ</td>
-                    {% endif %}
-                    {% if player.crime %}
-                        <td>はい</td>
-                    {% else %}
-                        <td>いいえ</td>
-                    {% endif %}
+                    <td><a href="#PlayerForm" onclick="copyinfo('{{ player.name }}',  '{{ player.info }}')">{{ player.name }}</a></td>
+                    <td>{{ player.nickname }}</td>
+                    <td>{{ player.nation.name }}</td>
+                    <td>{{ player.town }}</td>
                     <td>{{ player.info }}</td>
                 </tr>
                 {% endfor %}
@@ -47,19 +39,8 @@
         </main>
     </body>
     <script>
-        function copyinfo(name, rank, primary, crime, info){
+        function copyinfo(name, info){
             document.getElementById("id_name").value = name;
-            document.getElementById("id_rank").value = rank;
-            if (primary == "True") {
-                document.getElementById("id_primary").checked = true;
-            } else {
-                document.getElementById("id_primary").checked = false;
-            }
-            if (crime == "True") {
-                document.getElementById("id_crime").checked = true;
-            } else {
-                document.getElementById("id_crime").checked = false;
-            }
             document.getElementById("id_info").value = info;
         }
     </script>
