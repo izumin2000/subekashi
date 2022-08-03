@@ -2,7 +2,7 @@ from cgitb import reset
 from unittest import result
 from django.shortcuts import redirect, render
 from xia.forms import PlayerForm, MinisterForm
-from xia.model import Player, Citizen, Minister, Criminal, Gold, Tour, Nation, Analyze
+from xia.model import Player, Minister, Criminal, Gold, Tour, Nation, Analyze
 import requests
 from datetime import date
 import json
@@ -22,6 +22,7 @@ ERROR_API_URL = "https://error"
 
 #パスワード関連
 SHA256a = "917d6bfe7c48bc2870732e241fc211f5a50816863aea945443e409610a7ca46a"
+# if hashlib.sha256(mypassword.encode()).hexdigest() == SHA256a :
 
 
 # 成功時にAPIのjsonを出力。失敗すると空文字を出力。
@@ -70,6 +71,7 @@ def isExistDBNation(nation) :
     return None
 
 
+"""
 # Tour DB上にnationが存在するか確認
 def isExistDBTour(nation) :
     nation = nation.replace(" ", "")
@@ -84,57 +86,14 @@ def isExistDBTour(nation) :
         if tour_nation == nation :     # Tour DB上にnationがあった場合
             return nation_ins
     return None
-
-
-# EMC上にnationが存在するか確認
-def isExistEMCNation(nation) :
-    nation = nation.replace(" ", "")
-    nation = nation.replace("_", "")
-    nation = nation.lower()
-
-    # EMC上にinput_nationの国が存在するか確認
-    nations_dict_list = get_API(EMC_API_URL, "nations")
-    if nations_dict_list :      # APIの取得に成功したら
-        # EMC上の全ての国の名前を取得
-        for nation_dict in nations_dict_list :
-            emc_nation = nation_dict["name"]
-            emc_nation = emc_nation.replace("_", "")
-            emc_nation = emc_nation.lower()
-
-            if nation == emc_nation :        # EMC上にnationがあった場合
-                return nation_dict["name"], True
-        
-        # EMC上にnationが無かった場合
-        return False, True
-
-    else :      # APIの取得に失敗したら
-        return False, False
+"""
 
 
 # 国の情報を更新しDBに登録
-def set_nation(nation, getPlayer): 
-    ableAPI = True      # APIを取得できたかどうか
-
-    # 国のデータを取得
-    nation_dict = get_API(EMC_API_URL, "nations/" + nation)
-    if nation_dict :
-        king = nation_dict["king"]
-    else :      # nations/の取得に失敗したら
-        ableAPI = False
-
-    # 国王のデータを取得
-    if ableAPI :
-        ins_king, _ = Player.objects.get_or_create(name = king, defaults = {"name" : king})
-
-        if getPlayer :
-            ableAPI, ins_king = set_player(king, False)
-
-        if not ableAPI :      # allplayers/の取得に失敗したら
-            ins_king = isExistDBPlayer(king)      # Player DBからアーカイブを読み取り
-            ableAPI = False
-
+def set_nation(nation): 
+    nation_dict = get_API(EMC_API_URL, "nations/" + nation)     # 国のデータを取得
     # 国のデータの登録
-    if ableAPI :
+    if nation_dict :
         ins_nation, _ = Nation.objects.get_or_create(name = nation, defaults = {"name" : nation})
 
         ins_nation.population = len(nation_dict["residents"])
@@ -142,16 +101,15 @@ def set_nation(nation, getPlayer):
         ins_nation.capital = nation_dict["capitalName"]
         ins_nation.x = nation_dict["capitalX"]
         ins_nation.z = nation_dict["capitalZ"]
-        ins_nation.king = ins_king      # ins_kingの情報は後にset_player関数にて取得する
-        ins_nation.save()        
+        ins_nation.king = nation_dict["king"]
+        ins_nation.save()
+
+        ableAPI = True
     else :      # 今までにAPIの取得に失敗していたら
         ins_nation = isExistDBNation(nation)      # Nation DBからアーカイブを読み取り
-        if ins_nation :
-            ins_king = ins_nation.king      # Nation DBのアーカイブからkingインスタンスを読み取り
-        else :
-            ins_king = None
+        ableAPI = False
     
-    return ableAPI, ins_king, ins_nation
+    return ableAPI, ins_nation
 
 
 # プレイヤーの情報を取得
@@ -161,61 +119,51 @@ def get_player(player) :
         for player_dict in players_dict :
             if player_dict["name"] == player :
                 return player_dict
+    return None
         
 
 # プレイヤーの情報を更新しDBに登録
-def set_player(player, getNation):
+def set_player(player):
     ableAPI = True      # APIを取得できたかどうか
-    ins_player, _ = Player.objects.get_or_create(name = player, defaults = {"name" : player})
 
-    # オンラインのプレイヤーの情報を取得
-    online_dict = get_API(EMC_API_URL, "onlineplayers/" + player)
-    if online_dict :        # onlineplayers/の取得に成功したら
-        ins_player.nickname = online_dict["nickname"]
-        ins_player.online = True
-    else :      # onlineplayers/の取得に失敗したら
-        ins_player.online = False
-        if not ins_player.nickname :
-            ins_player.nickname = player
-
-    # UUIDの取得と登録
-    uuid_dict = get_API(UUID_API_URL, player)
-    if uuid_dict :      # APIの取得に成功したら
-        ins_player.uuid = uuid_dict["id"]
-    else :
-        ableAPI = False
-    
-    # player_dict = get_API(EMC_API_URL, "allplayers/" + player)
     player_dict = get_player(player)
     if player_dict :        # allplayers/の取得に成功したら
+        ins_player, _ = Player.objects.get_or_create(name = player, defaults = {"name" : player})
+
+        # ニックネーム・オンライン状況を取得
+        online_dict = get_API(EMC_API_URL, "onlineplayers/" + player)
+        if online_dict :        # onlineplayers/の取得に成功したら
+            ins_player.nickname = online_dict["nickname"]
+            ins_player.online = True
+        else :      # onlineplayers/の取得に失敗したら
+            ins_player.online = False
+            if not ins_player.nickname :
+                ins_player.nickname = player
+
+        # UUIDの取得と登録
+        uuid_dict = get_API(UUID_API_URL, player)
+        if uuid_dict :      # APIの取得に成功したら
+            ins_player.uuid = uuid_dict["id"]
+        else :
+            ableAPI = False
+    
         ins_player.town = player_dict["town"]
-        # プレイヤーの国の情報を登録
-        nation = player_dict["nation"]
-        if (nation != "No Nation") and (getNation or ins_player.nation == None):        # 国に所属していてnationの情報を取得するのなら
-            ableAPIerea, ins_king, ins_nation = set_nation(nation, False)
-            ableAPI &= ableAPIerea
+        ins_player.nation = player_dict["nation"]
+        ins_player.save()
 
-            if ableAPI :        # 今までにAPIの取得に成功していたら
-                ins_player.nation = ins_nation
-                if player != ins_king.name :        # 国王だったら
-                    ableAPItmp, _= set_player(ins_king.name, False)      # 再帰させる
-                    ableAPI &= ableAPItmp
-
-            else :      # 今までにAPIが取得できないことがあったら
-                nation, _ = isExistEMCNation(nation)
-                ins_player.nation = Nation.objects.filter(name = nation).first()
-                ableAPI = False
-                
-            # OUR_NATION国民の登録
-            if nation == OUR_NATION :
-                ins_citizen, _ = Citizen.objects.get_or_create(player = ins_player, defaults = {"player" : ins_player})
-                ins_citizen.save()
-                
     else :      # allplayers/の取得に失敗したら
+        ins_player = isExistDBPlayer(player)
         ableAPI = False
-
-    ins_player.save()
     return ableAPI, ins_player
+
+
+# オンラインプレイヤーの取得
+def get_online() :
+    online_dict_list = get_API(EMC_API_URL, "onlineplayers/")
+    online_players = []
+    for online_dict in online_dict_list :
+        online_players.append(online_dict["name"])
+    return online_players
 
 
 # dynmapの拡大率
@@ -249,43 +197,32 @@ def top(request):
     our_info = {}       # テンプレートに渡す辞書
     ableAPI = True
 
+    # 大臣の情報とOUR_NATIONの更新
     ministers = Minister.objects.all()
-    if ministers.count() :      # 大臣が一人以上いたら
-        # オンラインのプレイヤーの列挙
-        online_dict_list = get_API(EMC_API_URL, "onlineplayers/")
-        online_players = []
-        for online_dict in online_dict_list :
-            online_players.append(online_dict["name"])
-        if not online_dict_list :
-            ableAPI = False
-
-        # 大臣の情報とOUR_NATIONの更新
+    if ministers.count() :
+        online_players = get_online()
         for minister in ministers :
-            if minister.citizen.player.name in online_players :
-                minister.citizen.player.online = True
+            if minister.player.name in online_players :
+                minister.player.online = True
             else :
-                minister.citizen.player.online = False
+                minister.player.online = False
             minister.save()
 
-        our_info["ministers"] = ministers
+    our_info["ministers"] = ministers
 
-    else :      # 大臣が一人もいなかったら
-        ableAPI, _, _ = set_nation(OUR_NATION, True)        # OUR_NATIONの更新
+    ableAPI, ins_ournation = set_nation(OUR_NATION)       # OUR_NATIONの情報の取得
 
-    # OUR_NATIONの情報の取得
-    ins_ournation = isExistDBNation(OUR_NATION)
-
+    print(ableAPI, ins_ournation)
     if ins_ournation :     # DBにOUR_NATIONがあったら
         our_info["our"] = ins_ournation
-
+        if not ableAPI :
+            our_info["error"] = "Earth MCからの情報の取得に失敗した為、アーカイブ記事を表示します。"
     else :      # DBにOUR_NATIONが無かったら
         our_info.update({"population":"エラー", "area":"エラー", "king":"エラー", "capitalName":"エラー"})
-        ableAPI = False
+        our_info["error"] = "今までに一度も情報を取得できたことが無い為、記事を表示できません。"
 
     # APIが正常に処理できたかどうかの情報の登録
     our_info["ableAPI"] = ableAPI
-    if not ableAPI :        # いままでにAPIの取得に失敗していたら
-        our_info["error"] = "Earth MCからの情報の取得に失敗した為、アーカイブ記事を表示します。"
 
     pv_increment()
 
@@ -296,27 +233,17 @@ def top(request):
 def editplayer(request) :
     result = {}
 
-    # 市民を登録
-    nation_dict = get_API(EMC_API_URL, "nations/" + OUR_NATION)
-    citizens = nation_dict["residents"]
-    for citizen in citizens :
-
-        ins_player, _ = Player.objects.get_or_create(name = citizen, defaults = {"name" : citizen})
-        ins_citizen, _ = Citizen.objects.get_or_create(player = ins_player, defaults = {"player" : ins_player})
-        ins_citizen.iscitizen = True
-        ins_citizen.save()
-
     if request.method == "POST":
         name = request.POST.get("name")
         info = request.POST.get("info")
-        password = request.POST.get("password")
-        if hashlib.sha256(password.encode()).hexdigest() == SHA256a :       # パスワードが合っていたら
-            ins_player, _ = Player.objects.get_or_create(name = name, defaults = {"name" : name})
+        _, ins_player = set_player(name)
+
+        if ins_player :
             ins_player.info = info
             ins_player.save()
             result["title"] = name + "の情報が変更されました"
         else :
-            result["title"] = "パスワードが違います"
+            result["error"] = True      # プレイヤー情報の作成に関するトーストの表示
 
     form = PlayerForm()
     result["form"] = form
@@ -327,14 +254,14 @@ def editplayer(request) :
 # プレイヤーの情報の削除
 def editplayerdelete(request, player_id) :
     result = {}
-    ins_player = Minister.objects.get(player_id)
+    ins_player = Player.objects.get(id = player_id)
 
     result["title"] = ins_player.name + "の情報の削除しました"
     ins_player.delete()
 
     form = PlayerForm()
     result["form"] = form
-    result["players"] = Minister.objects.all()
+    result["players"] = Player.objects.all()
     return render(request, 'xia/editplayer.html', result)
 
 
@@ -345,19 +272,15 @@ def editminister(request) :
     if request.method == "POST":
         name = request.POST.get("name")
         title = request.POST.get("title")
-        password = request.POST.get("password")
-        if hashlib.sha256(password.encode()).hexdigest() == SHA256a :
-            ins_player, _ = Player.objects.get_or_create(name = name, defaults = {"name" : name})
-            ins_player.save()
-            ins_citizen, _ = Citizen.objects.get_or_create(player = ins_player, defaults = {"player" : ins_player})
-            ins_citizen.save()
-            insMinister, _ = Minister.objects.get_or_create(citizen = ins_citizen, defaults = {"citizen" : ins_citizen})
+        _, ins_player = set_player(name)
+        if ins_player :
+            insMinister, _ = Minister.objects.get_or_create(player = ins_player, defaults = {"player" : ins_player})
             insMinister.title = title
             insMinister.isminister = True
             insMinister.save()
             result["title"] = name + "の情報が変更されました"
         else :
-            result["title"] = "パスワードが違います"
+            result["error"] = True
 
     form = MinisterForm()
     result["form"] = form
@@ -370,7 +293,7 @@ def editministerdelete(request, minister_id) :
     result = {}
     insMinister = Minister.objects.get(minister_id)
 
-    result["title"] = insMinister.citizen.player.name + "大臣の情報の削除しました"
+    result["title"] = insMinister.player.name + "大臣の情報の削除しました"
     insMinister.delete()
 
     form = MinisterForm()
@@ -448,9 +371,9 @@ def modarticle(request, nation) :
                     ins_tour.save()
 
                     if iscreated :
-                        modarticle_dict["infomation"] = ins_nation.name + "の記事を作成しています"
+                        modarticle_dict["infomation"] = ins_nation + "の記事を作成しています"
                     else :
-                        modarticle_dict["infomation"] = ins_nation.name + "の記事を更新しています"
+                        modarticle_dict["infomation"] = ins_nation + "の記事を更新しています"
 
                     modarticle_dict["info"] = ins_tour.info
                     modarticle_dict["jump"] = nation      # リダイレクト先のnation
