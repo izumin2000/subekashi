@@ -105,20 +105,20 @@
                         {% for minister in ministers %}
                             <div class="info_item">
                                 {% if not ableAPI %}
-                                    <p class="info_title">{{ minister.citizen.player.name }}</p>
-                                {% elif minister.citizen.player.online %}
-                                    <p class="info_title isonline">{{ minister.citizen.player.name }}</p>
+                                    <p class="info_title">{{ minister.player.name }}</p>
+                                {% elif minister.player.online %}
+                                    <p class="info_title isonline">{{ minister.player.name }}</p>
                                 {% else %}
-                                    <p class="info_title isoffline">{{ minister.citizen.player.name }}</p>
+                                    <p class="info_title isoffline">{{ minister.player.name }}</p>
                                 {% endif %}
                                 <div class="info_underline"></div>
                                 <p class="info_data">{{ minister.title }}</p>
-                                {% if minister.citizen.player.uuid %}
-                                    <img class="skin" src="https://crafatar.com/renders/head/{{ minister.citizen.player.uuid }}">
+                                {% if minister.player.uuid %}
+                                    <img class="skin" src="https://crafatar.com/renders/head/{{ minister.player.uuid }}">
                                 {% else %}
                                     <img class="unknown_skin" src="{% static 'xia/image/unknown_skin.png' %}">
                                 {% endif %}
-                                <label for="trigger" class="open_btn" onclick="playerpopup('{{ minister.citizen.player.uuid }}', '{{ minister.citizen.player.name }}', '{{ ableAPI }}', '{{ minister.citizen.player.online }}', '{{ minister.citizen.player.info }}')">詳しく見る</label>
+                                <label for="trigger" class="open_btn" onclick="playerpopup('{{ minister.player.uuid }}', '{{ minister.player.name }}', '{{ ableAPI }}', '{{ minister.player.online }}', '{{ minister.player.info }}')">詳しく見る</label>
                                 <div class="popup_wrap">
                                     <input id="trigger" type="checkbox">
                                     <div class="popup_overlay">
@@ -166,18 +166,10 @@
                         </ol>
                         <li><a href="#major_players">大臣</a>が<span clss="isonline">ログイン</span>していない場合</li>
                         <ul class="liindent2">
-                            <li>Discordを使える場合</li>
                             <ol class="liindent3">
                                 <li>XiaのDiscordに参加します　URL:<a href="https://discord.gg/n9237pup6C">https://discord.gg/n9237pup6C</a></li>
                                 <li>雑談チャンネルにて<code onclick="copyCode('@大臣 Xiaに入りたいです')">@大臣 Xiaに入りたいです</code>とチャットで話してください。</li>
                                 <li>しばらくすると大臣より案内が来ますので指示に従ってください。</li>
-                            </ol>
-                            <li>Discordを使えない場合</li>
-                            <ol>
-                                <li>当サイトの<a onclick="notfound()">所属申請</a>のページを開いてください</li>
-                                <li>フォームが表示されるので、各欄を埋めてください。</li>
-                                <li>「回答を送る」ボタンを押して、回答を送信してください。</li>
-                                <li>EarthMCログイン時に<a href="#major_players">大臣</a>がログインしている場合、案内が来ますので指示に従ってください。</li>
                             </ol>
                         </ul>
                     </ul>
@@ -265,8 +257,8 @@
         };
     </script>
 
-    <!-- 複数画像をフェードインフェードアウトで切替 -->
     <script>
+    // 複数画像をフェードインフェードアウトで切替
         $(document).ready(function(){
         $('.clImg img:gt(0)').hide();
         setInterval(function() {
@@ -274,33 +266,31 @@
             cli += 1;
         },5000);
     });
-    </script>
 
-    <!-- コピーのtoastr -->
-    <script>
-        function copyCode(text) {
-            toastr.options = {
-                "closeButton": false,
-                "debug": false,
-                "newestOnTop": false,
-                "progressBar": true,
-                "positionClass": "toast-bottom-right",
-                "preventDuplicates": false,
-                "onclick": null,
-                "timeOut": "3000",
-                "extendedTimeOut": "0",
-                "showEasing": "swing",
-                "hideEasing": "linear",
-            }
-
-            if (Boolean(navigator.clipboard)) {
-                text = "/n spawn {{ tour.nation.name }}"
-                navigator.clipboard.writeText(text);
-                toastr.success(text + " をコピーしました！")
-            } else {
-                toastr.warning("この機能はセキュリティの関係上、HTTPS環境上でしか動作しません。")
-            }
+    // コピーのtoastr
+    function copyCode(text) {
+        toastr.options = {
+            "closeButton": false,
+            "debug": false,
+            "newestOnTop": false,
+            "progressBar": true,
+            "positionClass": "toast-bottom-right",
+            "preventDuplicates": false,
+            "onclick": null,
+            "timeOut": "3000",
+            "extendedTimeOut": "0",
+            "showEasing": "swing",
+            "hideEasing": "linear",
         }
+
+        if (Boolean(navigator.clipboard)) {
+            text = "/n spawn {{ tour.nation }}"
+            navigator.clipboard.writeText(text);
+            toastr.success(text + " をコピーしました！")
+        } else {
+            toastr.warning("この機能はセキュリティの関係上、HTTPS環境上でしか動作しません。")
+        }
+    }
     </script>
 
 </html>
