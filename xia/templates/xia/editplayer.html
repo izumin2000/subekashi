@@ -66,7 +66,7 @@
                             <!-- <td class="tdnation">{{ player.nation }}</td> -->
                             <!-- <td class="tdtown">{{ player.town }}</td> -->
                             <td class="tableinfo">{{ player.info }}</td>
-                            <th><a href="{% url 'xia:editplayerdelete' player.id %}"><i class="far fa-trash-alt"></i></a></th>
+                            <td><a href="{% url 'xia:editplayerdelete' player.id %}"><i class="far fa-trash-alt"></i></a></td>
                         </tr>
                         {% endfor %}
                     </table>

@@ -290,14 +290,14 @@ def editminister(request) :
 # 大臣の情報の削除
 def editministerdelete(request, minister_id) :
     result = {}
-    insMinister = Minister.objects.get(minister_id)
+    insMinister = Minister.objects.get(id = minister_id)
 
     result["title"] = insMinister.player.name + "大臣の情報の削除しました"
     insMinister.delete()
 
     form = MinisterForm()
     result["form"] = form
-    result["minister"] = Minister.objects.all()
+    result["ministers"] = Minister.objects.all()
     return render(request, 'xia/editminister.html', result)
 
 

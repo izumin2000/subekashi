@@ -58,10 +58,12 @@
                     <table border="1">
                         <th>大臣名</th>
                         <th>役所名</th>
+                        <th>削除</th>
                         {% for minister in ministers %}
                         <tr>
                             <td><a href="#PlayerForm" onclick="copyinfo('{{ minister.player.name }}', '{{ minister.title }}')">{{ minister.player.name }}</a></td>
                             <td>{{ minister.title }}</td>
+                            <td><a href="{% url 'xia:editministerdelete' minister.id %}"><i class="far fa-trash-alt"></i></a></td>
                         </tr>
                         {% endfor %}
                     </table>
