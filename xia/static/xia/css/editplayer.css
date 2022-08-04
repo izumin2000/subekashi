@@ -1,5 +1,5 @@
 .playerform {
-    margin: 150px 0 0 40px;
+    margin: 130px 0 0 40px;
 }
 
 #id_name {
@@ -67,4 +67,5 @@ table tr td {
 
 .fa-trash-alt {
     color: #BB002D;
+    padding-left: 4px;
 }

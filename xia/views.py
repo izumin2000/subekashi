@@ -211,7 +211,6 @@ def top(request):
 
     ableAPI, ins_ournation = set_nation(OUR_NATION)       # OUR_NATIONの情報の取得
 
-    print(ableAPI, ins_ournation)
     if ins_ournation :     # DBにOUR_NATIONがあったら
         our_info["our"] = ins_ournation
         if not ableAPI :
@@ -240,9 +239,10 @@ def editplayer(request) :
         if ins_player :
             ins_player.info = info
             ins_player.save()
-            result["title"] = name + "の情報が変更されました"
+            result["title"] = name + "の情報が更新されました"
         else :
             result["error"] = True      # プレイヤー情報の作成に関するトーストの表示
+            result["name"] = name
 
     form = PlayerForm()
     result["form"] = form
@@ -264,6 +264,21 @@ def editplayerdelete(request, player_id) :
     return render(request, 'xia/editplayer.html', result)
 
 
+# プレイヤーの情報をjsonに関わらず強制的に作成
+def editplayerforce(request, name) :
+    result = {"title" : name + "の情報を登録しました。国と町の情報は登録できませんでした。"}
+    
+    ins_player, _ = Player.objects.get_or_create(name = name, defaults = {"name" : name})
+    ins_player.nation = "No Nation"
+    ins_player.town = "No Town"
+    ins_player.save()
+
+    form = PlayerForm()
+    result["form"] = form
+    result["players"] = Player.objects.all()
+    return render(request, 'xia/editplayer.html', result)
+
+
 # 大臣の情報の編集
 def editminister(request) :
     result = {}
@@ -277,9 +292,10 @@ def editminister(request) :
             insMinister.title = title
             insMinister.isminister = True
             insMinister.save()
-            result["title"] = name + "の情報が変更されました"
+            result["title"] = name + "の情報が更新されました"
         else :
             result["error"] = True
+            result["name"] = name
 
     form = MinisterForm()
     result["form"] = form
@@ -300,6 +316,22 @@ def editministerdelete(request, minister_id) :
     result["ministers"] = Minister.objects.all()
     return render(request, 'xia/editminister.html', result)
 
+
+# 大臣情報をjsonに関わらず強制的に作成
+def editministerforce(request, name) :
+    result = {"title" : name + "大臣の情報を登録しました。国と町の情報は登録できませんでした。"}
+
+    ins_player, _ = Player.objects.get_or_create(name = name, defaults = {"name" : name})
+    ins_player.nation = "No Nation"
+    ins_player.town = "No Town"
+    ins_player.save()
+    insMinister, _ = Minister.objects.get_or_create(player = ins_player, defaults = {"player" : ins_player})
+    insMinister.save()
+
+    form = MinisterForm()
+    result["form"] = form
+    result["ministers"] = Minister.objects.all()
+    return render(request, 'xia/editminister.html', result)
 
 """
 def emctour(request) :

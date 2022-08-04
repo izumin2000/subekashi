@@ -76,6 +76,22 @@
                 </section>
             </article>
         </body>
+
+        <footer>
+            <div class="footer-container">
+                <div class="footer-left">
+                    <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+                </div>
+
+                <div class="footer-right">
+                    <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.ja"><img src="https://creativecommons.org/images/deed/zero_white_x2.png"><img src="https://creativecommons.org/images/deed/cc_icon_white_x2.png"></a>
+                    <p>KANAT2A2000</p>
+                    <!-- <a id="author" onclick="notfound()">KANATA2000</a> -->
+                </div>
+
+                <div class="clear"></div>
+            </div>
+        </footer>        
     </main>
 
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> <!-- jquery -->
@@ -95,7 +111,7 @@
             "positionClass": "toast-bottom-right",
             "preventDuplicates": false,
             "onclick": null,
-            "timeOut": "5000",
+            "timeOut": "10000",
             "extendedTimeOut": "0",
             "showEasing": "swing",
             "hideEasing": "linear",
@@ -107,9 +123,9 @@
 
         "{% if error %}"
         toastr.options.onclick = function () {
-            window.location.href = "{% url 'xia:editplayer' %}";
+            window.location.href = "{% url 'xia:editplayerforce' name %}";
         };
-        toastr.warning("{{ player.name }}の情報がEarthMC上にありません。作成する場合はこのメッセージをクリックしてください")
+        toastr.warning("{{ name }}の情報がEarthMC上にありません。作成する場合はこのメッセージをクリックしてください")
         "{% endif %}"
         
         // window_load();
