@@ -117,10 +117,11 @@ header {
 }
 
 .logomoji {
-    margin: 9px 0 0 5px ;
+    margin: 25px 0 0 5px ;
     font-size: 35px;
     font-weight: 600;
     color: #BB002D;
+    text-decoration: none;
 }
 
 

@@ -1,9 +1,13 @@
 .ministerform {
-    margin: 80px 0 0 40px;
+    margin: 150px 0 0 40px;
 }
 
 input {
     margin-bottom: 20px;
+}
+
+#id_name {
+    margin-top: 40px;
 }
 
 #id_info {
@@ -29,6 +33,10 @@ input {
 
 #id_info:focus::placeholder {
     color: transparent;
+}
+
+#submit {
+    margin-left: 20px;
 }
 
 #submit:hover {

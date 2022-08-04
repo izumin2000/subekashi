@@ -28,7 +28,7 @@
         <header>
             <div class="header-left">
                 <a href="{% url 'xia:top' %}"><img name="thumbnail" class="logo" src="{% static 'xia/image/flag.png' %}" alt="Xiaの国旗"></a>
-                <p class="logomoji">Xia</p>
+                <a href="{% url 'xia:top' %}" class="logomoji">Xia</a>
             </div>
 
             <div class="header-right">
@@ -45,6 +45,9 @@
         <body>
             <article>
                 <section class="ministerform">
+                    <h1>大臣の編集</h1>
+                    <div class="underline"></div>
+
                     <form action="{% url 'xia:editminister' %}" method="POST" class="post-form" id="ministerForm">{% csrf_token %}
                         {{ form.as_p }}
                         <input type="submit" value="送信">
@@ -107,7 +110,7 @@
         // window.onresize = window_load;
 
         // buttonのidの追加
-        submit = document.getElementsByTagName("Input")[2];
+        submit = document.getElementsByTagName("Input")[3];
         submit.setAttribute('id','submit');
     };
     </script>
