@@ -70,7 +70,6 @@
 
                     <p>プレイヤー情報の追加や編集ができます。</p>
                     <p>プレイヤー名をクリックすることで、フォームにプレイヤーの情報がコピーされます。</p>
-                    <p>※情報がnovaのものになっている可能性があります。</p>
                 </section>
             </article>
         </body>
@@ -84,6 +83,7 @@
 
     <script>
     window.onload = function() {
+        // toastrの表示
         toastr.options = {
             "closeButton": false,
             "debug": false,
@@ -109,8 +109,13 @@
         toastr.warning("{{ player.name }}の情報がEarthMC上にありません。作成する場合はこのメッセージをクリックしてください")
         "{% endif %}"
         
-        window_load();
-        window.onresize = window_load;
+        // window_load();
+        // window.onresize = window_load;
+
+        // buttonのidの追加
+        submit = document.getElementsByTagName("Input")[2];
+        console.log(submit);
+        submit.setAttribute('id','submit');
     };
     </script>
 

@@ -14,7 +14,6 @@ OUR_NATION = "Xia"
 EMC_API_URL = "https://emc-toolkit.vercel.app/api/aurora/"
 UUID_API_URL = "https://api.mojang.com/users/profiles/minecraft/"
 UPLOAD_URL = "uploadfiles/"
-NUMBER_OF_FIRSTVIEWS = 5
 
 # デバッグ用
 ERROR_API_URL = "https://error"

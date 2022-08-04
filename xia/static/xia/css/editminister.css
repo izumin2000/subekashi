@@ -2,8 +2,42 @@
     margin: 80px 0 0 40px;
 }
 
+input {
+    margin-bottom: 20px;
+}
+
+#id_info {
+    height: 200px;
+    width: 70%;
+    font-size: 20px;
+    padding: 10px;
+    margin-top: 20px;
+    border: none;
+    box-shadow: 0 0 0 1px #ccc inset;
+}
+
+@media (max-width: 560px) {
+    #id_info {
+        margin-top: 0;
+    }
+}
+
+#id_info:focus {
+    outline: 0;
+    box-shadow: 0 0 0 2px #BB002D inset;
+}
+
+#id_info:focus::placeholder {
+    color: transparent;
+}
+
+#submit:hover {
+    box-shadow: 0 0 0 2px #BB002D inset;
+    transform: color 0.5s;
+}
+
 .tablesection {
-    margin: 10px 0 10px 40px;
+    margin: 20px 0 10px 40px;
 }
 
 table {
@@ -20,6 +54,14 @@ table tr {
     margin: 5px;
 }
 
+table tr th {
+    padding: 5px;
+}
+
 table tr td {
     padding: 5px;
+}
+
+.fa-trash-alt {
+    color: #BB002D;
 }
