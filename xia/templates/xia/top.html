@@ -134,6 +134,12 @@
                     </div>
 
                     <h2>地図</h2>
+                    <p>町名をクリックすると自動で地図が切り替わります</p>
+                    <div id="towns">
+                        <a onclick="changemap('SIEGE_NOVA_INCA')">SIEGE_NOVA_INCA</a>
+                        <a onclick="changemap('Yushiwan')">Yushiwan</a>
+                        <a onclick="changemap('inca_village')">inca_village</a>
+                    </div>
                     <iframe id="dynmap" src="https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=6&x=20620&y=64&z=-7094"></iframe>
 
                     <h2>その他の情報</h2>
@@ -301,6 +307,19 @@
                 document.getElementById("mainarticle").style.opacity = 0;
                 document.getElementById("menuicon").innerHTML = "<i class='fas fa-times'></i>";
                 document.getElementById("menuarticle").style.opacity = 1;
+            }
+        }
+
+        
+        // マップの切り替え
+        function changemap(town) {
+            var map = document.getElementById("dynmap");
+            if (town == "SIEGE_NOVA_INCA") {
+                map.src = "https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=6&x=20620&y=64&z=-7094";
+            } else if (town == "Yushiwan") {
+                map.src = "https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=6&x=18456&y=64&z=-6976";
+            } else if (town == "inca_village") {
+                map.src = "https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=5&x=19560&y=64&z=-7176";
             }
         }
     </script>

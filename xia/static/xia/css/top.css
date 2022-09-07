@@ -22,6 +22,12 @@
     margin: 70px auto 0 auto;
 }
 
+#towns a {
+    display: inline-block;
+    margin: 4px 0 16px 24px;
+    cursor: pointer;
+}
+
 #dynmap {
     display: block;
     height: 65vh;
