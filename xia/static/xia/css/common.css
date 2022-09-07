@@ -37,26 +37,36 @@ header {
     float: right;
 }
 
-.header-right nav a {
+#menuannai {
+    display: inline-block;
     font-family: sans-serif;
-    font-size: 20px;
-    padding: 8px 8px;
+    font-size: 15px;
+    padding: 8px;
+    margin-bottom: 12px;
     line-height: 64px;
-    margin-right: 8px;
+    color: #101010;
+    
+}
+
+.header-right nav a {
+    display: inline-block;
+    font-family: sans-serif;
+    font-size: 48px;
+    padding: 12px;
+    line-height: 48px;
     text-decoration: none;
     color: #101010;
     border-radius: 10px;
-    transition: color 0.5s
+    cursor: pointer;
+    transition: color 0.5s;
 }
 
 .header-right nav a:hover {
-    text-decoration: underline #840021;
-    text-underline-offset: 3px;
     color: #BB002D;
     transition: color 0.5s;
 }
 
-@media (max-width: 640px) {
+/* @media (max-width: 640px) {
     header {
         height: 128px;
         margin-bottom: 128px;
@@ -105,7 +115,7 @@ header {
     .footer-left p {
         visibility:hidden;
     }
-}
+} */
 
 .clear {
     clear: both;
@@ -122,6 +132,14 @@ header {
     font-weight: 600;
     color: #BB002D;
     text-decoration: none;
+}
+
+
+/* メニュー */
+#menuarticle {
+    opacity: 0;
+    top: 68px;
+    position: fixed;        /* 最上部に固定 */
 }
 
 

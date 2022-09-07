@@ -34,9 +34,7 @@
 
             <div class="header-right">
                 <nav>
-                    <a href="{% url 'xia:top' %}">トップ</a>
-                    <a onclick="notfound()">Wiki</a>
-                    <a onclick="notfound()">納税ランキング</a>
+                    <a onclick="menu()" id="menuicon"><i class="fas fas fa-bars"></i></a>
                 </nav>
             </div>
 
@@ -45,7 +43,7 @@
 
 
         <main>
-            <article>
+            <article id="mainarticle">
                 <section class="firstview">
                     <div class="clImg">
                         <img src="{% static 'xia/image/top1.png' %}" alt="Xiaに関する画像">
@@ -184,6 +182,10 @@
                     </ul>
                 </section>
             </article>
+
+            <article id="menuarticle">
+                <h1>OK</h1>
+            </article>
         </main>
 
 
@@ -195,7 +197,7 @@
 
                 <div class="footer-right">
                     <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.ja"><img src="https://creativecommons.org/images/deed/zero_white_x2.png"><img src="https://creativecommons.org/images/deed/cc_icon_white_x2.png"></a>
-                    <p>2022 KANATA</p>
+                    <p>KANAT2A2000</p>
                     <!-- <a id="author" onclick="notfound()">KANATA2000</a> -->
                 </div>
 
@@ -211,8 +213,17 @@
 
     <script src="{% static 'xia/js/playerpopup.js' %}"></script>        <!-- プレイヤーポップアップ -->
 
-    <!-- エラーポップアップ -->
     <script>
+        // 複数画像をフェードインフェードアウトで切替
+        $(document).ready(function(){
+            $('.clImg img:gt(0)').hide();
+            setInterval(function() {
+                $('.clImg :first-child').fadeOut().next('img').fadeIn().end().appendTo('.clImg');
+            },5000);
+        });
+
+
+        // エラーtoastr
         window.onload = function() {
             toastr.options = {
                 "closeButton": false,
@@ -228,15 +239,13 @@
                 "hideEasing": "linear",
             }
 
-            // toasterの表示
             "{% if error %}"
             toastr.warning("{{ error }}")
             "{% endif %}"
         };
-    </script>
 
-    <!-- 存在しないページのtoastr -->
-    <script>
+
+        // 存在しないページのtoastr
         function notfound(){
             toastr.options = {
                 "closeButton": false,
@@ -254,41 +263,45 @@
 
             toastr.info("このページはまだ存在しません！")
         };
-    </script>
 
-    <script>
-    // 複数画像をフェードインフェードアウトで切替
-        $(document).ready(function(){
-        $('.clImg img:gt(0)').hide();
-        setInterval(function() {
-            $('.clImg :first-child').fadeOut().next('img').fadeIn().end().appendTo('.clImg');
-        },5000);
-    });
 
-    // コピーのtoastr
-    function copyCode(text) {
-        toastr.options = {
-            "closeButton": false,
-            "debug": false,
-            "newestOnTop": false,
-            "progressBar": true,
-            "positionClass": "toast-bottom-right",
-            "preventDuplicates": false,
-            "onclick": null,
-            "timeOut": "3000",
-            "extendedTimeOut": "0",
-            "showEasing": "swing",
-            "hideEasing": "linear",
+        // コピーのtoastr
+        function copyCode(text) {
+            toastr.options = {
+                "closeButton": false,
+                "debug": false,
+                "newestOnTop": false,
+                "progressBar": true,
+                "positionClass": "toast-bottom-right",
+                "preventDuplicates": false,
+                "onclick": null,
+                "timeOut": "3000",
+                "extendedTimeOut": "0",
+                "showEasing": "swing",
+                "hideEasing": "linear",
+            }
+
+            if (Boolean(navigator.clipboard)) {
+                navigator.clipboard.writeText(text);
+                toastr.success(text + " をコピーしました！")
+            } else {
+                toastr.warning("この機能はセキュリティの関係上、HTTPS環境上でしか動作しません。")
+            }
         }
 
-        if (Boolean(navigator.clipboard)) {
-            text = "/n spawn {{ tour.nation }}"
-            navigator.clipboard.writeText(text);
-            toastr.success(text + " をコピーしました！")
-        } else {
-            toastr.warning("この機能はセキュリティの関係上、HTTPS環境上でしか動作しません。")
-        }
-    }
-    </script>
 
+        // メニューの切り替え
+        function menu() {
+            var isMenu = document.getElementById("menuarticle").style.opacity
+            if (isMenu == 1) {
+                document.getElementById("mainarticle").style.opacity = 1;
+                document.getElementById("menuicon").innerHTML = "<i class='fas 	fas fa-bars'></i>";
+                document.getElementById("menuarticle").style.opacity = 0;
+            } else {
+                document.getElementById("mainarticle").style.opacity = 0;
+                document.getElementById("menuicon").innerHTML = "<i class='fas fa-times'></i>";
+                document.getElementById("menuarticle").style.opacity = 1;
+            }
+        }
+    </script>
 </html>
