@@ -52,7 +52,7 @@ header {
     display: inline-block;
     font-family: sans-serif;
     font-size: 48px;
-    padding: 12px;
+    padding: 10px;
     line-height: 48px;
     text-decoration: none;
     color: #101010;
@@ -138,21 +138,54 @@ header {
 /* メニュー */
 #menuarticle {
     opacity: 0;
-    top: 68px;
+    top: 100px;
     position: fixed;        /* 最上部に固定 */
 }
 
+#pages p {
+    padding-left: 20px;
+    font-family: sans-serif;
+    font-size: 40px !important;
+    line-height: 60px !important;
+}
+
+#pages a {
+    padding-left: 60px;
+    font-family: sans-serif;
+    font-size: 30px !important;
+    line-height: 60px !important;
+    text-decoration: underline;
+}
+
+#menuxia {
+    position: fixed;
+    bottom: 70px;
+    right: -85px;
+    color: #eeeeee;
+    transform: rotate(270deg);
+    letter-spacing: 0.15em;
+    font-family: Arial;
+    font-size: 150px !important;
+    line-height: 150px !important;
+    z-index: 0;
+}
+
+@media (max-width: 360px) {
+    #menuxia {
+        display: none;
+    }
+}
 
 /* 基礎 */
 main {
     margin-top: 64px;
 }
 
-@media (max-width: 640px) {
+/* @media (max-width: 640px) {
     main {
         margin-top: 128px;
     }
-}
+} */
 
 .topmargin {
     margin-top: 100px;

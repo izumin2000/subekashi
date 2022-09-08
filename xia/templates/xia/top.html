@@ -190,7 +190,18 @@
             </article>
 
             <article id="menuarticle">
-                <h1>OK</h1>
+                <section>
+                    <div id="pages">
+                        <p>メニュー</p><br />
+                        <a href="{% url 'top' %}">トップ</a><br />
+                        <a onclick="notfound()">住人</a><br />
+                        <a onclick="notfound()">歴史</a><br />
+                        <a onclick="notfound()">レイド</a><br />
+                        <a onclick="notfound()">納税ランキング</a><br />
+                        <a onclick="notfound()">管理者ページ</a><br />
+                    </div>
+                    <h1 id="menuxia">Xia</h1>
+                </section>
             </article>
         </main>
 
@@ -303,10 +314,12 @@
                 document.getElementById("mainarticle").style.opacity = 1;
                 document.getElementById("menuicon").innerHTML = "<i class='fas 	fas fa-bars'></i>";
                 document.getElementById("menuarticle").style.opacity = 0;
+                document.getElementsByTagName("main")[0].style.background = ""
             } else {
                 document.getElementById("mainarticle").style.opacity = 0;
                 document.getElementById("menuicon").innerHTML = "<i class='fas fa-times'></i>";
                 document.getElementById("menuarticle").style.opacity = 1;
+                document.getElementsByTagName("main")[0].style.background = "linear-gradient(90deg, #eee, #eee, calc(40vw + 160px), #BB002D)";
             }
         }
 
