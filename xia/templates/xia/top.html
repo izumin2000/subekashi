@@ -309,17 +309,18 @@
 
         // メニューの切り替え
         function menu() {
-            var isMenu = document.getElementById("menuarticle").style.opacity
-            if (isMenu == 1) {
-                document.getElementById("mainarticle").style.opacity = 1;
-                document.getElementById("menuicon").innerHTML = "<i class='fas 	fas fa-bars'></i>";
-                document.getElementById("menuarticle").style.opacity = 0;
-                document.getElementsByTagName("main")[0].style.background = ""
-            } else {
-                document.getElementById("mainarticle").style.opacity = 0;
+            var isMenu = document.getElementById("menuarticle").style.display
+            console.log(isMenu)
+            if (isMenu != "block") {
+                document.getElementById("mainarticle").style.display = "none";
                 document.getElementById("menuicon").innerHTML = "<i class='fas fa-times'></i>";
-                document.getElementById("menuarticle").style.opacity = 1;
+                document.getElementById("menuarticle").style.display = "block";
                 document.getElementsByTagName("main")[0].style.background = "linear-gradient(90deg, #eee, #eee, calc(40vw + 160px), #BB002D)";
+            } else {
+                document.getElementById("mainarticle").style.display = "block";
+                document.getElementById("menuicon").innerHTML = "<i class='fas 	fas fa-bars'></i>";
+                document.getElementById("menuarticle").style.display = "none";
+                document.getElementsByTagName("main")[0].style.background = ""
             }
         }
 
