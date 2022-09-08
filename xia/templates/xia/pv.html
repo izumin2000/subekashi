@@ -23,7 +23,7 @@
         var myLineChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: JSON.parse("{{axisxlist | safe}}"),
+                labels: "{{axisxlist | safe}}".split(','),
                 datasets: [
                 {
                     label: 'PV数',

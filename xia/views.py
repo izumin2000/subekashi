@@ -525,12 +525,11 @@ def nationlist(request, order) :
 """
 
 
-# TODO ゼロ埋め 31レコード表示
 def pv(request) :
-    pv = Analyze.objects.values_list("pv", flat=True)
-    pv = list(pv)
+    pv = list(Analyze.objects.values_list("pv", flat=True))
+    date = Analyze.objects.values_list("date", flat=True)
+    date = [f"{d.month}月{d.day}日" for d in date]
     allpv = sum(pv)
-    axisxlist = list(range(len(pv)))
 
-    result = {"pv" : pv, "allpv" : allpv, "axisxlist" : axisxlist}
+    result = {"pv" : pv, "allpv" : allpv, "axisxlist" : ",".join(date)}
     return render(request, 'xia/pv.html', result)
