@@ -31,27 +31,33 @@ header {
     float: left;
 }
 
+.header-left p {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 20px;
+    line-height: 20px;
+    color: #ddd;
+}
+
 .header-right {
     margin-right: 8px;
     float: right;
 }
 
 .header-right nav a {
-    font-family: sans-serif;
+    font-family: 'Noto Sans JP', sans-serif;
     font-size: 20px;
+    line-height: 20px;
     padding: 8px 8px;
-    line-height: 64px;
     margin-right: 8px;
     text-decoration: none;
-    color: #101010;
+    color: #ddd;
     border-radius: 10px;
     transition: color 0.5s
 }
 
 .header-right nav a:hover {
-    text-decoration: underline #840021;
+    text-decoration: underline #ddd;
     text-underline-offset: 3px;
-    color: #BB002D;
     transition: color 0.5s;
 }
 
@@ -131,7 +137,7 @@ main {
 
 h1 {
     text-align: center;
-    font-family: sans-serif;
+    font-family: 'Noto Sans JP', sans-serif;
     font-size: 40px;
     line-height: 40px;
     margin: 50px 0 10px 0;
@@ -164,7 +170,7 @@ section p {
 a {
     color: #000;
     text-decoration: underline 2px #BB002D;
-    font-family: sans-serif;
+    font-family: 'Noto Sans JP', sans-serif;
     line-height: 16px;
     margin: 0 5px;
 }
@@ -176,6 +182,10 @@ code {
     background-color: #e3e4ff;
     border-radius: 5px;
     cursor: pointer;
+}
+
+.kanji {
+    font-size: 24px;
 }
 
 .fa-youtube {
@@ -235,8 +245,7 @@ code {
     top: 48%;
     right: 30px;
     text-align: right;
-    font-family: 'Microsoft Sans Serif';
-    font-size: 30px;
+    font-family: 'Noto Sans JP', sans-serif;
     padding: 10px;
     border-radius: 5px;
     color: #fff;
@@ -335,7 +344,7 @@ code {
 .info_warning {
     margin: 10px 25px !important;
     color: #f2a744;
-    font-family: sans-serif;
+    font-family: 'Noto Sans JP', sans-serif;
     font-size: 15px;
     line-height: 15px;
 }
@@ -358,7 +367,7 @@ code {
     margin-top: 15px;
     text-align: center;
     text-decoration: underline 2px #BB002D;
-    font-family: sans-serif;
+    font-family: 'Noto Sans JP', sans-serif;
     line-height: 16px;
 }
 
@@ -448,7 +457,7 @@ code {
 }
 
 #popup_info {
-    font-family: sans-serif;
+    font-family: 'Noto Sans JP', sans-serif;
     margin: 20px 10px;
     font-size: 16px;
 }
@@ -552,7 +561,7 @@ footer {
 }
 
 .footer-left p {
-    font-family: sans-serif;
+    font-family: 'Noto Sans JP', sans-serif;
     margin: 20px 0px 0px 10px;
     color: white;
 }
@@ -569,7 +578,7 @@ footer {
 }
 
 .footer-right p {
-    font-family: sans-serif;
+    font-family: 'Noto Sans JP', sans-serif;
     float: right;
     display: inline;
     margin: 6px 6px 0 0;

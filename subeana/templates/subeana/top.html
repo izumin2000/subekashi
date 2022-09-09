@@ -23,6 +23,7 @@
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
         <link rel="preconnect" href="https://fonts.googleapis.com">     <!-- sans font -->
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>        <!-- sans font -->
+        <link href="{% static 'subeana/js/kanji.js' %}" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@900&display=swap" rel="stylesheet">      <!-- sans font -->
         <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" /> <!-- toastr -->
     </head>
@@ -31,7 +32,7 @@
     <body>
         <header>
             <div class="header-left">
-                <!-- <a href="{% url 'subeana:top' %}"><img name="thumbnail" class="logo" src="{% static 'subeana/image/emctourlogo.png' %}" alt="EMC tourのロゴ"></a> -->
+                <p href="{% url 'xia:top' %}" class="logomoji">全て歌詞の所為です。</p>
             </div>
 
             <div class="header-right">
@@ -86,5 +87,14 @@
             </div>
         </footer>-->
     </body>
+
+    <script>
+    window.onload = function() {
+        ps = document.getElementsByTagName('p');
+        for (p of ps) {
+            p.innerHTML = p.innerHTML.replace(/([\u4E00-\u9FFF])/gi,"<font class=kanji>$1</font>");
+        }
+    }
+    </script>
 
 </html>
