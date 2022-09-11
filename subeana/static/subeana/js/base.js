@@ -4,17 +4,16 @@ function kanji() {
     for (tag of tags) {
         for (p of document.getElementsByTagName(tag)) {
             if (p.className != "nokanji") {
-                if ((tag == 'p') || (tag == 'a')) {
+                if (['p', 'a'].includes(tag)) {
                     p.innerHTML = p.innerHTML.replace(/([\u4E00-\u9FFF])/gi,"<font class=kanjipa>$1</font>");
-                } else if (tag == 'h1') {
-                    p.innerHTML = p.innerHTML.replace(/([\u4E00-\u9FFF])/gi,"<font class=kanjih1>$1</font>");
-                } else if (tag == 'h2') {
-                    p.innerHTML = p.innerHTML.replace(/([\u4E00-\u9FFF])/gi,"<font class=kanjih2>$1</font>");
+                } else {
+                    p.innerHTML = p.innerHTML.replace(/([\u4E00-\u9FFF])/gi,"<font class=kanjih>$1</font>");
                 }
             }
         }
     }
 }
+
 
 // メニューの切り替え
 function menu() {
@@ -32,6 +31,7 @@ function menu() {
     }
     kanji();
 }
+
 
 // 存在しないページのtoastr
 function notfound(){
@@ -51,6 +51,17 @@ function notfound(){
 
     toastr.info("このページはまだ存在しません！")
 };
+
+
+// 可変テキストエリア
+function autotextarea() {
+    let textarea = document.getElementById('lyrics');
+    let clientHeight = textarea.clientHeight - 20;
+    textarea.style.height = clientHeight + 'px';
+    let scrollHeight = textarea.scrollHeight - 20;
+    textarea.style.height = scrollHeight + 'px';
+}
+
 
 window.onload = function() {
     kanji();

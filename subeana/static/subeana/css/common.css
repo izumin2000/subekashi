@@ -136,12 +136,13 @@ main {
 }
 
 #mainarticle {
-    margin-top: 100px;
+    margin: 100px 0 0 32px;
 }
 
 h1 {
     text-align: center;
     font-family: 'Noto Sans JP', sans-serif;
+    color: #FFF;
     font-size: 40px;
     line-height: 40px;
     margin: 50px 0 10px 0;
@@ -156,27 +157,24 @@ h1 {
 h2 {
     font-size: 25px;
     line-height: 25px;
+    color: #FFF;
     margin: 40px 20px 20px 20px;
-    padding: 10px 0 5px 10px;
-    background: linear-gradient(90deg, #FFD1DC, #eee, calc(40vw + 300px), #eee);
-    border-radius: 5px;
 }
 
-section p {
+p {
     font-family: 'Noto Sans JP', sans-serif;
     font-weight: 900;
     color: #fff;
     font-size: 18px;
     line-height: 18px;
-    line-height: 30px;
-    margin: 0 24px;
 }
 
 a {
     color: #fff;
     text-decoration: underline 2px #fff;
     font-family: 'Noto Sans JP', sans-serif;
-    line-height: 16px;
+    font-size: 18px;
+    line-height: 18px;
     margin: 0 5px;
 }
 
@@ -184,14 +182,9 @@ a {
     font-size: 27px;
 }
 
-.kanjih1 {
-    font-size: 60px;
-    line-height: 60px;
-}
-
-.kanjih2 {
-    font-size: 38px;
-    line-height: 38px;
+.kanjih {
+    font-size: 50px;
+    line-height: 50px;
 }
 
 .underline {
@@ -234,19 +227,15 @@ a {
 
 
 /* フォーム */
-input {
+input, select, option, textarea {
+    font-family: 'Noto Sans JP', sans-serif;
     height: 50px;
-    width: 240px;
+    width: 40vw;
+    margin-top: 20px;
+    padding-left: 10px;
     font-size: 20px;
-    text-align: center;
     border: none;
     box-shadow: 0 0 0 1px #ccc inset;
-}
-
-@media (max-width: 360px) {
-    input {
-        width: 180px;
-    }
 }
 
 input:focus {
@@ -258,32 +247,46 @@ input:focus::placeholder {
     color: transparent;
 }
 
-.formbutton {
+label {
+    font-family: 'Noto Sans JP', sans-serif;
+    color: #fff;
+    font-size: 18px;
+    line-height: 18px;
+    margin-right:10px;
+}
+
+textarea {
+    height: 100px;
+    width: 80vw;
+    padding: 10px;
+}
+
+#submit {
+    padding-left: 0px;
     height: 49.5px;
     width: 100px;
     border: none;
     font-size: 20px;
     cursor: pointer;
+    margin: 20px 0;
 }
 
-@media (max-width: 360px) {
-    .formbutton {
-        width: 80px;
-    }
+#submit:hover {
+    background-color: #ccc;
 }
 
-.formbutton:hover {
-    background-color: #ddd;
-}
-
-.formbutton:active {
+#submit:active {
     border: none;
     box-shadow: 0 0 0 2px #fff inset;
-    background-color: #eee;
+    background-color: #aaa;
 }
 
 
 /* フッダー */
+.bottomelement {
+    margin-bottom: 20px;
+}
+
 footer {
     width: 100%;
     bottom: 0;
