@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+
+{% load static %}
+
+<html lang="ja">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="author" content="KANATA2000">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:site" content="@KANATA20002">
+        <meta name="og:type" content="website">
+        <meta name="og:title" content="全て歌詞の所為です。">
+        <meta name="og:image" content="{% static 'subeana/image/icon.png' %}">
+        <meta name="og:description" content="全て歌詞の所為です。">
+        <meta name="og:url" content="https://izuminapp.herokuapp.com/subeana">
+        <meta name="description" content="全て歌詞の所為です。">
+        <meta meta="" name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
+        <meta charset="utf-8">
+        <title>全て歌詞の所為です。</title>
+        <link rel="stylesheet" type="text/css" href="{% static 'subeana/css/common.css'%}">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">     <!-- sans font -->
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>        <!-- sans font -->
+        <link rel="shortcut icon" href="{% static 'subeana/image/icon.ico' %}">
+        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@900&display=swap" rel="stylesheet">      <!-- sans font -->
+        <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" /> <!-- toastr -->
+    </head>
+
+
+    <body>
+        <header>
+            <div class="header-left">
+                <a href="{% url 'xia:top' %}"><img name="thumbnail" class="logo" src="{% static 'subeana/image/icon.png' %}" alt="全て歌詞の所為です。のロゴ"></a>
+                <p href="{% url 'xia:top' %}" class="logomoji">全て歌詞の所為です。</p>
+            </div>
+
+            <div class="header-right">
+                <nav>
+                    <a onclick="menu()" id="menuicon"><i class="fas fas fa-bars"></i></a>
+                </nav>
+            </div>
+
+            <div class="clear"></div>
+        </header>
+
+        <main>
+            <article id="mainarticle">
+                <section>
+                    <p>
+                        全て歌詞の所為です。
+                    </p>
+                </section>
+            </article>
+
+            <article id="menuarticle">
+                <section>
+                    <div id="pages">
+                        <p>メニュー</p><br />
+                        <a href="{% url 'xia:top' %}">トップ</a><br />
+                        <a class="nokanji" onclick="notfound()">歌詞を検索</a><br />
+                        <a class="nokanji" onclick="notfound()">歌詞を登録</a><br />
+                        <a class="nokanji" onclick="notfound()">歌詞を生成</a><br />
+                        <a class="nokanji" onclick="notfound()">歌詞分析</a><br />
+                    </div>
+                </section>
+            </article>
+        </main>
+
+        
+        <footer>
+            <div class="footer-container">
+                <div class="footer-left">
+                    <p class="nokanji">当サイトは非公式です。</p>
+                </div>
+
+                <div class="footer-right">
+                    <p class="nokanji">色の無い緑の考えが猛烈に眠る</p>
+                </div>
+
+                <div class="clear"></div>
+            </div>
+        </footer>
+    </body>
+
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> <!-- jquery -->
+    
+    <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
+
+    <script src="{% static 'xia/js/playerpopup.js' %}"></script>        <!-- プレイヤーポップアップ -->
+
+    <script>
+        // 漢字のみおおきく
+        function kanji() {
+            tags = ['p', 'a', 'h1', 'h2'];
+            for (tag of tags) {
+                for (p of document.getElementsByTagName(tag)) {
+                    if (p.className != "nokanji") {
+                        if ((tag == 'p') || (tag == 'a')) {
+                            p.innerHTML = p.innerHTML.replace(/([\u4E00-\u9FFF])/gi,"<font class=kanjipa>$1</font>");
+                        } else if (tag == 'h1') {
+                            p.innerHTML = p.innerHTML.replace(/([\u4E00-\u9FFF])/gi,"<font class=kanjih1>$1</font>");
+                        } else if (tag == 'h2') {
+                            p.innerHTML = p.innerHTML.replace(/([\u4E00-\u9FFF])/gi,"<font class=kanjih2>$1</font>");
+                        }
+                    }
+                }
+            }
+        }
+        
+        // メニューの切り替え
+        function menu() {
+            var isMenu = document.getElementById("menuarticle").style.display
+            if (isMenu != "block") {
+                document.getElementById("mainarticle").style.display = "none";
+                document.getElementById("menuicon").innerHTML = "<i class='fas fa-times'></i>";
+                document.getElementById("menuarticle").style.display = "block";
+                document.getElementsByTagName("main")[0].style.background = "linear-gradient(180deg, #000, #000, 70vh, #005)";
+            } else {
+                document.getElementById("mainarticle").style.display = "block";
+                document.getElementById("menuicon").innerHTML = "<i class='fas 	fas fa-bars'></i>";
+                document.getElementById("menuarticle").style.display = "none";
+                document.getElementsByTagName("main")[0].style.background = ""
+            }
+            kanji();
+        }
+
+        // 存在しないページのtoastr
+        function notfound(){
+            toastr.options = {
+                "closeButton": false,
+                "debug": false,
+                "newestOnTop": false,
+                "progressBar": true,
+                "positionClass": "toast-bottom-right",
+                "preventDuplicates": false,
+                "onclick": null,
+                "timeOut": "3000",
+                "extendedTimeOut": "0",
+                "showEasing": "swing",
+                "hideEasing": "linear",
+            }
+
+            toastr.info("このページはまだ存在しません！")
+        };
+
+    </script>
+
+
+    <script>
+        window.onload = function() {
+            kanji();
+        }
+    </script>
+
+</html>

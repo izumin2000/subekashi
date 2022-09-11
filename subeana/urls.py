@@ -7,4 +7,5 @@ app_name = 'subeana'
 urlpatterns = [
     path('admin', admin.site.urls),
     path('', views.top, name = 'top'),
+    path('new', views.new, name = 'new'),
 ]
