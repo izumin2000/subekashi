@@ -57,10 +57,10 @@
                     <div id="pages">
                         <p>メニュー</p><br />
                         <a href="{% url 'xia:top' %}">トップ</a><br />
-                        <a onclick="notfound()">歌詞を検索</a><br />
-                        <a onclick="notfound()">歌詞を登録</a><br />
-                        <a onclick="notfound()">歌詞を生成</a><br />
-                        <a onclick="notfound()">歌詞分析</a><br />
+                        <a class="nokanji" onclick="notfound()">歌詞を検索</a><br />
+                        <a class="nokanji" onclick="notfound()">歌詞を登録</a><br />
+                        <a class="nokanji" onclick="notfound()">歌詞を生成</a><br />
+                        <a class="nokanji" onclick="notfound()">歌詞分析</a><br />
                     </div>
                 </section>
             </article>
@@ -70,11 +70,11 @@
         <footer>
             <div class="footer-container">
                 <div class="footer-left">
-                    <p>当サイトは非公式です。</p>
+                    <p class="nokanji">当サイトは非公式です。</p>
                 </div>
 
                 <div class="footer-right">
-                    <p>色の無い緑の考えが猛烈に眠る</p>
+                    <p class="nokanji">色の無い緑の考えが猛烈に眠る</p>
                 </div>
 
                 <div class="clear"></div>
@@ -89,32 +89,39 @@
     <script src="{% static 'xia/js/playerpopup.js' %}"></script>        <!-- プレイヤーポップアップ -->
 
     <script>
-    window.onload = function() {
-        tags = ['p', 'a', 'h1', 'h2', 'h3'];
-        for (tag of tags) {
-            for (p of document.getElementsByTagName(tag)) {
-                p.innerHTML = p.innerHTML.replace(/([\u4E00-\u9FFF])/gi,"<font class=kanji>$1</font>");
+        // 漢字のみおおきく
+        function kanji() {
+            tags = ['p', 'a', 'h1', 'h2'];
+            for (tag of tags) {
+                for (p of document.getElementsByTagName(tag)) {
+                    if (p.className != "nokanji") {
+                        if ((tag == 'p') || (tag == 'a')) {
+                            p.innerHTML = p.innerHTML.replace(/([\u4E00-\u9FFF])/gi,"<font class=kanjipa>$1</font>");
+                        } else if (tag == 'h1') {
+                            p.innerHTML = p.innerHTML.replace(/([\u4E00-\u9FFF])/gi,"<font class=kanjih1>$1</font>");
+                        } else if (tag == 'h2') {
+                            p.innerHTML = p.innerHTML.replace(/([\u4E00-\u9FFF])/gi,"<font class=kanjih2>$1</font>");
+                        }
+                    }
+                }
             }
         }
-    }
-    </script>
-
-    <script>
+        
         // メニューの切り替え
         function menu() {
             var isMenu = document.getElementById("menuarticle").style.display
-            console.log(isMenu)
             if (isMenu != "block") {
                 document.getElementById("mainarticle").style.display = "none";
                 document.getElementById("menuicon").innerHTML = "<i class='fas fa-times'></i>";
                 document.getElementById("menuarticle").style.display = "block";
-                document.getElementsByTagName("main")[0].style.background = "linear-gradient(180deg, #000, #000, 70vh, #500)";
+                document.getElementsByTagName("main")[0].style.background = "linear-gradient(180deg, #000, #000, 70vh, #005)";
             } else {
                 document.getElementById("mainarticle").style.display = "block";
                 document.getElementById("menuicon").innerHTML = "<i class='fas 	fas fa-bars'></i>";
                 document.getElementById("menuarticle").style.display = "none";
                 document.getElementsByTagName("main")[0].style.background = ""
             }
+            kanji();
         }
 
         // 存在しないページのtoastr
@@ -136,6 +143,13 @@
             toastr.info("このページはまだ存在しません！")
         };
 
+    </script>
+
+
+    <script>
+        window.onload = function() {
+            kanji();
+        }
     </script>
 
 </html>

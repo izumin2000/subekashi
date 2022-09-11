@@ -173,6 +173,7 @@ section p {
     font-weight: 900;
     color: #fff;
     font-size: 18px;
+    line-height: 18px;
     line-height: 30px;
     margin: 0 24px;
 }
@@ -185,8 +186,18 @@ a {
     margin: 0 5px;
 }
 
-.kanji {
-    font-size: 24px;
+.kanjipa {
+    font-size: 27px;
+}
+
+.kanjih1 {
+    font-size: 60px;
+    line-height: 60px;
+}
+
+.kanjih2 {
+    font-size: 38px;
+    line-height: 38px;
 }
 
 .underline {
@@ -214,14 +225,14 @@ a {
 #pages p {
     margin-top: 32px;
     padding: 32px 0 0 20px;
-    font-family: sans-serif;
+    font-family: 'Noto Sans JP', sans-serif;
     font-size: 40px !important;
     line-height: 60px !important;
 }
 
 #pages a {
     padding-left: 60px;
-    font-family: sans-serif;
+    font-family: 'Noto Sans JP', sans-serif;
     font-size: 30px !important;
     line-height: 60px !important;
     text-decoration: underline;
@@ -302,7 +313,7 @@ footer {
     color: #fff;
     font-size: 12px;
     line-height: 12px;
-    margin: 0px 0px 0px 10px;
+    margin: 3px 0 0 8px;
 }
 
 .footer-right p {
@@ -311,6 +322,6 @@ footer {
     line-height: 12px;
     float: right;
     display: inline;
-    margin-right: 6px;
+    margin: 9px 8px 0 0;
     color: #fff;
 }
