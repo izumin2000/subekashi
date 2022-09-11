@@ -32,27 +32,42 @@ header {
 }
 
 .header-left p {
+    display: inline-block;
     font-family: 'Noto Sans JP', sans-serif;
-    font-size: 20px;
-    line-height: 20px;
-    color: #ddd;
+    vertical-align: top; 
+    margin-top: 20px;
+    font-size: 25px;
+    line-height: 25px;
+    color: #FFF;
+}
+
+.logo {
+    display: inline-block;
+    height: 45px;
+    margin-top: 10px;
+    border-radius:50%;
 }
 
 .header-right {
-    margin-right: 8px;
+    margin: 8px 8px 0 0;
     float: right;
 }
 
 .header-right nav a {
+    display: inline-block;
     font-family: 'Noto Sans JP', sans-serif;
     font-size: 20px;
     line-height: 20px;
-    padding: 8px 8px;
     margin-right: 8px;
     text-decoration: none;
     color: #ddd;
-    border-radius: 10px;
-    transition: color 0.5s
+    cursor: pointer;
+    transition: color 0.5s;
+    vertical-align: top;
+}
+
+.header-right nav a i {
+    font-size: 48px;
 }
 
 .header-right nav a:hover {
@@ -106,11 +121,6 @@ header {
 
 .clear {
     clear: both;
-}
-
-.logo {
-    height: 50px;
-    margin-top: 6px;
 }
 
 
@@ -168,54 +178,15 @@ section p {
 }
 
 a {
-    color: #000;
-    text-decoration: underline 2px #BB002D;
+    color: #fff;
+    text-decoration: underline 2px #fff;
     font-family: 'Noto Sans JP', sans-serif;
     line-height: 16px;
     margin: 0 5px;
 }
 
-code {
-    display: inline-block;
-    padding: 0 0.2em;
-    margin: 0.2em 0.4em;
-    background-color: #e3e4ff;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
 .kanji {
     font-size: 24px;
-}
-
-.fa-youtube {
-    color: #FF0000;
-    margin-right: 5px;
-}
-
-.fa-discord {
-    color: #7289da;
-    margin-right: 5px;
-}
-
-.liindent1 {
-    margin-bottom: 20px;
-}
-
-.liindent2 {
-    margin-left: 40px;
-}
-
-.liindent3 {
-    margin-bottom: 10px;
-}
-
-.isonline {
-    color: #D1340A !important;
-}
-
-.isoffline {
-    color: #4E01C7 !important;
 }
 
 .underline {
@@ -223,7 +194,7 @@ code {
     height: 8px;
     width: 150px;
     margin: 0 auto 5px auto;
-    background-color: #BB002D;
+    background-color: #fff;
 }
 
 @media (max-width: 640px) {
@@ -233,269 +204,27 @@ code {
 }
 
 
-/* ファーストビュー */
-@media (max-width: 640px) {
-    .firstview {
-        padding-bottom: calc(100vh - 128px);
-    }
-}
-
-.firstview b {
-    position: absolute;
-    top: 48%;
-    right: 30px;
-    text-align: right;
-    font-family: 'Noto Sans JP', sans-serif;
-    padding: 10px;
-    border-radius: 5px;
-    color: #fff;
-    background-color: #00000077;
-    line-height: 40px
-}
-
-.clImg {
-    position: relative;
-}
-
-.clImg img {
-    position: absolute;
-    height: calc(100vh - 64px);
-    left: 0;
-    width: 100%;
-    object-fit: cover;
-}
-
-@media (max-width: 640px) {
-    .clImg img {
-        height: calc(100vh - 128px);
-    }
-}
-
-.firstview {
-    padding-bottom: calc(100vh - 64px);
-}
-
-@media (max-width: 640px) {
-    .firstview b {
-        top: 40%;
-        width: 220px;
-    }
-}
-
-
-/* タイル */
-.container {
-    margin: 10px 0 0 24px;
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-}
-
-@media (max-width: 780px) {
-    .container {
-        margin-left: calc(50%  - 240px);
-    }
-}
-
-@media (max-width: 520px) {
-    .container {
-        margin-left: calc(50%  - 115px);
-    }
-}
-
-.info_item {
-    height: 280px;
-    width: 220px;
-    border: 5px solid #BB002D;
-    border-radius: 5px;
-    margin: 0 15px 15px 0;
-}
-
-@media (max-width: 520px) {
-    .info_item {
-        margin-right: 0;
-    }
-}
-
-.info_title, #popup_name {
-    color: #000;
-    margin: 12px 0 10px 0;
-    text-align: center;
-    font-size: 25px;
-    line-height: 25px;
-}
-
-.info_underline {
-    height: 5px;
-    width: 227px;
-    margin-left: -2px;
-    background-color: #BB002D;
-}
-
-.info_data {
-    margin: 0;
-    color: #000;
-    margin-top: 20px;
-    text-align: center;
-    font-size: 25px;
-    line-height: 25px;
-}
-
-.info_warning {
-    margin: 10px 25px !important;
-    color: #f2a744;
-    font-family: 'Noto Sans JP', sans-serif;
-    font-size: 15px;
-    line-height: 15px;
-}
-
-.info_item i {
-    margin-top: 25px;
-    display: flex;
-	text-decoration: none;
-	align-items: center;
-	justify-content: center;
-    text-align: center;
-    color: #000;
-    font-size: 110px;
-    line-height: 110px;
-}
-
-.info_item a, .info_item label, .info_memo {
-    display: block;
-    color: #000;
-    margin-top: 15px;
-    text-align: center;
-    text-decoration: underline 2px #BB002D;
-    font-family: 'Noto Sans JP', sans-serif;
-    line-height: 16px;
-}
-
-.info_memo {
-    font-size: 14px !important;
-    text-decoration: none;
-    margin: 15px 0 5px 0;
-}
-
-.unknown_skin {
-    display: block;
-    width: 105px;
-    margin: 20px auto;
-}
-
-
-/* ポップアップ */
-.popup_wrap input {
+/* メニュー */
+#menuarticle {
     display: none;
+    margin-top: 64px;
+    height: calc(100vh - 96px);
 }
 
-.popup_overlay {
-    display: flex;
-    justify-content: center;
-    overflow: auto;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: #00000088;
-    opacity: 0;
-    transition: opacity 0.5s, transform 0s 0.5s;
-    transform: scale(0);
+#pages p {
+    margin-top: 32px;
+    padding: 32px 0 0 20px;
+    font-family: sans-serif;
+    font-size: 40px !important;
+    line-height: 60px !important;
 }
 
-.popup_trigger {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-}
-
-.popup_content {
-    position: relative;
-    align-self: center;
-    width: 75%;
-    max-width: 800px;
-    box-sizing: border-box;
-    background: #fff;
-    line-height: 1.4em;
-    transition: 0.5s;
-    border-radius: 12px;
-    box-shadow: 0 0 5px #00000088;
-}
-
-.popup_content p {
-    padding: 20px 20px 5px 20px;
-    text-align: center;
-}
-
-.close_btn {
-    position: absolute;
-    top: 14px;
-    right: 16px;
-    font-size: 30px;
-    cursor: pointer;
-    text-decoration: none !important;
-}
-
-.popup_wrap input:checked ~ .popup_overlay {
-    opacity: 1;
-    transform: scale(1);
-    transition: opacity 0.5s;
-}
-
-.open_btn {
-    color: #BB002D;
-    cursor: pointer;
-    transition: .3s ease;
-    padding: 5px 15px;
-}
-
-#popup_skin {
-    display: block;
-    width: 120px;
-    margin: 10px auto;
-}
-
-#popup_info {
-    font-family: 'Noto Sans JP', sans-serif;
-    margin: 20px 10px;
-    font-size: 16px;
-}
-
-
-/* アイテムリスト */
-.itemlist {
-    list-style-type: disc;
-    margin: 15px 50px;
-}
-
-.itemlist li {
-    font-size: 18px;
-    line-height: 32px;
-    word-wrap:break-word;
-    overflow-wrap: break-word;
-}
-
-.itemlist li img {
-    vertical-align: top;
-    height: 24px;
-    margin-right: 6px;
-}
-
-.itemlist li i {
-    height: 32px;
-    margin: 0 6px 0 4px;
-}
-
-.skin {
-    display: block;
-    width: 120px;
-    margin: 20px auto 10px auto;
-}
-
-ol {
-    list-style:decimal !important;
-    margin-left: 40px;
+#pages a {
+    padding-left: 60px;
+    font-family: sans-serif;
+    font-size: 30px !important;
+    line-height: 60px !important;
+    text-decoration: underline;
 }
 
 
@@ -517,7 +246,7 @@ input {
 
 input:focus {
     outline: 0;
-    box-shadow: 0 0 0 2px #BB002D inset;
+    box-shadow: 0 0 0 2px #fff inset;
 }
 
 input:focus::placeholder {
@@ -544,7 +273,7 @@ input:focus::placeholder {
 
 .formbutton:active {
     border: none;
-    box-shadow: 0 0 0 2px #BB002D inset;
+    box-shadow: 0 0 0 2px #fff inset;
     background-color: #eee;
 }
 
@@ -560,15 +289,6 @@ footer {
     height: 32px;
 }
 
-.footer-left p {
-    font-family: 'Noto Sans JP', sans-serif;
-    margin: 20px 0px 0px 10px;
-    color: white;
-}
-.footer-left .twitter-share-.formbutton {
-    color: #fff;
-}
-
 .footer-left {
     position: relative;
     float: left;
@@ -577,22 +297,20 @@ footer {
     height: 24px;   
 }
 
+.footer-left p {
+    font-family: 'Noto Sans JP', sans-serif;
+    color: #fff;
+    font-size: 12px;
+    line-height: 12px;
+    margin: 0px 0px 0px 10px;
+}
+
 .footer-right p {
     font-family: 'Noto Sans JP', sans-serif;
+    font-size: 12px;
+    line-height: 12px;
     float: right;
     display: inline;
-    margin: 6px 6px 0 0;
-    font-size: 15px;
-    color: #eee;
-}
-
-.footer-right a img {
-    float: right;
-    display: inline;
-    margin:4px 2px 0 2px;
-    height: 24px;
-}
-
-.footer-right p #author {
+    margin-right: 6px;
     color: #fff;
 }

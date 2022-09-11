@@ -37,17 +37,6 @@ header {
     float: right;
 }
 
-#menuannai {
-    display: inline-block;
-    font-family: sans-serif;
-    font-size: 15px;
-    padding: 8px;
-    margin-bottom: 12px;
-    line-height: 64px;
-    color: #101010;
-    
-}
-
 .header-right nav a {
     display: inline-block;
     font-family: sans-serif;
