@@ -1,0 +1,15 @@
+{% load static %}
+<header>
+    <div class="header-left">
+        <a href="{% url 'subeana:top' %}"><img name="thumbnail" class="logo" src="{% static 'subeana/image/icon.png' %}" alt="全て歌詞の所為です。のロゴ"></a>
+        <p href="{% url 'subeana:top' %}" class="logomoji">全て歌詞の所為です。</p>
+    </div>
+
+    <div class="header-right">
+        <nav>
+            <a onclick="menu()" id="menuicon"><i class="fas fas fa-bars"></i></a>
+        </nav>
+    </div>
+
+    <div class="clear"></div>
+</header>

@@ -135,14 +135,8 @@ main {
     }
 }
 
-.topmargin {
+#mainarticle {
     margin-top: 100px;
-}
-
-@media (max-width: 640px) {
-.topmargin {
-    margin-top: 172px;
-}
 }
 
 h1 {

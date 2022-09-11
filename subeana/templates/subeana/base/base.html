@@ -1,0 +1,20 @@
+{% load static %}
+<!DOCTYPE html>
+
+<html lang="ja">
+    {% include './head.html' %}
+    <body>
+        {% include './header.html' %}
+        <main>
+            <article id="mainarticle">
+                {% block content %}{% endblock %}
+            </article>
+            {% include './menu.html' %}
+        </main>
+        {% include './footer.html' %}
+    </body>
+
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> <!-- jquery -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
+    <script src="{% static 'subeana/js/base.js' %}" rel="stylesheet"></script>
+</html>
