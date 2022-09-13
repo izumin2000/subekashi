@@ -28,7 +28,9 @@
             <article id="mainarticle">
                 {% block content %}{% endblock %}
             </article>
-            {% include './menu.html' %}
+            <article id="menuarticle">
+                {% include './menu.html' %}
+            </article>
         </main>
         {% include './footer.html' %}
     </body>
