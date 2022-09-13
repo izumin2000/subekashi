@@ -1,4 +1,5 @@
 {% extends "subeana/base/base.html" %}
+{% load static %}
 {% block title %}歌詞の登録{% endblock %}
 {% block ogtitle %}歌詞の登録{% endblock %}
 
@@ -34,4 +35,11 @@
     </form>
     <p class="bottomelement">*がついているラベルは入力が必須です。</p>
 </section>
+{% endblock %}
+
+{% block js %}
+<script src="{% static 'subeana/js/checkform.js' %}" rel="stylesheet"></script>
+<script>
+    checksong("{{ basedir }}");
+</script>
 {% endblock %}
