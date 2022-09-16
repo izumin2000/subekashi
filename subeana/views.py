@@ -20,7 +20,9 @@ def new(request) :
 
         ins_song = Song.objects.create()
         ins_song.title = title
-        # ins_song.channel = channel
+        ins_song.channel = channel
+        if url in "https://www.youtube.com/watch?v=" :
+            url = "https://youtu.be/" + url[32:44]
         ins_song.url = url
         ins_song.lyrics = lyrics
         ins_song.save()

@@ -269,6 +269,7 @@ textarea {
     font-size: 20px;
     cursor: pointer;
     margin: 20px 0;
+    
 }
 
 #submit:hover {
@@ -279,6 +280,12 @@ textarea {
     border: none;
     box-shadow: 0 0 0 2px #fff inset;
     background-color: #aaa;
+}
+
+#submit:disabled {
+    background-color: #ccc;
+    box-shadow: none;
+    cursor: not-allowed;
 }
 
 

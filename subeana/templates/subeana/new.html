@@ -9,13 +9,13 @@
     <div class="underline"></div>
     <form action="{% url 'subeana:new' %}" method="POST" class="post-form" id="newForm">{% csrf_token %}
         <label>曲名*</label>
-        <input type="text" id="title" name="title"><br>
+        <input type="text" id="title" name="title" oninput="checksong()"><br>
         <label>作者*</label>
-        <input type="text" id="channel" name="channel"><br>
+        <input type="text" id="channel" name="channel" oninput="checkform()"><br>
         <label>URL</label>
         <input type="text" id="url" name="url"><br>
         <label>カテゴリ*</label>
-        <select id="imitate" name="imitate">
+        <select id="imitate" name="imitate" oninput="checkform()">
             <option>選択してください</option>
             <option>原曲</option>
             <option>.模倣</option>
@@ -31,7 +31,7 @@
         </select><br>
         <label id="lyricslabel">歌詞</label>
         <textarea id="lyrics" name="lyrics" oninput="autotextarea()"></textarea><br>
-        <input type="submit" value="登録" id="submit">
+        <input type="submit" value="登録" id="submit" disabled>
     </form>
     <p class="bottomelement">*がついているラベルは入力が必須です。</p>
 </section>
