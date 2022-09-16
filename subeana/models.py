@@ -25,6 +25,7 @@ class Word(models.Model) :
     song = models.OneToOneField("Song", on_delete = models.DO_NOTHING, blank = True, null = True, related_name = "word_song")
     title = models.CharField(default = "", max_length = 100)
     words = models.CharField(default = "", max_length = 10000)
+    ruigo = models.CharField(default = "", max_length = 10000)
 
 
 class Ai(models.Model) :
