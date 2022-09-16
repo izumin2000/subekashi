@@ -12,5 +12,6 @@ urlpatterns = [
     path('admin', admin.site.urls),
     path('', views.top, name = 'top'),
     path('new', views.new, name = 'new'),
+    path('songs/<str:song_title>', views.song, name = 'song'),
     path('api/',include(defaultRouter.urls)),
 ]

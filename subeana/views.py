@@ -35,6 +35,11 @@ def new(request) :
     return render(request, 'subeana/new.html', dir)
 
 
+def song(request, song_title) :
+    dir = {"title" : song_title}
+    return render(request, "subeana/song.html", dir)
+
+
 class SongViewSet(viewsets.ModelViewSet):
     queryset = Song.objects.all()
     serializer_class = SongSerializer
