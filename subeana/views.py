@@ -27,10 +27,11 @@ def new(request) :
         ins_song.lyrics = lyrics
         ins_song.save()
 
+    BASE_DIR = str(BASE_DIR)
     if "C:" in BASE_DIR :
         dir["basedir"] = "http://127.0.0.1:8000"
     else :
-        print("!"*20, BASE_DIR)
+        print("!"*20, "\n", BASE_DIR)
         dir["basedir"] = BASE_DIR
     return render(request, 'subeana/new.html', dir)
 

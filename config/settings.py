@@ -15,7 +15,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 try:
     from .local_settings import *
@@ -138,14 +138,9 @@ if DEBUG :
             'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
         }
     }
-    SECRET_KEY = '%ibnx3^jl9t51-1xkc#5&xn)yh7p1xv5%ks_68%8dk$*-ht_!s'
+    SECRET_KEY = SECRET_KEY
 else :
     django_heroku.settings(locals())
     SECRET_KEY = os.environ['SECRET_KEY']
-    cloudinary.config(
-        cloud_name = 'hha8k6kh9',
-        api_key = os.environ['CLOUDINARY_API_KEY'],
-        api_secret = os.environ['CLOUDINARY_API_SECRET']
-    )
 
 # DEBUG = True
