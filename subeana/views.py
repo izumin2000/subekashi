@@ -2,7 +2,7 @@ from django.shortcuts import render
 from subeana.models import Song
 from rest_framework import viewsets
 from .serializer import SongSerializer
-from config.settings import BASE_DIR
+from config.settings import BASE_DIR as BASE_DIRpath
 # Create your views here.
 def top(request):
     return render(request, 'subeana/top.html')
@@ -27,7 +27,7 @@ def new(request) :
         ins_song.lyrics = lyrics
         ins_song.save()
 
-    BASE_DIR = str(BASE_DIR)
+    BASE_DIR = str(BASE_DIRpath)
     if "C:" in BASE_DIR :
         dir["basedir"] = "http://127.0.0.1:8000"
     else :
