@@ -3,7 +3,6 @@ from pathlib import Path
 import os
 import dj_database_url
 import django_heroku
-import cloudinary
 from dotenv import find_dotenv, load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -139,7 +138,7 @@ if DEBUG :
             'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
         }
     }
-    SECRET_KEY = SECRET_KEY
+    SECRET_KEY = '%ibnx3^jl9t51-1xkc#5&xn)yh7p1xv5%ks_68%8dk$*-ht_!s'
 else :
     django_heroku.settings(locals())
     SECRET_KEY = os.environ['SECRET_KEY']
