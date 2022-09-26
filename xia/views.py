@@ -322,7 +322,7 @@ def editministerforce(request, name) :
 
 # レイド
 def raid(request) :
-    result = {"locked" : True, "towns" : list("hogehoge")}
+    result = {"locked" : True, "towns" : list("hogehugapiyo")}
 
     if request.method == "POST":
         password = request.POST.get("password")
