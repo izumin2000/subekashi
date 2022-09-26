@@ -45,6 +45,10 @@ def get_API(url, route) :
         if "error" in get_dict :     # dictのキーにerrorがあったら
             print("Invalid path Error", get.status_code,  route)
             return ""
+        
+        if "message" in get_dict :     # dictのキーにerrorがあったら
+            print("404 on json API", get.status_code,  route)
+            
         else :      # 正常に取得できたら
             print("OK", get.status_code, route)
             return get_dict
