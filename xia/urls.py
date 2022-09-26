@@ -15,7 +15,3 @@ urlpatterns = [
     path('edit/minister/delete/<int:minister_id>', views.editministerdelete, name = 'editministerdelete'),
     path('edit/minister/force/<str:name>', views.editministerforce, name = 'editministerforce'),
 ]
-    # path('nations', views.emctour, name = 'emctour'),
-    # path('nations/<str:nation>', views.nation, name = 'nation'),
-    # path('nations/modarticle/<str:nation>', views.modarticle, name = 'modarticle'),
-    # path('nations/list/<str:order>', views.nationlist, name = 'nationlist'),
