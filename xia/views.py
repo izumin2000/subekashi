@@ -332,7 +332,6 @@ def raid(request) :
             result["locked"] = False
 
             players_dict = get_API(EMC_API_URL, "allplayers/")
-            print()
             towns_dict = {}
             for player_dict in players_dict :
                 town = player_dict["town"]
@@ -362,6 +361,16 @@ def raid(request) :
 
     return render(request, 'xia/raid.html', result)
 
+
+# レイドからdynmapへリダイレクト
+def raidmap(request, town) :
+    town_dict = get_API(EMC_API_URL, "towns/" + town)
+    if town_dict :
+        x = town_dict["x"]
+        z = town_dict["z"]
+        area = town_dict["area"]
+        return redirect(f"https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom={mapzoom(area)}&x={x}&y=64&z={z}")
+    return raid(request)
 
 def pv(request) :
     pv = list(Analyze.objects.values_list("pv", flat=True))

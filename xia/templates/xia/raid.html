@@ -8,15 +8,17 @@
     <section class="raidform">
         <h1>レイド</h1>
         <div class="underline"></div>
-
-        <form action="{% url 'xia:raid' %}" method="POST" class="post-form" id="raidForm">{% csrf_token %}
-            <label>パスワード</label>
-            <input type="password" id="password" name="password"><br>
-            <input type="submit" id="submit" value="送信">
-        </form>
+        {% if locked %}
+            <form action="{% url 'xia:raid' %}" method="POST" class="post-form" id="raidForm">{% csrf_token %}
+                <label>パスワード</label>
+                <input type="password" id="password" name="password"><br>
+                <input type="submit" id="submit" value="送信">
+            </form>
+        {% endif %}
     </section>
 
     <section class="tablesection">
+        <p>町名をクリックすると町名がクリップボードにコピーされます。</p>
         <table border="1">
             <th>町名</th>
             <th>最終ログイン日</th>
@@ -24,14 +26,14 @@
             {% if locked %}
                 {% for town in towns %}
                     <tr>
-                        <td>******* <a onclick="notfound()"><i class="fas fa-map-marked-alt"></i></a></td>
+                        <td>******* <i class="fas fa-map-marked-alt"></i></td>
                         <td>*******</td>
                     </tr>
                 {% endfor %}
             {% else %}
                 {% for name, lastlogin in towns %}
                 <tr>
-                    <td>{{ name }} <a onclick="notfound()"><i class="fas fa-map-marked-alt"></i></a></td>
+                    <td><a class="name" onclick="copyCode('{{ name }}')">{{ name }}</a> <a class="map" href="{% url 'xia:raidmap' name %}" target="_blank" rel="noopener noreferrer"><i class="fas fa-map-marked-alt"></i></a></td>
                     <td>{{ lastlogin }} 日前</td>
                 </tr>
                 {% endfor %}

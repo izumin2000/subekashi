@@ -36,3 +36,13 @@ table tr th {
 table tr td {
     padding: 5px;
 }
+
+.name {
+    display: inline-block;
+    cursor: pointer;
+}
+
+.map:hover {
+    color: #BB002D;
+    transition: color 0.5s;
+}
