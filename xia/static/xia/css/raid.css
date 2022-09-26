@@ -1,10 +1,17 @@
-.raidform {
+section p {
+    margin: 0;
+}
+
+.raidsection {
     margin: 130px 0 0 40px;
 }
 
+#raidform {
+    margin-top: 20px;
+}
 
 #submit {
-    margin: 20px 0 0 20px;
+    margin-top: 20px;
 }
 
 #submit:hover {

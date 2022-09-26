@@ -5,11 +5,11 @@
 {% block css %}{% static 'xia/css/raid.css'%}{% endblock %}
 
 {% block content %}
-    <section class="raidform">
+    <section class="raidsection">
         <h1>レイド</h1>
         <div class="underline"></div>
         {% if locked %}
-            <form action="{% url 'xia:raid' %}" method="POST" class="post-form" id="raidForm">{% csrf_token %}
+            <form action="{% url 'xia:raid' %}" method="POST" class="post-form" id="raidform">{% csrf_token %}
                 <label>パスワード</label>
                 <input type="password" id="password" name="password"><br>
                 <input type="submit" id="submit" value="送信">
@@ -18,7 +18,11 @@
     </section>
 
     <section class="tablesection">
-        <p>町名をクリックすると町名がクリップボードにコピーされます。</p>
+        {% if not locked %}
+            <p>町名をクリックすると町名がクリップボードにコピーされます。</p>
+            <p>レイドの情報を取得しました。万が一パスワードが流出した場合、KANATA2000#6494に連絡をください。</p>
+        {% endif %}
+        
         <table border="1">
             <th>町名</th>
             <th>最終ログイン日</th>
@@ -47,7 +51,7 @@
         window.onload = function() {
             // toastrの表示
             toastr.options = {
-                "closeButton": false,
+                "closeButton": true,
                 "debug": false,
                 "newestOnTop": false,
                 "progressBar": true,
@@ -62,10 +66,6 @@
 
             "{% if locked and not error %}"
             toastr.error("あなたはXiaの機密情報にアクセスしようとしています。アクセスするにはパスワードを送信してください。")
-            "{% endif %}"
-
-            "{% if get %}"
-            toastr.info("レイドの情報を取得しました。万が一パスワードが流出した場合、KANATA2000#6494に連絡をください。")
             "{% endif %}"
 
             toastr.options = {"positionClass": "toast-bottom-right"}
