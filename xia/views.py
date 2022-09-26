@@ -7,6 +7,7 @@ import requests
 from datetime import date
 import json
 from time import sleep
+from datetime import datetime
 import hashlib
 
 
@@ -322,14 +323,34 @@ def editministerforce(request, name) :
 
 # レイド
 def raid(request) :
-    result = {"locked" : True, "towns" : list("hogehugapiyo")}
+    result = {"locked" : True, "towns" : {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8, 9:9, 10:10, 11:11, 12:12}}
 
     if request.method == "POST":
         password = request.POST.get("password")
         if hashlib.sha256(password.encode()).hexdigest() == SHA256a :
             result["locked"] = False
-            result["towns"] = ""
 
+            players_dict = get_API(EMC_API_URL, "allplayers/")
+            print()
+            towns_dict = {}
+            for player_dict in players_dict :
+                town = player_dict["town"]
+                if "lastOnline" in player_dict :
+                    lastOnline = int(player_dict["lastOnline"])
+                    if town in towns_dict :
+                        if towns_dict[town] > lastOnline :
+                            towns_dict[town] = lastOnline
+                    towns_dict[town] = lastOnline
+
+            towns_tuple = sorted(towns_dict.items(), key = lambda town : town[1])     # ソート
+
+            today = datetime.today()
+            towns = []
+            for name, unixt in towns_tuple :
+                lastOnline = today - datetime.fromtimestamp(unixt)
+                towns.append((name, lastOnline.days))
+
+            result["towns"] = towns
 
     return render(request, 'xia/raid.html', result)
 

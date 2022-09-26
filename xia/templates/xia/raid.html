@@ -29,10 +29,10 @@
                     </tr>
                 {% endfor %}
             {% else %}
-                {% for town in towns %}
+                {% for name, lastlogin in towns %}
                 <tr>
-                    <td>{{ town.name }} <a onclick="notfound()"><i class="fas fa-map-marked-alt"></i></a></td>
-                    <td>{{ town.data }}</td>
+                    <td>{{ name }} <a onclick="notfound()"><i class="fas fa-map-marked-alt"></i></a></td>
+                    <td>{{ lastlogin }} 日前</td>
                 </tr>
                 {% endfor %}
             {% endif %}
