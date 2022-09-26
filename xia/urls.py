@@ -14,4 +14,5 @@ urlpatterns = [
     path('edit/minister', views.editminister, name = 'editminister'),
     path('edit/minister/delete/<int:minister_id>', views.editministerdelete, name = 'editministerdelete'),
     path('edit/minister/force/<str:name>', views.editministerforce, name = 'editministerforce'),
+    path('raid', views.raid, name = 'raid'),
 ]

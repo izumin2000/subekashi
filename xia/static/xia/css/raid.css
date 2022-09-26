@@ -1,0 +1,38 @@
+.raidform {
+    margin: 130px 0 0 40px;
+}
+
+
+#submit {
+    margin: 20px 0 0 20px;
+}
+
+#submit:hover {
+    box-shadow: 0 0 0 2px #BB002D inset;
+    transform: color 0.5s;
+}
+
+.tablesection {
+    margin: 40px 0 10px 40px;
+}
+
+table {
+    border-collapse: collapse;
+    margin-bottom: 10px;
+}
+
+.tableinfo {
+    word-break : break-all;
+}
+
+table tr {
+    margin: 5px;
+}
+
+table tr th {
+    padding: 5px;
+}
+
+table tr td {
+    padding: 5px;
+}

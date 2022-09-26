@@ -1,0 +1,70 @@
+{% extends "xia/base/base.html" %}
+{% load static %}
+{% block title %}レイド{% endblock %}
+{% block ogtitle %}レイド{% endblock %}
+{% block css %}{% static 'xia/css/raid.css'%}{% endblock %}
+
+{% block content %}
+    <section class="raidform">
+        <h1>レイド</h1>
+        <div class="underline"></div>
+
+        <form action="{% url 'xia:raid' %}" method="POST" class="post-form" id="raidForm">{% csrf_token %}
+            <label>パスワード</label>
+            <input type="password" id="password" name="password"><br>
+            <input type="submit" id="submit" value="送信">
+        </form>
+    </section>
+
+    <section class="tablesection">
+        <table border="1">
+            <th>町名</th>
+            <th>最終ログイン</th>
+            
+            {% if locked %}
+                {% for town in towns %}
+                    <tr>
+                        <td>******* <a onclick="notfound()"><i class="fas fa-map-marked-alt"></i></a></td>
+                        <td>*******</td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                {% for town in towns %}
+                <tr>
+                    <td>{{ town.name }} <a onclick="notfound()"><i class="fas fa-map-marked-alt"></i></a></td>
+                    <td>{{ town.data }}</td>
+                </tr>
+                {% endfor %}
+            {% endif %}
+        </table>
+    </section>
+{% endblock %}
+
+{% block js %}
+    <script>
+        window.onload = function() {
+            // toastrの表示
+            toastr.options = {
+                "closeButton": false,
+                "debug": false,
+                "newestOnTop": false,
+                "progressBar": true,
+                "positionClass": "toast-bottom-full-width",
+                "preventDuplicates": false,
+                "onclick": null,
+                "timeOut": "10000",
+                "extendedTimeOut": "10000",
+                "showEasing": "swing",
+                "hideEasing": "linear",
+            }
+
+            "{% if locked %}"
+            toastr.error("あなたはXiaの機密情報にアクセスしようとしています。アクセスするにはパスワードを送信してください。")
+            "{% endif %}"
+
+            "{% if error %}"
+            toastr.warning("ECMからの情報の取得に失敗しました。")
+            "{% endif %}"
+        };
+    </script>
+{% endblock %}

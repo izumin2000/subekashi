@@ -320,6 +320,20 @@ def editministerforce(request, name) :
     return render(request, 'xia/editminister.html', result)
 
 
+# レイド
+def raid(request) :
+    result = {"locked" : True, "towns" : list("hogehoge")}
+
+    if request.method == "POST":
+        password = request.POST.get("password")
+        if hashlib.sha256(password.encode()).hexdigest() == SHA256a :
+            result["locked"] = False
+            result["towns"] = ""
+
+
+    return render(request, 'xia/raid.html', result)
+
+
 def pv(request) :
     pv = list(Analyze.objects.values_list("pv", flat=True))
     date = Analyze.objects.values_list("date", flat=True)
