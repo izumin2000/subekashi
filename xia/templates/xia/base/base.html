@@ -1,0 +1,42 @@
+{% load static %}
+<!DOCTYPE html>
+
+<html lang="ja">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="author" content="KANATA2000">
+        <meta name="twitter:card" content="summary">
+        <meta name="twitter:site" content="@KANATA20002">
+        <meta name="og:type" content="website">
+        <meta name="og:title" content="{% block ogtitle %}{% endblock %} | Xia公式ホームページ">
+        <meta name="og:image" content="{% static 'xia/image/flag.png' %}">
+        <meta name="og:description" content="EarthMCの中国 運城市にある国、Xiaの紹介サイトです。">
+        <meta name="og:url" content="https://izuminapp.herokuapp.com/xia">
+        <meta name="description" content="EarthMCの中国 運城市にある国、Xiaの紹介サイトです。">
+        <meta meta="" name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
+        <meta charset="utf-8">
+        <title>{% block title %}{% endblock %} | Xia公式ホームページ</title>
+        <link rel="stylesheet" type="text/css" href="{% static 'xia/css/common.css'%}">
+        <link rel="stylesheet" type="text/css" href="{% block css %}{% endblock %}">
+        <link rel="shortcut icon" href="{% static 'xia/image/flag.ico' %}">
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
+        <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" /> <!-- toastr -->
+    </head>
+    <body>
+        {% include './header.html' %}
+        <main>
+            <article id="mainarticle">
+                {% block content %}{% endblock %}
+            </article>
+            <article id="menuarticle">
+                {% include './menu.html' %}
+            </article>
+        </main>
+        {% include './footer.html' %}
+    </body>
+
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> <!-- jquery -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
+    <script src="{% static 'xia/js/base.js' %}" rel="stylesheet"></script>
+    {% block js %}{% endblock %}
+</html>

@@ -1,247 +1,160 @@
-<!DOCTYPE html>
-
+{% extends "xia/base/base.html" %}
 {% load static %}
+{% block title %}トップ{% endblock %}
+{% block ogtitle %}トップ{% endblock %}
+{% block css %}{% static 'xia/css/top.css'%}{% endblock %}
 
-<html lang="ja">
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <meta name="author" content="KANATA2000">
-        <meta name="twitter:card" content="summary">
-        <meta name="twitter:site" content="@KANATA20002">
-        <meta name="og:type" content="website">
-        <meta name="og:title" content="Xiaへようこそ">
-        <meta name="og:image" content="{% static 'xia/image/flag.png' %}">
-        <meta name="og:description" content="EarthMCの中国 運城市にある国、Xiaの紹介サイトです。">
-        <meta name="og:url" content="https://izuminapp.herokuapp.com/xia">
-        <meta name="description" content="EarthMCの中国 運城市にある国、Xiaの紹介サイトです。">
-        <meta meta="" name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
-        <meta charset="utf-8">
-        <title>Xia - トップ</title>
-        <link rel="stylesheet" type="text/css" href="{% static 'xia/css/common.css'%}">
-        <link rel="stylesheet" type="text/css" href="{% static 'xia/css/top.css'%}">
-        <link rel="shortcut icon" href="{% static 'xia/image/flag.ico' %}">
-        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
-        <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" /> <!-- toastr -->
-    </head>
+{% block content %}
+    <section class="firstview">
+        <div class="clImg">
+            <img src="{% static 'xia/image/top1.png' %}" alt="Xiaに関する画像">
+            <img src="{% static 'xia/image/top2.png' %}" alt="Xiaに関する画像">
+        </div>
+        <b><span id="top_title">Xia 公式ホームページ</span></b>
+    </section>
 
+    <section class="welcome">
+        <h1>Xiaについて</h1>
+        <div class="underline"></div>
+        <h2>概要</h2>
+        <p>Xiaは<a href="https://earthmc.net/">EarthMC</a>の<a href="#dynmap">中国 運城市に位置する</a>日本人勢による国です。</p>
+        <p>もともとはTN時代にRyo5Syo5（現kasana2005)がInca Empireという名称で建国したものが国の起源になっております。</p>
+        <p>TA時代では中国に首都を置いていて、多くの町に囲まれた場所に位置しています。</p>
 
-    <body>
-        <header>
-            <div class="header-left">
-                <a href="{% url 'xia:top' %}"><img name="thumbnail" class="logo" src="{% static 'xia/image/flag.png' %}" alt="Xiaの国旗"></a>
-                <a href="{% url 'xia:top' %}" class="logomoji">Xia</a>
+        <h2>基本情報</h2>
+        {% if not ableAPI %}
+            <p class="info_warning">この情報は最新ではありません。</p>
+        {% endif %}
+        <div class="container">
+            <div class="info_item">
+                <p class="info_title">国旗</p>
+                <div class="info_underline"></div>
+                <img class="info_flag" src="{% static 'xia/image/flag.png' %}">
             </div>
 
-            <div class="header-right">
-                <nav>
-                    <a onclick="menu()" id="menuicon"><i class="fas fas fa-bars"></i></a>
-                </nav>
+            <div class="info_item">
+                <p class="info_title">首都</p>
+                <div class="info_underline"></div>
+                <p class="info_data info_data_small">{{ our.capital }}</p>
+                <i class="fas fa-building"></i>
+                <a href="https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=6&x=20617&y=64&z=-7085">DynMapで見る</a>
             </div>
 
-            <div class="clear"></div>
-        </header>
+            <div class="info_item">
+                <p class="info_title">人口</p>
+                <div class="info_underline"></div>
+                <p class="info_data">{{ our.population }} 人</p>
+                <i class="fas fa-user-friends"></i>
+                <a onclick="notfound()">プレイヤー情報を見る</a>
+            </div>
 
+            <div class="info_item">
+                <p class="info_title">面積</p>
+                <div class="info_underline"></div>
+                <p class="info_data">{{ our.area }} チャンク</p>
+                <i class="fas fa-cubes"></i>
+            </div>
+        </div>
 
-        <main>
-            <article id="mainarticle">
-                <section class="firstview">
-                    <div class="clImg">
-                        <img src="{% static 'xia/image/top1.png' %}" alt="Xiaに関する画像">
-                        <img src="{% static 'xia/image/top2.png' %}" alt="Xiaに関する画像">
-                    </div>
-                    <b><span id="top_title">Xia 公式ホームページ</span></b>
-                </section>
-            
-                <section class="welcome">
-                    <h1>Xiaについて</h1>
-                    <div class="underline"></div>
-                    <h2>概要</h2>
-                    <p>Xiaは<a href="https://earthmc.net/">EarthMC</a>の<a href="#dynmap">中国 運城市に位置する</a>日本人勢による国です。</p>
-                    <p>もともとはTN時代にRyo5Syo5（現kasana2005)がInca Empireという名称で建国したものが国の起源になっております。</p>
-                    <p>TA時代では中国に首都を置いていて、多くの町に囲まれた場所に位置しています。</p>
-
-                    <h2>基本情報</h2>
+        <h2 id="major_players">大臣紹介</h2>
+        <!-- <p>ユーザー名が<span class="isonline">赤色</span>ならオンライン、<span class="isoffline">青色</span>ならオフライン、黒色ならオンライン情報の未取得を示しています。</p> -->
+        <!-- <p>他のプレイヤーは<a onclick="notfound()">こちらから</a>閲覧できます。</p> -->
+        <div class="container">
+            {% for minister in ministers %}
+                <div class="info_item">
                     {% if not ableAPI %}
-                        <p class="info_warning">この情報は最新ではありません。</p>
+                        <p class="info_title">{{ minister.player.name }}</p>
+                    {% elif minister.player.online %}
+                        <p class="info_title isonline">{{ minister.player.name }}</p>
+                    {% else %}
+                        <p class="info_title isoffline">{{ minister.player.name }}</p>
                     {% endif %}
-                    <div class="container">
-                        <div class="info_item">
-                            <p class="info_title">国旗</p>
-                            <div class="info_underline"></div>
-                            <img class="info_flag" src="{% static 'xia/image/flag.png' %}">
-                        </div>
-
-                        <div class="info_item">
-                            <p class="info_title">首都</p>
-                            <div class="info_underline"></div>
-                            <p class="info_data info_data_small">{{ our.capital }}</p>
-                            <i class="fas fa-building"></i>
-                            <a href="https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=6&x=20617&y=64&z=-7085">DynMapで見る</a>
-                        </div>
-
-                        <div class="info_item">
-                            <p class="info_title">人口</p>
-                            <div class="info_underline"></div>
-                            <p class="info_data">{{ our.population }} 人</p>
-                            <i class="fas fa-user-friends"></i>
-                            <a onclick="notfound()">プレイヤー情報を見る</a>
-                        </div>
-
-                        <div class="info_item">
-                            <p class="info_title">面積</p>
-                            <div class="info_underline"></div>
-                            <p class="info_data">{{ our.area }} チャンク</p>
-                            <i class="fas fa-cubes"></i>
-                        </div>
-                    </div>
-
-                    <h2 id="major_players">大臣紹介</h2>
-                    <!-- <p>ユーザー名が<span class="isonline">赤色</span>ならオンライン、<span class="isoffline">青色</span>ならオフライン、黒色ならオンライン情報の未取得を示しています。</p> -->
-                    <!-- <p>他のプレイヤーは<a onclick="notfound()">こちらから</a>閲覧できます。</p> -->
-                    <div class="container">
-                        {% for minister in ministers %}
-                            <div class="info_item">
-                                {% if not ableAPI %}
-                                    <p class="info_title">{{ minister.player.name }}</p>
-                                {% elif minister.player.online %}
-                                    <p class="info_title isonline">{{ minister.player.name }}</p>
-                                {% else %}
-                                    <p class="info_title isoffline">{{ minister.player.name }}</p>
-                                {% endif %}
-                                <div class="info_underline"></div>
-                                <p class="info_data">{{ minister.title }}</p>
-                                {% if minister.player.uuid %}
-                                    <img class="skin" src="https://crafatar.com/renders/head/{{ minister.player.uuid }}">
-                                {% else %}
-                                    <img class="unknown_skin" src="{% static 'xia/image/unknown_skin.png' %}">
-                                {% endif %}
-                                <label for="trigger" class="open_btn" onclick="playerpopup('{{ minister.player.uuid }}', '{{ minister.player.name }}', '{{ ableAPI }}', '{{ minister.player.online }}', '{{ minister.player.info }}')">詳しく見る</label>
-                                <div class="popup_wrap">
-                                    <input id="trigger" type="checkbox">
-                                    <div class="popup_overlay">
-                                        <label for="trigger" class="popup_trigger"></label>
-                                        <div class="popup_content">
-                                            <label for="trigger" class="close_btn">x</label>
-                                            <p id="popup_name"></p>                                      
-                                            <img id="popup_skin">
-                                            <hr id="popup_hr">
-                                            <p id="popup_info"></p>
-                                        </div>
-                                    </div>
-                                </div>
+                    <div class="info_underline"></div>
+                    <p class="info_data">{{ minister.title }}</p>
+                    {% if minister.player.uuid %}
+                        <img class="skin" src="https://crafatar.com/renders/head/{{ minister.player.uuid }}">
+                    {% else %}
+                        <img class="unknown_skin" src="{% static 'xia/image/unknown_skin.png' %}">
+                    {% endif %}
+                    <label for="trigger" class="open_btn" onclick="playerpopup('{{ minister.player.uuid }}', '{{ minister.player.name }}', '{{ ableAPI }}', '{{ minister.player.online }}', '{{ minister.player.info }}')">詳しく見る</label>
+                    <div class="popup_wrap">
+                        <input id="trigger" type="checkbox">
+                        <div class="popup_overlay">
+                            <label for="trigger" class="popup_trigger"></label>
+                            <div class="popup_content">
+                                <label for="trigger" class="close_btn">x</label>
+                                <p id="popup_name"></p>                                      
+                                <img id="popup_skin">
+                                <hr id="popup_hr">
+                                <p id="popup_info"></p>
                             </div>
-                        {% endfor %}
+                        </div>
                     </div>
-
-                    <h2>地図</h2>
-                    <p>町名をクリックすると自動で地図が切り替わります</p>
-                    <div id="towns">
-                        <a onclick="changemap('SIEGE_NOVA_INCA')">SIEGE_NOVA_INCA</a>
-                        <a onclick="changemap('Yushiwan')">Yushiwan</a>
-                        <a onclick="changemap('inca_village')">inca_village</a>
-                    </div>
-                    <iframe id="dynmap" src="https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=6&x=20620&y=64&z=-7094"></iframe>
-
-                    <h2>その他の情報</h2>
-                    <p>その他の情報については<a onclick="notfound()">こちらのページ</a>からご覧になることができます</p>
-
-                    <h1>Xia国民になろう！</h1>
-                    <div class="underline"></div>
-                    <h2>素敵な特典</h2>
-                    <p>準備中...</p>
-                    <!-- <ul class="itemlist">
-                        <li><img src="{% static 'xia/image/oak.png' %}">原木 64個</li>
-                        <li><img src="{% static 'xia/image/iron.png' %}">鉄インゴット 64個</li>
-                        <li><img src="{% static 'xia/image/diamond.png' %}">ダイヤモンド 32個</li>
-                        <li><img src="{% static 'xia/image/potato.png' %}">食料 64個</li>
-                        <li><i class="fas fa-cubes"></i>土地 1チャンク</li>
-                    </ul> -->
-
-                    <h2>Xia国民になるには</h2>
-                    <ul class="itemlist">
-                        <li><a href="#major_players">大臣</a>が<span clss="isonline">ログイン</span>している場合</li>
-                        <ol class="liindent1">
-                            <li>EarthMCに参加してください</li>
-                            <li>チャットを開き<code onclick="copyCode('/ch join japanese')">/ch join japanese</code>と入力してください。</li>
-                            <li><code onclick="copyCode('Xiaに入りたいです')">Xiaに入りたいです</code>とチャットで話してください。</li>
-                            <li>招待が届くので、<code onclick="copyCode('/accept')">/accept</code>と入力してください。これでXia国民になれます。</li>
-                            <li><code onclick="copyCode('/n spawn Xia')">/n spawn Xia</code>でXiaにテレポートできます。</li>
-                        </ol>
-                        <li><a href="#major_players">大臣</a>が<span clss="isonline">ログイン</span>していない場合</li>
-                        <ul class="liindent2">
-                            <ol class="liindent3">
-                                <li>XiaのDiscordに参加します　URL:<a href="https://discord.gg/n9237pup6C">https://discord.gg/n9237pup6C</a></li>
-                                <li>雑談チャンネルにて<code onclick="copyCode('@大臣 Xiaに入りたいです')">@大臣 Xiaに入りたいです</code>とチャットで話してください。</li>
-                                <li>しばらくすると大臣より案内が来ますので指示に従ってください。</li>
-                            </ol>
-                        </ul>
-                    </ul>
-                    <p>※<code onclick="copyCode('このような見た目の文字')">このような見た目の文字</code>はクリック・タップすることでコピーをすることができます。</p>
-                    
-                    <h2>各種リンク</h2>
-                    <ul class="itemlist" id="links">
-                        <li><i class="fab fa-discord"></i>Xia Discord　URL:<a href="https://discord.gg/n9237pup6C">https://discord.gg/n9237pup6C</a></li>
-                        <li><i class="fab fa-youtube"></i>インカ放送局[公式]　URL:<a href="https://www.youtube.com/channel/UCbjn-i9H4iem98rTWYeZZ8w">https://www.youtube.com/channel/UCbjn-i9H4iem98rTWYeZZ8w</a></li>
-                        <li>インカ法務省公式ページ　URL:<a href="https://sites.google.com/view/inca-houmu-syou-koushiki">https://sites.google.com/view/inca-houmu-syou-koushiki</a></li>
-                        <li>EarthMC　URL:<a href="https://earthmc.net/">https://earthmc.net/</a></li>
-                        <!-- <li><i class=""></i>　URL:<a href=""></a></li> -->
-                    </ul>
-                </section>
-            </article>
-
-            <article id="menuarticle">
-                <section>
-                    <div id="pages">
-                        <p>メニュー</p><br />
-                        <a href="{% url 'xia:top' %}">トップ</a><br />
-                        <a onclick="notfound()">住人</a><br />
-                        <a onclick="notfound()">歴史</a><br />
-                        <a onclick="notfound()">レイド</a><br />
-                        <a onclick="notfound()">納税ランキング</a><br />
-                        <a onclick="notfound()">管理者ページ</a><br />
-                    </div>
-                    <h1 id="menuxia">Xia</h1>
-                </section>
-            </article>
-        </main>
-
-
-        <footer>
-            <div class="footer-container">
-                <div class="footer-left">
-                    <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
                 </div>
+            {% endfor %}
+        </div>
 
-                <div class="footer-right">
-                    <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.ja"><img src="https://creativecommons.org/images/deed/zero_white_x2.png"><img src="https://creativecommons.org/images/deed/cc_icon_white_x2.png"></a>
-                    <p>KANAT2A2000</p>
-                    <!-- <a id="author" onclick="notfound()">KANATA2000</a> -->
-                </div>
+        <h2>地図</h2>
+        <p>町名をクリックすると自動で地図が切り替わります</p>
+        <div id="towns">
+            <a onclick="changemap('SIEGE_NOVA_INCA')">SIEGE_NOVA_INCA</a>
+            <a onclick="changemap('Yushiwan')">Yushiwan</a>
+            <a onclick="changemap('inca_village')">inca_village</a>
+        </div>
+        <iframe id="dynmap" src="https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=6&x=20620&y=64&z=-7094"></iframe>
 
-                <div class="clear"></div>
-            </div>
-        </footer>
-    </body>
+        <h2>その他の情報</h2>
+        <p>その他の情報については<a onclick="notfound()">こちらのページ</a>からご覧になることができます</p>
 
+        <h1>Xia国民になろう！</h1>
+        <div class="underline"></div>
+        <h2>素敵な特典</h2>
+        <p>準備中...</p>
+        <!-- <ul class="itemlist">
+            <li><img src="{% static 'xia/image/oak.png' %}">原木 64個</li>
+            <li><img src="{% static 'xia/image/iron.png' %}">鉄インゴット 64個</li>
+            <li><img src="{% static 'xia/image/diamond.png' %}">ダイヤモンド 32個</li>
+            <li><img src="{% static 'xia/image/potato.png' %}">食料 64個</li>
+            <li><i class="fas fa-cubes"></i>土地 1チャンク</li>
+        </ul> -->
 
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> <!-- jquery -->
-    
-    <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
+        <h2>Xia国民になるには</h2>
+        <ul class="itemlist">
+            <li><a href="#major_players">大臣</a>が<span clss="isonline">ログイン</span>している場合</li>
+            <ol class="liindent1">
+                <li>EarthMCに参加してください</li>
+                <li>チャットを開き<code onclick="copyCode('/ch join japanese')">/ch join japanese</code>と入力してください。</li>
+                <li><code onclick="copyCode('Xiaに入りたいです')">Xiaに入りたいです</code>とチャットで話してください。</li>
+                <li>招待が届くので、<code onclick="copyCode('/accept')">/accept</code>と入力してください。これでXia国民になれます。</li>
+                <li><code onclick="copyCode('/n spawn Xia')">/n spawn Xia</code>でXiaにテレポートできます。</li>
+            </ol>
+            <li><a href="#major_players">大臣</a>が<span clss="isonline">ログイン</span>していない場合</li>
+            <ul class="liindent2">
+                <ol class="liindent3">
+                    <li>XiaのDiscordに参加します　URL:<a href="https://discord.gg/n9237pup6C">https://discord.gg/n9237pup6C</a></li>
+                    <li>雑談チャンネルにて<code onclick="copyCode('@大臣 Xiaに入りたいです')">@大臣 Xiaに入りたいです</code>とチャットで話してください。</li>
+                    <li>しばらくすると大臣より案内が来ますので指示に従ってください。</li>
+                </ol>
+            </ul>
+        </ul>
+        <p>※<code onclick="copyCode('このような見た目の文字')">このような見た目の文字</code>はクリック・タップすることでコピーをすることができます。</p>
+        
+        <h2>各種リンク</h2>
+        <ul class="itemlist" id="links">
+            <li><i class="fab fa-discord"></i>Xia Discord  URL:<a href="https://discord.gg/n9237pup6C">https://discord.gg/n9237pup6C</a></li>
+            <li><i class="fab fa-youtube"></i>インカ放送局[公式]  URL:<a href="https://www.youtube.com/channel/UCbjn-i9H4iem98rTWYeZZ8w">https://www.youtube.com/channel/UCbjn-i9H4iem98rTWYeZZ8w</a></li>
+            <li>インカ法務省公式ページ　URL:<a href="https://sites.google.com/view/inca-houmu-syou-koushiki">https://sites.google.com/view/inca-houmu-syou-koushiki</a></li>
+            <li>EarthMC  URL:<a href="https://earthmc.net/">https://earthmc.net/</a></li>
+            <!-- <li><i class=""></i>　URL:<a href=""></a></li> -->
+        </ul>
+    </section>
+{% endblock %}
 
-    <script src="{% static 'xia/js/playerpopup.js' %}"></script>        <!-- プレイヤーポップアップ -->
-
+{% block js %}
+    <script src="{% static 'xia/js/playerpopup.js' %}"></script>
     <script>
-        // 複数画像をフェードインフェードアウトで切替
-        $(document).ready(function(){
-            $('.clImg img:gt(0)').hide();
-            setInterval(function() {
-                $('.clImg :first-child').fadeOut().next('img').fadeIn().end().appendTo('.clImg');
-            },5000);
-        });
-
-
-        // エラーtoastr
         window.onload = function() {
+            // エラー用のtoaster
             toastr.options = {
                 "closeButton": false,
                 "debug": false,
@@ -255,74 +168,20 @@
                 "showEasing": "swing",
                 "hideEasing": "linear",
             }
-
-            "{% if error %}"
-            toastr.warning("{{ error }}")
-            "{% endif %}"
-        };
-
-
-        // 存在しないページのtoastr
-        function notfound(){
-            toastr.options = {
-                "closeButton": false,
-                "debug": false,
-                "newestOnTop": false,
-                "progressBar": true,
-                "positionClass": "toast-bottom-right",
-                "preventDuplicates": false,
-                "onclick": null,
-                "timeOut": "3000",
-                "extendedTimeOut": "0",
-                "showEasing": "swing",
-                "hideEasing": "linear",
-            }
-
-            toastr.info("このページはまだ存在しません！")
-        };
-
-
-        // コピーのtoastr
-        function copyCode(text) {
-            toastr.options = {
-                "closeButton": false,
-                "debug": false,
-                "newestOnTop": false,
-                "progressBar": true,
-                "positionClass": "toast-bottom-right",
-                "preventDuplicates": false,
-                "onclick": null,
-                "timeOut": "3000",
-                "extendedTimeOut": "0",
-                "showEasing": "swing",
-                "hideEasing": "linear",
-            }
-
-            if (Boolean(navigator.clipboard)) {
-                navigator.clipboard.writeText(text);
-                toastr.success(text + " をコピーしました！")
-            } else {
-                toastr.warning("この機能はセキュリティの関係上、HTTPS環境上でしか動作しません。")
+            
+            if ("{{ error }}") {
+                toastr.warning("{{ error }}");
             }
         }
 
-
-        // メニューの切り替え
-        function menu() {
-            var isMenu = document.getElementById("menuarticle").style.display
-            console.log(isMenu)
-            if (isMenu != "block") {
-                document.getElementById("mainarticle").style.display = "none";
-                document.getElementById("menuicon").innerHTML = "<i class='fas fa-times'></i>";
-                document.getElementById("menuarticle").style.display = "block";
-                document.getElementsByTagName("main")[0].style.background = "linear-gradient(90deg, #eee, #eee, calc(40vw + 160px), #BB002D)";
-            } else {
-                document.getElementById("mainarticle").style.display = "block";
-                document.getElementById("menuicon").innerHTML = "<i class='fas 	fas fa-bars'></i>";
-                document.getElementById("menuarticle").style.display = "none";
-                document.getElementsByTagName("main")[0].style.background = ""
-            }
-        }
+        
+        // 複数画像をフェードインフェードアウトで切替
+        $(document).ready(function(){
+            $('.clImg img:gt(0)').hide();
+            setInterval(function() {
+                $('.clImg :first-child').fadeOut().next('img').fadeIn().end().appendTo('.clImg');
+            },5000);
+        });
 
         
         // マップの切り替え
@@ -337,4 +196,4 @@
             }
         }
     </script>
-</html>
+{% endblock %}

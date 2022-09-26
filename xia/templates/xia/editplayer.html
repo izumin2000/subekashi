@@ -1,141 +1,80 @@
-<!DOCTYPE html>
-
+{% extends "xia/base/base.html" %}
 {% load static %}
+{% block title %}プレイヤーの編集{% endblock %}
+{% block ogtitle %}プレイヤーの編集{% endblock %}
+{% block css %}{% static 'xia/css/editplayer.css'%}{% endblock %}
 
-<html lang="ja">
-    <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <meta name="author" content="KANATA2000">
-        <meta name="twitter:card" content="summary">
-        <meta name="twitter:site" content="@KANATA20002">
-        <meta name="og:type" content="website">
-        <meta name="og:title" content="Xiaへようこそ">
-        <meta name="og:image" content="{% static 'xia/image/flag.png' %}">
-        <meta name="og:description" content="EarthMCの中国 運城市にある国、Xiaの紹介サイトです。">
-        <meta name="og:url" content="https://izuminapp.herokuapp.com/xia">
-        <meta name="description" content="EarthMCの中国 運城市にある国、Xiaの紹介サイトです。">
-        <meta meta="" name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
-        <meta charset="utf-8">
-        <title>Xia - プレイヤーの編集</title>
-        <link rel="stylesheet" type="text/css" href="{% static 'xia/css/common.css'%}">
-        <link rel="stylesheet" type="text/css" href="{% static 'xia/css/editplayer.css'%}">
-        <link rel="shortcut icon" href="{% static 'xia/image/flag.ico' %}">
-        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
-        <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" /> <!-- toastr -->
-    </head>
+{% block content %}
+    <section class="playerform">
+        <h1>プレイヤー情報の編集</h1>
+        <div class="underline"></div>
 
-    <main>
-        <header>
-            <div class="header-left">
-                <a href="{% url 'xia:top' %}"><img name="thumbnail" class="logo" src="{% static 'xia/image/flag.png' %}" alt="Xiaの国旗"></a>
-                <a href="{% url 'xia:top' %}" class="logomoji">Xia</a>
-            </div>
+        <form action="{% url 'xia:editplayer' %}" method="POST" class="post-form" id="PlayerForm">{% csrf_token %}
+            {{ form.as_p }}
+            <input type="submit" value="送信">
+        </form>
+    </section>
+    <section class="tablesection">
+        <table border="1" class="playertable">
+            <th>プレイヤー名</th>
+            <!-- <th id="thnation">国</th> -->
+            <!-- <th id="thtown">町</th> -->
+            <th>説明</th>
+            <th>削除</th>
+            {% for player in players %}
+            <tr>
+                <td><a href="#PlayerForm" onclick="copyinfo('{{ player.name }}', '{{ player.info }}')">{{ player.name }}</a></td>
+                <!-- <td class="tdnation">{{ player.nation }}</td> -->
+                <!-- <td class="tdtown">{{ player.town }}</td> -->
+                <td class="tableinfo">{{ player.info }}</td>
+                <td><a href="{% url 'xia:editplayerdelete' player.id %}"><i class="far fa-trash-alt"></i></a></td>
+            </tr>
+            {% endfor %}
+        </table>
 
-            <div class="header-right">
-                <nav>
-                    <a href="{% url 'xia:top' %}">トップ</a>
-                    <a onclick="notfound()">Wiki</a>
-                    <a onclick="notfound()">納税ランキング</a>
-                </nav>
-            </div>
+        <p>プレイヤー情報の追加や編集ができます。</p>
+        <p>プレイヤー名をクリックすることで、フォームにプレイヤーの情報がコピーされます。</p>
+    </section>
+{% endblock %}
 
-            <div class="clear"></div>
-        </header>
-
-        <body>
-            <article>
-                <section class="playerform">
-                    <h1>プレイヤー情報の編集</h1>
-                    <div class="underline"></div>
-
-                    <form action="{% url 'xia:editplayer' %}" method="POST" class="post-form" id="PlayerForm">{% csrf_token %}
-                        {{ form.as_p }}
-                        <input type="submit" value="送信">
-                    </form>
-                </section>
-                <section class="tablesection">
-                    <table border="1" class="playertable">
-                        <th>プレイヤー名</th>
-                        <!-- <th id="thnation">国</th> -->
-                        <!-- <th id="thtown">町</th> -->
-                        <th>説明</th>
-                        <th>削除</th>
-                        {% for player in players %}
-                        <tr>
-                            <td><a href="#PlayerForm" onclick="copyinfo('{{ player.name }}', '{{ player.info }}')">{{ player.name }}</a></td>
-                            <!-- <td class="tdnation">{{ player.nation }}</td> -->
-                            <!-- <td class="tdtown">{{ player.town }}</td> -->
-                            <td class="tableinfo">{{ player.info }}</td>
-                            <td><a href="{% url 'xia:editplayerdelete' player.id %}"><i class="far fa-trash-alt"></i></a></td>
-                        </tr>
-                        {% endfor %}
-                    </table>
-
-                    <p>プレイヤー情報の追加や編集ができます。</p>
-                    <p>プレイヤー名をクリックすることで、フォームにプレイヤーの情報がコピーされます。</p>
-                </section>
-            </article>
-        </body>
-
-        <footer>
-            <div class="footer-container">
-                <div class="footer-left">
-                    <a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class="twitter-share-button" data-show-count="false">Tweet</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-                </div>
-
-                <div class="footer-right">
-                    <a href="https://creativecommons.org/publicdomain/zero/1.0/deed.ja"><img src="https://creativecommons.org/images/deed/zero_white_x2.png"><img src="https://creativecommons.org/images/deed/cc_icon_white_x2.png"></a>
-                    <p>KANAT2A2000</p>
-                    <!-- <a id="author" onclick="notfound()">KANATA2000</a> -->
-                </div>
-
-                <div class="clear"></div>
-            </div>
-        </footer>        
-    </main>
-
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> <!-- jquery -->
-
-    <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
-
-    <script src="{% static 'xia/js/playerpopup.js' %}"></script>        <!-- プレイヤーポップアップ -->
-
+{% block js %}
+    <script src="{% static 'xia/js/playerpopup.js' %}"></script>
     <script>
-    window.onload = function() {
-        // toastrの表示
-        toastr.options = {
-            "closeButton": false,
-            "debug": false,
-            "newestOnTop": false,
-            "progressBar": true,
-            "positionClass": "toast-bottom-right",
-            "preventDuplicates": false,
-            "onclick": null,
-            "timeOut": "10000",
-            "extendedTimeOut": "0",
-            "showEasing": "swing",
-            "hideEasing": "linear",
-        }
+        window.onload = function() {
+            // toastrの表示
+            toastr.options = {
+                "closeButton": false,
+                "debug": false,
+                "newestOnTop": false,
+                "progressBar": true,
+                "positionClass": "toast-bottom-right",
+                "preventDuplicates": false,
+                "onclick": null,
+                "timeOut": "10000",
+                "extendedTimeOut": "0",
+                "showEasing": "swing",
+                "hideEasing": "linear",
+            }
 
-        "{% if title %}"
-        toastr.info("{{ title }}")
-        "{% endif %}"
+            "{% if title %}"
+            toastr.info("{{ title }}")
+            "{% endif %}"
 
-        "{% if error %}"
-        toastr.options.onclick = function () {
-            window.location.href = "{% url 'xia:editplayerforce' name %}";
+            "{% if error %}"
+            toastr.options.onclick = function () {
+                window.location.href = "{% url 'xia:editplayerforce' name %}";
+            };
+            toastr.warning("{{ name }}の情報がEarthMC上にありません。作成する場合はこのメッセージをクリックしてください")
+            "{% endif %}"
+            
+            // window_load();
+            // window.onresize = window_load;
+
+            // buttonのidの追加
+            submit = document.getElementsByTagName("Input")[2];
+            console.log(submit);
+            submit.setAttribute('id','submit');
         };
-        toastr.warning("{{ name }}の情報がEarthMC上にありません。作成する場合はこのメッセージをクリックしてください")
-        "{% endif %}"
-        
-        // window_load();
-        // window.onresize = window_load;
-
-        // buttonのidの追加
-        submit = document.getElementsByTagName("Input")[2];
-        console.log(submit);
-        submit.setAttribute('id','submit');
-    };
     </script>
 
     <script>
@@ -165,4 +104,4 @@
         }
         */
     </script>
-</html>
+{% endblock %}
