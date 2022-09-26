@@ -324,6 +324,7 @@ def editministerforce(request, name) :
 
 # レイド
 def raid(request) :
+    pv_increment()
     result = {"locked" : True, "towns" : dummy_dict}
 
     if request.method == "POST":
