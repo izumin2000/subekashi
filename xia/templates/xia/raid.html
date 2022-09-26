@@ -53,15 +53,20 @@
                 "preventDuplicates": false,
                 "onclick": null,
                 "timeOut": "20000",
-                "extendedTimeOut": "20000",
+                "extendedTimeOut": "5000",
                 "showEasing": "swing",
                 "hideEasing": "linear",
             }
 
-            "{% if locked %}"
+            "{% if locked and not error %}"
             toastr.error("あなたはXiaの機密情報にアクセスしようとしています。アクセスするにはパスワードを送信してください。")
             "{% endif %}"
 
+            "{% if get %}"
+            toastr.info("レイドの情報を取得しました。万が一パスワードが流出した場合、KANATA2000#6494に連絡をください。")
+            "{% endif %}"
+
+            toastr.options = {"positionClass": "toast-bottom-right"}
             "{% if error %}"
             toastr.warning("ECMからの情報の取得に失敗しました。")
             "{% endif %}"

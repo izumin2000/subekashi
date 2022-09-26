@@ -14,16 +14,17 @@ import hashlib
 OUR_NATION = "Xia"
 EMC_API_URL = "https://emc-toolkit.vercel.app/api/aurora/"
 UUID_API_URL = "https://api.mojang.com/users/profiles/minecraft/"
-UPLOAD_URL = "uploadfiles/"
 
 # デバッグ用
 ERROR_API_URL = "https://error"
 # EMC_API_URL = ERROR_API_URL     # コメントアウトを外すとEMC APIを取得
 
-#パスワード関連
+# ダミー用の辞書
+dummy_dict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8, 9:9, 10:10, 11:11, 12:12}
+
+# パスワード関連
 SHA256a = "917d6bfe7c48bc2870732e241fc211f5a50816863aea945443e409610a7ca46a"
 # if hashlib.sha256(mypassword.encode()).hexdigest() == SHA256a :
-
 
 # 成功時にAPIのjsonを出力。失敗すると空文字を出力。
 def get_API(url, route) :
@@ -323,7 +324,7 @@ def editministerforce(request, name) :
 
 # レイド
 def raid(request) :
-    result = {"locked" : True, "towns" : {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8, 9:9, 10:10, 11:11, 12:12}}
+    result = {"locked" : True, "towns" : dummy_dict}
 
     if request.method == "POST":
         password = request.POST.get("password")
@@ -351,6 +352,13 @@ def raid(request) :
                 towns.append((name, lastOnline.days))
 
             result["towns"] = towns
+
+            if len(towns) :
+                result["get"] = True
+            else :
+                result["towns"] = dummy_dict
+                result["locked"] = True
+                result["error"] = True
 
     return render(request, 'xia/raid.html', result)
 
