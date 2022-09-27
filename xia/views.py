@@ -23,7 +23,7 @@ ERROR_API_URL = "https://error"
 dummy_dict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8, 9:9, 10:10, 11:11, 12:12}
 
 # パスワード関連
-SHA256a = "917d6bfe7c48bc2870732e241fc211f5a50816863aea945443e409610a7ca46a"
+SHA256a = "5802ea2ddcf64db0efef04a2fa4b3a5b256d1b0f3d657031bd6a330ec54abefd"
 # if hashlib.sha256(mypassword.encode()).hexdigest() == SHA256a :
 
 # 成功時にAPIのjsonを出力。失敗すると空文字を出力。
@@ -339,17 +339,19 @@ def raid(request) :
                 if "lastOnline" in player_dict :
                     lastOnline = int(player_dict["lastOnline"])
                     if town in towns_dict :
-                        if towns_dict[town] > lastOnline :
+                        if towns_dict[town] < lastOnline :
                             towns_dict[town] = lastOnline
-                    towns_dict[town] = lastOnline
+                    else :
+                        towns_dict[town] = lastOnline
 
             towns_tuple = sorted(towns_dict.items(), key = lambda town : town[1])     # ソート
 
             today = datetime.today()
             towns = []
             for name, unixt in towns_tuple :
-                lastOnline = today - datetime.fromtimestamp(unixt)
-                towns.append((name, lastOnline.days))
+                lastOnline = (today - datetime.fromtimestamp(unixt)).days
+                if lastOnline < 45 :
+                    towns.append((name, lastOnline))
 
             result["towns"] = towns
 

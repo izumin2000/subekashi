@@ -19,6 +19,10 @@ section p {
     transform: color 0.5s;
 }
 
+#raidwarning {
+    margin: 10px 20px;
+}
+
 .tablesection {
     margin: 40px 0 10px 40px;
 }
