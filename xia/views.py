@@ -351,7 +351,7 @@ def raid(request) :
             for name, unixt in towns_tuple :
                 lastOnline = (today - datetime.fromtimestamp(unixt)).days
                 # if lastOnline < 45 :
-                    # towns.append((name, lastOnline))
+                towns.append((name, lastOnline))
 
             result["towns"] = towns
 
