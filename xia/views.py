@@ -1,5 +1,4 @@
-from cgitb import reset
-from unittest import result
+from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from xia.forms import PlayerForm, MinisterForm
 from xia.model import Player, Minister, Criminal, Gold, Tour, Nation, Analyze
@@ -153,6 +152,22 @@ def get_online() :
     return online_players
 
 
+# レイド情報の取得
+def get_reid() :
+    players_dict = get_API(EMC_API_URL, "allplayers/")
+    towns_dict = {}
+    for player_dict in players_dict :
+        town = player_dict["town"]
+        if "lastOnline" in player_dict :
+            lastOnline = int(player_dict["lastOnline"])
+            if town in towns_dict :
+                if towns_dict[town] < lastOnline :
+                    towns_dict[town] = lastOnline
+            else :
+                towns_dict[town] = lastOnline
+    return towns_dict
+
+
 # dynmapの拡大率
 def mapzoom(erea) :
     zoom = 8 - int(erea**0.22)
@@ -180,6 +195,7 @@ def pv_increment() :
     insAnalyze.save()
 
 
+# トップ
 def top(request):
     our_info = {}       # テンプレートに渡す辞書
     ableAPI = True
@@ -332,26 +348,15 @@ def raid(request) :
         if hashlib.sha256(password.encode()).hexdigest() == SHA256a :
             result["locked"] = False
 
-            players_dict = get_API(EMC_API_URL, "allplayers/")
-            towns_dict = {}
-            for player_dict in players_dict :
-                town = player_dict["town"]
-                if "lastOnline" in player_dict :
-                    lastOnline = int(player_dict["lastOnline"])
-                    if town in towns_dict :
-                        if towns_dict[town] < lastOnline :
-                            towns_dict[town] = lastOnline
-                    else :
-                        towns_dict[town] = lastOnline
-
+            towns_dict = get_reid()
             towns_tuple = sorted(towns_dict.items(), key = lambda town : town[1])     # ソート
 
             today = datetime.today()
             towns = []
             for name, unixt in towns_tuple :
                 lastOnline = (today - datetime.fromtimestamp(unixt)).days
-                # if lastOnline < 45 :
-                towns.append((name, lastOnline))
+                if lastOnline < 45 :
+                    towns.append((name, lastOnline))
 
             result["towns"] = towns
 
@@ -363,6 +368,12 @@ def raid(request) :
                 result["error"] = True
 
     return render(request, 'xia/raid.html', result)
+
+
+# BOTによるレイド自動取得
+def raidbot(request) :
+    towns_dict = get_reid()
+    return HttpResponse("OK")
 
 
 # レイドからdynmapへリダイレクト
