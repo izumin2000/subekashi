@@ -27,11 +27,6 @@ class Gold(models.Model) :
     date = models.DateField(blank = True, null = True)
     amount = models.IntegerField(default = 0)
 
-class Tour(models.Model) :
-    name = models.CharField(default = "", max_length = 500)
-    nation = models.ForeignKey("Nation", on_delete = models.DO_NOTHING, blank = True, null = True)
-    info = models.CharField(default = "", max_length = 500)
-
 class Nation(models.Model) :
     moddate = models.DateField(null = True, blank = True)
     name = models.CharField(default = "", max_length = 50)
@@ -41,8 +36,11 @@ class Nation(models.Model) :
     x = models.IntegerField(default = 0)
     z = models.IntegerField(default = 0)
     king = models.CharField(default = "", max_length = 50)
-    istour = models.BooleanField(default = False)
 
 class Analyze(models.Model) :
     date = models.DateField(null = True, blank = True)
     pv = models.IntegerField(default = 0)
+
+class Info(models.Model) :
+    name = models.CharField(default = "", max_length = 10)
+    value = models.CharField(default = "", max_length = 1000)
