@@ -1,7 +1,7 @@
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from xia.forms import PlayerForm, MinisterForm
-from xia.model import Player, Minister, Criminal, Gold, Tour, Nation, Analyze
+from xia.model import Player, Minister, Criminal, Gold, Nation, Analyze, Info
 import requests
 from datetime import date
 import json
@@ -357,10 +357,19 @@ def raid(request) :
                 lastOnline = (today - datetime.fromtimestamp(unixt)).days
                 if lastOnline < 45 :
                     towns.append((name, lastOnline))
+            
+            # 42日で消えた町のアーカイブの読み取り
+            raid_query, _ = Info.objects.get_or_create(name = "raid", defaults = {"value" : ""})
+            raid_set = eval(raid_query.value)
+            towns_set = set([name for name, _ in towns])
+            raid_towns = []
+            for town in (raid_set - towns_set) :
+                raid_towns.append((town, 42))
+            
+            raid_towns.extend(towns)
+            result["towns"] = raid_towns
 
-            result["towns"] = towns
-
-            if len(towns) :
+            if len(raid_towns) :
                 result["get"] = True
             else :
                 result["towns"] = dummy_dict
@@ -373,6 +382,13 @@ def raid(request) :
 # BOTによるレイド自動取得
 def raidbot(request) :
     towns_dict = get_reid()
+    today = datetime.today()
+    towns = set()
+    for name, unixt in towns_dict.items() :
+        lastOnline = (today - datetime.fromtimestamp(unixt)).days
+        if lastOnline == 41 :
+            towns.add(name)
+    Info.objects.update_or_create(name = "raid", defaults={"value" : str(towns)})
     return HttpResponse("OK")
 
 
