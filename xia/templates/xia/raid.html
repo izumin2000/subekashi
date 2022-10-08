@@ -35,8 +35,10 @@
         {% endif %}
         
         <table border="1" id="raidtable">
-            <th>町名</th>
-            <th>最終ログイン日</th>
+            <tr id="tabletop">
+                <th>町名</th>
+                <th>最終ログイン日</th>
+            </tr>
             
             {% if locked %}
                 {% for town in towns %}
@@ -94,7 +96,7 @@
             for (let townElement of raidtable.rows) {
                 let townname = townElement.id;
                 if (formname != "") {
-                    if (townname.match(formname) != null) {
+                    if ((townname.match(formname) != null) || (townname == "tabletop")) {
                         townElement.style.display = "table-row";
                     } else {
                         townElement.style.display = "none";
