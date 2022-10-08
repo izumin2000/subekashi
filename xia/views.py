@@ -13,6 +13,7 @@ import hashlib
 OUR_NATION = "Xia"
 EMC_API_URL = "https://emc-toolkit.vercel.app/api/aurora/"
 UUID_API_URL = "https://api.mojang.com/users/profiles/minecraft/"
+DISCORD_URL = "https://discord.com/api/webhooks/1027613658173407312/lmWZfotClRrZOJI_28mYxrAayywzR8-ZB8SG_Jrk-YI0ONyine6RZosPsjNMzyAU4xV8"
 
 # デバッグ用
 ERROR_API_URL = "https://error"
@@ -379,6 +380,17 @@ def raid(request) :
     return render(request, 'xia/raid.html', result)
 
 
+# レイドからdynmapへリダイレクト
+def raidmap(request, town) :
+    town_dict = get_API(EMC_API_URL, "towns/" + town)
+    if town_dict :
+        x = town_dict["x"]
+        z = town_dict["z"]
+        area = town_dict["area"]
+        return redirect(f"https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom={mapzoom(area)}&x={x}&y=64&z={z}")
+    return raid(request)
+
+
 # BOTによるレイド自動取得
 def raidbot(request) :
     towns_dict = get_reid()
@@ -392,15 +404,11 @@ def raidbot(request) :
     return HttpResponse("OK")
 
 
-# レイドからdynmapへリダイレクト
-def raidmap(request, town) :
-    town_dict = get_API(EMC_API_URL, "towns/" + town)
-    if town_dict :
-        x = town_dict["x"]
-        z = town_dict["z"]
-        area = town_dict["area"]
-        return redirect(f"https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom={mapzoom(area)}&x={x}&y=64&z={z}")
-    return raid(request)
+# Discord BOTのテスト
+def bothello(request) :
+    requests.post(DISCORD_URL, data={'content': "おほーぉ(^o^)"})
+    return HttpResponse("SEND")
+
 
 def pv(request) :
     pv = list(Analyze.objects.values_list("pv", flat=True))
