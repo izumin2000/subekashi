@@ -157,15 +157,21 @@ def get_online() :
 def get_reid() :
     players_dict = get_API(EMC_API_URL, "allplayers/")
     towns_dict = {}
+    known_towns = set()
+    unknown_towns = set()
     for player_dict in players_dict :
         town = player_dict["town"]
         if "lastOnline" in player_dict :
             lastOnline = int(player_dict["lastOnline"])
+            known_towns.add(player_dict["town"])
             if town in towns_dict :
                 if towns_dict[town] < lastOnline :
                     towns_dict[town] = lastOnline
             else :
                 towns_dict[town] = lastOnline
+        else :
+            unknown_towns.add(player_dict["town"])
+    # print(" ".join(unknown_towns - known_towns))
     return towns_dict
 
 
