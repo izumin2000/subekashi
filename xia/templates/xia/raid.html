@@ -17,6 +17,13 @@
         {% endif %}
     </section>
 
+    <section class="filtersection">
+        {% if get %}
+        <label>検索</label>
+        <input type="text" id="name" name="name" oninput="filtertown()"><br>
+        {% endif %}
+    </section>
+
     <section class="tablesection">
         {% if not locked %}
             <ul id="raidwarning">
@@ -27,7 +34,7 @@
             </ul>
         {% endif %}
         
-        <table border="1">
+        <table border="1" id="raidtable">
             <th>町名</th>
             <th>最終ログイン日</th>
             
@@ -40,7 +47,7 @@
                 {% endfor %}
             {% else %}
                 {% for name, lastlogin in towns %}
-                <tr>
+                <tr id="{{ name }}">
                     <td><a class="name" onclick="copyCode('{{ name }}')">{{ name }}</a> <a class="map" href="{% url 'xia:raidmap' name %}" target="_blank" rel="noopener noreferrer"><i class="fas fa-map-marked-alt"></i></a></td>
                     <td>{{ lastlogin }} 日前</td>
                 </tr>
@@ -76,6 +83,26 @@
             "{% if error %}"
             toastr.warning("ECMからの情報の取得に失敗しました。")
             "{% endif %}"
+
+            // レイド表の取得
+            var raidtable = document.getElementById('raidtable');
         };
+    
+        // 町の検索
+        function filtertown() {
+            let formname = document.getElementById("name").value;
+            for (let townElement of raidtable.rows) {
+                let townname = townElement.id;
+                if (formname != "") {
+                    if (townname.match(formname) != null) {
+                        townElement.style.display = "table-row";
+                    } else {
+                        townElement.style.display = "none";
+                    }
+                } else {
+                    townElement.style.display = "table-row";
+                }
+            }
+        }
     </script>
 {% endblock %}
