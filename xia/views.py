@@ -8,12 +8,12 @@ import json
 from time import sleep
 from datetime import datetime
 import hashlib
+from config.settings import DISCORD_URL
 
 
 OUR_NATION = "Xia"
 EMC_API_URL = "https://emc-toolkit.vercel.app/api/aurora/"
 UUID_API_URL = "https://api.mojang.com/users/profiles/minecraft/"
-DISCORD_URL = "https://discord.com/api/webhooks/1027613658173407312/lmWZfotClRrZOJI_28mYxrAayywzR8-ZB8SG_Jrk-YI0ONyine6RZosPsjNMzyAU4xV8"
 
 # デバッグ用
 ERROR_API_URL = "https://error"

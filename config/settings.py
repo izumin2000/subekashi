@@ -138,9 +138,7 @@ if DEBUG :
             'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
         }
     }
-    SECRET_KEY = SECRET_KEY
 else :
     django_heroku.settings(locals())
-    SECRET_KEY = os.environ['SECRET_KEY']
 
 # DEBUG = True
