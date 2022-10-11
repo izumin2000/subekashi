@@ -3,6 +3,21 @@
     margin-left: 10px;
 }
 
+@media (max-width: 640px) {
+    .imitateimitatediv {
+        display: block;
+        margin:10px 0 0 88px !important;
+    }
+
+    #url {
+        margin-bottom: 20px;
+    }
+
+    select {
+        margin-top: 0;
+    }
+}
+
 #imitateimitatediv1 {
     margin-left: 5px;
 }
