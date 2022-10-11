@@ -197,9 +197,12 @@ def teleport(nation) :
 # PV数のカウント
 def pv_increment() :
     today = date.today()
-    insAnalyze, _ = Analyze.objects.get_or_create(date = today, defaults = {"date" : today})
-    insAnalyze.pv += 1
-    insAnalyze.save()
+    try :
+        insAnalyze, _ = Analyze.objects.get_or_create(date = today, defaults = {"date" : today})
+        insAnalyze.pv += 1
+        insAnalyze.save()
+    except :
+        print("invalid date")
 
 
 # トップ
@@ -347,7 +350,7 @@ def editministerforce(request, name) :
 
 # レイド
 def raid(request) :
-    # pv_increment()
+    pv_increment()
     result = {"locked" : True, "towns" : dummy_dict}
 
     if request.method == "POST":
