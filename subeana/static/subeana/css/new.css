@@ -3,7 +3,11 @@
     margin-left: 10px;
 }
 
-@media (max-width: 640px) {
+#imitateimitatediv1 {
+    margin-left: 5px;
+}
+
+@media (max-width: 720px) {
     .imitateimitatediv {
         display: block;
         margin:10px 0 0 88px !important;
@@ -16,18 +20,18 @@
     select {
         margin-top: 0;
     }
-}
 
-#imitateimitatediv1 {
-    margin-left: 5px;
+    #imitateimitatediv2 {
+        margin-top: 20px;
+    }
 }
 
 .imitateimitatediv input {
     margin-top: 0;
 }
 
-#addimitate {
-    display: block;
+#appendimitate, #deleteimitate {
+    display: inline-block;
     font-family: 'Noto Sans JP', sans-serif;
     margin-left: 87px !important;
     padding-left: 0px;
@@ -39,12 +43,29 @@
     margin: 20px 0;
 }
 
-#addimitate:hover {
+#deleteimitate {
+    margin-left: 0 !important;
+}
+
+@media (max-width: 550px) {
+    #appendimitate, #deleteimitate{
+        margin-left: 0 !important;
+        width: 150px;
+    }
+}
+
+#appendimitate:hover, #deleteimitate:hover {
     background-color: #ccc;
 }
 
-#addimitate:active {
+#appendimitate:active, #deleteimitate:active {
     border: none;
     box-shadow: 0 0 0 2px #fff inset;
     background-color: #aaa;
+}
+
+#appendimitate:disabled, #deleteimitate:disabled {
+    background-color: #ccc;
+    box-shadow: none;
+    cursor: not-allowed;
 }

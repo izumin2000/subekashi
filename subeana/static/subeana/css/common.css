@@ -197,12 +197,18 @@ a {
 input, select, option, textarea {
     font-family: 'Noto Sans JP', sans-serif;
     height: 50px;
-    width: 35vw;
+    width: calc(50vw - 100px);
     margin-top: 20px;
     padding: 0 10px;
     font-size: 20px;
     border: none;
     box-shadow: 0 0 0 1px #ccc inset;
+}
+
+@media (max-width: 720px) {
+    input, select, option, textarea {
+        width: calc(65vw - 50px);
+    }
 }
 
 input:focus {
