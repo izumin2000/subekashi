@@ -1,5 +1,7 @@
 var isfirstget = true;
-var isfirstinfo = true
+var isfirstinfo = true;
+var imitateNum = 1;
+
 async function checksong(basedir) {
     if (isfirstget) {
         res = await fetch(basedir + "/subeana/api/song/?format=json");
@@ -36,34 +38,50 @@ async function checksong(basedir) {
 };
 
 
-function checkimitate() {
-    formimitate = document.getElementById("imitate1").value;
+function checkimitateimitate(imitateNum) {
+    formimitate = document.getElementById("imitate" + imitateNum).value;
     if (formimitate == "模倣曲模倣") {
         imitateimitateEle = document.createElement("input");
         imitateimitateEle.type = "text";
         imitateimitateEle.placeholder = "曲名";
-        imitateimitateEle.class = "imitateimitate";
-        imitateimitateEle.id = "imitateimitate1";
-        imitateimitateEle.name = "imitateimitate1";
-        imitateimitateEle.onclick = "checkimitateimitate()";
+        imitateimitateEle.id = "imitateimitate" + imitateNum;
+        imitateimitateEle.name = "imitateimitate" + imitateNum;
+        imitateimitateEle.onclick = "checkimitateimitatecheck(" + imitateNum + ")";
 
-        imitateimitatedevEle = document.getElementById("imitateimitatediv1");
+        imitateimitatedevEle = document.getElementById("imitateimitatediv" + imitateNum);
         imitateimitatedevEle.appendChild(imitateimitateEle);
     } else {
-        imitateimitatedevEle = document.getElementById("imitateimitatediv1");
-        formimitateIds = document.getElementById("imitateimitate1");
+        imitateimitatedevEle = document.getElementById("imitateimitatediv" + imitateNum);
+        formimitateIds = document.getElementById("imitateimitate" + imitateNum);
         if (formimitateIds) {
             imitateimitatedevEle.removeChild(formimitateIds);
         }
     }
 }
 
+function appendimitate() {
+    imitateNum += 1;
 
+    imitatelabelEle = document.createElement("label");
+    imitatelabelEle.innerHTML = "模倣曲" + imitateNum + "*";
+    
+    imitateselectEle = document.createElement("select");
+    imitateselectEle.id = "imitate" + imitateNum;
+    imitateselectEle.name = "imitate" + imitateNum;
+    imitateselectEle.setAttribute("oninput", "checkform(); checkimitateimitate(" + imitateNum + ");");
+    imitateselectEle.innerHTML = "<option>選択してください</option><option>原曲</option><option>.模倣</option><option>..模倣</option><option>教育模倣</option><option>アブジェ模倣</option><option>...模倣</option><option>表裏模倣</option><option>名の無い星が空に堕ちたら模倣</option><option>エヌ模倣</option><option>オリジナル模倣</option><option>模倣曲模倣</option>";
 
+    imitatedivEle = document.createElement("div");
+    imitatedivEle.setAttribute("class", "imitateimitatediv");
+    imitatedivEle.id = "imitateimitatediv" + imitateNum;
+    
+    imitatebrEle = document.createElement("br");
 
-
-function addimitate() {
-
+    imitateEle = document.getElementById("imitates");
+    imitateEle.appendChild(imitatelabelEle);
+    imitateEle.appendChild(imitateselectEle);
+    imitateEle.appendChild(imitatedivEle);
+    imitateEle.appendChild(imitatebrEle);
 }
 
 function checkform() {
