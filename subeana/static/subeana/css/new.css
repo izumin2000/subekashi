@@ -31,7 +31,6 @@
 }
 
 #appendimitate, #deleteimitate {
-    display: inline-block;
     font-family: 'Noto Sans JP', sans-serif;
     margin-left: 87px !important;
     padding-left: 0px;
@@ -43,8 +42,13 @@
     margin: 20px 0;
 }
 
+#appendimitate {
+    display: inline-block;
+}
+
 #deleteimitate {
     margin-left: 0 !important;
+    display: none;
 }
 
 @media (max-width: 550px) {

@@ -82,6 +82,17 @@ function appendimitatef() {
     imitateEle.appendChild(imitateselectEle);
     imitateEle.appendChild(imitatedivEle);
     imitateEle.appendChild(imitatebrEle);
+
+    appendimitateEle = document.getElementById("appendimitate");
+    appendimitateEle.innerText = "模倣曲" + String(imitateNum + 1) + "の追加";
+    deleteimitateEle = document.getElementById("deleteimitate");
+    deleteimitateEle.innerText = "模倣曲" + String(imitateNum) + "の削除";
+
+    if (imitateNum == 1) {
+        deleteimitateEle.style.display = "none";
+    } else {
+        deleteimitateEle.style.display = "inline-block";
+    }
 }
 
 function deleteimitatef() {
@@ -99,6 +110,17 @@ function deleteimitatef() {
     }
 
     imitateNum -= 1;
+
+    appendimitateEle = document.getElementById("appendimitate");
+    appendimitateEle.innerText = "模倣曲" + String(imitateNum + 1) + "の追加";
+    deleteimitateEle = document.getElementById("deleteimitate");
+    deleteimitateEle.innerText = "模倣曲" + String(imitateNum) + "の削除";
+
+    if (imitateNum == 1) {
+        deleteimitateEle.style.display = "none";
+    } else {
+        deleteimitateEle.style.display = "inline-block";
+    }
 }
 
 function checkform() {
