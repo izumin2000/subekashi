@@ -52,14 +52,14 @@ function checkimitateimitate(imitateNum) {
         imitateimitatedevEle.appendChild(imitateimitateEle);
     } else {
         imitateimitatedevEle = document.getElementById("imitateimitatediv" + imitateNum);
-        formimitateIds = document.getElementById("imitateimitate" + imitateNum);
-        if (formimitateIds) {
-            imitateimitatedevEle.removeChild(formimitateIds);
+        formimitateId = document.getElementById("imitateimitate" + imitateNum);
+        if (formimitateId) {
+            imitateimitatedevEle.removeChild(formimitateId);
         }
     }
 }
 
-function appendimitate() {
+function appendimitatef() {
     imitateNum += 1;
 
     imitatelabelEle = document.createElement("label");
@@ -82,6 +82,23 @@ function appendimitate() {
     imitateEle.appendChild(imitateselectEle);
     imitateEle.appendChild(imitatedivEle);
     imitateEle.appendChild(imitatebrEle);
+}
+
+function deleteimitatef() {
+    imitatesEle = document.getElementById("imitates");
+    
+    var lastEle = imitatesEle.lastElementChild;
+    while (lastEle.id != ("imitateimitatediv" + String(imitateNum - 1))) {
+        imitatesEle.lastElementChild.remove();
+       var lastEle = imitatesEle.lastElementChild;
+    }
+
+    if (imitateNum) {
+        imitatebrEle = document.createElement("br");
+        imitateEle.appendChild(imitatebrEle);
+    }
+
+    imitateNum -= 1;
 }
 
 function checkform() {
