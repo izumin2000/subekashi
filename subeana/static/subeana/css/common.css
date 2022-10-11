@@ -230,9 +230,9 @@ a {
 input, select, option, textarea {
     font-family: 'Noto Sans JP', sans-serif;
     height: 50px;
-    width: 40vw;
+    width: 35vw;
     margin-top: 20px;
-    padding-left: 10px;
+    padding: 0 10px;
     font-size: 20px;
     border: none;
     box-shadow: 0 0 0 1px #ccc inset;
@@ -262,6 +262,7 @@ textarea {
 }
 
 #submit {
+    font-family: 'Noto Sans JP', sans-serif;
     padding-left: 0px;
     height: 49.5px;
     width: 100px;
@@ -269,7 +270,6 @@ textarea {
     font-size: 20px;
     cursor: pointer;
     margin: 20px 0;
-    
 }
 
 #submit:hover {

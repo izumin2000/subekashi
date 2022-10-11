@@ -2,6 +2,7 @@
 {% load static %}
 {% block title %}歌詞の登録{% endblock %}
 {% block ogtitle %}歌詞の登録{% endblock %}
+{% block css %}{% static 'subeana/css/new.css'%}{% endblock %}
 
 {% block content %}
 <section>
@@ -14,21 +15,26 @@
         <input type="text" id="channel" name="channel" oninput="checkform()"><br>
         <label>URL</label>
         <input type="text" id="url" name="url"><br>
-        <label>カテゴリ*</label>
-        <select id="imitate" name="imitate" oninput="checkform()">
-            <option>選択してください</option>
-            <option>原曲</option>
-            <option>.模倣</option>
-            <option>..模倣</option>
-            <option>教育模倣</option>
-            <option>アブジェ模倣</option>
-            <option>...模倣</option>
-            <option>表裏模倣</option>
-            <option>名の無い星が空に堕ちたら模倣</option>
-            <option>エヌ模倣</option>
-            <option>オリジナル模倣</option>
-            <option>模倣曲模倣</option>
-        </select><br>
+        <div id="imitates">
+            <label>模倣曲*</label>
+            <select class="imitate" id="imitate1" name="imitate" oninput="checkform(); checkimitate();">
+                <option>選択してください</option>
+                <option>原曲</option>
+                <option>.模倣</option>
+                <option>..模倣</option>
+                <option>教育模倣</option>
+                <option>アブジェ模倣</option>
+                <option>...模倣</option>
+                <option>表裏模倣</option>
+                <option>名の無い星が空に堕ちたら模倣</option>
+                <option>エヌ模倣</option>
+                <option>オリジナル模倣</option>
+                <option>模倣曲模倣</option>
+            </select>
+            <div class="imitateimitatediv" id="imitateimitatediv1">
+            </div>
+            <button type="button" id="addimitate" onclick="addimitate()">模倣曲を追加</button>
+        </div>
         <label id="lyricslabel">歌詞</label>
         <textarea id="lyrics" name="lyrics" oninput="autotextarea()"></textarea><br>
         <input type="submit" value="登録" id="submit" disabled>

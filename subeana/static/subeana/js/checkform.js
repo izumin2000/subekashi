@@ -35,9 +35,40 @@ async function checksong(basedir) {
     }
 };
 
+
+function checkimitate() {
+    formimitate = document.getElementById("imitate1").value;
+    if (formimitate == "模倣曲模倣") {
+        imitateimitateEle = document.createElement("input");
+        imitateimitateEle.type = "text";
+        imitateimitateEle.placeholder = "曲名";
+        imitateimitateEle.class = "imitateimitate";
+        imitateimitateEle.id = "imitateimitate1";
+        imitateimitateEle.name = "imitateimitate1";
+        imitateimitateEle.onclick = "checkimitateimitate()";
+
+        imitateimitatedevEle = document.getElementById("imitateimitatediv1");
+        imitateimitatedevEle.appendChild(imitateimitateEle);
+    } else {
+        imitateimitatedevEle = document.getElementById("imitateimitatediv1");
+        formimitateIds = document.getElementById("imitateimitate1");
+        if (formimitateIds) {
+            imitateimitatedevEle.removeChild(formimitateIds);
+        }
+    }
+}
+
+
+
+
+
+function addimitate() {
+
+}
+
 function checkform() {
     formchannel = document.getElementById("channel").value
-    formimitate = document.getElementById("imitate").value
+    formimitate = document.getElementById("imitate1").value
     formsubmit = document.getElementById("submit")
     if ((formchannel != "") && (formimitate != "選択してください")) {
         formsubmit.disabled = false;
