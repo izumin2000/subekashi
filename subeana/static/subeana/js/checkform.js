@@ -85,13 +85,14 @@ function appendimitatef() {
 
     appendimitateEle = document.getElementById("appendimitate");
     appendimitateEle.innerText = "模倣曲" + String(imitateNum + 1) + "の追加";
+    appendimitateEle.disabled = true;
     deleteimitateEle = document.getElementById("deleteimitate");
     deleteimitateEle.innerText = "模倣曲" + String(imitateNum) + "の削除";
 
     if (imitateNum == 1) {
         deleteimitateEle.style.display = "none";
     } else {
-        deleteimitateEle.style.display = "inline-block";
+        deleteimitateEle.style.display = "inline-block";   
     }
 }
 
@@ -113,6 +114,8 @@ function deleteimitatef() {
 
     appendimitateEle = document.getElementById("appendimitate");
     appendimitateEle.innerText = "模倣曲" + String(imitateNum + 1) + "の追加";
+    appendimitateEle.disabled = false;
+
     deleteimitateEle = document.getElementById("deleteimitate");
     deleteimitateEle.innerText = "模倣曲" + String(imitateNum) + "の削除";
 
@@ -124,9 +127,17 @@ function deleteimitatef() {
 }
 
 function checkform() {
-    formchannel = document.getElementById("channel").value
-    formimitate = document.getElementById("imitate1").value
-    formsubmit = document.getElementById("submit")
+    formchannel = document.getElementById("channel").value;
+    appendimitateEle = document.getElementById("appendimitate");
+    formimitate = document.getElementById("imitate" + imitateNum).value;
+    formsubmit = document.getElementById("submit");
+
+    if (formimitate == "選択してください") {
+        appendimitateEle.disabled = true;
+    } else {
+        appendimitateEle.disabled = false;
+    }
+
     if ((formchannel != "") && (formimitate != "選択してください")) {
         formsubmit.disabled = false;
     } else {
