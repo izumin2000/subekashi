@@ -76,46 +76,13 @@ header {
     transition: color 0.5s;
 }
 
-@media (max-width: 640px) {
-    header {
-        height: 128px;
-        margin-bottom: 128px;
-        position: absolute;
-        top: 0px;
+@media (max-width: 420px) {
+    .logo {
+        display: none;
     }
 
     .header-left {
-        position: relative;
-        top: 6px;
-        margin-top: 4px;
-        float: none;
-        text-align: center;
-    }
-
-    .header-right {
-        float: none;
-        text-align: center;
-    }
-
-    .header-right nav a {
-        margin-right: calc(8% - 30px);
-    }
-}
-
-@media (max-width: 360px) {
-    .header-right {
-        position: relative;
-        left: -4px;
-        margin-right: 4px;
-    }
-
-    .header-right nav a {
-        margin-right: calc(8% - 25px);
-        font-size: 15px;
-    }
-
-    .footer-left p {
-        visibility:hidden;
+        margin-left: 0;
     }
 }
 
