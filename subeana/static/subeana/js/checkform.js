@@ -61,7 +61,7 @@ function checkform(imitateNumAt) {
     // 模倣曲模倣の曲名をinputするformの表示・非表示の切り替え
     if (imitateNumAt != 0) {      // 模倣曲模倣の入力の場合はこのブロックを実行しない
         imitateValue = document.getElementById("imitate" + imitateNumAt).value;
-        if (imitateValue == "模倣曲模倣") {
+        if (imitateValue == "模倣模倣") {
             imitateimitateEle = document.createElement("input");
             imitateimitateEle.type = "text";
             imitateimitateEle.placeholder = "曲名";
@@ -106,7 +106,7 @@ function appendimitatef() {
     imitateNums += 1;
 
     imitatelabelEle = document.createElement("label");
-    imitatelabelEle.innerHTML = "模倣曲" + imitateNums + "*";
+    imitatelabelEle.innerHTML = "模倣" + imitateNums + "*";
     
     imitateselectEle = document.createElement("select");
     imitateselectEle.id = "imitate" + imitateNums;
@@ -127,10 +127,10 @@ function appendimitatef() {
     imitateEle.appendChild(imitatebrEle);
 
     appendimitateEle = document.getElementById("appendimitate");
-    appendimitateEle.innerText = "模倣曲" + String(imitateNums + 1) + "の追加";
+    appendimitateEle.innerText = "模倣" + String(imitateNums + 1) + "の追加";
     appendimitateEle.disabled = true;
     deleteimitateEle = document.getElementById("deleteimitate");
-    deleteimitateEle.innerText = "模倣曲" + String(imitateNums) + "の削除";
+    deleteimitateEle.innerText = "模倣" + String(imitateNums) + "の削除";
 
     if (imitateNums == 1) {
         deleteimitateEle.style.display = "none";
@@ -158,11 +158,11 @@ function deleteimitatef() {
     imitateNums -= 1;
 
     appendimitateEle = document.getElementById("appendimitate");
-    appendimitateEle.innerText = "模倣曲" + String(imitateNums + 1) + "の追加";
+    appendimitateEle.innerText = "模倣" + String(imitateNums + 1) + "の追加";
     appendimitateEle.disabled = false;
 
     deleteimitateEle = document.getElementById("deleteimitate");
-    deleteimitateEle.innerText = "模倣曲" + String(imitateNums) + "の削除";
+    deleteimitateEle.innerText = "模倣" + String(imitateNums) + "の削除";
 
     if (imitateNums == 1) {
         deleteimitateEle.style.display = "none";

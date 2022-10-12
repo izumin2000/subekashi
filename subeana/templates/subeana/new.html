@@ -16,16 +16,15 @@
         <label>URL </label>
         <input type="text" id="url" name="url"><br>
         <div id="imitates">
-            <label>模倣曲1*</label>
+            <label>模倣1*</label>
             <select id="imitate1" name="imitate1" oninput="checkform(1);">
                 <option>選択してください</option>
-                <option>原曲</option>
                 <option>.模倣</option>
                 <option>..模倣</option>
                 <option>教育模倣</option>
                 <option>アブジェ模倣</option>
                 <option>...模倣</option>
-                <option>表裏模倣</option>
+                <option>表/裏模倣</option>
                 <option>名の無い星が空に堕ちたら模倣</option>
                 <option>エヌ模倣</option>
                 <option>オリジナル模倣</option>
@@ -34,8 +33,8 @@
             <div class="imitateimitatediv" id="imitateimitatediv1"></div>
             <br>
         </div>
-        <button type="button" id="appendimitate" onclick="appendimitatef()" disabled>模倣曲2を追加</button>
-        <button type="button" id="deleteimitate" onclick="deleteimitatef()">模倣曲1を削除</button><br>
+        <button type="button" id="appendimitate" onclick="appendimitatef()" disabled>模倣2を追加</button>
+        <button type="button" id="deleteimitate" onclick="deleteimitatef()">模倣1を削除</button><br>
         <label id="lyricslabel">歌詞</label>
         <textarea id="lyrics" name="lyrics" oninput="autotextarea()"></textarea><br>
         <input type="submit" value="登録" id="submit" disabled>
