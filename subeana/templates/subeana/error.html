@@ -1,0 +1,17 @@
+{% extends "subeana/base/base.html" %}
+{% load static %}
+{% block title %}エラー{% endblock %}
+{% block ogtitle %}エラー{% endblock %}
+{% block css %}{% static 'subeana/css/error.css'%}{% endblock %}
+
+{% block content %}
+<section id="error">
+    <p>本日は全て歌詞の所為です。に</p>
+    <p>御アクセス頂き、</p>
+    <p>ありがとうございます。</p>
+    <p>大変申し訳ありませんが、</p>
+    <p>内部エラーが発生した為、</p>
+    <p>ご覧になることが出来ません、</p>
+    <p>またの御アクセスをお待ちしております。</p>
+</section>
+{% endblock %}

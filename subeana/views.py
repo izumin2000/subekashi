@@ -18,6 +18,9 @@ def new(request) :
         lyrics = request.POST.get("lyrics")
         imitatenums = request.POST.get("imitatenums")
 
+        if ("" in [title, channel, imitatenums]) :
+            return render(request, "subeana/error.html")
+
         ins_song, _ = Song.objects.get_or_create(title = title, defaults = {title : title})
         ins_song.title = title
         ins_song.channel = channel
@@ -33,10 +36,12 @@ def new(request) :
             imitate = request.POST.get(f"imitate{i + 1}")
             if imitate == "模倣曲模倣" :
                 imitate = request.POST.get(f"imitateimitate{i + 1}")
-                imitates.add(imitate)
+                if imitate :
+                    imitates.add(imitate)
             else :
                 imitates.add(imitate)
 
+        imitates.discard("模倣曲模倣")
         ins_song.imitate = " ".join(list(imitates))
         ins_song.save()
 
@@ -51,6 +56,9 @@ def new(request) :
 def song(request, song_title) :
     dir = {"title" : song_title}
     return render(request, "subeana/song.html", dir)
+
+def error(request) :
+    return render(request, "subeana/error.html")
 
 
 class SongViewSet(viewsets.ModelViewSet):
