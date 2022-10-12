@@ -1,7 +1,8 @@
 {% extends "subeana/base/base.html" %}
-{% load static %}
 {% block title %}{{ title }}{% endblock %}
 {% block ogtitle %}{{ title }}{% endblock %}
+{% load static %}
+{% block css %}{% static 'subeana/css/song.css'%}{% endblock %}
 
 {% block content %}
 <p>{{ title }}</p>

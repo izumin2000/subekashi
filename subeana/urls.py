@@ -15,4 +15,5 @@ urlpatterns = [
     path('songs/<str:song_title>', views.song, name = 'song'),
     path('api/',include(defaultRouter.urls)),
     path('error', views.error, name = 'error'),
+    path('dev', views.dev, name = 'dev'),
 ]

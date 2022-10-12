@@ -61,6 +61,10 @@ def error(request) :
     return render(request, "subeana/error.html")
 
 
+def dev(request) :
+    return render(request, "subeana/dev.html")
+
+
 class SongViewSet(viewsets.ModelViewSet):
     queryset = Song.objects.all()
     serializer_class = SongSerializer
