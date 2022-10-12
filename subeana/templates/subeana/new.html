@@ -10,14 +10,14 @@
     <div class="underline"></div>
     <form action="{% url 'subeana:new' %}" method="POST" class="post-form" id="newForm">{% csrf_token %}
         <label>曲名*</label>
-        <input type="text" id="title" name="title" oninput="checksong()"><br>
+        <input type="text" id="title" name="title" oninput="checkform(0)"><br>
         <label>作者*</label>
-        <input type="text" id="channel" name="channel" oninput="checkform()"><br>
+        <input type="text" id="channel" name="channel" oninput="checkform(0)"><br>
         <label>URL </label>
         <input type="text" id="url" name="url"><br>
         <div id="imitates">
             <label>模倣曲1*</label>
-            <select id="imitate1" name="imitate1" oninput="checkform(); imitatecheck(1);">
+            <select id="imitate1" name="imitate1" oninput="checkform(1);">
                 <option>選択してください</option>
                 <option>原曲</option>
                 <option>.模倣</option>

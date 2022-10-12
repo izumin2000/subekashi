@@ -38,35 +38,10 @@ async function checksong(basedir) {
 };
 
 
-function imitatecheck(imitateNumAt) {
+function checkform(imitateNumAt) {
     appendimitateEle = document.getElementById("appendimitate");
 
-    if (imitateNumAt != 0) {      // 模倣曲模倣の入力の場合はこのブロックを実行しない
-        imitateValue = document.getElementById("imitate" + imitateNumAt).value;
-        if (imitateValue == "模倣曲模倣") {
-            imitateimitateEle = document.createElement("input");
-            imitateimitateEle.type = "text";
-            imitateimitateEle.placeholder = "曲名";
-            imitateimitateEle.id = "imitateimitate" + imitateNumAt;
-            imitateimitateEle.name = "imitateimitate" + imitateNumAt;
-            imitateimitateEle.setAttribute("oninput" ,"imitatecheck(0)");
-
-            imitateimitatedevEle = document.getElementById("imitateimitatediv" + imitateNumAt);
-            imitateimitatedevEle.appendChild(imitateimitateEle);
-
-            appendimitateEle.disabled = true;
-        } else if (imitateValue == "選択してください") {
-            appendimitateEle.disabled = true;
-        } else {
-            imitateimitatedevEle = document.getElementById("imitateimitatediv" + imitateNumAt);
-            imitateValueId = document.getElementById("imitateimitate" + imitateNumAt);
-            if (imitateValueId) {
-                imitateimitatedevEle.removeChild(imitateValueId);
-            }
-            appendimitateEle.disabled = false;
-        }
-    }
-
+    // 模倣曲模倣がvalidか確認
     imitateimitatevalid = true;
     imitateimitateexist = false;
     for (let i = 1; i <= imitateNums + 1; i++) {
@@ -82,6 +57,48 @@ function imitatecheck(imitateNumAt) {
     if (imitateimitatevalid && imitateimitateexist) {
         appendimitateEle.disabled = false;
     }
+
+    // 模倣曲模倣の曲名をinputするformの表示・非表示の切り替え
+    if (imitateNumAt != 0) {      // 模倣曲模倣の入力の場合はこのブロックを実行しない
+        imitateValue = document.getElementById("imitate" + imitateNumAt).value;
+        if (imitateValue == "模倣曲模倣") {
+            imitateimitateEle = document.createElement("input");
+            imitateimitateEle.type = "text";
+            imitateimitateEle.placeholder = "曲名";
+            imitateimitateEle.id = "imitateimitate" + imitateNumAt;
+            imitateimitateEle.name = "imitateimitate" + imitateNumAt;
+            imitateimitateEle.setAttribute("oninput" ,"checkform(0)");
+
+            imitateimitatedevEle = document.getElementById("imitateimitatediv" + imitateNumAt);
+            imitateimitatedevEle.appendChild(imitateimitateEle);
+
+            appendimitateEle.disabled = true;
+        } else {
+            imitateimitatedevEle = document.getElementById("imitateimitatediv" + imitateNumAt);
+            imitateValueId = document.getElementById("imitateimitate" + imitateNumAt);
+            if (imitateValueId) {
+                imitateimitatedevEle.removeChild(imitateValueId);
+            }
+
+            if (imitateValue == "選択してください") {
+                appendimitateEle.disabled = true;
+            } else {
+                appendimitateEle.disabled = false;
+            }
+        }
+    }
+
+    // form全体がvalidか確認
+    titleValue = document.getElementById("title").value;
+    channelValue = document.getElementById("channel").value;
+    appendimitateDisalbe = document.getElementById("appendimitate").disabled;
+    submitEle = document.getElementById("submit");
+    console.log((titleValue != "") , (channelValue != "") , !(appendimitateDisalbe));
+    if ((titleValue != "") && (channelValue != "") && !(appendimitateDisalbe)) {
+        submitEle.disabled = false;
+    } else {
+        submitEle.disabled = true;
+    }  
 }
 
 
@@ -94,7 +111,7 @@ function appendimitatef() {
     imitateselectEle = document.createElement("select");
     imitateselectEle.id = "imitate" + imitateNums;
     imitateselectEle.name = "imitate" + imitateNums;
-    imitateselectEle.setAttribute("oninput", "imitatecheck(" + imitateNums + "); checkform();");
+    imitateselectEle.setAttribute("oninput", "checkform(" + imitateNums + ")");
     imitateselectEle.innerHTML = "<option>選択してください</option><option>原曲</option><option>.模倣</option><option>..模倣</option><option>教育模倣</option><option>アブジェ模倣</option><option>...模倣</option><option>表裏模倣</option><option>名の無い星が空に堕ちたら模倣</option><option>エヌ模倣</option><option>オリジナル模倣</option><option>模倣曲模倣</option>";
 
     imitatedivEle = document.createElement("div");
@@ -120,6 +137,8 @@ function appendimitatef() {
     } else {
         deleteimitateEle.style.display = "inline-block";   
     }
+
+    checkform(imitateNums);
 }
 
 function deleteimitatef() {
@@ -150,17 +169,4 @@ function deleteimitatef() {
     } else {
         deleteimitateEle.style.display = "inline-block";
     }
-}
-
-function checkform() {
-    channelEle = document.getElementById("channel").value;
-    appendimitateEle = document.getElementById("appendimitate");
-    imitateValue = document.getElementById("imitate" + imitateNums).value;
-    submitEle = document.getElementById("submit");
-
-    // if ((channelEle != "") && (imitateValue != "選択してください")) {
-    submitEle.disabled = false;
-    // } else {
-        // submitEle.disabled = true;
-    // }  
 }
