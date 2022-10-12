@@ -86,6 +86,10 @@ function checkform(imitateNumAt) {
                 appendimitateEle.disabled = false;
             }
         }
+
+        // viewsへの値の受け渡し
+        imitatenumsEle = document.getElementById("imitatenums");
+        imitatenumsEle.value = imitateNums;
     }
 
     // form全体がvalidか確認
@@ -111,7 +115,7 @@ function appendimitatef() {
     imitateselectEle.id = "imitate" + imitateNums;
     imitateselectEle.name = "imitate" + imitateNums;
     imitateselectEle.setAttribute("oninput", "checkform(" + imitateNums + ")");
-    imitateselectEle.innerHTML = "<option>選択してください</option><option>原曲</option><option>.模倣</option><option>..模倣</option><option>教育模倣</option><option>アブジェ模倣</option><option>...模倣</option><option>表裏模倣</option><option>名の無い星が空に堕ちたら模倣</option><option>エヌ模倣</option><option>オリジナル模倣</option><option>模倣曲模倣</option>";
+    imitateselectEle.innerHTML = "<option>選択してください</option><option>.模倣</option><option>..模倣</option><option>教育模倣</option><option>アブジェ模倣</option><option>...模倣</option><option>表裏模倣</option><option>名の無い星が空に堕ちたら模倣</option><option>エヌ模倣</option><option>オリジナル模倣</option><option>模倣曲模倣</option>";
 
     imitatedivEle = document.createElement("div");
     imitatedivEle.setAttribute("class", "imitateimitatediv");
@@ -168,4 +172,7 @@ function deleteimitatef() {
     } else {
         deleteimitateEle.style.display = "inline-block";
     }
+
+    imitatenumsEle = document.getElementById("imitatenums");
+    imitatenumsEle.value = imitateNums;
 }

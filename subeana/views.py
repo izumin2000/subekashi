@@ -15,23 +15,35 @@ def new(request) :
         title = request.POST.get("title")
         channel = request.POST.get("channel")
         url = request.POST.get("url")
-        imitate = request.POST.get("imitate")
         lyrics = request.POST.get("lyrics")
+        imitatenums = request.POST.get("imitatenums")
 
-        ins_song = Song.objects.create()
+        ins_song, _ = Song.objects.get_or_create(title = title, defaults = {title : title})
         ins_song.title = title
         ins_song.channel = channel
-        if url in "https://www.youtube.com/watch?v=" :
-            url = "https://youtu.be/" + url[32:44]
-        ins_song.url = url
-        ins_song.lyrics = lyrics
+        if url :
+            if url in "https://www.youtube.com/watch?v=" :
+                url = "https://youtu.be/" + url[32:44]
+                ins_song.url = url
+        if lyrics :
+            ins_song.lyrics = lyrics
+
+        imitates = set()
+        for i in range(int(imitatenums)) :
+            imitate = request.POST.get(f"imitate{i + 1}")
+            if imitate == "模倣曲模倣" :
+                imitate = request.POST.get(f"imitateimitate{i + 1}")
+                imitates.add(imitate)
+            else :
+                imitates.add(imitate)
+
+        ins_song.imitate = " ".join(list(imitates))
         ins_song.save()
 
     BASE_DIR = str(BASE_DIRpath)
     if "C:" in BASE_DIR :
         dir["basedir"] = "http://127.0.0.1:8000"
     else :
-        print("!"*20, "\n", BASE_DIR)
         dir["basedir"] = BASE_DIR
     return render(request, 'subeana/new.html', dir)
 
