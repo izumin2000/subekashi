@@ -61,7 +61,7 @@ function checkform(imitateNumAt) {
     // 模倣曲模倣の曲名をinputするformの表示・非表示の切り替え
     if (imitateNumAt != 0) {      // 模倣曲模倣の入力の場合はこのブロックを実行しない
         imitateValue = document.getElementById("imitate" + imitateNumAt).value;
-        if (imitateValue == "模倣模倣") {
+        if (imitateValue == "模倣曲模倣") {
             imitateimitateEle = document.createElement("input");
             imitateimitateEle.type = "text";
             imitateimitateEle.placeholder = "曲名";
@@ -93,7 +93,6 @@ function checkform(imitateNumAt) {
     channelValue = document.getElementById("channel").value;
     appendimitateDisalbe = document.getElementById("appendimitate").disabled;
     submitEle = document.getElementById("submit");
-    console.log((titleValue != "") , (channelValue != "") , !(appendimitateDisalbe));
     if ((titleValue != "") && (channelValue != "") && !(appendimitateDisalbe)) {
         submitEle.disabled = false;
     } else {
