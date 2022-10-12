@@ -2,12 +2,12 @@ var isfirstget = true;
 var isfirstinfo = true;
 var imitateNums = 1;
 
-async function checksong(basedir) {
+async function isExistSong(basedir) {
     if (isfirstget) {
         res = await fetch(basedir + "/subeana/api/song/?format=json");
         songjson = await res.json();
         isfirstget = false;
-    }
+    }　
     formtitle = document.getElementById("title").value
     song = songjson.find((v) => v.title == formtitle);      // jsonから歌詞を検索
     if (song != null) {     // 記事があった場合

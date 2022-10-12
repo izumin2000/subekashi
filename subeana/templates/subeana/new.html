@@ -10,7 +10,7 @@
     <div class="underline"></div>
     <form action="{% url 'subeana:new' %}" method="POST" class="post-form" id="newForm">{% csrf_token %}
         <label>曲名*</label>
-        <input type="text" id="title" name="title" oninput="checkform(0)"><br>
+        <input type="text" id="title" name="title" oninput="checkform(0); isExistSong('{{basedir}}');"><br>
         <label>作者*</label>
         <input type="text" id="channel" name="channel" oninput="checkform(0)"><br>
         <label>URL </label>
@@ -46,7 +46,4 @@
 
 {% block js %}
 <script src="{% static 'subeana/js/checkform.js' %}" rel="stylesheet"></script>
-<script>
-    checksong("{{ basedir }}");
-</script>
 {% endblock %}
