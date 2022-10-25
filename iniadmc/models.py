@@ -1,6 +1,4 @@
 from django.db import models
 
-# Create your models here.
-class Info(models.Model) :
-    name = models.CharField(default = "", max_length = 10)
-    value = models.CharField(default = "", max_length = 10)
+class Wait(models.Model) :
+    minutes = models.IntegerField(default = 0, max_length = 1000)
