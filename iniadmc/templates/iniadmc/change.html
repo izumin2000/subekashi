@@ -1,0 +1,14 @@
+{% extends "iniadmc/base/base.html" %}
+{% block title %}展示室の混雑度{% endblock %}
+{% block ogtitle %}展示室の混雑度{% endblock %}
+{% load static %}
+
+{% block content %}
+<section id="top">
+    <form action="{% url 'iniadmc:change' %}" method="POST" class="post-form" id="newForm">{% csrf_token %}
+        <label>待ち時間</label>
+        <input type="number" name="minutes" step="5" placeholder="(分)">
+        <input type="submit" value="変更" id="submit">
+    </form>
+</section>
+{% endblock %}

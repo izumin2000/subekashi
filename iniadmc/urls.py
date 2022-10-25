@@ -6,7 +6,7 @@ from rest_framework import routers
 app_name = 'iniadmc'
 
 defaultRouter = routers.DefaultRouter()
-defaultRouter.register('info', views.InfoViewSet)
+defaultRouter.register('Wait', views.WaitViewSet)
 
 urlpatterns = [
     path('admin', admin.site.urls),

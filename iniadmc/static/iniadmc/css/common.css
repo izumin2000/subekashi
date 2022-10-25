@@ -556,6 +556,10 @@ ol {
 
 
 /* フォーム */
+form {
+    margin: 50vh 30vw 40vh 30vw;
+}
+
 input {
     height: 50px;
     width: 240px;

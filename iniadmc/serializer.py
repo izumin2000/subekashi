@@ -1,8 +1,8 @@
 from dataclasses import fields
 from rest_framework import serializers
-from .models import Info
+from .models import Wait
 
-class InfoSerializer(serializers.ModelSerializer):
+class WaitSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Info
-        fields = ('value',)
+        model = Wait
+        fields = ('minutes',)
