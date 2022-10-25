@@ -6,10 +6,11 @@ from rest_framework import routers
 app_name = 'iniadmc'
 
 defaultRouter = routers.DefaultRouter()
-# defaultRouter.register('song', views.SongViewSet)
+defaultRouter.register('info', views.InfoViewSet)
 
 urlpatterns = [
     path('admin', admin.site.urls),
     path('', views.top, name = 'top'),
-    # path('songs/<str:song_title>', views.song, name = 'song'),
+    path('change', views.change, name = 'change'),
+    path('api/',include(defaultRouter.urls)),
 ]

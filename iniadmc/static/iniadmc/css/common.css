@@ -18,10 +18,10 @@ body {
 /* ヘッダー */
 header {
     z-index: 9999;
-    height: 64px;
+    height: 86px;
     width: 100%;
-    background-color: #eee;
-    border-bottom: solid 4px #BB002D;
+    background-color: #ded;
+    border-bottom: solid 4px #333333;
     position: fixed;        /* 最上部に固定 */
     top: 0px        /*0pxに*/
 }
@@ -40,9 +40,9 @@ header {
 .header-right nav a {
     display: inline-block;
     font-family: sans-serif;
-    font-size: 48px;
+    font-size: 64px;
     padding: 10px;
-    line-height: 48px;
+    line-height: 64px;
     text-decoration: none;
     color: #101010;
     border-radius: 10px;
@@ -51,7 +51,7 @@ header {
 }
 
 .header-right nav a:hover {
-    color: #BB002D;
+    color: #333333;
     transition: color 0.5s;
 }
 
@@ -111,16 +111,26 @@ header {
 }
 
 .logo {
-    height: 50px;
+    height: 72px;
     margin-top: 6px;
 }
 
 .logomoji {
-    margin: 25px 0 0 5px ;
-    font-size: 35px;
+    margin: 37px 0 0 5px ;
+    font-size: 32px;
     font-weight: 600;
-    color: #BB002D;
+    color: #333333;
     text-decoration: none;
+}
+
+@media (max-width: 640px) {
+    .logo {
+        margin: 0 auto;
+    }
+
+    .logomoji {
+        display: none;
+    }
 }
 
 
@@ -168,7 +178,7 @@ header {
 
 /* 基礎 */
 main {
-    margin-top: 64px;
+    margin-top: 100px;
 }
 
 /* @media (max-width: 640px) {
@@ -176,16 +186,6 @@ main {
         margin-top: 128px;
     }
 } */
-
-.topmargin {
-    margin-top: 100px;
-}
-
-@media (max-width: 640px) {
-.topmargin {
-    margin-top: 172px;
-}
-}
 
 h1 {
     text-align: center;
@@ -210,6 +210,7 @@ h2 {
     background: linear-gradient(90deg, #FFD1DC, #eee, calc(40vw + 300px), #eee);
     border-radius: 5px;
 }
+
 p {
     font-family: sans-serif;
 }
@@ -223,7 +224,7 @@ section p {
 
 a {
     color: #000;
-    text-decoration: underline 2px #BB002D;
+    text-decoration: underline 2px #333333;
     font-family: sans-serif;
     line-height: 16px;
     margin: 0 5px;
@@ -273,7 +274,7 @@ code {
     height: 8px;
     width: 150px;
     margin: 0 auto 5px auto;
-    background-color: #BB002D;
+    background-color: #333333;
 }
 
 @media (max-width: 640px) {
@@ -357,7 +358,7 @@ code {
 .info_item {
     height: 280px;
     width: 220px;
-    border: 5px solid #BB002D;
+    border: 5px solid #333333;
     border-radius: 5px;
     margin: 0 15px 15px 0;
 }
@@ -380,7 +381,7 @@ code {
     height: 5px;
     width: 227px;
     margin-left: -2px;
-    background-color: #BB002D;
+    background-color: #333333;
 }
 
 .info_data {
@@ -421,7 +422,7 @@ code {
     color: #000;
     margin-top: 15px;
     text-align: center;
-    text-decoration: underline 2px #BB002D;
+    text-decoration: underline 2px #333333;
     font-family: sans-serif;
     line-height: 16px;
 }
@@ -499,7 +500,7 @@ code {
 }
 
 .open_btn {
-    color: #BB002D;
+    color: #333333;
     cursor: pointer;
     transition: .3s ease;
     padding: 5px 15px;
@@ -572,7 +573,7 @@ input {
 
 input:focus {
     outline: 0;
-    box-shadow: 0 0 0 2px #BB002D inset;
+    box-shadow: 0 0 0 2px #333333 inset;
 }
 
 input:focus::placeholder {
@@ -599,7 +600,7 @@ input:focus::placeholder {
 
 .formbutton:active {
     border: none;
-    box-shadow: 0 0 0 2px #BB002D inset;
+    box-shadow: 0 0 0 2px #333333 inset;
     background-color: #eee;
 }
 
