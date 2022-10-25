@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'config',
     'xia',
     'subeana',
+    'iniadmc',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
