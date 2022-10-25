@@ -2,13 +2,25 @@ from django.shortcuts import render
 from iniadmc.models import Wait
 from .serializer import WaitSerializer
 from rest_framework import viewsets
+from config.settings import BASE_DIR as BASE_DIRpath
 
 def top(request) :
-    ins_wait = Wait.objects.get(id=0)
-    return render(request, 'iniadmc/top.html', {"minutes" : ins_wait.minutes})
+    if not len(Wait.objects.all()) :
+        ins_wait = Wait.objects.create()
+        ins_wait.minutes = 0
+        ins_wait.save()
+    ins_wait = Wait.objects.first()
+    BASE_DIR = str(BASE_DIRpath)
+    if "C:" in BASE_DIR :
+        BASE_DIR = "http://127.0.0.1:8000"
+    return render(request, 'iniadmc/top.html', {"minutes" : ins_wait.minutes, "BASE_DIR" : BASE_DIR})
 
 def change(request) :
-    ins_wait, _ = Wait.objects.get_or_create(minutes = 0, defaults = {"minutes" : 0})
+    if not len(Wait.objects.all()) :
+        ins_wait = Wait.objects.create()
+        ins_wait.minutes = 0
+        ins_wait.save()
+    ins_wait = Wait.objects.first()
     if request.method == "POST":
         inp_minutes = request.POST.get("minutes")
         ins_wait.minutes = inp_minutes

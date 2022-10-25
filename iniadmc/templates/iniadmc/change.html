@@ -7,7 +7,7 @@
 <section id="top">
     <form action="{% url 'iniadmc:change' %}" method="POST" class="post-form" id="newForm">{% csrf_token %}
         <label>待ち時間</label>
-        <input type="number" name="minutes" step="5" placeholder="(分)">
+        <input type="number" name="minutes" step="5" placeholder="(分)" min="0">
         <input type="submit" value="変更" id="submit">
     </form>
 </section>

@@ -656,3 +656,15 @@ footer {
 .footer-right p #author {
     color: #fff;
 }
+
+#timestamp {
+    text-align: center;
+}
+
+#video {
+    height: 70vh;
+    width: 70vw;
+    margin: 0 auto;
+    text-align: center;
+    border: dashed#000 ;
+}

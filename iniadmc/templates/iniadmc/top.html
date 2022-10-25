@@ -4,7 +4,35 @@
 {% load static %}
 
 {% block content %}
-<section id="top">
-    <p>{{ minutes }}</p>
+<section id="videosession">
+    <div id="video">ここに動画を埋め込む</div>
 </section>
+<section id="infosession">
+    <h1>待ち時間は<b id="minutes">{{ minutes }}</b>分程度です。</h1>
+    <p id="timestamp"></p>
+</section>
+{% endblock %}
+
+{% block js %}
+<script>
+    async function CheckAPI(basedir) {
+        res = await fetch(basedir + "/iniadmc/api/Wait/?format=json");
+        songjson = await res.json();
+        
+        minutesEle = document.getElementById("minutes");
+        minutesEle.innerHTML = songjson[0]["minutes"];
+        
+        timestampEle = document.getElementById("timestamp");
+        var now = new Date();
+        timestampEle.innerHTML = "情報の最終取得時間：" + now.getHours() + "時" + now.getMinutes() + "分";
+
+    }
+
+    window.onload = function() {
+        CheckAPI('{{ BASE_DIR }}');
+        setInterval(() => {
+            CheckAPI('{{ BASE_DIR }}');
+        }, 60000);
+    }
+</script>
 {% endblock %}
