@@ -86,8 +86,8 @@ def new(request) :
     BASE_DIR = str(BASE_DIRpath)
     if "C:" in BASE_DIR :
         dir["basedir"] = "http://127.0.0.1:8000"
-    elif "heroku" in BASE_DIR :
-        dir["basedir"] = "https://izuminapp.herokuapp.com"
+    elif "app" in BASE_DIR :
+        BASE_DIR = ""
         
     return render(request, 'subeana/new.html', dir)
 
