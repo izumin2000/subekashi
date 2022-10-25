@@ -100,7 +100,10 @@ def error(request) :
 
 
 def dev(request) :
-
+    if request.method == "POST":
+        password = request.POST.get("password")
+        if hashlib.sha256(password.encode()).hexdigest() == SHA256a :
+            0
     return render(request, "subeana/dev.html")
 
 
