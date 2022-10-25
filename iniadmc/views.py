@@ -13,6 +13,8 @@ def top(request) :
     BASE_DIR = str(BASE_DIRpath)
     if "C:" in BASE_DIR :
         BASE_DIR = "http://127.0.0.1:8000"
+    elif "heroku" in BASE_DIR :
+        BASE_DIR = "https://izuminapp.herokuapp.com"
     return render(request, 'iniadmc/top.html', {"minutes" : ins_wait.minutes, "BASE_DIR" : BASE_DIR})
 
 def change(request) :
