@@ -178,7 +178,7 @@ header {
 
 /* 基礎 */
 main {
-    margin-top: 100px;
+    margin-top:50px;
 }
 
 /* @media (max-width: 640px) {
@@ -203,11 +203,12 @@ h1 {
 
 h2 {
     font-family: sans-serif;
+    text-align: center;
     font-size: 25px;
     line-height: 25px;
-    margin: 40px 20px 20px 20px;
+    margin: 10px;
     padding: 10px 0 5px 10px;
-    background: linear-gradient(90deg, #FFD1DC, #eee, calc(40vw + 300px), #eee);
+    /* background: linear-gradient(90deg, #FFD1DC, #eee, calc(40vw + 300px), #eee); */
     border-radius: 5px;
 }
 

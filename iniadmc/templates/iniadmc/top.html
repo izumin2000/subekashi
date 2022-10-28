@@ -8,7 +8,12 @@
     <div id="video">ここに動画を埋め込む</div>
 </section>
 <section id="infosession">
-    <h1>待ち時間は<b id="minutes">{{ minutes }}</b>分程度です。</h1>
+    <h2 id="time">展示時間・・・10:00～12:00, 13:00～15:00, 16:00～17:00</h2>
+    {% if minutes %}
+        <h1>待ち時間は<b id="minutes">{{ minutes }}</b>分程度です。</h1>
+    {% else %}
+        <h1>待ち時間は<b>ありません</b></h1>
+    {% endif %}  
     <p id="timestamp"></p>
 </section>
 {% endblock %}
@@ -24,8 +29,7 @@
         
         timestampEle = document.getElementById("timestamp");
         var now = new Date();
-        timestampEle.innerHTML = "情報の最終取得時間：" + now.getHours() + "時" + now.getMinutes() + "分";
-
+        timestampEle.innerHTML = "情報の最終取得時間：" + ("00" + now.getHours()).slice(-2) + "時" + ("00" +now.getMinutes()).slice(-2) + "分";
     }
 
     window.onload = function() {
