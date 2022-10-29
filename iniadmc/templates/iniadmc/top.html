@@ -8,8 +8,8 @@
     <iframe width="560" height="315" src="https://www.youtube.com/embed/AmUPM4aJjRw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen id="video"></iframe>
 </section>
 <section id="infosession">
-    <h2 id="time">展示時間・・・10:00～12:00, 13:00～15:00, 16:00～17:00</h2>
-    {% if minutes %}
+    <h2 id="time">展示時間・・・10:00～12:00, 13:30～15:00, 16:00～17:00</h2>
+    {% if minutes != 0 %}
         <h1>待ち時間は<b id="minutes">{{ minutes }}</b>分程度です。</h1>
     {% else %}
         <h1>待ち時間は<b>ありません</b></h1>
