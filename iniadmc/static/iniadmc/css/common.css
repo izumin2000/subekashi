@@ -663,9 +663,9 @@ footer {
 }
 
 #video {
+    display: block;
     height: 70vh;
     width: 70vw;
     margin: 0 auto;
     text-align: center;
-    border: dashed#000 ;
 }
