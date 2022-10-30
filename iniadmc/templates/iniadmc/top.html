@@ -25,7 +25,9 @@
         songjson = await res.json();
         
         minutesEle = document.getElementById("minutes");
-        minutesEle.innerHTML = songjson[0]["minutes"];
+        if (minutesEle) {
+            minutesEle.innerHTML = songjson[0]["minutes"];
+        }
         
         timestampEle = document.getElementById("timestamp");
         var now = new Date();
