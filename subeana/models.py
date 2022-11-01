@@ -13,18 +13,12 @@ class Song(models.Model) :
     title = models.CharField(default = "", max_length = 100)
     channel = models.CharField(default = "", max_length = 50)
     url = models.CharField(default = "", max_length = 50, blank = True, null = True)
-    lyrics = models.CharField(default = "", max_length = 10000)
+    lyrics = models.CharField(default = "", max_length = 10000, blank = True, null = True)
+    ruigo = models.CharField(default = "", max_length = 10000, blank = True, null = True)
     imitate = models.CharField(default = "", max_length = 1000)
 
     def __str__(self):
         return self.title
-
-
-class Word(models.Model) :
-    song = models.OneToOneField("Song", on_delete = models.DO_NOTHING, blank = True, null = True, related_name = "word_song")
-    title = models.CharField(default = "", max_length = 100)
-    words = models.CharField(default = "", max_length = 10000)
-    ruigo = models.CharField(default = "", max_length = 10000)
 
 
 class Ai(models.Model) :
