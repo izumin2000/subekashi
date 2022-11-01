@@ -22,7 +22,7 @@
 {% block js %}
 <script>
     function backupf() {
-        window.open('{{BASE_DIR}}/subeana/api/song/?format=json', '_blank');
+        window.open('{{basedir}}/subeana/api/song/?format=json', '_blank');
         resetEle = document.getElementById("reset")
         resetEle.removeAttribute("disabled")
     }

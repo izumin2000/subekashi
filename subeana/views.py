@@ -89,8 +89,8 @@ def new(request) :
     BASE_DIR = str(BASE_DIRpath)
     if "C:" in BASE_DIR :
         dir["basedir"] = "http://127.0.0.1:8000"
-    elif "heroku" in BASE_DIR :
-        BASE_DIR = ""
+    elif "app" in BASE_DIR :
+        dir["basedir"] = ""
         
     return render(request, 'subeana/new.html', dir)
 
@@ -111,9 +111,9 @@ def dev(request) :
         BASE_DIR = str(BASE_DIRpath)
         if "C:" in BASE_DIR :
             BASE_DIR = "http://127.0.0.1:8000"
-        elif "heroku" in BASE_DIR :
+        elif "app" in BASE_DIR :
             BASE_DIR = "https://izuminapp.herokuapp.com"
-        dir["BASE_DIR"] = BASE_DIR
+        dir["basedir"] = ""
 
         if password :
             if hashlib.sha256(password.encode()).hexdigest() == SHA256a :
