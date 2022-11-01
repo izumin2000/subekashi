@@ -100,6 +100,14 @@
             <a onclick="changemap('SIEGE_NOVA_INCA')">SIEGE_NOVA_INCA</a>
             <a onclick="changemap('Yushiwan')">Yushiwan</a>
             <a onclick="changemap('inca_village')">inca_village</a>
+            <a onclick="changemap('niouyagura')">niouyagura</a>
+            <a onclick="changemap('MugenJou')">MugenJou</a>
+            <a onclick="changemap('zozotown')">zozotown</a>
+            <a onclick="changemap('bondo')">bondo</a>
+            <a onclick="changemap('xian')">xian</a>
+            <a onclick="changemap('Nation')">Nation</a>
+            <a onclick="changemap('Apa_hotel')">Apa_hotel</a>
+            <a onclick="changemap('Nihonmachi')">Nihonmachi</a>
         </div>
         <iframe id="dynmap" src="https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=6&x=20620&y=64&z=-7094"></iframe>
 
@@ -188,11 +196,27 @@
         function changemap(town) {
             var map = document.getElementById("dynmap");
             if (town == "SIEGE_NOVA_INCA") {
-                map.src = "https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=6&x=20620&y=64&z=-7094";
+                map.src = "https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=6&x=20504&y=64&z=-7080";
             } else if (town == "Yushiwan") {
                 map.src = "https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=6&x=18456&y=64&z=-6976";
             } else if (town == "inca_village") {
-                map.src = "https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=5&x=19560&y=64&z=-7176";
+                map.src = "https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=5&x=19624&y=64&z=-7160";
+            } else if (town == "niouyagura") {
+                map.src = "https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=7&x=19136&y=64&z=-6976";
+            } else if (town == "MugenJou") {
+                map.src = "https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=7&x=21440&y=64&z=-6296";
+            } else if (town == "zozotown") {
+                map.src = "https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=7&x=20672&y=64&z=-7696";
+            } else if (town == "bondo") {
+                map.src = "https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=7&x=18784&y=64&z=-6384";
+            } else if (town == "xian") {
+                map.src = "https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=6&x=19984&y=64&z=-7064";
+            } else if (town == "Nation") {
+                map.src = "https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=7&x=18200&y=64&z=-6160";
+            } else if (town == "Apa_hotel") {
+                map.src = "https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=6&x=20704&y=64&z=-6808";
+            } else if (town == "Nihonmachi") {
+                map.src = "https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=6&x=20792&y=64&z=-7328";
             }
         }
     </script>
