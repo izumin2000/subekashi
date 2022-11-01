@@ -8,10 +8,23 @@
 <section id="devsettion">
     <h1>dev</h1>
     <div class="underline"></div>
-
     <form action="{% url 'subeana:dev' %}" method="POST" class="post-form" id="newForm">{% csrf_token %}
-        <input type="password" name="password" id="password">
-        <input type="submit" name="submit" id="submit">
+        {% if locked %}
+            <input type="password" name="password" id="password">
+            <input type="submit" name="submit" id="submit" value="送信">
+        {% else %}
+            <input type="button" name="submit" id="backup" value="バックアップ" onclick="backupf()">
+            <input type="submit" name="submit" id="reset" value="リセット" disabled>
+        {% endif %}
     </form>
 </section>
+{% endblock %}
+{% block js %}
+<script>
+    function backupf() {
+        window.open('{{BASE_DIR}}/subeana/api/song/?format=json', '_blank');
+        resetEle = document.getElementById("reset")
+        resetEle.removeAttribute("disabled")
+    }
+</script>
 {% endblock %}
