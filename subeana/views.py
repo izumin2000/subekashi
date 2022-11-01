@@ -152,7 +152,7 @@ def dev(request) :
     dir = {"locked" : True}
     if request.method == "POST":
         password = request.POST.get("password")
-        
+
         BASE_DIR = str(BASE_DIRpath)
         if "C:" in BASE_DIR :
             BASE_DIR = "http://127.0.0.1:8000"
@@ -172,6 +172,11 @@ def dev(request) :
     return render(request, "subeana/dev.html", dir)
 
 
+def make(request) :
+    dir = {}
+    return render(request, "subeana/make.html", dir)
+
+    
 class SongViewSet(viewsets.ModelViewSet):
     queryset = Song.objects.all()
     serializer_class = SongSerializer
