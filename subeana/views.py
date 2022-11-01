@@ -112,7 +112,7 @@ def dev(request) :
         if "C:" in BASE_DIR :
             BASE_DIR = "http://127.0.0.1:8000"
         elif "heroku" in BASE_DIR :
-            BASE_DIR = ""
+            BASE_DIR = "https://izuminapp.herokuapp.com"
         dir["BASE_DIR"] = BASE_DIR
 
         if password :
