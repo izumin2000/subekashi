@@ -7,6 +7,8 @@ import hashlib
 import requests
 from time import sleep
 from .reset import SUBEANA_LIST
+import random
+from janome.tokenizer import Tokenizer
 
 
 # パスワード関連
@@ -42,6 +44,31 @@ def get_API(url) :
         print("not 2xx", get.status_code)
         return ""
 
+
+def counter(word) :
+    word = str(word)
+    hiragana = [(i >= "ぁ") and (i <= "ゟ") for i in word].count(True)
+    katakana = [(i >= "ァ") and (i <= "ヿ") for i in word].count(True)
+    kanji = [(i >= "一") and (i <= "鿼") for i in word].count(True)
+    return hiragana, katakana, kanji
+
+
+def tokenizer_janome(text):
+    toklist = []
+    j_t = Tokenizer()
+
+    for tok in j_t.tokenize(text, wakati=False) :
+        hinshi = tok.part_of_speech.split(',')[0]
+        if hinshi == "動詞" :
+            katsuyou = tok.infl_form[:2]
+        elif hinshi == "形容詞" :
+            katsuyou = tok.infl_form[:2]
+        # elif hinshi == "名詞" :
+            # katsuyou = tok.part_of_speech
+        else :
+            katsuyou = ""
+        toklist.append((tok.surface, hinshi, katsuyou))
+    return toklist
 
 def top(request):
     return render(request, 'subeana/top.html')
@@ -99,6 +126,32 @@ def song(request, song_title) :
     dir = {"title" : song_title}
     return render(request, "subeana/song.html", dir)
 
+
+def make(request) :
+    dir = {}
+    lyrics = ""
+    simD = {}
+    text = ""
+    replaceble_hinshis = ["名詞", "動詞"]
+
+    tok = tokenizer_janome(text)
+    for word, hinshi, katsuyou in tok :
+        if hinshi in replaceble_hinshis :
+            if (hinshi + katsuyou) in simD.keys() :
+                # fitL = [sim for sim in simD[hinshi + katsuyou] if counter(word) == counter(sim)]
+                fitL = [word]
+                for sim in simD[hinshi + katsuyou] :
+                    if (counter(word) == counter(sim)) :
+                        fitL.append(sim)
+                lyrics += random.choice(fitL)
+            else :
+                lyrics += word
+            # simD[hinshi + katsuyou].remove(sim)
+        else :
+            lyrics += word
+    print(lyrics)
+    return render(request, "subeana/make.html", dir)
+
 def error(request) :
     return render(request, "subeana/error.html")
 
@@ -125,11 +178,6 @@ def dev(request) :
                 requests.post(url = BASE_DIR + "/subeana/api/song/?format=json" ,data = song)
             
     return render(request, "subeana/dev.html", dir)
-
-
-def make(request) :
-    dir = {}
-    return render(request, "subeana/make.html", dir)
 
 
 class SongViewSet(viewsets.ModelViewSet):
