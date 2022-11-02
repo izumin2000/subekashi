@@ -25,12 +25,8 @@
 {% block js %}
     <script>
         function songpage(song_id) {
-            window.location.href = "songs/" + song_id
+            window.location.href = "songs/" + song_id;
         }
-
-        window.addEventListener('DOMContentLoaded', function(){
-            window.addEventListener('resize', changecss);
-        });
 
         function changecss() {
             cardrightEles = document.getElementsByClassName("cardright");
@@ -50,5 +46,12 @@
                 }
             }
         }
+
+        
+        window.addEventListener('DOMContentLoaded', function(){
+            window.addEventListener('resize', changecss, false);
+        });
+
+        window.addEventListener('load', changecss);
     </script>
 {% endblock %}
