@@ -16,6 +16,7 @@
             </div>
             <div class="cardright">
                 <p class="songlyrics">{{ ins_song.lyrics|slice:"30" }}...</p>
+                <a class="songurl" href="{{ ins_song.url }}">{{ ins_song.url }}</a>
             </div>
         </div>
     {% endfor %}
@@ -25,6 +26,29 @@
     <script>
         function songpage(song_id) {
             window.location.href = "songs/" + song_id
+        }
+
+        window.addEventListener('DOMContentLoaded', function(){
+            window.addEventListener('resize', changecss);
+        });
+
+        function changecss() {
+            cardrightEles = document.getElementsByClassName("cardright");
+            for (cardrightEle of cardrightEles) {
+                if (window.innerWidth < 600) {
+                    cardrightEle.style.display = "none";
+                } else {
+                    cardrightEle.style.display = "block";
+                }
+            }
+            songcardEles = document.getElementsByClassName("songcard");
+            for (songcardEle of songcardEles) {
+                if (window.innerWidth < 600) {
+                    songcardEle.style.padding = "20px 0 70px 0"
+                } else {
+                    songcardEle.style.padding = "20px 0"
+                }
+            }
         }
     </script>
 {% endblock %}

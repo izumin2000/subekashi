@@ -27,9 +27,14 @@
 }
 
 .songchannel {
+    margin-top: 15px;
     font-size: 15px;
 }
 
 .songlyrics {
     font-size: 12px;
+}
+
+.songurl {
+    top: 15px;
 }
