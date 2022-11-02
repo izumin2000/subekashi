@@ -8,5 +8,23 @@
 <section>
     <h1>新着の曲</h1>
     <div class="underline"></div>
+    {% for ins_song in ins_songs %}
+        <div class="songcard" onclick="songpage('{{ ins_song.id }}')">
+            <div class="cardleft">
+                <p class="songtitle">{{ ins_song.title }}</p>
+                <p class="songchannel">{{ ins_song.channel }}</p>
+            </div>
+            <div class="cardright">
+                <p class="songlyrics">{{ ins_song.lyrics|slice:"30" }}...</p>
+            </div>
+        </div>
+    {% endfor %}
 </section>
+{% endblock %}
+{% block js %}
+    <script>
+        function songpage(song_id) {
+            window.location.href = "songs/" + song_id
+        }
+    </script>
 {% endblock %}

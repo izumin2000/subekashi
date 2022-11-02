@@ -71,7 +71,12 @@ def tokenizer_janome(text):
     return toklist
 
 def top(request):
-    return render(request, 'subeana/top.html')
+    dir = {}
+    ins_songs = Song.objects.exclude(lyrics = "")
+    dir["ins_songs"] = ins_songs
+    pages = len(ins_songs)
+    dir["pages"] = list(range(1, pages + 1))
+    return render(request, 'subeana/top.html', dir)
 
 
 def new(request) :
@@ -122,8 +127,9 @@ def new(request) :
     return render(request, 'subeana/new.html', dir)
 
 
-def song(request, song_title) :
-    dir = {"title" : song_title}
+def song(request, song_id) :
+    song_ins = Song.objects.get(pk = song_id)
+    dir = {"song_ins" : song_ins}
     return render(request, "subeana/song.html", dir)
 
 
