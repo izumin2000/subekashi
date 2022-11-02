@@ -128,8 +128,10 @@ def new(request) :
 
 
 def song(request, song_id) :
+    dir = {}
     song_ins = Song.objects.get(pk = song_id)
-    dir = {"song_ins" : song_ins}
+    dir["song_ins"] = song_ins
+    dir["imitates"] = eval(song_ins.imitate)
     return render(request, "subeana/song.html", dir)
 
 
