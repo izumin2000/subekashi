@@ -1,0 +1,57 @@
+#makeForm {
+    margin-left: calc(32vw - 160px);
+}
+
+@media (max-width: 720px) {
+    #makeForm {
+        margin-left: 0;
+    }
+}
+
+.genetype {
+    box-shadow: none;
+    height: 15px;
+    width: 15px;
+}
+
+.devinput {
+    display: inline-block;
+    cursor: pointer;
+}
+
+.songlist {
+    width: calc(50vw - 98px);
+    margin: 5px 0 5px 60px;
+    padding: 10px;
+    background-color: #333;
+    cursor: pointer;
+}
+
+.channel {
+    color: #ccc;
+}
+
+.songlist:hover {
+    background-color: #555;
+}
+
+@media (max-width: 720px) {
+    .songlist {
+        width: calc(65vw - 50px);
+    }
+}
+
+#similar {
+    box-shadow: none;
+}
+
+#similarlabel {
+    position:relative;
+    bottom: 20px;
+}
+
+#similarvalue {
+    display: inline-block;
+    position:relative;
+    bottom: 20px;
+}

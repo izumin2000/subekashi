@@ -96,12 +96,6 @@ main {
     margin-top: 64px;
 }
 
-@media (max-width: 640px) {
-    main {
-        margin-top: 128px;
-    }
-}
-
 #mainarticle {
     margin: 100px 0 0 32px;
 }
@@ -111,7 +105,7 @@ h1 {
     font-family: 'Noto Sans JP', sans-serif;
     color: #FFF;
     font-size: 40px;
-    line-height: 40px;
+    line-height: 50px;
     margin: 50px 0 10px 0;
 }
 
@@ -123,7 +117,7 @@ h1 {
 
 h2 {
     font-size: 25px;
-    line-height: 25px;
+    line-height: 50px;
     color: #FFF;
     margin: 40px 20px 20px 20px;
 }
@@ -133,7 +127,7 @@ p {
     font-weight: 900;
     color: #fff;
     font-size: 18px;
-    line-height: 18px;
+    line-height: 27px;
 }
 
 a {
@@ -141,7 +135,7 @@ a {
     text-decoration: underline 2px #fff;
     font-family: 'Noto Sans JP', sans-serif;
     font-size: 18px;
-    line-height: 18px;
+    line-height: 27px;
     margin: 0 5px;
 }
 
@@ -224,7 +218,7 @@ label {
     font-family: 'Noto Sans JP', sans-serif;
     color: #fff;
     font-size: 18px;
-    line-height: 18px;
+    line-height: 27px;
     margin-right:10px;
 }
 
