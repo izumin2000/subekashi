@@ -158,6 +158,8 @@ def make(request) :
         else :
             lyrics += word
     print(lyrics)
+    dir["lyrics"] = lyrics
+    dir["songs_ins"] = Song.objects.all()
     return render(request, "subeana/make.html", dir)
 
 def error(request) :

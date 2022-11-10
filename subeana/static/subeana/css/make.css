@@ -19,6 +19,14 @@
     cursor: pointer;
 }
 
+.devinput label {
+    cursor: pointer;
+}
+
+#songsec {
+    display: none;
+}
+
 .songlist {
     width: calc(50vw - 98px);
     margin: 5px 0 5px 60px;

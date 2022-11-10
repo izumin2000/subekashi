@@ -11,8 +11,8 @@
     {% for ins_song in ins_songs %}
         <div class="songcard" onclick="songpage('{{ ins_song.id }}')">
             <div class="cardleft">
-                <p class="songtitle"><i class="fas fa-music"></i>{{ ins_song.title }}</p>
-                <p class="songchannel"><i class="fas fa-user-circle"></i>{{ ins_song.channel }}</p>
+                <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title }}</p>
+                <p class="songchannel"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</p>
             </div>
             <div class="cardright">
                 <p class="songlyrics">{{ ins_song.lyrics|slice:"30" }}...</p>
