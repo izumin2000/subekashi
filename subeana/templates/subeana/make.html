@@ -8,8 +8,37 @@
 <section>
     <h1>歌詞の生成</h1>
     <div class="underline"></div>
+    <form action="{% url 'subeana:make' %}" method="POST" class="post-form" id="newForm">{% csrf_token %}
+        <input type="radio" class="isCategory" name="isCategory" value="category" oninput="isCategory()" checked>
+        <label>カテゴリ</label>
+        <input type="radio" class="isCategory" name="isCategory" value="song" oninput="isCategory()"><br>
+        <label>曲</label>
+        <label>カテゴリ*</label>
+        <select id="category" name="category" oninput="makeform();">
+            <option>選択してください</option>
+            <option>.模倣</option>
+            <option>..模倣</option>
+            <option>教育模倣</option>
+            <option>アブジェ模倣</option>
+            <option>...模倣</option>
+            <option>表/裏模倣</option>
+            <option>名の無い星が空に堕ちたら模倣</option>
+            <option>エヌ模倣</option>
+        </select><br>
+        <label>曲名*</label>
+        <input type="text" id="input" name="song" oninput="makeform();"><br>
+        {% for song_ins in songs_ins %}
+        <p class="songs" onclick="inputsong('{{ song.title }}')">{{ song.channel }} / {{ song.title }}</p>
+        {% endfor %}
+        <label>類似度*</label>
+        <input type="range" id="similar" name="similar" min="1" max="10" value="5" oninput="similar()">
+        <p id="similarvalue">5</p>
+        <input type="submit" value="登録" id="submit" disabled>
+        <p class="bottomelement">*がついているラベルは入力が必須です。</p>
+    </form>
 </section>
 {% endblock %}
 
 {% block js %}
+<script src="{% static 'subeana/js/songform.js' %}" rel="stylesheet"></script>
 {% endblock %}

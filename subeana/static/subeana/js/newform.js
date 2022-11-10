@@ -40,7 +40,7 @@ async function isExistSong(basedir) {
 };
 
 
-function checkform(imitateNumAt) {
+function newform(imitateNumAt) {
     appendimitateEle = document.getElementById("appendimitate");
 
     // 模倣曲模倣がvalidか確認
@@ -69,7 +69,7 @@ function checkform(imitateNumAt) {
             imitateimitateEle.placeholder = "曲名";
             imitateimitateEle.id = "imitateimitate" + imitateNumAt;
             imitateimitateEle.name = "imitateimitate" + imitateNumAt;
-            imitateimitateEle.setAttribute("oninput" ,"checkform(0)");
+            imitateimitateEle.setAttribute("oninput" ,"newform(0)");
 
             imitateimitatedevEle = document.getElementById("imitateimitatediv" + imitateNumAt);
             imitateimitatedevEle.appendChild(imitateimitateEle);
@@ -116,7 +116,7 @@ function appendimitatef() {
     imitateselectEle = document.createElement("select");
     imitateselectEle.id = "imitate" + imitateNums;
     imitateselectEle.name = "imitate" + imitateNums;
-    imitateselectEle.setAttribute("oninput", "checkform(" + imitateNums + ")");
+    imitateselectEle.setAttribute("oninput", "newform(" + imitateNums + ")");
     imitateselectEle.innerHTML = "<option>選択してください</option><option>.模倣</option><option>..模倣</option><option>教育模倣</option><option>アブジェ模倣</option><option>...模倣</option><option>表裏模倣</option><option>名の無い星が空に堕ちたら模倣</option><option>エヌ模倣</option><option>オリジナル模倣</option><option>模倣曲模倣</option>";
 
     imitatedivEle = document.createElement("div");
@@ -143,7 +143,7 @@ function appendimitatef() {
         deleteimitateEle.style.display = "inline-block";   
     }
 
-    checkform(imitateNums);
+    newform(imitateNums);
 }
 
 function deleteimitatef() {
