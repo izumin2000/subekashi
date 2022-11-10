@@ -5,18 +5,18 @@
 {% block css %}{% static 'subeana/css/make.css'%}{% endblock %}
 
 {% block content %}
-<section>
+<section id="formsection">
     <h1>歌詞の生成</h1>
     <div class="underline"></div>
     <form action="{% url 'subeana:make' %}" method="POST" class="post-form" id="makeForm">{% csrf_token %}
-        <label>生成元*</label>
+        <label>生成タイプ*</label>
         <div class="devinput" onclick="devinput(0)">
             <input type="radio" class="genetype" name="genetype" value="category" oninput="changetype(0)" checked>
             <label>カテゴリ</label>
         </div>
         <div class="devinput" onclick="devinput(1)">
             <input type="radio" class="genetype" name="genetype" value="song" oninput="changetype(1)">
-            <label>曲</label>
+            <label>ソング</label>
         </div>
         <div class="devinput" onclick="devinput(2)">
             <input type="radio" class="genetype" name="genetype" value="model" oninput="changetype(2)">
@@ -50,9 +50,29 @@
             <input type="range" id="similar" name="similar" min="1" max="10" value="5" oninput="similar()">
             <p id="similarvalue">5</p><br>
         </div>
-        <input type="submit" value="登録" id="submit" disabled>
+        <input type="submit" value="生成" id="submit" disabled>
         <p class="bottomelement">*がついているラベルは入力が必須です。</p>
     </form>
+</section>
+
+<section id="discribesection">
+    <h1>生成タイプについて</h1>
+    <div class="underline"></div>
+    <div class="formmargin">
+        <p>カテゴリ・・・全てあなたの所為です。の特定の曲とその模倣曲から生成する方法</p>
+        <p>ソング・・・特定の曲を中心とした模倣関係となっている曲から生成する方法</p>
+        <p>モデル・・・模倣曲を学習した言語モデルを用いて生成する方法</p>
+    </div>
+    <h1>類似度について</h1>
+    <div class="underline"></div>
+    <div class="formmargin">
+        <p>類似度を高めに指定すると指定した曲により近い歌詞を生成する。具体的には</p>
+        <ul>
+            <li>指定した曲に登場する単語やその単語の類義語の生成割合が増える</li>
+            <li>模倣関係となっている曲が減り、より指定した曲の構文形式に近くなる</li>
+        </ul>
+        <p>等の効果がある。</p>
+    </div>
 </section>
 {% endblock %}
 

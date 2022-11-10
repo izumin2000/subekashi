@@ -63,3 +63,17 @@
     position:relative;
     bottom: 20px;
 }
+
+.formmargin {
+    margin-left: calc(32vw - 160px);
+}
+
+@media (max-width: 720px) {
+    .formmargin {
+        margin-left: 0;
+    }
+}
+
+.formmargin p, .formmargin li {
+    line-height: 40px;
+}

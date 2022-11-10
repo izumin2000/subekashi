@@ -122,7 +122,7 @@ h2 {
     margin: 40px 20px 20px 20px;
 }
 
-p {
+p, li {
     font-family: 'Noto Sans JP', sans-serif;
     font-weight: 900;
     color: #fff;
