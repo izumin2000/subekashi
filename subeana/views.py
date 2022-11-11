@@ -118,7 +118,7 @@ def new(request) :
             if imitate == "模倣曲模倣" :
                 imitate = request.POST.get(f"imitateimitate{i + 1}")
                 if imitate :
-                    imitates.add(imitate)
+                    imitates.add(imitate + "模倣")
             else :
                 imitates.add(imitate)
 
@@ -140,28 +140,43 @@ def song(request, song_id) :
 
 def make(request) :
     dir = {}
-    lyrics = ""
-    simD = {}
-    text = ""
-    replaceble_hinshis = ["名詞", "動詞"]
 
-    tok = tokenizer_janome(text)
-    for word, hinshi, katsuyou in tok :
-        if hinshi in replaceble_hinshis :
-            if (hinshi + katsuyou) in simD.keys() :
-                # fitL = [sim for sim in simD[hinshi + katsuyou] if counter(word) == counter(sim)]
-                fitL = [word]
-                for sim in simD[hinshi + katsuyou] :
-                    if (counter(word) == counter(sim)) :
-                        fitL.append(sim)
-                lyrics += random.choice(fitL)
+    if request.method == "POST":
+        inp_genetype = request.POST.get("genetype")
+        if inp_genetype == "category" :
+            inp_category = request.POST.get("category")
+            inp_similar = request.POST.get("similar")
+
+        if inp_genetype == "song" :
+            inp_title = request.POST.get("title")
+            inp_similar = request.POST.get("similar")
+
+        if inp_genetype == "model" :
+            0
+
+        
+
+        lyrics = ""
+        simD = {}
+        text = ""
+        replaceble_hinshis = ["名詞", "動詞"]
+
+        tok = tokenizer_janome(text)
+        for word, hinshi, katsuyou in tok :
+            if hinshi in replaceble_hinshis :
+                if (hinshi + katsuyou) in simD.keys() :
+                    # fitL = [sim for sim in simD[hinshi + katsuyou] if counter(word) == counter(sim)]
+                    fitL = [word]
+                    for sim in simD[hinshi + katsuyou] :
+                        if (counter(word) == counter(sim)) :
+                            fitL.append(sim)
+                    lyrics += random.choice(fitL)
+                else :
+                    lyrics += word
+                # simD[hinshi + katsuyou].remove(sim)
             else :
                 lyrics += word
-            # simD[hinshi + katsuyou].remove(sim)
-        else :
-            lyrics += word
-    print(lyrics)
-    dir["lyrics"] = lyrics
+                
     dir["songs_ins"] = Song.objects.all()
     dir["basedir"] = get_basedir()
     return render(request, "subeana/make.html", dir)
