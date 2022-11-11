@@ -16,6 +16,8 @@ class Song(models.Model) :
     lyrics = models.CharField(default = "", max_length = 10000, blank = True, null = True)
     ruigo = models.CharField(default = "", max_length = 10000, blank = True, null = True)
     imitate = models.CharField(default = "", max_length = 1000)
+    isjoke = models.BooleanField(default = False)
+    isjapanese = models.BooleanField(default = True)
 
     def __str__(self):
         return self.title
