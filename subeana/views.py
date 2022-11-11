@@ -45,6 +45,14 @@ def get_API(url) :
         return ""
 
 
+def get_basedir() :
+    BASE_DIR = str(BASE_DIRpath)
+    if "C:" in BASE_DIR :
+        return "http://127.0.0.1:8000"
+    elif "app" in BASE_DIR :
+        return ""
+
+
 def counter(word) :
     word = str(word)
     hiragana = [(i >= "ぁ") and (i <= "ゟ") for i in word].count(True)
@@ -118,12 +126,7 @@ def new(request) :
         ins_song.imitate = str(list(imitates))
         ins_song.save()
 
-    BASE_DIR = str(BASE_DIRpath)
-    if "C:" in BASE_DIR :
-        dir["basedir"] = "http://127.0.0.1:8000"
-    elif "app" in BASE_DIR :
-        dir["basedir"] = ""
-        
+    dir["basedir"] = get_basedir()
     return render(request, 'subeana/new.html', dir)
 
 
@@ -160,6 +163,7 @@ def make(request) :
     print(lyrics)
     dir["lyrics"] = lyrics
     dir["songs_ins"] = Song.objects.all()
+    dir["basedir"] = get_basedir()
     return render(request, "subeana/make.html", dir)
 
 def error(request) :
@@ -170,13 +174,7 @@ def dev(request) :
     dir = {"locked" : True}
     if request.method == "POST":
         password = request.POST.get("password")
-
-        BASE_DIR = str(BASE_DIRpath)
-        if "C:" in BASE_DIR :
-            BASE_DIR = "http://127.0.0.1:8000"
-        elif "app" in BASE_DIR :
-            BASE_DIR = "https://izuminapp.herokuapp.com"
-        dir["basedir"] = ""
+        dir["basedir"] = get_basedir()
 
         if password :
             if hashlib.sha256(password.encode()).hexdigest() == SHA256a :
@@ -185,7 +183,7 @@ def dev(request) :
             Song.objects.all().delete()
 
             for song in SUBEANA_LIST :
-                requests.post(url = BASE_DIR + "/subeana/api/song/?format=json" ,data = song)
+                requests.post(url = get_basedir() + "/subeana/api/song/?format=json" ,data = song)
             
     return render(request, "subeana/dev.html", dir)
 

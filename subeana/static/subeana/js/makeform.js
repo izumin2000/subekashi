@@ -1,4 +1,12 @@
-var radiotype = true;
+var type = 0;
+var songjson, songEles;
+
+async function getSong(basedir) {
+    res = await fetch(basedir + "/subeana/api/song/?format=json");
+    songjson = await res.json();
+
+    songEles = document.getElementsByClassName("songs");
+}
 
 
 function changetype(radiotype) {
@@ -18,8 +26,11 @@ function changetype(radiotype) {
         songsecEle.style.display = "none";
         similarsecEle.style.display = "none";
     }
-    return 1;
+
+    type = radiotype;
+    makeform(radiotype);
 }
+
 
 function devinput(radiotype) {
     radioEle = document.getElementsByClassName("genetype")[radiotype];
@@ -27,7 +38,67 @@ function devinput(radiotype) {
     changetype(radiotype);
 }
 
-function makeform() {
-    return 1;
 
+function titleinput(title) {
+    titleEle = document.getElementById("title");
+    titleEle.value = title;
+    makeform();
+}
+
+
+function searchsong() {
+    titleEle = document.getElementById("title");
+    title = titleEle.value 
+    if (title == "") {
+        for (songEle of songEles) {
+            songEle.parentElement.style.display = "none";
+        }
+    } else {
+        for (songEle of songEles) {
+            if (songEle.id.match(title) == null) {
+                songEle.parentElement.style.display = "none";
+            } else {
+                songEle.parentElement.style.display = "block";
+            }
+        }
+    }
+
+    makeform();
+}
+
+
+function similarinput() {
+    similarEle = document.getElementById("similar");
+    similarvalueEle = document.getElementById("similarvalue");
+
+    similarvalueEle.innerHTML = similarEle.value;
+}
+
+
+function makeform() {
+    submitEle = document.getElementById("submit");
+    
+    if (type == 0) {
+        categoryEle = document.getElementById("category");
+        if (categoryEle.value == "選択してください") {
+            submitEle.disabled = true;
+        } else {
+            submitEle.disabled = false;
+        }
+    } else if (type == 1) {
+        titleEle = document.getElementById("title");
+        if (titleEle.value == "") {
+            submitEle.disabled = true;
+        } else {
+            song = songjson.find((v) => v.title == titleEle.value);      // jsonから歌詞を検索
+            if (song == null) {
+                submitEle.disabled = true;
+            } else {
+                submitEle.disabled = false;
+            }
+        }
+
+    } else if (type == 2) {
+        submitEle.disabled = false;
+    }
 }

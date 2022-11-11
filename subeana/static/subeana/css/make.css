@@ -27,7 +27,8 @@
     display: none;
 }
 
-.songlist {
+.songrow {
+    display: none;
     width: calc(50vw - 98px);
     margin: 5px 0 5px 60px;
     padding: 10px;
@@ -39,12 +40,12 @@
     color: #ccc;
 }
 
-.songlist:hover {
+.songrow:hover {
     background-color: #555;
 }
 
 @media (max-width: 720px) {
-    .songlist {
+    .songrow {
         width: calc(65vw - 50px);
     }
 }

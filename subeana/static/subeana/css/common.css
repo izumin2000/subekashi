@@ -106,7 +106,7 @@ h1 {
     color: #FFF;
     font-size: 40px;
     line-height: 50px;
-    margin: 50px 0 10px 0;
+    margin: 75px 0 10px 0;
 }
 
 @media (max-width: 480px) {
@@ -152,7 +152,7 @@ a {
     text-align: center;
     height: 8px;
     width: 150px;
-    margin: 0 auto 5px auto;
+    margin: 0 auto 25px auto;
     background-color: #fff;
 }
 

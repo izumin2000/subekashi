@@ -9,7 +9,7 @@
     <h1>歌詞の生成</h1>
     <div class="underline"></div>
     <form action="{% url 'subeana:make' %}" method="POST" class="post-form" id="makeForm">{% csrf_token %}
-        <label>生成タイプ*</label>
+        <label>生成タイプ</label>
         <div class="devinput" onclick="devinput(0)">
             <input type="radio" class="genetype" name="genetype" value="category" oninput="changetype(0)" checked>
             <label>カテゴリ</label>
@@ -38,16 +38,16 @@
         </div>
         <div id="songsec">
             <label>曲名*</label>
-            <input type="text" id="input" name="inputsong" oninput="makeform();"><br>
+            <input type="text" id="title" name="title" oninput="searchsong()"><br>
             {% for song_ins in songs_ins %}
-            <div class="songlist">
-                <p class="songs" onclick="inputsong('{{ song_ins.title }}')"><span class="channel"><i class="fas fa-user-circle"></i> {{ song_ins.channel }}</span> <i class="fas fa-music"></i> {{ song_ins.title }}</p>
+            <div class="songrow">
+                <p class="songs" id="{{ song_ins.title }}" onclick="titleinput('{{ song_ins.title }}')"><span class="channel"><i class="fas fa-user-circle"></i> {{ song_ins.channel }}</span> <i class="fas fa-music"></i> {{ song_ins.title }}</p>
             </div>
             {% endfor %}
         </div>
         <div id="similarsec">
             <label id="similarlabel">類似度</label>
-            <input type="range" id="similar" name="similar" min="1" max="10" value="5" oninput="similar()">
+            <input type="range" id="similar" name="similar" min="1" max="10" value="5" oninput="similarinput()">
             <p id="similarvalue">5</p><br>
         </div>
         <input type="submit" value="生成" id="submit" disabled>
@@ -66,16 +66,19 @@
     <h1>類似度について</h1>
     <div class="underline"></div>
     <div class="formmargin">
-        <p>類似度を高めに指定すると指定した曲により近い歌詞を生成する。具体的には</p>
+        <p>類似度を高めに指定すると指定した曲により近い歌詞を生成します。具体的には</p>
         <ul>
             <li>指定した曲に登場する単語やその単語の類義語の生成割合が増える</li>
-            <li>模倣関係となっている曲が減り、より指定した曲の構文形式に近くなる</li>
+            <li>生成に用いる模倣曲の数を減らし指定した曲の構文形式に寄せる</li>
         </ul>
-        <p>等の効果がある。</p>
+        <p>等の効果があります。</p>
     </div>
 </section>
 {% endblock %}
 
 {% block js %}
 <script src="{% static 'subeana/js/makeform.js' %}" rel="stylesheet"></script>
+<script>
+    getSong('{{ basedir }}');
+</script>
 {% endblock %}
