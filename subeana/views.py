@@ -1,7 +1,7 @@
 from django.shortcuts import render
-from subeana.models import Song
+from subeana.models import Song, Ai
 from rest_framework import viewsets
-from .serializer import SongSerializer
+from .serializer import SongSerializer, AiSerializer
 from config.settings import BASE_DIR as BASE_DIRpath
 import hashlib
 import requests
@@ -13,6 +13,7 @@ import networkx as nx
 
 # パスワード関連
 SHA256a = "5802ea2ddcf64db0efef04a2fa4b3a5b256d1b0f3d657031bd6a330ec54abefd"
+REPLACEBLE_HINSHIS = ["名詞", "動詞"]
 
 
 def get_API(url) :
@@ -77,6 +78,38 @@ def tokenizer_janome(text):
             katsuyou = ""
         toklist.append((tok.surface, hinshi, katsuyou))
     return toklist
+
+
+def vector_generate(ins_original, ins_songs) :
+    lyrics = ""
+    simD = {}
+    tok = tokenizer_janome(ins_original.lyrics)
+    
+    for ins_song in ins_songs :
+        ruigo = ins_song.ruigo
+        if ruigo :
+            for hinshi, words in eval(ruigo).items() :
+                if hinshi in simD.keys() :
+                    simD[hinshi] += words
+                else :
+                    simD[hinshi] = words
+
+    for word, hinshi, katsuyou in tok :
+        if hinshi in REPLACEBLE_HINSHIS :
+            if (hinshi + katsuyou) in simD.keys() :
+                # fitL = [sim for sim in simD[hinshi + katsuyou] if counter(word) == counter(sim)]
+                fitL = [word]
+                for sim in simD[hinshi + katsuyou] :
+                    if (counter(word) == counter(sim)) :
+                        fitL.append(sim)
+                lyrics += random.choice(fitL)
+            else :
+                lyrics += word
+            # simD[hinshi + katsuyou].remove(sim)
+        else :
+            lyrics += word
+    return lyrics.split("\n")
+
 
 def top(request):
     dir = {}
@@ -155,13 +188,17 @@ def make(request) :
             inp_similar = request.POST.get("similar")
 
             ins_songs = set()
+            ins_original = Song.objects.filter(title = inp_category[:-2]).first()
             for ins_song in Song.objects.all() :
                 if ins_song.title == inp_category[:-2] :
                     ins_songs.add(ins_song)
                 elif ins_song.imitate :
-                    ins_original = Song.objects.filter(title = inp_category[:-2]).first()
                     if ins_original.id in eval(ins_song.imitate):
                         ins_songs.add(ins_song)
+        
+            lyrics = vector_generate(ins_original, ins_songs)
+            dir["lyrics"] = lyrics
+            return render(request, "subeana/result.html", dir)
                 
         elif inp_genetype == "song" :
             inp_title = request.POST.get("title")
@@ -186,41 +223,17 @@ def make(request) :
             ins_songs = set()
             for id, pops in length.items() :
                 if pops <= inp_pops :
-                    ins_songs.add(Song.objects.get(pk = id))     
+                    ins_songs.add(Song.objects.get(pk = id))
+            
+            lyrics = vector_generate(ins_original, ins_songs)
+            dir["lyrics"] = lyrics
+            return render(request, "subeana/result.html", dir)
+
 
         elif inp_genetype == "model" :
             0
 
 
-        simD = {}
-        for ins_song in ins_songs :
-            ruigo = ins_song.ruigo
-            if ruigo :
-                for hinshi, words in eval(ruigo).items() :
-                    if hinshi in simD.keys() :
-                        simD[hinshi] += words
-                    else :
-                        simD[hinshi] = words
-
-        lyrics = ""
-        replaceble_hinshis = ["名詞", "動詞"]
-
-        tok = tokenizer_janome(ins_original.lyrics)
-        for word, hinshi, katsuyou in tok :
-            if hinshi in replaceble_hinshis :
-                if (hinshi + katsuyou) in simD.keys() :
-                    # fitL = [sim for sim in simD[hinshi + katsuyou] if counter(word) == counter(sim)]
-                    fitL = [word]
-                    for sim in simD[hinshi + katsuyou] :
-                        if (counter(word) == counter(sim)) :
-                            fitL.append(sim)
-                    lyrics += random.choice(fitL)
-                else :
-                    lyrics += word
-                # simD[hinshi + katsuyou].remove(sim)
-            else :
-                lyrics += word
-        print(ruigo, lyrics)
 
     
     dir["ins_songs"] = Song.objects.all()
@@ -252,3 +265,8 @@ def dev(request) :
 class SongViewSet(viewsets.ModelViewSet):
     queryset = Song.objects.all()
     serializer_class = SongSerializer
+
+
+class AiViewSet(viewsets.ModelViewSet):
+    queryset = Ai.objects.all()
+    serializer_class = AiSerializer

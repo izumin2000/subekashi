@@ -7,6 +7,7 @@ app_name = 'subeana'
 
 defaultRouter = routers.DefaultRouter()
 defaultRouter.register('song', views.SongViewSet)
+defaultRouter.register('ai', views.AiViewSet)
 
 urlpatterns = [
     path('admin', admin.site.urls),
