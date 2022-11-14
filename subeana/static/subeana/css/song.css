@@ -6,3 +6,20 @@ section p, section a {
     text-align: center;
     margin-top: 40px;
 }
+
+.fa-music, .fa-user-circle, .fa-link {
+    margin-right: 10px;
+}
+
+#songimitateslabel {
+    display: inline;
+    white-space: nowrap;
+    color: #fff;
+    margin-right: -20px;
+}
+
+.songimitate {
+    display: inline;
+    white-space: nowrap;
+    margin: 0 0 0 20px;
+}
