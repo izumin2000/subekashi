@@ -11,7 +11,6 @@ import random
 from janome.tokenizer import Tokenizer
 import networkx as nx
 
-
 # パスワード関連
 SHA256a = "5802ea2ddcf64db0efef04a2fa4b3a5b256d1b0f3d657031bd6a330ec54abefd"
 
@@ -82,7 +81,7 @@ def tokenizer_janome(text):
 def top(request):
     dir = {}
     ins_songs = Song.objects.exclude(lyrics = "")
-    dir["ins_songs"] = ins_songs
+    dir["ins_songs"] = ins_songs.reverse()
     pages = len(ins_songs)
     dir["pages"] = list(range(1, pages + 1))
     return render(request, 'subeana/top.html', dir)
@@ -139,6 +138,7 @@ def song(request, song_id) :
     dir["ins_song"] = ins_song
     imitates = []
     if ins_song.imitate :
+        print(ins_song.imitate)
         for imitate_id in eval(ins_song.imitate) :
             imitates.append(Song.objects.get(pk = imitate_id))
         dir["imitates"] = imitates
@@ -159,8 +159,8 @@ def make(request) :
                 if ins_song.title == inp_category[:-2] :
                     ins_songs.add(ins_song)
                 elif ins_song.imitate :
-                    original_id = Song.objects.filter(title = inp_category[:-2]).first().id
-                    if original_id in eval(ins_song.imitate):
+                    ins_original = Song.objects.filter(title = inp_category[:-2]).first()
+                    if ins_original.id in eval(ins_song.imitate):
                         ins_songs.add(ins_song)
                 
         elif inp_genetype == "song" :
@@ -178,27 +178,34 @@ def make(request) :
             G = nx.Graph()
             G.add_weighted_edges_from(imitates, weight='weight')
 
-            ins_song = Song.objects.filter(title = inp_title).first()
+            ins_original = Song.objects.filter(title = inp_title).first()
             length, path = nx.single_source_dijkstra(G, ins_song.id)
 
             #TODO  ↓ をinp_similarに
-            inp_pops = 0
+            inp_pops = 2
             ins_songs = set()
             for id, pops in length.items() :
                 if pops <= inp_pops :
-                    ins_songs.add(Song.objects.get(pk = id))
+                    ins_songs.add(Song.objects.get(pk = id))     
 
         elif inp_genetype == "model" :
             0
 
-        
+
+        simD = {}
+        for ins_song in ins_songs :
+            ruigo = ins_song.ruigo
+            if ruigo :
+                for hinshi, words in eval(ruigo).items() :
+                    if hinshi in simD.keys() :
+                        simD[hinshi] += words
+                    else :
+                        simD[hinshi] = words
 
         lyrics = ""
-        simD = {}
-        text = ""
         replaceble_hinshis = ["名詞", "動詞"]
 
-        tok = tokenizer_janome(text)
+        tok = tokenizer_janome(ins_original.lyrics)
         for word, hinshi, katsuyou in tok :
             if hinshi in replaceble_hinshis :
                 if (hinshi + katsuyou) in simD.keys() :
@@ -213,8 +220,10 @@ def make(request) :
                 # simD[hinshi + katsuyou].remove(sim)
             else :
                 lyrics += word
-                
-    dir["songs_ins"] = Song.objects.all()
+        print(ruigo, lyrics)
+
+    
+    dir["ins_songs"] = Song.objects.all()
     dir["basedir"] = get_basedir()
     return render(request, "subeana/make.html", dir)
 

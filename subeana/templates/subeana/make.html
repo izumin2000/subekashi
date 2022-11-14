@@ -40,7 +40,7 @@
         <div id="songsec">
             <label>曲名*</label>
             <input type="text" id="title" name="title" oninput="searchsong()"><br>
-            {% for ins_song in songs_ins %}
+            {% for ins_song in ins_songs %}
             <div class="songrow">
                 <p class="songs" id="{{ ins_song.title }}" onclick="titleinput('{{ ins_song.title }}')"><span class="channel"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</span> <i class="fas fa-music"></i> {{ ins_song.title }}</p>
             </div>
