@@ -104,7 +104,7 @@ def new(request) :
         ins_song.title = inp_title
         ins_song.channel = inp_channel
         if inp_url :
-            if inp_url in "https://www.youtube.com/watch?v=" :
+            if "https://www.youtube.com/watch" in inp_url :
                 url = "https://youtu.be/" + inp_url[32:44]
                 ins_song.url = url
             else :
@@ -115,14 +115,16 @@ def new(request) :
         imitates = set()
         for i in range(int(inp_imitatenums)) :
             imitate = request.POST.get(f"imitate{i + 1}")
-            if imitate == "模倣曲模倣" :
+            imitate = imitate[:-2]
+            if imitate == "模倣曲" :
                 imitate = request.POST.get(f"imitateimitate{i + 1}")
                 if imitate :
-                    imitates.add(imitate + "模倣")
-            else :
-                imitates.add(imitate)
+                    ins_imitate, _ = Song.objects.get_or_create(title = imitate, defaults = {"title" : imitate})
+                    imitates.add(ins_imitate.id)
+            elif imitate != "オリジナル模倣" :
+                ins_imitate = Song.objects.filter(title = imitate).first()
+                imitates.add(ins_imitate.id)
 
-        imitates.discard("模倣曲模倣")
         ins_song.imitate = str(list(imitates))
         ins_song.save()
 
@@ -132,9 +134,13 @@ def new(request) :
 
 def song(request, song_id) :
     dir = {}
-    song_ins = Song.objects.get(pk = song_id)
-    dir["song_ins"] = song_ins
-    dir["imitates"] = eval(song_ins.imitate)
+    ins_song = Song.objects.get(pk = song_id)
+    dir["ins_song"] = ins_song
+    imitates = []
+    if ins_song.imitate :
+        for imitate_id in eval(ins_song.imitate) :
+            imitates.append(Song.objects.get(pk = imitate_id))
+        dir["imitates"] = imitates
     return render(request, "subeana/song.html", dir)
 
 
@@ -147,11 +153,20 @@ def make(request) :
             inp_category = request.POST.get("category")
             inp_similar = request.POST.get("similar")
 
-        if inp_genetype == "song" :
+            ins_songs = set()
+            for ins_song in Song.objects.all() :
+                if ins_song.title == inp_category[:-2] :
+                    ins_songs.add(ins_song)
+                elif ins_song.imitate :
+                    original_id = Song.objects.filter(title = inp_category[:-2]).first().id
+                    if original_id in eval(ins_song.imitate):
+                        ins_songs.add(ins_song)
+                
+        elif inp_genetype == "song" :
             inp_title = request.POST.get("title")
             inp_similar = request.POST.get("similar")
 
-        if inp_genetype == "model" :
+        elif inp_genetype == "model" :
             0
 
         

@@ -34,14 +34,15 @@
                 <option>表/裏模倣</option>
                 <option>名の無い星が空に堕ちたら模倣</option>
                 <option>エヌ模倣</option>
+                <option>K²</option>
             </select>
         </div>
         <div id="songsec">
             <label>曲名*</label>
             <input type="text" id="title" name="title" oninput="searchsong()"><br>
-            {% for song_ins in songs_ins %}
+            {% for ins_song in songs_ins %}
             <div class="songrow">
-                <p class="songs" id="{{ song_ins.title }}" onclick="titleinput('{{ song_ins.title }}')"><span class="channel"><i class="fas fa-user-circle"></i> {{ song_ins.channel }}</span> <i class="fas fa-music"></i> {{ song_ins.title }}</p>
+                <p class="songs" id="{{ ins_song.title }}" onclick="titleinput('{{ ins_song.title }}')"><span class="channel"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</span> <i class="fas fa-music"></i> {{ ins_song.title }}</p>
             </div>
             {% endfor %}
         </div>
