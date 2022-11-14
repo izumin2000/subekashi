@@ -197,6 +197,7 @@ def make(request) :
                         ins_songs.add(ins_song)
         
             lyrics = vector_generate(ins_original, ins_songs)
+            dir["basedir"] = get_basedir()
             dir["lyrics"] = lyrics
             return render(request, "subeana/result.html", dir)
                 
@@ -226,6 +227,7 @@ def make(request) :
                     ins_songs.add(Song.objects.get(pk = id))
             
             lyrics = vector_generate(ins_original, ins_songs)
+            dir["basedir"] = get_basedir()
             dir["lyrics"] = lyrics
             return render(request, "subeana/result.html", dir)
 

@@ -42,6 +42,10 @@ function devinput(radiotype) {
 function titleinput(title) {
     titleEle = document.getElementById("title");
     titleEle.value = title;
+    for (songEle of songEles) {
+        songEle.parentElement.style.display = "none";
+    }
+
     makeform();
 }
 

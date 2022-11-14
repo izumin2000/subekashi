@@ -1,0 +1,20 @@
+{% extends "subeana/base/base.html" %}
+{% block title %}歌詞の生成結果{% endblock %}
+{% block ogtitle %}歌詞の生成結果{% endblock %}
+{% load static %}
+{% block css %}{% static 'subeana/css/result.css'%}{% endblock %}
+
+{% block content %}
+<section id="resultsection">
+    <h1>歌詞の生成結果</h1>
+    <div class="underline"></div>
+    {% for lyric in lyrics  %}
+        <p class="lyric">{{ lyric }}<i class="	far fa-thumbs-up" onclick="good('{{ basedir }}')"></i><i class="far fa-flag" onclick="bad('{{ basedir }}')"></i></p>
+    {% endfor %}
+</section>
+{% endblock %}
+
+{% block js %}
+    <script src="{% static 'subeana/js/result.js' %}" rel="stylesheet"></script>
+
+{% endblock %}
