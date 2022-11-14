@@ -9,6 +9,7 @@ from time import sleep
 from .reset import SUBEANA_LIST
 import random
 from janome.tokenizer import Tokenizer
+import networkx as nx
 
 
 # パスワード関連
@@ -165,6 +166,27 @@ def make(request) :
         elif inp_genetype == "song" :
             inp_title = request.POST.get("title")
             inp_similar = request.POST.get("similar")
+
+            imitates = []
+            for ins_song in Song.objects.all() :
+                name = ins_song.id
+                if ins_song.imitate :
+                    for imitate in eval(ins_song.imitate) :
+                        #TODO ウェイトを1以外に
+                        imitates.append((name, imitate, 1))
+
+            G = nx.Graph()
+            G.add_weighted_edges_from(imitates, weight='weight')
+
+            ins_song = Song.objects.filter(title = inp_title).first()
+            length, path = nx.single_source_dijkstra(G, ins_song.id)
+
+            #TODO  ↓ をinp_similarに
+            inp_pops = 0
+            ins_songs = set()
+            for id, pops in length.items() :
+                if pops <= inp_pops :
+                    ins_songs.add(Song.objects.get(pk = id))
 
         elif inp_genetype == "model" :
             0
