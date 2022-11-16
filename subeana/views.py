@@ -108,7 +108,14 @@ def vector_generate(ins_original, ins_songs) :
             # simD[hinshi + katsuyou].remove(sim)
         else :
             lyrics += word
-    return lyrics.split("\n")
+    
+    ais_ins = []
+    for lyric in lyrics.split("\n") :
+        ai_ins = Ai.objects.create()
+        ai_ins.lyrics = lyric
+        ai_ins.save()
+        ais_ins.append(ai_ins)
+    return ais_ins
 
 
 def top(request):
@@ -196,9 +203,9 @@ def make(request) :
                     if ins_original.id in eval(ins_song.imitate):
                         ins_songs.add(ins_song)
         
-            lyrics = vector_generate(ins_original, ins_songs)
+            ais_ins = vector_generate(ins_original, ins_songs)
             dir["basedir"] = get_basedir()
-            dir["lyrics"] = lyrics
+            dir["ais_ins"] = ais_ins
             return render(request, "subeana/result.html", dir)
                 
         elif inp_genetype == "song" :
@@ -226,9 +233,9 @@ def make(request) :
                 if pops <= inp_pops :
                     ins_songs.add(Song.objects.get(pk = id))
             
-            lyrics = vector_generate(ins_original, ins_songs)
+            ais_ins = vector_generate(ins_original, ins_songs)
             dir["basedir"] = get_basedir()
-            dir["lyrics"] = lyrics
+            dir["ais_ins"] = ais_ins
             return render(request, "subeana/result.html", dir)
 
 
