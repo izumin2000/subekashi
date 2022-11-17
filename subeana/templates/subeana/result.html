@@ -9,7 +9,11 @@
     <h1>歌詞の生成結果</h1>
     <div class="underline"></div>
     {% for ai_ins in ais_ins  %}
-        <p class="lyric">{{ ai_ins.lyrics }}<i class="	far fa-thumbs-up" onclick="good('{{ basedir }}', '{{ ai_ins.id }}')"></i><i class="far fa-flag" onclick="bad('{{ basedir }}', '{{ ai_ins.id }}')"></i></p>
+        <p class="lyric">
+            {{ ai_ins.lyrics }}
+            <i id="{{ai_ins.id}}good" class="far fa-thumbs-up" onclick="good('{{ basedir }}', '{{ ai_ins.id }}')"></i>
+            <i id="{{ai_ins.id}}bad" class="far fa-flag" onclick="bad('{{ basedir }}', '{{ ai_ins.id }}')"></i>
+        </p>
     {% endfor %}
 </section>
 {% endblock %}

@@ -110,6 +110,7 @@ def vector_generate(ins_original, ins_songs) :
             lyrics += word
     
     ais_ins = []
+    Ai.objects.all().delete()
     for lyric in lyrics.split("\n") :
         ai_ins = Ai.objects.create()
         ai_ins.lyrics = lyric
