@@ -110,7 +110,6 @@ def vector_generate(ins_original, ins_songs) :
             lyrics += word
     
     ais_ins = []
-    Ai.objects.all().delete()
     for lyric in lyrics.split("\n") :
         ai_ins = Ai.objects.create()
         ai_ins.lyrics = lyric
@@ -191,9 +190,12 @@ def make(request) :
 
     if request.method == "POST":
         inp_genetype = request.POST.get("genetype")
+        dir["genetype"] = inp_genetype
         if inp_genetype == "category" :
             inp_category = request.POST.get("category")
+            dir["category"] = inp_category
             inp_similar = request.POST.get("similar")
+            dir["similar"] = inp_similar
 
             ins_songs = set()
             ins_original = Song.objects.filter(title = inp_category[:-2]).first()
@@ -211,7 +213,9 @@ def make(request) :
                 
         elif inp_genetype == "song" :
             inp_title = request.POST.get("title")
+            dir["title"] = inp_title
             inp_similar = request.POST.get("similar")
+            dir["similar"] = inp_similar
 
             imitates = []
             for ins_song in Song.objects.all() :

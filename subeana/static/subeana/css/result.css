@@ -1,3 +1,58 @@
-.fa-thumbs-up, .fa-flag {
+.lyric {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.fa-thumbs-up {
     cursor: pointer;
+    border-left: 2px solid #fff;
+    margin-left: 15px;
+    padding-left: 15px;
+}
+
+.fa-flag {
+    cursor: pointer;
+    margin-left: 5px;
+}
+
+#controlsection {
+    margin-top: 40px;
+}
+
+.controlsectioni {
+    margin: 10px 10px 10px calc(50vw - 500px);
+    border: 0;
+    padding: 0;
+}
+
+@media (max-width: 960px) {
+    .controlsectioni {
+        margin-left: 10px 10px 20px 0;
+    }
+}
+
+.controlsectionb {
+    margin: 0;
+    border: 0;
+    padding: 0 5px 0 0;
+}
+
+#controlForm {
+    margin-bottom: 15px;
+}
+
+#copysubmit {
+    display: flex;
+    justify-content: center;
+}
+
+#copy {
+    width: 200px;
+    margin-right: 40px;
+}
+
+#submit {
+    width: 200px;
+    margin-left: 10px;
+    padding-bottom: 0px;
 }

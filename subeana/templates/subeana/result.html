@@ -16,6 +16,21 @@
         </p>
     {% endfor %}
 </section>
+<section id="controlsection">
+    <form action="{% url 'subeana:make' %}" method="POST" class="post-form" id="controlForm">{% csrf_token %}
+        <input type="text" name="genetype" value="{{ genetype }}" hidden>
+        <input type="text" name="category" value="{{ category }}" hidden>
+        <input type="text" name="title" value="{{ title }}" hidden>
+        <input type="similar" name="similar" value="{{ similar }}" hidden>
+        <div id="copysubmit">
+            <button id="copy" onclick="copy()"><i class="far fa-thumbs-up controlsectionb"></i>の行をコピー</button>
+            <input type="submit" value="再生成" id="submit">
+        </div>
+    </form>
+    <p><i class="far fa-thumbs-up controlsectioni"></i>・・・その行がすべあな風だったり良いと思う場合にクリックしてください</p>
+    <p><i class="far fa-flag controlsectioni"></i>・・・その行がすべあな風ではなかったり文法的な間違いがある場合にクリックしてください</p>
+</section>
+
 {% endblock %}
 
 {% block js %}

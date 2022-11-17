@@ -228,7 +228,7 @@ textarea {
     padding: 10px;
 }
 
-#submit {
+#submit, button {
     font-family: 'Noto Sans JP', sans-serif;
     padding-left: 0px;
     height: 49.5px;
