@@ -144,4 +144,4 @@ else :
     DISCORD_URL = os.environ['DISCORD_URL']
 
 
-# DEBUG = True
+DEBUG = True
