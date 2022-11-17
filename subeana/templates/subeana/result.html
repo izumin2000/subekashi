@@ -11,7 +11,7 @@
     {% for ai_ins in ais_ins  %}
         <p class="lyric">
             {{ ai_ins.lyrics }}
-            <i id="{{ai_ins.id}}good" class="far fa-thumbs-up" onclick="good('{{ basedir }}', '{{ ai_ins.id }}')"></i>
+            <i id="{{ai_ins.id}}good" class="far fa-thumbs-up checkgood" onclick="good('{{ basedir }}', '{{ ai_ins.id }}')"></i>
             <i id="{{ai_ins.id}}bad" class="far fa-flag" onclick="bad('{{ basedir }}', '{{ ai_ins.id }}')"></i>
         </p>
     {% endfor %}
@@ -21,16 +21,15 @@
         <input type="text" name="genetype" value="{{ genetype }}" hidden>
         <input type="text" name="category" value="{{ category }}" hidden>
         <input type="text" name="title" value="{{ title }}" hidden>
-        <input type="similar" name="similar" value="{{ similar }}" hidden>
+        <input type="number" name="similar" value="{{ similar }}" hidden>
         <div id="copysubmit">
-            <button id="copy" onclick="copy()"><i class="far fa-thumbs-up controlsectionb"></i>の行をコピー</button>
+            <div class="dummybutton" onclick="copygood()"><p class="dummybuttonp"><i class="far fa-thumbs-up controlsectionb"></i>の行をコピー</p></div>
             <input type="submit" value="再生成" id="submit">
         </div>
     </form>
     <p><i class="far fa-thumbs-up controlsectioni"></i>・・・その行がすべあな風だったり良いと思う場合にクリックしてください</p>
     <p><i class="far fa-flag controlsectioni"></i>・・・その行がすべあな風ではなかったり文法的な間違いがある場合にクリックしてください</p>
 </section>
-
 {% endblock %}
 
 {% block js %}

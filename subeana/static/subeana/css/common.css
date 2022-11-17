@@ -228,7 +228,7 @@ textarea {
     padding: 10px;
 }
 
-#submit, button {
+#submit, button, .dummybutton {
     font-family: 'Noto Sans JP', sans-serif;
     padding-left: 0px;
     height: 49.5px;
@@ -239,17 +239,32 @@ textarea {
     margin: 20px 0;
 }
 
-#submit:hover {
+.dummybutton {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #eee;
+    padding: 0 50px;
+    margin: auto 0;
+}
+
+.dummybuttonp {
+    color: #000;
+    text-align: center;
+    white-space: nowrap;
+}
+
+#submit:hover, button:hover, .dummybutton:hover {
     background-color: #ccc;
 }
 
-#submit:active {
+#submit:active, button:active, .dummybutton:active {
     border: none;
     box-shadow: 0 0 0 2px #fff inset;
     background-color: #aaa;
 }
 
-#submit:disabled {
+#submit:disabled, button:disabled, .dummybutton:disabled {
     background-color: #ccc;
     box-shadow: none;
     cursor: not-allowed;
