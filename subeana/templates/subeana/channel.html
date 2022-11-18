@@ -8,7 +8,21 @@
 <section id="channelsettion">
     <h1>{{ channel }}</h1>
     <div class="underline"></div>
+    {% for ins_song in ins_songs %}
+    <div class="songcard" onclick="songpage('{{ basedir }}', '{{ ins_song.id }}')">
+        <div class="cardleft">
+            <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title }}</p>
+            <a class="songurl" href="{{ ins_song.url }}">{{ ins_song.url }}</a>
+        </div>
+        <div class="cardright">
+            <p class="songlyrics1">{{ ins_song.lyrics|slice:"25" }}</p>
+            <p class="songlyrics2">{{ ins_song.lyrics|slice:"25:50" }}...</p>
+        </div>
+    </div>
+{% endfor %}
 </section>
 {% endblock %}
+
 {% block js %}
+    <script src="{% static 'subeana/js/top.js' %}" rel="stylesheet"></script>
 {% endblock %}

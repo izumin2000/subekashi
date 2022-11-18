@@ -1,0 +1,41 @@
+.songcard {
+    margin: 20px 20px 20px 0 ;
+    padding: 20px 0;
+    background-color: #333;
+}
+
+.cardleft {
+    text-align:left;
+    float:left;
+    font-family: 'Noto Sans JP', sans-serif;
+    padding: 0 20px;
+}
+
+.cardright {
+    padding: 0 20px;
+    text-align:right;
+}
+
+.songcard:hover {
+    cursor: pointer;
+    background-color: #555;
+}
+
+.songtitle {
+    font-size: 20px;
+    margin-bottom: 12px;
+}
+
+.songurl {
+    font-size: 15px;
+}
+
+.songlyrics1, .songlyrics2 {
+    font-size: 12px;
+}
+
+.songlyrics2 {
+    display: inline-block;
+    margin-top: 5px;
+}
+

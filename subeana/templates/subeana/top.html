@@ -9,49 +9,20 @@
     <h1>新着の曲</h1>
     <div class="underline"></div>
     {% for ins_song in ins_songs %}
-        <div class="songcard" onclick="songpage('{{ ins_song.id }}')">
+        <div class="songcard" onclick="songpage('{{ basedir }}', '{{ ins_song.id }}')">
             <div class="cardleft">
                 <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title }}</p>
                 <p class="songchannel"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</p>
             </div>
             <div class="cardright">
-                <p class="songlyrics">{{ ins_song.lyrics|slice:"30" }}...</p>
+                <p class="songlyrics">{{ ins_song.lyrics|slice:"25" }}...</p>
                 <a class="songurl" href="{{ ins_song.url }}">{{ ins_song.url }}</a>
             </div>
         </div>
     {% endfor %}
 </section>
 {% endblock %}
+
 {% block js %}
-    <script>
-        function songpage(song_id) {
-            window.location.href = "songs/" + song_id;
-        }
-
-        function changecss() {
-            cardrightEles = document.getElementsByClassName("cardright");
-            for (cardrightEle of cardrightEles) {
-                if (window.innerWidth < 600) {
-                    cardrightEle.style.display = "none";
-                } else {
-                    cardrightEle.style.display = "block";
-                }
-            }
-            songcardEles = document.getElementsByClassName("songcard");
-            for (songcardEle of songcardEles) {
-                if (window.innerWidth < 600) {
-                    songcardEle.style.padding = "20px 0 70px 0"
-                } else {
-                    songcardEle.style.padding = "20px 0"
-                }
-            }
-        }
-
-        
-        window.addEventListener('DOMContentLoaded', function(){
-            window.addEventListener('resize', changecss, false);
-        });
-
-        window.addEventListener('load', changecss);
-    </script>
+    <script src="{% static 'subeana/js/top.js' %}" rel="stylesheet"></script>
 {% endblock %}

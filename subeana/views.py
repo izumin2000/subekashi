@@ -124,6 +124,7 @@ def top(request):
     dir["ins_songs"] = ins_songs.reverse()
     pages = len(ins_songs)
     dir["pages"] = list(range(1, pages + 1))
+    dir["basedir"] = get_basedir()
     return render(request, 'subeana/top.html', dir)
 
 
@@ -260,11 +261,10 @@ def channel(request, channel_name) :
 
     dir["channel"] = channel_name
     ins_songs = Song.objects.filter(channel = channel_name)
-    if len(ins_songs) :
-        dir["ins_songs"] = ins_songs
-        return render(request, "subeana/channel.html", dir)
-    else :
-        return render(request, "subeana/new.html", dir)
+    dir["ins_songs"] = ins_songs
+    dir["basedir"] = get_basedir()
+    return render(request, "subeana/channel.html", dir)
+
 
 def error(request) :
     return render(request, "subeana/error.html")
