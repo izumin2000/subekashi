@@ -12,7 +12,7 @@ section p, section a {
 }
 
 #songimitateslabel {
-    display: inline;
+    display: inline-block;
     white-space: nowrap;
     color: #fff;
     margin-right: -20px;

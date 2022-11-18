@@ -1,0 +1,14 @@
+{% extends "subeana/base/base.html" %}
+{% block title %}{{ channel }}{% endblock %}
+{% block ogtitle %}{{ channel }}{% endblock %}
+{% load static %}
+{% block css %}{% static 'subeana/css/channel.css'%}{% endblock %}
+
+{% block content %}
+<section id="channelsettion">
+    <h1>{{ channel }}</h1>
+    <div class="underline"></div>
+</section>
+{% endblock %}
+{% block js %}
+{% endblock %}

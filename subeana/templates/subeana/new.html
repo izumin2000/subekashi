@@ -10,11 +10,11 @@
     <div class="underline"></div>
     <form action="{% url 'subeana:new' %}" method="POST" class="post-form" id="newForm">{% csrf_token %}
         <label>曲名*</label>
-        <input type="text" id="title" name="title" oninput="newform(0); isExistSong('{{basedir}}');"><br>
+        <input type="text" id="title" name="title" oninput="newform(0); isExistSong('{{basedir}}')" value="{{ title }}"><br>
         <label>作者*</label>
-        <input type="text" id="channel" name="channel" oninput="newform(0)"><br>
+        <input type="text" id="channel" name="channel" oninput="newform(0)" value="{{ channel }}"><br>
         <label>URL </label>
-        <input type="text" id="url" name="url"><br>
+        <input type="text" id="url" name="url" value="{{ url }}"><br>
         <div id="imitates">
             <label>模倣1*</label>
             <select id="imitate1" name="imitate1" oninput="newform(1);">

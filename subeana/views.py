@@ -254,6 +254,18 @@ def make(request) :
     dir["basedir"] = get_basedir()
     return render(request, "subeana/make.html", dir)
 
+
+def channel(request, channel_name) :
+    dir = {}
+
+    dir["channel"] = channel_name
+    ins_songs = Song.objects.filter(channel = channel_name)
+    if len(ins_songs) :
+        dir["ins_songs"] = ins_songs
+        return render(request, "subeana/channel.html", dir)
+    else :
+        return render(request, "subeana/new.html", dir)
+
 def error(request) :
     return render(request, "subeana/error.html")
 
