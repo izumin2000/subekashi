@@ -7,7 +7,7 @@
 {% block content %}
 <section>
     <p id="songtitle"><i class="fas fa-music"></i>{{ ins_song.title }}</p>
-    <p id="songchannel"><i class="fas fa-user-circle"></i>{{ ins_song.channel }}</p>
+    <a id="songchannel" href="{% url 'subeana:channel' ins_song.channel %}"><i class="fas fa-user-circle"></i>{{ ins_song.channel }}</a>
     {% if ins_song.url %}
         <a id="songurl" href="{{ ins_song.url }}"><i class="fas fa-link"></i>{{ ins_song.url }}</a>
         <div></div>

@@ -252,6 +252,7 @@ textarea {
     color: #000;
     text-align: center;
     white-space: nowrap;
+    padding-top: 5px;
 }
 
 #submit:hover, button:hover, .dummybutton:hover {

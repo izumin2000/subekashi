@@ -1,6 +1,6 @@
 .songcard {
     margin: 20px 20px 20px 0 ;
-    padding: 20px 0;
+    padding: 15px 0;
     background-color: #333;
 }
 
@@ -26,10 +26,6 @@
     margin-bottom: 12px;
 }
 
-.songurl {
-    font-size: 15px;
-}
-
 .songlyrics1, .songlyrics2 {
     font-size: 12px;
 }
@@ -37,5 +33,14 @@
 .songlyrics2 {
     display: inline-block;
     margin-top: 5px;
+}
+
+#songnotfound {
+    margin: 25px;
+    text-align: center;
+}
+
+#tonew {
+    margin: 0 auto 15px auto;
 }
 

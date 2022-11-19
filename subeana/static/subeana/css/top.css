@@ -1,6 +1,6 @@
 .songcard {
     margin: 20px 20px 20px 0 ;
-    padding: 20px 0 10px 0;
+    padding: 15px 0;
     background-color: #333;
 }
 
@@ -12,7 +12,7 @@
 }
 
 .cardright {
-    padding: 0 20px;
+    padding: 0 18px;
     text-align:right;
 }
 
@@ -23,18 +23,23 @@
 
 .songtitle {
     font-size: 20px;
+    margin-bottom: 12px;
+    padding-left: 2px;
 }
 
 .songchannel {
-    margin-top: 10px;
     font-size: 15px;
+}
+
+.songchannel i {
+    font-size: 20px;
 }
 
 .songlyrics {
     font-size: 12px;
+    margin-bottom: 10px;
 }
 
 .songurl {
     display: inline-block;
-    margin-top: 5px;
 }

@@ -12,7 +12,7 @@
         <div class="songcard" onclick="songpage('{{ basedir }}', '{{ ins_song.id }}')">
             <div class="cardleft">
                 <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title }}</p>
-                <p class="songchannel"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</p>
+                <a class="songchannel" href="{% url 'subeana:channel' ins_song.channel %}"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</a>
             </div>
             <div class="cardright">
                 <p class="songlyrics">{{ ins_song.lyrics|slice:"25" }}...</p>
@@ -24,5 +24,5 @@
 {% endblock %}
 
 {% block js %}
-    <script src="{% static 'subeana/js/top.js' %}" rel="stylesheet"></script>
+    <script src="{% static 'subeana/js/songlist.js' %}" rel="stylesheet"></script>
 {% endblock %}
