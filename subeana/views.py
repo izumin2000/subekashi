@@ -265,6 +265,7 @@ def channel(request, channel_name) :
     ins_songs = Song.objects.filter(channel = channel_name)
     dir["ins_songs"] = ins_songs
     dir["basedir"] = get_basedir()
+    dir["hiddinfooter"] = 3 > len(ins_songs)
     return render(request, "subeana/channel.html", dir)
 
 

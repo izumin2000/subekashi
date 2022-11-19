@@ -30,9 +30,16 @@
 
 {% block js %}
     <script src="{% static 'subeana/js/songlist.js' %}" rel="stylesheet"></script>
+    <script src="{% static 'subeana/js/hiddinfooter.js' %}" rel="stylesheet"></script>
     <script>
         function tonew() {
             window.location.href = "{% url 'subeana:new' %}?channel={{ channel }}";
         }
+
+        window.addEventListener('load', function(){
+            if ('{{hiddinfooter}}') {
+                hiddinfooter();
+            }
+        });
     </script>
 {% endblock %}
