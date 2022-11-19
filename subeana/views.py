@@ -169,6 +169,8 @@ def new(request) :
         ins_song.imitate = str(list(imitates))
         ins_song.save()
 
+    if "channel" in request.GET :
+        dir["channel"] = request.GET.get("channel")
     dir["basedir"] = get_basedir()
     return render(request, 'subeana/new.html', dir)
 

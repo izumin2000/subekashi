@@ -32,7 +32,7 @@
     <script src="{% static 'subeana/js/songlist.js' %}" rel="stylesheet"></script>
     <script>
         function tonew() {
-            return 1
+            window.location.href = "{% url 'subeana:new' %}?channel={{ channel }}";
         }
     </script>
 {% endblock %}
