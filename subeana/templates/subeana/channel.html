@@ -24,21 +24,21 @@
     {% else %}
         <p id="songnotfound">曲が見つかりませんでした</p>
     {% endif %}
-    <div id="tonew" class="dummybutton" onclick="tonew()"><p class="dummybuttonp">新規作成する</p></div>
+    <div id="tonew" class="dummybutton" onclick="tonew()"><p class="dummybuttonp">曲を登録する</p></div>
 </section>
 {% endblock %}
 
 {% block js %}
     <script src="{% static 'subeana/js/songlist.js' %}" rel="stylesheet"></script>
-    <script src="{% static 'subeana/js/hiddinfooter.js' %}" rel="stylesheet"></script>
+    <script src="{% static 'subeana/js/fixfooter.js' %}" rel="stylesheet"></script>
     <script>
         function tonew() {
             window.location.href = "{% url 'subeana:new' %}?channel={{ channel }}";
         }
 
         window.addEventListener('load', function(){
-            if ('{{hiddinfooter}}') {
-                hiddinfooter();
+            if ('{{fixfooter}}') {
+                fixfooter();
             }
         });
     </script>
