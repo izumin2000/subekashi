@@ -7,28 +7,50 @@
 {% block content %}
 <section>
     <p id="songtitle"><i class="fas fa-music"></i>{{ ins_song.title }}</p>
-    <a id="songchannel" href="{% url 'subeana:channel' ins_song.channel %}"><i class="fas fa-user-circle"></i>{{ ins_song.channel }}</a>
-    {% if ins_song.url %}
-        <a id="songurl" href="{{ ins_song.url }}"><i class="fas fa-link"></i>{{ ins_song.url }}</a>
+    {% if ins_song.channel %}
+        <a id="songchannel" href="{% url 'subeana:channel' ins_song.channel %}"><i class="fas fa-user-circle"></i>{{ ins_song.channel }}</a>
+        {% if ins_song.url %}
+            <a id="songurl" href="{{ ins_song.url }}"><i class="fas fa-link"></i>{{ ins_song.url }}</a>
+        {% else %}
+            <a id="songurlnotfound" href="{% url 'subeana:edit' %}?id={{ ins_song.id }}"><i class="fas fa-link"></i>URLを追加</a>
+        {% endif %}
         <div></div>
-    {% endif %}
-    <p id="songimitateslabel"><i class="fas fa-tags"></i></p>
-    {% if imitates %}
-        {% for imitate in imitates %}
-            <p class="songimitate">{{ imitate }}模倣</p>
-        {% endfor %}
+        <p id="songimitateslabel"><i class="fas fa-tags"></i></p>
+        {% if imitates %}
+            {% for imitate in imitates %}
+                <p class="songimitate">{{ imitate }}模倣</p>
+            {% endfor %}
+        {% else %}
+            <p class="songimitate">オリジナル</p>
+        {% endif %}
+        {% if ins_song.lyrics %}
+            <p id="songlyrics">{{ ins_song.lyrics }}</p>
+        {% else %}
+            <a id="songlyricsnotfound" href="{% url 'subeana:edit' %}?id={{ ins_song.id }}">歌詞を追加</a>
+        {% endif %}
     {% else %}
-        <p class="songimitate">オリジナル</p>
+        <p id="songnotfound">曲の情報が見つかりませんでした</p>
+        <div id="tonew" class="dummybutton" onclick="tonew()"><p class="dummybuttonp">曲を登録する</p></div>
     {% endif %}
-    <p id="songlyrics">{{ ins_song.lyrics }}</p>
 </section>
 {% endblock %}
 
 {% block js %}
+<script src="{% static 'subeana/js/fixfooter.js' %}" rel="stylesheet"></script>
 <script>
     window.addEventListener('load', function(){
         songlyricsEle = document.getElementById("songlyrics");
-        songlyricsEle.innerHTML = songlyrics.innerHTML.replace(/\n/g, "<br><br>");
+        if (songlyricsEle) {
+            songlyricsEle.innerHTML = songlyricsEle.innerHTML.replace(/\n/g, "<br><br>");
+        }
+
+        if ((!'{{ ins_song.channel }}') | (!'{{ ins_song.lyrics|slice:"1" }}')) {
+            fixfooter();
+        }
     });
+
+    function tonew() {
+        window.location.href = "{% url 'subeana:new' %}?title={{ ins_song.title }}";
+    }
 </script>
 {% endblock %}

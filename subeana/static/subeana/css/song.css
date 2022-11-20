@@ -6,7 +6,7 @@ section p, section a {
     margin-right: 10px;
 }
 
-#songurl {
+#songchannel ,#songurl, #songurlnotfound, #songlyricsnotfound {
     display: block;
 }
 
@@ -26,4 +26,12 @@ section p, section a {
     display: inline;
     white-space: nowrap;
     margin: 0 0 0 20px;
+}
+
+#songnotfound {
+    text-align: center;
+}
+
+#tonew {
+    margin: 0 auto;
 }

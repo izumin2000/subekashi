@@ -274,6 +274,20 @@ def channel(request, channel_name) :
 
 def edit(request) :
     dir = {}
+
+    if "id" in request.GET :
+        song_id = request.GET.get("id")
+        song_ins = Song.objects.filter(pk = song_id)
+        if len(song_ins) :
+            song_ins = song_ins.first()
+            dir["title"] = song_ins.title
+            if song_ins.url :
+                dir["lyrics"] = True
+            if song_ins.lyrics :
+                dir["url"] = True
+        else :
+            return render(request, "subeana/error.html")
+
     return render(request, "subeana/edit.html", dir)
 
 
