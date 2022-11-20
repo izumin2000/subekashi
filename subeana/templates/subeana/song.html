@@ -21,7 +21,11 @@
                 <p class="songimitate">{{ imitate }}模倣</p>
             {% endfor %}
         {% else %}
-            <p class="songimitate">オリジナル</p>
+            {% if ins_song.channel == "全てあなたの所為です。" %}
+                <p class="songimitate">オリジナル</p>
+            {% else %}
+                <p class="songimitate">オリジナル模倣</p>
+            {% endif %}
         {% endif %}
         {% if ins_song.lyrics %}
             <p id="songlyrics">{{ ins_song.lyrics }}</p>

@@ -162,12 +162,14 @@ def new(request) :
                 if imitate :
                     ins_imitate, _ = Song.objects.get_or_create(title = imitate, defaults = {"title" : imitate})
                     imitates.add(ins_imitate.id)
-            elif imitate != "オリジナル模倣" :
+            elif imitate != "オリジナル" :
                 ins_imitate = Song.objects.filter(title = imitate).first()
                 imitates.add(ins_imitate.id)
 
         ins_song.imitate = str(list(imitates))
         ins_song.save()
+        dir["ins_song"] = ins_song
+        return render(request, 'subeana/song.html', dir)
 
     dir["basedir"] = get_basedir()
     if "channel" in request.GET :
