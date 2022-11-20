@@ -35,6 +35,11 @@
     margin-top: 5px;
 }
 
+.songlyricsnotfound {
+    display: block;
+    margin-bottom: 40px;
+}
+
 #songnotfound {
     margin: 25px;
     text-align: center;
