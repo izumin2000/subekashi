@@ -10,6 +10,7 @@ from .reset import SUBEANA_LIST
 import random
 from janome.tokenizer import Tokenizer
 import networkx as nx
+import random
 
 # パスワード関連
 SHA256a = "5802ea2ddcf64db0efef04a2fa4b3a5b256d1b0f3d657031bd6a330ec54abefd"
@@ -120,10 +121,16 @@ def vector_generate(ins_original, ins_songs) :
 
 def top(request):
     dir = {}
-    ins_songs = Song.objects.exclude(lyrics = "")
-    dir["ins_songs"] = ins_songs.reverse()
-    pages = len(ins_songs)
-    dir["pages"] = list(range(1, pages + 1))
+    ins_songs = Song.objects.exclude(lyrics = "").exclude(url = "").exclude(channel = "")[5::-1]
+    dir["ins_songs"] = ins_songs
+    ins_lacks = list(Song.objects.filter(lyrics = "").exclude(channel = "")) + list(Song.objects.filter(url = "").exclude(channel = ""))
+    if ins_lacks :
+        ins_lacks = random.sample(ins_lacks, min(6, len(ins_lacks)))
+        dir["ins_lacks"] = ins_lacks
+    ins_nones = list(Song.objects.filter(channel = ""))
+    if ins_nones :
+        ins_nones = random.sample(ins_nones, min(6, len(ins_nones)))
+        dir["ins_nones"] = ins_nones
     dir["basedir"] = get_basedir()
     return render(request, 'subeana/top.html', dir)
 

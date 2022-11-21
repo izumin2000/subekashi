@@ -97,7 +97,7 @@ main {
 }
 
 #mainarticle {
-    margin: 100px 0 0 32px;
+    margin: 100px 30px 0 30px;
 }
 
 h1 {
@@ -116,6 +116,7 @@ h1 {
 }
 
 h2 {
+    font-family: 'Noto Sans JP', sans-serif;
     font-size: 25px;
     line-height: 50px;
     color: #FFF;
