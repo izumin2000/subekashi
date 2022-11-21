@@ -316,6 +316,14 @@ def edit(request) :
 
 def search(request) :
     dir = {}
+
+    if "lacks" in request.GET :
+        dir["lack"] = request.GET.get("lacks")
+    if "nones" in request.GET :
+        dir["nones"] = request.GET.get("nones")
+    
+    ins_songs = Song.objects.all()
+    dir["ins_songs"] = ins_songs
     return render(request, "subeana/search.html", dir)
 
 

@@ -1,14 +1,46 @@
 {% extends "subeana/base/base.html" %}
-{% block title %}一覧と検索{% endblock %}
-{% block ogtitle %}一覧と検索{% endblock %}
+{% block title %}曲の一覧と検索{% endblock %}
+{% block ogtitle %}曲の一覧と検索{% endblock %}
 {% load static %}
 {% block css %}{% static 'subeana/css/search.css'%}{% endblock %}
 
 {% block content %}
 <section>
-
+    <h1>曲の一覧と検索</h1>
+    <div class="underline"></div>
+    {% for ins_song in ins_songs %}
+        <div class="songcard" onclick="songpage('{{ basedir }}', '{{ ins_song.id }}')">
+            <div class="cardleft">
+                <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title }}</p>
+                {% if ins_song.channel %}
+                    <a class="songchannel" href="{% url 'subeana:channel' ins_song.channel %}"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</a>
+                {% else %}
+                    <p class="songchannel"><i class="fas fa-user-circle"></i> チャンネル未登録</p>
+                {% endif %}
+            </div>
+            <div class="cardright">
+                {% if ins_song.lyrics %}
+                    <p class="songlyrics">{{ ins_song.lyrics|slice:"25" }}...</p>
+                {% else %}
+                    <p class="songlyrics">歌詞未登録</p>
+                {% endif %}
+                {% if ins_song.url %}
+                    <a class="songurl" href="{{ ins_song.url }}">{{ ins_song.url }}</a>
+                {% else %}
+                    <p class="songurl">URL未登録</p>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
 </section>
 {% endblock %}
 
 {% block js %}
+<script src="{% static 'subeana/js/songlist.js' %}" rel="stylesheet"></script>
+<script src="{% static 'subeana/js/search.js' %}" rel="stylesheet"></script>
+<script>
+    window.addEventListener('load', function(){
+
+    })
+</script>
 {% endblock %}
