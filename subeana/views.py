@@ -121,7 +121,7 @@ def vector_generate(ins_original, ins_songs) :
 
 def top(request):
     dir = {}
-    ins_songs = Song.objects.exclude(lyrics = "").exclude(url = "").exclude(channel = "")[5::-1]
+    ins_songs = Song.objects.exclude(lyrics = "")[5::-1]
     dir["ins_songs"] = ins_songs
     ins_lacks = list(Song.objects.filter(lyrics = "").exclude(channel = "")) + list(Song.objects.filter(url = "").exclude(channel = ""))
     if ins_lacks :
@@ -312,6 +312,11 @@ def edit(request) :
         return render(request, "subeana/song.html", dir)
 
     return render(request, "subeana/edit.html", dir)
+
+
+def search(request) :
+    dir = {}
+    return render(request, "subeana/search.html", dir)
 
 
 def error(request) :

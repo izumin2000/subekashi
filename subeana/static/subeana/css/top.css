@@ -44,3 +44,13 @@
 .songurl {
     display: inline-block;
 }
+
+.dummybutton {
+    margin: 0 auto;
+}
+
+#imicom {
+    display: block;
+    margin: -25px auto 25px auto;
+    width: 500px;
+}

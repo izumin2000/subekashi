@@ -17,6 +17,7 @@ urlpatterns = [
     path('edit', views.edit, name = 'edit'),
     path('songs/<int:song_id>', views.song, name = 'song'),
     path('channel/<str:channel_name>', views.channel, name = 'channel'),
+    path('search', views.search, name = 'search'),
     path('api/',include(defaultRouter.urls)),
     path('error', views.error, name = 'error'),
     path('dev', views.dev, name = 'dev'),
