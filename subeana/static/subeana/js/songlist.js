@@ -18,9 +18,9 @@ function changecss() {
     songcardEles = document.getElementsByClassName("songcard");
     for (songcardEle of songcardEles) {
         if (window.innerWidth < 800) {
-            songcardEle.style.padding = "20px 0 90px 0"
+            songcardEle.style.padding = "20px 0 90px 0";
         } else {
-            songcardEle.style.padding = "15px 0 10px 0;"
+            songcardEle.style.padding = "15px 0 10px 0";
         }
     }
 }

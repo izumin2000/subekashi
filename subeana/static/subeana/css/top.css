@@ -51,6 +51,18 @@
 
 #imicom {
     display: block;
-    margin: -25px auto 25px auto;
+    margin: -25px auto 0 auto;
     width: 500px;
+}
+
+@media (max-width: 640px) {
+    #imicom {
+        width: 75vw;
+    }
+}
+
+#subeana {
+    text-align: center;
+    margin-bottom: 50px;
+    text-decoration: none;
 }
