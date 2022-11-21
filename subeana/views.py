@@ -146,7 +146,7 @@ def new(request) :
         ins_song.channel = inp_channel
         if inp_url :
             if "https://www.youtube.com/watch" in inp_url :
-                url = "https://youtu.be/" + inp_url[32:44]
+                url = "https://youtu.be/" + inp_url[32:43]
                 ins_song.url = url
             else :
                 ins_song.url = inp_url
@@ -195,7 +195,7 @@ def song(request, song_id) :
 def make(request) :
     dir = {}
 
-    if request.method == "POST":
+    if request.method == "POST" :
         inp_genetype = request.POST.get("genetype")
         dir["genetype"] = inp_genetype
         if inp_genetype == "category" :
@@ -276,19 +276,33 @@ def channel(request, channel_name) :
 
 def edit(request) :
     dir = {}
-
     if "id" in request.GET :
         song_id = request.GET.get("id")
-        song_ins = Song.objects.filter(pk = song_id)
-        if len(song_ins) :
-            song_ins = song_ins.first()
-            dir["title"] = song_ins.title
-            if song_ins.url :
-                dir["lyrics"] = True
-            if song_ins.lyrics :
-                dir["url"] = True
+        ins_song = Song.objects.filter(pk = song_id)
+        if len(ins_song) :
+            ins_song = ins_song.first()
+            dir["ins_song"] = ins_song
         else :
             return render(request, "subeana/error.html")
+    else :
+        return render(request, "subeana/error.html")
+    
+    if request.method == "POST" :
+        inp_url = request.POST.get("url")
+        inp_lyrics = request.POST.get("lyrics")
+
+        if inp_url :
+            if "https://www.youtube.com/watch" in inp_url :
+                url = "https://youtu.be/" + inp_url[32:43]
+                ins_song.url = url
+            else :
+                ins_song.url = inp_url
+        if inp_lyrics :
+            ins_song.lyrics = inp_lyrics
+
+        ins_song.save()
+        dir["ins_song"] = ins_song
+        return render(request, "subeana/song.html", dir)
 
     return render(request, "subeana/edit.html", dir)
 

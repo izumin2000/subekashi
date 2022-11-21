@@ -16,7 +16,7 @@
                     {% if ins_song.url %}
                         <a class="songurl" href="{{ ins_song.url }}">{{ ins_song.url }}</a>
                     {% else %}
-                        <a class="songurlnotfound" href="{% url 'subeana:edit' %}?id={{ ins_song.id }}">URLを追加</a>
+                    <a class="songurlnotfound" href="{% url 'subeana:edit' %}?id={{ ins_song.id }}">URLを追加</a>
                     {% endif %}
                 </div>
                 <div class="cardright">
