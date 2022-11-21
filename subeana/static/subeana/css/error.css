@@ -1,5 +1,9 @@
-#error p {
+#error {
+    margin-top: 192px;
+}
+
+#error h2 {
     font-size: 32px;
-    margin-bottom: 128px;
+    margin-bottom: 96px;
     text-align: center;
 }
