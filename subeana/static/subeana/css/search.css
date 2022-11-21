@@ -1,3 +1,19 @@
+.filters {
+    box-shadow: none;
+    height: 15px;
+    width: 15px;
+}
+
+.devinput {
+    display: inline-block;
+    cursor: pointer;
+}
+
+.devinput label {
+    cursor: pointer;
+}
+
+
 .songcard {
     margin: 20px 0 ;
     padding: 15px 0 10px 0;

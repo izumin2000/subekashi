@@ -318,7 +318,7 @@ def search(request) :
     dir = {}
 
     if "lacks" in request.GET :
-        dir["lack"] = request.GET.get("lacks")
+        dir["lacks"] = request.GET.get("lacks")
     if "nones" in request.GET :
         dir["nones"] = request.GET.get("nones")
     
