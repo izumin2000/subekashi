@@ -172,15 +172,16 @@ a {
 }
 
 #pages p {
-    margin-top: 32px;
-    padding: 32px 0 0 20px;
+    margin-left: 32px;
+    padding: 15vh 0 0 calc(50% - 550px);
     font-family: 'Noto Sans JP', sans-serif;
-    font-size: 40px !important;
-    line-height: 60px !important;
+    font-size: 45px !important;
+    line-height: 75px !important;
 }
 
 #pages a {
-    padding-left: 60px;
+    margin-left: 32px;
+    padding-left: calc(50% - 500px);
     font-family: 'Noto Sans JP', sans-serif;
     font-size: 30px !important;
     line-height: 60px !important;
