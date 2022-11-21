@@ -242,6 +242,15 @@ textarea {
     margin: 20px 0;
 }
 
+.dummybuttons {
+    display: flex;
+    justify-content: center;
+}
+
+.dummybuttonf {
+    margin: 0 20px !important;
+}
+
 .dummybutton {
     display: flex;
     justify-content: center;

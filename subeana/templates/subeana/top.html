@@ -71,14 +71,16 @@
                 </div>
             </div>
         {% endfor %}
-        <div class="dummybutton" onclick="tosearch('?nones=1')"><p class="dummybuttonp">もっと見る</p></div>
+            <div class="dummybuttons">
+                <div class="dummybutton dummybuttonf" onclick="tosearch('?nones=1')"><p class="dummybuttonp">もっと見る</p></div>
+                <div class="dummybutton dummybuttonf" onclick="tonew()"><p class="dummybuttonp">曲を登録する</p></div>
+            </div>
     {% endif %}
     
     <h1>リンク</h1>
     <div class="underline"></div>
     <a href="https://imicomweb.com/"><img id="imicom" src="{% static 'subeana/image/imicom.png' %}"></a>
     <a href="https://www.youtube.com/@subeteanatanoseidesu" id="subeana"><h2>全てあなたの所為です。</h2></a>
-    
 </section>
 {% endblock %}
 
@@ -87,6 +89,10 @@
     <script>
         function tosearch(query) {
             window.location.href = "{% url 'subeana:search' %}" + query;
+        }
+
+        function tonew() {
+            window.location.href = "{% url 'subeana:new' %}";
         }
     </script>
 {% endblock %}
