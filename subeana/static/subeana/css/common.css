@@ -31,21 +31,22 @@ header {
     float: left;
 }
 
-.header-left p {
-    display: inline-block;
-    font-family: 'Noto Sans JP', sans-serif;
-    vertical-align: top; 
-    margin-top: 20px;
-    font-size: 25px;
-    line-height: 25px;
-    color: #FFF;
-}
-
 .logo {
     display: inline-block;
     height: 45px;
     margin-top: 10px;
     border-radius:50%;
+}
+
+.logomoji {
+    display: inline-block;
+    font-family: 'Noto Sans JP', sans-serif;
+    vertical-align: top; 
+    margin-top: 18px;
+    font-size: 20px;
+    line-height: 30px;
+    color: #FFF;
+    text-decoration: none;
 }
 
 .header-right {
