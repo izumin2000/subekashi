@@ -51,13 +51,13 @@
 
 #imicom {
     display: block;
-    margin: -25px auto 0 auto;
-    width: 500px;
+    margin: 0 auto -50px auto;
+    width: 425px;
 }
 
 @media (max-width: 640px) {
     #imicom {
-        width: 75vw;
+        width: 70vw;
     }
 }
 
@@ -65,4 +65,14 @@
     text-align: center;
     margin-bottom: 50px;
     text-decoration: none;
+}
+
+#subeana h1 {
+    font-size: 35px;
+}
+
+@media (max-width: 640px) {
+    #subeana h1 {
+        font-size: 25px;
+    }
 }
