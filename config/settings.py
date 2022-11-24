@@ -2,7 +2,6 @@ from email.policy import default
 from pathlib import Path
 import os
 import dj_database_url
-import django_heroku
 from dotenv import find_dotenv, load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -22,7 +21,6 @@ try:
 except ImportError:
     pass
 
-# ALLOWED_HOSTS = ['127.0.0.1', '.herokuapp.com']
 ALLOWED_HOSTS = ['*']
 
 
@@ -140,7 +138,7 @@ if DEBUG :
         }
     }
 else :
-    django_heroku.settings(locals())
+    # django_heroku.settings(locals())
     DISCORD_URL = os.environ['DISCORD_URL']
 
 
