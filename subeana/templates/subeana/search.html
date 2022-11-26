@@ -10,6 +10,7 @@
     <h1>曲の一覧と検索</h1>
     <div class="underline"></div>
 
+    <input type="text" id="search" name="search" oninput="searchsong()" placeholder="チャンネル名・タイトル・歌詞"><br>
     <label>フィルタ</label>
     <div class="devinput" onclick="devinput(0)">
         <input type="radio" class="filters" name="filter" value="all" oninput="changefiltertype(0)" checked>
@@ -25,7 +26,7 @@
     </div><br>
 
     {% for ins_song in ins_songs %}
-        <div class="songcard" onclick="songpage('{{ basedir }}', '{{ ins_song.id }}')">
+        <div id="{{ ins_song.id }}" class="songcard" onclick="songpage('{{ basedir }}', '{{ ins_song.id }}')">
             <div class="cardleft">
                 <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title }}</p>
                 {% if ins_song.channel %}
@@ -48,6 +49,7 @@
             </div>
         </div>
     {% endfor %}
+    <p id="notfound">見つかりませんでした。</p>
 </section>
 {% endblock %}
 
@@ -61,6 +63,8 @@
         } else if ('{{ nones }}') {
             devinput(2);
         }
+
+        getSong('{{ basedir }}')
     })
 </script>
 {% endblock %}

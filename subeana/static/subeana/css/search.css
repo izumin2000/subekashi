@@ -77,8 +77,8 @@
     }
 }
 
-#subeana {
+#notfound {
+    display: none;
     text-align: center;
-    margin-bottom: 50px;
-    text-decoration: none;
+    margin: 30px 0;
 }
