@@ -94,8 +94,13 @@ def vector_generate(ins_original, ins_imitates) :
                 else :
                     simD[hinshi] = words
 
+    before_hinshi = ""
     for word, hinshi, katsuyou in tok :
-        if hinshi in REPLACEBLE_HINSHIS :
+        if (hinshi in REPLACEBLE_HINSHIS) and not(word.isdigit()) :
+            if (hinshi == "名詞") and (before_hinshi == "名詞") :
+                lyrics += word
+                continue
+            before_hinshi = hinshi
             if (hinshi + katsuyou) in simD.keys() :
                 fitL = [word]
                 for sim in simD[hinshi + katsuyou] :
@@ -107,13 +112,15 @@ def vector_generate(ins_original, ins_imitates) :
             # simD[hinshi + katsuyou].remove(sim)
         else :
             lyrics += word
-    
+
+        before_hinshi = hinshi
     ais_ins = []
     for lyric in lyrics.split("\n") :
-        ai_ins = Ai.objects.create()
-        ai_ins.lyrics = lyric
-        ai_ins.save()
-        ais_ins.append(ai_ins)
+        if len(lyric) >= 2 :
+            ai_ins = Ai.objects.create()
+            ai_ins.lyrics = lyric
+            ai_ins.save()
+            ais_ins.append(ai_ins)
     return ais_ins
 
 
@@ -190,7 +197,6 @@ def song(request, song_id) :
     dir["ins_song"] = ins_song
     imitates = []
     if ins_song.imitate :
-        print(ins_song.imitate)
         for imitate_id in eval(ins_song.imitate) :
             imitates.append(Song.objects.get(pk = imitate_id))
         dir["imitates"] = imitates
@@ -209,16 +215,16 @@ def make(request) :
             inp_category = request.POST.get("category")
             dir["category"] = inp_category
 
-            ins_songs = set()
+            ins_imitates = set()
             ins_original = Song.objects.filter(title = inp_category[:-2]).first()
             for ins_song in Song.objects.all() :
                 if ins_song.title == inp_category[:-2] :
-                    ins_songs.add(ins_song)
+                    ins_imitates.add(ins_song)
                 elif ins_song.imitate :
                     if ins_original.id in eval(ins_song.imitate):
-                        ins_songs.add(ins_song)
+                        ins_imitates.add(ins_song)
         
-            ais_ins = vector_generate(ins_original, ins_songs)
+            ais_ins = vector_generate(ins_original, ins_imitates)
             dir["ais_ins"] = ais_ins
             return render(request, "subeana/result.html", dir)
                 
@@ -248,12 +254,12 @@ def make(request) :
 
             #TODO  ↓ をinp_similarに
             inp_pops = 2
-            ins_songs = set()
+            ins_imitates = set()
             for id, pops in length.items() :
                 if pops <= inp_pops :
-                    ins_songs.add(Song.objects.get(pk = id))
+                    ins_imitates.add(Song.objects.get(pk = id))
             
-            ais_ins = vector_generate(ins_original, ins_songs)
+            ais_ins = vector_generate(ins_original, ins_imitates)
             dir["basedir"] = get_basedir()
             dir["ais_ins"] = ais_ins
             return render(request, "subeana/result.html", dir)
