@@ -124,6 +124,13 @@ def vector_generate(ins_original, ins_imitates) :
     return ais_ins
 
 
+def format_url(url) :
+    if "https://www.youtube.com/watch" in url :
+        return "https://youtu.be/" + url[32:43]
+    else :
+        return url
+
+
 def top(request):
     dir = {}
     ins_songs = Song.objects.exclude(lyrics = "")[5::-1]
@@ -155,19 +162,17 @@ def new(request) :
         if ("" in [inp_title, inp_channel, inp_imitatenums]) :
             return render(request, "subeana/error.html")
 
-        ins_song, iscreate = Song.objects.get_or_create(title = inp_title, defaults = {"title" : inp_title})
+        ins_song, iscreated = Song.objects.get_or_create(title = inp_title, defaults = {"title" : inp_title})
+
         ins_song.title = inp_title
-        ins_song.channel = inp_channel
+        if iscreated or not(iscreated or ins_song.channel) :
+            ins_song.channel = inp_channel
         ins_song.isjapanese = bool(inp_isjapanese)
         ins_song.isjoke = bool(inp_isjoke)
 
-        if inp_url :
-            if "https://www.youtube.com/watch" in inp_url :
-                url = "https://youtu.be/" + inp_url[32:43]
-                ins_song.url = url
-            else :
-                ins_song.url = inp_url
-        if inp_lyrics :
+        if inp_url and (iscreated or not(iscreated or ins_song.url)):
+            ins_song.url = format_url(inp_url)
+        if inp_lyrics and (iscreated or not(iscreated or ins_song.lyrics)) :
             ins_song.lyrics = inp_lyrics
 
         imitates = set()
@@ -183,8 +188,10 @@ def new(request) :
                 ins_imitate = Song.objects.filter(title = imitate).first()
                 imitates.add(ins_imitate.id)
 
-        ins_song.imitate = str(list(imitates))
+        if iscreated or not(iscreated or ins_song.imitate) :
+            ins_song.imitate = str(list(imitates))
         ins_song.save()
+        
         dir["ins_song"] = ins_song
         return render(request, 'subeana/song.html', dir)
 
@@ -309,8 +316,7 @@ def edit(request) :
 
         if inp_url :
             if "https://www.youtube.com/watch" in inp_url :
-                url = "https://youtu.be/" + inp_url[32:43]
-                ins_song.url = url
+                ins_song.url = format_url(inp_url)
             else :
                 ins_song.url = inp_url
         if inp_lyrics :

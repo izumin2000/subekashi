@@ -11,11 +11,11 @@
     <form action="{% url 'subeana:edit' %}?id={{ ins_song.id }}" method="POST" class="post-form" id="editForm">{% csrf_token %}
         {% if not ins_song.url %}
             <label>URL </label>
-            <input type="text" id="url" name="url"><br>
+            <input type="text" id="url" name="url" value="{{ url }}"><br>
         {% endif %}
         {% if not ins_song.lyrics|slice:"1" %}
             <label id="lyricslabel">歌詞</label>
-            <textarea id="lyrics" name="lyrics" oninput="autotextarea()"></textarea><br>
+            <textarea id="lyrics" name="lyrics" value="{{ lyrics }}" oninput="autotextarea()"></textarea><br>
         {% endif %}
         <input type="submit" value="登録" id="submit">
     </form>

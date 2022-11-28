@@ -1,5 +1,4 @@
 var isfirstget = true;
-var isfirstinfo = true;
 var imitateNums = 1;
 
 async function isExistSong(basedir) {
@@ -21,20 +20,29 @@ async function isExistSong(basedir) {
             "positionClass": "toast-bottom-right",
             "preventDuplicates": false,
             "onclick": null,
-            "timeOut": "5000",
+            "timeOut": "10000",
             "extendedTimeOut": "0",
             "showEasing": "swing",
             "hideEasing": "linear",
         }
         
-        if (song.lyrics == "") {
-            toastr.info(song.title + "の記事は登録済ですが、歌詞が登録されていません")
-        } else {
-            toastr.info(song.title + "の歌詞は登録済です。")
+        lack_columns = [];
+        if (song.channel) {
+            lack_columns.push("作者");
         }
-        if (isfirstinfo) {
-            toastr.info("送信ボタンを押すと元の記事を上書きします")
-            isfirstinfo = false
+        if (song.url) {
+            lack_columns.push("URL");
+        }
+        if ((song.imitates) || (song.channel == "全てあなたの所為です。")) {
+            lack_columns.push("原曲");
+        }
+        if (song.lyrics) {
+            lack_columns.push("歌詞");
+        }
+        if (lack_columns.length == 4) {
+            toastr.warning(song.title + "の情報は全て登録済です。")
+        } else if (lack_columns.length > 0) {
+            toastr.warning(song.title + "の情報のうち、" + lack_columns.join("・") + "の情報は既に登録済です。")
         }
     }
 };
@@ -145,6 +153,7 @@ function appendimitatef() {
 
     newform(imitateNums);
 }
+
 
 function deleteimitatef() {
     imitatesEle = document.getElementById("imitates");
