@@ -11,6 +11,7 @@ import random
 from janome.tokenizer import Tokenizer
 import networkx as nx
 import random
+import re
 
 # パスワード関連
 SHA256a = "5802ea2ddcf64db0efef04a2fa4b3a5b256d1b0f3d657031bd6a330ec54abefd"
@@ -73,21 +74,19 @@ def tokenizer_janome(text):
             katsuyou = tok.infl_form[:2]
         elif hinshi == "形容詞" :
             katsuyou = tok.infl_form[:2]
-        # elif hinshi == "名詞" :
-            # katsuyou = tok.part_of_speech
+        elif hinshi == "名詞" :
+            katsuyou = tok.part_of_speech
         else :
             katsuyou = ""
         toklist.append((tok.surface, hinshi, katsuyou))
     return toklist
 
-
-def vector_generate(ins_original, ins_songs) :
+def vector_generate(ins_original, ins_imitates) :
     lyrics = ""
     simD = {}
-    tok = tokenizer_janome(ins_original.lyrics)
-    
-    for ins_song in ins_songs :
-        ruigo = ins_song.ruigo
+    tok = tokenizer_janome(ins_original.lyrics)    
+    for ins_imitate in ins_imitates :
+        ruigo = ins_imitate.ruigo
         if ruigo :
             for hinshi, words in eval(ruigo).items() :
                 if hinshi in simD.keys() :
@@ -98,7 +97,6 @@ def vector_generate(ins_original, ins_songs) :
     for word, hinshi, katsuyou in tok :
         if hinshi in REPLACEBLE_HINSHIS :
             if (hinshi + katsuyou) in simD.keys() :
-                # fitL = [sim for sim in simD[hinshi + katsuyou] if counter(word) == counter(sim)]
                 fitL = [word]
                 for sim in simD[hinshi + katsuyou] :
                     if (counter(word) == counter(sim)) :
@@ -201,6 +199,8 @@ def song(request, song_id) :
 
 def make(request) :
     dir = {}
+    dir["ins_songs"] = Song.objects.all()
+    dir["basedir"] = get_basedir()
 
     if request.method == "POST" :
         inp_genetype = request.POST.get("genetype")
@@ -208,8 +208,6 @@ def make(request) :
         if inp_genetype == "category" :
             inp_category = request.POST.get("category")
             dir["category"] = inp_category
-            inp_similar = request.POST.get("similar")
-            dir["similar"] = inp_similar
 
             ins_songs = set()
             ins_original = Song.objects.filter(title = inp_category[:-2]).first()
@@ -221,7 +219,6 @@ def make(request) :
                         ins_songs.add(ins_song)
         
             ais_ins = vector_generate(ins_original, ins_songs)
-            dir["basedir"] = get_basedir()
             dir["ais_ins"] = ais_ins
             return render(request, "subeana/result.html", dir)
                 
@@ -243,7 +240,11 @@ def make(request) :
             G.add_weighted_edges_from(imitates, weight='weight')
 
             ins_original = Song.objects.filter(title = inp_title).first()
-            length, path = nx.single_source_dijkstra(G, ins_song.id)
+            if ins_original.id in G.nodes() :
+                length, path = nx.single_source_dijkstra(G, ins_original.id)
+            else :
+                dir["error"] = ins_original.title + "の模倣関係の曲が無いか登録されていないようです"
+                return render(request, "subeana/make.html", dir)
 
             #TODO  ↓ をinp_similarに
             inp_pops = 2
@@ -263,9 +264,6 @@ def make(request) :
 
 
 
-    
-    dir["ins_songs"] = Song.objects.all()
-    dir["basedir"] = get_basedir()
     return render(request, "subeana/make.html", dir)
 
 

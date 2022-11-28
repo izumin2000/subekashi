@@ -52,7 +52,7 @@ function titleinput(title) {
 
 function searchsong() {
     titleEle = document.getElementById("title");
-    title = titleEle.value 
+    title = titleEle.value;
     if (title == "") {
         for (songEle of songEles) {
             songEle.parentElement.style.display = "none";
@@ -105,4 +105,22 @@ function makeform() {
     } else if (type == 2) {
         submitEle.disabled = false;
     }
+}
+
+function displayerror(error) {
+    toastr.options = {
+        "closeButton": false,
+        "debug": false,
+        "newestOnTop": false,
+        "progressBar": true,
+        "positionClass": "toast-bottom-right",
+        "preventDuplicates": false,
+        "onclick": null,
+        "timeOut": "10000",
+        "extendedTimeOut": "0",
+        "showEasing": "swing",
+        "hideEasing": "linear",
+    }
+
+    toastr.warning(error)
 }

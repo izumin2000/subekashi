@@ -80,6 +80,11 @@
 {% block js %}
 <script src="{% static 'subeana/js/makeform.js' %}" rel="stylesheet"></script>
 <script>
-    getSong('{{ basedir }}');
+    window.addEventListener('load', function(){
+        getSong('{{ basedir }}');
+        if ('{{ error }}') {
+            displayerror('{{ error }}');
+        }
+    })
 </script>
 {% endblock %}
