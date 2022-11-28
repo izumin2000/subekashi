@@ -1,13 +1,4 @@
-async function good(basedir, id) {
-    goodEle = document.getElementById(id + "good");
-    if (goodEle.className == "fas fa-thumbs-up checkgood") {
-        isgood = false;
-        goodEle.className = "far fa-thumbs-up checkgood";
-    } else {
-        isgood = true;
-        goodEle.className = "fas fa-thumbs-up checkgood";
-    }
-
+async function setscore(basedir, id, score) {
     res = await fetch(
         basedir + "/subeana/api/ai/" + id + "/?format=json",
         {
@@ -17,38 +8,25 @@ async function good(basedir, id) {
             },
             body: JSON.stringify(
                 {
-                    "isgood": isgood
+                    "points": score
                 }
             )
         }
     );
 }
 
-async function bad(basedir, id) {
-    badEle = document.getElementById(id + "bad");
-    if (badEle.className == "fas fa-flag") {
-        isbad = false;
-        badEle.className = "far fa-flag";
-    } else {
-        isbad = true;
-        badEle.className = "fas fa-flag";
+
+function devinput(basedir, id, score) {
+    for (s = 1; s <= 5; s++) {
+        radioEle = document.getElementById(String(id) + String(s));
+        radioEle.checked = false;
+
     }
-
-    res = await fetch(
-        basedir + "/subeana/api/ai/" + id + "/?format=json",
-        {
-            method: "PUT",
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(
-                {
-                    "isbad": isbad
-                }
-            )
-        }
-    );
+    radioEle = document.getElementById(String(id) + String(score));
+    radioEle.checked = true;
+    setscore(basedir, id, score);
 }
+
 
 function copygood() {
     toastr.options = {
@@ -65,11 +43,12 @@ function copygood() {
         "hideEasing": "linear",
     }
 
-    checkgoodEles = document.getElementsByClassName("checkgood");
+    checkgoodEles = document.getElementsByClassName("lyricdiv");
     copytext = ""
     for (checkgoodEle of checkgoodEles) {
-        if (checkgoodEle.className == "fas fa-thumbs-up checkgood") {
-            copytext += checkgoodEle.parentElement.innerText + "\n";
+        isbest = checkgoodEle.children[1].children[0].checked;
+        if (isbest) {
+            copytext += checkgoodEle.children[0].innerText + "\n";
         }
     }
 

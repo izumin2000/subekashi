@@ -1,18 +1,32 @@
-.lyric {
+.lyricdiv {
     text-align: center;
-    margin-top: 10px;
 }
 
-.fa-thumbs-up {
-    cursor: pointer;
-    border-left: 2px solid #fff;
-    margin-left: 15px;
-    padding-left: 15px;
+.lyric {
+    display: inline-block;
+    margin: 30px;
 }
 
-.fa-flag {
+@media (max-width: 960px) {
+    .lyric {
+        display: block;
+        margin: 50px 0 0 0;
+    }
+}
+
+.score {
+    box-shadow: none;
+    height: 15px;
+    width: 15px;
+}
+
+.devinput {
+    display: inline-block;
     cursor: pointer;
-    margin-left: 5px;
+}
+
+.devinput label {
+    cursor: pointer;
 }
 
 #controlsection {
@@ -29,12 +43,6 @@
     .controlsectioni {
         margin-left: 10px 10px 20px 0;
     }
-}
-
-.controlsectionb {
-    margin: 0;
-    border: 0;
-    padding: 0 5px 0 0;
 }
 
 #controlForm {
