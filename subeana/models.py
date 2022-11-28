@@ -25,8 +25,8 @@ class Song(models.Model) :
 
 class Ai(models.Model) :
     lyrics = models.CharField(default = "", max_length = 100)
-    isgood = models.BooleanField(default = False)
-    isbad = models.BooleanField(default = False)
+    points = models.IntegerField(default = 0)
+    isgpt = models.BooleanField(default = False)
     
     def __str__(self):
         return self.lyrics
