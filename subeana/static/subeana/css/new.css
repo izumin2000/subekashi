@@ -73,3 +73,12 @@
     box-shadow: none;
     cursor: not-allowed;
 }
+
+#isjapanese, #isjoke {
+    display: inline-block;
+    box-shadow: none;
+    height: 25px;
+    width: 25px;
+    margin: -5px 0 0 50px;
+    vertical-align: middle;
+}

@@ -149,13 +149,18 @@ def new(request) :
         inp_url = request.POST.get("url")
         inp_lyrics = request.POST.get("lyrics")
         inp_imitatenums = request.POST.get("imitatenums")
+        inp_isjapanese = request.POST.get("isjapanese")
+        inp_isjoke = request.POST.get("isjoke")
 
         if ("" in [inp_title, inp_channel, inp_imitatenums]) :
             return render(request, "subeana/error.html")
 
-        ins_song, _ = Song.objects.get_or_create(title = inp_title, defaults = {"title" : inp_title})
+        ins_song, iscreate = Song.objects.get_or_create(title = inp_title, defaults = {"title" : inp_title})
         ins_song.title = inp_title
         ins_song.channel = inp_channel
+        ins_song.isjapanese = bool(inp_isjapanese)
+        ins_song.isjoke = bool(inp_isjoke)
+
         if inp_url :
             if "https://www.youtube.com/watch" in inp_url :
                 url = "https://youtu.be/" + inp_url[32:43]
