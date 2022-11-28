@@ -54,6 +54,10 @@
     margin-left: 15px;
 }
 
+#similarsec {
+    display: none;
+}
+
 #similar {
     box-shadow: none;
 }

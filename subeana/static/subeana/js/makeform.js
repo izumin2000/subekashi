@@ -16,7 +16,7 @@ function changetype(radiotype) {
     if (radiotype == 0) {
         categorysecEle.style.display = "block";
         songsecEle.style.display = "none";
-        similarsecEle.style.display = "block";
+        similarsecEle.style.display = "none";
     } else if (radiotype == 1) {
         categorysecEle.style.display = "none";
         songsecEle.style.display = "block";

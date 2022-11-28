@@ -251,7 +251,6 @@ def make(request) :
                 name = ins_song.id
                 if ins_song.imitate :
                     for imitate in eval(ins_song.imitate) :
-                        #TODO ウェイトを1以外に
                         imitates.append((name, imitate, 1))
 
             G = nx.Graph()
@@ -264,8 +263,7 @@ def make(request) :
                 dir["error"] = ins_original.title + "の模倣関係の曲が無いか登録されていないようです"
                 return render(request, "subeana/make.html", dir)
 
-            #TODO  ↓ をinp_similarに
-            inp_pops = 2
+            inp_pops = 6 - int(inp_similar)
             ins_imitates = set()
             for id, pops in length.items() :
                 if pops <= inp_pops :
