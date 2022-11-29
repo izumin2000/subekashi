@@ -10,7 +10,23 @@
     <h1>曲の一覧と検索</h1>
     <div class="underline"></div>
 
+    <label>検索</label>
     <input type="text" id="search" name="search" oninput="searchsong()" placeholder="チャンネル名・タイトル・歌詞"><br>
+    <div id="categorysec">
+        <label>カテゴリ</label>
+        <select id="category" name="category" oninput="searchsong(); ">
+            <option>全ての模倣</option>
+            <option>.模倣</option>
+            <option>..模倣</option>
+            <option>教育模倣</option>
+            <option>アブジェ模倣</option>
+            <option>...模倣</option>
+            <option>表/裏模倣</option>
+            <option>名の無い星が空に堕ちたら模倣</option>
+            <option>エヌ模倣</option>
+            <option>K²模倣</option>
+        </select>
+    </div><br>
     <label>フィルタ</label>
     <div class="devinput" onclick="devinput(0)">
         <input type="radio" class="filters" name="filter" value="all" oninput="searchsong()" checked>

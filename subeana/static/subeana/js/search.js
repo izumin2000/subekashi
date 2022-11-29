@@ -20,6 +20,14 @@ function searchsong() {
         filtertype++;
     }
 
+    categoryEle = document.getElementById("category");
+    category = categoryEle.value.slice(0, -2);
+    if (category == "全ての") {
+        category_id = 0
+    } else {
+        category_id = String(songjson.find((v) => v.title == category).id);
+    }
+
     for (songEle of songEles) {
         styledisplay = "none";
 
@@ -34,6 +42,10 @@ function searchsong() {
         }
         if (songjson[i]["lyrics"].match(search) != null) {
             styledisplay = "block";
+        }
+
+        if (!songjson[i]["imitate"].split(",").includes(category_id) && category_id) {
+            styledisplay = "none";
         }
         
         if (filtertype == 1) {

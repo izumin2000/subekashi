@@ -189,7 +189,7 @@ def new(request) :
                 imitates.add(ins_imitate.id)
 
         if iscreated or not(iscreated or ins_song.imitate) :
-            ins_song.imitate = str(list(imitates))
+            ins_song.imitate = list(imitates).join(",")
         ins_song.save()
         
         dir["ins_song"] = ins_song
@@ -209,7 +209,7 @@ def song(request, song_id) :
     dir["ins_song"] = ins_song
     imitates = []
     if ins_song.imitate :
-        for imitate_id in eval(ins_song.imitate) :
+        for imitate_id in ins_song.imitate.split(",") :
             imitates.append(Song.objects.get(pk = imitate_id))
         dir["imitates"] = imitates
     return render(request, "subeana/song.html", dir)
@@ -233,7 +233,7 @@ def make(request) :
                 if ins_song.title == inp_category[:-2] :
                     ins_imitates.add(ins_song)
                 elif ins_song.imitate :
-                    if ins_original.id in eval(ins_song.imitate):
+                    if ins_original.id in ins_song.imitate.split(","):
                         ins_imitates.add(ins_song)
         
             ais_ins = vector_generate(ins_original, ins_imitates)
@@ -250,7 +250,7 @@ def make(request) :
             for ins_song in Song.objects.all() :
                 name = ins_song.id
                 if ins_song.imitate :
-                    for imitate in eval(ins_song.imitate) :
+                    for imitate in ins_song.imitate.split(",") :
                         imitates.append((name, imitate, 1))
 
             G = nx.Graph()
