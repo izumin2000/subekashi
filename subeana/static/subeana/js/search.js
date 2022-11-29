@@ -9,47 +9,58 @@ async function getSong(basedir) {
 function searchsong() {
     searchEle = document.getElementById("search");
     search = searchEle.value;
-    id = 0;
-    nothit = true;
+    i = 0;
+
+    filtrtEles = document.getElementsByClassName("filters")
+    filtertype = 0
+    for (filtrtEle of filtrtEles) {
+        if (filtrtEle.checked) {
+            break
+        }
+        filtertype++;
+    }
+
     for (songEle of songEles) {
         styledisplay = "none";
+
         if (!search) {
             styledisplay = "block";
-            nothit = false;
         }
-        if (songjson[id]["title"].match(search) != null) {
+        if (songjson[i]["title"].match(search) != null) {
             styledisplay = "block";
-            nothit = false;
         }
-        if (songjson[id]["channel"].match(search) != null) {
+        if (songjson[i]["channel"].match(search) != null) {
             styledisplay = "block";
-            nothit = false;
         }
-        if (songjson[id]["lyrics"].match(search) != null) {
+        if (songjson[i]["lyrics"].match(search) != null) {
             styledisplay = "block";
-            nothit = false;
         }
         
-        songEle.style.display = styledisplay;
-
-        notfoundEle = document.getElementById("notfound")       
-        if (nothit) {
-            notfoundEle.style.display = "block";
-        } else {
-            notfoundEle.style.display = "none";
+        if (filtertype == 1) {
+            if (((songjson[i]["url"] != "") && (songjson[i]["lyrics"] != "")) || (songjson[i]["channel"] == "")) {
+                styledisplay = "none";
+            } 
+        } else if (filtertype == 2) {
+            if (songjson[i]["channel"] != "") {
+                styledisplay = "none";
+            }
         }
-        id++;
+        songEle.style.display = styledisplay;
+        i++;
     }
-}
 
-
-function changefiltertype(filtertype) {
-    if (filtertype == 0) {
-        console.log(0);
-    } else if (filtertype == 1) {
-        console.log(1);
-    } else if (filtertype == 2) {
-        console.log(2);
+    notfoundEle = document.getElementById("notfound")       
+    nothit = true;
+    for (songEle of songEles) {
+        if (songEle.style.display == "block") {
+            nothit = false;
+            break
+        }
+    }
+    if (nothit) {
+        notfoundEle.style.display = "block";
+    } else {
+        notfoundEle.style.display = "none";
     }
 }
 
@@ -57,5 +68,5 @@ function changefiltertype(filtertype) {
 function devinput(filtertype) {
     radioEle = document.getElementsByClassName("filters")[filtertype];
     radioEle.checked = true;
-    changefiltertype(filtertype);
+    searchsong();
 }

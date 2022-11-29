@@ -13,15 +13,15 @@
     <input type="text" id="search" name="search" oninput="searchsong()" placeholder="チャンネル名・タイトル・歌詞"><br>
     <label>フィルタ</label>
     <div class="devinput" onclick="devinput(0)">
-        <input type="radio" class="filters" name="filter" value="all" oninput="changefiltertype(0)" checked>
+        <input type="radio" class="filters" name="filter" value="all" oninput="searchsong()" checked>
         <label>全ての曲</label>
     </div>
     <div class="devinput" onclick="devinput(1)">
-        <input type="radio" class="filters" name="filter" value="lacks" oninput="changefiltertype(1)">
+        <input type="radio" class="filters" name="filter" value="lacks" oninput="searchsong()">
         <label>情報不足の曲</label>
     </div>
     <div class="devinput" onclick="devinput(2)">
-        <input type="radio" class="filters" name="filter" value="nones" oninput="changefiltertype(2)">
+        <input type="radio" class="filters" name="filter" value="nones" oninput="searchsong()">
         <label>未登録の曲</label>
     </div><br>
 
