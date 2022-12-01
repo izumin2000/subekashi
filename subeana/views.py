@@ -208,6 +208,8 @@ def song(request, song_id) :
     ins_song = Song.objects.get(pk = song_id)
     dir["ins_song"] = ins_song
     imitates = []
+    if ins_song.isjoke :
+        imitates.append("ネタ曲")
     if ins_song.imitate :
         for imitate_id in ins_song.imitate.split(",") :
             imitates.append(Song.objects.get(pk = imitate_id))
@@ -263,7 +265,7 @@ def make(request) :
                 dir["error"] = ins_original.title + "の模倣関係の曲が無いか登録されていないようです"
                 return render(request, "subeana/make.html", dir)
 
-            inp_pops = 6 - int(inp_similar)
+            inp_pops = 5 - int(inp_similar)
             ins_imitates = set()
             for id, pops in length.items() :
                 if pops <= inp_pops :
