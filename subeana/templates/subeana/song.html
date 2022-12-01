@@ -16,17 +16,19 @@
         {% endif %}
         <div></div>
         <p id="songimitateslabel"><i class="fas fa-tags"></i></p>
-        {% if imitates %}
-            {% for imitate in imitates %}
-                <p class="songimitate">{{ imitate }}模倣</p>
-            {% endfor %}
-        {% else %}
-            {% if ins_song.channel == "全てあなたの所為です。" %}
-                <p class="songimitate">オリジナル</p>
-            {% else %}
+        {% for imitate in imitates %}
+            {% if imitate == "ネタ曲" %}
+                <a class="songimitate" href="{% url 'subeana:search' %}?isjoke=1">ネタ曲</a>
+            {% elif imitate == "オリジナル" %}
+                <a class="songimitate" href="{% url 'subeana:channel' '全てあなたの所為です。' %}">オリジナル</a>
+            {% elif imitate == "オリジナル模倣" %}
                 <p class="songimitate">オリジナル模倣</p>
+            {% else %}
+                {% if imitate %}
+                    <a class="songimitate" href="{% url 'subeana:song' imitate.id %}">{{ imitate.title }}模倣</a>
+                {% endif %}
             {% endif %}
-        {% endif %}
+        {% endfor %}
         {% if ins_song.lyrics %}
             <p id="songlyrics">{{ ins_song.lyrics }}</p>
         {% else %}

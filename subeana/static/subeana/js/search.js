@@ -3,7 +3,7 @@ var songjson, songEles;
 async function getSong(basedir) {
     res = await fetch(basedir + "/subeana/api/song/?format=json");
     songjson = await res.json();
-        songEles = document.getElementsByClassName("songcard");
+    songEles = document.getElementsByClassName("songcard");
 }
 
 function categoryform() {

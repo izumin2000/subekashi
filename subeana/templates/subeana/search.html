@@ -42,7 +42,7 @@
         <label>未登録の曲</label>
     </div>
     <div class="devinput" onclick="devinput(3)">
-        <input type="checkbox" class="filters" name="filter" value="joke" oninput="searchsong()">
+        <input type="checkbox" id="joke" class="filters" name="filter" value="joke" oninput="searchsong()">
         <label>ネタ曲</label>
     </div><br>
 
@@ -79,15 +79,18 @@
 <script src="{% static 'subeana/js/search.js' %}" rel="stylesheet"></script>
 <script>
     window.addEventListener('load', function(){
+        getSong('{{ basedir }}')
         if ('{{ lacks }}') {
             devinput(1);
         } else if ('{{ nones }}') {
             devinput(2);
         } else if ('{{ category }}') {
             categoryinput('{{ category }}')
+        } else if ('{{ isjoke }}') {
+            jokeEle = document.getElementById("joke");
+            jokeEle.checked = true;
+            window.setTimeout(searchsong, 1000);
         }
-
-        getSong('{{ basedir }}')
     })
 </script>
 {% endblock %}

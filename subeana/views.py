@@ -208,12 +208,19 @@ def song(request, song_id) :
     ins_song = Song.objects.get(pk = song_id)
     dir["ins_song"] = ins_song
     imitates = []
-    if ins_song.isjoke :
-        imitates.append("ネタ曲")
+
     if ins_song.imitate :
         for imitate_id in ins_song.imitate.split(",") :
             imitates.append(Song.objects.get(pk = imitate_id))
-        dir["imitates"] = imitates
+    if ins_song.channel == "全てあなたの所為です。" :
+        imitates.append("オリジナル")
+    if not(len(imitates)) :
+        imitates.append("オリジナル模倣")
+    if ins_song.isjoke :
+        imitates.append("ネタ曲")    
+
+    dir["imitates"] = imitates
+    print(imitates)
     return render(request, "subeana/song.html", dir)
 
 
@@ -336,8 +343,11 @@ def search(request) :
         dir["lacks"] = request.GET.get("lacks")
     if "nones" in request.GET :
         dir["nones"] = request.GET.get("nones")
+    if "isjoke" in request.GET :
+        dir["isjoke"] = request.GET.get("isjoke")
     
     ins_songs = Song.objects.all()
+    dir["basedir"] = get_basedir()
     dir["ins_songs"] = ins_songs
     return render(request, "subeana/search.html", dir)
 

@@ -28,7 +28,11 @@
             </div>
         </div>
     {% endfor %}
-    <div class="dummybutton" onclick="tosearch('')"><p class="dummybuttonp">もっと見る</p></div>
+        <div class="dummybuttons">
+            <div class="dummybutton dummybuttonf" onclick="tosearch('')"><p class="dummybuttonp">もっと見る</p></div>
+            <div class="dummybutton dummybuttonf" onclick="tonew()"><p class="dummybuttonp">曲を登録する</p></div>
+        </div>
+
 
     {% if ins_lacks %}
         <h1>情報不足の曲</h1>
@@ -53,7 +57,11 @@
                 </div>
             </div>
         {% endfor %}
-        <div class="dummybutton" onclick="tosearch('?lacks=1')"><p class="dummybuttonp">もっと見る</p></div>
+            <div class="dummybuttons">
+                <div class="dummybutton dummybuttonf" onclick="tosearch('?lacks=1')"><p class="dummybuttonp">もっと見る</p></div>
+                <div class="dummybutton dummybuttonf" onclick="tonew()"><p class="dummybuttonp">曲を登録する</p></div>
+            </div>
+
     {% endif %}
 
     {% if ins_nones %}
