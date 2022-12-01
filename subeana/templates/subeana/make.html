@@ -8,7 +8,7 @@
 <section id="formsection">
     <h1>歌詞の生成</h1>
     <div class="underline"></div>
-    <form action="{% url 'subeana:make' %}" method="POST" class="post-form" id="makeForm">{% csrf_token %}
+    <form action="{% url 'make' %}" method="POST" class="post-form" id="makeForm">{% csrf_token %}
         <label>生成タイプ</label>
         <div class="devinput" onclick="devinput(0)">
             <input type="radio" class="genetype" name="genetype" value="category" oninput="changetype(0)" checked>

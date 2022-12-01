@@ -9,7 +9,7 @@
         <h1>プレイヤー情報の編集</h1>
         <div class="underline"></div>
 
-        <form action="{% url 'xia:editplayer' %}" method="POST" class="post-form" id="PlayerForm">{% csrf_token %}
+        <form action="{% url 'editplayer' %}" method="POST" class="post-form" id="PlayerForm">{% csrf_token %}
             {{ form.as_p }}
             <input type="submit" value="送信">
         </form>
@@ -27,7 +27,7 @@
                 <!-- <td class="tdnation">{{ player.nation }}</td> -->
                 <!-- <td class="tdtown">{{ player.town }}</td> -->
                 <td class="tableinfo">{{ player.info }}</td>
-                <td><a href="{% url 'xia:editplayerdelete' player.id %}"><i class="far fa-trash-alt"></i></a></td>
+                <td><a href="{% url 'editplayerdelete' player.id %}"><i class="far fa-trash-alt"></i></a></td>
             </tr>
             {% endfor %}
         </table>
@@ -61,7 +61,7 @@
 
             "{% if error %}"
             toastr.options.onclick = function () {
-                window.location.href = "{% url 'xia:editplayerforce' name %}";
+                window.location.href = "{% url 'editplayerforce' name %}";
             };
             toastr.warning("{{ name }}の情報がEarthMC上にありません。作成する場合はこのメッセージをクリックしてください")
             "{% endif %}"

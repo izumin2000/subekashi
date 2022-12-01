@@ -3,7 +3,7 @@ var imitateNums = 1;
 
 async function isExistSong(basedir) {
     if (isfirstget) {
-        res = await fetch(basedir + "/subeana/api/song/?format=json");
+        res = await fetch(basedir + "/api/song/?format=json");
         songjson = await res.json();
         isfirstget = false;
     }

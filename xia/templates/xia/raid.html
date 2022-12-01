@@ -9,7 +9,7 @@
         <h1>レイド</h1>
         <div class="underline"></div>
         {% if locked %}
-            <form action="{% url 'xia:raid' %}" method="POST" class="post-form" id="raidform">{% csrf_token %}
+            <form action="{% url 'raid' %}" method="POST" class="post-form" id="raidform">{% csrf_token %}
                 <label>パスワード</label>
                 <input type="password" id="password" name="password"><br>
                 <input type="submit" id="submit" value="送信">
@@ -50,7 +50,7 @@
             {% else %}
                 {% for name, lastlogin in towns %}
                 <tr id="{{ name }}">
-                    <td><a class="name" onclick="copyCode('{{ name }}')">{{ name }}</a> <a class="map" href="{% url 'xia:raidmap' name %}" target="_blank" rel="noopener noreferrer"><i class="fas fa-map-marked-alt"></i></a></td>
+                    <td><a class="name" onclick="copyCode('{{ name }}')">{{ name }}</a> <a class="map" href="{% url 'raidmap' name %}" target="_blank" rel="noopener noreferrer"><i class="fas fa-map-marked-alt"></i></a></td>
                     <td>{{ lastlogin }} 日前</td>
                 </tr>
                 {% endfor %}

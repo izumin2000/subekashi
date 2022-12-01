@@ -41,7 +41,7 @@
     <script src="{% static 'subeana/js/fixfooter.js' %}" rel="stylesheet"></script>
     <script>
         function tonew() {
-            window.location.href = "{% url 'subeana:new' %}?channel={{ channel }}";
+            window.location.href = "{% url 'new' %}?channel={{ channel }}";
         }
 
         window.addEventListener('load', function(){

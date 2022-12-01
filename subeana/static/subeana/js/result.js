@@ -1,6 +1,6 @@
 async function setscore(basedir, id, score) {
     res = await fetch(
-        basedir + "/subeana/api/ai/" + id + "/?format=json",
+        basedir + "/api/ai/" + id + "/?format=json",
         {
             method: "PUT",
             headers: {

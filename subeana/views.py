@@ -51,7 +51,7 @@ def get_API(url) :
 def get_basedir() :
     BASE_DIR = str(BASE_DIRpath)
     if "C:" in BASE_DIR :
-        return "http://127.0.0.1:8000"
+        return "http://subeana.localhost:8000"
     elif "app" in BASE_DIR :
         return ""
 
@@ -220,7 +220,6 @@ def song(request, song_id) :
         imitates.append("ネタ曲")    
 
     dir["imitates"] = imitates
-    print(imitates)
     return render(request, "subeana/song.html", dir)
 
 

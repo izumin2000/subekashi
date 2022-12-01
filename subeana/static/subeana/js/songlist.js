@@ -1,9 +1,9 @@
 function songpage(basedir, song_id) {
-    window.location.href = basedir + "/subeana/songs/" + song_id;
+    window.location.href = basedir + "/songs/" + song_id;
 }
 
 function songlack(basedir, song_id) {
-    window.location.href = basedir + "/subeana/edit?id=" + song_id;
+    window.location.href = basedir + "/edit?id=" + song_id;
 }
 
 function changecss() {

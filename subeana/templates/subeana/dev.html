@@ -8,7 +8,7 @@
 <section id="devsettion">
     <h1>dev</h1>
     <div class="underline"></div>
-    <form action="{% url 'subeana:dev' %}" method="POST" class="post-form" id="newForm">{% csrf_token %}
+    <form action="{% url 'dev' %}" method="POST" class="post-form" id="newForm">{% csrf_token %}
         {% if locked %}
             <input type="password" name="password" id="password">
             <input type="submit" name="submit" id="submit" value="送信">

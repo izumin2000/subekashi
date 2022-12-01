@@ -8,7 +8,7 @@
 <section>
     <h1> 歌詞の登録 </h1>
     <div class="underline"></div>
-    <form action="{% url 'subeana:new' %}" method="POST" class="post-form" id="newForm">{% csrf_token %}
+    <form action="{% url 'new' %}" method="POST" class="post-form" id="newForm">{% csrf_token %}
         <label>曲名*</label>
         <input type="text" id="title" name="title" oninput="newform(0); isExistSong('{{basedir}}')" value="{{ title }}"><br>
         <label>作者*</label>

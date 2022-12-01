@@ -5,6 +5,7 @@ dj-database-url==1.0.0
 Django==4.1.1
 django-environ==0.9.0
 django-filter==22.1
+django-hosts==5.1
 djangorestframework==3.13.1
 gunicorn==20.1.0
 idna==3.3

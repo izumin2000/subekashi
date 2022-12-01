@@ -12,7 +12,7 @@
         <div class="songcard" onclick="songpage('{{ basedir }}', '{{ ins_song.id }}')">
             <div class="cardleft">
                 <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title }}</p>
-                <a class="songchannel" href="{% url 'subeana:channel' ins_song.channel %}"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</a>
+                <a class="songchannel" href="{% url 'channel' ins_song.channel %}"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</a>
             </div>
             <div class="cardright">
                 {% if ins_song.lyrics %}
@@ -41,18 +41,18 @@
             <div class="songcard" onclick="songpage('{{ basedir }}', '{{ ins_song.id }}')">
                 <div class="cardleft">
                     <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title }}</p>
-                    <a class="songchannel" href="{% url 'subeana:channel' ins_song.channel %}"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</a>
+                    <a class="songchannel" href="{% url 'channel' ins_song.channel %}"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</a>
                 </div>
                 <div class="cardright">
                     {% if ins_song.lyrics %}
                         <p class="songlyrics">{{ ins_song.lyrics|slice:"25" }}...</p>
                     {% else %}
-                        <a class="songlyrics" href="{% url 'subeana:edit' %}?id={{ ins_song.id }}">歌詞未登録</a>
+                        <a class="songlyrics" href="{% url 'edit' %}?id={{ ins_song.id }}">歌詞未登録</a>
                     {% endif %}
                     {% if ins_song.url %}
                         <a class="songurl" href="{{ ins_song.url }}">{{ ins_song.url }}</a>
                     {% else %}
-                        <a class="songurl" href="{% url 'subeana:edit' %}?id={{ ins_song.id }}">URL未登録</a>
+                        <a class="songurl" href="{% url 'edit' %}?id={{ ins_song.id }}">URL未登録</a>
                     {% endif %}
                 </div>
             </div>
@@ -96,11 +96,11 @@
     <script src="{% static 'subeana/js/songlist.js' %}" rel="stylesheet"></script>
     <script>
         function tosearch(query) {
-            window.location.href = "{% url 'subeana:search' %}" + query;
+            window.location.href = "{% url 'search' %}" + query;
         }
 
         function tonew() {
-            window.location.href = "{% url 'subeana:new' %}";
+            window.location.href = "{% url 'new' %}";
         }
     </script>
 {% endblock %}

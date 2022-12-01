@@ -1,7 +1,7 @@
 var songjson, songEles;
 
 async function getSong(basedir) {
-    res = await fetch(basedir + "/subeana/api/song/?format=json");
+    res = await fetch(basedir + "/api/song/?format=json");
     songjson = await res.json();
     songEles = document.getElementsByClassName("songcard");
 }

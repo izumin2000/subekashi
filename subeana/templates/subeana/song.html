@@ -8,31 +8,31 @@
 <section>
     <p id="songtitle"><i class="fas fa-music"></i>{{ ins_song.title }}</p>
     {% if ins_song.channel %}
-        <a id="songchannel" href="{% url 'subeana:channel' ins_song.channel %}"><i class="fas fa-user-circle"></i>{{ ins_song.channel }}</a>
+        <a id="songchannel" href="{% url 'channel' ins_song.channel %}"><i class="fas fa-user-circle"></i>{{ ins_song.channel }}</a>
         {% if ins_song.url %}
             <a id="songurl" href="{{ ins_song.url }}"><i class="fas fa-link"></i>{{ ins_song.url }}</a>
         {% else %}
-            <a id="songurlnotfound" href="{% url 'subeana:edit' %}?id={{ ins_song.id }}"><i class="fas fa-link"></i>URLを追加</a>
+            <a id="songurlnotfound" href="{% url 'edit' %}?id={{ ins_song.id }}"><i class="fas fa-link"></i>URLを追加</a>
         {% endif %}
         <div></div>
         <p id="songimitateslabel"><i class="fas fa-tags"></i></p>
         {% for imitate in imitates %}
             {% if imitate == "ネタ曲" %}
-                <a class="songimitate" href="{% url 'subeana:search' %}?isjoke=1">ネタ曲</a>
+                <a class="songimitate" href="{% url 'search' %}?isjoke=1">ネタ曲</a>
             {% elif imitate == "オリジナル" %}
-                <a class="songimitate" href="{% url 'subeana:channel' '全てあなたの所為です。' %}">オリジナル</a>
+                <a class="songimitate" href="{% url 'channel' '全てあなたの所為です。' %}">オリジナル</a>
             {% elif imitate == "オリジナル模倣" %}
                 <p class="songimitate">オリジナル模倣</p>
             {% else %}
                 {% if imitate %}
-                    <a class="songimitate" href="{% url 'subeana:song' imitate.id %}">{{ imitate.title }}模倣</a>
+                    <a class="songimitate" href="{% url 'song' imitate.id %}">{{ imitate.title }}模倣</a>
                 {% endif %}
             {% endif %}
         {% endfor %}
         {% if ins_song.lyrics %}
             <p id="songlyrics">{{ ins_song.lyrics }}</p>
         {% else %}
-            <a id="songlyricsnotfound" href="{% url 'subeana:edit' %}?id={{ ins_song.id }}">歌詞を追加</a>
+            <a id="songlyricsnotfound" href="{% url 'edit' %}?id={{ ins_song.id }}">歌詞を追加</a>
         {% endif %}
     {% else %}
         <p id="songnotfound">曲の情報が見つかりませんでした</p>
@@ -56,7 +56,7 @@
     });
 
     function tonew() {
-        window.location.href = "{% url 'subeana:new' %}?title={{ ins_song.title }}";
+        window.location.href = "{% url 'new' %}?title={{ ins_song.title }}";
     }
 </script>
 {% endblock %}

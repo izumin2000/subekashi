@@ -9,7 +9,7 @@
         <h1>大臣情報の編集</h1>
         <div class="underline"></div>
 
-        <form action="{% url 'xia:editminister' %}" method="POST" class="post-form" id="ministerForm">{% csrf_token %}
+        <form action="{% url 'editminister' %}" method="POST" class="post-form" id="ministerForm">{% csrf_token %}
             {{ form.as_p }}
             <input type="submit" value="送信">
         </form>
@@ -24,7 +24,7 @@
             <tr>
                 <td><a href="#PlayerForm" onclick="copyinfo('{{ minister.player.name }}', '{{ minister.title }}')">{{ minister.player.name }}</a></td>
                 <td>{{ minister.title }}</td>
-                <td><a href="{% url 'xia:editministerdelete' minister.id %}"><i class="far fa-trash-alt"></i></a></td>
+                <td><a href="{% url 'editministerdelete' minister.id %}"><i class="far fa-trash-alt"></i></a></td>
             </tr>
             {% endfor %}
         </table>
@@ -57,7 +57,7 @@
 
             "{% if error %}"
             toastr.options.onclick = function () {
-                window.location.href = "{% url 'xia:editministerforce' name %}";
+                window.location.href = "{% url 'editministerforce' name %}";
             };
             toastr.warning("{{ name }}の情報がEarthMC上にありません。作成する場合はこのメッセージをクリックしてください")
             "{% endif %}"
