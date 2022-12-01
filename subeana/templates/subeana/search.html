@@ -40,6 +40,10 @@
     <div class="devinput" onclick="devinput(2)">
         <input type="radio" class="filters" name="filter" value="nones" oninput="searchsong()">
         <label>未登録の曲</label>
+    </div>
+    <div class="devinput" onclick="devinput(3)">
+        <input type="checkbox" class="filters" name="filter" value="joke" oninput="searchsong()">
+        <label>ネタ曲</label>
     </div><br>
 
     {% for ins_song in ins_songs %}

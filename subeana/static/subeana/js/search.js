@@ -97,9 +97,13 @@ function searchsong() {
             } 
         } else if (filtertype == 2) {
             if (songjson[i]["channel"] != "") {
+            }
+        } else if (filtrtEles[3].checked) {
+            if (!songjson[i]["isjoke"]) {
                 styledisplay = "none";
             }
         }
+
         songEle.style.display = styledisplay;
         i++;
     }
@@ -122,7 +126,15 @@ function searchsong() {
 
 function devinput(filtertype) {
     radioEle = document.getElementsByClassName("filters")[filtertype];
-    radioEle.checked = true;
+    if (filtertype == 3) {
+        if (radioEle.checked) {
+            radioEle.checked = false;
+        } else {
+            radioEle.checked = true;
+        }
+    } else {
+        radioEle.checked = true;
+    }
     searchsong();
 }
 
