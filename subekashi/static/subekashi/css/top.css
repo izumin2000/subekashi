@@ -1,0 +1,78 @@
+.songcard {
+    margin: 20px 0 ;
+    padding: 15px 0 10px 0;
+    background-color: #333;
+}
+
+.cardleft {
+    text-align:left;
+    float:left;
+    font-family: 'Noto Sans JP', sans-serif;
+    padding: 0 20px;
+}
+
+.cardright {
+    padding: 0 18px;
+    text-align:right;
+}
+
+.songcard:hover {
+    cursor: pointer;
+    background-color: #555;
+}
+
+.songtitle {
+    font-size: 20px;
+    margin-bottom: 12px;
+    padding-left: 2px;
+}
+
+.songchannel {
+    font-size: 15px;
+}
+
+.songchannel i {
+    font-size: 20px;
+}
+
+.songlyrics {
+    display: block;
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+
+.songurl {
+    display: inline-block;
+}
+
+.dummybutton {
+    margin: 0 auto;
+}
+
+#imicom {
+    display: block;
+    margin: 0 auto -50px auto;
+    width: 425px;
+}
+
+@media (max-width: 640px) {
+    #imicom {
+        width: 70vw;
+    }
+}
+
+#subekashi {
+    text-align: center;
+    margin-bottom: 50px;
+    text-decoration: none;
+}
+
+#subekashi h1 {
+    font-size: 35px;
+}
+
+@media (max-width: 640px) {
+    #subekashi h1 {
+        font-size: 25px;
+    }
+}

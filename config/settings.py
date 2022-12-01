@@ -29,7 +29,7 @@ ALLOWED_HOSTS = ['*']
 INSTALLED_APPS = [
     'config',
     'xia',
-    'subeana',
+    'subekashi',
     'iniadmc',
     'django.contrib.admin',
     'django.contrib.auth',

@@ -1,0 +1,30 @@
+{% extends "subekashi/base/base.html" %}
+{% block title %}{{ ins_song.title }}の編集{% endblock %}
+{% block ogtitle %}{{ ins_song.title }}の編集{% endblock %}
+{% load static %}
+{% block css %}{% static 'subekashi/css/edit.css'%}{% endblock %}
+
+{% block content %}
+<section id="formsection">
+    <h1>{{ ins_song.title }}の編集</h1>
+    <div class="underline"></div>
+    <form action="{% url 'edit' %}?id={{ ins_song.id }}" method="POST" class="post-form" id="editForm">{% csrf_token %}
+        {% if not ins_song.url %}
+            <label>URL </label>
+            <input type="text" id="url" name="url" value="{{ url }}"><br>
+        {% endif %}
+        {% if not ins_song.lyrics|slice:"1" %}
+            <label id="lyricslabel">歌詞</label>
+            <textarea id="lyrics" name="lyrics" value="{{ lyrics }}" oninput="autotextarea()"></textarea><br>
+        {% endif %}
+        <input type="submit" value="登録" id="submit">
+    </form>
+</section>
+{% endblock %}
+
+{% block js %}
+<script src="{% static 'subekashi/js/fixfooter.js' %}" rel="stylesheet"></script>
+<script>
+    window.addEventListener('load', fixfooter);
+</script>
+{% endblock %}

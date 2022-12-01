@@ -1,0 +1,30 @@
+{% extends "subekashi/base/base.html" %}
+{% block title %}開発者ツール{% endblock %}
+{% block ogtitle %}開発者ツール{% endblock %}
+{% load static %}
+{% block css %}{% static 'subekashi/css/dev.css'%}{% endblock %}
+
+{% block content %}
+<section id="devsettion">
+    <h1>dev</h1>
+    <div class="underline"></div>
+    <form action="{% url 'dev' %}" method="POST" class="post-form" id="newForm">{% csrf_token %}
+        {% if locked %}
+            <input type="password" name="password" id="password">
+            <input type="submit" name="submit" id="submit" value="送信">
+        {% else %}
+            <input type="button" name="submit" id="backup" value="バックアップ" onclick="backupf()">
+            <input type="submit" name="submit" id="reset" value="リセット" disabled>
+        {% endif %}
+    </form>
+</section>
+{% endblock %}
+{% block js %}
+<script>
+    function backupf() {
+        window.open('{{basedir}}/api/song/?format=json', '_blank');
+        resetEle = document.getElementById("reset")
+        resetEle.removeAttribute("disabled")
+    }
+</script>
+{% endblock %}

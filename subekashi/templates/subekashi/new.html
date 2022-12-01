@@ -1,0 +1,54 @@
+{% extends "subekashi/base/base.html" %}
+{% block title %}歌詞の登録{% endblock %}
+{% block ogtitle %}歌詞の登録{% endblock %}
+{% load static %}
+{% block css %}{% static 'subekashi/css/new.css'%}{% endblock %}
+
+{% block content %}
+<section>
+    <h1> 歌詞の登録 </h1>
+    <div class="underline"></div>
+    <form action="{% url 'new' %}" method="POST" class="post-form" id="newForm">{% csrf_token %}
+        <label>曲名*</label>
+        <input type="text" id="title" name="title" oninput="newform(0); isExistSong('{{basedir}}')" value="{{ title }}"><br>
+        <label>作者*</label>
+        <input type="text" id="channel" name="channel" oninput="newform(0)" value="{{ channel }}"><br>
+        <label>URL </label>
+        <input type="text" id="url" name="url" value="{{ url }}"><br>
+        <div id="imitates">
+            <label>模倣1*</label>
+            <select id="imitate1" name="imitate1" oninput="newform(1);">
+                <option>選択してください</option>
+                <option>.模倣</option>
+                <option>..模倣</option>
+                <option>教育模倣</option>
+                <option>アブジェ模倣</option>
+                <option>...模倣</option>
+                <option>表/裏模倣</option>
+                <option>名の無い星が空に堕ちたら模倣</option>
+                <option>エヌ模倣</option>
+                <option>K²模倣</option>
+                <option>オリジナル模倣</option>
+                <option>模倣曲模倣</option>
+            </select>
+            <div class="imitateimitatediv" id="imitateimitatediv1"></div>
+            <br>
+        </div>
+        <button type="button" id="appendimitate" onclick="appendimitatef()" disabled>模倣2を追加</button>
+        <button type="button" id="deleteimitate" onclick="deleteimitatef()">模倣1を削除</button><br>
+        <label id="lyricslabel">歌詞</label>
+        <textarea id="lyrics" name="lyrics" oninput="autotextarea()"></textarea><br>
+        <input type="number" id="imitatenums" name="imitatenums" hidden><br>
+        <input type="checkbox" id="isjapanese" name="isjapanese" checked>
+        <label>日本語の曲</label>
+        <input type="checkbox" id="isjoke" name="isjoke">
+        <label>ネタ曲</label><br>
+        <input type="submit" value="登録" id="submit" disabled>
+    </form>
+    <p class="bottomelement">*がついているラベルは入力が必須です。</p>
+</section>
+{% endblock %}
+
+{% block js %}
+<script src="{% static 'subekashi/js/newform.js' %}" rel="stylesheet"></script>
+{% endblock %}
