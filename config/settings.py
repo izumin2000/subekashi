@@ -142,7 +142,6 @@ if DEBUG :
         }
     }
 else :
-    # django_heroku.settings(locals())
     DISCORD_URL = os.environ['DISCORD_URL']
 
 

@@ -1,0 +1,15 @@
+{% extends "subekashi/base/base.html" %}
+{% block title %}修正の提案{% endblock %}
+{% block ogtitle %}修正の提案{% endblock %}
+{% load static %}
+{% block css %}{% static 'subekashi/css/wrong.css'%}{% endblock %}
+
+{% block content %}
+<section id="wrongsection">
+    <h1>修正の提案</h1>
+    <div class="underline"></div>
+    <form action="{% url 'song' ins_song.id %}" method="POST" class="post-form" id="wrongForm">{% csrf_token %}
+        
+    </form>
+</section>
+{% endblock %}

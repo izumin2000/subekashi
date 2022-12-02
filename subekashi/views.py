@@ -392,6 +392,14 @@ def search(request) :
     return render(request, "subekashi/search.html", dir)
 
 
+def wrong(request, song_id) :
+    dir = {}
+
+    ins_song = Song.objects.get(pk = song_id)
+    dir["ins_song"] = ins_song
+    return render(request, "subekashi/wrong.html", dir)
+
+
 def error(request) :
     return render(request, "subekashi/error.html")
 
