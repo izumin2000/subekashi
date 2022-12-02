@@ -293,6 +293,10 @@ def make(request) :
                 if ins_song.imitate :
                     for imitate in ins_song.imitate.split(",") :
                         imitates.append((name, imitate, 1))
+                if ins_song.imitated :
+                    for imitated in ins_song.imitated.split(",") :
+                        imitates.append((name, imitated, 1))
+                
 
             G = nx.Graph()
             G.add_weighted_edges_from(imitates, weight='weight')
@@ -309,7 +313,9 @@ def make(request) :
             if length :
                 for id, pops in length.items() :
                     if pops <= inp_pops :
-                        ins_imitates.add(Song.objects.get(pk = id))
+                        ins_song = Song.objects.get(pk = id)
+                        if not(ins_song.isjoke) and ins_song.isjapanese :
+                            ins_imitates.add(ins_song)
             
             print(ins_imitates)
             ais_ins = vector_generate(ins_original, ins_imitates)
