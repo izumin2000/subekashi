@@ -15,7 +15,7 @@
             <a id="songurlnotfound" href="{% url 'edit' %}?id={{ ins_song.id }}"><i class="fas fa-link"></i>URLを追加</a>
         {% endif %}
         <div></div>
-        <p id="songimitateslabel"><i class="fas fa-tags"></i></p>
+        <p id="songimitateslabel"><i class="fas fa-tags fa-xs"></i></p>
         {% for imitate in imitates %}
             {% if imitate == "ネタ曲" %}
                 <a class="songimitate" href="{% url 'search' %}?isjoke=1">ネタ曲</a>
@@ -29,6 +29,17 @@
                 {% endif %}
             {% endif %}
         {% endfor %}
+        
+        {% if ins_imitateds %}
+            <div id="imitated">
+            <p id="songimitatedslabel"><i class="fas fa-sitemap fa-xs"></i></p>
+            {% for ins_imitated in ins_imitateds %}
+                <a class="songimitate" href="{% url 'song' ins_imitated.id %}">{{ ins_imitated.title }}</a>
+            {% endfor %}
+            </div>
+        {% endif %}
+
+
         {% if ins_song.lyrics %}
             <p id="songlyrics">{{ ins_song.lyrics }}</p>
         {% else %}

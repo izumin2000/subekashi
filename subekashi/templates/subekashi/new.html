@@ -51,4 +51,8 @@
 
 {% block js %}
 <script src="{% static 'subekashi/js/newform.js' %}" rel="stylesheet"></script>
+<script>
+    window.addEventListener('load', newform(0));
+</script>
+
 {% endblock %}

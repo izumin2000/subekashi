@@ -33,13 +33,13 @@ async function isExistSong(basedir) {
         if (song.url) {
             lack_columns.push("URL");
         }
-        if ((song.imitates) || (song.channel == "全てあなたの所為です。")) {
-            lack_columns.push("原曲");
+        if (song.imitate) {
+            lack_columns.push("模倣");
         }
         if (song.lyrics) {
             lack_columns.push("歌詞");
         }
-        if (lack_columns.length == 4) {
+        if ((lack_columns.length == 4) || (song.channel == "全てあなたの所為です。")) {
             toastr.warning(song.title + "の情報は全て登録済です。")
         } else if (lack_columns.length > 0) {
             toastr.warning(song.title + "の情報のうち、" + lack_columns.join("・") + "の情報は既に登録済です。")
@@ -125,7 +125,7 @@ function appendimitatef() {
     imitateselectEle.id = "imitate" + imitateNums;
     imitateselectEle.name = "imitate" + imitateNums;
     imitateselectEle.setAttribute("oninput", "newform(" + imitateNums + ")");
-    imitateselectEle.innerHTML = "<option>選択してください</option><option>.模倣</option><option>..模倣</option><option>教育模倣</option><option>アブジェ模倣</option><option>...模倣</option><option>表裏模倣</option><option>名の無い星が空に堕ちたら模倣</option><option>エヌ模倣</option><option>エヌ模倣</option>K²模倣<option>オリジナル模倣</option><option>模倣曲模倣</option>";
+    imitateselectEle.innerHTML = "<option>選択してください</option><option>.模倣</option><option>..模倣</option><option>教育模倣</option><option>アブジェ模倣</option><option>...模倣</option><option>表裏模倣</option><option>名の無い星が空に堕ちたら模倣</option><option>エヌ模倣</option>K²模倣<option>オリジナル模倣</option><option>模倣曲模倣</option>";
 
     imitatedivEle = document.createElement("div");
     imitatedivEle.setAttribute("class", "imitateimitatediv");

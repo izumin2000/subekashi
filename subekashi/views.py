@@ -165,7 +165,7 @@ def new(request) :
 
         ins_song.title = inp_title
         if iscreated or not(iscreated or ins_song.channel) :
-            ins_song.channel = inp_channel
+            ins_song.channel = inp_channel.replace(" ", "")
         ins_song.isjapanese = bool(inp_isjapanese)
         ins_song.isjoke = bool(inp_isjoke)
 
@@ -183,14 +183,40 @@ def new(request) :
                 if imitate :
                     ins_imitate, _ = Song.objects.get_or_create(title = imitate, defaults = {"title" : imitate})
                     imitates.add(ins_imitate.id)
+                    if ins_imitate.imitated :
+                        imitated = set(ins_imitate.imitated.split(","))
+                        imitated.add(ins_song.id)
+                        ins_imitate.imitated = ",".join(list(map(str, imitated)))
+                    else :
+                        ins_imitate.imitated = ins_song.id
+                    ins_imitate.save()
             elif imitate != "オリジナル" :
                 ins_imitate = Song.objects.filter(title = imitate).first()
                 imitates.add(ins_imitate.id)
+                if ins_imitate.imitated :
+                    imitated = set(ins_imitate.imitated.split(","))
+                    imitated.add(ins_song.id)
+                    ins_imitate.imitated = ",".join(list(map(str, imitated)))
+                else :
+                    ins_imitate.imitated = ins_song.id
+                ins_imitate.save()
 
         if iscreated or not(iscreated or ins_song.imitate) :
-            ins_song.imitate = list(imitates).join(",")
+            ins_song.imitate = ",".join(list(map(str, list(imitates))))
         ins_song.save()
         
+        imitates = []
+        if ins_song.imitate :
+            for imitate_id in ins_song.imitate.split(",") :
+                imitates.append(Song.objects.get(pk = int(imitate_id)))
+        if ins_song.channel == "全てあなたの所為です。" :
+            imitates.append("オリジナル")
+        if not(len(imitates)) :
+            imitates.append("オリジナル模倣")
+        if ins_song.isjoke :
+            imitates.append("ネタ曲")    
+
+        dir["imitates"] = imitates
         dir["ins_song"] = ins_song
         return render(request, 'subekashi/song.html', dir)
 
@@ -210,15 +236,23 @@ def song(request, song_id) :
 
     if ins_song.imitate :
         for imitate_id in ins_song.imitate.split(",") :
-            imitates.append(Song.objects.get(pk = imitate_id))
+            imitates.append(Song.objects.get(pk = int(imitate_id)))
     if ins_song.channel == "全てあなたの所為です。" :
         imitates.append("オリジナル")
     if not(len(imitates)) :
         imitates.append("オリジナル模倣")
     if ins_song.isjoke :
         imitates.append("ネタ曲")    
-
     dir["imitates"] = imitates
+
+    imitateds = ins_song.imitated
+    if imitateds :
+        ins_imitateds = []
+        for id in imitateds.split(",") :
+            ins_imitated = Song.objects.get(pk = int(id))
+            ins_imitateds.append(ins_imitated)
+        dir["ins_imitateds"] = ins_imitateds
+
     return render(request, "subekashi/song.html", dir)
 
 
@@ -264,18 +298,20 @@ def make(request) :
             G.add_weighted_edges_from(imitates, weight='weight')
 
             ins_original = Song.objects.filter(title = inp_title).first()
+            
             if ins_original.id in G.nodes() :
                 length, path = nx.single_source_dijkstra(G, ins_original.id)
             else :
-                dir["error"] = ins_original.title + "の模倣関係の曲が無いか登録されていないようです"
-                return render(request, "subekashi/make.html", dir)
+                length = 0
 
             inp_pops = 5 - int(inp_similar)
-            ins_imitates = set()
-            for id, pops in length.items() :
-                if pops <= inp_pops :
-                    ins_imitates.add(Song.objects.get(pk = id))
+            ins_imitates = set([ins_original])
+            if length :
+                for id, pops in length.items() :
+                    if pops <= inp_pops :
+                        ins_imitates.add(Song.objects.get(pk = id))
             
+            print(ins_imitates)
             ais_ins = vector_generate(ins_original, ins_imitates)
             dir["basedir"] = get_basedir()
             dir["ais_ins"] = ais_ins

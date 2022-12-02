@@ -15,11 +15,17 @@ section p, section a {
     margin-top: 40px;
 }
 
-#songimitateslabel {
+
+#songimitateslabel, #songimitatedslabel {
     display: inline-block;
     white-space: nowrap;
     color: #fff;
-    margin: 0 -20px 0 20px;
+    margin: 0 -15px 0 20px;
+}
+
+#imitated {
+    margin-top: 15px;
+    padding-right: 24px;
 }
 
 .songimitate {
