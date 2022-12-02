@@ -49,6 +49,9 @@
         <p id="songnotfound">曲の情報が見つかりませんでした</p>
         <div id="tonew" class="dummybutton" onclick="tonew()"><p class="dummybuttonp">曲を登録する</p></div>
     {% endif %}
+    <div class="dummybuttons">
+        <div class="dummybutton dummybuttonf towrong" onclick="towrong()"><p class="dummybuttonp">変更・削除の提案</p></div>
+    </div>
 </section>
 {% endblock %}
 
@@ -68,6 +71,10 @@
 
     function tonew() {
         window.location.href = "{% url 'new' %}?title={{ ins_song.title }}";
+    }
+
+    function towrong() {
+        window.location.href = "{% url 'wrong' ins_song.id %}";
     }
 </script>
 {% endblock %}

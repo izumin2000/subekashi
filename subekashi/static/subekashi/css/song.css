@@ -41,3 +41,8 @@ section p, section a {
 #tonew {
     margin: 0 auto;
 }
+
+.towrong {
+    margin: 50px 0 !important;
+    width: 200px;
+}

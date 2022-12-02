@@ -8,7 +8,7 @@ import json
 from time import sleep
 from datetime import datetime
 import hashlib
-from config.settings import DISCORD_URL
+from config.settings import XIA_DISCORD_URL
 
 
 OUR_NATION = "Xia"
@@ -412,7 +412,7 @@ def raidbot(request) :
 
 # Discord BOTのテスト
 def bothello(request) :
-    requests.post(DISCORD_URL, data={'content': "おほーぉ(^o^)"})
+    requests.post(XIA_DISCORD_URL, data={'content': "おほーぉ(^o^)"})
     return HttpResponse("SEND")
 
 

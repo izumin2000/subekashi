@@ -11,6 +11,7 @@ import networkx as nx
 import random
 from rest_framework import viewsets
 from .serializer import SongSerializer, AiSerializer
+from config.settings import SUBEKASHI_DISCORD_URL
 
 # パスワード関連
 SHA256a = "5802ea2ddcf64db0efef04a2fa4b3a5b256d1b0f3d657031bd6a330ec54abefd"
@@ -397,6 +398,12 @@ def wrong(request, song_id) :
 
     ins_song = Song.objects.get(pk = song_id)
     dir["ins_song"] = ins_song
+    if request.method == "POST" :
+        inp_reason = request.POST.get("reason")
+        inp_comment = request.POST.get("comment")
+        content = f'**{ins_song.title}**\nid : {ins_song.id}\n理由 : {inp_reason}\nコメント : {inp_comment}'
+        requests.post(SUBEKASHI_DISCORD_URL, data={'content': content})
+
     return render(request, "subekashi/wrong.html", dir)
 
 

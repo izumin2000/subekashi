@@ -142,7 +142,8 @@ if DEBUG :
         }
     }
 else :
-    DISCORD_URL = os.environ['DISCORD_URL']
+    XIA_DISCORD_URL = os.environ['XIA_DISCORD_URL']
+    SUBEKASHI_DISCORD_URL = os.environ['SUBEKASHI_DISCORD_URL']
 
 
 # DEBUG = True
