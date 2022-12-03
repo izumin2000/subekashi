@@ -8,23 +8,43 @@
 <section id="devsettion">
     <h1>dev</h1>
     <div class="underline"></div>
-    <form action="{% url 'dev' %}" method="POST" class="post-form" id="newForm">{% csrf_token %}
-        {% if locked %}
+    {% if locked %}
+        <form action="{% url 'dev' %}" method="POST" class="post-form">{% csrf_token %}
             <input type="password" name="password" id="password">
             <input type="submit" name="submit" id="submit" value="送信">
-        {% else %}
-            <input type="button" name="submit" id="backup" value="バックアップ" onclick="backupf()">
-            <input type="submit" name="submit" id="reset" value="リセット" disabled>
-        {% endif %}
-    </form>
+        </form>
+    {% else %}
+        <form action="{% url 'dev' %}?gpt=1" method="POST" class="post-form">{% csrf_token %}
+            <textarea id="gpt" name="gpt" placeholder="GPT2japaneseの出力結果"></textarea>
+            <input type="submit" name="submit" id="gptsubmit" value="送信">
+        </form>
+        <form action="{% url 'dev' %}?reset=1" method="POST" class="post-form">{% csrf_token %}
+            <div class="dummybutton" onclick="backupf()"><p class="dummybuttonp">バックアップ</p></div>
+            <label>確認</label>
+            <input type="checkbox" name="confirm" id="confirm" oninput="confirmf()">
+            <input type="submit" name="submit" id="resetsubmit" value="リセット" disabled>
+        </form>
+    {% endif %}
 </section>
 {% endblock %}
 {% block js %}
+<script src="{% static 'subekashi/js/fixfooter.js' %}" rel="stylesheet"></script>
 <script>
+    window.addEventListener('load', fixfooter);
     function backupf() {
         window.open('{{basedir}}/api/song/?format=json', '_blank');
-        resetEle = document.getElementById("reset")
-        resetEle.removeAttribute("disabled")
+        resetEle = document.getElementById("reset");
+    }
+    
+    function confirmf() {
+        resetEle = document.getElementById("resetsubmit");
+        confirmEle = document.getElementById("confirm");
+        if (confirmEle.checked) {
+            resetEle.removeAttribute("disabled");
+        } else {
+            resetEle.setAttribute("disabled", true);
+        }
+
     }
 </script>
 {% endblock %}

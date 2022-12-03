@@ -324,11 +324,10 @@ def make(request) :
             dir["ais_ins"] = ais_ins
             return render(request, "subekashi/result.html", dir)
 
-
         elif inp_genetype == "model" :
-            0
-
-
+            ai_ins = Ai.objects.filter(isgpt = True)
+            dir["ais_ins"] = random.sample(list(ai_ins), 20)
+            return render(request, "subekashi/result.html", dir)
 
     return render(request, "subekashi/make.html", dir)
 
@@ -420,12 +419,39 @@ def dev(request) :
         if password :
             if hashlib.sha256(password.encode()).hexdigest() == SHA256a :
                 dir["locked"] = False
-        else :
+        isreset = request.GET.get("reset")
+        isgpt = request.GET.get("gpt")
+        if isreset :
             Song.objects.all().delete()
-            for song in subeana_LIST :
-                sleep(0.1)
-                print(get_basedir() + "/api/song/?format=json")
-                requests.post(url = get_basedir().replace("subekashi.", "") + "/api/song/?format=json" ,data = song)
+            inp_isconfirmed = request.POST.get("confirm")
+            isconfirmed = bool(inp_isconfirmed)
+            if isconfirmed :
+                for song in subeana_LIST :
+                    sleep(0.1)
+                    requests.post(url = get_basedir().replace("subekashi.", "") + "/api/song/?format=json" ,data = song)
+                dir["locked"] = False
+
+        if isgpt :
+            inp_gpt = request.POST.get("gpt")
+            if inp_gpt :
+                gpts = inp_gpt.split("\n")[12:]
+                for gpt in gpts :
+                    if gpt[0] != "=" :
+                        long_sentence_gpts = gpt.split("。")
+                        for long_sentence_gpt in long_sentence_gpts :
+                            long_sentence_gpt += "。"
+                            sentence_gpts = long_sentence_gpt.split("、")
+                            for sentence_gpt in sentence_gpts :
+                                sentence_gpt += "、"
+                                sentence_gpt = sentence_gpt.replace("「", "")
+                                sentence_gpt = sentence_gpt.replace("」", "")
+                                sentence_gpt = sentence_gpt.replace("。、", "。")
+                                if 10 <= len(sentence_gpt) <= 20 :
+                                    ai_ins = Ai.objects.create()
+                                    ai_ins.isgpt = True
+                                    ai_ins.lyrics = sentence_gpt
+                                    ai_ins.save()
+                dir["locked"] = False
             
     return render(request, "subekashi/dev.html", dir)
 

@@ -51,3 +51,10 @@
     box-shadow: none;
     cursor: not-allowed;
 }
+
+#confirm {
+    box-shadow: none;
+    height: 15px;
+    width: 15px;
+    margin-right: 25px;
+}
