@@ -18,7 +18,7 @@ from django.urls import reverse
 
 # パスワード関連
 SHA256a = "5802ea2ddcf64db0efef04a2fa4b3a5b256d1b0f3d657031bd6a330ec54abefd"
-REPLACEBLE_HINSHIS = ["名詞", "動詞"]
+REPLACEBLE_HINSHIS = ["名詞", "動詞", "形容詞"]
 
 
 def get_API(url) :
@@ -84,7 +84,7 @@ def tokenizer_janome(text):
         toklist.append((tok.surface, hinshi, katsuyou))
     return toklist
 
-def vector_generate(ins_original, ins_imitates) :
+def vector_generate(ins_original, ins_imitates, dir) :
     lyrics = ""
     simD = {}
     tok = tokenizer_janome(ins_original.lyrics)    
@@ -122,6 +122,12 @@ def vector_generate(ins_original, ins_imitates) :
         if len(lyric) >= 2 :
             ai_ins = Ai.objects.create()
             ai_ins.lyrics = lyric
+            ai_ins.genetype = dir["genetype"]
+            if dir["genetype"] == "category" :
+                ai_ins.category = dir["category"]
+            elif dir["genetype"] == "song" :
+                ai_ins.title = dir["title"]
+                ai_ins.similar = int(dir["similar"])
             ai_ins.save()
             ais_ins.append(ai_ins)
     return ais_ins
@@ -281,7 +287,7 @@ def make(request) :
                     if ins_original.id in ins_song.imitate.split(","):
                         ins_imitates.add(ins_song)
         
-            ais_ins = vector_generate(ins_original, ins_imitates)
+            ais_ins = vector_generate(ins_original, ins_imitates, dir)
             dir["ais_ins"] = ais_ins
             return render(request, "subekashi/result.html", dir)
                 
@@ -322,7 +328,7 @@ def make(request) :
                             ins_imitates.add(ins_song)
             
             print(ins_imitates)
-            ais_ins = vector_generate(ins_original, ins_imitates)
+            ais_ins = vector_generate(ins_original, ins_imitates, dir)
             dir["basedir"] = get_basedir()
             dir["ais_ins"] = ais_ins
             return render(request, "subekashi/result.html", dir)
