@@ -174,7 +174,7 @@ a {
 
 #pages p {
     margin-left: 32px;
-    padding: 12.5vh 0 0 calc(50% - 550px);
+    padding: 10vh 0 0 calc(50% - 550px);
     font-family: 'Noto Sans JP', sans-serif;
     font-size: 45px !important;
     line-height: 75px !important;
@@ -188,6 +188,23 @@ a {
     line-height: 60px !important;
     text-decoration: underline;
 }
+
+.googleblue {
+    color: #4285F4;
+}
+
+.googlered {
+    color: #DB4437;
+}
+
+.googleyellow {
+    color: #F4B400;
+}
+
+.googlegreen {
+    color: #0F9D58;
+}
+
 
 
 /* フォーム */
