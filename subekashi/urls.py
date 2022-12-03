@@ -3,6 +3,7 @@ from . import views
 from django.urls import path,include
 from rest_framework import routers
 
+
 app_name = 'subekashi'
 
 defaultRouter = routers.DefaultRouter()
@@ -22,4 +23,7 @@ urlpatterns = [
     path('error', views.error, name = 'error'),
     path('dev', views.dev, name = 'dev'),
     path('api/',include(defaultRouter.urls)),
+    path('login/', views.Login, name='login'),
+    path('logout/', views.Logout.as_view(), name='logout'),
+    path('oauth/', include('social_django.urls', namespace='social')),
 ]

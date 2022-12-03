@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.http import HttpResponseRedirect
 from subekashi.models import Song, Ai
 from config.settings import BASE_DIR as BASE_DIRpath
 import hashlib
@@ -12,6 +13,8 @@ import random
 from rest_framework import viewsets
 from .serializer import SongSerializer, AiSerializer
 from config.settings import SUBEKASHI_DISCORD_URL
+from django.contrib.auth.views import LoginView, LogoutView
+from django.urls import reverse
 
 # パスワード関連
 SHA256a = "5802ea2ddcf64db0efef04a2fa4b3a5b256d1b0f3d657031bd6a330ec54abefd"
@@ -464,3 +467,11 @@ class SongViewSet(viewsets.ModelViewSet):
 class AiViewSet(viewsets.ModelViewSet):
     queryset = Ai.objects.all()
     serializer_class = AiSerializer
+
+
+def Login(request):
+    return HttpResponseRedirect(reverse('social:begin', kwargs=dict(backend='google-oauth2')))
+
+    
+class Logout(LogoutView):
+    next_page = '/'
