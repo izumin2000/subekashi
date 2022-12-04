@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from subekashi.models import Song, Ai
-from config.settings import BASE_DIR as BASE_DIRpath
+from config.settings import DEBUG
 import hashlib
 import requests
 from time import sleep
@@ -52,11 +52,10 @@ def get_API(url) :
 
 
 def get_basedir() :
-    BASE_DIR = str(BASE_DIRpath)
-    if "C:" in BASE_DIR :
+    if DEBUG :
         return "http://subekashi.localhost:8000"
-    elif "app" in BASE_DIR :
-        return ""
+    else :
+        return "http://subekashi.izmn.net/"
 
 
 def counter(word) :
