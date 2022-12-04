@@ -13,7 +13,7 @@ import random
 from rest_framework import viewsets
 from .serializer import SongSerializer, AiSerializer
 from config.settings import SUBEKASHI_DISCORD_URL
-from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth.views import LogoutView
 from django.urls import reverse
 
 # パスワード関連
@@ -413,6 +413,13 @@ def wrong(request, song_id) :
         requests.post(SUBEKASHI_DISCORD_URL, data={'content': content})
 
     return render(request, "subekashi/wrong.html", dir)
+
+
+def ai(request) :
+    dir = {}
+    dir["ins_ais"]
+    return render(request, "subekashi/ai.html", dir)
+
 
 
 def error(request) :
