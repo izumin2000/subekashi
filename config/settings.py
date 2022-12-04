@@ -12,9 +12,9 @@ ALLOWED_HOSTS = [
     "subekashi.localhost",
     "xia.localhost",
     "iniadmc.localhost",
-    "subekashi.izmn.net ",
-    "xia.izmn.net ",
-    "iniadmc.izmn.net ",
+    "subekashi.izmn.net",
+    "xia.izmn.net",
+    "iniadmc.izmn.net",
     ]
 
 INSTALLED_APPS = [
