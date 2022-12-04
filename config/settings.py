@@ -8,7 +8,14 @@ from .local_settings import *
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: don't run with debug turned on in production!
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    "subekashi.localhost",
+    "xia.localhost",
+    "iniadmc.localhost",
+    "subekashi.izmn.net ",
+    "xia.izmn.net ",
+    "iniadmc.izmn.net ",
+    ]
 
 INSTALLED_APPS = [
     'config',
@@ -41,7 +48,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'config.urls'
 ROOT_HOSTCONF = 'config.hosts'
-DEFAULT_HOST = 'top'
+DEFAULT_HOST = 'subekashi'
 
 TEMPLATES = [
     {

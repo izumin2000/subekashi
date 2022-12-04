@@ -55,7 +55,7 @@ def get_basedir() :
     if DEBUG :
         return "http://subekashi.localhost:8000"
     else :
-        return "http://subekashi.izmn.net/"
+        return "http://subekashi.izmn.net"
 
 
 def counter(word) :
@@ -442,8 +442,13 @@ def dev(request) :
             isconfirmed = bool(inp_isconfirmed)
             if isconfirmed :
                 for song in subeana_LIST :
-                    sleep(0.1)
-                    requests.post(url = get_basedir().replace("subekashi.", "") + "/api/song/?format=json" ,data = song)
+                    ins_song = Song.objects.create()
+                    ins_song.title = song["title"]
+                    ins_song.channel = song["channel"]
+                    ins_song.url = song["url"]
+                    ins_song.lyrics = song["lyrics"]
+                    ins_song.isjapanese = song["isjapanese"]
+                    ins_song.save()
                 dir["locked"] = False
 
         if isgpt :
