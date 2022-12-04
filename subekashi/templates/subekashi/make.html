@@ -51,8 +51,12 @@
             <input type="range" id="similar" name="similar" min="1" max="5" value="3" oninput="similarinput()">
             <p id="similarvalue">3</p><br>
         </div>
-        <input type="submit" value="生成" id="submit" disabled>
-        <p class="bottomelement">*がついているラベルは入力が必須です。</p>
+        {% if user.is_authenticated %}
+            <input type="submit" value="生成" id="submit" disabled>
+            <p class="bottomelement">*がついているラベルは入力が必須です。</p>
+        {% else %}
+            <p class="bottomelement">生成する為にはログインが必要です。</p>
+        {% endif %}
     </form>
 </section>
 

@@ -416,9 +416,8 @@ def wrong(request, song_id) :
 
 def ai(request) :
     dir = {}
-    dir["ins_ais"]
+    dir["ins_ais"] = Ai.objects.exclude(points = 0)[::-1]
     return render(request, "subekashi/ai.html", dir)
-
 
 
 def error(request) :
