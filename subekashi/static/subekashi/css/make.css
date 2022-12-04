@@ -73,6 +73,11 @@
     bottom: 20px;
 }
 
+#needlogin {
+    display: block;
+    margin-top: 20px;
+}
+
 .formmargin {
     margin-left: calc(32vw - 160px);
 }

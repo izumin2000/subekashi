@@ -55,28 +55,19 @@
             <input type="submit" value="生成" id="submit" disabled>
             <p class="bottomelement">*がついているラベルは入力が必須です。</p>
         {% else %}
-            <p class="bottomelement">生成する為にはログインが必要です。</p>
+            <p id="needlogin">生成する為にはログインが必要です。</p>
         {% endif %}
     </form>
 </section>
 
 <section id="discribesection">
-    <h1>生成タイプについて</h1>
+    <h1>用語について</h1>
     <div class="underline"></div>
     <div class="formmargin">
         <p>カテゴリ・・・全てあなたの所為です。の特定の曲とその模倣曲から生成する方法</p>
         <p>ソング・・・特定の曲を中心とした模倣関係となっている曲から生成する方法</p>
         <p>モデル・・・模倣曲を学習した言語モデルを用いて生成する方法</p>
-    </div>
-    <h1>類似度について</h1>
-    <div class="underline"></div>
-    <div class="formmargin">
-        <p>類似度を高めに指定すると指定した曲により近い歌詞を生成します。具体的には</p>
-        <ul>
-            <li>指定した曲に登場する単語やその単語の類義語の生成割合が増える</li>
-            <li>生成に用いる模倣曲の数を減らし指定した曲の構文形式に寄せる</li>
-        </ul>
-        <p>等の効果があります。</p>
+        <p>類似度・・・高いほど模倣曲の数を減らし指定した曲に近い歌詞を生成する</p>
     </div>
 </section>
 {% endblock %}
