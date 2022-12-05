@@ -8,7 +8,7 @@ async function setscore(basedir, id, username, score) {
             },
             body: JSON.stringify(
                 {
-                    "points": score,
+                    "score": score,
                     "people": 1,
                     "users": username
                 }

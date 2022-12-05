@@ -116,20 +116,20 @@ def vector_generate(ins_original, ins_imitates, dir) :
             lyrics += word
 
         before_hinshi = hinshi
-    ais_ins = []
+    ins_ais = []
     for lyric in lyrics.split("\n") :
         if len(lyric) >= 2 :
-            ai_ins = Ai.objects.create()
-            ai_ins.lyrics = lyric
-            ai_ins.genetype = dir["genetype"]
+            ins_ai = Ai.objects.create()
+            ins_ai.lyrics = lyric
+            ins_ai.genetype = dir["genetype"]
             if dir["genetype"] == "category" :
-                ai_ins.category = dir["category"]
+                ins_ai.category = dir["category"]
             elif dir["genetype"] == "song" :
-                ai_ins.title = dir["title"]
-                ai_ins.similar = int(dir["similar"])
-            ai_ins.save()
-            ais_ins.append(ai_ins)
-    return ais_ins
+                ins_ai.title = dir["title"]
+                ins_ai.similar = int(dir["similar"])
+            ins_ai.save()
+            ins_ais.append(ins_ai)
+    return ins_ais
 
 
 def format_url(url) :
@@ -286,8 +286,8 @@ def make(request) :
                     if ins_original.id in ins_song.imitate.split(","):
                         ins_imitates.add(ins_song)
         
-            ais_ins = vector_generate(ins_original, ins_imitates, dir)
-            dir["ais_ins"] = ais_ins
+            ins_ais = vector_generate(ins_original, ins_imitates, dir)
+            dir["ins_ais"] = ins_ais
             return render(request, "subekashi/result.html", dir)
                 
         elif inp_genetype == "song" :
@@ -326,15 +326,14 @@ def make(request) :
                         if not(ins_song.isjoke) and ins_song.isjapanese :
                             ins_imitates.add(ins_song)
             
-            print(ins_imitates)
-            ais_ins = vector_generate(ins_original, ins_imitates, dir)
+            ins_ais = vector_generate(ins_original, ins_imitates, dir)
             dir["basedir"] = get_basedir()
-            dir["ais_ins"] = ais_ins
+            dir["ins_ais"] = ins_ais
             return render(request, "subekashi/result.html", dir)
 
         elif inp_genetype == "model" :
-            ai_ins = Ai.objects.filter(isgpt = True)
-            dir["ais_ins"] = random.sample(list(ai_ins), 20)
+            ins_ai = Ai.objects.filter(isgpt = True)
+            dir["ins_ais"] = random.sample(list(ins_ai), 20)
             return render(request, "subekashi/result.html", dir)
 
     return render(request, "subekashi/make.html", dir)
@@ -408,7 +407,10 @@ def wrong(request, song_id) :
     if request.method == "POST" :
         inp_reason = request.POST.get("reason")
         inp_comment = request.POST.get("comment")
-        content = f'**{ins_song.title}**\nid : {ins_song.id}\n理由 : {inp_reason}\nコメント : {inp_comment}'
+        if inp_comment :
+            content = f'**{ins_song.title}**\nid : {ins_song.id}\n理由 : {inp_reason}\nコメント : {inp_comment}'
+        else :
+            content = f'**{ins_song.title}**\nid : {ins_song.id}\n理由 : {inp_reason}'
         requests.post(SUBEKASHI_DISCORD_URL, data={'content': content})
 
     return render(request, "subekashi/wrong.html", dir)
@@ -416,7 +418,7 @@ def wrong(request, song_id) :
 
 def ai(request) :
     dir = {}
-    dir["ins_ais"] = Ai.objects.exclude(points = 0)[::-1]
+    dir["ins_ais"] = Ai.objects.exclude(score = 0)[::-1]
     return render(request, "subekashi/ai.html", dir)
 
 
@@ -466,10 +468,10 @@ def dev(request) :
                                 sentence_gpt = sentence_gpt.replace("」", "")
                                 sentence_gpt = sentence_gpt.replace("。、", "。")
                                 if 10 <= len(sentence_gpt) <= 20 :
-                                    ai_ins = Ai.objects.create()
-                                    ai_ins.isgpt = True
-                                    ai_ins.lyrics = sentence_gpt
-                                    ai_ins.save()
+                                    ins_ai = Ai.objects.create()
+                                    ins_ai.isgpt = True
+                                    ins_ai.lyrics = sentence_gpt
+                                    ins_ai.save()
                 dir["locked"] = False
             
     return render(request, "subekashi/dev.html", dir)
