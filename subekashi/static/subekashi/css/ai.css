@@ -1,0 +1,30 @@
+.lyricdiv {
+    text-align: center;
+}
+
+.lyric {
+    display: inline-block;
+    margin: 30px;
+}
+
+@media (max-width: 960px) {
+    .lyric {
+        display: block;
+        margin: 50px 0 0 0;
+    }
+}
+
+.score {
+    box-shadow: none;
+    height: 15px;
+    width: 15px;
+}
+
+.devinput {
+    display: inline-block;
+    cursor: pointer;
+}
+
+.devinput label {
+    cursor: pointer;
+}

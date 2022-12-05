@@ -49,6 +49,11 @@
     margin: 0 auto;
 }
 
+.ai_lyrics {
+    text-align: center;
+    margin-top: 10px;
+}
+
 #imicom {
     display: block;
     margin: 0 auto -50px auto;

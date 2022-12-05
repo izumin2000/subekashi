@@ -151,6 +151,9 @@ def top(request):
     if ins_nones :
         ins_nones = random.sample(ins_nones, min(6, len(ins_nones)))
         dir["ins_nones"] = ins_nones
+    ins_ai = Ai.objects.exclude(score = 0)
+    if ins_ai :
+        dir["ins_ais"] = ins_ai[10:-1]
     dir["basedir"] = get_basedir()
     return render(request, 'subekashi/top.html', dir)
 

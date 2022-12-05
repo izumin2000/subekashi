@@ -2,6 +2,7 @@ async function setscore(basedir, id, username, score) {
     res = await fetch(basedir + "/api/ai/" + id + "?format=json");
     json_ai = res.json();
 
+    console.log(json_ai, json_ai.users);
     users = json_ai.users.split(",");
     if (!users.includes(username)) {
         users.push(username);
@@ -20,9 +21,22 @@ async function setscore(basedir, id, username, score) {
                 body: json_ai
             }
         );
-        console.log(json_ai);
     } else {
-        console.log("scored");
+        toastr.options = {
+            "closeButton": true,
+            "debug": false,
+            "newestOnTop": false,
+            "progressBar": true,
+            "positionClass": "toast-bottom-right",
+            "preventDuplicates": false,
+            "onclick": null,
+            "timeOut": "10000",
+            "extendedTimeOut": "0",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+        }
+
+        toastr.warning("この行は既に評価済です。")
     }
 }
 

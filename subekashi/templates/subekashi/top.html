@@ -28,11 +28,22 @@
             </div>
         </div>
     {% endfor %}
+    <div class="dummybuttons">
+        <div class="dummybutton dummybuttonf" onclick="toai()"><p class="dummybuttonp">もっと見る</p></div>
+        <div class="dummybutton dummybuttonf" onclick="tomake()"><p class="dummybuttonp">曲を登録する</p></div>
+    </div>
+    
+    <h1>生成された歌詞</h1>
+    <div class="underline"></div>
+    {% if ins_ais %}
+        {% for ins_ai in ins_ais %}
+            <p class="ai_lyrics">{{ ins_ai.lyrics }}</p>
+        {% endfor %}
         <div class="dummybuttons">
             <div class="dummybutton dummybuttonf" onclick="tosearch('')"><p class="dummybuttonp">もっと見る</p></div>
             <div class="dummybutton dummybuttonf" onclick="tonew()"><p class="dummybuttonp">曲を登録する</p></div>
         </div>
-
+    {% endif %}
 
     {% if ins_lacks %}
         <h1>情報不足の曲</h1>
@@ -101,6 +112,14 @@
 
         function tonew() {
             window.location.href = "{% url 'new' %}";
+        }
+        
+        function toai() {
+            window.location.href = "{% url 'ai' %}";
+        }
+        
+        function tomake() {
+            window.location.href = "{% url 'make' %}";
         }
     </script>
 {% endblock %}
