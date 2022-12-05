@@ -20,6 +20,7 @@ urlpatterns = [
     path('channel/<str:channel_name>', views.channel, name = 'channel'),
     path('search', views.search, name = 'search'),
     path('ai', views.ai, name = 'ai'),
+    path('note', views.note, name = 'note'),
     path('wrong/<int:song_id>', views.wrong, name = 'wrong'),
     path('error', views.error, name = 'error'),
     path('dev', views.dev, name = 'dev'),
