@@ -18,7 +18,7 @@ class Song(models.Model) :
 
 class Ai(models.Model) :
     lyrics = models.CharField(default = "", max_length = 100)
-    points = models.IntegerField(default = 0)
+    score = models.IntegerField(default = 0)
     people = models.IntegerField(default = 0)
     users = models.CharField(default = "", max_length = 1000)
     genetype = models.CharField(default = "", max_length = 100)
