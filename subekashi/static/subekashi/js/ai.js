@@ -1,15 +1,15 @@
 async function setscore(basedir, id, username, score) {
     res = await fetch(basedir + "/api/ai/" + id + "?format=json");
-    json_ai = res.json();
+    json_ai = await res.json();
 
     console.log(json_ai, json_ai.users);
     users = json_ai.users.split(",");
     if (!users.includes(username)) {
         users.push(username);
         users = users.join(",");
-        json_ai["users"] = users;
-        json_ai["poeple"] = Number(json_ai["poeple"]) + 1;
-        json_ai["score"] = Number(json_ai["score"]) + score;
+        json_ai.users = users;
+        json_ai.poeple = Number(json_ai.poeple) + 1;
+        json_ai.score = Number(json_ai.score) + score;
 
         res = await fetch(
             basedir + "/api/ai/" + id + "/?format=json",
