@@ -2,13 +2,13 @@ async function setscore(basedir, id, username, score) {
     res = await fetch(basedir + "/api/ai/" + id + "?format=json");
     json_ai = res.json();
 
-    users = ins_ai.users.split(",");
+    users = json_ai.users.split(",");
     if (!users.includes(username)) {
         users.push(username);
         users = users.join(",");
-        ins_ai["users"] = users;
-        ins_ai["poeple"] = Number(ins_ai["poeple"]) + 1;
-        ins_ai["score"] = Number(ins_ai["score"]) + score;
+        json_ai["users"] = users;
+        json_ai["poeple"] = Number(json_ai["poeple"]) + 1;
+        json_ai["score"] = Number(json_ai["score"]) + score;
 
         res = await fetch(
             basedir + "/api/ai/" + id + "/?format=json",
@@ -17,9 +17,12 @@ async function setscore(basedir, id, username, score) {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: ins_ai
+                body: json_ai
             }
         );
+        console.log(json_ai);
+    } else {
+        console.log("scored");
     }
 }
 
