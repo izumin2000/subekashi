@@ -55,7 +55,7 @@ def get_basedir() :
     if DEBUG :
         return "http://subekashi.localhost:8000"
     else :
-        return "http://subekashi.izmn.net"
+        return "https://subekashi.izmn.net"
 
 
 def counter(word) :
