@@ -33,9 +33,9 @@
         <div class="dummybutton dummybuttonf" onclick="tonew()"><p class="dummybuttonp">曲を登録する</p></div>
     </div>
     
-    <h1>生成された歌詞</h1>
-    <div class="underline"></div>
     {% if ins_ais %}
+        <h1>生成された歌詞</h1>
+        <div class="underline"></div>
         {% for ins_ai in ins_ais %}
             <p class="lyrics">{{ ins_ai.lyrics }}</p>
         {% endfor %}

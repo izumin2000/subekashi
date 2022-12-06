@@ -331,13 +331,14 @@ footer {
     margin: 3px 0 0 8px;
 }
 
-.footer-right p {
+.footer-right a {
     font-family: 'Noto Sans JP', sans-serif;
     font-size: 12px;
     line-height: 12px;
     float: right;
     display: inline;
     margin: 9px 8px 0 0;
+    text-decoration: none;
     color: #fff;
 }
 

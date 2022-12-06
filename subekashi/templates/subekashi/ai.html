@@ -38,4 +38,23 @@
 
 {% block js %}
 <script src="{% static 'subekashi/js/ai.js' %}" rel="stylesheet"></script>
+<script>
+window.addEventListener('load', function(){
+    toastr.options = {
+        "closeButton": true,
+        "debug": false,
+        "newestOnTop": false,
+        "progressBar": true,
+        "positionClass": "toast-bottom-right",
+        "preventDuplicates": false,
+        "onclick": null,
+        "timeOut": "5000",
+        "extendedTimeOut": "0",
+        "showEasing": "swing",
+        "hideEasing": "linear",
+    }
+
+    toastr.info("生成された歌詞のうち未評価の歌詞を表示しています。")
+});
+</script>
 {% endblock %}

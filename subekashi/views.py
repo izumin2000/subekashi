@@ -151,7 +151,7 @@ def top(request):
     if ins_nones :
         ins_nones = random.sample(ins_nones, min(6, len(ins_nones)))
         dir["ins_nones"] = ins_nones
-    ins_ais = Ai.objects.exclude(score = 0)
+    ins_ais = Ai.objects.filter(score = 0)[::-1]
     if ins_ais :
         dir["ins_ais"] = ins_ais[min(10, len(ins_ais))::-1]
     dir["basedir"] = get_basedir()
@@ -427,7 +427,7 @@ def wrong(request, song_id) :
 
 def ai(request) :
     dir = {}
-    dir["ins_ais"] = Ai.objects.exclude(score = 0)[::-1]
+    dir["ins_ais"] = Ai.objects.filter(score = 0)[::-1]
     return render(request, "subekashi/ai.html", dir)
 
 
