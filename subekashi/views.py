@@ -141,7 +141,7 @@ def format_url(url) :
 
 def top(request):
     dir = {}
-    ins_songs = Song.objects.exclude(lyrics = "")[5::-1]
+    ins_songs = list(Song.objects.exclude(lyrics = ""))[:-7:-1]
     dir["ins_songs"] = ins_songs
     ins_lacks = list(Song.objects.filter(lyrics = "").exclude(channel = "")) + list(Song.objects.filter(url = "").exclude(channel = ""))
     if ins_lacks :
