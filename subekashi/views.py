@@ -166,11 +166,11 @@ def new(request) :
         inp_channel = request.POST.get("channel")
         inp_url = request.POST.get("url")
         inp_lyrics = request.POST.get("lyrics")
-        inp_imitatenums = request.POST.get("imitatenums")
         inp_isjapanese = request.POST.get("isjapanese")
         inp_isjoke = request.POST.get("isjoke")
+        imitate1 = request.POST.get("imitate1")
 
-        if ("" in [inp_title, inp_channel, inp_imitatenums]) :
+        if (("" in [inp_title, inp_channel]) or (imitate1 == "選択してください")):
             return render(request, "subekashi/error.html")
 
         ins_song, iscreated = Song.objects.get_or_create(title = inp_title, defaults = {"title" : inp_title})
@@ -187,13 +187,25 @@ def new(request) :
             ins_song.lyrics = inp_lyrics
 
         imitates = set()
-        for i in range(int(inp_imitatenums)) :
-            imitate = request.POST.get(f"imitate{i + 1}")
-            imitate = imitate[:-2]
-            if imitate == "模倣曲" :
-                imitate = request.POST.get(f"imitateimitate{i + 1}")
-                if imitate :
-                    ins_imitate, _ = Song.objects.get_or_create(title = imitate, defaults = {"title" : imitate})
+        imitateNum = 1
+        while 1 :
+            imitate = request.POST.get(f"imitate{imitateNum}")
+            if imitate :
+                imitate = imitate[:-2]
+                if imitate == "模倣曲" :
+                    imitate = request.POST.get(f"imitateimitate{imitateNum}")
+                    if imitate :
+                        ins_imitate, _ = Song.objects.get_or_create(title = imitate, defaults = {"title" : imitate})
+                        imitates.add(ins_imitate.id)
+                        if ins_imitate.imitated :
+                            imitated = set(ins_imitate.imitated.split(","))
+                            imitated.add(ins_song.id)
+                            ins_imitate.imitated = ",".join(list(map(str, imitated)))
+                        else :
+                            ins_imitate.imitated = ins_song.id
+                        ins_imitate.save()
+                elif imitate != "オリジナル" :
+                    ins_imitate = Song.objects.filter(title = imitate).first()
                     imitates.add(ins_imitate.id)
                     if ins_imitate.imitated :
                         imitated = set(ins_imitate.imitated.split(","))
@@ -202,16 +214,9 @@ def new(request) :
                     else :
                         ins_imitate.imitated = ins_song.id
                     ins_imitate.save()
-            elif imitate != "オリジナル" :
-                ins_imitate = Song.objects.filter(title = imitate).first()
-                imitates.add(ins_imitate.id)
-                if ins_imitate.imitated :
-                    imitated = set(ins_imitate.imitated.split(","))
-                    imitated.add(ins_song.id)
-                    ins_imitate.imitated = ",".join(list(map(str, imitated)))
-                else :
-                    ins_imitate.imitated = ins_song.id
-                ins_imitate.save()
+                imitateNum += 1
+            else :
+                break
 
         if iscreated or not(iscreated or ins_song.imitate) :
             ins_song.imitate = ",".join(list(map(str, list(imitates))))

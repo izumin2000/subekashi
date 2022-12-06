@@ -96,10 +96,6 @@ function newform(imitateNumAt) {
                 appendimitateEle.disabled = false;
             }
         }
-
-        // viewsへの値の受け渡し
-        imitatenumsEle = document.getElementById("imitatenums");
-        imitatenumsEle.value = imitateNums;
     }
 
     // form全体がvalidか確認
