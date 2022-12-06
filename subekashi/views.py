@@ -280,6 +280,9 @@ def make(request) :
             inp_category = request.POST.get("category")
             dir["category"] = inp_category
 
+            if (inp_category == "選択してください") :
+                return render(request, "subekashi/error.html")
+
             ins_imitates = set()
             ins_original = Song.objects.filter(title = inp_category[:-2]).first()
             for ins_song in Song.objects.all() :
@@ -298,6 +301,9 @@ def make(request) :
             dir["title"] = inp_title
             inp_similar = request.POST.get("similar")
             dir["similar"] = inp_similar
+
+            if (inp_title == "") :
+                return render(request, "subekashi/error.html")
 
             imitates = []
             for ins_song in Song.objects.all() :
