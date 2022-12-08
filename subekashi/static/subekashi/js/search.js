@@ -100,6 +100,10 @@ function searchsong() {
                 styledisplay = "none";
             }
         } else if (filtrtEles[3].checked) {
+            if (!songjson[i]["isoriginal"]) {
+                styledisplay = "none";
+            }
+        } else if (filtrtEles[4].checked) {
             if (!songjson[i]["isjoke"]) {
                 styledisplay = "none";
             }
@@ -127,27 +131,25 @@ function searchsong() {
 
 function devinput(filtertype) {
     radioEle = document.getElementsByClassName("filters")[filtertype];
-    if (filtertype == 3) {
-        if (radioEle.checked) {
-            radioEle.checked = false;
-        } else {
-            radioEle.checked = true;
-        }
+    if (filtertype >= 3) {
+        radioEle.checked = !radioEle.checked;
     } else {
         radioEle.checked = true;
     }
     searchsong();
 }
 
-function jokeinput() {
-    jokeEle = document.getElementById("joke");
-    if (jokeEle.checked) {
-        jokeEle.checked = false;
-    } else {
-        jokeEle.checked = true;
+
+function checkboxinput(filtertype) {
+    if (filtertype == 3) {
+        checkboxEle = document.getElementById("original");
+    } else if (filtertype == 4) {
+        checkboxEle = document.getElementById("joke");
     }
+    checkboxEle.checked = !checkboxEle.checked;
     searchsong();
 }
+
 
 function categoryinput(category) {
     if (category == "オリジナル") {

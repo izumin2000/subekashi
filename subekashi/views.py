@@ -203,8 +203,9 @@ def new(request) :
                             ins_imitate.imitated = ",".join(list(map(str, imitated)))
                         else :
                             ins_imitate.imitated = ins_song.id
+                        ins_imitate.save()
                 elif imitate == "オリジナル" :
-                    ins_imitate.isoriginal = True
+                    ins_song.isoriginal = True
                 else :
                     ins_imitate = Song.objects.filter(title = imitate).first()
                     imitates.add(ins_imitate.id)
@@ -214,7 +215,7 @@ def new(request) :
                         ins_imitate.imitated = ",".join(list(map(str, imitated)))
                     else :
                         ins_imitate.imitated = ins_song.id
-                ins_imitate.save()
+                    ins_imitate.save()
                 imitateNum += 1
             else :
                 break
@@ -227,14 +228,7 @@ def new(request) :
         if ins_song.imitate :
             for imitate_id in ins_song.imitate.split(",") :
                 imitates.append(Song.objects.get(pk = int(imitate_id)))
-        if ins_song.channel == "全てあなたの所為です。" :
-            imitates.append("オリジナル")
-        if not(len(imitates)) :
-            imitates.append("オリジナル模倣")
-        if ins_song.isjoke :
-            imitates.append("ネタ曲")    
-
-        dir["imitates"] = imitates
+            dir["imitates"] = imitates
         dir["ins_song"] = ins_song
         return render(request, 'subekashi/song.html', dir)
 
@@ -250,16 +244,12 @@ def song(request, song_id) :
     dir = {}
     ins_song = Song.objects.get(pk = song_id)
     dir["ins_song"] = ins_song
-    imitates = []
 
+    imitates = []
     if ins_song.imitate :
         for imitate_id in ins_song.imitate.split(",") :
             imitates.append(Song.objects.get(pk = int(imitate_id)))
-    if ins_song.channel == "全てあなたの所為です。" :
-        imitates.append("オリジナル")
-    if ins_song.isjoke :
-        imitates.append("ネタ曲")    
-    dir["imitates"] = imitates
+        dir["imitates"] = imitates
 
     imitateds = ins_song.imitated
     if imitateds :
@@ -403,6 +393,8 @@ def search(request) :
         dir["lacks"] = request.GET.get("lacks")
     if "nones" in request.GET :
         dir["nones"] = request.GET.get("nones")
+    if "isoriginal" in request.GET :
+        dir["isoriginal"] = request.GET.get("isoriginal")
     if "isjoke" in request.GET :
         dir["isjoke"] = request.GET.get("isjoke")
     

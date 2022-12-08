@@ -42,9 +42,13 @@
         <label>未登録の曲</label>
     </div>
     <div class="devinput" onclick="devinput(3)">
-        <input type="checkbox" id="joke" class="filters" name="filter" value="joke" oninput="jokeinput(); searchsong()">
+        <input type="checkbox" id="original" class="filters" name="filter" value="original" oninput="checkboxinput(3); searchsong()">
+        <label>オリジナル模倣曲</label>
+    </div>
+    <div class="devinput" onclick="devinput(4)">
+        <input type="checkbox" id="joke" class="filters" name="filter" value="joke" oninput="checkboxinput(4); searchsong()">
         <label>ネタ曲</label>
-    </div><br>
+    </div>
 
     {% for ins_song in ins_songs %}
         <div id="{{ ins_song.id }}" class="songcard" onclick="songpage('{{ basedir }}', '{{ ins_song.id }}')">
@@ -86,6 +90,10 @@
             devinput(2);
         } else if ('{{ category }}') {
             categoryinput('{{ category }}')
+        } else if ('{{ isoriginal }}') {
+            originalEle = document.getElementById("original");
+            originalEle.checked = true;
+            window.setTimeout(searchsong, 1000);
         } else if ('{{ isjoke }}') {
             jokeEle = document.getElementById("joke");
             jokeEle.checked = true;
