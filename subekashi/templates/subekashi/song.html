@@ -20,13 +20,14 @@
             {% if imitate == "ネタ曲" %}
                 <a class="songimitate" href="{% url 'search' %}?isjoke=1">ネタ曲</a>
             {% elif imitate == "オリジナル" %}
-                <a class="songimitate" href="{% url 'channel' '全てあなたの所為です。' %}">オリジナル</a>
-            {% elif imitate == "オリジナル模倣" %}
-                <p class="songimitate">オリジナル模倣</p>
+            <a class="songimitate" href="{% url 'channel' '全てあなたの所為です。' %}">オリジナル</a>
             {% else %}
                 {% if imitate %}
                     <a class="songimitate" href="{% url 'song' imitate.id %}">{{ imitate.title }}模倣</a>
                 {% endif %}
+            {% endif %}
+            {% if imitate.isoriginal %}
+                <p class="songimitate">オリジナル模倣</p>
             {% endif %}
         {% endfor %}
         

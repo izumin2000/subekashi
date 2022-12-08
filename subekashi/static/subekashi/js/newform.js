@@ -121,7 +121,7 @@ function appendimitatef() {
     imitateselectEle.id = "imitate" + imitateNums;
     imitateselectEle.name = "imitate" + imitateNums;
     imitateselectEle.setAttribute("oninput", "newform(" + imitateNums + ")");
-    imitateselectEle.innerHTML = "<option>選択してください</option><option>.模倣</option><option>..模倣</option><option>教育模倣</option><option>アブジェ模倣</option><option>...模倣</option><option>表\/裏模倣</option><option>名の無い星が空に堕ちたら模倣</option><option>エヌ模倣</option>K²模倣<option>オリジナル模倣</option><option>模倣曲模倣</option>";
+    imitateselectEle.innerHTML = "<option>選択してください</option><option>.模倣</option><option>..模倣</option><option>教育模倣</option><option>アブジェ模倣</option><option>...模倣</option><option>表\/裏模倣</option><option>名の無い星が空に堕ちたら模倣</option><option>エヌ模倣</option><option>K²模倣</option><option>オリジナル模倣</option><option>模倣曲模倣</option>";
 
     imitatedivEle = document.createElement("div");
     imitatedivEle.setAttribute("class", "imitateimitatediv");
