@@ -35,6 +35,10 @@ async function isExistSong(basedir) {
         }
         if (song.imitate) {
             lack_columns.push("模倣");
+        } else {
+            if (song.isoriginal) {
+                lack_columns.push("模倣");
+            }
         }
         if (song.lyrics) {
             lack_columns.push("歌詞");
