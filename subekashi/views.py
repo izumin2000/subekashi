@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
-from subekashi.models import Song, Ai
+from subekashi.models import Song, Ai, Genecategory, Genesong
 from config.settings import DEBUG
 import hashlib
 import requests
@@ -122,13 +122,19 @@ def vector_generate(ins_original, ins_imitates, dir) :
             ins_ai = Ai.objects.create()
             ins_ai.lyrics = lyric
             ins_ai.genetype = dir["genetype"]
-            if dir["genetype"] == "category" :
-                ins_ai.category = dir["category"]
-            elif dir["genetype"] == "song" :
-                ins_ai.title = dir["title"]
-                ins_ai.similar = int(dir["similar"])
             ins_ai.save()
             ins_ais.append(ins_ai)
+            if dir["genetype"] == "category" :
+                ins_genecategory = Genecategory.objects.create()
+                ins_genecategory.ai = ins_ai
+                ins_genecategory.category = dir["category"]
+                ins_genecategory.save()
+            elif dir["genetype"] == "song" :
+                ins_genesong = Genesong.objects.create()
+                ins_genesong.ai = ins_ai
+                ins_genesong.title = dir["title"]
+                ins_genesong.similar = int(dir["similar"])
+                ins_genesong.save()
     return ins_ais
 
 
@@ -335,7 +341,7 @@ def make(request) :
             return render(request, "subekashi/result.html", dir)
 
         elif inp_genetype == "model" :
-            ins_ai = Ai.objects.filter(isgpt = True)
+            ins_ai = Ai.objects.filter(genetype = "model")
             dir["ins_ais"] = random.sample(list(ins_ai), 20)
             return render(request, "subekashi/result.html", dir)
 

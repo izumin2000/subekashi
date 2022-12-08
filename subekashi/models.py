@@ -20,13 +20,18 @@ class Song(models.Model) :
 class Ai(models.Model) :
     lyrics = models.CharField(default = "", max_length = 100)
     score = models.IntegerField(default = 0)
-    people = models.IntegerField(default = 0)
-    users = models.CharField(default = "", max_length = 1000)
     genetype = models.CharField(default = "", max_length = 100)
-    category = models.CharField(default = "", max_length = 100)
-    title = models.CharField(default = "", max_length = 100)
-    similar = models.CharField(default = "", max_length = 100)
-    isgpt = models.BooleanField(default = False)
     
     def __str__(self):
         return self.lyrics
+
+
+class Genecategory(models.Model) :
+    ai = models.ForeignKey("Ai", on_delete = models.CASCADE, blank = True, null = True)
+    category = models.CharField(default = "", max_length = 100)
+
+
+class Genesong(models.Model) :
+    ai = models.ForeignKey("Ai", on_delete = models.CASCADE, blank = True, null = True)
+    title = models.CharField(default = "", max_length = 100)
+    similar = models.CharField(default = "", max_length = 100)
