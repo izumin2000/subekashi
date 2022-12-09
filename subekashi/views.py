@@ -12,7 +12,7 @@ import networkx as nx
 import random
 from rest_framework import viewsets
 from .serializer import SongSerializer, AiSerializer
-from config.settings import SUBEKASHI_DISCORD_URL
+from config.settings import *
 from django.contrib.auth.views import LogoutView
 from django.urls import reverse
 
@@ -149,7 +149,8 @@ def top(request):
     dir = {}
     ins_songs = list(Song.objects.exclude(lyrics = ""))[:-7:-1]
     dir["ins_songs"] = ins_songs
-    ins_lacks = list(Song.objects.filter(lyrics = "").exclude(channel = "")) + list(Song.objects.filter(url = "").exclude(channel = ""))
+    ins_lacks = list(Song.objects.filter(lyrics = "").exclude(channel = ""))
+    ins_lacks += list(Song.objects.filter(url = "").exclude(channel = ""))
     if ins_lacks :
         ins_lacks = random.sample(ins_lacks, min(6, len(ins_lacks)))
         dir["ins_lacks"] = ins_lacks
@@ -236,6 +237,13 @@ def new(request) :
                 imitates.append(Song.objects.get(pk = int(imitate_id)))
             dir["imitates"] = imitates
         dir["ins_song"] = ins_song
+        content = f'**{ins_song.title}**\n\
+        id : {ins_song.id}\n\
+        チャンネル : {ins_song.channel}\n\
+        URL : {ins_song.url}\n\
+        模倣 : {", ".join([imitate.title for imitate in imitates])}\n\
+        歌詞 : {ins_song.lyrics[:min(20, len(ins_song.lyrics))]}'
+        requests.post(SUBEKASHI_NEW_DISCORD_URL, data={'content': content})
         return render(request, 'subekashi/song.html', dir)
 
     dir["basedir"] = get_basedir()
@@ -387,6 +395,12 @@ def edit(request) :
 
         ins_song.save()
         dir["ins_song"] = ins_song
+        content = f'**{ins_song.title}**\n\
+        id : {ins_song.id}\n\
+        チャンネル : {ins_song.channel}\n\
+        URL : {ins_song.url}\n\
+        歌詞 : {ins_song.lyrics[:min(20, len(ins_song.lyrics))]}'
+        requests.post(SUBEKASHI_NEW_DISCORD_URL, data={'content': content})
         return render(request, "subekashi/song.html", dir)
 
     return render(request, "subekashi/edit.html", dir)
@@ -422,7 +436,7 @@ def wrong(request, song_id) :
             content = f'**{ins_song.title}**\nid : {ins_song.id}\n理由 : {inp_reason}\nコメント : {inp_comment}'
         else :
             content = f'**{ins_song.title}**\nid : {ins_song.id}\n理由 : {inp_reason}'
-        requests.post(SUBEKASHI_DISCORD_URL, data={'content': content})
+        requests.post(SUBEKASHI_EDIT_DISCORD_URL, data={'content': content})
 
     return render(request, "subekashi/wrong.html", dir)
 
