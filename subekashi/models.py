@@ -6,7 +6,7 @@ class Song(models.Model) :
     channel = models.CharField(default = "", max_length = 50)
     url = models.CharField(default = "", max_length = 50, blank = True, null = True)
     lyrics = models.CharField(default = "", max_length = 10000, blank = True, null = True)
-    ruigo = models.CharField(default = "", max_length = 10000, blank = True, null = True)
+    ruigo = models.CharField(default = "", max_length = 50000, blank = True, null = True)
     imitate = models.CharField(default = "", max_length = 1000, blank = True, null = True)
     imitated = models.CharField(default = "", max_length = 1000, blank = True, null = True)
     isoriginal = models.BooleanField(default = False)
