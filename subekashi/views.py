@@ -484,23 +484,36 @@ def dev(request) :
         if isgpt :
             inp_gpt = request.POST.get("gpt")
             if inp_gpt :
+                set_lyrics = set()
                 gpts = inp_gpt.split("\n")[12:]
                 for gpt in gpts :
                     if gpt[0] != "=" :
-                        long_sentence_gpts = gpt.split("。")
-                        for long_sentence_gpt in long_sentence_gpts :
-                            long_sentence_gpt += "。"
-                            sentence_gpts = long_sentence_gpt.split("、")
-                            for sentence_gpt in sentence_gpts :
-                                sentence_gpt += "、"
-                                sentence_gpt = sentence_gpt.replace("「", "")
-                                sentence_gpt = sentence_gpt.replace("」", "")
-                                sentence_gpt = sentence_gpt.replace("。、", "。")
-                                if 10 <= len(sentence_gpt) <= 20 :
-                                    ins_ai = Ai.objects.create()
-                                    ins_ai.isgpt = True
-                                    ins_ai.lyrics = sentence_gpt
-                                    ins_ai.save()
+                        sentence_gpts = gpt.split("。")
+                        for sentence_gpt in sentence_gpts :
+                            sentence_gpt += "。"
+                            lyrics_tmp = ""
+                            lyrics_gpts = sentence_gpt.split("、")
+                            for lyrics_gpt in lyrics_gpts :
+                                lyrics_gpt += "、"
+                                lyrics_gpt = lyrics_gpt.replace("「", "")
+                                lyrics_gpt = lyrics_gpt.replace("」", "")
+                                lyrics_gpt = lyrics_gpt.replace("。、", "。")
+                                lyrics_gpt = lyrics_tmp + lyrics_gpt
+                                if 4 < len(lyrics_gpt) :
+                                    if "所為" in lyrics_gpt :
+                                        if random.random <= 0.2 :
+                                            set_lyrics.add(lyrics_gpt)
+                                    else :
+                                        set_lyrics.add(lyrics_gpt)
+                                    lyrics_tmp = ""
+                                else :
+                                    lyrics_tmp = lyrics_gpt
+                for ai_lyrics in set_lyrics :
+                    ins_ai = Ai.objects.create()
+                    ins_ai.lyrics = ai_lyrics
+                    print(ai_lyrics)
+                    ins_ai.save()
+
                 dir["locked"] = False
             
     return render(request, "subekashi/dev.html", dir)
