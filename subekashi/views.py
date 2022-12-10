@@ -491,25 +491,25 @@ def dev(request) :
                         sentence_gpts = gpt.split("。")
                         for sentence_gpt in sentence_gpts :
                             sentence_gpt += "。"
-                            lyrics_tmp = ""
                             lyrics_gpts = sentence_gpt.split("、")
                             for lyrics_gpt in lyrics_gpts :
-                                lyrics_gpt += "、"
-                                delete_chars = list("「」　（）()") + ["。、"]
-                                for delete_char in delete_chars :
+                                for delete_char in "「」　（）()" :
                                     lyrics_gpt = lyrics_gpt.replace(delete_char, "")
-                                lyrics_gpt = lyrics_tmp + lyrics_gpt
-                                if 5 <= len(lyrics_gpt) :
-                                    set_lyrics.add(lyrics_gpt)
-                                    lyrics_tmp = ""
-                                else :
-                                    lyrics_tmp = lyrics_gpt
-                                    
+                                set_lyrics.add(lyrics_gpt)
+
+                lyrics_tmp = ""
                 for ai_lyrics in set_lyrics :
-                    if len(ai_lyrics) <= 15 :
+                    if lyrics_tmp :
+                        ai_lyrics += lyrics_tmp
+                    if len(ai_lyrics) <= 7 :
+                        lyrics_tmp = ai_lyrics
+                    elif len(ai_lyrics) <= 20 :
+                        if (ai_lyrics[-1] != "、") and (ai_lyrics[-1] != "。") :
+                            ai_lyrics += "、"
                         ins_ai = Ai.objects.create()
                         ins_ai.lyrics = ai_lyrics
                         ins_ai.save()
+                        lyrics_tmp = ""
 
                 dir["locked"] = False
             
