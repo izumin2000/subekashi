@@ -495,16 +495,12 @@ def dev(request) :
                             lyrics_gpts = sentence_gpt.split("、")
                             for lyrics_gpt in lyrics_gpts :
                                 lyrics_gpt += "、"
-                                lyrics_gpt = lyrics_gpt.replace("「", "")
-                                lyrics_gpt = lyrics_gpt.replace("」", "")
-                                lyrics_gpt = lyrics_gpt.replace("。、", "。")
+                                delete_chars = list("「」　（）()") + ["。、"]
+                                for delete_char in delete_chars :
+                                    lyrics_gpt = lyrics_gpt.replace(delete_char, "")
                                 lyrics_gpt = lyrics_tmp + lyrics_gpt
-                                if 4 < len(lyrics_gpt) :
-                                    if "所為" in lyrics_gpt :
-                                        if random.random <= 0.2 :
-                                            set_lyrics.add(lyrics_gpt)
-                                    else :
-                                        set_lyrics.add(lyrics_gpt)
+                                if 6 < len(lyrics_gpt) :
+                                    set_lyrics.add(lyrics_gpt)
                                     lyrics_tmp = ""
                                 else :
                                     lyrics_tmp = lyrics_gpt
