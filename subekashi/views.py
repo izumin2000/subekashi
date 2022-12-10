@@ -499,19 +499,17 @@ def dev(request) :
                                 for delete_char in delete_chars :
                                     lyrics_gpt = lyrics_gpt.replace(delete_char, "")
                                 lyrics_gpt = lyrics_tmp + lyrics_gpt
-                                if 6 <= len(lyrics_gpt) :
+                                if 5 <= len(lyrics_gpt) :
                                     set_lyrics.add(lyrics_gpt)
-                                    lyrics_tmp = ""
-                                elif 20 >= len(lyrics_gpt) :
-                                    lyrics_gpt = ""
                                     lyrics_tmp = ""
                                 else :
                                     lyrics_tmp = lyrics_gpt
+                                    
                 for ai_lyrics in set_lyrics :
-                    ins_ai = Ai.objects.create()
-                    ins_ai.lyrics = ai_lyrics
-                    print(ai_lyrics)
-                    ins_ai.save()
+                    if len(ai_lyrics) <= 15 :
+                        ins_ai = Ai.objects.create()
+                        ins_ai.lyrics = ai_lyrics
+                        ins_ai.save()
 
                 dir["locked"] = False
             
