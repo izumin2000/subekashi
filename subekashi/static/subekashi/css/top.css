@@ -66,18 +66,18 @@
     }
 }
 
-#subekashi {
+.youtubelink {
     text-align: center;
     margin-bottom: 50px;
     text-decoration: none;
 }
 
-#subekashi h1 {
+.youtubelink h1 {
     font-size: 35px;
 }
 
 @media (max-width: 640px) {
-    #subekashi h1 {
+    .youtubelink h1 {
         font-size: 25px;
     }
 }

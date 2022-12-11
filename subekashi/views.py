@@ -330,26 +330,34 @@ def make(request) :
             ins_original = Song.objects.filter(title = inp_title).first()
             
             if ins_original.id in G.nodes() :
-                length, path = nx.single_source_dijkstra(G, ins_original.id)
+                length, _ = nx.single_source_dijkstra(G, ins_original.id)
             else :
                 length = 0
 
             inp_pops = 5 - int(inp_similar)
             ins_imitates = set([ins_original])
+            disableGene = True
             if length :
                 for id, pops in length.items() :
                     if pops <= inp_pops :
                         ins_song = Song.objects.get(pk = id)
                         if not(ins_song.isjoke) and ins_song.isjapanese :
                             ins_imitates.add(ins_song)
+                            if disableGene :
+                                if ins_song.ruigo :
+                                    disableGene = False
             
-            ins_ais = vector_generate(ins_original, ins_imitates, dir)
-            dir["basedir"] = get_basedir()
-            dir["ins_ais"] = ins_ais
-            return render(request, "subekashi/result.html", dir)
+            if disableGene :
+                dir["error"] = "生成に必要なデータが揃ってないようです"
+                return render(request, "subekashi/make.html", dir)
+            else :
+                ins_ais = vector_generate(ins_original, ins_imitates, dir)
+                dir["basedir"] = get_basedir()
+                dir["ins_ais"] = ins_ais
+                return render(request, "subekashi/result.html", dir)
 
         elif inp_genetype == "model" :
-            ins_ai = Ai.objects.filter(genetype = "model")
+            ins_ai = Ai.objects.filter(genetype = "model").exclude(score = 0)
             dir["ins_ais"] = random.sample(list(ins_ai), 20)
             return render(request, "subekashi/result.html", dir)
 
