@@ -30,7 +30,7 @@
     {% endfor %}
     <div class="dummybuttons">
         <div class="dummybutton dummybuttonf" onclick="tosearch('')"><p class="dummybuttonp">もっと見る</p></div>
-        <div class="dummybutton dummybuttonf" onclick="tonew()"><p class="dummybuttonp">曲を登録する</p></div>
+        <div class="dummybutton dummybuttonf" onclick="tonew('')"><p class="dummybuttonp">曲を登録する</p></div>
     </div>
     
     {% if ins_ais %}
@@ -70,7 +70,7 @@
         {% endfor %}
             <div class="dummybuttons">
                 <div class="dummybutton dummybuttonf" onclick="tosearch('?lacks=1')"><p class="dummybuttonp">もっと見る</p></div>
-                <div class="dummybutton dummybuttonf" onclick="tonew()"><p class="dummybuttonp">曲を登録する</p></div>
+                <div class="dummybutton dummybuttonf" onclick="tonew('')"><p class="dummybuttonp">曲を登録する</p></div>
             </div>
 
     {% endif %}
@@ -79,7 +79,7 @@
         <h1>未登録の曲</h1>
         <div class="underline"></div>
         {% for ins_song in ins_nones %}
-            <div class="songcard" onclick="songlack('{{ basedir }}', '{{ ins_song.id }}')">
+            <div class="songcard" onclick="tonew('{{ ins_song.title }}')">
                 <div class="cardleft">
                     <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title|slice:"30" }}</p>
                     <p class="songchannel"><i class="fas fa-user-circle"></i> チャンネル未登録</p>
@@ -92,7 +92,7 @@
         {% endfor %}
             <div class="dummybuttons">
                 <div class="dummybutton dummybuttonf" onclick="tosearch('?nones=1')"><p class="dummybuttonp">もっと見る</p></div>
-                <div class="dummybutton dummybuttonf" onclick="tonew()"><p class="dummybuttonp">曲を登録する</p></div>
+                <div class="dummybutton dummybuttonf" onclick="tonew('')"><p class="dummybuttonp">曲を登録する</p></div>
             </div>
     {% endif %}
     
@@ -111,8 +111,9 @@
             window.location.href = "{% url 'search' %}" + query;
         }
 
-        function tonew() {
-            window.location.href = "{% url 'new' %}";
+        function tonew(title) {
+            window.location.href = "{% url 'new' %}?title=" + title;
+
         }
         
         function toai() {

@@ -68,11 +68,11 @@
 
 .youtubelink {
     text-align: center;
-    margin-bottom: 50px;
     text-decoration: none;
 }
 
 .youtubelink h1 {
+    margin-top: 100px;
     font-size: 35px;
 }
 

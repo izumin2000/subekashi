@@ -238,7 +238,7 @@ def new(request) :
             dir["imitates"] = imitates
         dir["ins_song"] = ins_song
 
-        if len(imitates) or ins_song.isoriginal :
+        if len(imitates) or ins_song.isoriginal or ins_song.channel == "全てあなたの所為です。"  :
             dir["displayinfo"] = True
 
         content = f'**{ins_song.title}**\n\
@@ -279,7 +279,7 @@ def song(request, song_id) :
             ins_imitateds.append(ins_imitated)
         dir["ins_imitateds"] = ins_imitateds
     
-    if len(imitates) or ins_song.isoriginal :
+    if len(imitates) or ins_song.isoriginal or ins_song.channel == "全てあなたの所為です。" :
         dir["displayinfo"] = True
 
     return render(request, "subekashi/song.html", dir)
