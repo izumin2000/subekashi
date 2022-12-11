@@ -185,8 +185,8 @@ def new(request) :
         ins_song.title = inp_title
         if iscreated or not(iscreated or ins_song.channel) :
             ins_song.channel = inp_channel.replace(" ", "")
-        ins_song.isjapanese = bool(inp_isjapanese)
-        ins_song.isjoke = bool(inp_isjoke)
+        ins_song.isjapanese = int(bool(inp_isjapanese))
+        ins_song.isjoke = int(bool(inp_isjoke))
 
         if inp_url and (iscreated or not(iscreated or ins_song.url)):
             ins_song.url = format_url(inp_url)
@@ -212,7 +212,7 @@ def new(request) :
                             ins_imitate.imitated = ins_song.id
                         ins_imitate.save()
                 elif imitate == "オリジナル" :
-                    ins_song.isoriginal = True
+                    ins_song.isoriginal = 1
                 else :
                     ins_imitate = Song.objects.filter(title = imitate).first()
                     imitates.add(ins_imitate.id)
@@ -237,6 +237,10 @@ def new(request) :
                 imitates.append(Song.objects.get(pk = int(imitate_id)))
             dir["imitates"] = imitates
         dir["ins_song"] = ins_song
+
+        if len(imitates) or ins_song.isoriginal :
+            dir["displayinfo"] = True
+
         content = f'**{ins_song.title}**\n\
         id : {ins_song.id}\n\
         チャンネル : {ins_song.channel}\n\
@@ -247,10 +251,12 @@ def new(request) :
         return render(request, 'subekashi/song.html', dir)
 
     dir["basedir"] = get_basedir()
-    if "channel" in request.GET :
-        dir["channel"] = request.GET.get("channel")
     if "title" in request.GET :
         dir["title"] = request.GET.get("title")
+    if "channel" in request.GET :
+        dir["channel"] = request.GET.get("channel")
+    if "url" in request.GET :
+        dir["url"] = request.GET.get("url")
     return render(request, 'subekashi/new.html', dir)
 
 
@@ -272,6 +278,9 @@ def song(request, song_id) :
             ins_imitated = Song.objects.get(pk = int(id))
             ins_imitateds.append(ins_imitated)
         dir["ins_imitateds"] = ins_imitateds
+    
+    if len(imitates) or ins_song.isoriginal :
+        dir["displayinfo"] = True
 
     return render(request, "subekashi/song.html", dir)
 

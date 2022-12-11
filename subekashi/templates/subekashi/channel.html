@@ -12,9 +12,9 @@
         {% for ins_song in ins_songs %}
             <div class="songcard" onclick="songpage('{{ basedir }}', '{{ ins_song.id }}')">
                 <div class="cardleft">
-                    <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title }}</p>
+                    <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title|slice:"30" }}</p>
                     {% if ins_song.url %}
-                        <a class="songurl" href="{{ ins_song.url }}">{{ ins_song.url }}</a>
+                        <a class="songurl" href="{{ ins_song.url }}">{{ ins_song.url|slice:"35" }}</a>
                     {% else %}
                     <p class="songurlnotfound">URL未登録</p>
                     {% endif %}

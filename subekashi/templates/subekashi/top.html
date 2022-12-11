@@ -11,7 +11,7 @@
     {% for ins_song in ins_songs %}
         <div class="songcard" onclick="songpage('{{ basedir }}', '{{ ins_song.id }}')">
             <div class="cardleft">
-                <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title }}</p>
+                <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title|slice:"30" }}</p>
                 <a class="songchannel" href="{% url 'channel' ins_song.channel %}"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</a>
             </div>
             <div class="cardright">
@@ -21,7 +21,7 @@
                     <p class="songlyrics">歌詞未登録</p>
                 {% endif %}
                 {% if ins_song.url %}
-                    <a class="songurl" href="{{ ins_song.url }}">{{ ins_song.url }}</a>
+                    <a class="songurl" href="{{ ins_song.url }}">{{ ins_song.url|slice:"35" }}</a>
                 {% else %}
                     <p class="songurl">URL未登録</p>
                 {% endif %}
@@ -51,7 +51,7 @@
         {% for ins_song in ins_lacks %}
             <div class="songcard" onclick="songpage('{{ basedir }}', '{{ ins_song.id }}')">
                 <div class="cardleft">
-                    <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title }}</p>
+                    <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title|slice:"30" }}</p>
                     <a class="songchannel" href="{% url 'channel' ins_song.channel %}"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</a>
                 </div>
                 <div class="cardright">
@@ -61,7 +61,7 @@
                         <a class="songlyrics" href="{% url 'edit' %}?id={{ ins_song.id }}">歌詞未登録</a>
                     {% endif %}
                     {% if ins_song.url %}
-                        <a class="songurl" href="{{ ins_song.url }}">{{ ins_song.url }}</a>
+                        <a class="songurl" href="{{ ins_song.url }}">{{ ins_song.url|slice:"35" }}</a>
                     {% else %}
                         <a class="songurl" href="{% url 'edit' %}?id={{ ins_song.id }}">URL未登録</a>
                     {% endif %}
@@ -81,7 +81,7 @@
         {% for ins_song in ins_nones %}
             <div class="songcard" onclick="songlack('{{ basedir }}', '{{ ins_song.id }}')">
                 <div class="cardleft">
-                    <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title }}</p>
+                    <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title|slice:"30" }}</p>
                     <p class="songchannel"><i class="fas fa-user-circle"></i> チャンネル未登録</p>
                 </div>
                 <div class="cardright">

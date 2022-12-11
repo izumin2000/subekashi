@@ -7,10 +7,10 @@
 {% block content %}
 <section>
     <p id="songtitle"><i class="fas fa-music"></i>{{ ins_song.title }}</p>
-    {% if ins_song.channel %}
+    {% if displayinfo %}
         <a id="songchannel" href="{% url 'channel' ins_song.channel %}"><i class="fas fa-user-circle"></i>{{ ins_song.channel }}</a>
         {% if ins_song.url %}
-            <a id="songurl" href="{{ ins_song.url }}"><i class="fas fa-link"></i>{{ ins_song.url }}</a>
+            <a id="songurl" href="{{ ins_song.url }}"><i class="fas fa-link"></i>{{ ins_song.url|slice:"35" }}</a>
         {% else %}
             <a id="songurlnotfound" href="{% url 'edit' %}?id={{ ins_song.id }}"><i class="fas fa-link"></i>URLを追加</a>
         {% endif %}
@@ -69,7 +69,7 @@
     });
 
     function tonew() {
-        window.location.href = "{% url 'new' %}?title={{ ins_song.title }}";
+        window.location.href = "{% url 'new' %}?title={{ ins_song.title }}&channel={{ ins_song.channel }}&url={{ ins_song.url }}";
     }
 
     function towrong() {
