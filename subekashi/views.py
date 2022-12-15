@@ -366,7 +366,7 @@ def make(request) :
                 return render(request, "subekashi/result.html", dir)
 
         elif inp_genetype == "model" :
-            ins_ai = Ai.objects.filter(genetype = "model").exclude(score = 0)
+            ins_ai = Ai.objects.filter(genetype = "model", score = 0)
             dir["ins_ais"] = random.sample(list(ins_ai), 20)
             return render(request, "subekashi/result.html", dir)
 
@@ -460,6 +460,7 @@ def wrong(request, song_id) :
 
 def ai(request) :
     ins_ais = Ai.objects.filter(score = 0)[500::-1]
+    ins_ais = Ai.objects.filter(genetype = "model")
     return render(request, "subekashi/ai.html", {"ins_ais" : ins_ais})
 
 
@@ -524,6 +525,7 @@ def dev(request) :
                             ai_lyrics += "、"
                         ins_ai = Ai.objects.create()
                         ins_ai.lyrics = ai_lyrics
+                        ins_ai.genetype = "model"
                         ins_ai.save()
                         lyrics_tmp = ""
 
