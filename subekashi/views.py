@@ -459,9 +459,8 @@ def wrong(request, song_id) :
 
 
 def ai(request) :
-    dir = {}
-    dir["ins_ais"] = Ai.objects.filter(score = 0)[::-1]
-    return render(request, "subekashi/ai.html", dir)
+    ins_ais = Ai.objects.filter(score = 0)[500::-1]
+    return render(request, "subekashi/ai.html", {"ins_ais" : ins_ais})
 
 
 def note(request) :
