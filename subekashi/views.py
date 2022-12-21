@@ -85,30 +85,29 @@ def tokenizer_janome(text):
 
 def vector_generate(ins_original, ins_imitates, dir) :
     lyrics = ""
-    simD = {}
-    tok = tokenizer_janome(ins_original.lyrics)    
+    dict_sim = {}
+    toklist = tokenizer_janome(ins_original.lyrics)    
     for ins_imitate in ins_imitates :
-        ruigo = ins_imitate.ruigo
-        if ruigo :
-            for hinshi, words in eval(ruigo).items() :
-                if hinshi in simD.keys() :
-                    simD[hinshi] += words
+        dict_ruigo = ins_imitate.ruigo
+        if dict_ruigo :
+            for hinshikatsuyou, words in eval(dict_ruigo).items() :
+                if hinshikatsuyou in dict_sim.keys() :
+                    dict_sim[hinshikatsuyou] += words
                 else :
-                    simD[hinshi] = words
+                    dict_sim[hinshikatsuyou] = words
 
     before_hinshi = ""
-    for word, hinshi, katsuyou in tok :
+    for word, hinshi, katsuyou in toklist :
         if (hinshi in REPLACEBLE_HINSHIS) and not(word.isdigit()) :
             if (hinshi == "名詞") and (before_hinshi == "名詞") :
-                lyrics += word
                 continue
             before_hinshi = hinshi
-            if (hinshi + katsuyou) in simD.keys() :
-                fitL = [word]
-                for sim in simD[hinshi + katsuyou] :
-                    if (counter(word) == counter(sim)) :
-                        fitL.append(sim)
-                lyrics += random.choice(fitL)
+            hinshikatsuyou = hinshi + katsuyou
+            if hinshikatsuyou in dict_sim.keys() :
+                pickwords = [word]
+                for pickword in dict_sim[hinshikatsuyou] :
+                    pickwords.append(pickword)
+                lyrics += random.choice(pickwords)
             else :
                 lyrics += word
             # simD[hinshi + katsuyou].remove(sim)
