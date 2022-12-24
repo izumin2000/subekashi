@@ -1,12 +1,12 @@
 {% extends "subekashi/base/base.html" %}
-{% block title %}歌詞の登録{% endblock %}
-{% block ogtitle %}歌詞の登録{% endblock %}
+{% block title %}曲の登録{% endblock %}
+{% block ogtitle %}曲の登録{% endblock %}
 {% load static %}
 {% block css %}{% static 'subekashi/css/new.css'%}{% endblock %}
 
 {% block content %}
 <section>
-    <h1> 歌詞の登録 </h1>
+    <h1> 曲の登録 </h1>
     <div class="underline"></div>
     <form action="{% url 'new' %}" method="POST" class="post-form" id="newForm">{% csrf_token %}
         <label>曲名*</label>

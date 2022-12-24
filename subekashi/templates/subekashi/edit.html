@@ -1,12 +1,12 @@
 {% extends "subekashi/base/base.html" %}
-{% block title %}{{ ins_song.title }}の編集{% endblock %}
-{% block ogtitle %}{{ ins_song.title }}の編集{% endblock %}
+{% block title %}{{ ins_song.title }}の追記{% endblock %}
+{% block ogtitle %}{{ ins_song.title }}の追記{% endblock %}
 {% load static %}
 {% block css %}{% static 'subekashi/css/edit.css'%}{% endblock %}
 
 {% block content %}
 <section id="formsection">
-    <h1>{{ ins_song.title }}の編集</h1>
+    <h1>{{ ins_song.title }}の追記</h1>
     <div class="underline"></div>
     <form action="{% url 'edit' %}?id={{ ins_song.id }}" method="POST" class="post-form" id="editForm">{% csrf_token %}
         {% if not ins_song.url %}
