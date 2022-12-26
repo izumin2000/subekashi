@@ -26,6 +26,14 @@ dummy_dict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8, 9:9, 10:10, 11:11, 12:12}
 SHA256a = "5802ea2ddcf64db0efef04a2fa4b3a5b256d1b0f3d657031bd6a330ec54abefd"
 # if hashlib.sha256(mypassword.encode()).hexdigest() == SHA256a :
 
+
+# Discordにメッセージを送信
+def SendDiscord(message) :
+    headers = {'Content-Type': 'application/json'}
+    message = message.replace("\n", "\r")
+    requests.post(XIA_DISCORD_URL, json.dumps({"content": message}), headers = headers)
+
+
 # 成功時にAPIのjsonを出力。失敗すると空文字を出力。
 def get_API(url, route) :
     if url == EMC_API_URL :
