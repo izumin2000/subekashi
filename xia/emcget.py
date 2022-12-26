@@ -1,6 +1,5 @@
 from time import sleep
 import requests, json
-from orissaconfig import XIA_DISCORD_URL
 from views import SendDiscord
 
 isfirst = 1

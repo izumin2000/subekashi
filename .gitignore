@@ -7,7 +7,6 @@ db.sqlite3
 .py
 vp.py
 local_settings.py
-orissaconfig.py
 media/
 .htmlhintrc
 subekashi/sandbox
