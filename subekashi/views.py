@@ -463,8 +463,8 @@ def ai(request) :
     return render(request, "subekashi/ai.html", {"ins_ais" : ins_ais})
 
 
-def note(request) :
-    return render(request, "subekashi/note.html")
+def research(request) :
+    return render(request, "subekashi/research.html")
 
 
 def error(request) :

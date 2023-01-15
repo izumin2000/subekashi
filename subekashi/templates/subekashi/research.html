@@ -1,0 +1,24 @@
+{% extends "subekashi/base/base.html" %}
+{% block title %}研究リンク集{% endblock %}
+{% block ogtitle %}研究リンク集{% endblock %}
+{% load static %}
+{% block css %}{% static 'subekashi/css/research.css'%}{% endblock %}
+
+{% block content %}
+<section>
+    <h1>研究リンク集</h1>
+    <div class="underline"></div>
+
+    <a href="{% static 'subekashi/pdf/peper.pdf' %}">論文</a><br>
+    <a href="{% static 'subekashi/pdf/slide.pdf' %}">発表スライド</a><br>
+    <a href="{% url 'top' %}">全て歌詞の所為です。 ウェブサイト</a><br>
+    <a href="https://www.youtube.com/@subekashi/">全て歌詞の所為です。 YouTubeチャンネル</a><br>
+</section>
+{% endblock %}
+
+{% block js %}
+<script src="{% static 'subekashi/js/fixfooter.js' %}" rel="stylesheet"></script>
+<script>
+    window.addEventListener('load', fixfooter);
+</script>
+{% endblock %}
