@@ -9,16 +9,24 @@
     <h1>研究リンク集</h1>
     <div class="underline"></div>
 
-    <a href="{% static 'subekashi/pdf/peper.pdf' %}">論文</a><br>
-    <a href="{% static 'subekashi/pdf/slide.pdf' %}">発表スライド</a><br>
-    <a href="{% url 'top' %}">全て歌詞の所為です。 ウェブサイト</a><br>
-    <a href="https://www.youtube.com/@subekashi/">全て歌詞の所為です。 YouTubeチャンネル</a><br>
-</section>
-{% endblock %}
+    <div id="links">
+        <a href="{% static 'subekashi/pdf/peper.pdf' %}">論文</a><br>
+        <a href="{% static 'subekashi/pdf/slide.pdf' %}">発表スライド</a><br>
+        <a href="{% url 'top' %}">全て歌詞の所為です。 ウェブサイト</a><br>
+        <a href="https://www.youtube.com/@subekashi/">全て歌詞の所為です。 YouTubeチャンネル</a><br>
+    </div>
 
-{% block js %}
-<script src="{% static 'subekashi/js/fixfooter.js' %}" rel="stylesheet"></script>
-<script>
-    window.addEventListener('load', fixfooter);
-</script>
+    <h1>質問</h1>
+    <div class="underline"></div>
+        <p>マイクをオンにできない方はこちらから質問をしてください。</p>
+        <p>発表時間外の質問も受け付けています。回答はこのページにて掲載する予定です。</p>
+        <form action="{% url 'research' %}" method="POST" class="post-form">{% csrf_token %}
+            <textarea name="question" id="question" placeholder="質問を入力してください"></textarea><br>
+            <input type="submit" name="submit" id="submit" value="送信">
+        </form>
+    
+    <h1>回答</h1>
+    <div class="underline"></div>
+    <p>発表時間外の質問に対する回答を掲載する予定です。</p><br>
+</section>
 {% endblock %}

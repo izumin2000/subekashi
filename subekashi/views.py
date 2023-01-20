@@ -464,6 +464,9 @@ def ai(request) :
 
 
 def research(request) :
+    if request.method == "POST":
+        question = request.POST.get("question")
+        requests.post(SUBEKASHI_QUESTION_DISCORD_URL, data={'content': question})
     return render(request, "subekashi/research.html")
 
 

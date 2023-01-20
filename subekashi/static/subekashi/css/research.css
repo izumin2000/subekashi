@@ -1,0 +1,14 @@
+#links, p {
+    text-align: center;
+    margin-top: 45px;
+}
+
+#links a {
+    display: block;
+    margin-bottom: 15px;
+}
+
+textarea {
+    margin-top: 45px;
+    width: calc(100vw - 100px);
+}
