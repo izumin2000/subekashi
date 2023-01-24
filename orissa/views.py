@@ -8,7 +8,7 @@ import json
 from time import sleep
 from datetime import datetime
 import hashlib
-from config.settings import orissa_DISCORD_URL
+from config.settings import ORISSA_DISCORD_URL
 
 
 OUR_NATION = "orissa"
@@ -31,7 +31,7 @@ SHA256a = "5802ea2ddcf64db0efef04a2fa4b3a5b256d1b0f3d657031bd6a330ec54abefd"
 def SendDiscord(message) :
     headers = {'Content-Type': 'application/json'}
     message = message.replace("\n", "\r")
-    requests.post(orissa_DISCORD_URL, json.dumps({"content": message}), headers = headers)
+    requests.post(ORISSA_DISCORD_URL, json.dumps({"content": message}), headers = headers)
 
 
 # 成功時にAPIのjsonを出力。失敗すると空文字を出力。
@@ -420,7 +420,7 @@ def raidbot(request) :
 
 # Discord BOTのテスト
 def bothello(request) :
-    requests.post(orissa_DISCORD_URL, data={'content': "おほーぉ(^o^)"})
+    requests.post(ORISSA_DISCORD_URL, data={'content': "おほーぉ(^o^)", 'username': '課金したショックで金属製バットになってしまった', 'avatar_url': '画像のURL'})
     return HttpResponse("SEND")
 
 
