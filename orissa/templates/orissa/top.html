@@ -1,23 +1,23 @@
-{% extends "xia/base/base.html" %}
+{% extends "orissa/base/base.html" %}
 {% load static %}
 {% block title %}トップ{% endblock %}
 {% block ogtitle %}トップ{% endblock %}
-{% block css %}{% static 'xia/css/top.css'%}{% endblock %}
+{% block css %}{% static 'orissa/css/top.css'%}{% endblock %}
 
 {% block content %}
     <section class="firstview">
         <div class="clImg">
-            <img src="{% static 'xia/image/top1.png' %}" alt="Xiaに関する画像">
-            <img src="{% static 'xia/image/top2.png' %}" alt="Xiaに関する画像">
+            <img src="{% static 'orissa/image/top1.png' %}" alt="orissaに関する画像">
+            <img src="{% static 'orissa/image/top2.png' %}" alt="orissaに関する画像">
         </div>
-        <b><span id="top_title">Xia 公式ホームページ</span></b>
+        <b><span id="top_title">orissa 公式ホームページ</span></b>
     </section>
 
     <section class="welcome">
-        <h1>Xiaについて</h1>
+        <h1>orissaについて</h1>
         <div class="underline"></div>
         <h2>概要</h2>
-        <p>Xiaは<a href="https://earthmc.net/">EarthMC</a>の<a href="#dynmap">中国 運城市に位置する</a>日本人勢による国です。</p>
+        <p>orissaは<a href="https://earthmc.net/">EarthMC</a>の<a href="#dynmap">中国 運城市に位置する</a>日本人勢による国です。</p>
         <p>もともとはTN時代にRyo5Syo5（現kasana2005)がInca Empireという名称で建国したものが国の起源になっております。</p>
         <p>TA時代では中国に首都を置いていて、多くの町に囲まれた場所に位置しています。</p>
 
@@ -29,7 +29,7 @@
             <div class="info_item">
                 <p class="info_title">国旗</p>
                 <div class="info_underline"></div>
-                <img class="info_flag" src="{% static 'xia/image/flag.png' %}">
+                <img class="info_flag" src="{% static 'orissa/image/flag.png' %}">
             </div>
 
             <div class="info_item">
@@ -74,7 +74,7 @@
                     {% if minister.player.uuid %}
                         <img class="skin" src="https://crafatar.com/renders/head/{{ minister.player.uuid }}">
                     {% else %}
-                        <img class="unknown_skin" src="{% static 'xia/image/unknown_skin.png' %}">
+                        <img class="unknown_skin" src="{% static 'orissa/image/unknown_skin.png' %}">
                     {% endif %}
                     <label for="trigger" class="open_btn" onclick="playerpopup('{{ minister.player.uuid }}', '{{ minister.player.name }}', '{{ ableAPI }}', '{{ minister.player.online }}', '{{ minister.player.info }}')">詳しく見る</label>
                     <div class="popup_wrap">
@@ -104,7 +104,7 @@
             <a onclick="changemap('MugenJou')">MugenJou</a>
             <a onclick="changemap('zozotown')">zozotown</a>
             <a onclick="changemap('bondo')">bondo</a>
-            <a onclick="changemap('xian')">xian</a>
+            <a onclick="changemap('orissan')">orissan</a>
             <a onclick="changemap('Nation')">Nation</a>
             <a onclick="changemap('Apa_hotel')">Apa_hotel</a>
             <a onclick="changemap('Nihonmachi')">Nihonmachi</a>
@@ -114,33 +114,33 @@
         <h2>その他の情報</h2>
         <p>その他の情報については<a onclick="notfound()">こちらのページ</a>からご覧になることができます</p>
 
-        <h1>Xia国民になろう！</h1>
+        <h1>orissa国民になろう！</h1>
         <div class="underline"></div>
         <h2>素敵な特典</h2>
         <p>準備中...</p>
         <!-- <ul class="itemlist">
-            <li><img src="{% static 'xia/image/oak.png' %}">原木 64個</li>
-            <li><img src="{% static 'xia/image/iron.png' %}">鉄インゴット 64個</li>
-            <li><img src="{% static 'xia/image/diamond.png' %}">ダイヤモンド 32個</li>
-            <li><img src="{% static 'xia/image/potato.png' %}">食料 64個</li>
+            <li><img src="{% static 'orissa/image/oak.png' %}">原木 64個</li>
+            <li><img src="{% static 'orissa/image/iron.png' %}">鉄インゴット 64個</li>
+            <li><img src="{% static 'orissa/image/diamond.png' %}">ダイヤモンド 32個</li>
+            <li><img src="{% static 'orissa/image/potato.png' %}">食料 64個</li>
             <li><i class="fas fa-cubes"></i>土地 1チャンク</li>
         </ul> -->
 
-        <h2>Xia国民になるには</h2>
+        <h2>orissa国民になるには</h2>
         <ul class="itemlist">
             <li><a href="#major_players">大臣</a>が<span clss="isonline">ログイン</span>している場合</li>
             <ol class="liindent1">
                 <li>EarthMCに参加してください</li>
                 <li>チャットを開き<code onclick="copyCode('/ch join japanese')">/ch join japanese</code>と入力してください。</li>
-                <li><code onclick="copyCode('Xiaに入りたいです')">Xiaに入りたいです</code>とチャットで話してください。</li>
-                <li>招待が届くので、<code onclick="copyCode('/accept')">/accept</code>と入力してください。これでXia国民になれます。</li>
-                <li><code onclick="copyCode('/n spawn Xia')">/n spawn Xia</code>でXiaにテレポートできます。</li>
+                <li><code onclick="copyCode('orissaに入りたいです')">orissaに入りたいです</code>とチャットで話してください。</li>
+                <li>招待が届くので、<code onclick="copyCode('/accept')">/accept</code>と入力してください。これでorissa国民になれます。</li>
+                <li><code onclick="copyCode('/n spawn orissa')">/n spawn orissa</code>でorissaにテレポートできます。</li>
             </ol>
             <li><a href="#major_players">大臣</a>が<span clss="isonline">ログイン</span>していない場合</li>
             <ul class="liindent2">
                 <ol class="liindent3">
-                    <li>XiaのDiscordに参加します　URL:<a href="https://discord.gg/n9237pup6C">https://discord.gg/n9237pup6C</a></li>
-                    <li>雑談チャンネルにて<code onclick="copyCode('@大臣 Xiaに入りたいです')">@大臣 Xiaに入りたいです</code>とチャットで話してください。</li>
+                    <li>orissaのDiscordに参加します　URL:<a href="https://discord.gg/n9237pup6C">https://discord.gg/n9237pup6C</a></li>
+                    <li>雑談チャンネルにて<code onclick="copyCode('@大臣 orissaに入りたいです')">@大臣 orissaに入りたいです</code>とチャットで話してください。</li>
                     <li>しばらくすると大臣より案内が来ますので指示に従ってください。</li>
                 </ol>
             </ul>
@@ -149,7 +149,7 @@
         
         <h2>各種リンク</h2>
         <ul class="itemlist" id="links">
-            <li><i class="fab fa-discord"></i>Xia Discord  URL:<a href="https://discord.gg/n9237pup6C">https://discord.gg/n9237pup6C</a></li>
+            <li><i class="fab fa-discord"></i>orissa Discord  URL:<a href="https://discord.gg/n9237pup6C">https://discord.gg/n9237pup6C</a></li>
             <li><i class="fab fa-youtube"></i>インカ放送局[公式]  URL:<a href="https://www.youtube.com/channel/UCbjn-i9H4iem98rTWYeZZ8w">https://www.youtube.com/channel/UCbjn-i9H4iem98rTWYeZZ8w</a></li>
             <li>インカ法務省公式ページ　URL:<a href="https://sites.google.com/view/inca-houmu-syou-koushiki">https://sites.google.com/view/inca-houmu-syou-koushiki</a></li>
             <li>EarthMC  URL:<a href="https://earthmc.net/">https://earthmc.net/</a></li>
@@ -159,7 +159,7 @@
 {% endblock %}
 
 {% block js %}
-    <script src="{% static 'xia/js/playerpopup.js' %}"></script>
+    <script src="{% static 'orissa/js/playerpopup.js' %}"></script>
     <script>
         window.onload = function() {
             // エラー用のtoaster
@@ -209,7 +209,7 @@
                 map.src = "https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=7&x=20672&y=64&z=-7696";
             } else if (town == "bondo") {
                 map.src = "https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=7&x=18784&y=64&z=-6384";
-            } else if (town == "xian") {
+            } else if (town == "orissan") {
                 map.src = "https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=6&x=19984&y=64&z=-7064";
             } else if (town == "Nation") {
                 map.src = "https://earthmc.net/map/aurora/?worldname=earth&mapname=flat&zoom=7&x=18200&y=64&z=-6160";

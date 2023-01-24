@@ -157,7 +157,7 @@ header {
     text-decoration: underline;
 }
 
-#menuxia {
+#menuorissa {
     position: fixed;
     bottom: 105px;
     right: -85px;
@@ -171,7 +171,7 @@ header {
 }
 
 @media (max-width: 360px) {
-    #menuxia {
+    #menuorissa {
         display: none;
     }
 }
