@@ -2,7 +2,7 @@ from django.db import models
 
 
 class Song(models.Model) :
-    title = models.CharField(default = "", max_length = 100)
+    title = models.CharField(default = "", max_length = 500)
     channel = models.CharField(default = "", max_length = 50)
     url = models.CharField(default = "", max_length = 50, blank = True, null = True)
     lyrics = models.CharField(default = "", max_length = 10000, blank = True, null = True)
