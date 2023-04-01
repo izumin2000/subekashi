@@ -35,3 +35,7 @@ class Genesong(models.Model) :
     ai = models.ForeignKey("Ai", on_delete = models.CASCADE, blank = True, null = True)
     title = models.CharField(default = "", max_length = 100)
     similar = models.CharField(default = "", max_length = 100)
+
+class Singleton(models.Model) :
+    key = models.CharField(default = "", max_length = 100)
+    value = models.CharField(default = "", max_length = 500)
