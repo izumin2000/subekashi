@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
-from subekashi.models import Song, Ai, Genecategory, Genesong
+from subekashi.models import Song, Ai, Genecategory, Genesong, Singleton
 from config.settings import DEBUG
 import hashlib
 import requests
@@ -145,6 +145,7 @@ def format_url(url) :
 
 
 def top(request):
+    dir = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
     ins_songs = list(Song.objects.exclude(lyrics = ""))[:-7:-1]
     dir["ins_songs"] = ins_songs
     ins_lacks = list(Song.objects.filter(lyrics = "").exclude(channel = ""))
@@ -164,7 +165,7 @@ def top(request):
 
 
 def new(request) :
-    dir = {}
+    dir = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
 
     if request.method == "POST":
         inp_title = request.POST.get("title")
@@ -259,7 +260,7 @@ def new(request) :
 
 
 def song(request, song_id) :
-    dir = {}
+    dir = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
     ins_song = Song.objects.get(pk = song_id)
     dir["ins_song"] = ins_song
 
@@ -284,7 +285,7 @@ def song(request, song_id) :
 
 
 def make(request) :
-    dir = {}
+    dir = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
     dir["ins_songs"] = Song.objects.all()
     dir["basedir"] = get_basedir()
 
@@ -372,7 +373,7 @@ def make(request) :
 
 
 def channel(request, channel_name) :
-    dir = {}
+    dir = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
 
     dir["channel"] = channel_name
     ins_songs = Song.objects.filter(channel = channel_name)
@@ -384,7 +385,7 @@ def channel(request, channel_name) :
 
 
 def edit(request) :
-    dir = {}
+    dir = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
     if "id" in request.GET :
         song_id = request.GET.get("id")
         ins_song = Song.objects.filter(pk = song_id)
@@ -422,7 +423,7 @@ def edit(request) :
 
 
 def search(request) :
-    dir = {}
+    dir = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
 
     if "lacks" in request.GET :
         dir["lacks"] = request.GET.get("lacks")
@@ -440,7 +441,7 @@ def search(request) :
 
 
 def wrong(request, song_id) :
-    dir = {}
+    dir = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
 
     ins_song = Song.objects.get(pk = song_id)
     dir["ins_song"] = ins_song
@@ -483,6 +484,7 @@ def dev(request) :
                 dir["locked"] = False
         isreset = request.GET.get("reset")
         isgpt = request.GET.get("gpt")
+        iskey = request.GET.get("key")
         if isreset :
             Song.objects.all().delete()
             inp_isconfirmed = request.POST.get("confirm")
@@ -530,6 +532,13 @@ def dev(request) :
                         lyrics_tmp = ""
 
                 dir["locked"] = False
+        if iskey :
+            inp_key = request.POST.get("key")
+            inp_value = request.POST.get("value")
+            ins_singleton, _ = Singleton.objects.update_or_create(key = inp_key, defaults = {"key": inp_key})
+            ins_singleton.key = inp_key
+            ins_singleton.value = inp_value
+            ins_singleton.save()
             
     return render(request, "subekashi/dev.html", dir)
 
