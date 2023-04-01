@@ -330,6 +330,7 @@ textarea {
 .cardright {
     padding: 0 15px;
     text-align:right;
+    display: block;
 }
 
 .songcard:hover {
@@ -354,14 +355,14 @@ textarea {
 }
 
 .songlyrics {
-    display: block;
     white-space:nowrap;
     font-size: 12px;
     margin-bottom: 10px;
 }
 
 .songurl {
-    display: inline-block;
+    display: inline-block !important;
+    height: 100%;
     white-space:nowrap;
 }
 

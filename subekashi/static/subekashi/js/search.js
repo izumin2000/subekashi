@@ -1,9 +1,11 @@
 var songjson, songEles;
 
 async function getSong(basedir) {
-    res = await fetch(basedir + "/api/song/?format=json");
-    songjson = await res.json();
-    songEles = document.getElementsByClassName("songcard");
+    if (!songEles) {
+        res = await fetch(basedir + "/api/song/?format=json");
+        songjson = await res.json();
+        songEles = document.getElementsByClassName("songcard");
+    }
 }
 
 function categoryform() {
