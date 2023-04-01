@@ -141,6 +141,10 @@ a {
     margin: 0 5px;
 }
 
+.buttona {
+    text-decoration: none;
+}
+
 .kanjipa {
     font-size: 27px;
 }
@@ -263,8 +267,12 @@ textarea {
     justify-content: center;
 }
 
+.dummybuttons a {
+    text-decoration: none;
+}
+
 .dummybuttonf {
-    margin: 0 20px !important;
+    margin: 0 10px !important;
 }
 
 .dummybutton {
@@ -272,7 +280,7 @@ textarea {
     justify-content: center;
     align-items: center;
     background-color: #eee;
-    padding: 0 50px;
+    padding: 0 40px;
     margin: auto 0;
 }
 
@@ -298,6 +306,65 @@ textarea {
     box-shadow: none;
     cursor: not-allowed;
 }
+
+
+/* ソングカード */
+.songcard {
+    height: 80px;
+    margin: 20px 0 ;
+    padding: 15px 0 0 0 !important;
+    background-color: #333;
+}
+
+.songcard a {
+    display:block;
+}
+
+.cardleft {
+    text-align:left;
+    float:left;
+    font-family: 'Noto Sans JP', sans-serif;
+    padding: 0 15px;
+}
+
+.cardright {
+    padding: 0 15px;
+    text-align:right;
+}
+
+.songcard:hover {
+    cursor: pointer;
+    background-color: #555;
+}
+
+.songtitle {
+    font-size: 20px;
+    margin-bottom: 12px;
+    padding-left: 2px;
+    white-space:nowrap;
+}
+
+.songchannel {
+    font-size: 15px;
+    white-space:nowrap;
+}
+
+.songchannel i {
+    font-size: 20px;
+}
+
+.songlyrics {
+    display: block;
+    white-space:nowrap;
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+
+.songurl {
+    display: inline-block;
+    white-space:nowrap;
+}
+
 
 
 /* フッダー */

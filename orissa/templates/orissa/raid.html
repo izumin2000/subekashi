@@ -1,8 +1,8 @@
-{% extends "xia/base/base.html" %}
+{% extends "orissa/base/base.html" %}
 {% load static %}
 {% block title %}レイド{% endblock %}
 {% block ogtitle %}レイド{% endblock %}
-{% block css %}{% static 'xia/css/raid.css'%}{% endblock %}
+{% block css %}{% static 'orissa/css/raid.css'%}{% endblock %}
 
 {% block content %}
     <section class="raidsection">
@@ -78,7 +78,7 @@
             }
 
             "{% if locked and not error %}"
-            toastr.error("あなたはXiaの機密情報にアクセスしようとしています。アクセスするにはパスワードを送信してください。")
+            toastr.error("あなたはorissaの機密情報にアクセスしようとしています。アクセスするにはパスワードを送信してください。")
             "{% endif %}"
 
             toastr.options = {"positionClass": "toast-bottom-right"}

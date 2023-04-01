@@ -28,8 +28,6 @@ function categoryform() {
 }
 
 function searchsong() {
-    searchEle = document.getElementById("search");
-    search = searchEle.value;
     i = 0;
 
     filtrtEles = document.getElementsByClassName("filters")
@@ -68,19 +66,19 @@ function searchsong() {
     }
 
     for (songEle of songEles) {
-        styledisplay = "none";
-
-        if (!search) {
-            styledisplay = "block";
+        
+        channel = document.getElementById("channel").value;
+        title = document.getElementById("title").value;
+        lyrics = document.getElementById("lyrics").value;
+        styledisplay = "block";
+        if (channel && (songjson[i]["channel"].match(channel) == null)) {
+            styledisplay = "none";
         }
-        if (songjson[i]["title"].match(search) != null) {
-            styledisplay = "block";
+        if (title && (songjson[i]["title"].match(title) == null)) {
+            styledisplay = "none";
         }
-        if (songjson[i]["channel"].match(search) != null) {
-            styledisplay = "block";
-        }
-        if (songjson[i]["lyrics"].match(search) != null) {
-            styledisplay = "block";
+        if (lyrics && (songjson[i]["lyrics"].match(lyrics) == null)) {
+            styledisplay = "none";
         }
 
         if (!songjson[i]["imitate"].split(",").includes(category_id) && category_id) {
@@ -99,11 +97,15 @@ function searchsong() {
             if (songjson[i]["channel"] != "") {
                 styledisplay = "none";
             }
-        } else if (filtrtEles[3].checked) {
+        }
+        
+        if (filtrtEles[3].checked) {
             if (!songjson[i]["isoriginal"]) {
                 styledisplay = "none";
             }
-        } else if (filtrtEles[4].checked) {
+        }
+        
+        if (filtrtEles[4].checked) {
             if (!songjson[i]["isjoke"]) {
                 styledisplay = "none";
             }

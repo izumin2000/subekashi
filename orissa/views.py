@@ -1,17 +1,17 @@
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
-from xia.forms import PlayerForm, MinisterForm
-from xia.model import Player, Minister, Criminal, Gold, Nation, Analyze, Info
+from orissa.forms import PlayerForm, MinisterForm
+from orissa.model import Player, Minister, Criminal, Gold, Nation, Analyze, Info
 import requests
 from datetime import date
 import json
 from time import sleep
 from datetime import datetime
 import hashlib
-from config.settings import XIA_DISCORD_URL
+from config.settings import ORISSA_DISCORD_URL
 
 
-OUR_NATION = "Xia"
+OUR_NATION = "orissa"
 EMC_API_URL = "https://emc-toolkit.vercel.app/api/aurora/"
 UUID_API_URL = "https://api.mojang.com/users/profiles/minecraft/"
 
@@ -31,7 +31,7 @@ SHA256a = "5802ea2ddcf64db0efef04a2fa4b3a5b256d1b0f3d657031bd6a330ec54abefd"
 def SendDiscord(message) :
     headers = {'Content-Type': 'application/json'}
     message = message.replace("\n", "\r")
-    requests.post(XIA_DISCORD_URL, json.dumps({"content": message}), headers = headers)
+    requests.post(ORISSA_DISCORD_URL, json.dumps({"content": message}), headers = headers)
 
 
 # 成功時にAPIのjsonを出力。失敗すると空文字を出力。
@@ -243,7 +243,7 @@ def top(request):
 
     pv_increment()
 
-    return render(request, 'xia/top.html', our_info)
+    return render(request, 'orissa/top.html', our_info)
 
 
 # プレイヤーの編集
@@ -266,7 +266,7 @@ def editplayer(request) :
     form = PlayerForm()
     result["form"] = form
     result["players"] = Player.objects.all()
-    return render(request, 'xia/editplayer.html', result)
+    return render(request, 'orissa/editplayer.html', result)
 
 
 # プレイヤーの情報の削除
@@ -280,7 +280,7 @@ def editplayerdelete(request, player_id) :
     form = PlayerForm()
     result["form"] = form
     result["players"] = Player.objects.all()
-    return render(request, 'xia/editplayer.html', result)
+    return render(request, 'orissa/editplayer.html', result)
 
 
 # プレイヤーの情報をjsonに関わらず強制的に作成
@@ -295,7 +295,7 @@ def editplayerforce(request, name) :
     form = PlayerForm()
     result["form"] = form
     result["players"] = Player.objects.all()
-    return render(request, 'xia/editplayer.html', result)
+    return render(request, 'orissa/editplayer.html', result)
 
 
 # 大臣の情報の編集
@@ -319,7 +319,7 @@ def editminister(request) :
     form = MinisterForm()
     result["form"] = form
     result["ministers"] = Minister.objects.all()
-    return render(request, 'xia/editminister.html', result)
+    return render(request, 'orissa/editminister.html', result)
 
 
 # 大臣の情報の削除
@@ -333,7 +333,7 @@ def editministerdelete(request, minister_id) :
     form = MinisterForm()
     result["form"] = form
     result["ministers"] = Minister.objects.all()
-    return render(request, 'xia/editminister.html', result)
+    return render(request, 'orissa/editminister.html', result)
 
 
 # 大臣情報をjsonに関わらず強制的に作成
@@ -350,7 +350,7 @@ def editministerforce(request, name) :
     form = MinisterForm()
     result["form"] = form
     result["ministers"] = Minister.objects.all()
-    return render(request, 'xia/editminister.html', result)
+    return render(request, 'orissa/editminister.html', result)
 
 
 # レイド
@@ -391,7 +391,7 @@ def raid(request) :
                 result["locked"] = True
                 result["error"] = True
 
-    return render(request, 'xia/raid.html', result)
+    return render(request, 'orissa/raid.html', result)
 
 
 # レイドからdynmapへリダイレクト
@@ -420,7 +420,7 @@ def raidbot(request) :
 
 # Discord BOTのテスト
 def bothello(request) :
-    requests.post(XIA_DISCORD_URL, data={'content': "おほーぉ(^o^)"})
+    requests.post(ORISSA_DISCORD_URL, data={'content': "おほーぉ(^o^)", 'username': '課金したショックで金属製バットになってしまった', 'avatar_url': '画像のURL'})
     return HttpResponse("SEND")
 
 
@@ -431,4 +431,4 @@ def pv(request) :
     allpv = sum(pv)
 
     result = {"pv" : pv, "allpv" : allpv, "axisxlist" : ",".join(date)}
-    return render(request, 'xia/pv.html', result)
+    return render(request, 'orissa/pv.html', result)

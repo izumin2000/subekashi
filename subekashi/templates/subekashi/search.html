@@ -10,10 +10,14 @@
     <h1>曲の一覧と検索</h1>
     <div class="underline"></div>
 
-    <label>検索</label>
-    <input type="text" id="search" name="search" oninput="searchsong()" placeholder="チャンネル名・タイトル・歌詞"><br>
+    <label>チャンネル名</label>
+    <input type="text" id="channel" name="channel" oninput="searchsong()"><br>
+    <label>タイトル　　</label>
+    <input type="text" id="title" name="title" oninput="searchsong()"><br>
+    <label>歌詞　　　　</label>
+    <input type="text" id="lyrics" name="lyrics" oninput="searchsong()"><br>
     <div id="categorysec">
-        <label>カテゴリ</label>
+        <label>カテゴリ　　</label>
         <select id="category" name="category" oninput="categoryform();searchsong()">
             <option>全ての模倣</option>
             <option>.模倣</option>

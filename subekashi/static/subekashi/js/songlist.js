@@ -2,14 +2,10 @@ function songpage(basedir, song_id) {
     window.location.href = basedir + "/songs/" + song_id;
 }
 
-function songlack(basedir, song_id) {
-    window.location.href = basedir + "/edit?id=" + song_id;
-}
-
 function changecss() {
     cardrightEles = document.getElementsByClassName("cardright");
     for (cardrightEle of cardrightEles) {
-        if (window.innerWidth < 800) {
+        if (window.innerWidth < 840) {
             cardrightEle.style.display = "none";
         } else {
             cardrightEle.style.display = "block";
@@ -17,10 +13,10 @@ function changecss() {
     }
     songcardEles = document.getElementsByClassName("songcard");
     for (songcardEle of songcardEles) {
-        if (window.innerWidth < 800) {
-            songcardEle.style.padding = "20px 0 90px 0";
+        if (window.innerWidth < 840) {
+            songcardEle.style.padding = "0 15px";
         } else {
-            songcardEle.style.padding = "15px 0 10px 0";
+            songcardEle.style.padding = "15px 0px 15px 0px";
         }
     }
 }
