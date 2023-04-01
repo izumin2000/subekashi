@@ -9,28 +9,30 @@
     <h1>新着の曲</h1>
     <div class="underline"></div>
     {% for ins_song in ins_songs %}
-        <div class="songcard" onclick="songpage('{{ basedir }}', '{{ ins_song.id }}')">
-            <div class="cardleft">
-                <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title|slice:"30" }}</p>
-                <a class="songchannel" href="{% url 'channel' ins_song.channel %}"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</a>
-            </div>
-            <div class="cardright">
-                {% if ins_song.lyrics %}
-                    <p class="songlyrics">{{ ins_song.lyrics|slice:"25" }}...</p>
-                {% else %}
-                    <p class="songlyrics">歌詞未登録</p>
-                {% endif %}
-                {% if ins_song.url %}
-                    <a class="songurl" href="{{ ins_song.url }}">{{ ins_song.url|slice:"35" }}</a>
-                {% else %}
-                    <p class="songurl">URL未登録</p>
-                {% endif %}
-            </div>
+        <div class="songcard">
+            <a href="{% url 'song' ins_song.id %}" class="buttona">
+                <div class="cardleft">
+                    <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title|slice:"30" }}</p>
+                    <object><a class="songchannel" href="{% url 'channel' ins_song.channel %}"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</a></object>
+                </div>
+                <div class="cardright">
+                    {% if ins_song.lyrics %}
+                        <p class="songlyrics">{{ ins_song.lyrics|slice:"25" }}...</p>
+                    {% else %}
+                        <p class="songlyrics">歌詞未登録</p>
+                    {% endif %}
+                    {% if ins_song.url %}
+                        <object><a class="songurl" href="{{ ins_song.url }}">{{ ins_song.url|slice:"30" }}</a></object>
+                    {% else %}
+                        <p class="songurl">URL未登録</p>
+                    {% endif %}
+                </div>
+            </a>
         </div>
     {% endfor %}
     <div class="dummybuttons">
-        <div class="dummybutton dummybuttonf" onclick="tosearch('')"><p class="dummybuttonp">もっと見る</p></div>
-        <div class="dummybutton dummybuttonf" onclick="tonew('')"><p class="dummybuttonp">曲を登録する</p></div>
+        <a href="{% url 'search' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">もっと見る</p></div></a>
+        <a href="{% url 'new' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">曲を登録する</p></div></a>
     </div>
     
     {% if ins_ais %}
@@ -40,8 +42,8 @@
             <p class="lyrics">{{ ins_ai.lyrics }}</p>
         {% endfor %}
         <div class="dummybuttons">
-            <div class="dummybutton dummybuttonf" onclick="toai()"><p class="dummybuttonp">もっと見る</p></div>
-            <div class="dummybutton dummybuttonf" onclick="tomake()"><p class="dummybuttonp">曲を生成する</p></div>
+            <a href="{% url 'ai' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">もっと見る</p></div></a>
+            <a href="{% url 'make' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">曲を生成する</p></div></a>
         </div>
     {% endif %}
 
@@ -49,79 +51,63 @@
         <h1>情報不足の曲</h1>
         <div class="underline"></div>
         {% for ins_song in ins_lacks %}
-            <div class="songcard" onclick="songpage('{{ basedir }}', '{{ ins_song.id }}')">
-                <div class="cardleft">
-                    <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title|slice:"30" }}</p>
-                    <a class="songchannel" href="{% url 'channel' ins_song.channel %}"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</a>
-                </div>
-                <div class="cardright">
-                    {% if ins_song.lyrics %}
-                        <p class="songlyrics">{{ ins_song.lyrics|slice:"25" }}...</p>
-                    {% else %}
-                        <a class="songlyrics" href="{% url 'edit' %}?id={{ ins_song.id }}">歌詞未登録</a>
-                    {% endif %}
-                    {% if ins_song.url %}
-                        <a class="songurl" href="{{ ins_song.url }}">{{ ins_song.url|slice:"35" }}</a>
-                    {% else %}
-                        <a class="songurl" href="{% url 'edit' %}?id={{ ins_song.id }}">URL未登録</a>
-                    {% endif %}
-                </div>
+            <div class="songcard">
+                <a href="{% url 'song' ins_song.id %}" class="buttona">
+                    <div class="cardleft">
+                        <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title|slice:"30" }}</p>
+                        <object><a class="songchannel" href="{% url 'channel' ins_song.channel %}"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</a></object>
+                    </div>
+                    <div class="cardright">
+                        {% if ins_song.lyrics %}
+                            <p class="songlyrics">{{ ins_song.lyrics|slice:"25" }}...</p>
+                        {% else %}
+                            <object><a class="songlyrics" href="{% url 'edit' %}?id={{ ins_song.id }}">歌詞未登録</a></object>
+                        {% endif %}
+                        {% if ins_song.url %}
+                            <object><a class="songurl" href="{{ ins_song.url }}">{{ ins_song.url|slice:"30" }}</a></object>
+                        {% else %}
+                            <object><a class="songurl" href="{% url 'edit' %}?id={{ ins_song.id }}">URL未登録</a></object>
+                        {% endif %}
+                    </div>
+                </a>
             </div>
         {% endfor %}
             <div class="dummybuttons">
-                <div class="dummybutton dummybuttonf" onclick="tosearch('?lacks=1')"><p class="dummybuttonp">もっと見る</p></div>
-                <div class="dummybutton dummybuttonf" onclick="tonew('')"><p class="dummybuttonp">曲を登録する</p></div>
+                <a href="{% url 'ai' %}?lacks=1"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">もっと見る</p></div></a>
+                <a href="{% url 'new' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">曲を登録する</p></div></a>
             </div>
-
     {% endif %}
 
     {% if ins_nones %}
         <h1>未登録の曲</h1>
         <div class="underline"></div>
         {% for ins_song in ins_nones %}
-            <div class="songcard" onclick="tonew('{{ ins_song.title }}')">
-                <div class="cardleft">
-                    <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title|slice:"30" }}</p>
-                    <p class="songchannel"><i class="fas fa-user-circle"></i> チャンネル未登録</p>
-                </div>
-                <div class="cardright">
-                    <p class="songlyrics">歌詞未登録</p>
-                    <p class="songurl">URL未登録</p>
-                </div>
+            <div class="songcard">
+                <a href="{% url 'new' %}?title={{ ins_song.title }}" class="buttona">
+                    <div class="cardleft">
+                        <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title|slice:"30" }}</p>
+                        <p class="songchannel"><i class="fas fa-user-circle"></i> チャンネル未登録</p>
+                    </div>
+                    <div class="cardright">
+                        <p class="songlyrics">{{ imitates.pop }}</p>
+                        <p class="songurl">歌詞・URL未登録</p>
+                    </div>
+                </a>
             </div>
         {% endfor %}
-            <div class="dummybuttons">
-                <div class="dummybutton dummybuttonf" onclick="tosearch('?nones=1')"><p class="dummybuttonp">もっと見る</p></div>
-                <div class="dummybutton dummybuttonf" onclick="tonew('')"><p class="dummybuttonp">曲を登録する</p></div>
-            </div>
+        <div class="dummybuttons">
+            <a href="{% url 'search' %}?nones=1"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">もっと見る</p></div></a>
+            <a href="{% url 'new' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">曲を登録する</p></div></a>
+        </div>
     {% endif %}
     
     <h1>リンク</h1>
     <div class="underline"></div>
     <a href="https://imicomweb.com/"><img id="imicom" src="{% static 'subekashi/image/imicom.png' %}"></a>
     <a href="https://www.youtube.com/@subeteanatanoseidesu" class="youtubelink"><h1>全てあなたの所為です。</h1></a>
-    <a href="https://www.youtube.com/@subekashi" class="youtubelink"><h1>全て歌詞の所為です。</h1></a>
 </section>
 {% endblock %}
 
 {% block js %}
     <script src="{% static 'subekashi/js/songlist.js' %}" rel="stylesheet"></script>
-    <script>
-        function tosearch(query) {
-            window.location.href = "{% url 'search' %}" + query;
-        }
-
-        function tonew(title) {
-            window.location.href = "{% url 'new' %}?title=" + title;
-
-        }
-        
-        function toai() {
-            window.location.href = "{% url 'ai' %}";
-        }
-        
-        function tomake() {
-            window.location.href = "{% url 'make' %}";
-        }
-    </script>
 {% endblock %}
