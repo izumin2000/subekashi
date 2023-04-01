@@ -341,10 +341,12 @@ textarea {
     font-size: 20px;
     margin-bottom: 12px;
     padding-left: 2px;
+    white-space:nowrap;
 }
 
 .songchannel {
     font-size: 15px;
+    white-space:nowrap;
 }
 
 .songchannel i {
@@ -353,12 +355,14 @@ textarea {
 
 .songlyrics {
     display: block;
+    white-space:nowrap;
     font-size: 12px;
     margin-bottom: 10px;
 }
 
 .songurl {
     display: inline-block;
+    white-space:nowrap;
 }
 
 
