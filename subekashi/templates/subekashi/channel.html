@@ -10,23 +10,25 @@
     <div class="underline"></div>
     {% if ins_songs %}
         {% for ins_song in ins_songs %}
-            <div class="songcard" onclick="songpage('{{ basedir }}', '{{ ins_song.id }}')">
-                <div class="cardleft">
-                    <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title|slice:"30" }}</p>
-                    {% if ins_song.url %}
-                        <a class="songurl" href="{{ ins_song.url }}">{{ ins_song.url|slice:"35" }}</a>
-                    {% else %}
-                    <p class="songurlnotfound">URL未登録</p>
-                    {% endif %}
-                </div>
-                <div class="cardright">
-                    {% if ins_song.lyrics %}
-                        <p class="songlyrics1">{{ ins_song.lyrics|slice:"25" }}</p>
-                        <p class="songlyrics2">{{ ins_song.lyrics|slice:"25:50" }}...</p>
-                    {% else %}
-                        <p class="songlyricsnotfound">歌詞未登録</p>
-                    {% endif %}
-                </div>
+            <div class="songcard">
+                <a href="{% url 'song' ins_song.id %}" class="buttona">
+                    <div class="cardleft">
+                        <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title|slice:"30" }}</p>
+                        {% if ins_song.url %}
+                            <object><a class="songurl" href="{{ ins_song.url }}">{{ ins_song.url|slice:"35" }}</a></object>
+                        {% else %}
+                            <p class="songurlnotfound">URL未登録</p>
+                        {% endif %}
+                    </div>
+                    <div class="cardright">
+                        {% if ins_song.lyrics %}
+                            <p class="songlyrics1">{{ ins_song.lyrics|slice:"25" }}</p>
+                            <p class="songlyrics2">{{ ins_song.lyrics|slice:"25:50" }}...</p>
+                        {% else %}
+                            <p class="songlyricsnotfound">歌詞未登録</p>
+                        {% endif %}
+                    </div>
+                </a>
             </div>
         {% endfor %}
     {% else %}
