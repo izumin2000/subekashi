@@ -24,6 +24,11 @@
             <input type="checkbox" name="confirm" id="confirm" oninput="confirmf()">
             <input type="submit" name="submit" id="resetsubmit" value="リセット" disabled>
         </form>
+        <form action="{% url 'dev' %}?key=1" method="POST" class="post-form">{% csrf_token %}
+            <input type="text" name="key" id="key" placeholder="key">
+            <input type="text" name="value" id="value" placeholder="value">
+            <input type="submit" name="submit" id="keysubmit" value="送信">
+        </form>
     {% endif %}
 </section>
 {% endblock %}
