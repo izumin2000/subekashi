@@ -7,6 +7,11 @@
     margin: 20px;
 }
 
+#subekashi1 {
+    display: block;
+    margin: 20px auto 0 auto;
+}
+
 #imicom {
     display: block;
     margin: 0 auto -50px auto;
