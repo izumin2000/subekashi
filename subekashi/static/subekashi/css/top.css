@@ -24,18 +24,22 @@
     }
 }
 
-.youtubelink {
+#subekashi1 {
+    width: 64vw;
+    height: 36vw;
+}
+
+.subeana {
     text-align: center;
     text-decoration: none;
 }
 
-.youtubelink h1 {
-    margin-top: 100px;
+.subeana h1 {
+    margin-top: 50px;
     font-size: 35px;
 }
-
 @media (max-width: 640px) {
-    .youtubelink h1 {
+    .subeana h1 {
         font-size: 25px;
     }
 }
