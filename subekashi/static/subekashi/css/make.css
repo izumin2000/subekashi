@@ -30,7 +30,7 @@
 .songrow {
     display: none;
     width: calc(50vw - 98px);
-    margin: 5px 0 5px 60px;
+    margin: 5px 0 5px 70px;
     padding: 10px;
     background-color: #333;
     cursor: pointer;
