@@ -1,18 +1,8 @@
-.imitateimitatediv {
-    display: inline-block;
-    margin-left: 10px;
-}
-
-#imitateimitatediv1 {
-    margin-left: 5px;
+#imitateimitatediv {
+    display: none;
 }
 
 @media (max-width: 720px) {
-    .imitateimitatediv {
-        display: block;
-        margin:10px 0 0 88px !important;
-    }
-
     #url {
         margin-bottom: 20px;
     }
@@ -20,14 +10,6 @@
     select {
         margin-top: 0;
     }
-
-    #imitateimitatediv2 {
-        margin-top: 20px;
-    }
-}
-
-.imitateimitatediv input {
-    margin-top: 0;
 }
 
 #appendimitate, #deleteimitate {
