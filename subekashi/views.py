@@ -143,9 +143,13 @@ def format_url(url) :
     else :
         return url
 
+def init_dir() :
+    dir = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
+    return dir
+
 
 def top(request):
-    dir = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
+    dir = init_dir()
     ins_songs = list(Song.objects.exclude(lyrics = ""))[:-7:-1]
     dir["ins_songs"] = ins_songs
     ins_lacks = list(Song.objects.filter(lyrics = "").exclude(channel = ""))
@@ -165,7 +169,7 @@ def top(request):
 
 
 def new(request) :
-    dir = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
+    dir = init_dir()
 
     if request.method == "POST":
         inp_title = request.POST.get("title")
@@ -260,7 +264,8 @@ def new(request) :
 
 
 def song(request, song_id) :
-    dir = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
+    dir = init_dir()
+
     ins_song = Song.objects.get(pk = song_id)
     dir["ins_song"] = ins_song
 
@@ -285,7 +290,8 @@ def song(request, song_id) :
 
 
 def make(request) :
-    dir = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
+    dir = init_dir()
+
     dir["ins_songs"] = Song.objects.all()
     dir["basedir"] = get_basedir()
 
@@ -373,7 +379,7 @@ def make(request) :
 
 
 def channel(request, channel_name) :
-    dir = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
+    dir = init_dir()
 
     dir["channel"] = channel_name
     ins_songs = Song.objects.filter(channel = channel_name)
@@ -385,7 +391,7 @@ def channel(request, channel_name) :
 
 
 def edit(request) :
-    dir = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
+    dir = init_dir()
     if "id" in request.GET :
         song_id = request.GET.get("id")
         ins_song = Song.objects.filter(pk = song_id)
@@ -423,7 +429,7 @@ def edit(request) :
 
 
 def search(request) :
-    dir = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
+    dir = init_dir()
 
     if "lacks" in request.GET :
         dir["lacks"] = request.GET.get("lacks")
@@ -441,7 +447,7 @@ def search(request) :
 
 
 def wrong(request, song_id) :
-    dir = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
+    dir = init_dir()
 
     ins_song = Song.objects.get(pk = song_id)
     dir["ins_song"] = ins_song
