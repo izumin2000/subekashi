@@ -39,8 +39,8 @@
 {% endblock %}
 
 {% block js %}
-    <script src="{% static 'subekashi/js/songlist.js' %}" rel="stylesheet"></script>
-    <script src="{% static 'subekashi/js/fixfooter.js' %}" rel="stylesheet"></script>
+    <script src="{% static 'subekashi/js/songlist.js' %}?{{ lastModified }}" rel="stylesheet"></script>
+    <script src="{% static 'subekashi/js/fixfooter.js' %}?{{ lastModified }}" rel="stylesheet"></script>
     <script>
         function tonew() {
             window.location.href = "{% url 'new' %}?channel={{ channel }}";
