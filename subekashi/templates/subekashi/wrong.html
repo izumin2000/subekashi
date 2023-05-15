@@ -32,7 +32,7 @@
 {% endblock %}
 
 {% block js %}
-<script src="{% static 'subekashi/js/wrongform.js' %}" rel="stylesheet"></script>
+<script src="{% static 'subekashi/js/wrongform.js' %}?{{ lastModified }}" rel="stylesheet"></script>
 <script src="{% static 'subekashi/js/fixfooter.js' %}" rel="stylesheet"></script>
 <script>
     window.addEventListener('load', fixfooter);
