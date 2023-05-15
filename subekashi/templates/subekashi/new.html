@@ -10,14 +10,14 @@
     <div class="underline"></div>
     <form action="{% url 'new' %}" method="POST" class="post-form" id="newForm">{% csrf_token %}
         <label>曲名*</label>
-        <input type="text" id="title" name="title" oninput="newform(); isExistSong('{{basedir}}')" value="{{ title }}"><br>
+        <input type="text" id="title" name="title" oninput="newform(0); isExistSong('{{basedir}}')" value="{{ title }}"><br>
         <label>作者*</label>
-        <input type="text" id="channel" name="channel" oninput="newform(); isExistSong('{{basedir}}')" value="{{ channel }}"><br>
-        <label>URL</label>
+        <input type="text" id="channel" name="channel" oninput="newform(0)" value="{{ channel }}"><br>
+        <label>URL </label>
         <input type="text" id="url" name="url" value="{{ url }}"><br>
         <div id="imitates">
-            <label>模倣*</label>
-            <select id="imitate" name="imitate" oninput="appendimitatef();">
+            <label>模倣1*</label>
+            <select id="imitate1" name="imitate1" oninput="newform(1);">
                 <option>選択してください</option>
                 <option>.模倣</option>
                 <option>..模倣</option>
@@ -31,15 +31,7 @@
                 <option>オリジナル模倣</option>
                 <option>模倣曲模倣</option>
             </select>
-            <div id="imitateimitatediv">
-                <label>模倣曲模倣の曲名*</label>
-                <input type="text" id="imitateimitate"><br>
-                {% for ins_song in ins_songs %}
-                    <div class="songrow">
-                        <p class="songs" id="{{ ins_song.title }}" onclick="titleinput('{{ ins_song.title }}')"><span class="channel"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</span> <i class="fas fa-music"></i> {{ ins_song.title }}</p>
-                    </div>
-                {% endfor %}
-            </div>
+            <div class="imitateimitatediv" id="imitateimitatediv1"></div>
             <br>
         </div>
         <button type="button" id="appendimitate" onclick="appendimitatef()" disabled>模倣2を追加</button>
@@ -59,7 +51,7 @@
 {% block js %}
 <script src="{% static 'subekashi/js/newform.js' %}" rel="stylesheet"></script>
 <script>
-    window.addEventListener('load', newform());
+    window.addEventListener('load', newform(0));
 </script>
 
 {% endblock %}
