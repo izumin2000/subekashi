@@ -3,8 +3,8 @@ from django.db import models
 
 class Song(models.Model) :
     title = models.CharField(default = "", max_length = 500)
-    channel = models.CharField(default = "", max_length = 50)
-    url = models.CharField(default = "", max_length = 50, blank = True, null = True)
+    channel = models.CharField(default = "", max_length = 500)
+    url = models.CharField(default = "", max_length = 500, blank = True, null = True)
     lyrics = models.CharField(default = "", max_length = 10000, blank = True, null = True)
     ruigo = models.CharField(default = "", max_length = 50000, blank = True, null = True)
     imitate = models.CharField(default = "", max_length = 1000, blank = True, null = True)
