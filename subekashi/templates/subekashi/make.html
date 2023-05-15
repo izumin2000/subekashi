@@ -69,7 +69,7 @@
 {% endblock %}
 
 {% block js %}
-<script src="{% static 'subekashi/js/makeform.js' %}" rel="stylesheet"></script>
+<script src="{% static 'subekashi/js/makeform.js' %}?{{ lastModified }}" rel="stylesheet"></script>
 <script>
     window.addEventListener('load', function(){
         getSong('{{ basedir }}');

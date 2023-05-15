@@ -328,9 +328,16 @@ textarea {
 }
 
 .cardright {
+    display: block;
     padding: 0 15px;
     text-align:right;
-    display: block;
+}
+
+@media (max-width: 840px) {
+    .cardright {
+        display: none;
+        padding: 15px 0;
+    }
 }
 
 .songcard:hover {
