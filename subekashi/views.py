@@ -144,7 +144,7 @@ def format_url(url) :
         return url
 
 def init_dir() :
-    dir = init_dir()
+    dir = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
     return dir
 
 
