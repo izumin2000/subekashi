@@ -85,8 +85,8 @@
 {% endblock %}
 
 {% block js %}
-<script src="{% static 'subekashi/js/songlist.js' %}" rel="stylesheet"></script>
-<script src="{% static 'subekashi/js/search.js' %}" rel="stylesheet"></script>
+<script src="{% static 'subekashi/js/songlist.js' %}?{{ lastModified }}" rel="stylesheet"></script>
+<script src="{% static 'subekashi/js/search.js' %}?{{ lastModified }}" rel="stylesheet"></script>
 <script>
     window.addEventListener('load', function(){
         getSong('{{ basedir }}');

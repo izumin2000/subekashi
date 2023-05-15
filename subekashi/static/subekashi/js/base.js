@@ -61,3 +61,12 @@ function autotextarea() {
     let scrollHeight = textarea.scrollHeight - 20;
     textarea.style.height = scrollHeight + 'px';
 }
+
+// ソングページ
+function songpage(basedir, song_id) {
+    window.location.href = basedir + "/songs/" + song_id;
+}
+
+window.onload = function() {
+    kanji();
+}

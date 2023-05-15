@@ -1,3 +1,10 @@
+@media (max-width: 515px) {
+    input, select {
+        margin-top: 0;
+        margin-bottom: 20px;
+    }
+}
+
 .filters {
     box-shadow: none;
     height: 15px;
