@@ -10,10 +10,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: don't run with debug turned on in production!
 ALLOWED_HOSTS = [
     "subekashi.localhost",
-    "orissa.localhost",
+    "recruit.localhost",
     "iniadmc.localhost",
     "subekashi.izmn.net",
-    "orissa.izmn.net",
+    "recruit.izmn.net",
     "iniadmc.izmn.net",
     ]
 
@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     'orissa',
     'subekashi',
     'iniadmc',
+    'recruit',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
