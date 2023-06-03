@@ -27,11 +27,11 @@
     <body>
         {% include './header.html' %}
         <main>
-            <article id="mainarticle">
-                {% block content %}{% endblock %}
-            </article>
             <article id="menuarticle">
                 {% include './menu.html' %}
+            </article>
+            <article id="mainarticle">
+                {% block content %}{% endblock %}
             </article>
         </main>
         {% include './footer.html' %}
