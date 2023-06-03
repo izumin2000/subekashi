@@ -6,6 +6,8 @@ class Command(BaseCommand):
     help = "テストコマンド"
 
     def handle(self, *args, **options):
-        for i in Song.objects.all() :
-            if "/" in i.title :
-                print(i.title, i.id)
+        for song_ins in Song.objects.all() :
+            if "/" in song_ins.title :
+                print(song_ins.title, song_ins.id)
+                song_ins.title = song_ins.title.replace("/", "╱")
+                song_ins.save()

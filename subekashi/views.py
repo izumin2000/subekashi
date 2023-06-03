@@ -183,6 +183,7 @@ def new(request) :
         if (("" in [inp_title, inp_channel]) or (imitate1 == "選択してください")):
             return render(request, "subekashi/error.html")
 
+        inp_title = inp_title.replace("/", "╱")
         ins_song, iscreated = Song.objects.get_or_create(title = inp_title, defaults = {"title" : inp_title})
 
         ins_song.title = inp_title
