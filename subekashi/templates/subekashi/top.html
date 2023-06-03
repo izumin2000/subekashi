@@ -9,8 +9,8 @@
     <h1>新着の曲</h1>
     <div class="underline"></div>
     {% for ins_song in ins_songs %}
-        <div class="songcard">
-            <a href="{% url 'song' ins_song.id %}" class="buttona">
+        <a href="{% url 'song' ins_song.id %}" class="buttona">
+            <div class="songcard">
                 <div class="cardleft">
                     <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title|slice:"30" }}</p>
                     <object><a class="songchannel" href="{% url 'channel' ins_song.channel %}"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</a></object>
@@ -27,8 +27,8 @@
                         <p class="songurl">URL未登録</p>
                     {% endif %}
                 </div>
-            </a>
-        </div>
+            </div>
+        </a>
     {% endfor %}
     <div class="dummybuttons">
         <a href="{% url 'search' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">もっと見る</p></div></a>
@@ -51,8 +51,8 @@
         <h1>情報不足の曲</h1>
         <div class="underline"></div>
         {% for ins_song in ins_lacks %}
-            <div class="songcard">
-                <a href="{% url 'song' ins_song.id %}" class="buttona">
+            <a href="{% url 'song' ins_song.id %}" class="buttona">
+                <div class="songcard">
                     <div class="cardleft">
                         <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title|slice:"30" }}</p>
                         <object><a class="songchannel" href="{% url 'channel' ins_song.channel %}"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</a></object>
@@ -69,8 +69,8 @@
                             <object><a class="songurl" href="{% url 'edit' %}?id={{ ins_song.id }}">URL未登録</a></object>
                         {% endif %}
                     </div>
-                </a>
-            </div>
+                </div>
+            </a>
         {% endfor %}
             <div class="dummybuttons">
                 <a href="{% url 'search' %}?lacks=1"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">もっと見る</p></div></a>
@@ -82,8 +82,8 @@
         <h1>未登録の曲</h1>
         <div class="underline"></div>
         {% for ins_song in ins_nones %}
+        <a href="{% url 'new' %}?title={{ ins_song.title }}" class="buttona">
             <div class="songcard">
-                <a href="{% url 'new' %}?title={{ ins_song.title }}" class="buttona">
                     <div class="cardleft">
                         <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title|slice:"30" }}</p>
                         <p class="songchannel"><i class="fas fa-user-circle"></i> チャンネル未登録</p>
@@ -92,8 +92,8 @@
                         <p class="songlyrics">{{ imitates.pop }}</p>
                         <p class="songurl">歌詞・URL未登録</p>
                     </div>
-                </a>
-            </div>
+                </div>
+            </a>
         {% endfor %}
         <div class="dummybuttons">
             <a href="{% url 'search' %}?nones=1"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">もっと見る</p></div></a>

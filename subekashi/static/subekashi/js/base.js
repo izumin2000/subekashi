@@ -16,18 +16,18 @@ function kanji() {
 
 
 // メニューの切り替え
-var isMenu = false;
+var isMain = true;
 function menu() {
-    if (isMenu) {
+    if (isMain) {
         document.getElementById("menuicon").innerHTML = "<i class='fas fa-times'></i>";
         document.getElementById("menuarticle").style.display = "block";
         document.getElementById("menuarticle").style.position = "fixed";
-        isMenu = false;
+        isMain = false;
     } else {
         document.getElementById("menuicon").innerHTML = "<i class='fas 	fas fa-bars'></i>";
         document.getElementById("menuarticle").style.display = "none";
         document.getElementById("menuarticle").style.position = "static";
-        isMenu = true;
+        isMain = true;
     }
     kanji();
 }
