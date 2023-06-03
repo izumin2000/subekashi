@@ -16,18 +16,18 @@ function kanji() {
 
 
 // メニューの切り替え
+var isMenu = false;
 function menu() {
-    var isMenu = document.getElementById("menuarticle").style.display
-    if (isMenu != "block") {
-        document.getElementById("mainarticle").style.display = "none";
+    if (isMenu) {
         document.getElementById("menuicon").innerHTML = "<i class='fas fa-times'></i>";
         document.getElementById("menuarticle").style.display = "block";
-        document.getElementsByTagName("main")[0].style.background = "linear-gradient(180deg, #000, #000, 70vh, #005)";
+        document.getElementById("menuarticle").style.position = "fixed";
+        isMenu = false;
     } else {
-        document.getElementById("mainarticle").style.display = "block";
         document.getElementById("menuicon").innerHTML = "<i class='fas 	fas fa-bars'></i>";
         document.getElementById("menuarticle").style.display = "none";
-        document.getElementsByTagName("main")[0].style.background = ""
+        document.getElementById("menuarticle").style.position = "static";
+        isMenu = true;
     }
     kanji();
 }
