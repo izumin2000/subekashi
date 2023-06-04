@@ -15,6 +15,7 @@ from .serializer import SongSerializer, AiSerializer
 from config.settings import *
 from django.contrib.auth.views import LogoutView
 from django.urls import reverse
+import re
 
 # パスワード関連
 SHA256a = "5802ea2ddcf64db0efef04a2fa4b3a5b256d1b0f3d657031bd6a330ec54abefd"
@@ -510,33 +511,12 @@ def dev(request) :
         if isgpt :
             inp_gpt = request.POST.get("gpt")
             if inp_gpt :
-                set_lyrics = set()
-                gpts = inp_gpt.split("\n")[12:]
-                for gpt in gpts :
-                    if gpt[0] != "=" :
-                        sentence_gpts = gpt.split("。")
-                        for sentence_gpt in sentence_gpts :
-                            sentence_gpt += "。"
-                            lyrics_gpts = sentence_gpt.split("、")
-                            for lyrics_gpt in lyrics_gpts :
-                                for delete_char in "「」　（）()" :
-                                    lyrics_gpt = lyrics_gpt.replace(delete_char, "")
-                                set_lyrics.add(lyrics_gpt)
-
-                lyrics_tmp = ""
-                for ai_lyrics in set_lyrics :
-                    if lyrics_tmp :
-                        ai_lyrics += lyrics_tmp
-                    if len(ai_lyrics) <= 7 :
-                        lyrics_tmp = ai_lyrics
-                    elif len(ai_lyrics) <= 20 :
-                        if (ai_lyrics[-1] != "、") and (ai_lyrics[-1] != "。") :
-                            ai_lyrics += "、"
-                        ins_ai = Ai.objects.create()
-                        ins_ai.lyrics = ai_lyrics
-                        ins_ai.genetype = "model"
-                        ins_ai.save()
-                        lyrics_tmp = ""
+                gpt_lines = inp_gpt.split("\n")[12:]
+                gpt_lines = [i for i in gpt_lines if i[0] != "="]
+                gpt_lines = sum(list(map(lambda i : re.split("、|。|？", i), gpt_lines)), [])
+                gpt_lines = set(map(lambda i : re.sub("「|」|（|）|(|)|[ -¡]", "", i), gpt_lines))
+                gpt_lines = [i for i in gpt_lines if 6 < len(i) < 22]
+                [Ai.objects.create(lyrics = i, genetype = "model").save() for i in gpt_lines]
 
                 dir["locked"] = False
         if iskey :
