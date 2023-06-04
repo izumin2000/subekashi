@@ -29,7 +29,6 @@ function menu() {
         document.getElementById("menuarticle").style.position = "static";
         isMain = true;
     }
-    kanji();
 }
 
 
