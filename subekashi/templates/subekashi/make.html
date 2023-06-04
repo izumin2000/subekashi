@@ -10,19 +10,21 @@
     <div class="underline"></div>
     <form action="{% url 'make' %}" method="POST" class="post-form" id="makeForm">{% csrf_token %}
         <label>生成タイプ</label>
-        <div class="devinput" onclick="devinput(0)">
-            <input type="radio" class="genetype" name="genetype" value="category" oninput="changetype(0)" checked>
-            <label>カテゴリ</label>
+        <!-- <div class="devinput" onclick="devinput(0)"> -->
+        <div class="devinput">
+            <input type="radio" class="genetype" name="genetype" value="category" oninput="changetype(0)" disabled>
+            <label><s>カテゴリ</s></label>
         </div>
-        <div class="devinput" onclick="devinput(1)">
-            <input type="radio" class="genetype" name="genetype" value="song" oninput="changetype(1)">
-            <label>ソング</label>
+        <!-- <div class="devinput" onclick="devinput(1)"> -->
+        <div class="devinput">
+            <input type="radio" class="genetype" name="genetype" value="song" oninput="changetype(1)" disabled>
+            <label><s>ソング</s></label>
         </div>
         <div class="devinput" onclick="devinput(2)">
-            <input type="radio" class="genetype" name="genetype" value="model" oninput="changetype(2)">
+            <input type="radio" class="genetype" name="genetype" value="model" oninput="changetype(2)" checked>
             <label>モデル</label>
         </div><br>
-        <div id="categorysec">
+        <!-- <div id="categorysec">
             <label>カテゴリ*</label>
             <select id="category" name="category" oninput="makeform();">
                 <option>選択してください</option>
@@ -36,7 +38,7 @@
                 <option>エヌ模倣</option>
                 <option>K²模倣</option>
             </select>
-        </div>
+        </div> -->
         <div id="songsec">
             <label>曲名*</label>
             <input type="text" id="title" name="title" oninput="searchsong()"><br>
@@ -51,8 +53,10 @@
             <input type="range" id="similar" name="similar" min="1" max="5" value="3" oninput="similarinput()">
             <p id="similarvalue">3</p><br>
         </div>
-        <input type="submit" value="生成" id="submit" disabled>
+        <!-- <input type="submit" value="生成" id="submit" disabled> -->
+        <input type="submit" value="生成" id="submit">
         <p class="bottomelement">*がついているラベルは入力が必須です。</p>
+        <p class="bottomelement">現在、カテゴリとソングのシステムを修正中です。</p>
     </form>
 </section>
 
