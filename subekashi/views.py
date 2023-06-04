@@ -299,6 +299,11 @@ def make(request) :
 
     if request.method == "POST" :
         inp_genetype = request.POST.get("genetype")
+
+        # TODO model以外も対応させる
+        if inp_genetype != "model" :
+            return render(request, "subekashi/make.html", dir)
+            
         dir["genetype"] = inp_genetype
         if inp_genetype == "category" :
             inp_category = request.POST.get("category")
@@ -374,7 +379,10 @@ def make(request) :
 
         elif inp_genetype == "model" :
             ins_ai = Ai.objects.filter(genetype = "model", score = 0)
-            dir["ins_ais"] = random.sample(list(ins_ai), 20)
+            if not(len(ins_ai)) :
+                requests.post(SUBEKASHI_QUESTION_DISCORD_URL, data={'content': "ins_aiのデータがありません。", "avatar_url": "https://publicdomainvectors.org/photos/Anonymous_attention.png"})
+            # ins_ai = Ai.objects.filter(genetype = "model")
+            dir["ins_ais"] = random.sample(list(ins_ai), 25)
             return render(request, "subekashi/result.html", dir)
 
     return render(request, "subekashi/make.html", dir)
@@ -466,7 +474,7 @@ def wrong(request, song_id) :
 
 
 def ai(request) :
-    ins_ais = list(Ai.objects.all())[:-300:-1]
+    ins_ais = list(Ai.objects.filter(genetype = "model"))[:-300:-1]
     return render(request, "subekashi/ai.html", {"ins_ais" : ins_ais})
 
 
