@@ -163,7 +163,7 @@ def top(request):
         ins_nones = random.sample(ins_nones, min(6, len(ins_nones)))
         dir["ins_nones"] = ins_nones
         dir["imitates"] = list(map(lambda x: f"原曲は{Song.objects.get(id=int(x.imitated)).title}です" if x.imitated else "原曲が紐づけされていません" ,ins_nones))
-    ins_ais = Ai.objects.filter(score = 0)[::-1]
+    ins_ais = Ai.objects.filter(score = 5)[::-1]
     if ins_ais :
         dir["ins_ais"] = ins_ais[min(10, len(ins_ais))::-1]
     return render(request, 'subekashi/top.html', dir)
@@ -474,7 +474,7 @@ def wrong(request, song_id) :
 
 
 def ai(request) :
-    ins_ais = list(Ai.objects.filter(genetype = "model"))[:-300:-1]
+    ins_ais = list(Ai.objects.filter(genetype = "model", score = 5))[:-300:-1]
     return render(request, "subekashi/ai.html", {"ins_ais" : ins_ais})
 
 
