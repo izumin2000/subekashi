@@ -6,36 +6,12 @@
 
 {% block content %}
 <section id="aisection">
-    <h1>生成された歌詞</h1>
+    <h1>最高と評価された<br>生成された歌詞</h1>
     <div class="underline"></div>
     {% for ins_ai in ins_ais  %}
         <div class="lyricdiv">
             <p class="lyric">{{ ins_ai.lyrics }}</p>
-            <div class="devinput" onclick="devinput('{{ basedir }}', '{{ ins_ai.id }}', 5)">
-                <input type="radio" id="{{ ins_ai.id }}5" class="score" value="5" oninput="setscore('{{ basedir }}', '{{ ins_ai.id }}', 5)">
-                <label>最高</label>
-            </div>
-            <div class="devinput" onclick="devinput('{{ basedir }}', '{{ ins_ai.id }}', 4)">
-                <input type="radio" id="{{ ins_ai.id }}4" class="score" value="4" oninput="setscore('{{ basedir }}', '{{ ins_ai.id }}', 4)">
-                <label>良い</label>
-            </div>
-            <div class="devinput" onclick="devinput('{{ basedir }}', '{{ ins_ai.id }}', 3)">
-                <input type="radio" id="{{ ins_ai.id }}3" class="score" value="3" oninput="setscore('{{ basedir }}', '{{ ins_ai.id }}', 3)">
-                <label>普通</label>
-            </div>
-            <div class="devinput" onclick="devinput('{{ basedir }}', '{{ ins_ai.id }}', 2)">
-                <input type="radio" id="{{ ins_ai.id }}2" class="score" value="2" oninput="setscore('{{ basedir }}', '{{ ins_ai.id }}', 2)">
-                <label>微妙</label>
-            </div>
-            <div class="devinput" onclick="devinput('{{ basedir }}', '{{ ins_ai.id }}', 1)">
-                <input type="radio" id="{{ ins_ai.id }}1" class="score" value="1" oninput="setscore('{{ basedir }}', '{{ ins_ai.id }}', 1)">
-                <label>悪い</label>
-            </div><br>
         </div>
     {% endfor %}
 </section>
-{% endblock %}
-
-{% block js %}
-<script src="{% static 'subekashi/js/ai.js' %}?{{ lastModified }}" rel="stylesheet"></script>
 {% endblock %}
