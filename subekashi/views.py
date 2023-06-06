@@ -530,11 +530,11 @@ def dev(request) :
     return render(request, "subekashi/dev.html", dir)
 
 
-class SongViewSet(viewsets.ModelViewSet):
+class SongViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Song.objects.all()
     serializer_class = SongSerializer
 
 
-class AiViewSet(viewsets.ModelViewSet):
+class AiViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ai.objects.all()
     serializer_class = AiSerializer
