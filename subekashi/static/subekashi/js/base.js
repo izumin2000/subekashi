@@ -62,8 +62,8 @@ function autotextarea() {
 }
 
 // ソングページ
-function songpage(basedir, song_id) {
-    window.location.href = basedir + "/songs/" + song_id;
+function songpage(baseURL, songId) {
+    window.location.href = baseURL + "/songs/" + songId;
 }
 
 window.onload = function() {

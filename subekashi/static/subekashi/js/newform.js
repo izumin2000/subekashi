@@ -1,7 +1,7 @@
 var songJson, songResult, songGuessEles, imitateList = [];
 
-async function firstLoad(basedir) {
-    res = await fetch(basedir + "/api/song/?format=json");
+async function firstLoad(baseURL) {
+    res = await fetch(baseURL + "/api/song/?format=json");
     songJson = await res.json();
     songGuessEles = document.getElementsByClassName("songGuess");
 }
@@ -108,9 +108,9 @@ function appendImitate(song) {
 }
 
 
-function appendCategory(category_id) {
+function appendCategory(categoryId) {
     subeanaSongs = songJson.filter(song => song.channel == "全てあなたの所為です。");
-    appendImitate(subeanaSongs[category_id]);
+    appendImitate(subeanaSongs[categoryId]);
 }
 
 

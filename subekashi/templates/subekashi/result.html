@@ -8,27 +8,27 @@
 <section id="resultsection">
     <h1>歌詞の生成結果</h1>
     <div class="underline"></div>
-    {% for ins_ai in ins_ais  %}
+    {% for aiIns in aiInsL  %}
         <div class="lyricdiv">
-            <p class="lyric">{{ ins_ai.lyrics }}</p>
-            <div class="devinput" onclick="devinput('{{ basedir }}', '{{ ins_ai.id }}', 5)">
-                <input type="radio" id="{{ ins_ai.id }}5" class="score" value="5" oninput="setscore('{{ basedir }}', '{{ ins_ai.id }}', 5)">
+            <p class="lyric">{{ aiIns.lyrics }}</p>
+            <div class="devinput" onclick="devinput('{{ baseURL }}', '{{ aiIns.id }}', 5)">
+                <input type="radio" id="{{ aiIns.id }}5" class="score" value="5" oninput="setscore('{{ baseURL }}', '{{ aiIns.id }}', 5)">
                 <label>最高</label>
             </div>
-            <div class="devinput" onclick="devinput('{{ basedir }}', '{{ ins_ai.id }}', 4)">
-                <input type="radio" id="{{ ins_ai.id }}4" class="score" value="4" oninput="setscore('{{ basedir }}', '{{ ins_ai.id }}', 4)">
+            <div class="devinput" onclick="devinput('{{ baseURL }}', '{{ aiIns.id }}', 4)">
+                <input type="radio" id="{{ aiIns.id }}4" class="score" value="4" oninput="setscore('{{ baseURL }}', '{{ aiIns.id }}', 4)">
                 <label>良い</label>
             </div>
-            <div class="devinput" onclick="devinput('{{ basedir }}', '{{ ins_ai.id }}', 3)">
-                <input type="radio" id="{{ ins_ai.id }}3" class="score" value="3" oninput="setscore('{{ basedir }}', '{{ ins_ai.id }}', 3)">
+            <div class="devinput" onclick="devinput('{{ baseURL }}', '{{ aiIns.id }}', 3)">
+                <input type="radio" id="{{ aiIns.id }}3" class="score" value="3" oninput="setscore('{{ baseURL }}', '{{ aiIns.id }}', 3)">
                 <label>普通</label>
             </div>
-            <div class="devinput" onclick="devinput('{{ basedir }}', '{{ ins_ai.id }}', 2)">
-                <input type="radio" id="{{ ins_ai.id }}2" class="score" value="2" oninput="setscore('{{ basedir }}', '{{ ins_ai.id }}', 2)">
+            <div class="devinput" onclick="devinput('{{ baseURL }}', '{{ aiIns.id }}', 2)">
+                <input type="radio" id="{{ aiIns.id }}2" class="score" value="2" oninput="setscore('{{ baseURL }}', '{{ aiIns.id }}', 2)">
                 <label>微妙</label>
             </div>
-            <div class="devinput" onclick="devinput('{{ basedir }}', '{{ ins_ai.id }}', 1)">
-                <input type="radio" id="{{ ins_ai.id }}1" class="score" value="1" oninput="setscore('{{ basedir }}', '{{ ins_ai.id }}', 1)">
+            <div class="devinput" onclick="devinput('{{ baseURL }}', '{{ aiIns.id }}', 1)">
+                <input type="radio" id="{{ aiIns.id }}1" class="score" value="1" oninput="setscore('{{ baseURL }}', '{{ aiIns.id }}', 1)">
                 <label>悪い</label>
             </div><br>
         </div>

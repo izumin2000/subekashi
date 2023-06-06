@@ -1,6 +1,6 @@
-async function setscore(basedir, id, score) {
+async function setscore(baseURL, id, score) {
     res = await fetch(
-        basedir + "/api/ai/" + id + "/?format=json",
+        baseURL + "/api/ai/" + id + "/?format=json",
         {
             method: "PUT",
             headers: {
@@ -16,7 +16,7 @@ async function setscore(basedir, id, score) {
 }
 
 
-function devinput(basedir, id, score) {
+function devinput(baseURL, id, score) {
     for (s = 1; s <= 5; s++) {
         radioEle = document.getElementById(String(id) + String(s));
         radioEle.checked = false;
@@ -24,7 +24,7 @@ function devinput(basedir, id, score) {
     }
     radioEle = document.getElementById(String(id) + String(score));
     radioEle.checked = true;
-    setscore(basedir, id, score);
+    setscore(baseURL, id, score);
 }
 
 

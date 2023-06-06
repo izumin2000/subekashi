@@ -22,7 +22,7 @@ SHA256a = "5802ea2ddcf64db0efef04a2fa4b3a5b256d1b0f3d657031bd6a330ec54abefd"
 REPLACEBLE_HINSHIS = ["名詞", "動詞", "形容詞"]
 
 
-def get_API(url) :
+def getAPI(url) :
     try :
         get = requests.get(url)
     except :        # プロキシエラー等のエラーが発生したら
@@ -31,21 +31,21 @@ def get_API(url) :
 
     if (get.status_code == 200) :
         try :
-            get_dict = get.json()
+            getDict = get.json()
         except :        # JSON形式ではなかったら（メンテナンス等）
             print("Not JSON Error", get.status_code)
             return ""
 
-        if "error" in get_dict :     # dictのキーにerrorがあったら
+        if "error" in getDict :     # dictのキーにerrorがあったら
             print("Invalid path Error", get.status_code)
             return ""
         
-        if "message" in get_dict :     # dictのキーにerrorがあったら
+        if "message" in getDict :     # dictのキーにerrorがあったら
             print("404 on json API", get.status_code)
             
         else :      # 正常に取得できたら
             print("OK", get.status_code)
-            return get_dict
+            return getDict
 
     else :      # エラーステータスコードを受け取ったら（HEROKU error等）
         print("not 2xx", get.status_code)
@@ -60,8 +60,8 @@ def counter(word) :
     return hiragana, katakana, kanji
 
 
-def tokenizer_janome(text):
-    toklist = []
+def tokenizerJanome(text):
+    tokL = []
     j_t = Tokenizer()
 
     for tok in j_t.tokenize(text, wakati=False) :
@@ -74,128 +74,128 @@ def tokenizer_janome(text):
             katsuyou = tok.part_of_speech
         else :
             katsuyou = ""
-        toklist.append((tok.surface, hinshi, katsuyou))
-    return toklist
+        tokL.append((tok.surface, hinshi, katsuyou))
+    return tokL
 
-def vector_generate(ins_original, ins_imitates, dir) :
+def vectorGenerate(originalIns, imitateInsL, dataD) :
     lyrics = ""
-    dict_sim = {}
-    toklist = tokenizer_janome(ins_original.lyrics)    
-    for ins_imitate in ins_imitates :
-        dict_ruigo = ins_imitate.ruigo
-        if dict_ruigo :
-            for hinshikatsuyou, words in eval(dict_ruigo).items() :
-                if hinshikatsuyou in dict_sim.keys() :
-                    dict_sim[hinshikatsuyou] += words
+    simD = {}
+    tokL = tokenizerJanome(originalIns.lyrics)    
+    for imitateIns in imitateInsL :
+        ruigoDict = imitateIns.ruigo
+        if ruigoDict :
+            for hinshiKatsuyou, words in eval(ruigoDict).items() :
+                if hinshiKatsuyou in simD.keys() :
+                    simD[hinshiKatsuyou] += words
                 else :
-                    dict_sim[hinshikatsuyou] = words
+                    simD[hinshiKatsuyou] = words
 
-    before_hinshi = ""
-    for word, hinshi, katsuyou in toklist :
+    hinshiBefore = ""
+    for word, hinshi, katsuyou in tokL :
         if (hinshi in REPLACEBLE_HINSHIS) and not(word.isdigit()) :
-            if (hinshi == "名詞") and (before_hinshi == "名詞") :
+            if (hinshi == "名詞") and (hinshiBefore == "名詞") :
                 continue
-            before_hinshi = hinshi
-            hinshikatsuyou = hinshi + katsuyou
-            if hinshikatsuyou in dict_sim.keys() :
-                pickwords = [word]
-                for pickword in dict_sim[hinshikatsuyou] :
-                    pickwords.append(pickword)
-                lyrics += random.choice(pickwords)
+            hinshiBefore = hinshi
+            hinshiKatsuyou = hinshi + katsuyou
+            if hinshiKatsuyou in simD.keys() :
+                pickWords = [word]
+                for pickword in simD[hinshiKatsuyou] :
+                    pickWords.append(pickword)
+                lyrics += random.choice(pickWords)
             else :
                 lyrics += word
             # simD[hinshi + katsuyou].remove(sim)
         else :
             lyrics += word
 
-        before_hinshi = hinshi
-    ins_ais = []
+        hinshiBefore = hinshi
+    aiInsL = []
     for lyric in lyrics.split("\n") :
         if len(lyric) >= 2 :
-            ins_ai = Ai.objects.create()
-            ins_ai.lyrics = lyric
-            ins_ai.genetype = dir["genetype"]
-            ins_ai.save()
-            ins_ais.append(ins_ai)
-            if dir["genetype"] == "category" :
-                ins_genecategory = Genecategory.objects.create()
-                ins_genecategory.ai = ins_ai
-                ins_genecategory.category = dir["category"]
-                ins_genecategory.save()
-            elif dir["genetype"] == "song" :
-                ins_genesong = Genesong.objects.create()
-                ins_genesong.ai = ins_ai
-                ins_genesong.title = dir["title"]
-                ins_genesong.similar = int(dir["similar"])
-                ins_genesong.save()
-    return ins_ais
+            aiIns = Ai.objects.create()
+            aiIns.lyrics = lyric
+            aiIns.genetype = dataD["genetype"]
+            aiIns.save()
+            aiInsL.append(aiIns)
+            if dataD["genetype"] == "category" :
+                genecategoryIns = Genecategory.objects.create()
+                genecategoryIns.ai = aiIns
+                genecategoryIns.category = dataD["category"]
+                genecategoryIns.save()
+            elif dataD["genetype"] == "song" :
+                genesongIns = Genesong.objects.create()
+                genesongIns.ai = aiIns
+                genesongIns.title = dataD["title"]
+                genesongIns.similar = int(dataD["similar"])
+                genesongIns.save()
+    return aiInsL
 
 
-def format_url(url) :
+def formatURL(url) :
+    url = url.replace("m.youtube.com", "www.youtube.com")
     if "https://www.youtube.com/watch" in url :
         return "https://youtu.be/" + url[32:43]
     else :
         return url
 
-def init_dir() :
-    dir = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
+def initD() :
+    dataD = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
     if DEBUG :
-        dir["basedir"] = "http://subekashi.localhost:8000"
+        dataD["baseURL"] = "http://subekashi.localhost:8000"
     else :
-        dir["basedir"] = "https://subekashi.izmn.net"
-    return dir
+        dataD["baseURL"] = "https://subekashi.izmn.net"
+    return dataD
 
 
 def top(request):
-    dir = init_dir()
-    ins_songs = list(Song.objects.exclude(lyrics = ""))[:-7:-1]
-    dir["ins_songs"] = ins_songs
-    ins_lacks = list(Song.objects.filter(lyrics = "").exclude(channel = ""))
-    ins_lacks += list(Song.objects.filter(url = "").exclude(channel = ""))
-    if ins_lacks :
-        ins_lacks = random.sample(ins_lacks, min(6, len(ins_lacks)))
-        dir["ins_lacks"] = ins_lacks
-    ins_nones = list(Song.objects.filter(channel = ""))
-    if ins_nones :
-        ins_nones = random.sample(ins_nones, min(6, len(ins_nones)))
-        dir["ins_nones"] = ins_nones
-        dir["imitates"] = list(map(lambda x: f"原曲は{Song.objects.get(id=int(x.imitated)).title}です" if x.imitated else "原曲が紐づけされていません" ,ins_nones))
-    ins_ais = Ai.objects.filter(score = 5)[::-1]
-    if ins_ais :
-        dir["ins_ais"] = ins_ais[min(10, len(ins_ais))::-1]
-    return render(request, 'subekashi/top.html', dir)
+    dataD = initD()
+    songInsL = list(Song.objects.exclude(lyrics = ""))[:-7:-1]
+    dataD["songInsL"] = songInsL
+    lackInsL = list(Song.objects.filter(lyrics = "").exclude(channel = ""))
+    lackInsL += list(Song.objects.filter(url = "").exclude(channel = ""))
+    if lackInsL :
+        lackInsL = random.sample(lackInsL, min(6, len(lackInsL)))
+        dataD["lackInsL"] = lackInsL
+    noneInsL = list(Song.objects.filter(channel = ""))
+    if noneInsL :
+        noneInsL = random.sample(noneInsL, min(6, len(noneInsL)))
+        dataD["noneInsL"] = noneInsL
+        dataD["imitateInsL"] = list(map(lambda x: f"原曲は{Song.objects.get(id=int(x.imitated)).title}です" if x.imitated else "原曲が紐づけされていません" ,noneInsL))
+    aiInsL = Ai.objects.filter(score = 5)[::-1]
+    if aiInsL :
+        dataD["aiInsL"] = aiInsL[min(10, len(aiInsL))::-1]
+    return render(request, 'subekashi/top.html', dataD)
 
 
 def new(request) :
-    dir = init_dir()
+    dataD = initD()
 
     if request.method == "POST":
-        inp_title = request.POST.get("title")
-        inp_channel = request.POST.get("channel")
-        inp_url = request.POST.get("url")
-        inp_lyrics = request.POST.get("lyrics")
-        inp_isjapanese = request.POST.get("isjapanese")
-        inp_isjoke = request.POST.get("isjoke")
-        imitate1 = request.POST.get("imitate1")
+        titleForm = request.POST.get("title")
+        channelForm = request.POST.get("channel")
+        urlForm = request.POST.get("url")
+        lyricsForm = request.POST.get("lyrics")
+        isjapaneseForm = request.POST.get("isjapanese")
+        isjokeForm = request.POST.get("isjoke")
 
-        if (("" in [inp_title, inp_channel]) or (imitate1 == "選択してください")):
+        if ("" in [titleForm, channelForm]) :
             return render(request, "subekashi/error.html")
 
-        inp_title = inp_title.replace("/", "╱")
-        ins_song, iscreated = Song.objects.get_or_create(title = inp_title, defaults = {"title" : inp_title})
+        titleForm = titleForm.replace("/", "╱")
+        songIns, iscreated = Song.objects.get_or_create(title = titleForm, channel = channelForm)
 
-        ins_song.title = inp_title
-        if iscreated or not(iscreated or ins_song.channel) :
-            ins_song.channel = inp_channel.replace(" ", "")
-        ins_song.isjapanese = int(bool(inp_isjapanese))
-        ins_song.isjoke = int(bool(inp_isjoke))
+        songIns.title = titleForm
+        if iscreated or not(iscreated or songIns.channel) :
+            songIns.channel = channelForm.replace(" ", "")
+        songIns.isjapanese = int(bool(isjapaneseForm))
+        songIns.isjoke = int(bool(isjokeForm))
 
-        if inp_url and (iscreated or not(iscreated or ins_song.url)):
-            ins_song.url = format_url(inp_url)
-        if inp_lyrics and (iscreated or not(iscreated or ins_song.lyrics)) :
-            ins_song.lyrics = inp_lyrics
+        if urlForm and (iscreated or not(iscreated or songIns.url)):
+            songIns.url = formatURL(urlForm)
+        if lyricsForm and (iscreated or not(iscreated or songIns.lyrics)) :
+            songIns.lyrics = lyricsForm
 
-        imitates = set()
+        imitateInsL = set()
         imitateNum = 1
         while 1 :
             imitate = request.POST.get(f"imitate{imitateNum}")
@@ -204,270 +204,271 @@ def new(request) :
                 if imitate == "模倣曲" :
                     imitate = request.POST.get(f"imitateimitate{imitateNum}")
                     if imitate :
-                        ins_imitate, _ = Song.objects.get_or_create(title = imitate, defaults = {"title" : imitate})
-                        imitates.add(ins_imitate.id)
-                        if ins_imitate.imitated :
-                            imitated = set(ins_imitate.imitated.split(","))
-                            imitated.add(ins_song.id)
-                            ins_imitate.imitated = ",".join(list(map(str, imitated)))
+                        imitateIns, _ = Song.objects.get_or_create(title = imitate, defaults = {"title" : imitate})
+                        imitateInsL.add(imitateIns.id)
+                        if imitateIns.imitated :
+                            imitated = set(imitateIns.imitated.split(","))
+                            imitated.add(songIns.id)
+                            imitateIns.imitated = ",".join(list(map(str, imitated)))
                         else :
-                            ins_imitate.imitated = ins_song.id
-                        ins_imitate.save()
+                            imitateIns.imitated = songIns.id
+                        imitateIns.save()
                 elif imitate == "オリジナル" :
-                    ins_song.isoriginal = 1
+                    songIns.isoriginal = 1
                 else :
-                    ins_imitate = Song.objects.filter(title = imitate).first()
-                    imitates.add(ins_imitate.id)
-                    if ins_imitate.imitated :
-                        imitated = set(ins_imitate.imitated.split(","))
-                        imitated.add(ins_song.id)
-                        ins_imitate.imitated = ",".join(list(map(str, imitated)))
+                    imitateIns = Song.objects.filter(title = imitate).first()
+                    imitateInsL.add(imitateIns.id)
+                    if imitateIns.imitated :
+                        imitated = set(imitateIns.imitated.split(","))
+                        imitated.add(songIns.id)
+                        imitateIns.imitated = ",".join(list(map(str, imitated)))
                     else :
-                        ins_imitate.imitated = ins_song.id
-                    ins_imitate.save()
+                        imitateIns.imitated = songIns.id
+                    imitateIns.save()
                 imitateNum += 1
             else :
                 break
 
-        if iscreated or not(iscreated or ins_song.imitate) :
-            ins_song.imitate = ",".join(list(map(str, list(imitates))))
-        ins_song.save()
+        if iscreated or not(iscreated or songIns.imitate) :
+            songIns.imitate = ",".join(list(map(str, list(imitateInsL))))
+        songIns.save()
         
-        imitates = []
-        if ins_song.imitate :
-            for imitate_id in ins_song.imitate.split(",") :
-                imitates.append(Song.objects.get(pk = int(imitate_id)))
-            dir["imitates"] = imitates
-        dir["ins_song"] = ins_song
+        imitateInsL = []
+        if songIns.imitate :
+            for imitateId in songIns.imitate.split(",") :
+                imitateInsL.append(Song.objects.get(pk = int(imitateId)))
+            dataD["imitateInsL"] = imitateInsL
+        dataD["songIns"] = songIns
 
-        if len(imitates) or ins_song.isoriginal or ins_song.channel == "全てあなたの所為です。"  :
-            dir["displayinfo"] = True
+        if len(imitateInsL) or songIns.isoriginal or songIns.channel == "全てあなたの所為です。"  :
+            dataD["displayInfo"] = True
 
-        content = f'**{ins_song.title}**\n\
-        id : {ins_song.id}\n\
-        チャンネル : {ins_song.channel}\n\
-        URL : {ins_song.url}\n\
-        模倣 : {", ".join([imitate.title for imitate in imitates])}\n\
-        歌詞 : {ins_song.lyrics[:min(20, len(ins_song.lyrics))]}'
+        content = f'**{songIns.title}**\n\
+        id : {songIns.id}\n\
+        チャンネル : {songIns.channel}\n\
+        URL : {songIns.url}\n\
+        模倣 : {", ".join([imitate.title for imitate in imitateInsL])}\n\
+        歌詞 : {songIns.lyrics[:min(20, len(songIns.lyrics))]}'
         requests.post(SUBEKASHI_NEW_DISCORD_URL, data={'content': content})
-        return render(request, 'subekashi/song.html', dir)
+        return render(request, 'subekashi/song.html', dataD)
 
-    dir["ins_songs"] = Song.objects.all()
+    dataD["songInsL"] = Song.objects.all()
     if "title" in request.GET :
-        dir["title"] = request.GET.get("title")
+        dataD["title"] = request.GET.get("title")
     if "channel" in request.GET :
-        dir["channel"] = request.GET.get("channel")
+        dataD["channel"] = request.GET.get("channel")
     if "url" in request.GET :
-        dir["url"] = request.GET.get("url")
-    return render(request, 'subekashi/new.html', dir)
+        dataD["url"] = request.GET.get("url")
+    return render(request, 'subekashi/new.html', dataD)
 
 
-def song(request, song_id) :
-    dir = init_dir()
+def song(request, songId) :
+    dataD = initD()
 
-    ins_song = Song.objects.get(pk = song_id)
-    dir["ins_song"] = ins_song
+    songIns = Song.objects.get(pk = songId)
+    dataD["songIns"] = songIns
 
-    imitates = []
-    if ins_song.imitate :
-        for imitate_id in ins_song.imitate.split(",") :
-            imitates.append(Song.objects.get(pk = int(imitate_id)))
-        dir["imitates"] = imitates
+    imitateInsL = []
+    if songIns.imitate :
+        for imitateId in songIns.imitate.split(",") :
+            imitateInsL.append(Song.objects.get(pk = int(imitateId)))
+        dataD["imitateInsL"] = imitateInsL
 
-    imitateds = ins_song.imitated
+    imitateds = songIns.imitated
     if imitateds :
-        ins_imitateds = []
+        imitatedInsL = []
         for id in imitateds.split(",") :
-            ins_imitated = Song.objects.get(pk = int(id))
-            ins_imitateds.append(ins_imitated)
-        dir["ins_imitateds"] = ins_imitateds
+            imitatedIns = Song.objects.get(pk = int(id))
+            imitatedInsL.append(imitatedIns)
+        dataD["imitatedInsL"] = imitatedInsL
     
-    if len(imitates) or ins_song.isoriginal or ins_song.channel == "全てあなたの所為です。" :
-        dir["displayinfo"] = True
+    if len(imitateInsL) or songIns.isoriginal or songIns.channel == "全てあなたの所為です。" :
+        dataD["displayInfo"] = True
 
-    return render(request, "subekashi/song.html", dir)
+    return render(request, "subekashi/song.html", dataD)
 
 
 def make(request) :
-    dir = init_dir()
-    dir["ins_songs"] = Song.objects.all()
+    dataD = initD()
+    dataD["songInsL"] = Song.objects.all()
 
     if request.method == "POST" :
-        inp_genetype = request.POST.get("genetype")
+        genetypeForm = request.POST.get("genetype")
 
-        # TODO model以外も対応させる
-        if inp_genetype != "model" :
-            return render(request, "subekashi/make.html", dir)
+        # TODO model以外もAIを対応させる
+        if genetypeForm != "model" :
+            return render(request, "subekashi/make.html", dataD)
             
-        dir["genetype"] = inp_genetype
-        if inp_genetype == "category" :
-            inp_category = request.POST.get("category")
-            dir["category"] = inp_category
+        dataD["genetype"] = genetypeForm
+        if genetypeForm == "category" :
+            categoryForm = request.POST.get("category")
+            dataD["category"] = categoryForm
 
-            if (inp_category == "選択してください") :
+            if (categoryForm == "選択してください") :
                 return render(request, "subekashi/error.html")
 
-            ins_imitates = set()
-            ins_original = Song.objects.filter(title = inp_category[:-2]).first()
-            for ins_song in Song.objects.all() :
-                if ins_song.title == inp_category[:-2] :
-                    ins_imitates.add(ins_song)
-                elif ins_song.imitate :
-                    if ins_original.id in ins_song.imitate.split(","):
-                        ins_imitates.add(ins_song)
+            imitateInsL = set()
+            originalIns = Song.objects.filter(title = categoryForm[:-2]).first()
+            for songIns in Song.objects.all() :
+                if songIns.title == categoryForm[:-2] :
+                    imitateInsL.add(songIns)
+                elif songIns.imitate :
+                    if originalIns.id in songIns.imitate.split(","):
+                        imitateInsL.add(songIns)
         
-            ins_ais = vector_generate(ins_original, ins_imitates, dir)
-            dir["ins_ais"] = ins_ais
-            return render(request, "subekashi/result.html", dir)
+            aiInsL = vectorGenerate(originalIns, imitateInsL, dataD)
+            dataD["aiInsL"] = aiInsL
+            return render(request, "subekashi/result.html", dataD)
                 
-        elif inp_genetype == "song" :
-            inp_title = request.POST.get("title")
-            dir["title"] = inp_title
-            inp_similar = request.POST.get("similar")
-            dir["similar"] = inp_similar
+        elif genetypeForm == "song" :
+            titleForm = request.POST.get("title")
+            dataD["title"] = titleForm
+            similarForm = request.POST.get("similar")
+            dataD["similar"] = similarForm
 
-            if (inp_title == "") :
+            if (titleForm == "") :
                 return render(request, "subekashi/error.html")
 
-            imitates = []
-            for ins_song in Song.objects.all() :
-                name = ins_song.id
-                if ins_song.imitate :
-                    for imitate in ins_song.imitate.split(",") :
-                        imitates.append((name, imitate, 1))
-                if ins_song.imitated :
-                    for imitated in ins_song.imitated.split(",") :
-                        imitates.append((name, imitated, 1))
+            imitateInsL = []
+            for songIns in Song.objects.all() :
+                name = songIns.id
+                if songIns.imitate :
+                    for imitate in songIns.imitate.split(",") :
+                        imitateInsL.append((name, imitate, 1))
+                if songIns.imitated :
+                    for imitated in songIns.imitated.split(",") :
+                        imitateInsL.append((name, imitated, 1))
                 
 
             G = nx.Graph()
-            G.add_weighted_edges_from(imitates, weight='weight')
+            G.add_weighted_edges_from(imitateInsL, weight='weight')
 
-            ins_original = Song.objects.filter(title = inp_title).first()
+            originalIns = Song.objects.filter(title = titleForm).first()
             
-            if ins_original.id in G.nodes() :
-                length, _ = nx.single_source_dijkstra(G, ins_original.id)
+            if originalIns.id in G.nodes() :
+                length, _ = nx.single_source_dijkstra(G, originalIns.id)
             else :
                 length = 0
 
-            inp_pops = 5 - int(inp_similar)
-            ins_imitates = set([ins_original])
+            inp_pops = 5 - int(similarForm)
+            imitateInsL = set([originalIns])
             disableGene = True
             if length :
                 for id, pops in length.items() :
                     if pops <= inp_pops :
-                        ins_song = Song.objects.get(pk = id)
-                        if not(ins_song.isjoke) and ins_song.isjapanese :
-                            ins_imitates.add(ins_song)
+                        songIns = Song.objects.get(pk = id)
+                        if not(songIns.isjoke) and songIns.isjapanese :
+                            imitateInsL.add(songIns)
                             if disableGene :
-                                if ins_song.ruigo :
+                                if songIns.ruigo :
                                     disableGene = False
             
             if disableGene :
-                dir["error"] = "生成に必要なデータが揃ってないようです"
-                return render(request, "subekashi/make.html", dir)
+                dataD["error"] = "生成に必要なデータが揃ってないようです"
+                return render(request, "subekashi/make.html", dataD)
             else :
-                ins_ais = vector_generate(ins_original, ins_imitates, dir)
-                dir["ins_ais"] = ins_ais
-                return render(request, "subekashi/result.html", dir)
+                aiInsL = vectorGenerate(originalIns, imitateInsL, dataD)
+                dataD["aiInsL"] = aiInsL
+                return render(request, "subekashi/result.html", dataD)
 
-        elif inp_genetype == "model" :
-            ins_ai = Ai.objects.filter(genetype = "model", score = 0)
-            if not(len(ins_ai)) :
-                requests.post(SUBEKASHI_QUESTION_DISCORD_URL, data={'content': "ins_aiのデータがありません。", "avatar_url": "https://publicdomainvectors.org/photos/Anonymous_attention.png"})
-            # ins_ai = Ai.objects.filter(genetype = "model")
-            dir["ins_ais"] = random.sample(list(ins_ai), 25)
-            return render(request, "subekashi/result.html", dir)
+        elif genetypeForm == "model" :
+            aiIns = Ai.objects.filter(genetype = "model", score = 0)
+            if not(len(aiIns)) :
+                requests.post(SUBEKASHI_QUESTION_DISCORD_URL, data={'content': "aiInsのデータがありません。", "avatar_url": "https://publicdomainvectors.org/photos/Anonymous_attention.png"})
+            # aiIns = Ai.objects.filter(genetype = "model")
+            dataD["aiInsL"] = random.sample(list(aiIns), 25)
+            return render(request, "subekashi/result.html", dataD)
 
-    return render(request, "subekashi/make.html", dir)
+    return render(request, "subekashi/make.html", dataD)
 
 
-def channel(request, channel_name) :
-    dir = init_dir()
+def channel(request, channelName) :
+    dataD = initD()
 
-    dir["channel"] = channel_name
-    ins_songs = Song.objects.filter(channel = channel_name)
-    dir["ins_songs"] = ins_songs
-    if 3 > len(ins_songs) :
-        dir["fixfooter"] = True
-    return render(request, "subekashi/channel.html", dir)
+    dataD["channel"] = channelName
+    songInsL = Song.objects.filter(channel = channelName)
+    dataD["songInsL"] = songInsL
+    if 3 > len(songInsL) :
+        dataD["fixfooter"] = True
+    return render(request, "subekashi/channel.html", dataD)
 
 
 def edit(request) :
-    dir = init_dir()
+    dataD = initD()
     if "id" in request.GET :
-        song_id = request.GET.get("id")
-        ins_song = Song.objects.filter(pk = song_id)
-        if len(ins_song) :
-            ins_song = ins_song.first()
-            dir["ins_song"] = ins_song
+        songId = request.GET.get("id")
+        songIns = Song.objects.filter(pk = songId)
+        if len(songIns) :
+            songIns = songIns.first()
+            dataD["songIns"] = songIns
         else :
             return render(request, "subekashi/error.html")
     else :
         return render(request, "subekashi/error.html")
     
     if request.method == "POST" :
-        inp_url = request.POST.get("url")
-        inp_lyrics = request.POST.get("lyrics")
+        urlForm = request.POST.get("url")
+        lyricsForm = request.POST.get("lyrics")
 
-        if inp_url :
-            if "https://www.youtube.com/watch" in inp_url :
-                ins_song.url = format_url(inp_url)
+        if urlForm :
+            if "https://www.youtube.com/watch" in urlForm :
+                songIns.url = formatURL(urlForm)
             else :
-                ins_song.url = inp_url
-        if inp_lyrics :
-            ins_song.lyrics = inp_lyrics
+                songIns.url = urlForm
+        if lyricsForm :
+            songIns.lyrics = lyricsForm
 
-        ins_song.save()
-        dir["ins_song"] = ins_song
-        content = f'**{ins_song.title}**\n\
-        id : {ins_song.id}\n\
-        チャンネル : {ins_song.channel}\n\
-        URL : {ins_song.url}\n\
-        歌詞 : {ins_song.lyrics[:min(20, len(ins_song.lyrics))]}'
+        songIns.save()
+        dataD["songIns"] = songIns
+        content = f'**{songIns.title}**\n\
+        id : {songIns.id}\n\
+        チャンネル : {songIns.channel}\n\
+        URL : {songIns.url}\n\
+        歌詞 : {songIns.lyrics[:min(20, len(songIns.lyrics))]}'
         requests.post(SUBEKASHI_NEW_DISCORD_URL, data={'content': content})
-        return render(request, "subekashi/song.html", dir)
+        return render(request, "subekashi/song.html", dataD)
 
-    return render(request, "subekashi/edit.html", dir)
+    return render(request, "subekashi/edit.html", dataD)
 
 
 def search(request) :
-    dir = init_dir()
+    dataD = initD()
 
+    #TODO request.GETから必要なカラムだけ
     if "lacks" in request.GET :
-        dir["lacks"] = request.GET.get("lacks")
+        dataD["lacks"] = request.GET.get("lacks")
     if "nones" in request.GET :
-        dir["nones"] = request.GET.get("nones")
+        dataD["nones"] = request.GET.get("nones")
     if "isoriginal" in request.GET :
-        dir["isoriginal"] = request.GET.get("isoriginal")
+        dataD["isoriginal"] = request.GET.get("isoriginal")
     if "isjoke" in request.GET :
-        dir["isjoke"] = request.GET.get("isjoke")
+        dataD["isjoke"] = request.GET.get("isjoke")
     
-    ins_songs = Song.objects.all()
-    dir["ins_songs"] = ins_songs
-    return render(request, "subekashi/search.html", dir)
+    songInsL = Song.objects.all()
+    dataD["songInsL"] = songInsL
+    return render(request, "subekashi/search.html", dataD)
 
 
-def wrong(request, song_id) :
-    dir = init_dir()
+def wrong(request, songId) :
+    dataD = initD()
 
-    ins_song = Song.objects.get(pk = song_id)
-    dir["ins_song"] = ins_song
+    songIns = Song.objects.get(pk = songId)
+    dataD["songIns"] = songIns
     if request.method == "POST" :
         inp_reason = request.POST.get("reason")
         inp_comment = request.POST.get("comment")
         if inp_comment :
-            content = f'**{ins_song.title}**\nid : {ins_song.id}\n理由 : {inp_reason}\nコメント : {inp_comment}'
+            content = f'**{songIns.title}**\nid : {songIns.id}\n理由 : {inp_reason}\nコメント : {inp_comment}'
         else :
-            content = f'**{ins_song.title}**\nid : {ins_song.id}\n理由 : {inp_reason}'
+            content = f'**{songIns.title}**\nid : {songIns.id}\n理由 : {inp_reason}'
         requests.post(SUBEKASHI_EDIT_DISCORD_URL, data={'content': content})
 
-    return render(request, "subekashi/wrong.html", dir)
+    return render(request, "subekashi/wrong.html", dataD)
 
 
 def ai(request) :
-    ins_ais = list(Ai.objects.filter(genetype = "model", score = 5))[:-300:-1]
-    return render(request, "subekashi/ai.html", {"ins_ais" : ins_ais})
+    aiInsL = list(Ai.objects.filter(genetype = "model", score = 5))[:-300:-1]
+    return render(request, "subekashi/ai.html", {"aiInsL" : aiInsL})
 
 
 def research(request) :
@@ -482,14 +483,14 @@ def error(request) :
 
 
 def dev(request) :
-    dir = init_dir()
-    dir = {"locked" : True}
+    dataD = initD()
+    dataD = {"locked" : True}
     if request.method == "POST":
         password = request.POST.get("password")
 
         if password :
             if hashlib.sha256(password.encode()).hexdigest() == SHA256a :
-                dir["locked"] = False
+                dataD["locked"] = False
         isreset = request.GET.get("reset")
         isgpt = request.GET.get("gpt")
         iskey = request.GET.get("key")
@@ -499,14 +500,14 @@ def dev(request) :
             isconfirmed = bool(inp_isconfirmed)
             if isconfirmed :
                 for song in subeana_LIST :
-                    ins_song = Song.objects.create()
-                    ins_song.title = song["title"]
-                    ins_song.channel = song["channel"]
-                    ins_song.url = song["url"]
-                    ins_song.lyrics = song["lyrics"]
-                    ins_song.isjapanese = song["isjapanese"]
-                    ins_song.save()
-                dir["locked"] = False
+                    songIns = Song.objects.create()
+                    songIns.title = song["title"]
+                    songIns.channel = song["channel"]
+                    songIns.url = song["url"]
+                    songIns.lyrics = song["lyrics"]
+                    songIns.isjapanese = song["isjapanese"]
+                    songIns.save()
+                dataD["locked"] = False
 
         if isgpt :
             inp_gpt = request.POST.get("gpt")
@@ -518,7 +519,7 @@ def dev(request) :
                 gpt_lines = [i for i in gpt_lines if 6 < len(i) < 22]
                 [Ai.objects.create(lyrics = i, genetype = "model").save() for i in gpt_lines]
 
-                dir["locked"] = False
+                dataD["locked"] = False
         if iskey :
             inp_key = request.POST.get("key")
             inp_value = request.POST.get("value")
@@ -527,7 +528,7 @@ def dev(request) :
             ins_singleton.value = inp_value
             ins_singleton.save()
             
-    return render(request, "subekashi/dev.html", dir)
+    return render(request, "subekashi/dev.html", dataD)
 
 
 class SongViewSet(viewsets.ReadOnlyModelViewSet):

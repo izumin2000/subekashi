@@ -8,8 +8,8 @@
 <section id="wrongsection">
     <h1>修正・削除の提案</h1>
     <div class="underline"></div>
-    <p>対象の曲：{{ins_song.title}}</p>
-    <form action="{% url 'wrong' ins_song.id %}" method="POST" class="post-form" id="wrongForm">{% csrf_token %}
+    <p>対象の曲：{{songIns.title}}</p>
+    <form action="{% url 'wrong' songIns.id %}" method="POST" class="post-form" id="wrongForm">{% csrf_token %}
         <label>理由*</label>
         <select id="reason" name="reason" oninput="wrongform()">
             <option>理由を選択してください</option>

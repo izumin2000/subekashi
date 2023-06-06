@@ -1,8 +1,8 @@
 var songjson, songEles;
 
-async function getSong(basedir) {
+async function getSong(baseURL) {
     if (!songEles) {
-        res = await fetch(basedir + "/api/song/?format=json");
+        res = await fetch(baseURL + "/api/song/?format=json");
         songjson = await res.json();
         songEles = document.getElementsByClassName("songcard");
     }
@@ -45,25 +45,25 @@ function searchsong() {
     category = categoryEle.value.slice(0, -2);
     imitateimitateEle = document.getElementById("imitateimitate");
     if (category == "全ての") {
-        category_id = 0
+        categoryId = 0
     } else if (imitateimitateEle) {
         if (imitateimitateEle.value) {
             category = imitateimitateEle.value
             category_find = songjson.find((v) => v.title == category)
             if (category_find) {
-                category_id = String(category_find.id);
+                categoryId = String(category_find.id);
             } else {
-                category_id = -1        // 模倣曲模倣が見つからない場合
+                categoryId = -1        // 模倣曲模倣が見つからない場合
             }
         } else {
-            category_id = 0
+            categoryId = 0
         }
     } else {
         category_find = songjson.find((v) => v.title == category)
         if (category_find) {
-            category_id = String(category_find.id);
+            categoryId = String(category_find.id);
         } else {
-            category_id = 0
+            categoryId = 0
         }
     }
 
@@ -83,11 +83,11 @@ function searchsong() {
             styledisplay = "none";
         }
 
-        if (!songjson[i]["imitate"].split(",").includes(category_id) && category_id) {
+        if (!songjson[i]["imitate"].split(",").includes(categoryId) && categoryId) {
             styledisplay = "none";
         }
         
-        if (category_id == -1) {        // 模倣曲模倣が見つからない場合
+        if (categoryId == -1) {        // 模倣曲模倣が見つからない場合
             styledisplay = "none";
         }
         

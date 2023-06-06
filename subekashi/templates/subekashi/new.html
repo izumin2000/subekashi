@@ -34,9 +34,9 @@
             <p class="imitateP">もしくは模倣曲から選択</p>
             <div class="songGuesser">
                 <input type="text" id="imitateTitle" oninput="searchSong()" placeholder="タイトルを入力"><br>
-                {% for ins_song in ins_songs %}
-                <div class="songGuess" id="{{ ins_song.title }}" onclick="clickSong('{{ ins_song.id }}')">
-                    <p><span class="channel"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</span> <i class="fas fa-music"></i> {{ ins_song.title }}</p>
+                {% for songIns in songInsL %}
+                <div class="songGuess" id="{{ songIns.title }}" onclick="clickSong('{{ songIns.id }}')">
+                    <p><span class="channel"><i class="fas fa-user-circle"></i> {{ songIns.channel }}</span> <i class="fas fa-music"></i> {{ songIns.title }}</p>
                 </div>
                 {% endfor %}
             </div>
@@ -69,7 +69,7 @@
 {% block js %}
 <script src="{% static 'subekashi/js/newform.js' %}" rel="stylesheet"></script>
 <script>
-    window.addEventListener('load', firstLoad('{{ basedir }}'));
+    window.addEventListener('load', firstLoad('{{ baseURL }}'));
 </script>
 
 {% endblock %}
