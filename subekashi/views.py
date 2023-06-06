@@ -52,13 +52,6 @@ def get_API(url) :
         return ""
 
 
-def get_basedir() :
-    if DEBUG :
-        return "http://subekashi.localhost:8000"
-    else :
-        return "https://subekashi.izmn.net"
-
-
 def counter(word) :
     word = str(word)
     hiragana = [(i >= "ぁ") and (i <= "ゟ") for i in word].count(True)
@@ -146,6 +139,10 @@ def format_url(url) :
 
 def init_dir() :
     dir = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
+    if DEBUG :
+        dir["basedir"] = "http://subekashi.localhost:8000"
+    else :
+        dir["basedir"] = "https://subekashi.izmn.net"
     return dir
 
 
@@ -255,7 +252,7 @@ def new(request) :
         requests.post(SUBEKASHI_NEW_DISCORD_URL, data={'content': content})
         return render(request, 'subekashi/song.html', dir)
 
-    dir["basedir"] = get_basedir()
+    dir["ins_songs"] = Song.objects.all()
     if "title" in request.GET :
         dir["title"] = request.GET.get("title")
     if "channel" in request.GET :
@@ -293,9 +290,7 @@ def song(request, song_id) :
 
 def make(request) :
     dir = init_dir()
-
     dir["ins_songs"] = Song.objects.all()
-    dir["basedir"] = get_basedir()
 
     if request.method == "POST" :
         inp_genetype = request.POST.get("genetype")
@@ -373,7 +368,6 @@ def make(request) :
                 return render(request, "subekashi/make.html", dir)
             else :
                 ins_ais = vector_generate(ins_original, ins_imitates, dir)
-                dir["basedir"] = get_basedir()
                 dir["ins_ais"] = ins_ais
                 return render(request, "subekashi/result.html", dir)
 
@@ -394,7 +388,6 @@ def channel(request, channel_name) :
     dir["channel"] = channel_name
     ins_songs = Song.objects.filter(channel = channel_name)
     dir["ins_songs"] = ins_songs
-    dir["basedir"] = get_basedir()
     if 3 > len(ins_songs) :
         dir["fixfooter"] = True
     return render(request, "subekashi/channel.html", dir)
@@ -451,7 +444,6 @@ def search(request) :
         dir["isjoke"] = request.GET.get("isjoke")
     
     ins_songs = Song.objects.all()
-    dir["basedir"] = get_basedir()
     dir["ins_songs"] = ins_songs
     return render(request, "subekashi/search.html", dir)
 
@@ -490,10 +482,10 @@ def error(request) :
 
 
 def dev(request) :
+    dir = init_dir()
     dir = {"locked" : True}
     if request.method == "POST":
         password = request.POST.get("password")
-        dir["basedir"] = get_basedir()
 
         if password :
             if hashlib.sha256(password.encode()).hexdigest() == SHA256a :
@@ -546,11 +538,3 @@ class SongViewSet(viewsets.ModelViewSet):
 class AiViewSet(viewsets.ModelViewSet):
     queryset = Ai.objects.all()
     serializer_class = AiSerializer
-
-
-def Login(request):
-    return HttpResponseRedirect(reverse('social:begin', kwargs=dict(backend='google-oauth2')))
-
-    
-class Logout(LogoutView):
-    next_page = '/'

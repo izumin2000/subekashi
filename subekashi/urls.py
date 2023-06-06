@@ -25,7 +25,4 @@ urlpatterns = [
     path('error', views.error, name = 'error'),
     path('dev', views.dev, name = 'dev'),
     path('api/',include(defaultRouter.urls)),
-    path('login/', views.Login, name='login'),
-    path('logout/', views.Logout.as_view(), name='logout'),
-    path('oauth/', include('social_django.urls', namespace='social')),
 ]

@@ -1,11 +1,10 @@
-from dataclasses import fields
 from rest_framework import serializers
 from .models import Song, Ai
 
 class SongSerializer(serializers.ModelSerializer):
     class Meta:
         model = Song
-        fields = ("title", "channel", "url", "imitate", "imitated", "isoriginal", "isjoke", "isjapanese")
+        fields = ("id", "title", "channel", "url", "imitate", "imitated", "isoriginal", "isjoke", "isjapanese", "isdraft")
     
     def update(self, instance, validated_data):
         return super().update(instance, validated_data)
