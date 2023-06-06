@@ -377,6 +377,31 @@ textarea {
     white-space:nowrap;
 }
 
+/* ソングゲッサー */
+#imitateTitle {
+    width: calc(100vw - 115px);
+}
+
+.songGuess {
+    display: none;
+    width: calc(100vw - 100px);
+    margin: 5px 0;
+    padding: 5px;
+    background-color: #555;
+    cursor: pointer;
+}
+
+.channel {
+    color: #ccc;
+}
+
+.songGuess:hover {
+    background-color: #444;
+}
+
+.fa-music {
+    margin-left: 15px;
+}
 
 
 /* フッダー */

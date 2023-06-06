@@ -1,5 +1,18 @@
-#imitateimitatediv {
+.ok {
+    color: #393;
+}
+
+.warning {
+    color: #993;
+}
+
+.error {
+    color: #933;
+}
+
+#fillFormButton {
     display: none;
+    width: 250px;
 }
 
 @media (max-width: 720px) {
@@ -12,55 +25,70 @@
     }
 }
 
-#appendimitate, #deleteimitate {
+#imitate {
+    margin: 10px 0 ;
+    padding: 10px;
+    background-color: #333;
+}
+
+#imitate label {
+    display: block;
+    margin-bottom: 10px;
+}
+
+.imitateP {
+    margin-top: 15px;
+}
+
+.category {
+    display: inline-block;
     font-family: 'Noto Sans JP', sans-serif;
-    margin-left: 72px !important;
+    margin: 10px 0 !important;
     padding-left: 0px;
     height: 49.5px;
-    width: 200px;
+    width: 150px;
     border: none;
     font-size: 20px;
     cursor: pointer;
     margin: 20px 0;
 }
 
-#appendimitate {
-    display: inline-block;
-}
-
-#deleteimitate {
-    margin-left: 0 !important;
-    display: none;
-}
-
-@media (max-width: 550px) {
-    #appendimitate, #deleteimitate{
-        margin-left: 0 !important;
-        width: 150px;
-    }
-}
-
-#appendimitate:hover, #deleteimitate:hover {
+.category:hover {
     background-color: #ccc;
 }
 
-#appendimitate:active, #deleteimitate:active {
+.category:active {
     border: none;
     box-shadow: 0 0 0 2px #fff inset;
     background-color: #aaa;
 }
 
-#appendimitate:disabled, #deleteimitate:disabled {
-    background-color: #ccc;
-    box-shadow: none;
-    cursor: not-allowed;
+#imitatelists {
+    margin: 10px 0 0 10px;
 }
 
-#isjapanese, #isjoke {
+.imitatelist {
+    display: inline-block;
+    background-color: #666;
+    padding: 10px;
+}
+
+.deleteSong {
+    margin-left: 15px;
+    color: #aaa;
+    cursor: pointer;
+}
+
+.deleteSong a {
+    color: #aaa;
+}
+
+
+input[type=checkbox] {
     display: inline-block;
     box-shadow: none;
     height: 25px;
     width: 25px;
-    margin: -5px 0 0 50px;
+    margin: -5px 0 0 10px;
     vertical-align: middle;
 }

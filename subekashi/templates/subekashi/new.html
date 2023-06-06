@@ -8,50 +8,65 @@
 <section>
     <h1> 曲の登録 </h1>
     <div class="underline"></div>
-    <form action="{% url 'new' %}" method="POST" class="post-form" id="newForm">{% csrf_token %}
+    <form action="{% url 'new' %}" method="POST" class="post-form">{% csrf_token %}
         <label>曲名*</label>
-        <input type="text" id="title" name="title" oninput="newform(0); isExistSong('{{basedir}}')" value="{{ title }}"><br>
+        <input type="text" id="title" name="title" oninput="checkExist()" value="{{ title }}"><br>
         <label>作者*</label>
-        <input type="text" id="channel" name="channel" oninput="newform(0)" value="{{ channel }}"><br>
-        <label>URL </label>
+        <input type="text" id="channel" name="channel" oninput="checkExist()" value="{{ channel }}"><br>
+        <p id="isExist"></p>
+        <button type="button" class="category " id="fillFormButton" onclick="fillForm()">下書きを自動入力</button>
+        <label>URL　</label>
         <input type="text" id="url" name="url" value="{{ url }}"><br>
-        <div id="imitates">
-            <label>模倣1*</label>
-            <select id="imitate1" name="imitate1" oninput="newform(1);">
-                <option>選択してください</option>
-                <option>.模倣</option>
-                <option>..模倣</option>
-                <option>教育模倣</option>
-                <option>アブジェ模倣</option>
-                <option>...模倣</option>
-                <option>表/裏模倣</option>
-                <option>名の無い星が空に堕ちたら模倣</option>
-                <option>エヌ模倣</option>
-                <option>K²模倣</option>
-                <option>オリジナル模倣</option>
-                <option>模倣曲模倣</option>
-            </select>
-            <div class="imitateimitatediv" id="imitateimitatediv1"></div>
-            <br>
+        <label>模倣</label>
+        <div id="imitate">
+            <p>原曲から選択</p>
+            <div id="categorys">
+                <button type="button" class="category" onclick="appendCategory(0)">.模倣</button>
+                <button type="button" class="category" onclick="appendCategory(1)">..模倣</button>
+                <button type="button" class="category" onclick="appendCategory(2)">教育模倣</button>
+                <button type="button" class="category" onclick="appendCategory(3)">アブジェ模倣</button>
+                <button type="button" class="category" onclick="appendCategory(4)">...模倣</button>
+                <button type="button" class="category" onclick="appendCategory(5)">表/裏模倣</button>
+                <button type="button" class="category" onclick="appendCategory(6)">名の無い星模倣</button>
+                <button type="button" class="category" onclick="appendCategory(7)">エヌ模倣</button>
+                <button type="button" class="category" onclick="appendCategory(8)">K²模倣</button>
+            </div>
+            <p class="imitateP">もしくは模倣曲から選択</p>
+            <div class="songGuesser">
+                <input type="text" id="imitateTitle" oninput="searchSong()" placeholder="タイトルを入力"><br>
+                {% for ins_song in ins_songs %}
+                <div class="songGuess" id="{{ ins_song.title }}" onclick="clickSong('{{ ins_song.id }}')">
+                    <p><span class="channel"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</span> <i class="fas fa-music"></i> {{ ins_song.title }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            <div id="imitatelists"></div>
+            <p class="imitateP">※複数入力できます</p>
+            <input type="text" id="imitates" name="imitates" hidden>
         </div>
-        <button type="button" id="appendimitate" onclick="appendimitatef()" disabled>模倣2を追加</button>
-        <button type="button" id="deleteimitate" onclick="deleteimitatef()">模倣1を削除</button><br>
         <label id="lyricslabel">歌詞</label>
         <textarea id="lyrics" name="lyrics" oninput="autotextarea()"></textarea><br>
+        <input type="checkbox" id="isorginal" name="isorginal">
+        <label>オリジナル模倣</label>
+        <input type="checkbox" id="isdeleted" name="isdeleted">
+        <label>削除済みの曲</label>
         <input type="checkbox" id="isjapanese" name="isjapanese" checked>
         <label>日本語の曲</label>
         <input type="checkbox" id="isjoke" name="isjoke">
         <label>ネタ曲</label><br>
+        <input type="checkbox" id="isdraft" name="isdraft">
+        <label>下書きとして投稿</label><br>
         <input type="submit" value="登録" id="submit" disabled>
     </form>
     <p class="bottomelement">*がついているラベルは入力が必須です。</p>
+    <p class="bottomelement">※転載動画のURLの記載はお控えください。</p>
 </section>
 {% endblock %}
 
 {% block js %}
 <script src="{% static 'subekashi/js/newform.js' %}" rel="stylesheet"></script>
 <script>
-    window.addEventListener('load', newform(0));
+    window.addEventListener('load', firstLoad('{{ basedir }}'));
 </script>
 
 {% endblock %}
