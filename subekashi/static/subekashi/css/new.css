@@ -1,28 +1,27 @@
+#isExist {
+    margin: 10px 0 0 70px;
+}
+
 .ok {
-    color: #393;
+    color: #090;
 }
 
 .warning {
-    color: #993;
+    color: #990;
 }
 
 .error {
-    color: #933;
+    color: #B60;
 }
 
 #fillFormButton {
     display: none;
     width: 250px;
+    margin-left: 71px !important;
 }
 
-@media (max-width: 720px) {
-    #url {
-        margin-bottom: 20px;
-    }
-
-    select {
-        margin-top: 0;
-    }
+#url {
+    margin: 10px 0 0 9px;
 }
 
 #imitate {
@@ -91,4 +90,8 @@ input[type=checkbox] {
     width: 25px;
     margin: -5px 0 0 10px;
     vertical-align: middle;
+}
+
+#checkboxs {
+    margin: 20px 0 0 -10px;
 }

@@ -15,7 +15,7 @@
         <input type="text" id="channel" name="channel" oninput="checkExist()" value="{{ channel }}"><br>
         <p id="isExist"></p>
         <button type="button" class="category " id="fillFormButton" onclick="fillForm()">下書きを自動入力</button>
-        <label>URL　</label>
+        <label>URL</label>
         <input type="text" id="url" name="url" value="{{ url }}"><br>
         <label>模倣</label>
         <div id="imitate">
@@ -41,24 +41,27 @@
                 {% endfor %}
             </div>
             <div id="imitatelists"></div>
-            <p class="imitateP">※複数入力できます</p>
+            <p class="imitateP">※複数入力ができます</p>
             <input type="text" id="imitates" name="imitates" hidden>
         </div>
         <label id="lyricslabel">歌詞</label>
         <textarea id="lyrics" name="lyrics" oninput="autotextarea()"></textarea><br>
-        <input type="checkbox" id="isorginal" name="isorginal">
-        <label>オリジナル模倣</label>
-        <input type="checkbox" id="isdeleted" name="isdeleted">
-        <label>削除済みの曲</label>
-        <input type="checkbox" id="isjapanese" name="isjapanese" checked>
-        <label>日本語の曲</label>
-        <input type="checkbox" id="isjoke" name="isjoke">
-        <label>ネタ曲</label><br>
-        <input type="checkbox" id="isdraft" name="isdraft">
-        <label>下書きとして投稿</label><br>
+        <div id="checkboxs">
+            <input type="checkbox" id="isorginal" name="isorginal">
+            <label onclick="divInput(0)">オリジナル模倣</label>
+            <input type="checkbox" id="isdeleted" name="isdeleted">
+            <label onclick="divInput(1)">削除済みの曲</label>
+            <input type="checkbox" id="isjapanese" name="isjapanese" checked>
+            <label onclick="divInput(2)">日本語の曲</label>
+            <input type="checkbox" id="isjoke" name="isjoke">
+            <label onclick="divInput(3)">ネタ曲</label><br>
+            <input type="checkbox" id="isdraft" name="isdraft">
+            <label onclick="divInput(4)">下書きとして投稿</label><br>
+        </div>
         <input type="submit" value="登録" id="submit" disabled>
     </form>
     <p class="bottomelement">*がついているラベルは入力が必須です。</p>
+    <p class="bottomelement">※入力は大文字・小文字・空白文字も区別されます。</p>
     <p class="bottomelement">※転載動画のURLの記載はお控えください。</p>
 </section>
 {% endblock %}
