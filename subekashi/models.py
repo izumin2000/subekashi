@@ -12,6 +12,7 @@ class Song(models.Model) :
     isoriginal = models.BooleanField(default = False)
     isjoke = models.BooleanField(default = False)
     isjapanese = models.BooleanField(default = True)
+    isdraft = models.BooleanField(default = False)
 
     def __str__(self):
         return self.title
