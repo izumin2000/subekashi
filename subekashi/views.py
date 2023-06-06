@@ -393,44 +393,6 @@ def channel(request, channelName) :
     return render(request, "subekashi/channel.html", dataD)
 
 
-def edit(request) :
-    dataD = initD()
-    if "id" in request.GET :
-        songId = request.GET.get("id")
-        songIns = Song.objects.filter(pk = songId)
-        if len(songIns) :
-            songIns = songIns.first()
-            dataD["songIns"] = songIns
-        else :
-            return render(request, "subekashi/error.html")
-    else :
-        return render(request, "subekashi/error.html")
-    
-    if request.method == "POST" :
-        urlForm = request.POST.get("url")
-        lyricsForm = request.POST.get("lyrics")
-
-        if urlForm :
-            if "https://www.youtube.com/watch" in urlForm :
-                songIns.url = formatURL(urlForm)
-            else :
-                songIns.url = urlForm
-        if lyricsForm :
-            songIns.lyrics = lyricsForm
-
-        songIns.save()
-        dataD["songIns"] = songIns
-        content = f'**{songIns.title}**\n\
-        id : {songIns.id}\n\
-        チャンネル : {songIns.channel}\n\
-        URL : {songIns.url}\n\
-        歌詞 : {songIns.lyrics[:min(20, len(songIns.lyrics))]}'
-        requests.post(SUBEKASHI_NEW_DISCORD_URL, data={'content': content})
-        return render(request, "subekashi/song.html", dataD)
-
-    return render(request, "subekashi/edit.html", dataD)
-
-
 def search(request) :
     dataD = initD()
 
@@ -447,23 +409,6 @@ def search(request) :
     songInsL = Song.objects.all()
     dataD["songInsL"] = songInsL
     return render(request, "subekashi/search.html", dataD)
-
-
-def wrong(request, songId) :
-    dataD = initD()
-
-    songIns = Song.objects.get(pk = songId)
-    dataD["songIns"] = songIns
-    if request.method == "POST" :
-        inp_reason = request.POST.get("reason")
-        inp_comment = request.POST.get("comment")
-        if inp_comment :
-            content = f'**{songIns.title}**\nid : {songIns.id}\n理由 : {inp_reason}\nコメント : {inp_comment}'
-        else :
-            content = f'**{songIns.title}**\nid : {songIns.id}\n理由 : {inp_reason}'
-        requests.post(SUBEKASHI_EDIT_DISCORD_URL, data={'content': content})
-
-    return render(request, "subekashi/wrong.html", dataD)
 
 
 def ai(request) :
