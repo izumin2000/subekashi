@@ -54,25 +54,25 @@
         <label>ネタ曲</label>
     </div>
 
-    {% for ins_song in ins_songs %}
+    {% for songIns in songInsL %}
         <div class="songcard">
-            <a href="{% url 'song' ins_song.id %}" class="buttona">
+            <a href="{% url 'song' songIns.id %}" class="buttona">
                 <div class="cardleft">
-                    <p class="songtitle"><i class="fas fa-music"></i> {{ ins_song.title|slice:"30" }}</p>
-                    {% if ins_song.channel %}
-                        <object><a class="songchannel" href="{% url 'channel' ins_song.channel %}"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</a></object>
+                    <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"30" }}</p>
+                    {% if songIns.channel %}
+                        <object><a class="songchannel" href="{% url 'channel' songIns.channel %}"><i class="fas fa-user-circle"></i> {{ songIns.channel }}</a></object>
                     {% else %}
                         <p class="songchannel"><i class="fas fa-user-circle"></i> チャンネル未登録</p>
                     {% endif %}
                 </div>
                 <div class="cardright">
-                    {% if ins_song.lyrics %}
-                        <p class="songlyrics">{{ ins_song.lyrics|slice:"25" }}...</p>
+                    {% if songIns.lyrics %}
+                        <p class="songlyrics">{{ songIns.lyrics|slice:"25" }}...</p>
                     {% else %}
                         <p class="songlyrics">歌詞未登録</p>
                     {% endif %}
-                    {% if ins_song.url %}
-                        <object><a class="songurl" href="{{ ins_song.url }}">{{ ins_song.url|slice:"30" }}</a></object>
+                    {% if songIns.url %}
+                        <object><a class="songurl" href="{{ songIns.url }}">{{ songIns.url|slice:"30" }}</a></object>
                     {% else %}
                         <p class="songurl">URL未登録</p>
                     {% endif %}
@@ -88,7 +88,7 @@
 <script src="{% static 'subekashi/js/search.js' %}?{{ lastModified }}" rel="stylesheet"></script>
 <script>
     window.addEventListener('load', function(){
-        getSong('{{ basedir }}');
+        getSong('{{ baseURL }}');
         window.setTimeout(formautochange, 1000)
     })
 

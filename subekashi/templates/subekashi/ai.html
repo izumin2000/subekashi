@@ -8,9 +8,9 @@
 <section id="aisection">
     <h1>最高と評価された<br>生成された歌詞</h1>
     <div class="underline"></div>
-    {% for ins_ai in ins_ais  %}
+    {% for aiIns in aiInsL  %}
         <div class="lyricdiv">
-            <p class="lyric">{{ ins_ai.lyrics }}</p>
+            <p class="lyric">{{ aiIns.lyrics }}</p>
         </div>
     {% endfor %}
 </section>
