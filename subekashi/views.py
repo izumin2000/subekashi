@@ -143,7 +143,7 @@ def initD() :
     if DEBUG :
         dataD["baseURL"] = "http://subekashi.localhost:8000"
     else :
-        dataD["baseURL"] = "https://subekashi.izmn.net"
+        dataD["baseURL"] = "https://lyrics.imicomweb.com"
     return dataD
 
 
@@ -222,7 +222,7 @@ def new(request) :
             dataD["imitateInsL"] = imitateInsL
         dataD["songIns"] = songIns
         dataD["isExist"] = True
-        
+
         content = f'**{songIns.title}**\n\
         id : {songIns.id}\n\
         チャンネル : {songIns.channel}\n\
