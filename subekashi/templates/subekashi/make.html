@@ -8,7 +8,7 @@
 <section id="formsection">
     <h1>歌詞の生成</h1>
     <div class="underline"></div>
-    <form action="{% url 'make' %}" method="POST" class="post-form" id="makeForm">{% csrf_token %}
+    <form action="{% url 'make' %}" method="POST" id="makeForm">{% csrf_token %}
         <label>生成タイプ</label>
         <!-- <div class="devinput" onclick="devinput(0)"> -->
         <div class="devinput">
@@ -42,9 +42,9 @@
         <div id="songsec">
             <label>曲名*</label>
             <input type="text" id="title" name="title" oninput="searchsong()"><br>
-            {% for ins_song in ins_songs %}
-            <div class="songrow">
-                <p class="songs" id="{{ ins_song.title }}" onclick="titleinput('{{ ins_song.title }}')"><span class="channel"><i class="fas fa-user-circle"></i> {{ ins_song.channel }}</span> <i class="fas fa-music"></i> {{ ins_song.title }}</p>
+            {% for songIns in songInsL %}
+            <div class="songGuess">
+                <p class="songs" id="{{ songIns.title }}" onclick="titleinput('{{ songIns.title }}')"><span class="channel"><i class="fas fa-user-circle"></i> {{ songIns.channel }}</span> <i class="fas fa-music"></i> {{ songIns.title }}</p>
             </div>
             {% endfor %}
         </div>
@@ -76,7 +76,7 @@
 <script src="{% static 'subekashi/js/makeform.js' %}?{{ lastModified }}" rel="stylesheet"></script>
 <script>
     window.addEventListener('load', function(){
-        getSong('{{ basedir }}');
+        getSong('{{ baseURL }}');
         if ('{{ error }}') {
             displayerror('{{ error }}');
         }

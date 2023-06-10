@@ -1,8 +1,8 @@
 var type = 0;
 var songjson, songEles;
 
-async function getSong(basedir) {
-    res = await fetch(basedir + "/api/song/?format=json");
+async function getSong(baseURL) {
+    res = await fetch(baseURL + "/api/song/?format=json");
     songjson = await res.json();
 
     songEles = document.getElementsByClassName("songs");

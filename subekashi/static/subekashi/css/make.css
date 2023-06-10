@@ -27,33 +27,6 @@
     display: none;
 }
 
-.songrow {
-    display: none;
-    width: calc(50vw - 98px);
-    margin: 5px 0 5px 70px;
-    padding: 10px;
-    background-color: #333;
-    cursor: pointer;
-}
-
-.channel {
-    color: #ccc;
-}
-
-.songrow:hover {
-    background-color: #555;
-}
-
-@media (max-width: 720px) {
-    .songrow {
-        width: calc(65vw - 50px);
-    }
-}
-
-.fa-music {
-    margin-left: 15px;
-}
-
 #similarsec {
     display: none;
 }
@@ -71,11 +44,6 @@
     display: inline-block;
     position:relative;
     bottom: 20px;
-}
-
-#needlogin {
-    display: block;
-    margin-top: 20px;
 }
 
 .formmargin {

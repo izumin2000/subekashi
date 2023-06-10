@@ -20,7 +20,7 @@
     <div class="underline"></div>
         <p>マイクをオンにできない方はこちらから質問をしてください。</p>
         <p>発表時間外の質問も受け付けています。回答はこのページにて掲載する予定です。</p>
-        <form action="{% url 'research' %}" method="POST" class="post-form">{% csrf_token %}
+        <form action="{% url 'research' %}" method="POST">{% csrf_token %}
             <textarea name="question" id="question" placeholder="質問を入力してください"></textarea><br>
             <input type="submit" name="submit" id="submit" value="送信">
         </form>

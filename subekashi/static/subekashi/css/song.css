@@ -6,6 +6,10 @@ section p, section a {
     margin-right: 10px;
 }
 
+#songtitle {
+    margin-left: 18px;
+}
+
 #songchannel ,#songurl, #songurlnotfound, #songlyricsnotfound {
     display: block;
     width: fit-content;

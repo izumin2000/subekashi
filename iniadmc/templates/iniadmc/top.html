@@ -20,8 +20,8 @@
 
 {% block js %}
 <script>
-    async function CheckAPI(basedir) {
-        res = await fetch(basedir + "/iniadmc/api/Wait/?format=json");
+    async function CheckAPI(baseURL) {
+        res = await fetch(baseURL + "/iniadmc/api/Wait/?format=json");
         songjson = await res.json();
         
         minutesEle = document.getElementById("minutes");
