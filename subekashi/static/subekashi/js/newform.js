@@ -1,17 +1,50 @@
 var songJson, songResult, songGuessEles, imitateList = [];
 
-async function firstLoad(baseURL) {
+async function firstLoad(baseURL, songId) {
     res = await fetch(baseURL + "/api/song/?format=json");
     songJson = await res.json();
+
+    if (songId) {
+        songResult = songJson.filter(song => song.id == songId)[0];
+        document.getElementById("title").value = songResult.title;
+        document.getElementById("channel").value = songResult.channel;
+        fillForm();
+        setSubmitButton("_", "_");
+    }
+
     songGuessEles = document.getElementsByClassName("songGuess");
 }
 
-function submitButtonControler()
 
-
-function setSubmitButton(isAvailable) {
+function submitButtonControler() {
+    titleValue = document.getElementById("title").value;
+    channelValue = document.getElementById("channel").value;
     submitEle = document.getElementById("submit");
-    submitEle.disabled = !isAvailable;
+    submitEle.disabled = (titleValue == "") && (channelValue == "");
+}
+
+
+function setSubmitButton(titleValue, channelValue) {
+    submitEle = document.getElementById("submit");
+    if ((titleValue == "") || (channelValue == "")) {
+        submitEle.disabled = true;
+    } else {
+        submitEle.disabled = false;
+    }
+}
+
+function setDeleteButton() {
+    reasonValue = document.getElementById("reason").value;
+    deleteEle = document.getElementById("deletesubmit");
+    if (songResult) {
+        if ((reasonValue == "") || (songResult.length == 0)) {
+            deleteEle.disabled = true;
+        } else {
+            deleteEle.disabled = false;
+        }
+    } else {
+        deleteEle.disabled = true;
+    }
 }
 
 
@@ -20,31 +53,36 @@ function checkExist() {
     channelValue = document.getElementById("channel").value;
     isExistEle = document.getElementById("isExist");
     fillFormButtonEle = document.getElementById("fillFormButton");
-    
-    songResult = songJson.filter(song => song.title == titleValue).filter(song => song.channel == channelValue);
-    if (titleValue != "" && channelValue != "") {
-        if (songResult.length == 0) {
-            isExistEle.innerHTML = "<span class='ok'>この曲は登録されていません。</span>";
-            fillFormButtonEle.style.display = "none";
-        } else {
-            songResult = songResult[0];
-            if (([songResult.url, songResult.lyrics, songResult.imitate].includes("")) || (songResult.isdraft)) {
-                isExistEle.innerHTML = "<span class='warning'>この曲の記事は作成途中です。</span>";
-                fillFormButtonEle.style.display = "block";
-            } else {
-                isExistEle.innerHTML = "<span class='error'>この曲の記事は作成済みです。</span>";
+
+    if ((titleValue != "") && (channelValue != "")) {
+        songResult = songJson.filter(song => song.title == titleValue).filter(song => song.channel == channelValue);
+        if (titleValue != "" && channelValue != "") {
+            if (songResult.length == 0) {
+                isExistEle.innerHTML = "<span class='ok'>この曲は登録されていません。</span>";
                 fillFormButtonEle.style.display = "none";
+            } else {
+                songResult = songResult[0];
+                if (([songResult.url, songResult.lyrics, songResult.imitate].includes("")) || (songResult.isdraft)) {
+                    isExistEle.innerHTML = "<span class='warning'>この曲の記事は作成途中です。</span>";
+                    fillFormButtonEle.style.display = "block";
+                } else {
+                    isExistEle.innerHTML = "<span class='error'>この曲の記事は作成済みです。</span>";
+                    fillFormButtonEle.style.display = "none";
+                }
             }
+        } else {
+            isExistEle.innerHTML = "";
+            fillFormButtonEle.style.display = "none";
         }
-    } else {
-        isExistEle.innerHTML = "";
-        fillFormButtonEle.style.display = "none";
     }
+
+    setSubmitButton(titleValue, channelValue);
+    setDeleteButton();
 };
 
 
-function fillForm () {
-    if (songResult.url == "削除済み") {
+function fillForm() {
+    if (songResult.url == "非公開") {
         document.getElementById("isdeleted").checked = true;
     } else {
         document.getElementById("url").value = songResult.url;
@@ -52,9 +90,11 @@ function fillForm () {
     for (imitateId of imitateList) {
         deleteImitate(imitateId);
     }
-    for (imitateId of songResult.imitate.split(",")) {
-        song = songJson.filter(song => song.id == imitateId)[0];
-        appendImitate(song);
+    if (songResult.imitate) {
+        for (imitateId of songResult.imitate.split(",")) {
+            song = songJson.filter(song => song.id == imitateId)[0];
+            appendImitate(song);
+        }
     }
 	document.getElementById("lyrics").value = songResult.lyrics;
 	document.getElementById("isorginal").checked = songResult.isoriginal;
@@ -148,13 +188,15 @@ function searchSong() {
     }
 }
 
+
 function divInput(n) {
     checkboxIds = ["isorginal", "isdeleted", "isjapanese", "isjoke", "isdraft"];
     checkboxEle = document.getElementById(checkboxIds[n]);
     checkboxEle.checked = !checkboxEle.checked;
 }
 
-window.addEventListener('beforeunload', function (event) {
-    event.preventDefault()
-    event.returnValue = ''
-})
+
+// window.addEventListener('beforeunload', function (event) {
+//     event.preventDefault()
+//     event.returnValue = ''
+// })

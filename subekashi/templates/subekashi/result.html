@@ -35,7 +35,7 @@
     {% endfor %}
 </section>
 <section id="controlsection">
-    <form action="{% url 'make' %}" method="POST" class="post-form" id="controlForm">{% csrf_token %}
+    <form action="{% url 'make' %}" method="POST" id="controlForm">{% csrf_token %}
         <input type="text" name="genetype" value="{{ genetype }}" hidden>
         <input type="text" name="category" value="{{ category }}" hidden>
         <input type="text" name="title" value="{{ title }}" hidden>

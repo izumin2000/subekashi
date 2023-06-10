@@ -95,3 +95,30 @@ input[type=checkbox] {
 #checkboxs {
     margin: 20px 0 0 -10px;
 }
+
+#deletesubmit {
+    font-family: 'Noto Sans JP', sans-serif;
+    padding-left: 0px;
+    height: 49.5px;
+    width: 100px;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    margin: 20px 0;
+}
+
+#deletesubmit:hover {
+    background-color: #ccc;
+}
+
+#deletesubmit:active {
+    border: none;
+    box-shadow: 0 0 0 2px #fff inset;
+    background-color: #aaa;
+}
+
+#deletesubmit:disabled {
+    background-color: #ccc;
+    box-shadow: none;
+    cursor: not-allowed;
+}

@@ -138,7 +138,6 @@ a {
     font-family: 'Noto Sans JP', sans-serif;
     font-size: 18px;
     line-height: 27px;
-    margin: 0 5px;
 }
 
 .buttona {
@@ -359,6 +358,7 @@ textarea {
 .songchannel {
     font-size: 15px;
     white-space:nowrap;
+    margin-left: 3px;
 }
 
 .songchannel i {
@@ -398,11 +398,6 @@ textarea {
 .songGuess:hover {
     background-color: #444;
 }
-
-.fa-music {
-    margin-left: 15px;
-}
-
 
 /* フッダー */
 .bottomelement {

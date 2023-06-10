@@ -9,22 +9,22 @@
     <h1>dev</h1>
     <div class="underline"></div>
     {% if locked %}
-        <form action="{% url 'dev' %}" method="POST" class="post-form">{% csrf_token %}
+        <form action="{% url 'dev' %}" method="POST">{% csrf_token %}
             <input type="password" name="password" id="password">
             <input type="submit" name="submit" id="submit" value="送信">
         </form>
     {% else %}
-        <form action="{% url 'dev' %}?gpt=1" method="POST" class="post-form">{% csrf_token %}
+        <form action="{% url 'dev' %}?gpt=1" method="POST">{% csrf_token %}
             <textarea id="gpt" name="gpt" placeholder="GPT2japaneseの出力結果"></textarea>
             <input type="submit" name="submit" id="gptsubmit" value="送信">
         </form>
-        <form action="{% url 'dev' %}?reset=1" method="POST" class="post-form">{% csrf_token %}
+        <form action="{% url 'dev' %}?reset=1" method="POST">{% csrf_token %}
             <div class="dummybutton" onclick="backupf()"><p class="dummybuttonp">バックアップ</p></div>
             <label>確認</label>
             <input type="checkbox" name="confirm" id="confirm" oninput="confirmf()">
             <input type="submit" name="submit" id="resetsubmit" value="リセット" disabled>
         </form>
-        <form action="{% url 'dev' %}?key=1" method="POST" class="post-form">{% csrf_token %}
+        <form action="{% url 'dev' %}?key=1" method="POST">{% csrf_token %}
             <input type="text" name="key" id="key" placeholder="key">
             <input type="text" name="value" id="value" placeholder="value">
             <input type="submit" name="submit" id="keysubmit" value="送信">

@@ -7,12 +7,10 @@
 {% block content %}
 <section>
     <p id="songtitle"><i class="fas fa-music"></i>{{ songIns.title }}</p>
-    {% if displayInfo %}
+    {% if isExist %}
         <a id="songchannel" href="{% url 'channel' songIns.channel %}"><i class="fas fa-user-circle"></i>{{ songIns.channel }}</a>
         {% if songIns.url %}
             <a id="songurl" href="{{ songIns.url }}"><i class="fas fa-link"></i>{{ songIns.url|slice:"35" }}</a>
-        {% else %}
-            <a id="songurlnotfound" href="{% url 'edit' %}?id={{ songIns.id }}"><i class="fas fa-link"></i>URLを追加</a>
         {% endif %}
         <div></div>
         <p id="songimitateslabel"><i class="fas fa-tags fa-xs"></i></p>
@@ -27,6 +25,9 @@
         {% endif %}
         {% if songIns.isjoke %}
             <a class="songimitate" href="{% url 'search' %}?isjoke=1">ネタ曲</a>
+        {% endif %}
+        {% if songIns.isdraft %}
+            <a class="songimitate" href="{% url 'search' %}?isdraft=1">下書き</a>
         {% endif %}
         
         {% if imitatedInsL %}
@@ -45,11 +46,10 @@
             <a id="songlyricsnotfound" href="{% url 'edit' %}?id={{ songIns.id }}">歌詞を追加</a>
         {% endif %}
     {% else %}
-        <p id="songnotfound">曲の情報が見つかりませんでした</p>
-        <div id="tonew" class="dummybutton" onclick="tonew()"><p class="dummybuttonp">曲を登録する</p></div>
+        <p id="songnotfound">曲の情報が見つからないか削除依頼が送信されました。</p>
     {% endif %}
     <div class="dummybuttons">
-        <div class="dummybutton dummybuttonf towrong" onclick="towrong()"><p class="dummybuttonp">変更・削除の提案</p></div>
+        <div class="dummybutton dummybuttonf towrong" onclick="toedit()"><p class="dummybuttonp">編集と削除</p></div>
     </div>
 </section>
 {% endblock %}
@@ -68,12 +68,8 @@
         }
     });
 
-    function tonew() {
-        window.location.href = "{% url 'new' %}?title={{ songIns.title }}&channel={{ songIns.channel }}&url={{ songIns.url }}";
-    }
-
-    function towrong() {
-        window.location.href = "{% url 'wrong' songIns.id %}";
+    function toedit() {
+        window.location.href = "{% url 'new' %}?id={{ songIns.id }}";
     }
 </script>
 {% endblock %}

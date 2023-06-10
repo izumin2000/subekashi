@@ -174,118 +174,119 @@ def new(request) :
         titleForm = request.POST.get("title")
         channelForm = request.POST.get("channel")
         urlForm = request.POST.get("url")
+        imitatesForm = request.POST.get("imitates")
         lyricsForm = request.POST.get("lyrics")
+        isorginalForm = request.POST.get("isorginal")
+        isdeletedForm = request.POST.get("isdeleted")
         isjapaneseForm = request.POST.get("isjapanese")
         isjokeForm = request.POST.get("isjoke")
+        isdraftForm = request.POST.get("isdraft")
 
         if ("" in [titleForm, channelForm]) :
             return render(request, "subekashi/error.html")
 
         titleForm = titleForm.replace("/", "╱")
-        songIns, iscreated = Song.objects.get_or_create(title = titleForm, channel = channelForm)
+        songIns, _ = Song.objects.get_or_create(title = titleForm, channel = channelForm)
 
-        songIns.title = titleForm
-        if iscreated or not(iscreated or songIns.channel) :
-            songIns.channel = channelForm.replace(" ", "")
+        if isdeletedForm :
+            songIns.url = "非公開"
+        else :
+            songIns.url = formatURL(urlForm)
+        
+        nowImitateS = set(songIns.imitate.split(","))
+        newimitateS = set(imitatesForm.split(","))
+        appendImitateS = newimitateS - nowImitateS
+        deleteImitateS = nowImitateS - newimitateS
+        for imitateId in appendImitateS :
+            imitatedIns = Song.objects.get(pk = imitateId)
+            newImitatedIns = set(imitatedIns.imitated).add(songIns.id)
+            imitatedIns.imitated = ",".join(newImitatedIns)
+            imitatedIns.save()
+        for imitateId in deleteImitateS :
+            imitatedIns = Song.objects.get(pk = imitateId)
+            set(imitatedIns.imitated).remove(songIns.id)
+            imitatedIns.imitated = ",".join(newImitatedIns)
+            imitatedIns.save()
+        songIns.imitate = imitatesForm
+
+        songIns.lyrics = lyricsForm
+        songIns.isoriginal = int(bool(isorginalForm))
         songIns.isjapanese = int(bool(isjapaneseForm))
         songIns.isjoke = int(bool(isjokeForm))
-
-        if urlForm and (iscreated or not(iscreated or songIns.url)):
-            songIns.url = formatURL(urlForm)
-        if lyricsForm and (iscreated or not(iscreated or songIns.lyrics)) :
-            songIns.lyrics = lyricsForm
-
-        imitateInsL = set()
-        imitateNum = 1
-        while 1 :
-            imitate = request.POST.get(f"imitate{imitateNum}")
-            if imitate :
-                imitate = imitate[:-2]
-                if imitate == "模倣曲" :
-                    imitate = request.POST.get(f"imitateimitate{imitateNum}")
-                    if imitate :
-                        imitateIns, _ = Song.objects.get_or_create(title = imitate, defaults = {"title" : imitate})
-                        imitateInsL.add(imitateIns.id)
-                        if imitateIns.imitated :
-                            imitated = set(imitateIns.imitated.split(","))
-                            imitated.add(songIns.id)
-                            imitateIns.imitated = ",".join(list(map(str, imitated)))
-                        else :
-                            imitateIns.imitated = songIns.id
-                        imitateIns.save()
-                elif imitate == "オリジナル" :
-                    songIns.isoriginal = 1
-                else :
-                    imitateIns = Song.objects.filter(title = imitate).first()
-                    imitateInsL.add(imitateIns.id)
-                    if imitateIns.imitated :
-                        imitated = set(imitateIns.imitated.split(","))
-                        imitated.add(songIns.id)
-                        imitateIns.imitated = ",".join(list(map(str, imitated)))
-                    else :
-                        imitateIns.imitated = songIns.id
-                    imitateIns.save()
-                imitateNum += 1
-            else :
-                break
-
-        if iscreated or not(iscreated or songIns.imitate) :
-            songIns.imitate = ",".join(list(map(str, list(imitateInsL))))
+        songIns.isdraft = int(bool(isdraftForm))
         songIns.save()
         
         imitateInsL = []
         if songIns.imitate :
-            for imitateId in songIns.imitate.split(",") :
-                imitateInsL.append(Song.objects.get(pk = int(imitateId)))
+            imitateInsL = list(map(lambda i : Song.objects.get(pk = int(i)), songIns.imitate.split(",")))
             dataD["imitateInsL"] = imitateInsL
         dataD["songIns"] = songIns
-
-        if len(imitateInsL) or songIns.isoriginal or songIns.channel == "全てあなたの所為です。"  :
-            dataD["displayInfo"] = True
-
+        dataD["isExist"] = True
+        
         content = f'**{songIns.title}**\n\
         id : {songIns.id}\n\
         チャンネル : {songIns.channel}\n\
         URL : {songIns.url}\n\
-        模倣 : {", ".join([imitate.title for imitate in imitateInsL])}\n\
-        歌詞 : {songIns.lyrics[:min(20, len(songIns.lyrics))]}'
+        模倣 : {", ".join([imitate.title for imitate in imitateInsL])}\n'
         requests.post(SUBEKASHI_NEW_DISCORD_URL, data={'content': content})
+        
         return render(request, 'subekashi/song.html', dataD)
+    
+    else :
+        dataD["songInsL"] = Song.objects.all()
+        dataD["id"] = request.GET.get("id")
 
-    dataD["songInsL"] = Song.objects.all()
-    if "title" in request.GET :
-        dataD["title"] = request.GET.get("title")
-    if "channel" in request.GET :
-        dataD["channel"] = request.GET.get("channel")
-    if "url" in request.GET :
-        dataD["url"] = request.GET.get("url")
-    return render(request, 'subekashi/new.html', dataD)
+        return render(request, 'subekashi/new.html', dataD)
 
 
 def song(request, songId) :
     dataD = initD()
-
     songIns = Song.objects.get(pk = songId)
+    isExist = bool(songIns)
     dataD["songIns"] = songIns
+    dataD["isExist"] = isExist
 
-    imitateInsL = []
-    if songIns.imitate :
-        for imitateId in songIns.imitate.split(",") :
-            imitateInsL.append(Song.objects.get(pk = int(imitateId)))
-        dataD["imitateInsL"] = imitateInsL
+    if isExist :
+        if songIns.imitate :
+            imitateInsL = []
+            imitates = songIns.imitate.split(",")
+            for imitateId in imitates:
+                imitateInsQ = Song.objects.filter(id = int(imitateId))
+                if imitateInsQ :
+                    imitateIns = imitateInsQ.first()
+                    imitateInsL.append(imitateIns)
+                else :
+                    songIns.imitate = imitates.remove(imitateId)
+                    songIns.save()
+            dataD["imitateInsL"] = imitateInsL
 
-    imitateds = songIns.imitated
-    if imitateds :
-        imitatedInsL = []
-        for id in imitateds.split(",") :
-            imitatedIns = Song.objects.get(pk = int(id))
-            imitatedInsL.append(imitatedIns)
-        dataD["imitatedInsL"] = imitatedInsL
-    
-    if len(imitateInsL) or songIns.isoriginal or songIns.channel == "全てあなたの所為です。" :
-        dataD["displayInfo"] = True
+        if songIns.imitated :
+            imitatedInsL = []
+            imitateds = songIns.imitated.split(",")
+            for imitatedId in imitateds:
+                imitatedInsQ = Song.objects.filter(id = int(imitatedId))
+                if imitatedInsQ :
+                    imitatedIns = imitatedInsQ.first()
+                    imitatedInsL.append(imitatedIns)
+                else :
+                    songIns.imitate = imitateds.remove(imitatedId)
+                    songIns.save()
+            dataD["imitatedInsL"] = imitatedInsL
 
     return render(request, "subekashi/song.html", dataD)
+
+
+def delete(request) :
+    dataD = initD()
+    dataD["isExist"] = False
+
+    if request.method == "POST":
+        titleForm = request.POST.get("title")
+        channelForm = request.POST.get("channel")
+        songIns, _ = Song.objects.get_or_create(title = titleForm, channel = channelForm)
+        isdraftForm = request.POST.get("isdraft")
+        requests.post(SUBEKASHI_QUESTION_DISCORD_URL, data={'content': f"ID：{songIns.id}\n理由：{isdraftForm}"})
+    return render(request, 'subekashi/song.html', dataD)
 
 
 def make(request) :

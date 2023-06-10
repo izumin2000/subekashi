@@ -6,9 +6,9 @@
 
 {% block content %}
 <section>
-    <h1> 曲の登録 </h1>
+    <h1>登録と編集</h1>
     <div class="underline"></div>
-    <form action="{% url 'new' %}" method="POST" class="post-form">{% csrf_token %}
+    <form action="{% url 'new' %}" method="POST">{% csrf_token %}
         <label>曲名*</label>
         <input type="text" id="title" name="title" oninput="checkExist()" value="{{ title }}"><br>
         <label>作者*</label>
@@ -50,7 +50,7 @@
             <input type="checkbox" id="isorginal" name="isorginal">
             <label onclick="divInput(0)">オリジナル模倣</label>
             <input type="checkbox" id="isdeleted" name="isdeleted">
-            <label onclick="divInput(1)">削除済みの曲</label>
+            <label onclick="divInput(1)">非公開の曲</label>
             <input type="checkbox" id="isjapanese" name="isjapanese" checked>
             <label onclick="divInput(2)">日本語の曲</label>
             <input type="checkbox" id="isjoke" name="isjoke">
@@ -63,13 +63,27 @@
     <p class="bottomelement">*がついているラベルは入力が必須です。</p>
     <p class="bottomelement">※入力は大文字・小文字・空白文字も区別されます。</p>
     <p class="bottomelement">※転載動画のURLの記載はお控えください。</p>
+    <p class="bottomelement">※一時的に全て歌詞の所為です。に載っていない曲を模倣曲として登録する為には、手動でその模倣曲を情報を登録しなければならない仕様になっております。ご不便おかけします。</p>
+    <h1>曲の削除依頼</h1>
+    <div class="underline"></div>
+    <form action="{% url 'delete' %}" method="POST">{% csrf_token %}
+        <label>削除理由</label>
+        <textarea id="reason" name="reason" oninput="setDeleteButton()"></textarea><br>
+        <input type="submit" value="送信" id="deletesubmit" disabled>
+    </form>
 </section>
 {% endblock %}
 
 {% block js %}
 <script src="{% static 'subekashi/js/newform.js' %}" rel="stylesheet"></script>
 <script>
-    window.addEventListener('load', firstLoad('{{ baseURL }}'));
+    window.addEventListener('load', function() {
+        if ('{{ id }}') {
+            firstLoad('{{ baseURL }}', '{{ id }}');
+        } else {
+            firstLoad('{{ baseURL }}', 0);
+        }
+    });
 </script>
 
 {% endblock %}
