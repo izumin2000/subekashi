@@ -10,6 +10,7 @@
     <h1>曲の一覧と検索</h1>
     <div class="underline"></div>
 
+    <p id="loading">読み込み中</p>
     <div id="searchform">
         <label>チャンネル名</label>
         <input type="text" id="channel" name="channel" oninput="searchSong()"><br>
@@ -90,10 +91,10 @@
 <script src="{% static 'subekashi/js/search.js' %}?{{ lastModified }}" rel="stylesheet"></script>
 <script>
     window.addEventListener('load', function(){
-        if ('{{ query }}' == "None") {
+        if ('{{ query }}' == "{}") {
             firstLoad('{{ baseURL }}', 0);
         } else {
-            firstLoad('{{ baseURL }}', '{{ query }}');
+            firstLoad('{{ baseURL }}', '{{ query|safe }}');
         }
     })
 </script>
