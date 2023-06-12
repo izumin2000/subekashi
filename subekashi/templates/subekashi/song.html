@@ -43,13 +43,13 @@
         {% if songIns.lyrics %}
             <p id="songlyrics">{{ songIns.lyrics }}</p>
         {% else %}
-            <a id="songlyricsnotfound" href="{% url 'edit' %}?id={{ songIns.id }}">歌詞を追加</a>
+            <a id="songlyricsnotfound" href="{% url 'new' %}?id={{ songIns.id }}">歌詞を追加</a>
         {% endif %}
     {% else %}
         <p id="songnotfound">曲の情報が見つからないか削除依頼が送信されました。</p>
     {% endif %}
     <div class="dummybuttons">
-        <div class="dummybutton dummybuttonf towrong" onclick="toedit()"><p class="dummybuttonp">編集と削除</p></div>
+        <div class="dummybutton dummybuttonf towrong" onclick="tonew()"><p class="dummybuttonp">編集と削除</p></div>
     </div>
 </section>
 {% endblock %}
@@ -68,7 +68,7 @@
         }
     });
 
-    function toedit() {
+    function tonew() {
         window.location.href = "{% url 'new' %}?id={{ songIns.id }}";
     }
 </script>

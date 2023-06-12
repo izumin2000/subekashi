@@ -366,9 +366,10 @@ textarea {
 }
 
 .songlyrics {
+    display: block;
     white-space:nowrap;
     font-size: 12px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .songurl {

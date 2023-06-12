@@ -24,7 +24,8 @@
                     {% if songIns.url %}
                         <object><a class="songurl" href="{{ songIns.url }}">{{ songIns.url|slice:"30" }}</a></object>
                     {% else %}
-                        <p class="songurl">URL未登録</p>
+                        <object><a class="songurl" href="{% url 'new' %}?id={{ songIns.id }}">URL未登録</a></object>
+
                     {% endif %}
                 </div>
             </div>
@@ -61,12 +62,12 @@
                         {% if songIns.lyrics %}
                             <p class="songlyrics">{{ songIns.lyrics|slice:"25" }}...</p>
                         {% else %}
-                            <object><a class="songlyrics" href="{% url 'edit' %}?id={{ songIns.id }}">歌詞未登録</a></object>
+                            <object><a class="songlyrics" href="{% url 'new' %}?id={{ songIns.id }}">歌詞未登録</a></object>
                         {% endif %}
                         {% if songIns.url %}
                             <object><a class="songurl" href="{{ songIns.url }}">{{ songIns.url|slice:"30" }}</a></object>
                         {% else %}
-                            <object><a class="songurl" href="{% url 'edit' %}?id={{ songIns.id }}">URL未登録</a></object>
+                            <object><a class="songurl" href="{% url 'new' %}?id={{ songIns.id }}">URL未登録</a></object>
                         {% endif %}
                     </div>
                 </div>
