@@ -4,7 +4,7 @@ async function firstLoad(baseURL, songId) {
     res = await fetch(baseURL + "/api/song/?format=json");
     songJson = await res.json();
 
-    if (songId) {
+    if (songId != "None") {
         songResult = songJson.filter(song => song.id == songId)[0];
         document.getElementById("title").value = songResult.title;
         document.getElementById("channel").value = songResult.channel;
@@ -48,6 +48,21 @@ function setDeleteButton() {
 }
 
 
+function isCompleted(song) {
+    if (song.isdraft) {
+        return false;
+    }
+    if (song.channel == "全てあなたの所為です。") {
+        return true;
+    }
+    if (song.isoriginal) {
+        return ![songResult.url, songResult.lyrics].includes("");
+    } else {
+        return ![songResult.url, songResult.lyrics, songResult.imitate].includes("");
+    }
+}
+
+
 function checkExist() {
     titleValue = document.getElementById("title").value;
     channelValue = document.getElementById("channel").value;
@@ -56,24 +71,22 @@ function checkExist() {
 
     if ((titleValue != "") && (channelValue != "")) {
         songResult = songJson.filter(song => song.title == titleValue).filter(song => song.channel == channelValue);
-        if (titleValue != "" && channelValue != "") {
-            if (songResult.length == 0) {
-                isExistEle.innerHTML = "<span class='ok'>この曲は登録されていません。</span>";
+        if (songResult.length == 0) {
+            isExistEle.innerHTML = "<span class='ok'>この曲は登録されていません。</span>";
+            fillFormButtonEle.style.display = "none";
+        } else {
+            songResult = songResult[0];
+            if (isCompleted(songResult)) {
+                isExistEle.innerHTML = "<span class='error'>この曲の記事は作成済みです。</span>";
                 fillFormButtonEle.style.display = "none";
             } else {
-                songResult = songResult[0];
-                if (([songResult.url, songResult.lyrics, songResult.imitate].includes("")) || (songResult.isdraft)) {
-                    isExistEle.innerHTML = "<span class='warning'>この曲の記事は作成途中です。</span>";
-                    fillFormButtonEle.style.display = "block";
-                } else {
-                    isExistEle.innerHTML = "<span class='error'>この曲の記事は作成済みです。</span>";
-                    fillFormButtonEle.style.display = "none";
-                }
+                isExistEle.innerHTML = "<span class='warning'>この曲の記事は作成途中です。</span>";
+                fillFormButtonEle.style.display = "block";
             }
-        } else {
-            isExistEle.innerHTML = "";
-            fillFormButtonEle.style.display = "none";
         }
+    } else {
+        isExistEle.innerHTML = "";
+        fillFormButtonEle.style.display = "none";
     }
 
     setSubmitButton(titleValue, channelValue);
