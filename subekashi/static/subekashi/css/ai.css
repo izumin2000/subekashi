@@ -20,11 +20,11 @@
     width: 15px;
 }
 
-.devinput {
+.devInput {
     display: inline-block;
     cursor: pointer;
 }
 
-.devinput label {
+.devInput label {
     cursor: pointer;
 }

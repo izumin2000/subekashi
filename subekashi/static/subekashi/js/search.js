@@ -1,167 +1,79 @@
-var songjson, songEles;
+var songJson, songResult, subeanaSongs, songEles;
 
-async function getSong(baseURL) {
-    if (!songEles) {
-        res = await fetch(baseURL + "/api/song/?format=json");
-        songjson = await res.json();
-        songEles = document.getElementsByClassName("songcard");
+async function firstLoad(baseURL, query) {
+    res = await fetch(baseURL + "/api/song/?format=json");
+    songJson = await res.json();
+    subeanaSongs = songJson.filter(song => song.channel == "全てあなたの所為です。");
+    songEles = document.getElementsByClassName("songcard");
+    if (query) {
+        0
     }
+
+    // document.getElementById("loading").style.display = "none";
+    document.getElementById("searchform").style.display = "block";
 }
 
-function categoryform() {
-    categoryEle = document.getElementById("category");
-    if (categoryEle.value == "模倣曲模倣") {
-        categorysecEle = document.getElementById("categorysec");
-        
-        imitateimitateEle = document.createElement("input");
-        imitateimitateEle.type = "text";
-        imitateimitateEle.placeholder = "曲名";
-        imitateimitateEle.id = "imitateimitate";
-        imitateimitateEle.name = "imitateimitate";
-        imitateimitateEle.setAttribute("oninput" ,"searchsong()");
-        
-        categorysecEle.appendChild(imitateimitateEle);
-    } else {
-        imitateimitateEle = document.getElementById("imitateimitate");
-        if (imitateimitateEle) {
-            categorysecEle.removeChild(imitateimitateEle);
-        }
+
+function songFilter(key, value) {
+    if (value) {
+        songResult = songResult.filter(song => Boolean(song[key]));
+        songResult = songResult.filter(song => song[key].match(value));
     }
+    return songResult;
 }
 
-function searchsong() {
-    i = 0;
 
-    filtrtEles = document.getElementsByClassName("filters")
-    filtertype = 0
-    for (filtrtEle of filtrtEles) {
-        if (filtrtEle.checked) {
-            break
-        }
-        filtertype++;
+function searchSong() {
+    songResult = songJson.concat();
+    channelValue = document.getElementById("channel").value;
+    titleValue = document.getElementById("title").value;
+    lyricsValue = document.getElementById("lyrics").value;
+
+    filterEles = Array.from(document.getElementsByClassName("filters")).filter(filterEle => filterEle.checked);
+    filterL = (filterEles.map(filterEle => filterEle.value));
+
+    categoryValue = document.getElementById("category").value;
+    if (categoryValue != "全ての模倣") {
+        categoryId = subeanaSongs.filter(song => song.title == categoryValue.slice(0, -2)).map(song => song.id)[0];
+        songResult = songFilter("imitate", String(categoryId));
     }
 
-    categoryEle = document.getElementById("category");
-    category = categoryEle.value.slice(0, -2);
-    imitateimitateEle = document.getElementById("imitateimitate");
-    if (category == "全ての") {
-        categoryId = 0
-    } else if (imitateimitateEle) {
-        if (imitateimitateEle.value) {
-            category = imitateimitateEle.value
-            category_find = songjson.find((v) => v.title == category)
-            if (category_find) {
-                categoryId = String(category_find.id);
-            } else {
-                categoryId = -1        // 模倣曲模倣が見つからない場合
-            }
-        } else {
-            categoryId = 0
-        }
-    } else {
-        category_find = songjson.find((v) => v.title == category)
-        if (category_find) {
-            categoryId = String(category_find.id);
-        } else {
-            categoryId = 0
-        }
+    songResult = songFilter("channel", channelValue);
+    songResult = songFilter("title", titleValue);
+    songResult = songFilter("lyrics", lyricsValue);
+    
+    if (filterL.includes("1")) {
+        songResult = songResult.filter(song => !isCompleted(song));
+    }
+    if (filterL.includes("2")) {
+        songResult = songResult.filter(song => song.isdraft);
+    }
+    if (filterL.includes("3")) {
+        songResult = songResult.filter(song => song.isoriginal);
+    }
+    if (filterL.includes("4")) {
+        songResult = songResult.filter(song => song.isjoke);
     }
 
-    for (songEle of songEles) {
-        
-        channel = document.getElementById("channel").value;
-        title = document.getElementById("title").value;
-        lyrics = document.getElementById("lyrics").value;
-        styledisplay = "block";
-        if (channel && (songjson[i]["channel"].match(channel) == null)) {
-            styledisplay = "none";
-        }
-        if (title && (songjson[i]["title"].match(title) == null)) {
-            styledisplay = "none";
-        }
-        if (lyrics && (songjson[i]["lyrics"].match(lyrics) == null)) {
-            styledisplay = "none";
-        }
+    songResultId = songResult.map(song => song.id);
+    Array.from(songEles).map(songEle => songEle.style.display = "none");
+    songResultId.map(songId => document.getElementById("song" + songId).style.display = "block");
 
-        if (!songjson[i]["imitate"].split(",").includes(categoryId) && categoryId) {
-            styledisplay = "none";
-        }
-        
-        if (categoryId == -1) {        // 模倣曲模倣が見つからない場合
-            styledisplay = "none";
-        }
-        
-        if (filtertype == 1) {
-            if (((songjson[i]["url"] != "") && (songjson[i]["lyrics"] != "")) || (songjson[i]["channel"] == "")) {
-                styledisplay = "none";
-            } 
-        } else if (filtertype == 2) {
-            if (songjson[i]["channel"] != "") {
-                styledisplay = "none";
-            }
-        }
-        
-        if (filtrtEles[3].checked) {
-            if (!songjson[i]["isoriginal"]) {
-                styledisplay = "none";
-            }
-        }
-        
-        if (filtrtEles[4].checked) {
-            if (!songjson[i]["isjoke"]) {
-                styledisplay = "none";
-            }
-        }
-
-        songEle.style.display = styledisplay;
-        i++;
-    }
-
-    notfoundEle = document.getElementById("notfound")       
-    nothit = true;
-    for (songEle of songEles) {
-        if (songEle.style.display == "block") {
-            nothit = false;
-            break
-        }
-    }
-    if (nothit) {
-        notfoundEle.style.display = "block";
-    } else {
+    notfoundEle = document.getElementById("notfound");     
+    if (songResult.length) {
         notfoundEle.style.display = "none";
+    } else {
+        notfoundEle.style.display = "block";
     }
 }
 
 
-function devinput(filtertype) {
+function devInput(filtertype) {
     radioEle = document.getElementsByClassName("filters")[filtertype];
     if (filtertype >= 3) {
         radioEle.checked = !radioEle.checked;
     } else {
         radioEle.checked = true;
     }
-    searchsong();
-}
-
-
-function checkboxinput(filtertype) {
-    if (filtertype == 3) {
-        checkboxEle = document.getElementById("original");
-    } else if (filtertype == 4) {
-        checkboxEle = document.getElementById("joke");
-    }
-    checkboxEle.checked = !checkboxEle.checked;
-    searchsong();
-}
-
-
-function categoryinput(category) {
-    if (category == "オリジナル") {
-        searchEle = document.getElementById("search");
-        searchEle.value = "全てあなたの所為です。";
-    } else {
-        categoryEle = document.getElementById("category");
-        categoryEle.value = category + "模倣";
-    }
-    searchsong();
+    searchSong();
 }
