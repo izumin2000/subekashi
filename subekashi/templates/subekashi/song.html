@@ -10,7 +10,11 @@
     {% if isExist %}
         <a id="songchannel" href="{% url 'channel' songIns.channel %}"><i class="fas fa-user-circle"></i>{{ songIns.channel }}</a>
         {% if songIns.url %}
-            <a id="songurl" href="{{ songIns.url }}"><i class="fas fa-link"></i>{{ songIns.url|slice:"35" }}</a>
+            {% if songIns.url == "非公開" %}
+                <p id="songurl" href="{{ songIns.url }}"><i class="fas fa-link"></i>非公開</p>
+            {% else %}
+                <a id="songurl" href="{{ songIns.url }}"><i class="fas fa-link"></i>{{ songIns.url|slice:"35" }}</a>
+            {% endif %}
         {% endif %}
         <div></div>
         <p id="songimitateslabel"><i class="fas fa-tags fa-xs"></i></p>
