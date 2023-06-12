@@ -9,7 +9,7 @@ async function firstLoad(baseURL, query) {
         0
     }
 
-    // document.getElementById("loading").style.display = "none";
+    document.getElementById("loading").style.display = "none";
     document.getElementById("searchform").style.display = "block";
 }
 
