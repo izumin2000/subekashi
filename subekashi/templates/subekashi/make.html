@@ -10,17 +10,17 @@
     <div class="underline"></div>
     <form action="{% url 'make' %}" method="POST" id="makeForm">{% csrf_token %}
         <label>生成タイプ</label>
-        <!-- <div class="devinput" onclick="devinput(0)"> -->
-        <div class="devinput">
+        <!-- <div class="devInput" onclick="devInput(0)"> -->
+        <div class="devInput">
             <input type="radio" class="genetype" name="genetype" value="category" oninput="changetype(0)" disabled>
             <label><s>カテゴリ</s></label>
         </div>
-        <!-- <div class="devinput" onclick="devinput(1)"> -->
-        <div class="devinput">
+        <!-- <div class="devInput" onclick="devInput(1)"> -->
+        <div class="devInput">
             <input type="radio" class="genetype" name="genetype" value="song" oninput="changetype(1)" disabled>
             <label><s>ソング</s></label>
         </div>
-        <div class="devinput" onclick="devinput(2)">
+        <div class="devInput" onclick="devInput(2)">
             <input type="radio" class="genetype" name="genetype" value="model" oninput="changetype(2)" checked>
             <label>モデル</label>
         </div><br>
@@ -41,7 +41,7 @@
         </div> -->
         <div id="songsec">
             <label>曲名*</label>
-            <input type="text" id="title" name="title" oninput="searchsong()"><br>
+            <input type="text" id="title" name="title" oninput="searchSong()"><br>
             {% for songIns in songInsL %}
             <div class="songGuess">
                 <p class="songs" id="{{ songIns.title }}" onclick="titleinput('{{ songIns.title }}')"><span class="channel"><i class="fas fa-user-circle"></i> {{ songIns.channel }}</span> <i class="fas fa-music"></i> {{ songIns.title }}</p>
