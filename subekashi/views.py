@@ -193,19 +193,24 @@ def new(request) :
         else :
             songIns.url = formatURL(urlForm)
         
-        nowImitateS = set(songIns.imitate.split(","))
-        newimitateS = set(imitatesForm.split(","))
-        appendImitateS = newimitateS - nowImitateS
-        deleteImitateS = nowImitateS - newimitateS
+        oldImitateS = set(songIns.imitate.split(",")) - set([''])
+        newImitateS = set(imitatesForm.split(",")) - set([''])
+
+        appendImitateS = newImitateS - oldImitateS
+        deleteImitateS = oldImitateS - newImitateS
+
         for imitateId in appendImitateS :
             imitatedIns = Song.objects.get(pk = imitateId)
-            newImitatedIns = set(imitatedIns.imitated).add(songIns.id)
-            imitatedIns.imitated = ",".join(newImitatedIns)
+            imitatedInsL = set(imitatedIns.imitated.split(","))
+            imitatedInsL.add(str(songIns.id))
+            imitatedIns.imitated = ",".join(imitatedInsL)
             imitatedIns.save()
         for imitateId in deleteImitateS :
             imitatedIns = Song.objects.get(pk = imitateId)
-            set(imitatedIns.imitated).remove(songIns.id)
-            imitatedIns.imitated = ",".join(newImitatedIns)
+            imitatedInsL = set(imitatedIns.imitated.split(","))
+            print(imitatedInsL)
+            imitatedInsL.remove(str(songIns.id))
+            imitatedIns.imitated = ",".join(imitatedInsL)
             imitatedIns.save()
         songIns.imitate = imitatesForm
 
