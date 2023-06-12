@@ -42,8 +42,6 @@
 
         {% if songIns.lyrics %}
             <p id="songlyrics">{{ songIns.lyrics }}</p>
-        {% else %}
-            <a id="songlyricsnotfound" href="{% url 'new' %}?id={{ songIns.id }}">歌詞を追加</a>
         {% endif %}
     {% else %}
         <p id="songnotfound">曲の情報が見つからないか削除依頼が送信されました。</p>
