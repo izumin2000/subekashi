@@ -16,7 +16,7 @@ async function setscore(baseURL, id, score) {
 }
 
 
-function devinput(baseURL, id, score) {
+function devInput(baseURL, id, score) {
     for (s = 1; s <= 5; s++) {
         radioEle = document.getElementById(String(id) + String(s));
         radioEle.checked = false;
