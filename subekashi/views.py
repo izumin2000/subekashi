@@ -401,19 +401,9 @@ def channel(request, channelName) :
 
 def search(request) :
     dataD = initD()
-
-    #TODO request.GETから必要なカラムだけ
-    if "lacks" in request.GET :
-        dataD["lacks"] = request.GET.get("lacks")
-    if "nones" in request.GET :
-        dataD["nones"] = request.GET.get("nones")
-    if "isoriginal" in request.GET :
-        dataD["isoriginal"] = request.GET.get("isoriginal")
-    if "isjoke" in request.GET :
-        dataD["isjoke"] = request.GET.get("isjoke")
-    
-    songInsL = Song.objects.all()
-    dataD["songInsL"] = songInsL
+    dataD["songInsL"] = Song.objects.all()
+    query = request.GET
+    dataD["query"] = f"{query.get('title')},{query.get('channel')},{query.get('lyrics')},{query.get('filter')}".replace("None", "")
     return render(request, "subekashi/search.html", dataD)
 
 

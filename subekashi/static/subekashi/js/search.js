@@ -5,12 +5,19 @@ async function firstLoad(baseURL, query) {
     songJson = await res.json();
     subeanaSongs = songJson.filter(song => song.channel == "全てあなたの所為です。");
     songEles = document.getElementsByClassName("songcard");
-    if (query) {
-        0
+
+    query = query.split(",")
+    document.getElementById("title").value = query[0];
+    document.getElementById("channel").value = query[1];
+    document.getElementById("lyrics").value = query[2];
+    if (query[3] != "") {
+        devInput(Number(query[3]));
     }
 
     document.getElementById("loading").style.display = "none";
     document.getElementById("searchform").style.display = "block";
+
+    searchSong();
 }
 
 

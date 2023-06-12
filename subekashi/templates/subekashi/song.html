@@ -25,13 +25,13 @@
             <p class="songimitate">オリジナル</p>
         {% endif %}
         {% if songIns.isoriginal %}
-            <a class="songimitate" href="{% url 'search' %}?isoriginal=1">オリジナル模倣</a>
+            <a class="songimitate" href="{% url 'search' %}?filter=3">オリジナル模倣</a>
         {% endif %}
         {% if songIns.isjoke %}
-            <a class="songimitate" href="{% url 'search' %}?isjoke=1">ネタ曲</a>
+            <a class="songimitate" href="{% url 'search' %}?filter=4">ネタ曲</a>
         {% endif %}
         {% if songIns.isdraft %}
-            <a class="songimitate" href="{% url 'search' %}?isdraft=1">下書き</a>
+            <a class="songimitate" href="{% url 'search' %}?filter=2">下書き</a>
         {% endif %}
         
         {% if imitatedInsL %}
