@@ -32,7 +32,7 @@ function changetype(radiotype) {
 }
 
 
-function devinput(radiotype) {
+function devInput(radiotype) {
     radioEle = document.getElementsByClassName("genetype")[radiotype];
     radioEle.checked = true;
     changetype(radiotype);
@@ -50,7 +50,7 @@ function titleinput(title) {
 }
 
 
-function searchsong() {
+function searchSong() {
     titleEle = document.getElementById("title");
     title = titleEle.value;
     if (title == "") {

@@ -33,6 +33,7 @@ function setSubmitButton(titleValue, channelValue) {
     }
 }
 
+
 function setDeleteButton() {
     reasonValue = document.getElementById("reason").value;
     deleteEle = document.getElementById("deletesubmit");
@@ -44,21 +45,6 @@ function setDeleteButton() {
         }
     } else {
         deleteEle.disabled = true;
-    }
-}
-
-
-function isCompleted(song) {
-    if (song.isdraft) {
-        return false;
-    }
-    if (song.channel == "全てあなたの所為です。") {
-        return true;
-    }
-    if (song.isoriginal) {
-        return ![songResult.url, songResult.lyrics].includes("");
-    } else {
-        return ![songResult.url, songResult.lyrics, songResult.imitate].includes("");
     }
 }
 
@@ -173,6 +159,7 @@ function appendSong(id) {
     titleEle = document.getElementById("imitateTitle");
     titleEle.value = "";
 }
+
 
 function clickSong(id) {
     imitateTitleValue = document.getElementById("imitateTitle").value;

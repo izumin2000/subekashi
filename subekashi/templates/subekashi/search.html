@@ -10,52 +10,54 @@
     <h1>曲の一覧と検索</h1>
     <div class="underline"></div>
 
-    <label>チャンネル名</label>
-    <input type="text" id="channel" name="channel" oninput="searchsong()"><br>
-    <label>タイトル　　</label>
-    <input type="text" id="title" name="title" oninput="searchsong()"><br>
-    <label>歌詞　　　　</label>
-    <input type="text" id="lyrics" name="lyrics" oninput="searchsong()"><br>
-    <div id="categorysec">
-        <label>カテゴリ　　</label>
-        <select id="category" name="category" oninput="categoryform();searchsong()">
-            <option>全ての模倣</option>
-            <option>.模倣</option>
-            <option>..模倣</option>
-            <option>教育模倣</option>
-            <option>アブジェ模倣</option>
-            <option>...模倣</option>
-            <option>表/裏模倣</option>
-            <option>名の無い星が空に堕ちたら模倣</option>
-            <option>エヌ模倣</option>
-            <option>K²模倣</option>
-            <option>模倣曲模倣</option>
-        </select>
-    </div><br>
-    <label>フィルタ</label>
-    <div class="devinput" onclick="devinput(0)">
-        <input type="radio" class="filters" name="filter" value="all" oninput="searchsong()" checked>
-        <label>全ての曲</label>
+    <div id="searchform">
+        <label>チャンネル名</label>
+        <input type="text" id="channel" name="channel" oninput="searchSong()"><br>
+        <label>タイトル　　</label>
+        <input type="text" id="title" name="title" oninput="searchSong()"><br>
+        <label>歌詞　　　　</label>
+        <input type="text" id="lyrics" name="lyrics" oninput="searchSong()"><br>
+        <div id="categorysec">
+            <label>カテゴリ　　</label>
+            <select id="category" name="category" oninput="searchSong()">
+                <option>全ての模倣</option>
+                <option>.模倣</option>
+                <option>..模倣</option>
+                <option>教育模倣</option>
+                <option>アブジェ模倣</option>
+                <option>...模倣</option>
+                <option>表╱裏模倣</option>
+                <option>名の無い星が空に堕ちたら模倣</option>
+                <option>エヌ模倣</option>
+                <option>K²模倣</option>
+            </select>
+        </div><br>
+        <label>フィルタ</label>
+        <div onclick="searchSong()">
+            <div class="devInput" onclick="devInput(0)">
+                <input type="radio" class="filters" value="0" name="fillLevel" oninput="searchSong()" checked>
+                <label>全ての曲</label>
+            </div>
+            <div class="devInput" onclick="devInput(1)">
+                <input type="radio" class="filters" value="1" name="fillLevel" oninput="searchSong()">
+                <label>情報不足の曲</label>
+            </div>
+            <div class="devInput" onclick="devInput(2)">
+                <input type="radio" class="filters" value="2" name="fillLevel" oninput="searchSong()">
+                <label>下書きの曲</label>
+            </div>
+            <div class="devInput" onclick="devInput(3)">
+                <input type="checkbox" class="filters" value="3" oninput="searchSong()">
+                <label>オリジナル模倣曲</label>
+            </div>
+            <div class="devInput" onclick="devInput(4)">
+                <input type="checkbox" class="filters" value="4" oninput="searchSong()">
+                <label>ネタ曲</label>
+            </div>
+        </div>
     </div>
-    <div class="devinput" onclick="devinput(1)">
-        <input type="radio" class="filters" name="filter" value="lacks" oninput="searchsong()">
-        <label>情報不足の曲</label>
-    </div>
-    <div class="devinput" onclick="devinput(2)">
-        <input type="radio" class="filters" name="filter" value="nones" oninput="searchsong()">
-        <label>未登録の曲</label>
-    </div>
-    <div class="devinput" onclick="devinput(3)">
-        <input type="checkbox" id="original" class="filters" name="filter" value="original" oninput="checkboxinput(3); searchsong()">
-        <label>オリジナル模倣曲</label>
-    </div>
-    <div class="devinput" onclick="devinput(4)">
-        <input type="checkbox" id="joke" class="filters" name="filter" value="joke" oninput="checkboxinput(4); searchsong()">
-        <label>ネタ曲</label>
-    </div>
-
     {% for songIns in songInsL %}
-        <div class="songcard">
+        <div class="songcard" id="song{{ songIns.id }}">
             <a href="{% url 'song' songIns.id %}" class="buttona">
                 <div class="cardleft">
                     <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"30" }}</p>
@@ -88,24 +90,11 @@
 <script src="{% static 'subekashi/js/search.js' %}?{{ lastModified }}" rel="stylesheet"></script>
 <script>
     window.addEventListener('load', function(){
-        getSong('{{ baseURL }}');
-        window.setTimeout(formautochange, 1000)
-    })
-
-    function formautochange() {
-        if ('{{ lacks }}') {
-            devinput(1);
-        } else if ('{{ nones }}') {
-            devinput(2);
-        } else if ('{{ category }}') {
-            categoryinput('{{ category }}')
-        } else if ('{{ isoriginal }}') {
-            originalEle = document.getElementById("original");
-            originalEle.checked = true;
-        } else if ('{{ isjoke }}') {
-            jokeEle = document.getElementById("joke");
-            jokeEle.checked = true;
+        if ('{{ query }}' == "None") {
+            firstLoad('{{ baseURL }}', 0);
+        } else {
+            firstLoad('{{ baseURL }}', '{{ query }}');
         }
-    }
+    })
 </script>
 {% endblock %}

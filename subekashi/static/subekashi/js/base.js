@@ -1,4 +1,4 @@
-// 漢字のみおおきく
+// 漢字のみ大きく
 function kanji() {
     tags = ['p', 'a', 'h1', 'h2', 'li'];
     for (tag of tags) {
@@ -61,10 +61,22 @@ function autotextarea() {
     textarea.style.height = scrollHeight + 'px';
 }
 
-// ソングページ
-function songpage(baseURL, songId) {
-    window.location.href = baseURL + "/songs/" + songId;
+
+// songが情報不足ではないかどうか
+function isCompleted(song) {
+    if (song.isdraft) {
+        return false;
+    }
+    if (song.channel == "全てあなたの所為です。") {
+        return true;
+    }
+    if (song.isoriginal) {
+        return ![songResult.url, songResult.lyrics].includes("");
+    } else {
+        return ![songResult.url, songResult.lyrics, songResult.imitate].includes("");
+    }
 }
+
 
 window.onload = function() {
     kanji();
