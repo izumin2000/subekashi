@@ -15,6 +15,7 @@ ALLOWED_HOSTS = [
     "subekashi.izmn.net",
     "recruit.izmn.net",
     "iniadmc.izmn.net",
+    "lyrics.imicomweb.com",
     ]
 
 INSTALLED_APPS = [
