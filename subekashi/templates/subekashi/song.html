@@ -6,8 +6,8 @@
 
 {% block content %}
 <section>
-    <p id="songtitle"><i class="fas fa-music"></i>{{ songIns.title }}</p>
     {% if isExist %}
+        <p id="songtitle"><i class="fas fa-music"></i>{{ songIns.title }}</p>
         <a id="songchannel" href="{% url 'channel' songIns.channel %}"><i class="fas fa-user-circle"></i>{{ songIns.channel }}</a>
         {% if songIns.url %}
             {% if songIns.url == "非公開" %}
@@ -47,12 +47,21 @@
         {% if songIns.lyrics %}
             <p id="songlyrics">{{ songIns.lyrics }}</p>
         {% endif %}
-    {% else %}
-        <p id="songnotfound">曲の情報が見つからないか削除依頼が送信されました。</p>
-    {% endif %}
-    <div class="dummybuttons">
+
+        <div class="dummybuttons">
+            <div class="dummybutton dummybuttonf towrong" onclick="tonew()"><p class="dummybuttonp">編集と削除</p></div>
+        </div>
+        
+        {% else %}
+        {% if isDeleted %}
+        <p class="songnotfound">削除依頼が送信されました。</p>
         <div class="dummybutton dummybuttonf towrong" onclick="tonew()"><p class="dummybuttonp">編集と削除</p></div>
-    </div>
+        {% else %}
+            <p class="songnotfound">曲の情報が見つかりません。</p>        
+        {% endif %}
+    {% endif %}
+
+
 </section>
 {% endblock %}
 
