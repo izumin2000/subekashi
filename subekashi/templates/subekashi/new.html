@@ -68,6 +68,8 @@
     <div class="underline"></div>
     <form action="{% url 'delete' %}" method="POST">{% csrf_token %}
         <label>削除理由</label>
+        <input type="text" id="titleDelete" name="title" value="{{ title }}" hidden><br>
+        <input type="text" id="channelDelete" name="channel" value="{{ channel }}" hidden><br>
         <textarea id="reason" name="reason" oninput="setDeleteButton()"></textarea><br>
         <input type="submit" value="送信" id="deletesubmit" disabled>
     </form>
