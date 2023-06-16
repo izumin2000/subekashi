@@ -12,6 +12,7 @@ async function firstLoad(baseURL, songId) {
         setSubmitButton("_", "_");
     }
 
+    checkExist();
     songGuessEles = document.getElementsByClassName("songGuess");
 }
 
@@ -51,7 +52,9 @@ function setDeleteButton() {
 
 function checkExist() {
     titleValue = document.getElementById("title").value;
+    document.getElementById("titleDelete").value = titleValue;
     channelValue = document.getElementById("channel").value;
+    document.getElementById("channelDelete").value = channelValue;
     isExistEle = document.getElementById("isExist");
     fillFormButtonEle = document.getElementById("fillFormButton");
 

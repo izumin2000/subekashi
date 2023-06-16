@@ -246,7 +246,7 @@ def new(request) :
 
 def song(request, songId) :
     dataD = initD()
-    songIns = Song.objects.get(pk = songId)
+    songIns = Song.objects.filter(pk = songId).first()
     isExist = bool(songIns)
     dataD["songIns"] = songIns
     dataD["isExist"] = isExist
@@ -283,14 +283,14 @@ def song(request, songId) :
 
 def delete(request) :
     dataD = initD()
-    dataD["isExist"] = False
+    dataD["isDeleted"] = True
 
     if request.method == "POST":
         titleForm = request.POST.get("title")
         channelForm = request.POST.get("channel")
         songIns, _ = Song.objects.get_or_create(title = titleForm, channel = channelForm)
         isdraftForm = request.POST.get("isdraft")
-        requests.post(SUBEKASHI_QUESTION_DISCORD_URL, data={'content': f"ID：{songIns.id}\n理由：{isdraftForm}"})
+        requests.post(SUBEKASHI_EDIT_DISCORD_URL, data={'content': f"ID：{songIns.id}\n理由：{isdraftForm}"})
     return render(request, 'subekashi/song.html', dataD)
 
 
