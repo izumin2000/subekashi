@@ -2,12 +2,11 @@
 *.log
 *.pyc
 __pycache__/
-db-volumes/
 db.sqlite3
-.py
-vp.py
+*.py
 local_settings.py
-media/
 .htmlhintrc
 subekashi/sandbox
 subekashi/dev
+iniadmc/*
+orissa/*
