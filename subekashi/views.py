@@ -1,10 +1,8 @@
-from django.shortcuts import render
-from django.http import HttpResponseRedirect
+from django.shortcuts import render, redirect
 from subekashi.models import Song, Ai, Genecategory, Genesong, Singleton
 from config.settings import DEBUG
 import hashlib
 import requests
-from time import sleep
 from .reset import subeana_LIST
 import random
 from janome.tokenizer import Tokenizer
@@ -13,8 +11,6 @@ import random
 from rest_framework import viewsets
 from .serializer import SongSerializer, AiSerializer
 from config.settings import *
-from django.contrib.auth.views import LogoutView
-from django.urls import reverse
 import re
 
 # パスワード関連
@@ -290,6 +286,7 @@ def delete(request) :
         channelForm = request.POST.get("channel")
         songIns, _ = Song.objects.get_or_create(title = titleForm, channel = channelForm)
         isdraftForm = request.POST.get("isdraft")
+        #TODO もし200以外だったらエラーにする
         requests.post(SUBEKASHI_EDIT_DISCORD_URL, data={'content': f"ID：{songIns.id}\n理由：{isdraftForm}"})
     return render(request, 'subekashi/song.html', dataD)
 
@@ -471,6 +468,8 @@ def dev(request) :
             
     return render(request, "subekashi/dev.html", dataD)
 
+def github(request) :
+    return redirect("https://github.com/izumin2000/izuminapp")
 
 class SongViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Song.objects.all()

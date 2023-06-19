@@ -23,5 +23,6 @@ urlpatterns = [
     path('research', views.research, name = 'research'),
     path('error', views.error, name = 'error'),
     path('dev', views.dev, name = 'dev'),
+    path('github', views.github, name = 'github'),
     path('api/',include(defaultRouter.urls)),
 ]
