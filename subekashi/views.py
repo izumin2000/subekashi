@@ -469,7 +469,7 @@ def dev(request) :
     return render(request, "subekashi/dev.html", dataD)
 
 def github(request) :
-    return redirect("https://github.com/izumin2000/izuminapp")
+    return redirect("https://github.com/izumin2000/subekashi")
 
 class SongViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Song.objects.all()
