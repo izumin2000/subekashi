@@ -476,6 +476,6 @@ class SongViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SongSerializer
 
 
-class AiViewSet(viewsets.ReadOnlyModelViewSet):
+class AiViewSet(viewsets.ModelViewSet):
     queryset = Ai.objects.all()
     serializer_class = AiSerializer
