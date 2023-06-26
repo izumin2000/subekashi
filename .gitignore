@@ -7,6 +7,5 @@ local_settings.py
 .htmlhintrc
 subekashi/sandbox
 subekashi/dev
-iniadmc/*
 orissa/*
 backups/*
