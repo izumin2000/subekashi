@@ -204,7 +204,6 @@ def new(request) :
         for imitateId in deleteImitateS :
             imitatedIns = Song.objects.get(pk = imitateId)
             imitatedInsL = set(imitatedIns.imitated.split(","))
-            print(imitatedInsL)
             imitatedInsL.remove(str(songIns.id))
             imitatedIns.imitated = ",".join(imitatedInsL)
             imitatedIns.save()
@@ -252,26 +251,33 @@ def song(request, songId) :
             imitateInsL = []
             imitates = songIns.imitate.split(",")
             for imitateId in imitates:
-                imitateInsQ = Song.objects.filter(id = int(imitateId))
-                if imitateInsQ :
-                    imitateIns = imitateInsQ.first()
-                    imitateInsL.append(imitateIns)
+                if imitateId.isdigit() :
+                    imitateInsQ = Song.objects.filter(id = int(imitateId))
+                    if imitateInsQ :
+                        imitateIns = imitateInsQ.first()
+                        imitateInsL.append(imitateIns)
+                    else :
+                        songIns.imitate = imitates.remove(imitateId)
+                        songIns.save()
                 else :
-                    songIns.imitate = imitates.remove(imitateId)
-                    songIns.save()
+                    print(f"\033[31m{imitateId, songId}\033[0m")
+
             dataD["imitateInsL"] = imitateInsL
 
         if songIns.imitated :
             imitatedInsL = []
             imitateds = songIns.imitated.split(",")
             for imitatedId in imitateds:
-                imitatedInsQ = Song.objects.filter(id = int(imitatedId))
-                if imitatedInsQ :
-                    imitatedIns = imitatedInsQ.first()
-                    imitatedInsL.append(imitatedIns)
+                if imitatedId.isdigit() :
+                    imitatedInsQ = Song.objects.filter(id = int(imitatedId))
+                    if imitatedInsQ :
+                        imitatedIns = imitatedInsQ.first()
+                        imitatedInsL.append(imitatedIns)
+                    else :
+                        songIns.imitate = imitateds.remove(imitatedId)
+                        songIns.save()
                 else :
-                    songIns.imitate = imitateds.remove(imitatedId)
-                    songIns.save()
+                    print(f"\033[31m{imitatedId, songId}\033[0m")
             dataD["imitatedInsL"] = imitatedInsL
 
     return render(request, "subekashi/song.html", dataD)
