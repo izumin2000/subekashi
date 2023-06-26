@@ -7,5 +7,5 @@ local_settings.py
 .htmlhintrc
 subekashi/sandbox
 subekashi/dev
-orissa/*
+iniadynamap
 backups/*
