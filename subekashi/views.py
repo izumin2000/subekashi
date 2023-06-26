@@ -259,6 +259,9 @@ def song(request, songId) :
                     else :
                         songIns.imitate = imitates.remove(imitateId)
                         songIns.save()
+                else :
+                    print(f"\033[31m{imitateId, songId}\033[0m")
+
             dataD["imitateInsL"] = imitateInsL
 
         if songIns.imitated :
@@ -273,8 +276,8 @@ def song(request, songId) :
                     else :
                         songIns.imitate = imitateds.remove(imitatedId)
                         songIns.save()
-            else :
-                print(f"\033[31m{imitatedId}\033[0m")
+                else :
+                    print(f"\033[31m{imitatedId, songId}\033[0m")
             dataD["imitatedInsL"] = imitatedInsL
 
     return render(request, "subekashi/song.html", dataD)
