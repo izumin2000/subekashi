@@ -12,40 +12,12 @@ from rest_framework import viewsets
 from .serializer import SongSerializer, AiSerializer
 from config.settings import *
 import re
+from django.utils import timezone
+
 
 # パスワード関連
 SHA256a = "5802ea2ddcf64db0efef04a2fa4b3a5b256d1b0f3d657031bd6a330ec54abefd"
 REPLACEBLE_HINSHIS = ["名詞", "動詞", "形容詞"]
-
-
-def getAPI(url) :
-    try :
-        get = requests.get(url)
-    except :        # プロキシエラー等のエラーが発生したら
-        print("5xx Error")
-        return ""
-
-    if (get.status_code == 200) :
-        try :
-            getDict = get.json()
-        except :        # JSON形式ではなかったら（メンテナンス等）
-            print("Not JSON Error", get.status_code)
-            return ""
-
-        if "error" in getDict :     # dictのキーにerrorがあったら
-            print("Invalid path Error", get.status_code)
-            return ""
-        
-        if "message" in getDict :     # dictのキーにerrorがあったら
-            print("404 on json API", get.status_code)
-            
-        else :      # 正常に取得できたら
-            print("OK", get.status_code)
-            return getDict
-
-    else :      # エラーステータスコードを受け取ったら（HEROKU error等）
-        print("not 2xx", get.status_code)
-        return ""
 
 
 def counter(word) :
@@ -134,6 +106,7 @@ def formatURL(url) :
     else :
         return url
 
+
 def initD() :
     dataD = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
     if DEBUG :
@@ -141,6 +114,11 @@ def initD() :
     else :
         dataD["baseURL"] = "https://lyrics.imicomweb.com"
     return dataD
+
+
+def sendDiscord(url, content) :
+    res = requests.post(url, data={'content': content})
+    return res.status_code
 
 
 def top(request):
@@ -160,6 +138,11 @@ def top(request):
     aiInsL = Ai.objects.filter(score = 5)[::-1]
     if aiInsL :
         dataD["aiInsL"] = aiInsL[min(10, len(aiInsL))::-1]
+        
+    if request.method == "POST":
+        feedback = request.POST.get("feedback")
+        sendDiscord(FEEDBACK_DISCORD_URL, feedback)
+        
     return render(request, 'subekashi/top.html', dataD)
 
 
@@ -182,7 +165,7 @@ def new(request) :
             return render(request, "subekashi/error.html")
 
         titleForm = titleForm.replace("/", "╱")
-        songIns, _ = Song.objects.get_or_create(title = titleForm, channel = channelForm)
+        songIns, _ = Song.objects.get_or_create(title = titleForm, channel = channelForm, defaults={"posttime" : timezone.now()})
 
         if isdeletedForm :
             songIns.url = "非公開"
@@ -214,6 +197,7 @@ def new(request) :
         songIns.isjapanese = int(bool(isjapaneseForm))
         songIns.isjoke = int(bool(isjokeForm))
         songIns.isdraft = int(bool(isdraftForm))
+        songIns.posttime = timezone.now()
         songIns.save()
         
         imitateInsL = []
@@ -224,11 +208,13 @@ def new(request) :
         dataD["isExist"] = True
 
         content = f'**{songIns.title}**\n\
-        id : {songIns.id}\n\
+        ページ : {BASE_DIR}\song\{songIns.id}\n\
         チャンネル : {songIns.channel}\n\
         URL : {songIns.url}\n\
-        模倣 : {", ".join([imitate.title for imitate in imitateInsL])}\n'
-        requests.post(SUBEKASHI_NEW_DISCORD_URL, data={'content': content})
+        模倣 : {", ".join([imitate.title for imitate in imitateInsL])}\n\
+        歌詞 : ```{songIns.lyrics}```\n\
+        \n'
+        requests.post(NEW_DISCORD_URL, data={'content': content})
         
         return render(request, 'subekashi/song.html', dataD)
     
@@ -260,7 +246,8 @@ def song(request, songId) :
                         songIns.imitate = imitates.remove(imitateId)
                         songIns.save()
                 else :
-                    print(f"\033[31m{imitateId, songId}\033[0m")
+                    content = f"{imitateId, songId}"
+                    sendDiscord(ERROR_DISCORD_URL, content)
 
             dataD["imitateInsL"] = imitateInsL
 
@@ -277,7 +264,8 @@ def song(request, songId) :
                         songIns.imitate = imitateds.remove(imitatedId)
                         songIns.save()
                 else :
-                    print(f"\033[31m{imitatedId, songId}\033[0m")
+                    content = f"{imitatedId, songId}"
+                    sendDiscord(ERROR_DISCORD_URL, content)
             dataD["imitatedInsL"] = imitatedInsL
 
     return render(request, "subekashi/song.html", dataD)
@@ -290,10 +278,14 @@ def delete(request) :
     if request.method == "POST":
         titleForm = request.POST.get("title")
         channelForm = request.POST.get("channel")
-        songIns, _ = Song.objects.get_or_create(title = titleForm, channel = channelForm)
-        isdraftForm = request.POST.get("isdraft")
-        #TODO もし200以外だったらエラーにする
-        requests.post(SUBEKASHI_EDIT_DISCORD_URL, data={'content': f"ID：{songIns.id}\n理由：{isdraftForm}"})
+        songIns, _ = Song.objects.get_or_create(title = titleForm, channel = channelForm, defaults={"posttime" : timezone.now()})
+        reasonForm = request.POST.get("reason")
+        content = f"ID：{songIns.id}\n理由：{reasonForm}"
+        statusCode = sendDiscord(DELETE_DISCORD_URL, content)
+        print(statusCode)
+        if statusCode != 204 :
+            return render(request, 'subekashi/error.html', dataD)
+        
     return render(request, 'subekashi/song.html', dataD)
 
 
@@ -383,7 +375,7 @@ def make(request) :
         elif genetypeForm == "model" :
             aiIns = Ai.objects.filter(genetype = "model", score = 0)
             if not(len(aiIns)) :
-                requests.post(SUBEKASHI_QUESTION_DISCORD_URL, data={'content': "aiInsのデータがありません。", "avatar_url": "https://publicdomainvectors.org/photos/Anonymous_attention.png"})
+                sendDiscord(ERROR_DISCORD_URL, "aiInsのデータがありません。")
             # aiIns = Ai.objects.filter(genetype = "model")
             dataD["aiInsL"] = random.sample(list(aiIns), 25)
             return render(request, "subekashi/result.html", dataD)
@@ -416,9 +408,6 @@ def ai(request) :
 
 
 def research(request) :
-    if request.method == "POST":
-        question = request.POST.get("question")
-        requests.post(SUBEKASHI_QUESTION_DISCORD_URL, data={'content': question})
     return render(request, "subekashi/research.html")
 
 
