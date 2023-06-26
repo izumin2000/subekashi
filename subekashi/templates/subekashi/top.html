@@ -102,9 +102,13 @@
         </div>
     {% endif %}
     
-    <h1>全て歌詞の所為です。</h1>
-    <iframe id="subekashi1" src="https://www.youtube.com/embed/V7dRn5KZXk8" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    <h1>フィードバック</h1>
+    <form action="{% url 'top' %}" method="POST">{% csrf_token %}
+        <textarea id="feedback" name="feedback" placeholder="不具合の内容や機能の提案を入力"></textarea>
+        <input id="feedbacksend" type="submit" name="submit" value="送信">
 
+    </form>
+ 
     <h1>リンク</h1>
     <div class="underline"></div>
     <a href="https://imicomweb.com/"><img id="imicom" src="{% static 'subekashi/image/imicom.png' %}"></a>

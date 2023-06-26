@@ -138,6 +138,11 @@ def top(request):
     aiInsL = Ai.objects.filter(score = 5)[::-1]
     if aiInsL :
         dataD["aiInsL"] = aiInsL[min(10, len(aiInsL))::-1]
+        
+    if request.method == "POST":
+        feedback = request.POST.get("feedback")
+        sendDiscord(FEEDBACK_DISCORD_URL, feedback)
+        
     return render(request, 'subekashi/top.html', dataD)
 
 
