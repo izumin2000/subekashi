@@ -5,9 +5,14 @@ from dotenv import find_dotenv, load_dotenv
 from .local_settings import *
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DOMAIN = "localhost" if DEBUG else "imicomweb.com"
-APPS = ["subekashi", "iniadynamap"]
-ALLOWED_HOSTS = list(map(lambda x : f"{x}.{DOMAIN}", APPS))
+# DOMAIN = "localhost" if DEBUG else "imicomweb.com"
+# APPS = ["subekashi", "iniadynamap"]
+# ALLOWED_HOSTS = list(map(lambda x : f"{x}.{DOMAIN}", APPS))
+ALLOWED_HOSTS = [
+    'subekashi.localhost',
+    'subekashi.imicomweb.com',
+    'iniadynamap.localhost',
+]
 
 INSTALLED_APPS = [
     'config',
@@ -19,7 +24,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'django_hosts',
-] + APPS
+    'subekashi',
+]
 
 MIDDLEWARE = [
     'django_hosts.middleware.HostsRequestMiddleware',
