@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ALLOWED_HOSTS = list(map(lambda x : f"{x}.{DOMAIN}", APPS))
 ALLOWED_HOSTS = [
     'subekashi.localhost',
-    'subekashi.imicomweb.com',
+    'lyrics.imicomweb.com',
     'iniadynamap.localhost',
 ]
 
