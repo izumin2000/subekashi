@@ -4,19 +4,13 @@ import os
 from dotenv import find_dotenv, load_dotenv
 from .local_settings import *
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-# SECURITY WARNING: don't run with debug turned on in production!
-ALLOWED_HOSTS = [
-    "subekashi.localhost",
-    "iniadynamap.localhost",
-    "lyrics.imicomweb.com",
-    ]
+DOMAIN = "localhost" if DEBUG else "imicomweb.com"
+APPS = ["subekashi", "iniadynamap"]
+ALLOWED_HOSTS = list(map(lambda x : f"{x}.{DOMAIN}", APPS))
 
 INSTALLED_APPS = [
     'config',
-    'subekashi',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -25,7 +19,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'django_hosts',
-]
+] + APPS
 
 MIDDLEWARE = [
     'django_hosts.middleware.HostsRequestMiddleware',
