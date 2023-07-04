@@ -245,9 +245,6 @@ def song(request, songId) :
                     else :
                         songIns.imitate = imitates.remove(imitateId)
                         songIns.save()
-                else :
-                    content = f"{imitateId, songId}"
-                    sendDiscord(ERROR_DISCORD_URL, content)
 
             dataD["imitateInsL"] = imitateInsL
 
@@ -263,9 +260,6 @@ def song(request, songId) :
                     else :
                         songIns.imitate = imitateds.remove(imitatedId)
                         songIns.save()
-                else :
-                    content = f"{imitatedId, songId}"
-                    sendDiscord(ERROR_DISCORD_URL, content)
             dataD["imitatedInsL"] = imitatedInsL
 
     return render(request, "subekashi/song.html", dataD)
