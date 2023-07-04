@@ -1,6 +1,5 @@
 from django.shortcuts import render, redirect
 from subekashi.models import Song, Ai, Genecategory, Genesong, Singleton
-from config.settings import DEBUG
 import hashlib
 import requests
 from .reset import subeana_LIST
@@ -207,11 +206,13 @@ def new(request) :
         dataD["songIns"] = songIns
         dataD["isExist"] = True
 
+        pageURL = ("http://localhost:8000/" if DEBUG else "https://lyrics.imicomweb.com/") + f"song/{songIns.id}"
         content = f'**{songIns.title}**\n\
-        ページ : {BASE_DIR}\song\{songIns.id}\n\
+        {pageURL}\n\
         チャンネル : {songIns.channel}\n\
         URL : {songIns.url}\n\
         模倣 : {", ".join([imitate.title for imitate in imitateInsL])}\n\
+        ネタ曲 : {"Yes" if songIns.isjoke else "No"}\n\
         歌詞 : ```{songIns.lyrics}```\n\
         \n'
         requests.post(NEW_DISCORD_URL, data={'content': content})
