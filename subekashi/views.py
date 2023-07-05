@@ -206,9 +206,8 @@ def new(request) :
         dataD["songIns"] = songIns
         dataD["isExist"] = True
 
-        pageURL = ("http://localhost:8000/" if DEBUG else "https://lyrics.imicomweb.com/") + f"song/{songIns.id}"
         content = f'**{songIns.title}**\n\
-        {pageURL}\n\
+        {ROOT_DIR}/song/{songIns.id}\n\
         チャンネル : {songIns.channel}\n\
         URL : {songIns.url}\n\
         模倣 : {", ".join([imitate.title for imitate in imitateInsL])}\n\
@@ -460,6 +459,9 @@ def dev(request) :
 
 def github(request) :
     return redirect("https://github.com/izumin2000/subekashi")
+
+def robots(request) :
+    return redirect(f"{ROOT_DIR}/static/subekashi/robots.txt")
 
 class SongViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Song.objects.all()

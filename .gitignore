@@ -6,5 +6,6 @@ db.sqlite3
 local_settings.py
 .htmlhintrc
 subekashi/sandbox
+iniadfront
 iniadynamap
 backups/*
