@@ -1,8 +1,7 @@
 from django.contrib import admin
 from . import views
-from django.urls import path,include
+from django.urls import path, include
 from rest_framework import routers
-
 
 app_name = 'subekashi'
 
@@ -24,5 +23,6 @@ urlpatterns = [
     path('error', views.error, name = 'error'),
     path('dev', views.dev, name = 'dev'),
     path('github', views.github, name = 'github'),
+    path('robots.txt', views.robots, name = 'robots'),
     path('api/',include(defaultRouter.urls)),
 ]
