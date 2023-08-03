@@ -207,7 +207,7 @@ def new(request) :
         dataD["isExist"] = True
 
         content = f'**{songIns.title}**\n\
-        {ROOT_DIR}/song/{songIns.id}\n\
+        {ROOT_DIR}/songs/{songIns.id}\n\
         チャンネル : {songIns.channel}\n\
         URL : {songIns.url}\n\
         模倣 : {", ".join([imitate.title for imitate in imitateInsL])}\n\
@@ -462,6 +462,9 @@ def github(request) :
 
 def robots(request) :
     return redirect(f"{ROOT_DIR}/static/subekashi/robots.txt")
+
+def sitemap(request) :
+    return redirect(f"{ROOT_DIR}/static/subekashi/sitemap.xml")
 
 class SongViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Song.objects.all()
