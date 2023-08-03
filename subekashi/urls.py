@@ -24,5 +24,6 @@ urlpatterns = [
     path('dev', views.dev, name = 'dev'),
     path('github', views.github, name = 'github'),
     path('robots.txt', views.robots, name = 'robots'),
+    path('sitemap.xml', views.sitemap, name = 'sitemap'),
     path('api/',include(defaultRouter.urls)),
 ]
