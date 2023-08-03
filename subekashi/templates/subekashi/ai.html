@@ -1,12 +1,12 @@
 {% extends "subekashi/base/base.html" %}
-{% block title %}生成された歌詞{% endblock %}
-{% block ogtitle %}生成された歌詞{% endblock %}
+{% block title %}生成された最高評価の歌詞{% endblock %}
+{% block ogtitle %}生成された最高評価の歌詞{% endblock %}
 {% load static %}
 {% block css %}{% static 'subekashi/css/ai.css'%}{% endblock %}
 
 {% block content %}
 <section id="aisection">
-    <h1>最高と評価された<br>生成された歌詞</h1>
+    <h1>生成された最高評価の歌詞</h1>
     <div class="underline"></div>
     {% for aiIns in aiInsL  %}
         <div class="lyricdiv">

@@ -22,9 +22,9 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>        <!-- sans font -->
         <link rel="shortcut icon" href="{% static 'subekashi/image/icon.ico' %}">
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@900&display=swap" rel="stylesheet">      <!-- sans font -->
-        <link href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" rel="stylesheet" /> <!-- toastr -->
     </head>
     <body>
+        <!-- {% include './global_header.html' %} -->
         {% include './header.html' %}
         <main>
             <article id="menuarticle">
@@ -39,6 +39,7 @@
 
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> <!-- jquery -->
     <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="{% static 'subekashi/js/base.js' %}" rel="stylesheet"></script>
     {% block js %}{% endblock %}
 </html>

@@ -8,7 +8,7 @@
 <section>
     {% if isExist %}
         <p id="songtitle"><i class="fas fa-music"></i>{{ songIns.title }}</p>
-        <a id="songchannel" href="{% url 'channel' songIns.channel %}"><i class="fas fa-user-circle"></i>{{ songIns.channel }}</a>
+        <a id="songchannel" href="{% url 'subekashi:channel' songIns.channel %}"><i class="fas fa-user-circle"></i>{{ songIns.channel }}</a>
         {% if songIns.url %}
             {% if songIns.url == "非公開" %}
                 <p id="songurl" href="{{ songIns.url }}"><i class="fas fa-link"></i>非公開</p>
@@ -19,26 +19,26 @@
         <div></div>
         <p id="songimitateslabel"><i class="fas fa-tags fa-xs"></i></p>
         {% for imitateIns in imitateInsL %}
-            <a class="songimitate" href="{% url 'song' imitateIns.id %}">{{ imitateIns.title }}模倣</a>
+            <a class="songimitate" href="{% url 'subekashi:song' imitateIns.id %}">{{ imitateIns.title }}模倣</a>
         {% endfor %}
         {% if songIns.channel == "全てあなたの所為です。" %}
             <p class="songimitate">オリジナル</p>
         {% endif %}
         {% if songIns.isoriginal %}
-            <a class="songimitate" href="{% url 'search' %}?filter=3">オリジナル模倣</a>
+            <a class="songimitate" href="{% url 'subekashi:search' %}?filter=3">オリジナル模倣</a>
         {% endif %}
         {% if songIns.isjoke %}
-            <a class="songimitate" href="{% url 'search' %}?filter=4">ネタ曲</a>
+            <a class="songimitate" href="{% url 'subekashi:search' %}?filter=4">ネタ曲</a>
         {% endif %}
         {% if songIns.isdraft %}
-            <a class="songimitate" href="{% url 'search' %}?filter=2">下書き</a>
+            <a class="songimitate" href="{% url 'subekashi:search' %}?filter=2">下書き</a>
         {% endif %}
         
         {% if imitatedInsL %}
             <div id="imitated">
             <p id="songimitatedslabel"><i class="fas fa-sitemap fa-xs"></i></p>
             {% for imitatedIns in imitatedInsL %}
-                <a class="songimitate" href="{% url 'song' imitatedIns.id %}">{{ imitatedIns.title }}</a>
+                <a class="songimitate" href="{% url 'subekashi:song' imitatedIns.id %}">{{ imitatedIns.title }}</a>
             {% endfor %}
             </div>
         {% endif %}
@@ -80,7 +80,7 @@
     });
 
     function tonew() {
-        window.location.href = "{% url 'new' %}?id={{ songIns.id }}";
+        window.location.href = "{% url 'subekashi:new' %}?id={{ songIns.id }}";
     }
 </script>
 {% endblock %}
