@@ -4,6 +4,7 @@ from dotenv import find_dotenv, load_dotenv
 from .local_settings import *
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+ROOT_DIR = "http://localhost:8000" if DEBUG else "https://lyrics.imicomweb.com"
 ALLOWED_HOSTS = [
     'subekashi.localhost',
     'lyrics.imicomweb.com',
