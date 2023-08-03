@@ -9,11 +9,11 @@
     <h1>新着の曲</h1>
     <div class="underline"></div>
     {% for songIns in songInsL %}
-        <a href="{% url 'song' songIns.id %}" class="buttona">
+        <a href="{% url 'subekashi:song' songIns.id %}" class="buttona">
             <div class="songcard">
                 <div class="cardleft">
                     <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"30" }}</p>
-                    <object><a class="songchannel" href="{% url 'channel' songIns.channel %}"><i class="fas fa-user-circle"></i> {{ songIns.channel }}</a></object>
+                    <object><a class="songchannel" href="{% url 'subekashi:channel' songIns.channel %}"><i class="fas fa-user-circle"></i> {{ songIns.channel }}</a></object>
                 </div>
                 <div class="cardright">
                     {% if songIns.lyrics %}
@@ -24,7 +24,7 @@
                     {% if songIns.url %}
                         <object><a class="songurl" href="{{ songIns.url }}">{{ songIns.url|slice:"30" }}</a></object>
                     {% else %}
-                        <object><a class="songurl" href="{% url 'new' %}?id={{ songIns.id }}">URL未登録</a></object>
+                        <object><a class="songurl" href="{% url 'subekashi:new' %}?id={{ songIns.id }}">URL未登録</a></object>
 
                     {% endif %}
                 </div>
@@ -32,8 +32,8 @@
         </a>
     {% endfor %}
     <div class="dummybuttons">
-        <a href="{% url 'search' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">もっと見る</p></div></a>
-        <a href="{% url 'new' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">曲を登録する</p></div></a>
+        <a href="{% url 'subekashi:search' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">もっと見る</p></div></a>
+        <a href="{% url 'subekashi:new' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">曲を登録する</p></div></a>
     </div>
     
     {% if aiInsL %}
@@ -43,8 +43,8 @@
             <p class="lyrics">{{ aiIns.lyrics }}</p>
         {% endfor %}
         <div class="dummybuttons">
-            <a href="{% url 'ai' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">もっと見る</p></div></a>
-            <a href="{% url 'make' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">曲を生成する</p></div></a>
+            <a href="{% url 'subekashi:ai' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">もっと見る</p></div></a>
+            <a href="{% url 'subekashi:make' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">曲を生成する</p></div></a>
         </div>
     {% endif %}
 
@@ -52,30 +52,30 @@
         <h1>情報不足の曲</h1>
         <div class="underline"></div>
         {% for songIns in lackInsL %}
-            <a href="{% url 'song' songIns.id %}" class="buttona">
+            <a href="{% url 'subekashi:song' songIns.id %}" class="buttona">
                 <div class="songcard">
                     <div class="cardleft">
                         <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"30" }}</p>
-                        <object><a class="songchannel" href="{% url 'channel' songIns.channel %}"><i class="fas fa-user-circle"></i> {{ songIns.channel }}</a></object>
+                        <object><a class="songchannel" href="{% url 'subekashi:channel' songIns.channel %}"><i class="fas fa-user-circle"></i> {{ songIns.channel }}</a></object>
                     </div>
                     <div class="cardright">
                         {% if songIns.lyrics %}
                             <p class="songlyrics">{{ songIns.lyrics|slice:"25" }}...</p>
                         {% else %}
-                            <object><a class="songlyrics" href="{% url 'new' %}?id={{ songIns.id }}">歌詞未登録</a></object>
+                            <object><a class="songlyrics" href="{% url 'subekashi:new' %}?id={{ songIns.id }}">歌詞未登録</a></object>
                         {% endif %}
                         {% if songIns.url %}
                             <object><a class="songurl" href="{{ songIns.url }}">{{ songIns.url|slice:"30" }}</a></object>
                         {% else %}
-                            <object><a class="songurl" href="{% url 'new' %}?id={{ songIns.id }}">URL未登録</a></object>
+                            <object><a class="songurl" href="{% url 'subekashi:new' %}?id={{ songIns.id }}">URL未登録</a></object>
                         {% endif %}
                     </div>
                 </div>
             </a>
         {% endfor %}
             <div class="dummybuttons">
-                <a href="{% url 'search' %}?filter=1"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">もっと見る</p></div></a>
-                <a href="{% url 'new' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">曲を登録する</p></div></a>
+                <a href="{% url 'subekashi:search' %}?filter=1"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">もっと見る</p></div></a>
+                <a href="{% url 'subekashi:new' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">曲を登録する</p></div></a>
             </div>
     {% endif %}
 
@@ -83,7 +83,7 @@
         <h1>未登録の曲</h1>
         <div class="underline"></div>
         {% for songIns in noneInsL %}
-        <a href="{% url 'new' %}?title={{ songIns.title }}" class="buttona">
+        <a href="{% url 'subekashi:new' %}?title={{ songIns.title }}" class="buttona">
             <div class="songcard">
                     <div class="cardleft">
                         <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"30" }}</p>
@@ -97,13 +97,13 @@
             </a>
         {% endfor %}
         <div class="dummybuttons">
-            <a href="{% url 'search' %}?filter=1"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">もっと見る</p></div></a>
-            <a href="{% url 'new' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">曲を登録する</p></div></a>
+            <a href="{% url 'subekashi:search' %}?filter=1"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">もっと見る</p></div></a>
+            <a href="{% url 'subekashi:new' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">曲を登録する</p></div></a>
         </div>
     {% endif %}
     
     <h1>フィードバック</h1>
-    <form action="{% url 'top' %}" method="POST">{% csrf_token %}
+    <form action="{% url 'subekashi:top' %}" method="POST">{% csrf_token %}
         <textarea id="feedback" name="feedback" placeholder="不具合の内容や機能の提案を入力"></textarea>
         <input id="feedbacksend" type="submit" name="submit" value="送信">
 
