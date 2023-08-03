@@ -58,12 +58,12 @@
         </div>
     </div>
     {% for songIns in songInsL %}
-        <a href="{% url 'song' songIns.id %}" class="buttona">
+        <a href="{% url 'subekashi:song' songIns.id %}" class="buttona">
             <div class="songcard" id="song{{ songIns.id }}">
                 <div class="cardleft">
                     <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"30" }}</p>
                     {% if songIns.channel %}
-                        <object><a class="songchannel" href="{% url 'channel' songIns.channel %}"><i class="fas fa-user-circle"></i> {{ songIns.channel }}</a></object>
+                        <object><a class="songchannel" href="{% url 'subekashi:channel' songIns.channel %}"><i class="fas fa-user-circle"></i> {{ songIns.channel }}</a></object>
                     {% else %}
                         <p class="songchannel"><i class="fas fa-user-circle"></i> チャンネル未登録</p>
                     {% endif %}
