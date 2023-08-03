@@ -1,4 +1,3 @@
-from email.policy import default
 from pathlib import Path
 import os
 from dotenv import find_dotenv, load_dotenv
@@ -6,13 +5,9 @@ from .local_settings import *
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 ROOT_DIR = "http://localhost:8000" if DEBUG else "https://lyrics.imicomweb.com"
-# DOMAIN = "localhost" if DEBUG else "imicomweb.com"
-# APPS = ["subekashi", "iniadynamap"]
-# ALLOWED_HOSTS = list(map(lambda x : f"{x}.{DOMAIN}", APPS))
 ALLOWED_HOSTS = [
     'subekashi.localhost',
     'lyrics.imicomweb.com',
-    'iniadynamap.localhost',
 ]
 
 INSTALLED_APPS = [
@@ -29,7 +24,6 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'django_hosts.middleware.HostsRequestMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
