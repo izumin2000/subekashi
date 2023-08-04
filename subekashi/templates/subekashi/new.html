@@ -8,7 +8,7 @@
 <section>
     <h1>登録と編集</h1>
     <div class="underline"></div>
-    <form action="{% url 'subekashi:new' %}" method="POST">{% csrf_token %}
+    <form action="{% url 'subekashi:new' %}" method="POST" id="newform">{% csrf_token %}
         <label>曲名*</label>
         <input type="text" id="title" name="title" oninput="checkExist()" value="{{ title }}"><br>
         <label>作者*</label>
@@ -58,7 +58,7 @@
             <input type="checkbox" id="isdraft" name="isdraft">
             <label onclick="divInput(4)">下書きとして投稿</label><br>
         </div>
-        <input type="submit" value="登録" id="submit" disabled>
+        <input type="submit" value="登録" id="newsubmit" disabled>
     </form>
     <p class="bottomelement">*がついているラベルは入力が必須です。</p>
     <p class="bottomelement">※入力は大文字・小文字・空白文字も区別されます。</p>
