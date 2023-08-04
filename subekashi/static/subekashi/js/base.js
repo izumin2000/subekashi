@@ -32,26 +32,6 @@ function menu() {
 }
 
 
-// 存在しないページのtoastr
-function notfound(){
-    toastr.options = {
-        "closeButton": false,
-        "debug": false,
-        "newestOnTop": false,
-        "progressBar": true,
-        "positionClass": "toast-bottom-right",
-        "preventDuplicates": false,
-        "onclick": null,
-        "timeOut": "3000",
-        "extendedTimeOut": "0",
-        "showEasing": "swing",
-        "hideEasing": "linear",
-    }
-
-    toastr.info("このページはまだ存在しません！")
-};
-
-
 // 可変テキストエリア
 function autotextarea() {
     let textarea = document.getElementById('lyrics');
@@ -77,7 +57,17 @@ function isCompleted(song) {
     }
 }
 
+async function getHeader() {
+    res = await fetch("https://script.google.com/macros/s/AKfycbx-0xNDgYC2FEtislBFe4afGaX0DbRTuSwHMUZH2380R34up5SV-D4eKRNls0f6keG5ow/exec");
+    resJson = await res.json();
+    var imindata = resJson[0].headdata;
+    document.getElementById("imiN_header").innerHTML = imindata;
+    globalHeaderEles = document.getElementsByClassName("imiN_list")[0];
+    // globalHeaderEles.children[0].remove();
+    // globalHeaderEles.children[2].remove();
+}
 
 window.onload = function() {
     kanji();
+    getHeader();
 }
