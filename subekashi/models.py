@@ -9,7 +9,7 @@ class Song(models.Model) :
     ruigo = models.CharField(default = "", max_length = 50000, blank = True, null = True)
     imitate = models.CharField(default = "", max_length = 1000, blank = True, null = True)
     imitated = models.CharField(default = "", max_length = 1000, blank = True, null = True)
-    posttime = models.DateTimeField(blank = False, null = False)
+    posttime = models.DateTimeField(blank = True, null = True)
     uploaddata = models.DateField(blank = True, null = True)
     isoriginal = models.BooleanField(default = False)
     isjoke = models.BooleanField(default = False)
