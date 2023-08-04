@@ -1,3 +1,7 @@
+#newform {
+    margin-bottom: 65px;
+}
+
 #isExist {
     margin: 10px 0 0 70px;
 }
@@ -94,6 +98,15 @@ input[type=checkbox] {
 
 #checkboxs {
     margin: 20px 0 0 -10px;
+}
+
+#newsubmit {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #eee;
+    padding: 0 10px;
+    margin: 20px 0;
 }
 
 #deletesubmit {
