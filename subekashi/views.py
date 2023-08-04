@@ -182,12 +182,14 @@ def new(request) :
             imitatedInsL = set(imitatedIns.imitated.split(","))
             imitatedInsL.add(str(songIns.id))
             imitatedIns.imitated = ",".join(imitatedInsL)
+            imitatedIns.posttime = timezone.now()
             imitatedIns.save()
         for imitateId in deleteImitateS :
             imitatedIns = Song.objects.get(pk = imitateId)
             imitatedInsL = set(imitatedIns.imitated.split(","))
             imitatedInsL.remove(str(songIns.id))
             imitatedIns.imitated = ",".join(imitatedInsL)
+            imitatedIns.posttime = timezone.now()
             imitatedIns.save()
         songIns.imitate = imitatesForm
 
@@ -244,6 +246,7 @@ def song(request, songId) :
                         imitateInsL.append(imitateIns)
                     else :
                         songIns.imitate = imitates.remove(imitateId)
+                        songIns.posttime = timezone.now()
                         songIns.save()
 
             dataD["imitateInsL"] = imitateInsL
@@ -259,6 +262,7 @@ def song(request, songId) :
                         imitatedInsL.append(imitatedIns)
                     else :
                         songIns.imitate = imitateds.remove(imitatedId)
+                        songIns.posttime = timezone.now()
                         songIns.save()
             dataD["imitatedInsL"] = imitatedInsL
 
@@ -390,7 +394,7 @@ def channel(request, channelName) :
 
 def search(request) :
     dataD = initD()
-    dataD["songInsL"] = Song.objects.all()
+    dataD["songInsL"] = Song.objects.order_by("-posttime")
     query = request.GET
     dataD["query"] = f"{query.get('title')},{query.get('channel')},{query.get('lyrics')},{query.get('filter')}".replace("None", "")
     return render(request, "subekashi/search.html", dataD)
@@ -433,6 +437,7 @@ def dev(request) :
                     songIns.url = song["url"]
                     songIns.lyrics = song["lyrics"]
                     songIns.isjapanese = song["isjapanese"]
+                    songIns.posttime = timezone.now()
                     songIns.save()
                 dataD["locked"] = False
 
