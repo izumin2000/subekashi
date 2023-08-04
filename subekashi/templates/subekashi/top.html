@@ -22,7 +22,11 @@
                         <p class="songlyrics">歌詞未登録</p>
                     {% endif %}
                     {% if songIns.url %}
-                        <object><a class="songurl" href="{{ songIns.url }}">{{ songIns.url|slice:"30" }}</a></object>
+                        {% if songIns.url == "非公開" %}
+                            <object><p id="songurl"><i class="fas fa-link"></i>非公開</p></object>
+                        {% else %}
+                            <object><a class="songurl" href="{{ songIns.url }}">{{ songIns.url|slice:"30" }}</a></object>
+                        {% endif %}
                     {% else %}
                         <object><a class="songurl" href="{% url 'subekashi:new' %}?id={{ songIns.id }}">URL未登録</a></object>
 
