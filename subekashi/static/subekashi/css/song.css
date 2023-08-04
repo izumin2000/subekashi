@@ -10,7 +10,11 @@ section p, section a {
     margin-left: 18px;
 }
 
-#songchannel ,#songurl, #songurlnotfound, #songlyricsnotfound {
+#songposttime i {
+    margin-right: 7px;
+}
+
+#songchannel ,#songurl, #songtitle, #songurlnotfound, #songlyricsnotfound {
     display: block;
     width: fit-content;
 }
@@ -19,7 +23,6 @@ section p, section a {
     text-align: center;
     margin-top: 40px;
 }
-
 
 #songimitateslabel, #songimitatedslabel {
     display: inline-block;
