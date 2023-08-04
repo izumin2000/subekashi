@@ -11,7 +11,7 @@
         <a id="songchannel" href="{% url 'subekashi:channel' songIns.channel %}"><i class="fas fa-user-circle"></i>{{ songIns.channel }}</a>
         {% if songIns.url %}
             {% if songIns.url == "非公開" %}
-                <p id="songurl" href="{{ songIns.url }}"><i class="fas fa-link"></i>非公開</p>
+                <p id="songurl"><i class="fas fa-link"></i>非公開</p>
             {% else %}
                 <a id="songurl" href="{{ songIns.url }}"><i class="fas fa-link"></i>{{ songIns.url|slice:"35" }}</a>
             {% endif %}
