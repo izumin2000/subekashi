@@ -6,6 +6,12 @@ from django.utils import timezone
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
+        for songId in options['d'] :
+            songIns = Song.objects.filter(pk = int(songId)).first()
+            if songIns :
+                print("delete song", songIns.id)
+                songIns.delete()
+
         songInsL = Song.objects.all() 
         songInsSet = set()
         for songIns in songInsL :
@@ -44,3 +50,6 @@ class Command(BaseCommand):
             
             if isChanged :
                 songIns.save()
+
+    def add_arguments(self, parser):
+        parser.add_argument('-d', required=False, nargs='*')
