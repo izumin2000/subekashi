@@ -1,4 +1,5 @@
-#newform {
+#newform, #deleteform {
+    display: none;
     margin-bottom: 65px;
 }
 
