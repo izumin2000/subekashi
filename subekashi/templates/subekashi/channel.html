@@ -15,7 +15,11 @@
                     <div class="cardleft">
                         <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"30" }}</p>
                         {% if songIns.url %}
-                            <object><a class="songurl" href="{{ songIns.url }}">{{ songIns.url|slice:"35" }}</a></object>
+                            {% if songIns.url == "非公開" %}
+                                <object><p id="songurl">非公開</p></object>
+                            {% else %}
+                                <object><a class="songurl" href="{{ songIns.url }}">{{ songIns.url|slice:"35" }}</a></object>
+                            {% endif %}
                         {% else %}
                             <p class="songurlnotfound">URL未登録</p>
                         {% endif %}
