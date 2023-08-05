@@ -14,6 +14,10 @@ async function firstLoad(baseURL, songId) {
 
     checkExist();
     songGuessEles = document.getElementsByClassName("songGuess");
+
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("newform").style.display = "block";
+    document.getElementById("deleteform").style.display = "block";
 }
 
 
