@@ -45,6 +45,8 @@ function searchSong() {
         songResult = songFilter("imitate", String(categoryId));
     }
 
+    titleValue = titleValue.replace(/\//g, "╱");
+
     songResult = songFilter("channel", channelValue);
     songResult = songFilter("title", titleValue);
     songResult = songFilter("lyrics", lyricsValue);

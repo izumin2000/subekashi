@@ -246,7 +246,6 @@ def song(request, songId) :
                         imitateInsL.append(imitateIns)
                     else :
                         songIns.imitate = imitates.remove(imitateId)
-                        songIns.posttime = timezone.now()
                         songIns.save()
 
             dataD["imitateInsL"] = imitateInsL
@@ -262,7 +261,6 @@ def song(request, songId) :
                         imitatedInsL.append(imitatedIns)
                     else :
                         songIns.imitate = imitateds.remove(imitatedId)
-                        songIns.posttime = timezone.now()
                         songIns.save()
             dataD["imitatedInsL"] = imitatedInsL
 

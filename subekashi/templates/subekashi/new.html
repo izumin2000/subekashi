@@ -8,6 +8,7 @@
 <section>
     <h1>登録と編集</h1>
     <div class="underline"></div>
+    <p id="loading">読み込み中</p>
     <form action="{% url 'subekashi:new' %}" method="POST" id="newform">{% csrf_token %}
         <label>曲名*</label>
         <input type="text" id="title" name="title" oninput="checkExist()" value="{{ title }}"><br>
@@ -66,7 +67,7 @@
     <p class="bottomelement">※一時的に全て歌詞の所為です。に載っていない曲を模倣曲として登録する為には、手動でその模倣曲を情報を登録しなければならない仕様になっております。ご不便おかけします。</p>
     <h1>曲の削除依頼</h1>
     <div class="underline"></div>
-    <form action="{% url 'subekashi:delete' %}" method="POST">{% csrf_token %}
+    <form action="{% url 'subekashi:delete' %}" method="POST" id="deleteform">{% csrf_token %}
         <label>削除理由</label>
         <input type="text" id="titleDelete" name="title" value="{{ title }}" hidden><br>
         <input type="text" id="channelDelete" name="channel" value="{{ channel }}" hidden><br>
