@@ -14,19 +14,23 @@ async function firstLoad(baseURL, songId) {
 
     checkExist();
     songGuessEles = document.getElementsByClassName("songGuess");
+
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("newform").style.display = "block";
+    document.getElementById("deleteform").style.display = "block";
 }
 
 
 function submitButtonControler() {
     titleValue = document.getElementById("title").value;
     channelValue = document.getElementById("channel").value;
-    submitEle = document.getElementById("submit");
+    submitEle = document.getElementById("newsubmit");
     submitEle.disabled = (titleValue == "") && (channelValue == "");
 }
 
 
 function setSubmitButton(titleValue, channelValue) {
-    submitEle = document.getElementById("submit");
+    submitEle = document.getElementById("newsubmit");
     if ((titleValue == "") || (channelValue == "")) {
         submitEle.disabled = true;
     } else {
@@ -59,6 +63,7 @@ function checkExist() {
     fillFormButtonEle = document.getElementById("fillFormButton");
 
     if ((titleValue != "") && (channelValue != "")) {
+        titleValue = titleValue.replace(/\//g, "╱");
         songResult = songJson.filter(song => song.title == titleValue).filter(song => song.channel == channelValue);
         if (songResult.length == 0) {
             isExistEle.innerHTML = "<span class='ok'>この曲は登録されていません。</span>";
