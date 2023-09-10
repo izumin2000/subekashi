@@ -58,13 +58,32 @@ function isCompleted(song) {
 }
 
 async function getHeader() {
-    res = await fetch("https://script.google.com/macros/s/AKfycbx-0xNDgYC2FEtislBFe4afGaX0DbRTuSwHMUZH2380R34up5SV-D4eKRNls0f6keG5ow/exec");
-    resJson = await res.json();
-    var imindata = resJson[0].headdata;
-    document.getElementById("imiN_header").innerHTML = imindata;
-    globalHeaderEles = document.getElementsByClassName("imiN_list")[0];
-    // globalHeaderEles.children[0].remove();
-    // globalHeaderEles.children[2].remove();
+    const url_to_get_header = "https://script.google.com/macros/s/AKfycbx-0xNDgYC2FEtislBFe4afGaX0DbRTuSwHMUZH2380R34up5SV-D4eKRNls0f6keG5ow/exec";
+
+    try {
+	const res = await fetch(url_to_get_header);
+	if ( ! res.ok ) {
+	    throw new RuntimeError(`getHeader: Response: ${res.status}`);
+	}
+
+	const res_json = await res.json();
+	const imindata = res_json[0].headdata;
+
+	const div_to_header = document.createElement("div");
+	div_to_header.innerHTML = imindata;
+	const header = div_to_header.children;
+
+	const target_elm = document.getElementById("imiN_header");
+	target_elm.append(...header);
+
+    } catch ( error ) {
+	console.error(error);
+
+	const p = document.createElement("p");
+	p.textContent = "ヘッダーを読み込めませんでした。再読み込みをお試しください。";
+	const target_elm = document.getElementById("imiN_header");
+	target_elm.append(p);
+    }
 }
 
 window.onload = function() {
