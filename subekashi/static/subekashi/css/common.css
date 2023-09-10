@@ -1,3 +1,7 @@
+:root {
+	--imiN-header-height: 30px;
+}
+
 * {
     margin: 0px;
     padding: 0px;
@@ -23,7 +27,22 @@ header {
     background-color: #000;
     border-bottom: solid 4px #fff;
     position: fixed;        /* 最上部に固定 */
-    top: 0px        /*0pxに*/
+    top: var(--imiN-header-height);
+}
+
+.imiN_header {
+	display: flex;
+	align-items: center;
+	position: relative;
+	width: 100%;
+	height: var(--imiN-header-height);
+	background-color: #fff;
+}
+
+.imiN_loading {
+	font-size: 0.9em;
+	color: #444;
+	margin-left: 10px;
 }
 
 .header-left {
