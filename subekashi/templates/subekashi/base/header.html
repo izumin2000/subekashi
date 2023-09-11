@@ -1,15 +1,23 @@
 {% load static %}
-<header>
-    <div class="header-left">
-        <a href="{% url 'subekashi:top' %}"><img name="thumbnail" class="logo" src="{% static 'subekashi/image/icon.png' %}" alt="全て歌詞の所為です。のロゴ"></a>
-        <a href="{% url 'subekashi:top' %}" class="logomoji">全て歌詞の所為です。</a>
+<header id="header">
+    <!-- イミコミュのヘッダー -->
+    <div class="imiN_header" id="imiN_header">
+        <p class="imiN_loading">Now loading...</p>
     </div>
 
-    <div class="header-right">
-        <nav>
-            <a onclick="menu()" id="menuicon"><i class="fas fas fa-bars"></i></a>
-        </nav>
-    </div>
+    <!-- 既存のヘッダー -->
+    <div class="subekashi_header" id="subekashi_header">
+        <div class="header-left">
+            <a href="{% url 'subekashi:top' %}"><img name="thumbnail" class="logo" src="{% static 'subekashi/image/icon.png' %}" alt="全て歌詞の所為です。のロゴ"></a>
+            <a href="{% url 'subekashi:top' %}" class="logomoji">全て歌詞の所為です。</a>
+        </div>
 
-    <div class="clear"></div>
+        <div class="header-right">
+            <nav>
+                <a onclick="menu()" id="menuicon"><i class="fas fas fa-bars"></i></a>
+            </nav>
+        </div>
+
+        <div class="clear"></div>
+    </div>
 </header>
