@@ -22,12 +22,12 @@ body {
 /* ヘッダー */
 header {
     z-index: 9999;
-    height: 64px;
+    height: auto;
     width: 100%;
     background-color: #000;
     border-bottom: solid 4px #fff;
-    position: fixed;        /* 最上部に固定 */
-    top: var(--imiN-header-height);
+    position: fixed;
+    top: 0;
 }
 
 .imiN_header {
@@ -35,7 +35,7 @@ header {
 	align-items: center;
 	position: relative;
 	width: 100%;
-	height: var(--imiN-header-height);
+	/* height: var(--imiN-header-height); */
 	background-color: #fff;
 }
 
@@ -43,6 +43,11 @@ header {
 	font-size: 0.9em;
 	color: #444;
 	margin-left: 10px;
+}
+
+.subekashi_header {
+	position: sticky;
+	top: 0;
 }
 
 .header-left {
@@ -190,7 +195,7 @@ a {
 /* メニュー */
 #menuarticle {
     display: none;
-    margin-top: 64px;
+    margin-top: 89px;
     height: 100vh;
     width: 100vw;
     top: 0;
