@@ -2,7 +2,7 @@
 <header id="header">
     <!-- イミコミュのヘッダー -->
     <div class="imiN_header" id="imiN_header">
-        <p class="imiN_loading">Now loading...</p>
+        <p class="imiN_loading">loading...</p>
     </div>
 
     <!-- 既存のヘッダー -->
@@ -14,10 +14,14 @@
 
         <div class="header-right">
             <nav>
-                <a onclick="menu()" id="menuicon"><i class="fas fas fa-bars"></i></a>
+                <a onclick="menu(this)" id="menubutton" class="menubutton"> 
+                    <i id="menuicon" class="fas fa-bars"></i>
+                </a>
             </nav>
         </div>
 
         <div class="clear"></div>
+        
+        {% include './menu.html' %}
     </div>
 </header>
