@@ -95,6 +95,11 @@ async function getHeader() {
 
     const header = document.getElementsByTagName("header")[0];
     header.style.top = `-${imiN_header.clientHeight}px`;
+
+    document.getElementsByClassName("fault")[0].remove();
+    var imiN_headerEle = document.getElementsByClassName("imiN_header_inner")[0].children[0]
+    imiN_headerEle.classList.add("imiN_headerOverwrite");
+    imiN_headerEle.textContent = "イミコミュメニュー";
 }
 
 window.onload = function() {
