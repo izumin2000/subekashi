@@ -244,6 +244,9 @@ a {
     list-style-type: none;
     margin-left: 32px;
     padding-left: calc(50% - 500px);
+}
+
+.menuarticle li a {
     font-family: 'Noto Sans JP', sans-serif;
     font-size: 30px !important;
     line-height: 60px !important;
