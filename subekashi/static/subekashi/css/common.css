@@ -53,6 +53,19 @@ header {
 	margin-left: 10px;
 }
 
+.imiN_headerOverwrite {
+    left: 0 !important;
+    right: 0 !important;
+    margin: auto;
+    text-align: center;
+    background-color: #FFF !important;
+    color: #000 !important;
+}
+
+.imiN_news p {
+    color: #000;
+}
+
 .subekashi_header {
 	position: sticky;
 	top: 0;
