@@ -222,7 +222,7 @@ a {
     display: block!important;
     margin-top: 0;
     height: 100vh;
-    width: 100vw;
+    width: calc(100vw - 18px);
     left: 0;
     background: linear-gradient(180deg, #000, #000, 70vh, #005);
 }
@@ -244,9 +244,6 @@ a {
     list-style-type: none;
     margin-left: 32px;
     padding-left: calc(50% - 500px);
-}
-
-.menuarticle li a {
     font-family: 'Noto Sans JP', sans-serif;
     font-size: 30px !important;
     line-height: 60px !important;
