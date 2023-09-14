@@ -17,18 +17,24 @@ function kanji() {
 
 // メニューの切り替え
 var isMain = true;
+const menuarticle = document.getElementById("menuarticle");
+const imiN_header = document.getElementById("imiN_header");
+
 function menu() {
-    if (isMain) {
-        document.getElementById("menuicon").innerHTML = "<i class='fas fa-times'></i>";
-        document.getElementById("menuarticle").style.display = "block";
-        document.getElementById("menuarticle").style.position = "fixed";
-        isMain = false;
-    } else {
-        document.getElementById("menuicon").innerHTML = "<i class='fas 	fas fa-bars'></i>";
-        document.getElementById("menuarticle").style.display = "none";
-        document.getElementById("menuarticle").style.position = "static";
-        isMain = true;
-    }
+    // imiN_header.classList.toggle("hide");
+
+    menuarticle.classList.toggle("shown");
+
+    /* XXX(Tpaefawzen): IDK why `menuicon` could not be global const;
+     * it is <i> element and toggling did not change its actual list of
+     * classes.  Therefore I am declaring here.
+     * OBTW `menuarticle` worked even it is declared globally.
+     */
+    const menuicon    = document.getElementById("menuicon");
+    menuicon.classList.toggle("fa-bars");
+    menuicon.classList.toggle("fa-times");
+
+    isMain = ! isMain;
 }
 
 
@@ -58,13 +64,42 @@ function isCompleted(song) {
 }
 
 async function getHeader() {
-    res = await fetch("https://script.google.com/macros/s/AKfycbx-0xNDgYC2FEtislBFe4afGaX0DbRTuSwHMUZH2380R34up5SV-D4eKRNls0f6keG5ow/exec");
-    resJson = await res.json();
-    var imindata = resJson[0].headdata;
-    document.getElementById("imiN_header").innerHTML = imindata;
-    globalHeaderEles = document.getElementsByClassName("imiN_list")[0];
-    // globalHeaderEles.children[0].remove();
-    // globalHeaderEles.children[2].remove();
+    /**
+     * @global imiN_header
+     */
+
+    const url_to_get_header = "https://script.google.com/macros/s/AKfycbx-0xNDgYC2FEtislBFe4afGaX0DbRTuSwHMUZH2380R34up5SV-D4eKRNls0f6keG5ow/exec";
+
+    try {
+	const res = await fetch(url_to_get_header);
+	if ( ! res.ok ) {
+	    throw new RuntimeError(`getHeader: Response: ${res.status}`);
+	}
+
+	const res_json = await res.json();
+	const imindata = res_json[0].headdata;
+
+	const div_to_header = document.createElement("div");
+	div_to_header.innerHTML = imindata;
+	const header = div_to_header.children;
+
+	imiN_header.append(...header);
+
+    } catch ( error ) {
+	console.error(error);
+
+	const p = document.createElement("p");
+	p.textContent = "ヘッダーを読み込めませんでした。再読み込みをお試しください。";
+	imiN_header.append(p);
+    }
+
+    const header = document.getElementsByTagName("header")[0];
+    header.style.top = `-${imiN_header.clientHeight}px`;
+
+    document.getElementsByClassName("fault")[0].remove();
+    var imiN_headerEle = document.getElementsByClassName("imiN_header_inner")[0].children[0]
+    imiN_headerEle.classList.add("imiN_headerOverwrite");
+    imiN_headerEle.textContent = "イミコミュメニュー";
 }
 
 window.onload = function() {
