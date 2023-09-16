@@ -1,17 +1,5 @@
 // 漢字のみ大きく
 function kanji() {
-    tags = ['p', 'a', 'h1', 'h2', 'li'];
-    for (tag of tags) {
-        for (p of document.getElementsByTagName(tag)) {
-            if (p.className != "nokanji") {
-                if (['p', 'a', "li"].includes(tag)) {
-                    p.innerHTML = p.innerHTML.replace(/([\u4E00-\u9FFF])/gi,"<font class=kanjipa>$1</font>");
-                } else {
-                    p.innerHTML = p.innerHTML.replace(/([\u4E00-\u9FFF])/gi,"<font class=kanjih>$1</font>");
-                }
-            }
-        }
-    }
 }
 
 

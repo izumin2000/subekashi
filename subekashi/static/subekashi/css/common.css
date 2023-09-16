@@ -2,6 +2,12 @@
 	--imiN-header-height: 30px;
 }
 
+/* @font-face {
+    font-family: "Imitate";
+    src:
+        url("../GenZenGothicKaiC.woff2") format("woff2"),
+} */
+
 * {
     margin: 0px;
     padding: 0px;
@@ -16,6 +22,8 @@ body {
     margin: 0;
     padding: 0;
     -webkit-text-size-adjust: 100%;
+    /* font-family: 'Imitate', sans-serif; */
+    font-family: 'Noto Sans JP', sans-serif;
 }
 
 
@@ -85,7 +93,6 @@ header {
 
 .logomoji {
     display: inline-block;
-    font-family: 'Noto Sans JP', sans-serif;
     vertical-align: top; 
     margin-top: 18px;
     font-size: 20px;
@@ -101,7 +108,6 @@ header {
 
 .header-right nav a {
     display: inline-block;
-    font-family: 'Noto Sans JP', sans-serif;
     font-size: 20px;
     line-height: 20px;
     margin-right: 8px;
@@ -148,7 +154,6 @@ main {
 
 h1 {
     text-align: center;
-    font-family: 'Noto Sans JP', sans-serif;
     color: #FFF;
     font-size: 40px;
     line-height: 50px;
@@ -162,7 +167,6 @@ h1 {
 }
 
 h2 {
-    font-family: 'Noto Sans JP', sans-serif;
     font-size: 25px;
     line-height: 50px;
     color: #FFF;
@@ -170,7 +174,6 @@ h2 {
 }
 
 p, li {
-    font-family: 'Noto Sans JP', sans-serif;
     font-weight: 900;
     color: #fff;
     font-size: 18px;
@@ -180,7 +183,6 @@ p, li {
 a {
     color: #fff;
     text-decoration: underline 2px #fff;
-    font-family: 'Noto Sans JP', sans-serif;
     font-size: 18px;
     line-height: 27px;
 }
@@ -231,7 +233,6 @@ a {
     margin-left: 32px!important;
     margin-bottom: 0!important;
     padding: 0 0 0 calc(50% - 550px);
-    font-family: 'Noto Sans JP', sans-serif;
     font-size: 45px !important;
     line-height: 75px !important;
 }
@@ -244,7 +245,6 @@ a {
     list-style-type: none;
     margin-left: 32px;
     padding-left: calc(50% - 500px);
-    font-family: 'Noto Sans JP', sans-serif;
     font-size: 30px !important;
     line-height: 60px !important;
     text-decoration: underline;
@@ -284,7 +284,6 @@ a {
 
 /* フォーム */
 input, select, option, textarea {
-    font-family: 'Noto Sans JP', sans-serif;
     height: 50px;
     width: calc(50vw - 100px);
     margin-top: 20px;
@@ -310,7 +309,6 @@ input:focus::placeholder {
 }
 
 label {
-    font-family: 'Noto Sans JP', sans-serif;
     color: #fff;
     font-size: 18px;
     line-height: 27px;
@@ -324,7 +322,6 @@ textarea {
 }
 
 #submit, button, .dummybutton {
-    font-family: 'Noto Sans JP', sans-serif;
     padding-left: 0px;
     height: 49.5px;
     width: 100px;
@@ -395,7 +392,6 @@ textarea {
 .cardleft {
     text-align:left;
     float:left;
-    font-family: 'Noto Sans JP', sans-serif;
     padding: 0 15px;
 }
 
@@ -493,7 +489,6 @@ footer {
 }
 
 .footer-left p {
-    font-family: 'Noto Sans JP', sans-serif;
     color: #fff;
     font-size: 12px;
     line-height: 12px;
@@ -501,7 +496,6 @@ footer {
 }
 
 .footer-right a {
-    font-family: 'Noto Sans JP', sans-serif;
     font-size: 12px;
     line-height: 12px;
     float: right;
