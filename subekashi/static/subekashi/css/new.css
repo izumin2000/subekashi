@@ -46,7 +46,6 @@
 
 .category {
     display: inline-block;
-    font-family: 'Noto Sans JP', sans-serif;
     margin: 10px 0 !important;
     padding-left: 0px;
     height: 49.5px;
@@ -111,7 +110,6 @@ input[type=checkbox] {
 }
 
 #deletesubmit {
-    font-family: 'Noto Sans JP', sans-serif;
     padding-left: 0px;
     height: 49.5px;
     width: 100px;
