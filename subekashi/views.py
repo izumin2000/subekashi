@@ -118,6 +118,11 @@ def new(request) :
         songIns.isjoke = int(bool(isjokeForm))
         songIns.isdraft = int(bool(isdraftForm))
         songIns.posttime = timezone.now()
+        forwarded_addresses = request.META.get('HTTP_X_FORWARDED_FOR')
+        if forwarded_addresses:
+            songIns.ip = forwarded_addresses.split(',')[0]
+        else:
+            songIns.ip = request.META.get('REMOTE_ADDR')
         songIns.save()
         
         imitateInsL = []
@@ -133,6 +138,7 @@ def new(request) :
         URL : {songIns.url}\n\
         模倣 : {", ".join([imitate.title for imitate in imitateInsL])}\n\
         ネタ曲 : {"Yes" if songIns.isjoke else "No"}\n\
+        IP : {songIns.ip}\n\
         歌詞 : ```{songIns.lyrics}```\n\
         \n'
         requests.post(NEW_DISCORD_URL, data={'content': content})
