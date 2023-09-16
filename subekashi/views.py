@@ -1,11 +1,9 @@
 from django.shortcuts import render, redirect
-from subekashi.models import Song, Ai, Genecategory, Genesong, Singleton
+from subekashi.models import Song, Ai, Singleton
 import hashlib
 import requests
 from .reset import subeana_LIST
 import random
-from janome.tokenizer import Tokenizer
-import networkx as nx
 import random
 from rest_framework import viewsets
 from .serializer import SongSerializer, AiSerializer
@@ -17,85 +15,6 @@ from django.utils import timezone
 # パスワード関連
 SHA256a = "5802ea2ddcf64db0efef04a2fa4b3a5b256d1b0f3d657031bd6a330ec54abefd"
 REPLACEBLE_HINSHIS = ["名詞", "動詞", "形容詞"]
-
-
-def counter(word) :
-    word = str(word)
-    hiragana = [(i >= "ぁ") and (i <= "ゟ") for i in word].count(True)
-    katakana = [(i >= "ァ") and (i <= "ヿ") for i in word].count(True)
-    kanji = [(i >= "一") and (i <= "鿼") for i in word].count(True)
-    return hiragana, katakana, kanji
-
-
-def tokenizerJanome(text):
-    tokL = []
-    j_t = Tokenizer()
-
-    for tok in j_t.tokenize(text, wakati=False) :
-        hinshi = tok.part_of_speech.split(',')[0]
-        if hinshi == "動詞" :
-            katsuyou = tok.infl_form[:2]
-        elif hinshi == "形容詞" :
-            katsuyou = tok.infl_form[:2]
-        elif hinshi == "名詞" :
-            katsuyou = tok.part_of_speech
-        else :
-            katsuyou = ""
-        tokL.append((tok.surface, hinshi, katsuyou))
-    return tokL
-
-def vectorGenerate(originalIns, imitateInsL, dataD) :
-    lyrics = ""
-    simD = {}
-    tokL = tokenizerJanome(originalIns.lyrics)    
-    for imitateIns in imitateInsL :
-        ruigoDict = imitateIns.ruigo
-        if ruigoDict :
-            for hinshiKatsuyou, words in eval(ruigoDict).items() :
-                if hinshiKatsuyou in simD.keys() :
-                    simD[hinshiKatsuyou] += words
-                else :
-                    simD[hinshiKatsuyou] = words
-
-    hinshiBefore = ""
-    for word, hinshi, katsuyou in tokL :
-        if (hinshi in REPLACEBLE_HINSHIS) and not(word.isdigit()) :
-            if (hinshi == "名詞") and (hinshiBefore == "名詞") :
-                continue
-            hinshiBefore = hinshi
-            hinshiKatsuyou = hinshi + katsuyou
-            if hinshiKatsuyou in simD.keys() :
-                pickWords = [word]
-                for pickword in simD[hinshiKatsuyou] :
-                    pickWords.append(pickword)
-                lyrics += random.choice(pickWords)
-            else :
-                lyrics += word
-            # simD[hinshi + katsuyou].remove(sim)
-        else :
-            lyrics += word
-
-        hinshiBefore = hinshi
-    aiInsL = []
-    for lyric in lyrics.split("\n") :
-        if len(lyric) >= 2 :
-            aiIns = Ai.objects.create()
-            aiIns.lyrics = lyric
-            aiIns.genetype = dataD["genetype"]
-            aiIns.save()
-            aiInsL.append(aiIns)
-            if dataD["genetype"] == "category" :
-                genecategoryIns = Genecategory.objects.create()
-                genecategoryIns.ai = aiIns
-                genecategoryIns.category = dataD["category"]
-                genecategoryIns.save()
-            elif dataD["genetype"] == "song" :
-                genesongIns = Genesong.objects.create()
-                genesongIns.ai = aiIns
-                genesongIns.title = dataD["title"]
-                genesongIns.similar = int(dataD["similar"])
-                genesongIns.save()
-    return aiInsL
 
 
 def formatURL(url) :
@@ -199,6 +118,11 @@ def new(request) :
         songIns.isjoke = int(bool(isjokeForm))
         songIns.isdraft = int(bool(isdraftForm))
         songIns.posttime = timezone.now()
+        forwarded_addresses = request.META.get('HTTP_X_FORWARDED_FOR')
+        if forwarded_addresses:
+            songIns.ip = forwarded_addresses.split(',')[0]
+        else:
+            songIns.ip = request.META.get('REMOTE_ADDR')
         songIns.save()
         
         imitateInsL = []
@@ -214,6 +138,7 @@ def new(request) :
         URL : {songIns.url}\n\
         模倣 : {", ".join([imitate.title for imitate in imitateInsL])}\n\
         ネタ曲 : {"Yes" if songIns.isjoke else "No"}\n\
+        IP : {songIns.ip}\n\
         歌詞 : ```{songIns.lyrics}```\n\
         \n'
         requests.post(NEW_DISCORD_URL, data={'content': content})
@@ -293,82 +218,7 @@ def make(request) :
         genetypeForm = request.POST.get("genetype")
 
         # TODO model以外もAIを対応させる
-        if genetypeForm != "model" :
-            return render(request, "subekashi/make.html", dataD)
-            
-        dataD["genetype"] = genetypeForm
-        if genetypeForm == "category" :
-            categoryForm = request.POST.get("category")
-            dataD["category"] = categoryForm
-
-            if (categoryForm == "選択してください") :
-                return render(request, "subekashi/error.html")
-
-            imitateInsL = set()
-            originalIns = Song.objects.filter(title = categoryForm[:-2]).first()
-            for songIns in Song.objects.all() :
-                if songIns.title == categoryForm[:-2] :
-                    imitateInsL.add(songIns)
-                elif songIns.imitate :
-                    if originalIns.id in songIns.imitate.split(","):
-                        imitateInsL.add(songIns)
-        
-            aiInsL = vectorGenerate(originalIns, imitateInsL, dataD)
-            dataD["aiInsL"] = aiInsL
-            return render(request, "subekashi/result.html", dataD)
-                
-        elif genetypeForm == "song" :
-            titleForm = request.POST.get("title")
-            dataD["title"] = titleForm
-            similarForm = request.POST.get("similar")
-            dataD["similar"] = similarForm
-
-            if (titleForm == "") :
-                return render(request, "subekashi/error.html")
-
-            imitateInsL = []
-            for songIns in Song.objects.all() :
-                name = songIns.id
-                if songIns.imitate :
-                    for imitate in songIns.imitate.split(",") :
-                        imitateInsL.append((name, imitate, 1))
-                if songIns.imitated :
-                    for imitated in songIns.imitated.split(",") :
-                        imitateInsL.append((name, imitated, 1))
-                
-
-            G = nx.Graph()
-            G.add_weighted_edges_from(imitateInsL, weight='weight')
-
-            originalIns = Song.objects.filter(title = titleForm).first()
-            
-            if originalIns.id in G.nodes() :
-                length, _ = nx.single_source_dijkstra(G, originalIns.id)
-            else :
-                length = 0
-
-            inp_pops = 5 - int(similarForm)
-            imitateInsL = set([originalIns])
-            disableGene = True
-            if length :
-                for id, pops in length.items() :
-                    if pops <= inp_pops :
-                        songIns = Song.objects.get(pk = id)
-                        if not(songIns.isjoke) and songIns.isjapanese :
-                            imitateInsL.add(songIns)
-                            if disableGene :
-                                if songIns.ruigo :
-                                    disableGene = False
-            
-            if disableGene :
-                dataD["error"] = "生成に必要なデータが揃ってないようです"
-                return render(request, "subekashi/make.html", dataD)
-            else :
-                aiInsL = vectorGenerate(originalIns, imitateInsL, dataD)
-                dataD["aiInsL"] = aiInsL
-                return render(request, "subekashi/result.html", dataD)
-
-        elif genetypeForm == "model" :
+        if genetypeForm == "model" :
             aiIns = Ai.objects.filter(genetype = "model", score = 0)
             if not(len(aiIns)) :
                 sendDiscord(ERROR_DISCORD_URL, "aiInsのデータがありません。")
@@ -460,14 +310,18 @@ def dev(request) :
             
     return render(request, "subekashi/dev.html", dataD)
 
+
 def github(request) :
     return redirect("https://github.com/izumin2000/subekashi")
+
 
 def robots(request) :
     return redirect(f"{ROOT_DIR}/static/subekashi/robots.txt")
 
+
 def sitemap(request) :
     return redirect(f"{ROOT_DIR}/static/subekashi/sitemap.xml")
+
 
 class SongViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Song.objects.all()
