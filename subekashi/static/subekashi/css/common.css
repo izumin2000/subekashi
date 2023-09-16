@@ -191,13 +191,8 @@ a {
     text-decoration: none;
 }
 
-.kanjipa {
-    font-size: 27px;
-}
-
-.kanjih {
-    font-size: 50px;
-    line-height: 50px;
+.nokanji {
+    font-family: 'Noto Sans JP', sans-serif;
 }
 
 .underline {
@@ -241,7 +236,7 @@ a {
     margin-top: 0px
 }
 
-.menuarticle li {
+.menuarticle ul li a {
     list-style-type: none;
     margin-left: 32px;
     padding-left: calc(50% - 500px);
@@ -254,7 +249,7 @@ a {
 	.menuarticle h2 {
 		display: none;
 	}
-	.menuarticle li {
+	.menuarticle ul li a {
 		margin-bottom: -5px;
 	}
 }

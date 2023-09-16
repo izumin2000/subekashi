@@ -9,7 +9,7 @@
     <h1>新着の曲</h1>
     <div class="underline"></div>
     {% for songIns in songInsL %}
-        <a href="{% url 'subekashi:song' songIns.id %}" class="buttona">
+        <a href="{% url 'subekashi:song' songIns.id %}" class="buttona ">
             <div class="songcard">
                 <div class="cardleft">
                     <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"30" }}</p>
@@ -56,7 +56,7 @@
         <h1>情報不足の曲</h1>
         <div class="underline"></div>
         {% for songIns in lackInsL %}
-            <a href="{% url 'subekashi:song' songIns.id %}" class="buttona">
+            <a href="{% url 'subekashi:song' songIns.id %}" class="buttona ">
                 <div class="songcard">
                     <div class="cardleft">
                         <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"30" }}</p>
