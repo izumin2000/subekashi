@@ -1,5 +1,19 @@
 // 漢字のみ大きく
 function kanji() {
+    tags = ['p', 'a', 'h1', 'h2', 'li', 'texterea'];
+    for (tag of tags) {
+        for (charEle of document.getElementsByTagName(tag)) {
+            if ((!charEle.classList.contains('staticSize') && (!charEle.classList.contains('buttona')) && (charEle != null))) {
+                var computedStyle = window.getComputedStyle(charEle);
+                var fontSize = computedStyle.getPropertyValue('font-size');
+                var FontSize = parseFloat(fontSize)
+                var sizeUnit = fontSize.replace(FontSize.toString(), "");
+                var newStyle = `font-size: ${parseInt(FontSize * 1.5)}${sizeUnit}`
+                var newCharEle = charEle.innerHTML.replace(/([\u4E00-\u9FFF])/gi,`<span style="${newStyle}">$1</span>`)
+                charEle.innerHTML = newCharEle
+            }
+        }
+    }
 }
 
 
