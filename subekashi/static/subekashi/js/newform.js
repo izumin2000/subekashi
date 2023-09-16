@@ -103,11 +103,11 @@ function fillForm() {
             appendImitate(song);
         }
     }
-	document.getElementById("lyrics").value = songResult.lyrics;
-	document.getElementById("isorginal").checked = songResult.isoriginal;
-	document.getElementById("isjapanese").checked = songResult.isjapanese;
-	document.getElementById("isjoke").checked = songResult.isjoke;
-	document.getElementById("isdraft").checked = songResult.isdraft;
+    document.getElementById("lyrics").value = songResult.lyrics;
+    document.getElementById("isorginal").checked = songResult.isoriginal;
+    document.getElementById("isjapanese").checked = songResult.isjapanese;
+    document.getElementById("isjoke").checked = songResult.isjoke;
+    document.getElementById("isdraft").checked = songResult.isdraft;
 }
 
 

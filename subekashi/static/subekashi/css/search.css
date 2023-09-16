@@ -2,6 +2,10 @@
     display: none;
 }
 
+#loading {
+    margin-bottom: 60px;
+}
+
 @media (max-width: 515px) {
     input, select {
         margin-top: 0;
