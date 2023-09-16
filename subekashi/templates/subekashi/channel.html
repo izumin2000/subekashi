@@ -11,7 +11,7 @@
     {% if songInsL %}
         {% for songIns in songInsL %}
             <div class="songcard">
-                <a href="{% url 'subekashi:song' songIns.id %}" class="buttona">
+                <a href="{% url 'subekashi:song' songIns.id %}" class="buttona ">
                     <div class="cardleft">
                         <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"30" }}</p>
                         {% if songIns.url %}

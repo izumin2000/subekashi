@@ -58,7 +58,7 @@
         </div>
     </div>
     {% for songIns in songInsL %}
-        <a href="{% url 'subekashi:song' songIns.id %}" class="buttona">
+        <a href="{% url 'subekashi:song' songIns.id %}" class="buttona ">
             <div class="songcard" id="song{{ songIns.id }}">
                 <div class="cardleft">
                     <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"30" }}</p>
