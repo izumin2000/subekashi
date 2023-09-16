@@ -11,6 +11,8 @@
 * {
     margin: 0px;
     padding: 0px;
+    /* font-family: 'Imitate', sans-serif; */
+    font-family: 'Noto Sans JP', sans-serif;
 }
 
 html {
@@ -22,8 +24,6 @@ body {
     margin: 0;
     padding: 0;
     -webkit-text-size-adjust: 100%;
-    /* font-family: 'Imitate', sans-serif; */
-    font-family: 'Noto Sans JP', sans-serif;
 }
 
 
@@ -155,7 +155,7 @@ main {
 h1 {
     text-align: center;
     color: #FFF;
-    font-size: 40px;
+    font-size: 30px;
     line-height: 50px;
     margin: 75px 0 10px 0;
 }
@@ -167,7 +167,7 @@ h1 {
 }
 
 h2 {
-    font-size: 25px;
+    font-size: 20px;
     line-height: 50px;
     color: #FFF;
     margin: 40px 20px 20px 20px;
@@ -185,14 +185,6 @@ a {
     text-decoration: underline 2px #fff;
     font-size: 18px;
     line-height: 27px;
-}
-
-.buttona {
-    text-decoration: none;
-}
-
-.nokanji {
-    font-family: 'Noto Sans JP', sans-serif;
 }
 
 .underline {
