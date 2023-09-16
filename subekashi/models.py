@@ -14,6 +14,9 @@ class Song(models.Model) :
     isjoke = models.BooleanField(default = False)
     isjapanese = models.BooleanField(default = True)
     isdraft = models.BooleanField(default = False)
+    isinst = models.BooleanField(default = False)
+    issubeana= models.BooleanField(default = True)
+    ip = models.CharField(default = "", max_length = 100)
 
     def __str__(self):
         return self.title
