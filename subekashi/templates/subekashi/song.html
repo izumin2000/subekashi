@@ -13,7 +13,7 @@
             {% if songIns.url == "非公開" %}
                 <p id="songurl"><i class="fas fa-link"></i>非公開</p>
             {% else %}
-                <a id="songurl" href="{{ songIns.url }}"><i class="fas fa-link"></i>{{ songIns.url|slice:"35" }}</a>
+                <a id="songurl" href="{{ songIns.url }}"><i class="fas fa-link"></i>{{ songIns.url }}</a>
             {% endif %}
         {% endif %}
         <div></div>
