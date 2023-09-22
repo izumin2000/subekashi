@@ -1,6 +1,6 @@
 // 漢字のみ大きく
 function kanji() {
-    tags = ['p', 'a', 'h1', 'h2', 'li', 'textarea', 'input', 'button'];
+    tags = ['p', 'a', 'h1', 'h2', 'li', 'textarea', 'input', 'button', 'summary'];
     for (tag of tags) {
         for (charEle of document.getElementsByTagName(tag)) {
             if ((!charEle.classList.contains('staticSize') && (!charEle.classList.contains('buttona')) && (charEle != null))) {
