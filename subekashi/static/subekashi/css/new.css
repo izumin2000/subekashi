@@ -2,9 +2,29 @@
     margin-bottom: 120px;
 }
 
+details {
+    margin-top: 50px;
+}
+
+details h2 {
+    margin: 20px 0 10px 0;
+}
+
+details ul li {
+    margin: 0 0 10px 25px;
+}
+
+details ul ul {
+    margin-left: 40px;
+}
+
+.detailP {
+    font-size: 12px;
+}
+
 #newform, #deleteform {
     display: none;
-    margin-bottom: 65px;
+    margin: 20px 0 65px 0;
 }
 
 #isExist {

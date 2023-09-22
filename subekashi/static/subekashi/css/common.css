@@ -167,10 +167,10 @@ h1 {
 }
 
 h2 {
-    font-size: 20px;
-    line-height: 50px;
+    font-size: 24px;
+    line-height: 32px;
     color: #FFF;
-    margin: 40px 20px 20px 20px;
+    margin-top: 10px;
 }
 
 p, li {
@@ -201,6 +201,13 @@ a {
     }
 }
 
+details {
+    color: #FFF;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 27px;
+}
+
 
 /* メニュー */
 .menuarticle {
@@ -217,8 +224,7 @@ a {
 }
 
 .menuarticle h2 {
-    margin-left: 32px!important;
-    margin-bottom: 0!important;
+    margin: 30px 0 0 30px;
     padding: 0 0 0 calc(50% - 550px);
     font-size: 45px !important;
     line-height: 75px !important;
