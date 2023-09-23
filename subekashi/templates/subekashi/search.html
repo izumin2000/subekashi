@@ -65,7 +65,11 @@
                     {% if songIns.channel %}
                         <object><a class="songchannel" href="{% url 'subekashi:channel' songIns.channel %}"><i class="fas fa-user-circle"></i> {{ songIns.channel|slice:"20" }}</a></object>
                     {% else %}
-                        <p class="songchannel"><i class="fas fa-user-circle"></i> チャンネル未登録</p>
+                        {% if songIns.isinst %}
+                            <p class="songlyrics">インスト曲</p>
+                        {% else %}
+                            <object><a class="songlyrics" href="{% url 'subekashi:new' %}?id={{ songIns.id }}">歌詞未登録</a></object>
+                        {% endif %}
                     {% endif %}
                 </div>
                 <div class="cardright">
@@ -81,7 +85,7 @@
                             <object><a class="songurl" href="{{ songIns.url }}">{{ songIns.url|slice:"30" }}</a></object>
                         {% endif %}
                     {% else %}
-                        <p class="songurl">URL未登録</p>
+                        <object><a class="songurl" href="{% url 'subekashi:new' %}?id={{ songIns.id }}">URL未登録</a></object>
                     {% endif %}
                 </div>
             </div>
