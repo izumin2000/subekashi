@@ -77,6 +77,8 @@ def new(request) :
         isdeletedForm = request.POST.get("isdeleted")
         isjapaneseForm = request.POST.get("isjapanese")
         isjokeForm = request.POST.get("isjoke")
+        isinstForm = request.POST.get("isinst")
+        issubeanaForm = request.POST.get("issubeana")
         isdraftForm = request.POST.get("isdraft")
 
         if ("" in [titleForm, channelForm]) :
@@ -116,6 +118,8 @@ def new(request) :
         songIns.isoriginal = int(bool(isorginalForm))
         songIns.isjapanese = int(bool(isjapaneseForm))
         songIns.isjoke = int(bool(isjokeForm))
+        songIns.isinst = int(bool(isinstForm))
+        songIns.issubeana = int(bool(issubeanaForm))
         songIns.isdraft = int(bool(isdraftForm))
         songIns.posttime = timezone.now()
         forwarded_addresses = request.META.get('HTTP_X_FORWARDED_FOR')
