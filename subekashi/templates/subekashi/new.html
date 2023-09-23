@@ -59,12 +59,12 @@
             <li>いわゆるオリジナル模倣曲・フリースタイル模倣曲の場合はチェックをつけてください。</li>
             <li>例）『<a href="https://youtu.be/XkIKM80-Znc?si=j1Zr9TGQ4r6WJNzI">∴∴∴∴</a>』, 『<a href="https://youtu.be/zDUvoKUOviQ?si=PCEGV4vWQS_PVbpC">天秤にかけて</a>』, 『<a href="https://youtu.be/Z7NuHcBTQ4w?si=_sZunWHzp8pUOXP8">色素』</a>など。</li>
         </ul>
-        <h2>非公開の曲</h2>
+        <h2>非公開</h2>
         <ul>
             <li>URL先にアクセスしても閲覧できない状態になった場合はチェックしてください。</li>
             <li>限定公開の場合はチェックする必要はありません。</li>
         </ul>
-        <h2>日本語の曲</h2>
+        <h2>日本語</h2>
         <ul>
             <li>歌詞の大半が日本語の場合はチェックしてください。</li>
             <li>日本語以外の言語や暗号のみ。</li>
@@ -78,7 +78,7 @@
             <li>歌詞がトチ狂っていたり、本当の狂気について考えたりしている曲はネタ曲です。</li>
             <li>ネタ曲かどうかの判断は個人の判断に任せます。</li>
         </ul>
-        <h2>インスト曲</h2>
+        <h2>インスト</h2>
         <ul>
             <li>歌詞の無い曲の場合はチェックしてください。</li>
             <li>『<a href="https://www.youtube.com/watch?v=evR5ei8_e5s">M.A.Z.[short]</a>』, 『<a href="https://youtu.be/2P62pozC9Zc?si=2o0gIT63eJpH2CZS">またの御アクセスをお待ちしております。</a>』, 『<a href="https://youtu.be/BrUcribiF4w?si=DgBmy0GSxgFyndjd">V</a>』など。</li>
@@ -88,7 +88,7 @@
             <li>すべあな界隈曲の場合はチェックしてください。</li>
             <li>すべあな界隈曲かどうかの判断は個人の判断に任せます。</li>
         </ul>
-        <h2>下書きとして投稿</h2>
+        <h2>下書き</h2>
         <ul>
             <li>下書きとして投稿したい場合はチェックしてください。</li>
             <li>下書きした内容は下書きとしてマークされます。</li>
@@ -101,7 +101,7 @@
             <li>タイトルとチャンネル名を入力すると、登録ができる状態になります。</li>
             <li>稀にタイトルとチャンネル名を入力しても登録できない不具合が発生するので、発生次第<a href="{% url 'subekashi:top' %}#feedback">こちら</a>からご連絡ください。</li>
         </ul>
-        <h2>曲の削除依頼</h2>
+        <h2>削除依頼</h2>
         <ul>
             <li>開発者に曲の削除依頼を送ります。</li>
             <li>実際に削除の対応をするまでに時間がかかる場合があります。</li>
@@ -150,22 +150,22 @@
             <input type="checkbox" id="isorginal" name="isorginal">
             <label onclick="divInput(0)">オリジナル模倣</label>
             <input type="checkbox" id="isdeleted" name="isdeleted">
-            <label onclick="divInput(1)">非公開の曲</label>
+            <label onclick="divInput(1)">非公開</label>
             <input type="checkbox" id="isjapanese" name="isjapanese" checked>
-            <label onclick="divInput(2)">日本語の曲</label>
+            <label onclick="divInput(2)">日本語</label>
             <input type="checkbox" id="isjoke" name="isjoke">
             <label onclick="divInput(3)">ネタ曲</label>
             <input type="checkbox" id="isinst" name="isinst">
-            <label onclick="divInput(4)">インスト曲</label>
+            <label onclick="divInput(4)">インスト</label>
             <input type="checkbox" id="issubeana" name="issubeana">
             <label onclick="divInput(5)">すべあな界隈曲</label><br>
             <input type="checkbox" id="isdraft" name="isdraft">
-            <label onclick="divInput(6)">下書きとして投稿</label><br>
+            <label onclick="divInput(6)">下書き</label><br>
         </div>
         <input type="submit" value="登録" id="newsubmit" disabled>
     </form>
 
-    <h1>曲の削除依頼</h1>
+    <h1>削除依頼</h1>
     <div class="underline"></div>
     <form action="{% url 'subekashi:delete' %}" method="POST" id="deleteform">{% csrf_token %}
         <input type="text" id="titleDelete" name="title" value="{{ title }}" hidden><br>
