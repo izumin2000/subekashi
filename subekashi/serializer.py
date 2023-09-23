@@ -4,7 +4,7 @@ from .models import Song, Ai
 class SongSerializer(serializers.ModelSerializer):
     class Meta:
         model = Song
-        fields = ("id", "title", "channel", "url", "imitate", "imitated", "lyrics", "isoriginal", "isjoke", "isjapanese", "isdraft")
+        fields = ("id", "title", "channel", "url", "imitate", "imitated", "lyrics", "isoriginal", "isjoke", "isjapanese", "isinst", "issubeana", "isdraft")
     
     def update(self, instance, validated_data):
         return super().update(instance, validated_data)
