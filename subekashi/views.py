@@ -42,8 +42,10 @@ def top(request):
     dataD = initD()
     songInsL = list(Song.objects.exclude(lyrics = ""))[:-7:-1]
     dataD["songInsL"] = songInsL
-    lackInsL = list(Song.objects.filter(lyrics = "").exclude(channel = ""))
-    lackInsL += list(Song.objects.filter(url = "").exclude(channel = ""))
+    lackInsL = list(Song.objects.filter(isdraft = True))
+    lackInsL += list(Song.objects.filter(lyrics = "").exclude(isinst = True))
+    lackInsL += list(Song.objects.filter(url = "").exclude(isdeleted = True))
+    lackInsL += list(Song.objects.filter(imitate = "").exclude(issubeana = True).exclude(isoriginal = True))
     if lackInsL :
         lackInsL = random.sample(lackInsL, min(6, len(lackInsL)))
         dataD["lackInsL"] = lackInsL

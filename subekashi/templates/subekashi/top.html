@@ -6,7 +6,7 @@
 
 {% block content %}
 <section>
-    <h1>新着の曲</h1>
+    <h1>新着</h1>
     <div class="underline"></div>
     {% for songIns in songInsL %}
         <a href="{% url 'subekashi:song' songIns.id %}" class="buttona ">
@@ -56,7 +56,7 @@
     {% endif %}
 
     {% if lackInsL %}
-        <h1>情報不足の曲</h1>
+        <h1>未完成</h1>
         <div class="underline"></div>
         {% for songIns in lackInsL %}
             <a href="{% url 'subekashi:song' songIns.id %}" class="buttona ">
