@@ -93,29 +93,6 @@
                 <a href="{% url 'subekashi:new' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">曲を登録する</p></div></a>
             </div>
     {% endif %}
-
-    {% if noneInsL %}
-        <h1>未登録の曲</h1>
-        <div class="underline"></div>
-        {% for songIns in noneInsL %}
-        <a href="{% url 'subekashi:new' %}?title={{ songIns.title }}" class="buttona">
-            <div class="songcard">
-                    <div class="cardleft">
-                        <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"30" }}</p>
-                        <p class="songchannel"><i class="fas fa-user-circle"></i> チャンネル未登録</p>
-                    </div>
-                    <div class="cardright">
-                        <p class="songlyrics">{{ imitateInsL.pop }}</p>
-                        <p class="songurl">歌詞・URL未登録</p>
-                    </div>
-                </div>
-            </a>
-        {% endfor %}
-        <div class="dummybuttons">
-            <a href="{% url 'subekashi:search' %}?filter=1"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">もっと見る</p></div></a>
-            <a href="{% url 'subekashi:new' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">曲を登録する</p></div></a>
-        </div>
-    {% endif %}
     
     <h1>フィードバック</h1>
     <div class="underline"></div>

@@ -47,11 +47,6 @@ def top(request):
     if lackInsL :
         lackInsL = random.sample(lackInsL, min(6, len(lackInsL)))
         dataD["lackInsL"] = lackInsL
-    noneInsL = list(Song.objects.filter(channel = ""))
-    if noneInsL :
-        noneInsL = random.sample(noneInsL, min(6, len(noneInsL)))
-        dataD["noneInsL"] = noneInsL
-        dataD["imitateInsL"] = list(map(lambda x: f"原曲は{Song.objects.get(id=int(x.imitated)).title}です" if x.imitated else "原曲が紐づけされていません" ,noneInsL))
     aiInsL = Ai.objects.filter(score = 5)[::-1]
     if aiInsL :
         dataD["aiInsL"] = aiInsL[min(10, len(aiInsL))::-1]
