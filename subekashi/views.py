@@ -74,7 +74,6 @@ def new(request) :
         lyricsForm = request.POST.get("lyrics")
         isorginalForm = request.POST.get("isorginal")
         isdeletedForm = request.POST.get("isdeleted")
-        isjapaneseForm = request.POST.get("isjapanese")
         isjokeForm = request.POST.get("isjoke")
         isinstForm = request.POST.get("isinst")
         issubeanaForm = request.POST.get("issubeana")
@@ -85,11 +84,6 @@ def new(request) :
 
         titleForm = titleForm.replace("/", "╱")
         songIns, _ = Song.objects.get_or_create(title = titleForm, channel = channelForm, defaults={"posttime" : timezone.now()})
-
-        if isdeletedForm :
-            songIns.url = "非公開"
-        else :
-            songIns.url = formatURL(urlForm)
         
         oldImitateS = set(songIns.imitate.split(",")) - set([''])
         newImitateS = set(imitatesForm.split(",")) - set([''])
@@ -114,9 +108,10 @@ def new(request) :
         songIns.imitate = imitatesForm
 
         songIns.lyrics = lyricsForm
+        songIns.url = formatURL(urlForm)
         songIns.isoriginal = int(bool(isorginalForm))
-        songIns.isjapanese = int(bool(isjapaneseForm))
         songIns.isjoke = int(bool(isjokeForm))
+        songIns.isdeleted = int(bool(isdeletedForm))
         songIns.isinst = int(bool(isinstForm))
         songIns.issubeana = int(bool(issubeanaForm))
         songIns.isdraft = int(bool(isdraftForm))

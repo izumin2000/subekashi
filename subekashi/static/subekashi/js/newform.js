@@ -97,7 +97,6 @@ function fillForm() {
     }
     document.getElementById("lyrics").value = songResult.lyrics;
     document.getElementById("isorginal").checked = songResult.isoriginal;
-    document.getElementById("isjapanese").checked = songResult.isjapanese;
     document.getElementById("isjoke").checked = songResult.isjoke;
     document.getElementById("isinst").checked = songResult.isinst;
     document.getElementById("issubeana").checked = songResult.issubeana;
@@ -192,7 +191,7 @@ function searchSong() {
 
 
 function divInput(n) {
-    checkboxIds = ["isorginal", "isdeleted", "isjapanese", "isjoke", "isinst", "issubeana", "isdraft"];
+    checkboxIds = ["isorginal", "isdeleted", "isjoke", "isinst", "issubeana", "isdraft"];
     checkboxEle = document.getElementById(checkboxIds[n]);
     checkboxEle.checked = !checkboxEle.checked;
 }
