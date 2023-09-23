@@ -2,7 +2,6 @@ from django.shortcuts import render, redirect
 from subekashi.models import Song, Ai, Singleton
 import hashlib
 import requests
-from .reset import subeana_LIST
 import random
 import random
 from rest_framework import viewsets
@@ -274,24 +273,7 @@ def dev(request) :
         if password :
             if hashlib.sha256(password.encode()).hexdigest() == SHA256a :
                 dataD["locked"] = False
-        isreset = request.GET.get("reset")
         isgpt = request.GET.get("gpt")
-        iskey = request.GET.get("key")
-        if isreset :
-            Song.objects.all().delete()
-            inp_isconfirmed = request.POST.get("confirm")
-            isconfirmed = bool(inp_isconfirmed)
-            if isconfirmed :
-                for song in subeana_LIST :
-                    songIns = Song.objects.create()
-                    songIns.title = song["title"]
-                    songIns.channel = song["channel"]
-                    songIns.url = song["url"]
-                    songIns.lyrics = song["lyrics"]
-                    songIns.isjapanese = song["isjapanese"]
-                    songIns.posttime = timezone.now()
-                    songIns.save()
-                dataD["locked"] = False
 
         if isgpt :
             inp_gpt = request.POST.get("gpt")
@@ -304,13 +286,6 @@ def dev(request) :
                 [Ai.objects.create(lyrics = i, genetype = "model").save() for i in gpt_lines]
 
                 dataD["locked"] = False
-        if iskey :
-            inp_key = request.POST.get("key")
-            inp_value = request.POST.get("value")
-            ins_singleton, _ = Singleton.objects.update_or_create(key = inp_key, defaults = {"key": inp_key})
-            ins_singleton.key = inp_key
-            ins_singleton.value = inp_value
-            ins_singleton.save()
             
     return render(request, "subekashi/dev.html", dataD)
 
