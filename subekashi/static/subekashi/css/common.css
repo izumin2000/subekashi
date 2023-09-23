@@ -380,7 +380,9 @@ textarea {
 
 .buttona {
     display:block;
+    text-decoration: none;
 }
+
 
 .cardleft {
     text-align:left;

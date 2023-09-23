@@ -12,12 +12,12 @@
         <a href="{% url 'subekashi:song' songIns.id %}" class="buttona ">
             <div class="songcard">
                 <div class="cardleft">
-                    <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"30" }}</p>
-                    <object><a class="songchannel" href="{% url 'subekashi:channel' songIns.channel %}"><i class="fas fa-user-circle"></i> {{ songIns.channel }}</a></object>
+                    <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"20" }}</p>
+                    <object><a class="songchannel" href="{% url 'subekashi:channel' songIns.channel %}"><i class="fas fa-user-circle"></i> {{ songIns.channel|slice:"20" }}</a></object>
                 </div>
                 <div class="cardright">
                     {% if songIns.lyrics %}
-                        <p class="songlyrics">{{ songIns.lyrics|slice:"25" }}...</p>
+                        <p class="songlyrics">{{ songIns.lyrics|slice:"20" }}...</p>
                     {% else %}
                         <p class="songlyrics">歌詞未登録</p>
                     {% endif %}
@@ -59,12 +59,12 @@
             <a href="{% url 'subekashi:song' songIns.id %}" class="buttona ">
                 <div class="songcard">
                     <div class="cardleft">
-                        <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"30" }}</p>
-                        <object><a class="songchannel" href="{% url 'subekashi:channel' songIns.channel %}"><i class="fas fa-user-circle"></i> {{ songIns.channel }}</a></object>
+                        <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"20" }}</p>
+                        <object><a class="songchannel" href="{% url 'subekashi:channel' songIns.channel %}"><i class="fas fa-user-circle"></i> {{ songIns.channel|slice:"20" }}</a></object>
                     </div>
                     <div class="cardright">
                         {% if songIns.lyrics %}
-                            <p class="songlyrics">{{ songIns.lyrics|slice:"25" }}...</p>
+                            <p class="songlyrics">{{ songIns.lyrics|slice:"20" }}...</p>
                         {% else %}
                             <object><a class="songlyrics" href="{% url 'subekashi:new' %}?id={{ songIns.id }}">歌詞未登録</a></object>
                         {% endif %}
