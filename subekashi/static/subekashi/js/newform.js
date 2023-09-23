@@ -101,6 +101,7 @@ function fillForm() {
     document.getElementById("isinst").checked = songResult.isinst;
     document.getElementById("issubeana").checked = songResult.issubeana;
     document.getElementById("isdraft").checked = songResult.isdraft;
+    document.getElementById("isdeleted").checked = songResult.isdeleted;
 }
 
 

@@ -10,11 +10,7 @@
         <p id="songtitle"><i class="fas fa-music"></i>{{ songIns.title }}</p>
         <a id="songchannel" href="{% url 'subekashi:channel' songIns.channel %}"><i class="fas fa-user-circle"></i>{{ songIns.channel }}</a>
         {% if songIns.url %}
-            {% if songIns.url == "非公開" %}
-                <p id="songurl"><i class="fas fa-link"></i>非公開</p>
-            {% else %}
-                <a id="songurl" href="{{ songIns.url }}"><i class="fas fa-link"></i>{{ songIns.url }}</a>
-            {% endif %}
+            <a class="songurl" href="{{ songIns.url }}"><i class="fas fa-link"></i>{{ songIns.url }}</a>
         {% endif %}
         <div></div>
         <p id="songimitateslabel"><i class="fas fa-tags fa-xs"></i></p>
@@ -24,14 +20,23 @@
         {% if songIns.channel == "全てあなたの所為です。" %}
             <p class="songimitate">オリジナル</p>
         {% endif %}
+        {% if songIns.isdraft %}
+            <a class="songimitate" href="{% url 'subekashi:search' %}?filter=0">下書き</a>
+        {% endif %}
         {% if songIns.isoriginal %}
-            <a class="songimitate" href="{% url 'subekashi:search' %}?filter=3">オリジナル模倣</a>
+            <a class="songimitate" href="{% url 'subekashi:search' %}?filter=1">オリジナル模倣</a>
         {% endif %}
         {% if songIns.isjoke %}
-            <a class="songimitate" href="{% url 'subekashi:search' %}?filter=4">ネタ曲</a>
+            <a class="songimitate" href="{% url 'subekashi:search' %}?filter=2">ネタ曲</a>
         {% endif %}
-        {% if songIns.isdraft %}
-            <a class="songimitate" href="{% url 'subekashi:search' %}?filter=2">下書き</a>
+        {% if songIns.isinst %}
+            <a class="songimitate" href="{% url 'subekashi:search' %}?filter=3">インスト曲</a>
+        {% endif %}
+        {% if not songIns.issubeana %}
+            <a class="songimitate" href="{% url 'subekashi:search' %}?filter=4">すべあな界隈以外の曲</a>
+        {% endif %}
+        {% if songIns.isdeleted %}
+            <p class="songimitate">非公開</p>
         {% endif %}
         
         {% if imitatedInsL %}
