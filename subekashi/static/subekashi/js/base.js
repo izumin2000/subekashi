@@ -52,11 +52,17 @@ function isCompleted(song) {
     if (song.channel == "全てあなたの所為です。") {
         return true;
     }
-    if (song.isoriginal) {
-        return ![songResult.url, songResult.lyrics].includes("");
-    } else {
-        return ![songResult.url, songResult.lyrics, songResult.imitate].includes("");
+    columnL = [];
+    if (!song.isdeleted) {
+        columnL.push(song.url);
     }
+    if (!song.isoriginal && !song.issubeana) {
+        columnL.push(song.imitate);
+    }
+    if (!song.isinst) {
+        columnL.push(song.lyrics);
+    }
+    return !columnL.includes("");
 }
 
 async function getHeader() {

@@ -51,18 +51,17 @@ function searchSong() {
     songResult = songFilter("title", titleValue);
     songResult = songFilter("lyrics", lyricsValue);
     
-    if (filterL.includes("1")) {
-        songResult = songResult.filter(song => !isCompleted(song));
-    }
-    if (filterL.includes("2")) {
-        songResult = songResult.filter(song => song.isdraft);
-    }
-    if (filterL.includes("3")) {
-        songResult = songResult.filter(song => song.isoriginal);
-    }
-    if (filterL.includes("4")) {
-        songResult = songResult.filter(song => song.isjoke);
-    }
+    const filters = {
+        "isCompleted": song => !isCompleted(song),
+        "isoriginal": song => song.isoriginal,
+        "isjoke": song => song.isjoke,
+        "isinst": song => song.isinst,
+        "issubeana": song => !song.issubeana,
+    };
+    
+    filterL.forEach(filter => {
+        if(filters[filter]) songResult = songResult.filter(filters[filter]);
+    });
 
     songResultId = songResult.map(song => song.id);
     Array.from(songEles).map(songEle => songEle.style.display = "none");
@@ -79,10 +78,6 @@ function searchSong() {
 
 function devInput(filtertype) {
     radioEle = document.getElementsByClassName("filters")[filtertype];
-    if (filtertype >= 3) {
-        radioEle.checked = !radioEle.checked;
-    } else {
-        radioEle.checked = true;
-    }
+    radioEle.checked = !radioEle.checked;
     searchSong();
 }
