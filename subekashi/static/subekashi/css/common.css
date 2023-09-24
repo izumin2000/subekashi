@@ -167,10 +167,10 @@ h1 {
 }
 
 h2 {
-    font-size: 20px;
-    line-height: 50px;
+    font-size: 24px;
+    line-height: 32px;
     color: #FFF;
-    margin: 40px 20px 20px 20px;
+    margin-top: 10px;
 }
 
 p, li {
@@ -201,6 +201,13 @@ a {
     }
 }
 
+details {
+    color: #FFF;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 27px;
+}
+
 
 /* メニュー */
 .menuarticle {
@@ -217,8 +224,7 @@ a {
 }
 
 .menuarticle h2 {
-    margin-left: 32px!important;
-    margin-bottom: 0!important;
+    margin: 30px 0 0 30px;
     padding: 0 0 0 calc(50% - 550px);
     font-size: 45px !important;
     line-height: 75px !important;
@@ -368,13 +374,15 @@ textarea {
 .songcard {
     height: 80px;
     margin: 20px 0 ;
-    padding: 15px 0 0 0 !important;
+    padding: 12px 0 0 0;
     background-color: #333;
 }
 
 .buttona {
     display:block;
+    text-decoration: none;
 }
+
 
 .cardleft {
     text-align:left;
@@ -401,33 +409,36 @@ textarea {
 }
 
 .songtitle {
-    font-size: 20px;
+    font-size: 16px;
     margin-bottom: 12px;
-    padding-left: 2px;
     white-space:nowrap;
 }
 
 .songchannel {
-    font-size: 15px;
+    font-size: 16px;
     white-space:nowrap;
-    margin-left: 3px;
 }
 
 .songchannel i {
-    font-size: 20px;
+    font-size: 16px;
 }
 
 .songlyrics {
     display: block;
+    font-size: 16px;
+    margin-bottom: 12px;
     white-space:nowrap;
-    font-size: 12px;
-    margin-bottom: 8px;
 }
 
 .songurl {
-    display: inline-block !important;
-    height: 100%;
+    display: inline-block;
+    font-size: 16px;
     white-space:nowrap;
+}
+
+.fa-user-friends {
+    font-size: 12px;
+    margin: 0 2px;
 }
 
 /* ソングゲッサー */

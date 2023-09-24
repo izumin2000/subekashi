@@ -2,6 +2,7 @@
 {% block title %}{{ channel }}{% endblock %}
 {% block ogtitle %}{{ channel }}{% endblock %}
 {% load static %}
+{% load comma %}
 {% block css %}{% static 'subekashi/css/channel.css'%}{% endblock %}
 
 {% block content %}
@@ -15,13 +16,17 @@
                     <div class="cardleft">
                         <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"30" }}</p>
                         {% if songIns.url %}
-                            {% if songIns.url == "非公開" %}
-                                <object><p id="songurl">非公開</p></object>
+                            {% if songIns.url|iscomma %}
+                                <object><a class="songurl" href="{{ songIns.url|commapop }}">{{ songIns.url|commapop|slice:"30" }}</a>など</object>
                             {% else %}
-                                <object><a class="songurl" href="{{ songIns.url }}">{{ songIns.url|slice:"35" }}</a></object>
+                                <object><a class="songurl" href="{{ songIns.url }}">{{ songIns.url|slice:"30" }}</a></object>
                             {% endif %}
-                        {% else %}
-                            <p class="songurlnotfound">URL未登録</p>
+                            {% else %}
+                            {% if songIns.isdeleted %}
+                                <object><p class="songurl">非公開</p></object>
+                            {% else %}
+                                <object><a class="songurl" href="{% url 'subekashi:new' %}?id={{ songIns.id }}">URL未登録</a></object>
+                            {% endif %}
                         {% endif %}
                     </div>
                     <div class="cardright">
@@ -29,7 +34,11 @@
                             <p class="songlyrics1">{{ songIns.lyrics|slice:"25" }}</p>
                             <p class="songlyrics2">{{ songIns.lyrics|slice:"25:50" }}...</p>
                         {% else %}
-                            <p class="songlyricsnotfound">歌詞未登録</p>
+                            {% if songIns.isinst %}
+                                <p class="songlyrics">インスト曲</p>
+                            {% else %}
+                                <object><a class="songlyrics" href="{% url 'subekashi:new' %}?id={{ songIns.id }}">歌詞未登録</a></object>
+                            {% endif %}
                         {% endif %}
                     </div>
                 </a>
