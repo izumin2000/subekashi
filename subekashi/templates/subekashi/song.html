@@ -7,8 +7,8 @@
 {% block content %}
 <section>
     {% if isExist %}
-        <p id="songtitle"><i class="fas fa-music"></i>{{ songIns.title }}</p>
-        <a id="songchannel" href="{% url 'subekashi:channel' songIns.channel %}"><i class="fas fa-user-circle"></i>{{ songIns.channel }}</a>
+        <p class="songtitle"><i class="fas fa-music"></i>{{ songIns.title }}</p>
+        <a class="songchannel" href="{% url 'subekashi:channel' songIns.channel %}"><i class="fas fa-user-circle"></i>{{ songIns.channel }}</a>
         {% if songIns.url %}
             <a class="songurl" href="{{ songIns.url }}"><i class="fas fa-link"></i>{{ songIns.url }}</a>
         {% endif %}
