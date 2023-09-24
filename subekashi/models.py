@@ -12,7 +12,7 @@ class Song(models.Model) :
     uploaddata = models.DateField(blank = True, null = True)
     isoriginal = models.BooleanField(default = False)
     isjoke = models.BooleanField(default = False)
-    isdeleted = models.BooleanField(default = True)
+    isdeleted = models.BooleanField(default = False)
     isarchived = models.BooleanField(default = True)
     isdraft = models.BooleanField(default = False)
     isinst = models.BooleanField(default = False)
