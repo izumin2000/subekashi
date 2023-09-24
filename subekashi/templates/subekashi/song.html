@@ -8,7 +8,9 @@
 <section>
     {% if isExist %}
         <p class="songtitle"><i class="fas fa-music"></i>{{ songIns.title }}</p>
-        <a class="songchannel" href="{% url 'subekashi:channel' songIns.channel %}"><i class="fas fa-user-circle"></i>{{ songIns.channel }}</a>
+        {% for channel in channels %}
+            <a class="songchannel" href="{% url 'subekashi:channel' channel %}"><i class="fas fa-user-circle"></i>{{ channel }}</a>
+        {% endfor %}
         {% if songIns.url %}
             <a class="songurl" href="{{ songIns.url }}"><i class="fas fa-link"></i>{{ songIns.url }}</a>
         {% endif %}

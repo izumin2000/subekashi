@@ -40,7 +40,7 @@ def sendDiscord(url, content) :
 
 def top(request):
     dataD = initD()
-    songInsL = list(Song.objects.exclude(lyrics = ""))[:-7:-1]
+    songInsL = list(Song.objects.all())[:-7:-1]
     dataD["songInsL"] = songInsL
     lackInsL = list(Song.objects.filter(isdraft = True))
     lackInsL += list(Song.objects.filter(lyrics = "").exclude(isinst = True))
@@ -153,6 +153,7 @@ def song(request, songId) :
     isExist = bool(songIns)
     dataD["songIns"] = songIns
     dataD["isExist"] = isExist
+    dataD["channels"] = songIns.channel.replace(", ", ",").split(",")
 
     if isExist :
         if songIns.imitate :
@@ -226,9 +227,11 @@ def make(request) :
 
 def channel(request, channelName) :
     dataD = initD()
-
     dataD["channel"] = channelName
-    songInsL = Song.objects.filter(channel = channelName)
+    songInsL = []
+    for songIns in Song.objects.all() :
+        if channelName in songIns.channel.replace(", ", ",").split(",") :
+            songInsL.append(songIns)
     dataD["songInsL"] = songInsL
     if 3 > len(songInsL) :
         dataD["fixfooter"] = True
