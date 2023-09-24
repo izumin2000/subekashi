@@ -2,7 +2,6 @@ from django.shortcuts import render, redirect
 from subekashi.models import Song, Ai, Singleton
 import hashlib
 import requests
-from .reset import subeana_LIST
 import random
 import random
 from rest_framework import viewsets
@@ -41,18 +40,15 @@ def sendDiscord(url, content) :
 
 def top(request):
     dataD = initD()
-    songInsL = list(Song.objects.exclude(lyrics = ""))[:-7:-1]
+    songInsL = list(Song.objects.all())[:-7:-1]
     dataD["songInsL"] = songInsL
-    lackInsL = list(Song.objects.filter(lyrics = "").exclude(channel = ""))
-    lackInsL += list(Song.objects.filter(url = "").exclude(channel = ""))
+    lackInsL = list(Song.objects.filter(isdraft = True))
+    lackInsL += list(Song.objects.filter(lyrics = "").exclude(isinst = True))
+    lackInsL += list(Song.objects.filter(url = "").exclude(isdeleted = True))
+    lackInsL += list(Song.objects.filter(imitate = "").exclude(issubeana = True).exclude(isoriginal = True))
     if lackInsL :
         lackInsL = random.sample(lackInsL, min(6, len(lackInsL)))
         dataD["lackInsL"] = lackInsL
-    noneInsL = list(Song.objects.filter(channel = ""))
-    if noneInsL :
-        noneInsL = random.sample(noneInsL, min(6, len(noneInsL)))
-        dataD["noneInsL"] = noneInsL
-        dataD["imitateInsL"] = list(map(lambda x: f"原曲は{Song.objects.get(id=int(x.imitated)).title}です" if x.imitated else "原曲が紐づけされていません" ,noneInsL))
     aiInsL = Ai.objects.filter(score = 5)[::-1]
     if aiInsL :
         dataD["aiInsL"] = aiInsL[min(10, len(aiInsL))::-1]
@@ -75,8 +71,9 @@ def new(request) :
         lyricsForm = request.POST.get("lyrics")
         isorginalForm = request.POST.get("isorginal")
         isdeletedForm = request.POST.get("isdeleted")
-        isjapaneseForm = request.POST.get("isjapanese")
         isjokeForm = request.POST.get("isjoke")
+        isinstForm = request.POST.get("isinst")
+        issubeanaForm = request.POST.get("issubeana")
         isdraftForm = request.POST.get("isdraft")
 
         if ("" in [titleForm, channelForm]) :
@@ -84,11 +81,6 @@ def new(request) :
 
         titleForm = titleForm.replace("/", "╱")
         songIns, _ = Song.objects.get_or_create(title = titleForm, channel = channelForm, defaults={"posttime" : timezone.now()})
-
-        if isdeletedForm :
-            songIns.url = "非公開"
-        else :
-            songIns.url = formatURL(urlForm)
         
         oldImitateS = set(songIns.imitate.split(",")) - set([''])
         newImitateS = set(imitatesForm.split(",")) - set([''])
@@ -113,9 +105,12 @@ def new(request) :
         songIns.imitate = imitatesForm
 
         songIns.lyrics = lyricsForm
+        songIns.url = formatURL(urlForm)
         songIns.isoriginal = int(bool(isorginalForm))
-        songIns.isjapanese = int(bool(isjapaneseForm))
         songIns.isjoke = int(bool(isjokeForm))
+        songIns.isdeleted = int(bool(isdeletedForm))
+        songIns.isinst = int(bool(isinstForm))
+        songIns.issubeana = int(bool(issubeanaForm))
         songIns.isdraft = int(bool(isdraftForm))
         songIns.posttime = timezone.now()
         forwarded_addresses = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -158,6 +153,7 @@ def song(request, songId) :
     isExist = bool(songIns)
     dataD["songIns"] = songIns
     dataD["isExist"] = isExist
+    dataD["channels"] = songIns.channel.replace(", ", ",").split(",")
 
     if isExist :
         if songIns.imitate :
@@ -231,9 +227,11 @@ def make(request) :
 
 def channel(request, channelName) :
     dataD = initD()
-
     dataD["channel"] = channelName
-    songInsL = Song.objects.filter(channel = channelName)
+    songInsL = []
+    for songIns in Song.objects.all() :
+        if channelName in songIns.channel.replace(", ", ",").split(",") :
+            songInsL.append(songIns)
     dataD["songInsL"] = songInsL
     if 3 > len(songInsL) :
         dataD["fixfooter"] = True
@@ -270,24 +268,7 @@ def dev(request) :
         if password :
             if hashlib.sha256(password.encode()).hexdigest() == SHA256a :
                 dataD["locked"] = False
-        isreset = request.GET.get("reset")
         isgpt = request.GET.get("gpt")
-        iskey = request.GET.get("key")
-        if isreset :
-            Song.objects.all().delete()
-            inp_isconfirmed = request.POST.get("confirm")
-            isconfirmed = bool(inp_isconfirmed)
-            if isconfirmed :
-                for song in subeana_LIST :
-                    songIns = Song.objects.create()
-                    songIns.title = song["title"]
-                    songIns.channel = song["channel"]
-                    songIns.url = song["url"]
-                    songIns.lyrics = song["lyrics"]
-                    songIns.isjapanese = song["isjapanese"]
-                    songIns.posttime = timezone.now()
-                    songIns.save()
-                dataD["locked"] = False
 
         if isgpt :
             inp_gpt = request.POST.get("gpt")
@@ -300,13 +281,6 @@ def dev(request) :
                 [Ai.objects.create(lyrics = i, genetype = "model").save() for i in gpt_lines]
 
                 dataD["locked"] = False
-        if iskey :
-            inp_key = request.POST.get("key")
-            inp_value = request.POST.get("value")
-            ins_singleton, _ = Singleton.objects.update_or_create(key = inp_key, defaults = {"key": inp_key})
-            ins_singleton.key = inp_key
-            ins_singleton.value = inp_value
-            ins_singleton.save()
             
     return render(request, "subekashi/dev.html", dataD)
 

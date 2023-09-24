@@ -21,14 +21,6 @@ async function firstLoad(baseURL, songId) {
 }
 
 
-function submitButtonControler() {
-    titleValue = document.getElementById("title").value;
-    channelValue = document.getElementById("channel").value;
-    submitEle = document.getElementById("newsubmit");
-    submitEle.disabled = (titleValue == "") && (channelValue == "");
-}
-
-
 function setSubmitButton(titleValue, channelValue) {
     submitEle = document.getElementById("newsubmit");
     if ((titleValue == "") || (channelValue == "")) {
@@ -105,9 +97,11 @@ function fillForm() {
     }
     document.getElementById("lyrics").value = songResult.lyrics;
     document.getElementById("isorginal").checked = songResult.isoriginal;
-    document.getElementById("isjapanese").checked = songResult.isjapanese;
     document.getElementById("isjoke").checked = songResult.isjoke;
+    document.getElementById("isinst").checked = songResult.isinst;
+    document.getElementById("issubeana").checked = songResult.issubeana;
     document.getElementById("isdraft").checked = songResult.isdraft;
+    document.getElementById("isdeleted").checked = songResult.isdeleted;
 }
 
 
@@ -198,7 +192,7 @@ function searchSong() {
 
 
 function divInput(n) {
-    checkboxIds = ["isorginal", "isdeleted", "isjapanese", "isjoke", "isdraft"];
+    checkboxIds = ["isorginal", "isdeleted", "isjoke", "isinst", "issubeana", "isdraft"];
     checkboxEle = document.getElementById(checkboxIds[n]);
     checkboxEle.checked = !checkboxEle.checked;
 }
