@@ -409,32 +409,30 @@ textarea {
 }
 
 .songtitle {
-    font-size: 20px;
+    font-size: 16px;
     margin-bottom: 12px;
-    padding-left: 2px;
     white-space:nowrap;
 }
 
 .songchannel {
-    font-size: 15px;
+    font-size: 16px;
     white-space:nowrap;
-    margin-left: 3px;
 }
 
 .songchannel i {
-    font-size: 20px;
+    font-size: 16px;
 }
 
 .songlyrics {
     display: block;
+    font-size: 16px;
+    margin-bottom: 12px;
     white-space:nowrap;
-    font-size: 15px;
-    margin-bottom: 8px;
 }
 
 .songurl {
-    display: inline-block !important;
-    height: 100%;
+    display: inline-block;
+    font-size: 16px;
     white-space:nowrap;
 }
 
