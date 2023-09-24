@@ -436,6 +436,11 @@ textarea {
     white-space:nowrap;
 }
 
+.fa-user-friends {
+    font-size: 12px;
+    margin: 0 2px;
+}
+
 /* ソングゲッサー */
 #imitateTitle {
     width: calc(100vw - 115px);

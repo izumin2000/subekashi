@@ -2,6 +2,7 @@
 {% block title %}{{ channel }}{% endblock %}
 {% block ogtitle %}{{ channel }}{% endblock %}
 {% load static %}
+{% load comma %}
 {% block css %}{% static 'subekashi/css/channel.css'%}{% endblock %}
 
 {% block content %}
@@ -15,8 +16,12 @@
                     <div class="cardleft">
                         <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"30" }}</p>
                         {% if songIns.url %}
-                            <object><a class="songurl" href="{{ songIns.url }}">{{ songIns.url|slice:"30" }}</a></object>
-                        {% else %}
+                            {% if songIns.url|iscomma %}
+                                <object><a class="songurl" href="{{ songIns.url|commapop }}">{{ songIns.url|commapop|slice:"30" }}</a>など</object>
+                            {% else %}
+                                <object><a class="songurl" href="{{ songIns.url }}">{{ songIns.url|slice:"30" }}</a></object>
+                            {% endif %}
+                            {% else %}
                             {% if songIns.isdeleted %}
                                 <object><p class="songurl">非公開</p></object>
                             {% else %}
