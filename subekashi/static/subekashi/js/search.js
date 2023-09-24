@@ -10,6 +10,11 @@ async function firstLoad(baseURL, query) {
     document.getElementById("title").value = query[0];
     document.getElementById("channel").value = query[1];
     document.getElementById("lyrics").value = query[2];
+
+    radioEles = document.getElementsByClassName("filters");
+    for (radioEle of radioEles) {
+        radioEle.checked = false;
+    }
     if (query[3] != "") {
         devInput(Number(query[3]));
     }
