@@ -79,6 +79,7 @@
                             <object><a class="songlyrics" href="{% url 'subekashi:new' %}?id={{ songIns.id }}">歌詞未登録</a></object>
                         {% endif %}
                     {% endif %}
+                    <br>
                     {% if songIns.url %}
                         {% if songIns.url|iscomma %}
                             <object><a class="songurl" href="{{ songIns.url|commapop }}">{{ songIns.url|commapop|slice:"30" }}</a>など</object>
@@ -104,11 +105,8 @@
 <script src="{% static 'subekashi/js/search.js' %}?{{ lastModified }}" rel="stylesheet"></script>
 <script>
     window.addEventListener('load', function(){
-        if ('{{ query }}' == "{}") {
-            firstLoad('{{ baseURL }}', 0);
-        } else {
-            firstLoad('{{ baseURL }}', '{{ query|safe }}');
+        firstLoad('{{ baseURL }}', '{{ query|safe }}');
         }
-    })
+    )
 </script>
 {% endblock %}

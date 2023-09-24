@@ -30,6 +30,7 @@
                             <object><a class="songlyrics" href="{% url 'subekashi:new' %}?id={{ songIns.id }}">歌詞未登録</a></object>
                         {% endif %}
                     {% endif %}
+                    <br>
                     {% if songIns.url %}
                         {% if songIns.url|iscomma %}
                             <object><a class="songurl" href="{{ songIns.url|commapop }}">{{ songIns.url|commapop|slice:"30" }}</a>など</object>
@@ -88,6 +89,7 @@
                                 <object><a class="songlyrics" href="{% url 'subekashi:new' %}?id={{ songIns.id }}">歌詞未登録</a></object>
                             {% endif %}
                         {% endif %}
+                        <br>
                         {% if songIns.url %}
                             {% if songIns.url|iscomma %}
                                 <object><a class="songurl" href="{{ songIns.url|commapop }}">{{ songIns.url|commapop|slice:"30" }}</a>など</object>
