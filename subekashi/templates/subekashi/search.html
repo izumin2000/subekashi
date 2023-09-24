@@ -105,11 +105,8 @@
 <script src="{% static 'subekashi/js/search.js' %}?{{ lastModified }}" rel="stylesheet"></script>
 <script>
     window.addEventListener('load', function(){
-        if ('{{ query }}' == "{}") {
-            firstLoad('{{ baseURL }}', 0);
-        } else {
-            firstLoad('{{ baseURL }}', '{{ query|safe }}');
+        firstLoad('{{ baseURL }}', '{{ query|safe }}');
         }
-    })
+    )
 </script>
 {% endblock %}
