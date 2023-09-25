@@ -15,7 +15,7 @@ files = os.listdir(BACKUP_FOLDER)
 now = datetime.now()
 if len(files) <= BACKUP_FOLDER_NUMS :
     songs = requests.get("https://lyrics.imicomweb.com/api/song/?format=json").json()
-    if now.hour % 6 != 0 :
+    if now.hour % 6 == 0 :
         fileName = f"{BACKUP_FOLDER}{now.strftime('%Y-%m-%d-%H')}.pkl"
         f = open(fileName, 'wb')
         pickle.dump(songs, f)

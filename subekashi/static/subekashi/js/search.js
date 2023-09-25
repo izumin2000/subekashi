@@ -16,7 +16,7 @@ async function firstLoad(baseURL, query) {
         radioEle.checked = false;
     }
     if (query[3] != "") {
-        devInput(Number(query[3]));
+        radioEles[Number(query[3])].checked = true;
     }
 
     document.getElementById("loading").style.display = "none";
