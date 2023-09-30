@@ -183,7 +183,9 @@ def song(request, songId) :
                         imitatedIns = imitatedInsQ.first()
                         imitatedInsL.append(imitatedIns)
                     else :
-                        songIns.imitate = imitateds.remove(imitatedId)
+                        imitateds = imitates.remove(imitatedId)
+                        imitateds = ",".imitates(imitateds) if len(imitateds) else ""
+                        songIns.imitated = imitateds
                         songIns.save()
             dataD["imitatedInsL"] = imitatedInsL
 
