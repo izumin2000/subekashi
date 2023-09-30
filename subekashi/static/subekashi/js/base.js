@@ -119,23 +119,26 @@ function setCookie(name, json) {
 
 // クッキーの取得
 function getCookie() {
-    
     let cookies = '';
     let cookieArray = new Array();
-    let result = new Array();
+    let result = {};
 
     cookies = document.cookie;
 
-    if(cookies){
-        cookieArray = cookies.split(';');
-        
+    if (cookies) {
+        cookieArray = cookies.split('; ');
+
         cookieArray.forEach(data => {
             data = data.split('=');
-            result[data[0]] = JSON.parse(data[1]);
+
+            if (data[0].trim() !== 'csrftoken') {
+                result[data[0]] = JSON.parse(data[1]);
+            }
         });
     }
     return result;
 }
+
 
 // 読み込み時の実行
 window.onload = function() {
