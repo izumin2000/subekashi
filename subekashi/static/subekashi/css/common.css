@@ -35,10 +35,7 @@ header {
     background-color: #000;
     border-bottom: solid 4px #fff;
     position: sticky;
-    /*
-     * HACK: This value is modified by common.js when .imiN_header is
-     * loaded.
-     */
+    overflow: hidden;
     top: calc(-1 * var(--imiN-header-height));
 }
 
@@ -215,29 +212,28 @@ details {
 }
 
 .menuarticle.shown {
-    display: block!important;
+    display: flex !important;
     margin-top: 0;
-    height: 100vh;
-    width: calc(100vw - 18px);
-    left: 0;
+    height: calc(100vh - 100px);
+    width: 100vw;
+    overflow: hidden;
+    flex-direction: column;
+    margin-top: 10vh;
+    align-items: center;
+    text-align: center;
     background: linear-gradient(180deg, #000, #000, 70vh, #005);
 }
 
-.menuarticle h2 {
-    margin: 30px 0 0 30px;
-    padding: 0 0 0 calc(50% - 550px);
-    font-size: 45px !important;
-    line-height: 75px !important;
-}
-
 .menuarticle ul {
+    list-style: none;
     margin-top: 0px
 }
 
 .menuarticle ul li a {
     list-style-type: none;
-    margin-left: 32px;
-    padding-left: calc(50% - 500px);
+    text-align: center;
+    vertical-align: middle;
+    padding: 2vh 0;
     font-size: 30px !important;
     line-height: 60px !important;
     text-decoration: underline;
