@@ -13,7 +13,9 @@ async function firstLoad(baseURL, query) {
 
     radioEles = document.getElementsByClassName("filters");
     for (radioEle of radioEles) {
-        radioEle.checked = false;
+        if (radioEle.value != "issubeana") {
+            radioEle.checked = false;
+        }
     }
     if (query[3] != "") {
         radioEles[Number(query[3])].checked = true;
@@ -44,6 +46,12 @@ function searchSong() {
     filterEles = Array.from(document.getElementsByClassName("filters")).filter(filterEle => filterEle.checked);
     filterL = (filterEles.map(filterEle => filterEle.value));
 
+    // issubeanaとisxxが両方選択されている場合は無視
+    if (filterL.includes("issubeana") && filterL.includes("isxx")) {
+        filterL.splice(filterL.indexOf("issubeana"), 1);
+        filterL.splice(filterL.indexOf("isxx"), 1);
+    }
+
     categoryValue = document.getElementById("category").value;
     if (categoryValue != "全ての模倣") {
         categoryId = subeanaSongs.filter(song => song.title == categoryValue.slice(0, -2)).map(song => song.id)[0];
@@ -61,7 +69,8 @@ function searchSong() {
         "isoriginal": song => song.isoriginal,
         "isjoke": song => song.isjoke,
         "isinst": song => song.isinst,
-        "issubeana": song => !song.issubeana,
+        "issubeana": song => song.issubeana,
+        "isxx": song => !song.issubeana,
     };
     
     filterL.forEach(filter => {
