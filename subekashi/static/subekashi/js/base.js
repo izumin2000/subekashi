@@ -65,6 +65,7 @@ function isCompleted(song) {
     return !columnL.includes("");
 }
 
+// グローバルヘッダーの取得
 async function getHeader() {
     try {
         const res = await fetch("https://script.google.com/macros/s/AKfycbx-0xNDgYC2FEtislBFe4afGaX0DbRTuSwHMUZH2380R34up5SV-D4eKRNls0f6keG5ow/exec");
@@ -98,6 +99,45 @@ async function getHeader() {
     imicomInnerEle.textContent = "イミコミュメニュー";
 }
 
+
+// クッキーの保存
+function setCookie(name, json) {
+    let expire = '';
+    let period = '';
+    cookies = name + '=' + JSON.stringify(json) + ';';
+    cookies += 'path=/ ;';
+
+    period = 360;        //保存日数
+    expire = new Date();
+    expire.setTime(expire.getTime() + 1000 * 3600 * 24 * period);
+    expire.toUTCString();
+    cookies += 'expires=' + expire + ';';
+
+    document.cookie = cookies;
+};
+
+
+// クッキーの取得
+function getCookie() {
+    
+    let cookies = '';
+    let cookieArray = new Array();
+    let result = new Array();
+
+    cookies = document.cookie;
+
+    if(cookies){
+        cookieArray = cookies.split(';');
+        
+        cookieArray.forEach(data => {
+            data = data.split('=');
+            result[data[0]] = JSON.parse(data[1]);
+        });
+    }
+    return result;
+}
+
+// 読み込み時の実行
 window.onload = function() {
     kanji();
     getHeader();
