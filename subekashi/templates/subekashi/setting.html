@@ -1,0 +1,19 @@
+{% extends "subekashi/base/base.html" %}
+{% block title %}設定{% endblock %}
+{% block ogtitle %}設定{% endblock %}
+{% load static %}
+{% block css %}{% static 'subekashi/css/setting.css'%}{% endblock %}
+
+{% block content %}
+<section>
+    <h1>設定</h1>
+    <div class="underline"></div>
+    <p>開発中...</p>
+</section>
+{% endblock %}
+
+{% block js %}
+<script src="{% static 'subekashi/js/setting.js' %}" rel="stylesheet"></script>
+<script src="{% static 'subekashi/js/fixfooter.js' %}" rel="stylesheet"></script>
+<script>fixfooter()</script>
+{% endblock %}

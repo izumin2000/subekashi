@@ -256,6 +256,10 @@ def ai(request) :
     return render(request, "subekashi/ai.html", {"aiInsL" : aiInsL})
 
 
+def setting(request) :
+    return render(request, "subekashi/setting.html")
+
+
 def research(request) :
     return render(request, "subekashi/research.html")
 
