@@ -8,12 +8,29 @@
 <section>
     <h1>設定</h1>
     <div class="underline"></div>
-    <p>開発中...</p>
+    <p>開発中（まだ動きません）</p>
+    <label>界隈曲の表示</label>
+    <select id="songrange" onchange="songrange()">
+        <option value="all">全て表示する</option>
+        <option value="subeana" selected>すべあな界隈曲のみを表示</option>
+        <option value="xx">すべあな界隈曲以外を表示</option>
+    </select>
+    <br>
+    <label>ネタ曲の表示</label>
+    <select id="jokerange" onchange="jokerange()">
+        <option value="jokeon">表示する</option>
+        <option value="jokeoff" selected>表示しない</option>
+    </select>
 </section>
 {% endblock %}
 
 {% block js %}
 <script src="{% static 'subekashi/js/setting.js' %}" rel="stylesheet"></script>
 <script src="{% static 'subekashi/js/fixfooter.js' %}" rel="stylesheet"></script>
-<script>fixfooter()</script>
+<script>
+    window.addEventListener('load', function(){
+        fixfooter();
+        setSetting();
+    });
+</script>
 {% endblock %}
