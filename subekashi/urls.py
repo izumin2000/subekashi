@@ -19,6 +19,7 @@ urlpatterns = [
     path('channel/<str:channelName>', views.channel, name = 'channel'),
     path('search', views.search, name = 'search'),
     path('ai', views.ai, name = 'ai'),
+    path('setting', views.setting, name = 'setting'),
     path('research', views.research, name = 'research'),
     path('error', views.error, name = 'error'),
     path('dev', views.dev, name = 'dev'),
