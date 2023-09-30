@@ -32,7 +32,6 @@
                     <div class="cardright">
                         {% if songIns.lyrics %}
                             <p class="songlyrics1">{{ songIns.lyrics|slice:"25" }}</p>
-                            <br>
                             <p class="songlyrics2">{{ songIns.lyrics|slice:"25:50" }}...</p>
                         {% else %}
                             {% if songIns.isinst %}

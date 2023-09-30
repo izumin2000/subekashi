@@ -8,12 +8,13 @@
 <section>
     {% if isExist %}
         <p class="songtitle"><i class="fas fa-music"></i>{{ songIns.title }}</p>
+        <p id="songchannellabel"><i class="fas fa-user-circle"></i></p>
         {% for channel in channels %}
-            <a class="songchannel" href="{% url 'subekashi:channel' channel %}"><i class="fas fa-user-circle"></i>{{ channel }}</a>
+            <a class="songchannel" href="{% url 'subekashi:channel' channel %}">{{ channel }}</a>
         {% endfor %}
-        {% if songIns.url %}
-            <a class="songurl" href="{{ songIns.url }}"><i class="fas fa-link"></i>{{ songIns.url }}</a>
-        {% endif %}
+        {% for url in urls %}
+            <a class="songurl" href="{{ url }}"><i class="fas fa-link"></i>{{ url }}</a>
+        {% endfor %}
         <div></div>
         <p id="songimitateslabel"><i class="fas fa-tags fa-xs"></i></p>
         {% for imitateIns in imitateInsL %}
