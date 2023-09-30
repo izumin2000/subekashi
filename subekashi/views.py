@@ -156,6 +156,7 @@ def song(request, songId) :
 
     if isExist :
         dataD["channels"] = songIns.channel.replace(", ", ",").split(",")
+        dataD["urls"] = songIns.url.replace(", ", ",").split(",")
         if songIns.imitate :
             imitateInsL = []
             imitates = songIns.imitate.split(",")

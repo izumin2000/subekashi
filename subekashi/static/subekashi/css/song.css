@@ -2,8 +2,12 @@ section p, section a {
     margin: 20px;
 }
 
-.fa-music, .fa-user-circle, .fa-link {
+.fa-music, .fa-link {
     margin-right: 10px;
+}
+
+.fa-user-circle, .fa-tags {
+    margin-right: 20px;
 }
 
 #songtitle {
@@ -14,7 +18,7 @@ section p, section a {
     margin-right: 7px;
 }
 
-.songchannel ,.songurl, .songtitle {
+.songurl, .songtitle {
     display: block;
     width: fit-content;
 }
@@ -24,7 +28,7 @@ section p, section a {
     margin-top: 40px;
 }
 
-#songimitateslabel, #songimitatedslabel {
+#songchannellabel, #songimitateslabel, #songimitatedslabel {
     display: inline-block;
     white-space: nowrap;
     color: #fff;
@@ -36,10 +40,10 @@ section p, section a {
     padding-right: 24px;
 }
 
-.songimitate {
+.songchannel, .songimitate {
     display: inline;
     white-space: nowrap;
-    margin: 0 0 0 20px;
+    margin: 0 20px 0 0;
 }
 
 .songnotfound {
