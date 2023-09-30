@@ -6,4 +6,5 @@ db.sqlite3
 local_settings.py
 .htmlhintrc
 sandbox
+mycommand.py
 backups/*
