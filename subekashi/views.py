@@ -125,6 +125,8 @@ def new(request) :
             imitateInsL = list(map(lambda i : Song.objects.get(pk = int(i)), songIns.imitate.split(",")))
             dataD["imitateInsL"] = imitateInsL
         dataD["songIns"] = songIns
+        dataD["channels"] = songIns.channel.replace(", ", ",").split(",")
+        dataD["urls"] = songIns.url.replace(", ", ",").split(",")
         dataD["isExist"] = True
 
         content = f'**{songIns.title}**\n\
