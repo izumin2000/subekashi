@@ -223,9 +223,9 @@ def make(request) :
         # TODO model以外もAIを対応させる
         if genetypeForm == "model" :
             aiIns = Ai.objects.filter(genetype = "model", score = 0)
-            if not(len(aiIns)) :
+            if len(aiIns) <= 25 :
                 sendDiscord(ERROR_DISCORD_URL, "aiInsのデータがありません。")
-            # aiIns = Ai.objects.filter(genetype = "model")
+                return render(request, "subekashi/error.html")
             dataD["aiInsL"] = random.sample(list(aiIns), 25)
             return render(request, "subekashi/result.html", dataD)
 
@@ -287,9 +287,9 @@ def dev(request) :
                 gpt_lines = inp_gpt.split("\n")[12:]
                 gpt_lines = [i for i in gpt_lines if i[0] != "="]
                 gpt_lines = sum(list(map(lambda i : re.split("、|。|？", i), gpt_lines)), [])
-                gpt_lines = set(map(lambda i : re.sub("「|」|（|）|(|)|[ -¡]", "", i), gpt_lines))
-                gpt_lines = [i for i in gpt_lines if 6 < len(i) < 22]
-                [Ai.objects.create(lyrics = i, genetype = "model").save() for i in gpt_lines]
+                gpt_lines = set(map(lambda i : re.sub("{|}|/|「|」|（|）|(|)|[ -¡]", "", i), gpt_lines))
+                gpt_lines = [i for i in gpt_lines if (6 < len(i) < 22) and not(re.compile(r'[0-9a-zA-Z]+').search(i))]
+                [Ai.objects.create(lyrics = i, genetype = "model").save() for i in set(gpt_lines)]
 
                 dataD["locked"] = False
             
