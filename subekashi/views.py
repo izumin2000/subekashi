@@ -223,9 +223,8 @@ def make(request) :
         # TODO model以外もAIを対応させる
         if genetypeForm == "model" :
             aiIns = Ai.objects.filter(genetype = "model", score = 0)
-            if not(len(aiIns)) :
+            if len(aiIns) <= 25 :
                 sendDiscord(ERROR_DISCORD_URL, "aiInsのデータがありません。")
-            # aiIns = Ai.objects.filter(genetype = "model")
             dataD["aiInsL"] = random.sample(list(aiIns), 25)
             return render(request, "subekashi/result.html", dataD)
 
