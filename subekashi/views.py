@@ -287,9 +287,9 @@ def dev(request) :
                 gpt_lines = inp_gpt.split("\n")[12:]
                 gpt_lines = [i for i in gpt_lines if i[0] != "="]
                 gpt_lines = sum(list(map(lambda i : re.split("、|。|？", i), gpt_lines)), [])
-                gpt_lines = set(map(lambda i : re.sub("「|」|（|）|(|)|[ -¡]", "", i), gpt_lines))
-                gpt_lines = [i for i in gpt_lines if 6 < len(i) < 22]
-                [Ai.objects.create(lyrics = i, genetype = "model").save() for i in gpt_lines]
+                gpt_lines = set(map(lambda i : re.sub("{|}|/|「|」|（|）|(|)|[ -¡]", "", i), gpt_lines))
+                gpt_lines = [i for i in gpt_lines if (6 < len(i) < 22) and not(re.compile(r'[0-9a-zA-Z]+').search(i))]
+                [Ai.objects.create(lyrics = i, genetype = "model").save() for i in set(gpt_lines)]
 
                 dataD["locked"] = False
             
