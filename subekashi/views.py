@@ -225,6 +225,7 @@ def make(request) :
             aiIns = Ai.objects.filter(genetype = "model", score = 0)
             if len(aiIns) <= 25 :
                 sendDiscord(ERROR_DISCORD_URL, "aiInsのデータがありません。")
+                return render(request, "subekashi/error.html")
             dataD["aiInsL"] = random.sample(list(aiIns), 25)
             return render(request, "subekashi/result.html", dataD)
 
