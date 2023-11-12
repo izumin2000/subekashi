@@ -2,53 +2,96 @@ from django.core.management.base import BaseCommand
 from subekashi.models import Song
 from django.utils import timezone
 
+def getIns(n) :
+    return Song.objects.get(pk = n) if Song.objects.filter(pk = n) else False
+
+def commaClean(s) :
+    if s :
+        s = s[1:] if s[0] == "," else s
+        s = s[:-1] if s[-1] == "," else s
+        return s
+    else :
+        return ""
+
+def commaSplit(s) :
+    return list(map(int, s.split(","))) if s else []
+
+def addId(s, n) :
+    if s :
+        s = set(s.split(","))
+        s.add(str(n))
+        return ",".join(list(s))
+    else :
+        return str(n)
+
+def deleteId(s, n) :
+    s = set(s.split(","))
+    s.remove(str(n))
+    return ",".join(list(s)) if s else ""
 
 class Command(BaseCommand):
-
     def handle(self, *args, **options):
-        for songId in options['d'] :
-            songIns = Song.objects.filter(pk = int(songId)).first()
-            if songIns :
-                print("delete song", songIns.id)
-                songIns.delete()
+        # 指定した曲の削除
+        if options["d"] :
+            for songId in options['d'] :
+                songIns = getIns(songId)
+                if songIns :
+                    print(f"{songIns.id}({songIns})を削除しました")
+                    songIns.delete()
 
-        songInsL = Song.objects.all() 
-        songInsSet = set()
-        for songIns in songInsL :
-            songInsSet.add(songIns.id)
-            if songIns.imitated and songIns.imitated[0] == "," :
-                songIns.imitated = songIns.imitated[1:]
+        for songIns in Song.objects.all() :
+            # 模倣情報のチェック
+            songImitate = songIns.imitate
+            songImitateClean = commaClean(songImitate)
+            if songImitate != songImitateClean :
+                print(f"{songIns.id}({songIns})の模倣情報のエラーを修正しました")
+                songIns.imitate = songImitateClean
                 songIns.save()
-                print("delete conma", songIns.id)
+            
+            # 被模倣情報のチェック
+            songImitated = songIns.imitated
+            songImitatedClean = commaClean(songImitated)
+            if songImitated != songImitatedClean :
+                print(f"{songIns.id}({songIns})の被模倣情報のエラーを修正しました")
+                songIns.imitated = songImitatedClean
+                songIns.save()
 
-        deletedSongsSet = set(range(songInsL.last().id)) - songInsSet
+            # 模倣情報から被模倣情報のチェック
+            for imitateId in commaSplit(songIns.imitate) :
+                imitateIns = getIns(imitateId)
+                if imitateIns :
+                    if songIns.id not in commaSplit(imitateIns.imitated) :
+                        print(f"{imitateIns.id}({imitateIns})の被模倣情報に{songIns.id}({songIns})を追加しました")
+                        imitateIns.imitated = addId(imitateIns.imitated, songIns.id)
+                        imitateIns.save()
+                else :
+                    print(f"{songIns.id}({songIns})の被模倣情報から削除された曲{imitateId}を削除しました")
+                    songIns.imitate = deleteId(songIns.imitate, imitateId)
+                    songIns.save()
 
-        for songIns in songInsL :
-            isChanged = False                
-
-            # imitatedの削除
-            imitated = songIns.imitated
-            imitatedSet = set(map(int, imitated.split(","))) if bool(imitated) else set()
-            if len(imitatedSet & deletedSongsSet) :
-                imitatedL = list(imitatedSet - deletedSongsSet)
-                imitated = ",".join(list(map(str, imitatedL))) if imitatedL else ""
-                print("delete deleted imiteted song(s)", songIns.id)
-                songIns.imitated = imitated
-                isChanged = True
+            # 模倣情報から被模倣情報のチェック  
+            for imitatedId in commaSplit(songIns.imitated) :
+                imitatedIns = getIns(imitatedId)
+                if imitatedIns :
+                    if songIns.id not in commaSplit(imitatedIns.imitate) :
+                        print(f"{imitatedIns.id}({imitatedIns})の模倣情報に{songIns.id}({songIns})を追加しました")
+                        imitatedIns.imitate = addId(imitatedIns.imitate, songIns.id)
+                        imitatedIns.save()
+                else :
+                    print(f"{songIns.id}({songIns})の被模倣情報から削除された曲{imitatedId}を削除しました")
+                    songIns.imitated = deleteId(songIns.imitated, imitatedId)
+                    songIns.save()
 
             # posttimeの埋め込み
             if songIns.posttime == None :
+                print(f"{songIns.id}({songIns})のposttimeを更新しました。", songIns.id)
                 songIns.posttime = timezone.now()
-                print("fill time", songIns.id)
-                isChanged = True
+                songIns.save()
             
             # スラッシュの置換
             if "/" in songIns.title :
+                print(f"{songIns.id}({songIns})のスラッシュをリプレイスしました")
                 songIns.title = songIns.title.replace("/", "╱")
-                print("replace slash", songIns.id)
-                isChanged = True
-            
-            if isChanged :
                 songIns.save()
 
     def add_arguments(self, parser):
