@@ -9,6 +9,9 @@ from .serializer import SongSerializer, AiSerializer
 from config.settings import *
 import re
 from django.utils import timezone
+from django.core import management
+from django.http import JsonResponse
+import json
 
 
 # パスワード関連
@@ -178,7 +181,7 @@ def song(request, songId) :
                 if imitatedInsQ :
                     imitatedIns = imitatedInsQ.first()
                     imitatedInsL.append(imitatedIns)
-                    
+
             dataD["imitatedInsL"] = imitatedInsL
 
     return render(request, "subekashi/song.html", dataD)
@@ -304,3 +307,8 @@ class SongViewSet(viewsets.ReadOnlyModelViewSet):
 class AiViewSet(viewsets.ModelViewSet):
     queryset = Ai.objects.all()
     serializer_class = AiSerializer
+
+def clean(request) :
+    result = management.call_command("clean")
+    res = {"result" : result if result else "競合は発生していません"}
+    return JsonResponse(json.dumps(res, ensure_ascii=False), safe=False)
