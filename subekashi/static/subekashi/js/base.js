@@ -1,18 +1,18 @@
 // 漢字のみ大きく
 function kanji() {
-    tags = ['p', 'a', 'h1', 'h2', 'li', 'textarea', 'input', 'button', 'summary'];
-    for (tag of tags) {
-        for (charEle of document.getElementsByTagName(tag)) {
-            if ((!charEle.classList.contains('staticSize') && (!charEle.classList.contains('buttona')) && (charEle != null))) {
-                var computedStyle = window.getComputedStyle(charEle);
-                var fontSize = computedStyle.getPropertyValue('font-size');
-                var FontSize = parseFloat(fontSize);
-                var sizeUnit = fontSize.replace(FontSize.toString(), "");
-                var newStyle = `font-size: ${parseInt(FontSize * 1.5)}${sizeUnit}`;
-                var newCharEle = charEle.innerHTML.replace(/([\u4E00-\u9FFF])/gi,`<span style="${newStyle}">$1</span>`);
-                charEle.innerHTML = newCharEle
-            }
-        }
+    var query = ":not(:empty):not(.staticSize):not(.buttona):is(p, a, h1, h2, li, textarea, input, button, summary)";
+    var elms = document.querySelectorAll(query);
+
+    // Params.
+    var every_kanji_seq_re = /[\u2E80-\u2FDF々〇〻\u3400-\u9FFF\uF900-\uFAFF\u{20000}-\u{3FFFF}]+/gu;
+    var kanji_size = "150%";
+    // console.assert(/^[0-9]+%$/.test(kanji_size), "kanji_size Syntax");
+    
+    // Enlarge every kanji sequence.
+    for ( let charEle of elms ) {
+        var new_font_size = `font-size: ${kanji_size}`;
+        var newCharEle = charEle.innerHTML.replaceAll(every_kanji_seq_re, `<span style="${new_font_size}">$&</span>`);
+        charEle.innerHTML = newCharEle
     }
 }
 
@@ -69,19 +69,18 @@ function isCompleted(song) {
 async function getHeader() {
     try {
         const res = await fetch("https://script.google.com/macros/s/AKfycbx-0xNDgYC2FEtislBFe4afGaX0DbRTuSwHMUZH2380R34up5SV-D4eKRNls0f6keG5ow/exec");
-    if ( ! res.ok ) {
-        throw new RuntimeError(`getHeader: Response: ${res.status}`);
-    }
+        if ( ! res.ok ) {
+            throw new RuntimeError(`getHeader: Response: ${res.status}`);
+        }
 
-    const resJson = await res.json();
-    const resHeaddata = resJson[0].headdata;
+        const resJson = await res.json();
+        const resHeaddata = resJson[0].headdata;
 
-    const devEle = document.createElement("div");
-    devEle.innerHTML = resHeaddata;
-    const imicomEle = devEle.children;
+        const devEle = document.createElement("div");
+        devEle.innerHTML = resHeaddata;
+        const imicomEle = devEle.children;
 
-    imicomHeaderEle.append(...imicomEle);
-
+        imicomHeaderEle.append(...imicomEle);
     } catch ( error ) {
         console.error(error);
 
