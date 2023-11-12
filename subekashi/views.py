@@ -163,16 +163,10 @@ def song(request, songId) :
             imitateInsL = []
             imitates = songIns.imitate.split(",")
             for imitateId in imitates:
-                if imitateId.isdigit() :
-                    imitateInsQ = Song.objects.filter(id = int(imitateId))
-                    if imitateInsQ :
-                        imitateIns = imitateInsQ.first()
-                        imitateInsL.append(imitateIns)
-                    else :
-                        imitates = imitates.remove(imitateId)
-                        imitates = ",".imitates(imitates) if len(imitates) else ""
-                        songIns.imitate = imitates
-                        songIns.save()
+                imitateInsQ = Song.objects.filter(id = int(imitateId))
+                if imitateInsQ :
+                    imitateIns = imitateInsQ.first()
+                    imitateInsL.append(imitateIns)
 
             dataD["imitateInsL"] = imitateInsL
 
@@ -180,16 +174,11 @@ def song(request, songId) :
             imitatedInsL = []
             imitateds = songIns.imitated.split(",")
             for imitatedId in imitateds:
-                if imitatedId.isdigit() :
-                    imitatedInsQ = Song.objects.filter(id = int(imitatedId))
-                    if imitatedInsQ :
-                        imitatedIns = imitatedInsQ.first()
-                        imitatedInsL.append(imitatedIns)
-                    else :
-                        imitateds = imitates.remove(imitatedId)
-                        imitateds = ",".imitates(imitateds) if len(imitateds) else ""
-                        songIns.imitated = imitateds
-                        songIns.save()
+                imitatedInsQ = Song.objects.filter(id = int(imitatedId))
+                if imitatedInsQ :
+                    imitatedIns = imitatedInsQ.first()
+                    imitatedInsL.append(imitatedIns)
+                    
             dataD["imitatedInsL"] = imitatedInsL
 
     return render(request, "subekashi/song.html", dataD)
@@ -206,7 +195,6 @@ def delete(request) :
         reasonForm = request.POST.get("reason")
         content = f"ID：{songIns.id}\n理由：{reasonForm}"
         statusCode = sendDiscord(DELETE_DISCORD_URL, content)
-        print(statusCode)
         if statusCode != 204 :
             return render(request, 'subekashi/error.html', dataD)
         
