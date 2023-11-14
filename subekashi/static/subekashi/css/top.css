@@ -14,7 +14,7 @@
 
 #imicom {
     display: block;
-    margin: 0 auto -50px auto;
+    margin: 40px auto -20px auto;
     width: 425px;
 }
 
@@ -54,4 +54,16 @@
     display: block;
     width: 200px;
     margin: 20px auto;
+}
+
+.twitter-timeline-wrapper {
+    padding: 20px 0;
+}
+
+.twitter-timeline {
+    display: block;
+    width: 60vw;
+    height: 100vw;
+    margin: 0 auto;
+    overflow: scroll;
 }

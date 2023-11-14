@@ -377,6 +377,7 @@ textarea {
 .buttona {
     display:block;
     text-decoration: none;
+    height: 100%;
 }
 
 
