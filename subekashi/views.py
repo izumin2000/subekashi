@@ -315,10 +315,11 @@ def clean(request) :
     return JsonResponse(json.dumps(res, ensure_ascii=False), safe=False)
 
 def handle_404_error(request, exception=None):
-    return render(request, 'subekashi/404.html', status=404)
+    dataD = initD()
+    return render(request, 'subekashi/404.html', dataD, status=404)
     
 def handle_500_error(request):
     error_msg = HttpResponseServerError().content.decode("utf-8")
-    print(error_msg)
+    dataD = initD()
     sendDiscord(ERROR_DISCORD_URL, error_msg)
-    return render(request, 'subekashi/500.html', status=500)
+    return render(request, 'subekashi/500.html', dataD, status=500)
