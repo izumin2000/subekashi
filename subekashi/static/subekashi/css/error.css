@@ -1,9 +1,28 @@
 #error {
-    margin-top: 192px;
+    margin-top: 90vh;
 }
 
 #error h2 {
-    font-size: 32px;
-    margin-bottom: 96px;
+    font-size: 24px;
+    margin-bottom: 64px;
     text-align: center;
+}
+
+#error div {
+    text-align: center;
+    margin: 40vh auto;
+    display: table;
+}
+
+#error img {
+    margin: 0 auto;
+    height: 64px;
+}
+
+#error .logomoji {
+    margin: 20px auto;
+    padding-left: 20px;
+    font-size: 24px;
+    vertical-align: middle;
+    display: table-cell;
 }
