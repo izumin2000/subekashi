@@ -10,7 +10,7 @@ from config.settings import *
 import re
 from django.utils import timezone
 from django.core import management
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseServerError
 import json
 
 
@@ -183,8 +183,9 @@ def song(request, songId) :
                     imitatedInsL.append(imitatedIns)
 
             dataD["imitatedInsL"] = imitatedInsL
-
-    return render(request, "subekashi/song.html", dataD)
+        return render(request, "subekashi/song.html", dataD)
+    else :
+        return render(request, 'subekashi/404.html', status=404)
 
 
 def delete(request) :
@@ -312,3 +313,12 @@ def clean(request) :
     result = management.call_command("clean")
     res = {"result" : result if result else "競合は発生していません"}
     return JsonResponse(json.dumps(res, ensure_ascii=False), safe=False)
+
+def handle_404_error(request, exception=None):
+    return render(request, 'subekashi/404.html', status=404)
+    
+def handle_500_error(request):
+    error_msg = HttpResponseServerError().content.decode("utf-8")
+    print(error_msg)
+    sendDiscord(ERROR_DISCORD_URL, error_msg)
+    return render(request, 'subekashi/500.html', status=500)

@@ -1,0 +1,24 @@
+{% extends "subekashi/base/base.html" %}
+{% block title %}エラー{% endblock %}
+{% block ogtitle %}エラー{% endblock %}
+{% load static %}
+{% block css %}{% static 'subekashi/css/error.css'%}{% endblock %}
+
+{% block content %}
+<section id="error">
+    <h2>本日は全て歌詞の所為です。に</h2>
+    <h2>御アクセス頂き、</h2>
+    <h2>ありがとうございます。</h2>
+    <h2>大変申し訳ありませんが、</h2>
+    <h2>内部エラーが発生した為、</h2>
+    <h2>ご覧になることが出来ません。</h2>
+    <h2>またの御アクセスをお待ちしております。</h2>
+    <br><br><br><br>
+    <a href="{% url 'subekashi:top' %}" class="staticSize"><img name="thumbnail" class="logo" src="{% static 'subekashi/image/icon.png' %}" alt="全て歌詞の所為です。のロゴ"></a>
+    <a href="{% url 'subekashi:top' %}" class="logomoji">全て歌詞の所為です。</a>
+</section>
+{% endblock %}
+
+{% block js %}
+    <script src="{% static 'subekashi/js/error.js' %}?{{ lastModified }}" rel="stylesheet"></script>
+{% endblock %}
