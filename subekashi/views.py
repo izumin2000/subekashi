@@ -12,6 +12,7 @@ from django.utils import timezone
 from django.core import management
 from django.http import JsonResponse, HttpResponseServerError
 import json
+import traceback
 
 
 # パスワード関連
@@ -319,7 +320,7 @@ def handle_404_error(request, exception=None):
     return render(request, 'subekashi/404.html', dataD, status=404)
     
 def handle_500_error(request):
-    error_msg = HttpResponseServerError().content.decode("utf-8")
+    error_msg = traceback.format_exc()
     dataD = initD()
     sendDiscord(ERROR_DISCORD_URL, error_msg)
     return render(request, 'subekashi/500.html', dataD, status=500)
