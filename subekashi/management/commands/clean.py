@@ -30,7 +30,7 @@ def deleteId(s, n) :
     return ",".join(list(s)) if s else ""
 
 def output(m) :
-    print(m)
+    print(m, end="")
     return m
 
 class Command(BaseCommand):
@@ -60,7 +60,8 @@ class Command(BaseCommand):
                 msg += output(f"{songIns.id}({songIns})の被模倣情報のエラーを修正しました\n")
                 songIns.imitated = songImitatedClean
                 songIns.save()
-
+        
+        for songIns in Song.objects.all() :
             # 模倣情報から被模倣情報のチェック
             for imitateId in commaSplit(songIns.imitate) :
                 imitateIns = getIns(imitateId)
