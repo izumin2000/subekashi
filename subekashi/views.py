@@ -10,7 +10,7 @@ from config.settings import *
 import re
 from django.utils import timezone
 from django.core import management
-from django.http import JsonResponse, HttpResponseServerError
+from django.http import JsonResponse
 import json
 import traceback
 
@@ -81,7 +81,7 @@ def new(request) :
         isdraftForm = request.POST.get("isdraft")
 
         if ("" in [titleForm, channelForm]) :
-            return render(request, "subekashi/error.html")
+            return render(request, "subekashi/500.html")
 
         titleForm = titleForm.replace("/", "╱")
         songIns, _ = Song.objects.get_or_create(title = titleForm, channel = channelForm, defaults={"posttime" : timezone.now()})
@@ -201,7 +201,8 @@ def delete(request) :
         content = f"ID：{songIns.id}\n理由：{reasonForm}"
         statusCode = sendDiscord(DELETE_DISCORD_URL, content)
         if statusCode != 204 :
-            return render(request, 'subekashi/error.html', dataD)
+            sendDiscord(ERROR_DISCORD_URL, f"削除フォーム時に{statusCode}エラーが発生しました")
+            return render(request, 'subekashi/500.html', dataD)
         
     return render(request, 'subekashi/song.html', dataD)
 
@@ -218,7 +219,7 @@ def make(request) :
             aiIns = Ai.objects.filter(genetype = "model", score = 0)
             if len(aiIns) <= 25 :
                 sendDiscord(ERROR_DISCORD_URL, "aiInsのデータがありません。")
-                return render(request, "subekashi/error.html")
+                return render(request, "subekashi/500.html")
             dataD["aiInsL"] = random.sample(list(aiIns), 25)
             return render(request, "subekashi/result.html", dataD)
 
@@ -260,7 +261,7 @@ def research(request) :
 
 
 def error(request) :
-    return render(request, "subekashi/error.html")
+    return render(request, "subekashi/500.html")
 
 
 def dev(request) :
