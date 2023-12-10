@@ -1,4 +1,4 @@
-var songJson, songResult, songGuessEles, imitateList = [];
+var songJson, songResult, songGuessEles, imitateList = [], isGetQuery = false;
 
 async function firstLoad(baseURL, songId) {
     res = await fetch(baseURL + "/api/song/?format=json");
@@ -12,12 +12,15 @@ async function firstLoad(baseURL, songId) {
         setSubmitButton("_", "_");
     }
 
+    isGetQuery = songId != "None"
+
     checkExist();
     songGuessEles = document.getElementsByClassName("songGuess");
 
     document.getElementById("loading").style.display = "none";
     document.getElementById("newform").style.display = "block";
     document.getElementById("deleteform").style.display = "block";
+    document.getElementById("songid").value = Number(songId);
 }
 
 
@@ -72,6 +75,11 @@ function checkExist() {
         }
     } else {
         isExistEle.innerHTML = "";
+        fillFormButtonEle.style.display = "none";
+    }
+    
+    if (isGetQuery) {
+        isExistEle.innerHTML = "<span class='warning'>曲の記事の上書きをしています。</span>";
         fillFormButtonEle.style.display = "none";
     }
 
