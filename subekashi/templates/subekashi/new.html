@@ -103,6 +103,7 @@
     <p class="detailP">最終更新日：2023年9月25日</p>
     <p id="loading">読み込み中</p>
     <form action="{% url 'subekashi:new' %}" method="POST" id="newform">{% csrf_token %}
+        <input type="number" id="songid" name="songid" hidden><br>
         <label>曲名*</label>
         <input type="text" id="title" name="title" oninput="checkExist()" value="{{ title }}"><br>
         <label>作者*</label>
@@ -171,11 +172,7 @@
 <script src="{% static 'subekashi/js/newform.js' %}" rel="stylesheet"></script>
 <script>
     window.addEventListener('load', function() {
-        if ('{{ id }}') {
-            firstLoad('{{ baseURL }}', '{{ id }}');
-        } else {
-            firstLoad('{{ baseURL }}', 0);
-        }
+        firstLoad('{{ baseURL }}', '{{ id }}');
     });
 </script>
 

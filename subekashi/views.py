@@ -68,6 +68,7 @@ def new(request) :
     dataD = initD()
 
     if request.method == "POST":
+        idForm = request.POST.get("songid")
         titleForm = request.POST.get("title")
         channelForm = request.POST.get("channel")
         urlForm = request.POST.get("url")
@@ -84,7 +85,12 @@ def new(request) :
             return render(request, "subekashi/500.html")
 
         titleForm = titleForm.replace("/", "╱")
-        songIns, _ = Song.objects.get_or_create(title = titleForm, channel = channelForm, defaults={"posttime" : timezone.now()})
+        if idForm :
+            songIns = Song.objects.get(pk = int(idForm))
+            songIns.title = titleForm
+            songIns.channel = channelForm
+        else :
+            songIns, _ = Song.objects.get_or_create(title = titleForm, channel = channelForm, defaults={"posttime" : timezone.now()})
         
         oldImitateS = set(songIns.imitate.split(",")) - set([''])
         newImitateS = set(imitatesForm.split(",")) - set([''])
