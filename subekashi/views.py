@@ -182,8 +182,8 @@ def song(request, songId) :
 
         if songIns.imitated :
             imitatedInsL = []
-            imitateds = songIns.imitated.split(",")
-            for imitatedId in imitateds:
+            imitateds = set(songIns.imitated.split(",")) - set([""])
+            for imitatedId in imitateds :
                 imitatedInsQ = Song.objects.filter(id = int(imitatedId))
                 if imitatedInsQ :
                     imitatedIns = imitatedInsQ.first()
