@@ -10,7 +10,7 @@ from config.settings import *
 import re
 from django.utils import timezone
 from django.core import management
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 import json
 import traceback
 
@@ -41,19 +41,37 @@ def sendDiscord(url, content) :
     res = requests.post(url, data={'content': content})
     return res.status_code
 
+def getCookie(request) :
+    cookie = request.COOKIES
+    response = HttpResponse()
+    if not "songrange" in cookie.keys() :
+        response.set_cookie("songrange", "all")
+    if not "jokerange" in cookie.keys() :
+        response.set_cookie("jokerange", "off")
+
 
 def top(request):
     dataD = initD()
-    songInsL = list(Song.objects.all())[:-7:-1]
-    dataD["songInsL"] = songInsL
-    lackInsL = list(Song.objects.filter(isdraft = True))
-    lackInsL += list(Song.objects.filter(lyrics = "").exclude(isinst = True))
-    lackInsL += list(Song.objects.filter(url = "").exclude(isdeleted = True))
-    lackInsL += list(Song.objects.filter(imitate = "").exclude(issubeana = True).exclude(isoriginal = True))
+    cookie = getCookie(request)
+    if cookie["songrange"] == "all" :
+        songInsL = Song.objects.all()
+    elif cookie["songrange"] == "subeana" :
+        songInsL = Song.objects.filter(issubeana = True)
+    elif cookie["songrange"] == "xx" :
+        songInsL = Song.objects.filter(issubeana = False)
+    if cookie["jokerange"] == "off" :
+        songInsL = songInsL.filter(isjoke = False)
+        
+    dataD["songInsL"] = list(songInsL)[:-7:-1]
+    lackInsL = list(songInsL.filter(isdraft = True))
+    lackInsL += list(songInsL.filter(lyrics = "").exclude(isinst = True))
+    lackInsL += list(songInsL.filter(url = "").exclude(isdeleted = True))
+    lackInsL += list(songInsL.filter(imitate = "").exclude(issubeana = True).exclude(isoriginal = True))
     if lackInsL :
         lackInsL = random.sample(lackInsL, min(6, len(lackInsL)))
         dataD["lackInsL"] = lackInsL
     aiInsL = Ai.objects.filter(score = 5)[::-1]
+    
     if aiInsL :
         dataD["aiInsL"] = aiInsL[min(10, len(aiInsL))::-1]
         

@@ -8,7 +8,7 @@
 <section>
     <h1>設定</h1>
     <div class="underline"></div>
-    <p>開発中（まだ動きません）</p>
+    <p>トップページのみ動作します。その他ページでの設定の反映はまだできていません。</p>
     <label>界隈曲の表示</label>
     <select id="songrange" onchange="songrange()">
         <option value="all">全て表示する</option>
@@ -18,9 +18,10 @@
     <br>
     <label>ネタ曲の表示</label>
     <select id="jokerange" onchange="jokerange()">
-        <option value="jokeon">表示する</option>
-        <option value="jokeoff" selected>表示しない</option>
+        <option value="on">表示する</option>
+        <option value="off" selected>表示しない</option>
     </select>
+    <br>
 </section>
 {% endblock %}
 

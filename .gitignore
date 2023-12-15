@@ -8,3 +8,4 @@ local_settings.py
 sandbox
 mycommand.py
 backups/*
+private/*
