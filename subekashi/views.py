@@ -48,6 +48,7 @@ def getCookie(request) :
         response.set_cookie("songrange", "all")
     if not "jokerange" in cookie.keys() :
         response.set_cookie("jokerange", "off")
+    return cookie
 
 
 def top(request):
