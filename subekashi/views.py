@@ -41,26 +41,28 @@ def sendDiscord(url, content) :
     res = requests.post(url, data={'content': content})
     return res.status_code
 
-def getCookie(request) :
+def setCookie(request) :
     cookie = request.COOKIES
     response = HttpResponse()
     if not "songrange" in cookie.keys() :
         response.set_cookie("songrange", "all")
     if not "jokerange" in cookie.keys() :
         response.set_cookie("jokerange", "off")
-    return cookie
+    return request.COOKIES
 
 
 def top(request):
     dataD = initD()
-    cookie = getCookie(request)
-    if cookie["songrange"] == "all" :
+    cookie = setCookie(request)
+    songrange = cookie.get("songrange", None)
+    jokerange = cookie.get("jokerange", None)
+    if songrange == "all" :
         songInsL = Song.objects.all()
-    elif cookie["songrange"] == "subeana" :
+    elif songrange == "subeana" :
         songInsL = Song.objects.filter(issubeana = True)
-    elif cookie["songrange"] == "xx" :
+    elif songrange == "xx" :
         songInsL = Song.objects.filter(issubeana = False)
-    if cookie["jokerange"] == "off" :
+    if jokerange == "off" :
         songInsL = songInsL.filter(isjoke = False)
         
     dataD["songInsL"] = list(songInsL)[:-7:-1]
