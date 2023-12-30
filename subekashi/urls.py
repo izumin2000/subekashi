@@ -14,7 +14,6 @@ urlpatterns = [
     path('', views.top, name='top'),
     path('new', views.new, name='new'),
     path('delete', views.delete, name='delete'),
-    path('make', views.make, name='make'),
     path('songs/<int:songId>', views.song, name='song'),
     path('channel/<str:channelName>', views.channel, name='channel'),
     path('search', views.search, name='search'),

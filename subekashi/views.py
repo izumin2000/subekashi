@@ -41,6 +41,7 @@ def sendDiscord(url, content) :
     res = requests.post(url, data={'content': content})
     return res.status_code
 
+# TODO request.COOKIESは読み取り専用なので、
 def setCookie(request):
     if 'songrange' not in request.COOKIES:
         request.COOKIES['songrange'] = 'subeana'
@@ -232,23 +233,20 @@ def delete(request) :
     return render(request, 'subekashi/song.html', dataD)
 
 
-def make(request) :
+def ai(request) :
     dataD = initD()
     dataD["songInsL"] = Song.objects.all()
 
     if request.method == "POST" :
-        genetypeForm = request.POST.get("genetype")
-
-        # TODO model以外もAIを対応させる
-        if genetypeForm == "model" :
-            aiIns = Ai.objects.filter(genetype = "model", score = 0)
-            if len(aiIns) <= 25 :
-                sendDiscord(ERROR_DISCORD_URL, "aiInsのデータがありません。")
-                return render(request, "subekashi/500.html")
-            dataD["aiInsL"] = random.sample(list(aiIns), 25)
-            return render(request, "subekashi/result.html", dataD)
-
-    return render(request, "subekashi/make.html", dataD)
+        aiIns = Ai.objects.filter(genetype = "model", score = 0)
+        if len(aiIns) <= 25 :
+            sendDiscord(ERROR_DISCORD_URL, "aiInsのデータがありません。")
+            aiIns = Ai.objects.filter(genetype = "model")
+        dataD["aiInsL"] = random.sample(list(aiIns), 25)
+        return render(request, "subekashi/result.html", dataD)
+    dataD["bestInsL"] = list(Ai.objects.filter(genetype = "model", score = 5))[:-300:-1]
+    
+    return render(request, "subekashi/ai.html", dataD)
 
 
 def channel(request, channelName) :
@@ -270,11 +268,6 @@ def search(request) :
     query = request.GET
     dataD["query"] = f"{query.get('title')},{query.get('channel')},{query.get('lyrics')},{query.get('filter')}".replace("None", "")
     return render(request, "subekashi/search.html", dataD)
-
-
-def ai(request) :
-    aiInsL = list(Ai.objects.filter(genetype = "model", score = 5))[:-300:-1]
-    return render(request, "subekashi/ai.html", {"aiInsL" : aiInsL})
 
 
 def setting(request) :
