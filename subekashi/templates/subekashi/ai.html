@@ -1,16 +1,40 @@
 {% extends "subekashi/base/base.html" %}
-{% block title %}生成された最高評価の歌詞{% endblock %}
-{% block ogtitle %}生成された最高評価の歌詞{% endblock %}
+{% block title %}歌詞生成{% endblock %}
+{% block ogtitle %}歌詞生成{% endblock %}
 {% load static %}
 {% block css %}{% static 'subekashi/css/ai.css'%}{% endblock %}
 
 {% block content %}
+<section id="formsection">
+    <h1>歌詞の生成</h1>
+    <div class="underline"></div>
+    <form action="{% url 'subekashi:ai' %}" method="POST" id="aiForm">{% csrf_token %}
+        <label>使用モデル</label>
+        <!-- <div class="devInput" onclick="devInput(0)"> -->
+        <div class="devInput">
+            <input type="radio" class="genetype" name="genetype" value="category" oninput="changetype(0)" checked>
+            <label>すべあな/全曲/評価込</label>
+        </div>
+        <!-- <div class="devInput" onclick="devInput(1)"> -->
+        <div class="devInput">
+            <input type="radio" class="genetype" name="genetype" value="song" oninput="changetype(1)" disabled>
+            <label><s>すべあな/全曲/評価無(開発中)</s></label>
+        </div>
+        <div class="devInput" onclick="devInput(2)">
+            <input type="radio" class="genetype" name="genetype" value="model" oninput="changetype(2)" disabled>
+            <label><s>すべあな/.枠(開発中)</s></label>
+        </div><br><br>
+        <p class="staticSize">総学習量: 908675文字(1101曲, 2987評価)</p>
+        <input type="submit" value="生成" id="submit">
+    </form>
+</section>
+
 <section id="aisection">
     <h1>生成された最高評価の歌詞</h1>
     <div class="underline"></div>
-    {% for aiIns in aiInsL  %}
+    {% for bestIns in bestInsL  %}
         <div class="lyricdiv">
-            <p class="lyric">{{ aiIns.lyrics }}</p>
+            <p class="lyric">{{ bestIns.lyrics }}</p>
         </div>
     {% endfor %}
 </section>
