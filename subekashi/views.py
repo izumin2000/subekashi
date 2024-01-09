@@ -218,17 +218,21 @@ def song(request, songId) :
 def delete(request) :
     dataD = initD()
     dataD["isDeleted"] = True
-
+    dataD["songInsL"] = Song.objects.all()
+    
     if request.method == "POST":
         titleForm = request.POST.get("title")
         channelForm = request.POST.get("channel")
-        songIns, _ = Song.objects.get_or_create(title = titleForm, channel = channelForm, defaults={"posttime" : timezone.now()})
+        songIns = Song.objects.filter(title = titleForm, channel = channelForm)
+        if not songIns :
+            return render(request, 'subekashi/500.html')
+        songIns = songIns.first()
         reasonForm = request.POST.get("reason")
         content = f"ID：{songIns.id}\n理由：{reasonForm}"
         statusCode = sendDiscord(DELETE_DISCORD_URL, content)
         if statusCode != 204 :
             sendDiscord(ERROR_DISCORD_URL, f"削除フォーム時に{statusCode}エラーが発生しました")
-            return render(request, 'subekashi/500.html', dataD)
+            return render(request, 'subekashi/500.html')
         
     return render(request, 'subekashi/song.html', dataD)
 
@@ -335,11 +339,9 @@ def clean(request) :
     return JsonResponse(json.dumps(res, ensure_ascii=False), safe=False)
 
 def handle_404_error(request, exception=None):
-    dataD = initD()
-    return render(request, 'subekashi/404.html', dataD, status=404)
+    return render(request, 'subekashi/404.html', status=404)
     
 def handle_500_error(request):
     error_msg = traceback.format_exc()
-    dataD = initD()
     sendDiscord(ERROR_DISCORD_URL, error_msg)
-    return render(request, 'subekashi/500.html', dataD, status=500)
+    return render(request, 'subekashi/500.html', status=500)
