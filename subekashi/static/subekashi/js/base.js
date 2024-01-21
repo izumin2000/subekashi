@@ -68,7 +68,7 @@ function isCompleted(song) {
 // グローバルヘッダーの取得
 async function getHeader() {
     try {
-        const res = await fetch("https://script.google.com/macros/s/AKfycbx-0xNDgYC2FEtislBFe4afGaX0DbRTuSwHMUZH2380R34up5SV-D4eKRNls0f6keG5ow/exec");
+        const res = await fetch("https://script.google.com/macros/s/AKfycbx6kVTjsvQ5bChKtRMp1KCRr56NkkhFlOXhYv3a_1HK-q8UJTgIvFzI1TTpzIWGbpY6/exec?type=full");
         if ( ! res.ok ) {
             throw new RuntimeError(`getHeader: Response: ${res.status}`);
         }

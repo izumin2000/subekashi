@@ -324,6 +324,10 @@ def sitemap(request) :
     return redirect(f"{ROOT_DIR}/static/subekashi/sitemap.xml")
 
 
+def appleicon(request) :
+    return redirect(f"{ROOT_DIR}/static/subekashi/image/apple-touch-icon.png")
+
+
 class SongViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Song.objects.all()
     serializer_class = SongSerializer
