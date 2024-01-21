@@ -25,6 +25,7 @@ urlpatterns = [
     path('github', views.github, name='github'),
     path('robots.txt', views.robots, name='robots'),
     path('sitemap.xml', views.sitemap, name='sitemap'),
+    path('apple-touch-icon.png', views.appleicon, name='apple-touch-icon'),
     path('api/',include(defaultRouter.urls)),
     path('api/clean', views.clean, name='clean'),
 ]
