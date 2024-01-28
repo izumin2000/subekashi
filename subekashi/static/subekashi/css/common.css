@@ -2,17 +2,17 @@
 	--imiN-header-height: 30px;
 }
 
-/* @font-face {
+@font-face {
     font-family: "Imitate";
     src:
         url("../GenZenGothicKaiC.woff2") format("woff2"),
-} */
+}
 
 * {
     margin: 0px;
     padding: 0px;
-    /* font-family: 'Imitate', sans-serif; */
-    font-family: 'Noto Sans JP', sans-serif;
+    font-family: 'Imitate', sans-serif;
+    font-weight: 100;
 }
 
 html {
