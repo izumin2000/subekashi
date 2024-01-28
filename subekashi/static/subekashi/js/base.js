@@ -1,3 +1,11 @@
+// ホスト名+ドメインの取得
+function baseURL() {
+    var currentURL = window.location.href;
+    var protocolAndDomain = currentURL.split("//")[0] + "//" + currentURL.split("/")[2];
+    console.log(protocolAndDomain);
+    return protocolAndDomain;
+}
+
 // 漢字のみ大きく
 function kanji() {
     var query = ":not(:empty):not(.staticSize):not(.buttona):is(p, a, h1, h2, li, textarea, input, button, summary)";

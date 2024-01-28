@@ -30,10 +30,6 @@ def formatURL(url) :
 
 def initD() :
     dataD = {"lastModified": Singleton.objects.filter(key = "lastModified").first().value}
-    if DEBUG :
-        dataD["baseURL"] = "http://subekashi.localhost:8000"
-    else :
-        dataD["baseURL"] = "https://lyrics.imicomweb.com"
     return dataD
 
 

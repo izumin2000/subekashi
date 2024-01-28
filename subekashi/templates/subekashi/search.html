@@ -109,7 +109,7 @@
 <script src="{% static 'subekashi/js/search.js' %}?{{ lastModified }}" rel="stylesheet"></script>
 <script>
     window.addEventListener('load', function(){
-        firstLoad('{{ baseURL }}', '{{ query|safe }}');
+        firstLoad('{{ query|safe }}');
         }
     )
 </script>

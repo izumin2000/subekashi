@@ -1,7 +1,7 @@
 var songJson, songResult, songGuessEles, imitateList = [], isGetQuery = false;
 
-async function firstLoad(baseURL, songId) {
-    res = await fetch(baseURL + "/api/song/?format=json");
+async function firstLoad(songId) {
+    res = await fetch(baseURL() + "/api/song/?format=json");
     songJson = await res.json();
 
     if (songId != "None") {
