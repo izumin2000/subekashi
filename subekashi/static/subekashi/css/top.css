@@ -1,3 +1,24 @@
+/* デフォ子誕生日記念*/
+#defoko {
+    display: block;
+    width: fit-content;
+    height: fit-content;
+    background-color: #444;
+    margin: 0 auto;
+    border: solid 10px #FFF;
+}
+
+#defoko p {
+    padding: 5px;
+}
+
+#defoko img {
+    display: block;
+    height: 30vh;
+    margin: 0 auto;
+}
+
+
 .dummybutton {
     margin: 0 auto;
 }
