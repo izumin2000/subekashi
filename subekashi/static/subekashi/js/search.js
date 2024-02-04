@@ -1,7 +1,7 @@
 var songJson, songResult, subeanaSongs, songEles;
 
-async function firstLoad(baseURL, query) {
-    res = await fetch(baseURL + "/api/song/?format=json");
+async function firstLoad(query) {
+    res = await fetch(baseURL() + "/api/song/?format=json");
     songJson = await res.json();
     subeanaSongs = songJson.filter(song => song.channel == "全てあなたの所為です。");
     songEles = document.getElementsByClassName("songcard");

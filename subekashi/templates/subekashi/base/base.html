@@ -18,10 +18,7 @@
         <link rel="stylesheet" type="text/css" href="{% static 'subekashi/css/common.css'%}?{{ lastModified }}">
         <link rel="stylesheet" type="text/css" href="{% block css %}{% endblock %}?{{ lastModified }}">
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
-        <link rel="preconnect" href="https://fonts.googleapis.com">     <!-- sans font -->
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>        <!-- sans font -->
         <link rel="shortcut icon" href="{% static 'subekashi/image/icon.ico' %}">
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@900&display=swap" rel="stylesheet">      <!-- sans font -->
     </head>
     <body>
         {% include './header.html' %}
@@ -33,7 +30,6 @@
         {% include './footer.html' %}
     </body>
 
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script> <!-- jquery -->
     <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     {% block js %}{% endblock %}

@@ -1,19 +1,8 @@
-// 漢字のみ大きく
-function kanji() {
-    var query = ":not(:empty):not(.staticSize):not(.buttona):is(p, a, h1, h2, li, textarea, input, button, summary)";
-    var elms = document.querySelectorAll(query);
-
-    // Params.
-    var every_kanji_seq_re = /[\u2E80-\u2FDF々〇〻\u3400-\u9FFF\uF900-\uFAFF\u{20000}-\u{3FFFF}]+/gu;
-    var kanji_size = "150%";
-    // console.assert(/^[0-9]+%$/.test(kanji_size), "kanji_size Syntax");
-    
-    // Enlarge every kanji sequence.
-    for ( let charEle of elms ) {
-        var new_font_size = `font-size: ${kanji_size}`;
-        var newCharEle = charEle.innerHTML.replaceAll(every_kanji_seq_re, `<span style="${new_font_size}">$&</span>`);
-        charEle.innerHTML = newCharEle
-    }
+// ホスト名+ドメインの取得
+function baseURL() {
+    var currentURL = window.location.href;
+    var protocolAndDomain = currentURL.split("//")[0] + "//" + currentURL.split("/")[2];
+    return protocolAndDomain;
 }
 
 
@@ -21,10 +10,7 @@ function kanji() {
 var isMain = true;
 var menuarticleEle = document.getElementById("menuarticle");
 var imicomHeaderEle = document.getElementById("imiN_header");
-
 function menu() {
-    // imicomHeaderEle.classList.toggle("hide");
-
     menuarticleEle.classList.toggle("shown");
     const menuiconEle = document.getElementById("menuicon");
     menuiconEle.classList.toggle("fa-bars");
@@ -65,21 +51,19 @@ function isCompleted(song) {
     return !columnL.includes("");
 }
 
+
 // グローバルヘッダーの取得
 async function getHeader() {
     try {
         const res = await fetch("https://script.google.com/macros/s/AKfycbx6kVTjsvQ5bChKtRMp1KCRr56NkkhFlOXhYv3a_1HK-q8UJTgIvFzI1TTpzIWGbpY6/exec?type=full");
+        const text = await res.text();
         if ( ! res.ok ) {
             throw new RuntimeError(`getHeader: Response: ${res.status}`);
         }
-
-        const resJson = await res.json();
-        const resHeaddata = resJson[0].headdata;
-
+        
         const devEle = document.createElement("div");
-        devEle.innerHTML = resHeaddata;
+        devEle.innerHTML = text;
         const imicomEle = devEle.children;
-
         imicomHeaderEle.append(...imicomEle);
     } catch ( error ) {
         console.error(error);
@@ -92,10 +76,20 @@ async function getHeader() {
     const headerEle = document.getElementsByTagName("header")[0];
     headerEle.style.top = `-${imicomHeaderEle.clientHeight + 5}px`;
 
-    document.getElementsByClassName("fault")[0].remove();
-    var imicomInnerEle = imicomHeaderEle.children[2].children[0]
-    imicomInnerEle.classList.add("imiN_headerOverwrite");
-    imicomInnerEle.textContent = "イミコミュメニュー";
+    
+    var imiN_listEles = document.getElementsByClassName("imiN_list")[0].children;
+    Array.from(imiN_listEles).forEach(function(imiN_listEle) {
+        imiN_listEle.children[0].style = "color: #000; font-size: 20px;"
+    })
+
+    var faultEle = document.getElementsByClassName("fault")[0].children[0];
+    faultEle.style = "color: #FFF; font-size: 16px";
+    
+    var imiN_header_innerEle = document.getElementsByClassName("imiN_header_inner")[0];
+    imiN_header_innerEle.style = "padding-left: 0"
+
+    var imiN_noticeEle = document.getElementsByClassName("imiN_notice")[0].childNodes[2];
+    imiN_noticeEle.style = "color: #777"
 }
 
 
@@ -141,6 +135,5 @@ function getCookie() {
 
 // 読み込み時の実行
 window.onload = function() {
-    kanji();
     getHeader();
 }
