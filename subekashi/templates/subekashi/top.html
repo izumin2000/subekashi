@@ -11,6 +11,8 @@
         <p>デフォ子お誕生日おめでとう!</p>
         <img src="{% static 'subekashi/image/defoko.png' %}" alt="誕生日の画像">
     </div>
+    <div class="dummybutton present" onclick="addonigiri('PUT')"><p class="dummybuttonp">おにぎりをプレゼントする</p></div>
+    <p id="onigiri">おにぎりの数: <span id="counter">{{ onigiri }}</span></p>
 </section>
 <section>
     <h1>新着</h1>
@@ -148,4 +150,46 @@
         <p>飴屋P様, Tda様, 山本様, 金子卵様, エナメルP様・邪悪の化身バレッタ!!様, AGA様, マシシ様, sutokkko様</p>
     </div>
 </section>
+{% endblock %}
+
+{% block js %}
+<script>
+    async function getCSRF() {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; csrftoken=`);
+    if (parts.length === 2) {
+        csrf = parts.pop().split(';').shift()
+        return csrf;
+    }
+}
+
+
+async function addonigiri(method) {
+    res = null
+    csrf = await getCSRF();
+    try {
+        res = await fetch(baseURL() + "/onigiri",
+        {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrf,
+            },
+            credentials: 'include',
+        });
+        if ( ! res.ok ) {
+            throw new RuntimeError(`getHeader: Response: ${res.status}`);
+        };
+        onigiri = await res.text();
+        counterEle = document.getElementById("counter");
+        counterEle.innerHTML = onigiri;
+    } finally {
+        return res
+    }
+};
+
+setInterval(() => {
+    addonigiri('GET');
+}, 10000);
+</script>
 {% endblock %}

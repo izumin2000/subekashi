@@ -19,6 +19,15 @@
     border: solid 6px #FFF;
 }
 
+.present {
+    margin: 40px auto !important;
+    width: 140px;
+}
+
+#onigiri {
+    text-align: center;
+}
+
 
 #defoko p {
     padding: 5px;
