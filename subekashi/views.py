@@ -37,20 +37,21 @@ def sendDiscord(url, content) :
     res = requests.post(url, data={'content': content})
     return res.status_code
 
-def setcookie(request):
-    response = HttpResponse()
-    response.set_cookie("songrange", "subeana") if not request.COOKIES.get("songrange", None) else None
-    response.set_cookie("jokerange", "off") if not request.COOKIES.get("jokerange", None) else None
-    if request.method == "POST":
-        pass
+
+def setCookie(request):
+    if 'songrange' not in request.COOKIES:
+        request.COOKIES['songrange'] = 'subeana'
+    if 'jokerange' not in request.COOKIES:
+        request.COOKIES['jokerange'] = 'off'
     return request.COOKIES
 
 
 def top(request):
     dataD = initD()
-    cookie = setcookie(request)
+    cookie = setCookie(request)
     songrange = cookie['songrange']
     jokerange = cookie['jokerange']
+    
     if songrange == "all" :
         songInsL = Song.objects.all()
     elif songrange == "subeana" :

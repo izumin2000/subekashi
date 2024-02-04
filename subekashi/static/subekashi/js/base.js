@@ -125,7 +125,10 @@ function getCookie() {
             data = data.split('=');
 
             if (data[0].trim() !== 'csrftoken') {
-                result[data[0]] = JSON.parse(data[1]);
+                data = data[1]
+                if ((data.slice(0, 2) != "GA") && (data.slice(0, 2) != "GS")) {
+                    result[data[0]] = JSON.parse(data);
+                }
             }
         });
     }
