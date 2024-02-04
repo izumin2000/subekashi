@@ -36,11 +36,11 @@
 
 .subeana h1 {
     margin-top: 50px;
-    font-size: 35px;
+    font-size: 44px;
 }
 @media (max-width: 640px) {
     .subeana h1 {
-        font-size: 25px;
+        font-size: 30px;
     }
 }
 
@@ -66,4 +66,12 @@
     height: 100vw;
     margin: 0 auto;
     overflow: scroll;
+}
+
+#credit {
+    margin-bottom: 30px;
+}
+
+#credit p, #credit a {
+    font-size: 15px;
 }

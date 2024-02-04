@@ -52,7 +52,7 @@ header {
 }
 
 .imiN_loading {
-	font-size: 0.9em;
+	font-size: 1.12em;
 	color: #444;
 	margin-left: 10px;
 }
@@ -91,7 +91,7 @@ header {
     display: inline-block;
     vertical-align: top; 
     margin-top: 18px;
-    font-size: 20px;
+    font-size: 30px;
     line-height: 30px;
     color: #FFF;
     text-decoration: none;
@@ -104,8 +104,8 @@ header {
 
 .header-right nav a {
     display: inline-block;
-    font-size: 20px;
-    line-height: 20px;
+    font-size: 25px;
+    line-height: 25px;
     margin-right: 8px;
     text-decoration: none;
     color: #ddd;
@@ -151,19 +151,19 @@ main {
 h1 {
     text-align: center;
     color: #FFF;
-    font-size: 30px;
-    line-height: 50px;
+    font-size: 40px;
+    line-height: 62.5px;
     margin: 75px 0 10px 0;
 }
 
 @media (max-width: 480px) {
     h1 {
-        font-size: 9vw;
+        font-size: 10vw;
     }
 }
 
 h2 {
-    font-size: 24px;
+    font-size: 37.5px;
     line-height: 32px;
     color: #FFF;
     margin-top: 10px;
@@ -172,15 +172,20 @@ h2 {
 p, li {
     font-weight: 900;
     color: #fff;
-    font-size: 18px;
-    line-height: 27px;
+    font-size: 22.5px;
+    line-height: 32px;
 }
 
 a {
     color: #fff;
     text-decoration: underline 2px #fff;
-    font-size: 18px;
-    line-height: 27px;
+    font-size: 22.5px;
+    line-height: 32px;
+}
+
+.sansfont {
+    font-family: sans-serif !important;
+    font-weight: bold;
 }
 
 .underline {
@@ -200,8 +205,8 @@ a {
 details {
     color: #FFF;
     cursor: pointer;
-    font-size: 18px;
-    line-height: 27px;
+    font-size: 22.5px;
+    line-height: 32px;
 }
 
 
@@ -276,7 +281,7 @@ input, select, option, textarea {
     width: calc(50vw - 100px);
     margin-top: 20px;
     padding: 0 10px;
-    font-size: 20px;
+    font-size: 25px;
     border: none;
     box-shadow: 0 0 0 1px #ccc inset;
 }
@@ -298,8 +303,8 @@ input:focus::placeholder {
 
 label {
     color: #fff;
-    font-size: 18px;
-    line-height: 27px;
+    font-size: 22.5px;
+    line-height: 32px;
     margin-right: 20px;
 }
 
@@ -314,7 +319,7 @@ textarea {
     height: 49.5px;
     width: 100px;
     border: none;
-    font-size: 20px;
+    font-size: 25px;
     cursor: pointer;
     margin: 20px 0;
 }
@@ -369,7 +374,7 @@ textarea {
 .songcard {
     height: 80px;
     margin: 20px 0 ;
-    padding: 12px 0 0 0;
+    padding: 8px 0 0 0;
     background-color: #333;
 }
 
@@ -405,35 +410,35 @@ textarea {
 }
 
 .songtitle {
-    font-size: 16px;
-    margin-bottom: 12px;
+    font-size: 20px;
+    margin-bottom: 5px;
     white-space:nowrap;
 }
 
 .songchannel {
-    font-size: 16px;
+    font-size: 20px;
     white-space:nowrap;
 }
 
 .songchannel i {
-    font-size: 16px;
+    font-size: 20px;
 }
 
 .songlyrics {
     display: inline-block;
-    font-size: 16px;
-    margin-bottom: 12px;
+    font-size: 20px;
+    margin-bottom: 5px;
     white-space:nowrap;
 }
 
 .songurl {
     display: inline-block;
-    font-size: 16px;
+    font-size: 20px;
     white-space:nowrap;
 }
 
 .fa-user-friends {
-    font-size: 12px;
+    font-size: 15px;
     margin: 0 2px;
 }
 
@@ -484,14 +489,14 @@ footer {
 
 .footer-left p {
     color: #fff;
-    font-size: 12px;
-    line-height: 12px;
+    font-size: 15px;
+    line-height: 15px;
     margin: 3px 0 0 8px;
 }
 
 .footer-right a {
-    font-size: 12px;
-    line-height: 12px;
+    font-size: 15px;
+    line-height: 15px;
     float: right;
     display: inline;
     margin: 9px 8px 0 0;

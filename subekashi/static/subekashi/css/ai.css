@@ -1,5 +1,5 @@
 #aiForm {
-    margin-left: calc(32vw - 160px);
+    margin-left: calc(32vw - 260px);
 }
 
 @media (max-width: 720px) {
@@ -57,7 +57,7 @@
 }
 
 .formmargin p, .formmargin li {
-    line-height: 40px;
+    line-height: 50px;
 }
 
 .lyricdiv {

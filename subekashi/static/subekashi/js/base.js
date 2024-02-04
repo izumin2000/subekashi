@@ -79,11 +79,11 @@ async function getHeader() {
     
     var imiN_listEles = document.getElementsByClassName("imiN_list")[0].children;
     Array.from(imiN_listEles).forEach(function(imiN_listEle) {
-        imiN_listEle.children[0].style = "color: #000;"
+        imiN_listEle.children[0].style = "color: #000; font-size: 20px;"
     })
 
     var faultEle = document.getElementsByClassName("fault")[0].children[0];
-    faultEle.style = "color: #FFF";
+    faultEle.style = "color: #FFF; font-size: 16px";
     
     var imiN_header_innerEle = document.getElementsByClassName("imiN_header_inner")[0];
     imiN_header_innerEle.style = "padding-left: 0"

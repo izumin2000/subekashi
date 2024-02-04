@@ -19,7 +19,7 @@ details ul ul {
 }
 
 .detailP {
-    font-size: 12px;
+    font-size: 15px;
 }
 
 #newform, #deleteform {
@@ -75,7 +75,7 @@ details ul ul {
     height: 49.5px;
     width: 150px;
     border: none;
-    font-size: 20px;
+    font-size: 25px;
     cursor: pointer;
     margin: 20px 0;
 }
@@ -139,7 +139,7 @@ input[type=checkbox] {
     height: 49.5px;
     width: 100px;
     border: none;
-    font-size: 20px;
+    font-size: 25px;
     cursor: pointer;
     margin: 20px 0;
 }
