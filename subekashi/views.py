@@ -63,7 +63,6 @@ def onigiri(request):
         count += 1
         onigiriIns.value = str(count)
         onigiriIns.save()
-    print(f"\033[31m{count}\033[0m")
     return HttpResponse(count)
 
 def top(request):
