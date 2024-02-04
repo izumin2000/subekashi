@@ -21,6 +21,10 @@ section p, section a {
 .songurl, .songtitle {
     display: block;
     width: fit-content;
+    max-width: 90vw;
+    white-space: normal;
+    overflow-wrap: break-word;
+    margin-bottom: 20px;
 }
 
 #songlyrics {
