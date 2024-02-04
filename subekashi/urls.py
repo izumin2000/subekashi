@@ -28,4 +28,5 @@ urlpatterns = [
     path('apple-touch-icon.png', views.appleicon, name='apple-touch-icon'),
     path('api/',include(defaultRouter.urls)),
     path('api/clean', views.clean, name='clean'),
+    path('onigiri', views.onigiri, name='onigiri'),
 ]

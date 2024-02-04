@@ -3,10 +3,31 @@
     display: block;
     width: fit-content;
     height: fit-content;
-    background-color: #444;
+    background-color: #333;
     margin: 0 auto;
-    border: solid 10px #FFF;
+    border: solid 6px #FFF;
+    position: relative;
 }
+
+#defoko::before {
+    content: "";
+    position: absolute;
+    top: -20px;
+    left: -20px;
+    right: -20px;
+    bottom: -20px;
+    border: solid 6px #FFF;
+}
+
+.present {
+    margin: 40px auto !important;
+    width: 140px;
+}
+
+#onigiri {
+    text-align: center;
+}
+
 
 #defoko p {
     padding: 5px;
@@ -94,5 +115,6 @@
 }
 
 #credit p, #credit a {
+    overflow-wrap: break-word;
     font-size: 15px;
 }
