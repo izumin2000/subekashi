@@ -37,18 +37,18 @@ def sendDiscord(url, content) :
     res = requests.post(url, data={'content': content})
     return res.status_code
 
-# TODO request.COOKIESは読み取り専用なので、
-def setCookie(request):
-    if 'songrange' not in request.COOKIES:
-        request.COOKIES['songrange'] = 'subeana'
-    if 'jokerange' not in request.COOKIES:
-        request.COOKIES['jokerange'] = 'off'
+def setcookie(request):
+    response = HttpResponse()
+    response.set_cookie("songrange", "subeana") if not request.COOKIES.get("songrange", None) else None
+    response.set_cookie("jokerange", "off") if not request.COOKIES.get("jokerange", None) else None
+    if request.method == "POST":
+        pass
     return request.COOKIES
 
 
 def top(request):
     dataD = initD()
-    cookie = setCookie(request)
+    cookie = setcookie(request)
     songrange = cookie['songrange']
     jokerange = cookie['jokerange']
     if songrange == "all" :

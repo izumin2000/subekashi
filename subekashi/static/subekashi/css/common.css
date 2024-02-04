@@ -12,7 +12,7 @@
     margin: 0px;
     padding: 0px;
     font-family: 'Imitate', sans-serif;
-    font-weight: 100;
+    font-weight: lighter;
 }
 
 html {
@@ -44,7 +44,6 @@ header {
 	align-items: center;
 	position: relative;
 	width: 100%;
-	/* height: var(--imiN-header-height); */
 	background-color: #fff;
 }
 

@@ -76,14 +76,20 @@ async function getHeader() {
     const headerEle = document.getElementsByTagName("header")[0];
     headerEle.style.top = `-${imicomHeaderEle.clientHeight + 5}px`;
 
-    var faultEle = document.getElementsByClassName("fault")[0]
-    faultEle.style = "background-color: #FFF"
-    var imiN_listEle = document.getElementsByClassName("imiN_list")[0]
-    console.log(imiN_listEle);
-    imiN_listEle.childNodes[0].style = "font-color: #000"
-    var imicomInnerEle = imicomHeaderEle.children[2].children[0]
-    imicomInnerEle.classList.add("imiN_headerOverwrite");
-    imicomInnerEle.textContent = "イミコミュメニュー";
+    
+    var imiN_listEles = document.getElementsByClassName("imiN_list")[0].children;
+    Array.from(imiN_listEles).forEach(function(imiN_listEle) {
+        imiN_listEle.children[0].style = "color: #000;"
+    })
+
+    var faultEle = document.getElementsByClassName("fault")[0].children[0];
+    faultEle.style = "color: #FFF";
+    
+    var imiN_header_innerEle = document.getElementsByClassName("imiN_header_inner")[0];
+    imiN_header_innerEle.style = "padding-left: 0"
+
+    var imiN_noticeEle = document.getElementsByClassName("imiN_notice")[0].childNodes[2];
+    imiN_noticeEle.style = "color: #777"
 }
 
 
