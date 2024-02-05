@@ -46,27 +46,7 @@ def setCookie(request):
     if 'jokerange' not in request.COOKIES:
         request.COOKIES['jokerange'] = 'off'
     return request.COOKIES
- 
- 
- 
-def onigiri(request):
-    onigiriIns = Singleton.objects.filter(key = "onigiri").first()
-    count = int(onigiriIns.value)
-    if request.method == "PUT":
-        count += 1
-        onigiriIns.value = str(count)
-        onigiriIns.save()
-    return HttpResponse(count)
 
- 
-def onigiri(request):
-    onigiriIns = Singleton.objects.filter(key = "onigiri").first()
-    count = int(onigiriIns.value)
-    if request.method == "PUT":
-        count += 1
-        onigiriIns.value = str(count)
-        onigiriIns.save()
-    return HttpResponse(count)
 
 def top(request):
     dataD = initD()
