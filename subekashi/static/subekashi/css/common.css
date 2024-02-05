@@ -11,7 +11,8 @@
 * {
     margin: 0px;
     padding: 0px;
-    font-family: 'Imitate', sans-serif;
+    /* TODO ✦を表示させる */
+    /* font-family: 'Imitate', sans-serif; */
     font-weight: lighter;
 }
 
