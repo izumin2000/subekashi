@@ -29,16 +29,8 @@ def formatURL(url) :
 
 
 def initD() :
-    onigiriIns = Singleton.objects.filter(key = "onigiri")
-    if onigiriIns:
-        onigiriIns = onigiriIns.first()
-    else:
-        onigiriIns = Singleton.objects.create(key = "onigiri", value="0")
-        onigiriIns.save()
-        
     dataD = {
         "lastModified": Singleton.objects.filter(key = "lastModified").first().value,
-        "onigiri": onigiriIns.value
     }
     return dataD
 
@@ -55,6 +47,17 @@ def setCookie(request):
         request.COOKIES['jokerange'] = 'off'
     return request.COOKIES
  
+ 
+ 
+def onigiri(request):
+    onigiriIns = Singleton.objects.filter(key = "onigiri").first()
+    count = int(onigiriIns.value)
+    if request.method == "PUT":
+        count += 1
+        onigiriIns.value = str(count)
+        onigiriIns.save()
+    return HttpResponse(count)
+
  
 def onigiri(request):
     onigiriIns = Singleton.objects.filter(key = "onigiri").first()
