@@ -18,8 +18,6 @@ async function firstLoad(songId) {
     songGuessEles = document.getElementsByClassName("songGuess");
 
     document.getElementById("loading").style.display = "none";
-    document.getElementById("newform").style.display = "block";
-    document.getElementById("deleteform").style.display = "block";
     document.getElementById("songid").value = Number(songId);
 }
 
