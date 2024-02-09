@@ -81,8 +81,8 @@
         console.log(getCookie().brlyrics, getCookie().brlyrics=="brless");
         if (getCookie().brlyrics == "brless") {
             songlyricsEle.innerHTML = songlyricsEle.innerText.replace("<br>", "");
-        } else if (getCookie().brlyrics == "normal") {
-            songlyricsEle.style = "line-height: 60px"
+        } else if (getCookie().brlyrics == "peak") {
+            songlyricsEle.style = "line-height: 0"
         }
 
         if ((!'{{ songIns.channel }}') | (!'{{ songIns.lyrics|slice:"1" }}')) {
