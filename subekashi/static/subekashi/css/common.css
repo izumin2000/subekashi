@@ -324,6 +324,7 @@ textarea {
     font-size: 25px;
     cursor: pointer;
     margin: 20px 0;
+    font-family: 'Noto Sans JP', sans-serif
 }
 
 .dummybuttons {
@@ -468,6 +469,29 @@ textarea {
     background-color: #444;
 }
 
+
+/* cookieの同意 */
+#agreement {
+    display: none;
+    position: fixed;
+    width: 400px;
+    height: 100px;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #555;
+}
+
+#agreement p {
+    color: #FFF;
+    margin: 10px 0;
+    text-align: center;
+}
+
+#agreement button {
+    display: block;
+    margin: 0 auto;
+}
 /* フッダー */
 .bottomelement {
     margin-bottom: 20px;
