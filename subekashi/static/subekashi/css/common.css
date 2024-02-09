@@ -212,29 +212,30 @@ details {
 
 
 /* メニュー */
-.menuarticle {
+#menuarticle {
     display: none;
+    justify-content: center;
+    align-items: center;
 }
 
-.menuarticle.shown {
+#menuarticle.shown {
     display: flex !important;
     margin-top: 0;
-    height: calc(100vh - 100px);
+    height: calc(100vh - 60px);
     width: 100vw;
     overflow: hidden;
     flex-direction: column;
-    margin-top: 10vh;
     align-items: center;
     text-align: center;
     background: linear-gradient(180deg, #000, #000, 70vh, #005);
 }
 
-.menuarticle ul {
+#menuarticle ul {
     list-style: none;
-    margin-top: 0px
+    margin-bottom: 30px;
 }
 
-.menuarticle ul li a {
+#menuarticle ul li a {
     list-style-type: none;
     text-align: center;
     vertical-align: middle;
@@ -245,16 +246,16 @@ details {
 }
 
 @media(min-height: 426px) and (max-height: 524px) {
-	.menuarticle h2 {
+	#menuarticle h2 {
 		display: none;
 	}
-	.menuarticle ul li a {
+	#menuarticle ul li a {
 		margin-bottom: -5px;
 	}
 }
 
 @media(max-height: 425px) {
-	.menuarticle li {
+	#menuarticle li {
 		margin-bottom: -15px;
 	}
 }
