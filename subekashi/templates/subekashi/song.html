@@ -77,11 +77,13 @@
 <script>
     window.addEventListener('load', function(){
         songlyricsEle = document.getElementById("songlyrics");
-        songlyricsEle.innerHTML = songlyricsEle.innerHTML.replace(/\n/g, "<br>");
-        if (getCookie().brlyrics == "brless") {
-            songlyricsEle.innerHTML = songlyricsEle.innerText.replace("<br>", "");
-        } else if (getCookie().brlyrics == "pack") {
-            songlyricsEle.innerHTML = songlyricsEle.innerHTML.replace(/(<br>\s*)+/g, "<br>");
+        if (songlyricsEle) {
+            songlyricsEle.innerHTML = songlyricsEle.innerHTML.replace(/\n/g, "<br>");
+            if (getCookie().brlyrics == "brless") {
+                songlyricsEle.innerHTML = songlyricsEle.innerText.replace("<br>", "");
+            } else if (getCookie().brlyrics == "pack") {
+                songlyricsEle.innerHTML = songlyricsEle.innerHTML.replace(/(<br>\s*)+/g, "<br>");
+            }
         }
 
         if ((!'{{ songIns.channel }}') | (!'{{ songIns.lyrics|slice:"1" }}')) {

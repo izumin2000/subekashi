@@ -116,7 +116,7 @@ function getCookie() {
     var cookieDict = {};
     var cookies = document.cookie.split("; ");
     
-    cookies.forEach(function(cookie) {
+    if (cookies) cookies.forEach(function(cookie) {
         var parts = cookie.split("=");
         var name = decodeURIComponent(parts[0]);
         var value = decodeURIComponent(parts[1].replace(/"/g, ''));
