@@ -11,10 +11,10 @@
     <div class="underline"></div>
     {% if songInsL %}
         {% for songIns in songInsL %}
-            <div class="songcard">
+            <div class="songcard sansfont">
                 <a href="{% url 'subekashi:song' songIns.id %}" class="buttona ">
                     <div class="cardleft">
-                        <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"30" }}</p>
+                        <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"20" }}</p>
                         {% if songIns.url %}
                             {% if songIns.url|iscomma %}
                                 <object><a class="songurl" href="{{ songIns.url|commapop }}">{{ songIns.url|commapop|slice:"30" }}</a>など</object>

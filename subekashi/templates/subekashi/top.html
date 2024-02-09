@@ -13,7 +13,7 @@
         <a href="{% url 'subekashi:song' songIns.id %}" class="buttona ">
             <div class="songcard">
                 <div class="cardleft">
-                    <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"20" }}</p>
+                    <p class="songtitle sansfont"><i class="fas fa-music"></i> {{ songIns.title|slice:"20" }}</p>
                     {% if songIns.channel|iscomma %}
                         <object><p><i class="fas fa-user-friends"></i>合作</p></object>
                     {% else %}
@@ -72,7 +72,7 @@
             <a href="{% url 'subekashi:song' songIns.id %}" class="buttona ">
                 <div class="songcard">
                     <div class="cardleft">
-                        <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"20" }}</p>
+                        <p class="songtitle sansfont"><i class="fas fa-music"></i> {{ songIns.title|slice:"20" }}</p>
                         {% if songIns.channel|iscomma %}
                             <object><p><i class="fas fa-user-friends"></i>合作</p></object>
                         {% else %}

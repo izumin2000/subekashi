@@ -11,14 +11,14 @@
 * {
     margin: 0px;
     padding: 0px;
-    /* TODO ✦を表示させる */
-    font-family: 'Imitate', sans-serif;
-    font-weight: lighter;
 }
 
 html {
     height: 100%;
     background-color: #000;
+    /* TODO ✦を表示させる */
+    font-family: 'Imitate', 'Noto Sans JP', sans-serif;
+    font-weight: lighter !important;
 }
 
 body {
@@ -156,6 +156,7 @@ h1 {
     font-size: 40px;
     line-height: 62.5px;
     margin: 75px 0 10px 0;
+    font-weight: lighter;
 }
 
 @media (max-width: 480px) {
@@ -172,7 +173,6 @@ h2 {
 }
 
 p, li {
-    font-weight: 900;
     color: #fff;
     font-size: 22.5px;
     line-height: 32px;
@@ -186,8 +186,7 @@ a {
 }
 
 .sansfont {
-    font-family: sans-serif !important;
-    font-weight: bold;
+    font-family: 'Noto Sans JP', sans-serif !important;
 }
 
 .underline {
@@ -286,6 +285,7 @@ input, select, option, textarea {
     font-size: 25px;
     border: none;
     box-shadow: 0 0 0 1px #ccc inset;
+    font-family: 'Imitate', 'Noto Sans JP', sans-serif;
 }
 
 @media (max-width: 720px) {
