@@ -274,7 +274,8 @@ def search(request) :
 
 
 def setting(request) :
-    return render(request, "subekashi/setting.html")
+    dataD = initD()
+    return render(request, "subekashi/setting.html", dataD)
 
 
 def research(request) :
