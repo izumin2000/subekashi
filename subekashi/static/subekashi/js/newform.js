@@ -16,8 +16,6 @@ async function firstLoad(songId) {
 
     checkExist();
     songGuessEles = document.getElementsByClassName("songGuess");
-
-    document.getElementById("loading").style.display = "none";
     document.getElementById("songid").value = Number(songId);
 }
 
