@@ -49,6 +49,16 @@ class Ai(models.Model) :
         return self.lyrics
 
 
+class Ad(models.Model) :
+    url = models.CharField(default = "", max_length = 100)
+    view = models.IntegerField(default = 1)
+    click = models.IntegerField(default = 1)
+    isdisplay = models.BooleanField(default = False)
+    
+    def __str__(self):
+        return self.url
+
+
 class Singleton(models.Model) :
     key = models.CharField(default = "", max_length = 100)
     value = models.CharField(default = "", max_length = 500)
