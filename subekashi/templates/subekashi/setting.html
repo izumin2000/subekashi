@@ -22,12 +22,12 @@
         <option value="off" selected>表示しない</option>
     </select>
     <br>
-    <label>歌詞を詰めて表示</label>
+    <label>歌詞の表示</label>
     <select id="brlyrics" onchange="setting(true)">
-        <option value="on">詰める</option>
-        <option value="off" selected>詰めない</option>
+        <option value="normal" selected>改行して詰めない</option>
+        <option value="pack">改行して詰める</option>
+        <option value="brless">改行しない</option>
     </select>
-    <p>未実装です</p>
     <br>
     <label>宣伝を表示</label>
     <select id="adrange" onchange="setting(true)">
@@ -45,7 +45,7 @@
 <script src="{% static 'subekashi/js/fixfooter.js' %}" rel="stylesheet"></script>
 <script>
     var selectEles = document.getElementsByTagName("select");
-    var settingMap = ["songrange", "jokerange", "fonttype", "brlyrics", "adrange"];
+    var settingMap = ["songrange", "jokerange", "brlyrics", "adrange"];
 
     function setting(isUpdate) {
         var i = 0;
