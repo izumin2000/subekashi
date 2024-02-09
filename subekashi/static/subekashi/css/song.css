@@ -30,6 +30,7 @@ section p, section a {
 #songlyrics {
     text-align: center;
     margin-top: 40px;
+    line-height: 60px
 }
 
 #songchannellabel, #songimitateslabel, #songimitatedslabel {
