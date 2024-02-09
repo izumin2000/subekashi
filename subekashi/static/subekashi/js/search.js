@@ -1,4 +1,5 @@
 var songJson, songResult, subeanaSongs, songEles;
+var isLoaded = false;
 
 async function firstLoad(query) {
     res = await fetch(baseURL() + "/api/song/?format=json");
@@ -7,9 +8,9 @@ async function firstLoad(query) {
     songEles = document.getElementsByClassName("songcard");
 
     query = query.split(",")
-    document.getElementById("title").value = query[0];
-    document.getElementById("channel").value = query[1];
-    document.getElementById("lyrics").value = query[2];
+    if (query[0]) ddocument.getElementById("title").value = query[0];
+    if (query[1]) ddocument.getElementById("channel").value = query[1];
+    if (query[2]) document.getElementById("lyrics").value = query[2];
 
     radioEles = document.getElementsByClassName("filters");
     for (radioEle of radioEles) {
@@ -21,6 +22,7 @@ async function firstLoad(query) {
         radioEles[Number(query[3])].checked = true;
     }
 
+    isLoaded = true;
     searchSong();
 }
 
@@ -35,6 +37,10 @@ function songFilter(key, value) {
 
 
 function searchSong() {
+    if (!isLoaded) {
+        return
+    }
+
     songResult = songJson.concat();
     channelValue = document.getElementById("channel").value;
     titleValue = document.getElementById("title").value;
