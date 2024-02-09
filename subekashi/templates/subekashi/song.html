@@ -77,8 +77,12 @@
 <script>
     window.addEventListener('load', function(){
         songlyricsEle = document.getElementById("songlyrics");
-        if (songlyricsEle) {
-            songlyricsEle.innerHTML = songlyricsEle.innerHTML.replace(/\n/g, "<br><br>");
+        songlyricsEle.innerHTML = songlyricsEle.innerHTML.replace(/\n/g, "<br>");
+        console.log(getCookie().brlyrics, getCookie().brlyrics=="brless");
+        if (getCookie().brlyrics == "brless") {
+            songlyricsEle.innerHTML = songlyricsEle.innerText.replace("<br>", "");
+        } else if (getCookie().brlyrics == "normal") {
+            songlyricsEle.style = "line-height: 60px"
         }
 
         if ((!'{{ songIns.channel }}') | (!'{{ songIns.lyrics|slice:"1" }}')) {
