@@ -1,0 +1,17 @@
+{% extends "subekashi/base/base.html" %}
+{% block title %}すべ歌詞DSP{% endblock %}
+{% block ogtitle %}すべ歌詞DSP{% endblock %}
+{% load static %}
+{% block css %}{% static 'subekashi/css/ad.css'%}{% endblock %}
+
+{% block content %}
+<section>
+    <h1>すべ歌詞DSP</h1>
+    <div class="underline"></div>
+    <form action="{% url 'subekashi:ad' %}" method="POST" id="adForm">{% csrf_token %}
+        <label>url</label>
+        <input type="text" id="url" name="url"><br>
+        <input type="submit" value="送信" id="adsubmit" disabled>
+    </form>
+</section>
+{% endblock %}

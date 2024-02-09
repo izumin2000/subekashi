@@ -278,6 +278,15 @@ def setting(request) :
     return render(request, "subekashi/setting.html", dataD)
 
 
+def ad(request) :
+    dataD = initD()
+    if request.method == "POST" :
+        urlForm = request.POST.get("url")
+        sendDiscord(urlForm, DSP_DISCORD_URL)
+    print(f"\033[31m{request.COOKIES}\033[0m")
+    return render(request, "subekashi/ad.html", dataD)
+
+
 def research(request) :
     return render(request, "subekashi/research.html")
 
