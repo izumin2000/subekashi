@@ -79,7 +79,8 @@ async function getHeader() {
     
     var imiN_listEles = document.getElementsByClassName("imiN_list")[0].children;
     Array.from(imiN_listEles).forEach(function(imiN_listEle) {
-        imiN_listEle.children[0].style = "color: #000; font-size: 20px;"
+        imiN_listEle.children[0].className = "sansfont";
+        imiN_listEle.children[0].style = "color: #000; font-size: 16px;"
     })
 
     var faultEle = document.getElementsByClassName("fault")[0].children[0];
@@ -112,27 +113,17 @@ function setCookie(name, json) {
 
 // クッキーの取得
 function getCookie() {
-    let cookies = '';
-    let cookieArray = new Array();
-    let result = {};
-
-    cookies = document.cookie;
-
-    if (cookies) {
-        cookieArray = cookies.split('; ');
-
-        cookieArray.forEach(data => {
-            data = data.split('=');
-
-            if (data[0].trim() !== 'csrftoken') {
-                data = data[1]
-                if ((data.slice(0, 2) != "GA") && (data.slice(0, 2) != "GS")) {
-                    result[data[0]] = JSON.parse(data);
-                }
-            }
-        });
-    }
-    return result;
+    var cookieDict = {};
+    var cookies = document.cookie.split("; ");
+    
+    cookies.forEach(function(cookie) {
+        var parts = cookie.split("=");
+        var name = decodeURIComponent(parts[0]);
+        var value = decodeURIComponent(parts[1].replace(/"/g, ''));
+        cookieDict[name] = value;
+    });
+    
+    return cookieDict;
 }
 
 

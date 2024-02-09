@@ -7,7 +7,7 @@
 {% block content %}
 <section>
     {% if isExist %}
-        <p class="songtitle"><i class="fas fa-music"></i>{{ songIns.title }}</p>
+        <p class="songtitle sansfont"><i class="fas fa-music"></i>{{ songIns.title }}</p>
         <p id="songchannellabel"><i class="fas fa-user-circle"></i></p>
         {% for channel in channels %}
             <a class="songchannel" href="{% url 'subekashi:channel' channel %}">{{ channel }}</a>

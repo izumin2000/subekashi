@@ -1,11 +1,6 @@
 .songlyrics1, .songlyrics2 {
-    font-size: 25px;
+    font-size: 20px;
     margin-bottom: 4px;
-}
-
-.songlyrics2 {
-    display: inline-block;
-    margin-top: 8px;
 }
 
 .songlyricsnotfound {

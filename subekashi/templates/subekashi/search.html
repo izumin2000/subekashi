@@ -14,7 +14,7 @@
     <p id="loading">読み込み中</p>
     <div id="searchform">
         <label>タイトル　　</label>
-        <input type="text" id="title" name="title" oninput="searchSong()"><br>
+        <input type="text" id="title" class="sansfont" name="title" oninput="searchSong()"><br>
         <label>チャンネル名</label>
         <input type="text" id="channel" name="channel" oninput="searchSong()"><br>
         <label>歌詞　　　　</label>
@@ -66,7 +66,7 @@
         <a href="{% url 'subekashi:song' songIns.id %}" class="buttona ">
             <div class="songcard" id="song{{ songIns.id }}">
                 <div class="cardleft">
-                    <p class="songtitle"><i class="fas fa-music"></i> {{ songIns.title|slice:"20" }}</p>
+                    <p class="songtitle sansfont"><i class="fas fa-music"></i> {{ songIns.title|slice:"20" }}</p>
                     {% if songIns.channel|iscomma %}
                         <object><p><i class="fas fa-user-friends"></i>合作</p></object>
                     {% else %}
