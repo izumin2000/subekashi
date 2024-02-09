@@ -81,7 +81,7 @@
         if (getCookie().brlyrics == "brless") {
             songlyricsEle.innerHTML = songlyricsEle.innerText.replace("<br>", "");
         } else if (getCookie().brlyrics == "pack") {
-            songlyricsEle.style = "line-height: 0"
+            songlyricsEle.innerHTML = songlyricsEle.innerHTML.replace(/(<br>\s*)+/g, "<br>");
         }
 
         if ((!'{{ songIns.channel }}') | (!'{{ songIns.lyrics|slice:"1" }}')) {
