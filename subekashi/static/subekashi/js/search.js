@@ -21,9 +21,6 @@ async function firstLoad(query) {
         radioEles[Number(query[3])].checked = true;
     }
 
-    document.getElementById("loading").style.display = "none";
-    document.getElementById("searchform").style.display = "block";
-
     searchSong();
 }
 
