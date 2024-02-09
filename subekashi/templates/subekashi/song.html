@@ -78,7 +78,6 @@
     window.addEventListener('load', function(){
         songlyricsEle = document.getElementById("songlyrics");
         songlyricsEle.innerHTML = songlyricsEle.innerHTML.replace(/\n/g, "<br>");
-        console.log(getCookie().brlyrics, getCookie().brlyrics=="brless");
         if (getCookie().brlyrics == "brless") {
             songlyricsEle.innerHTML = songlyricsEle.innerText.replace("<br>", "");
         } else if (getCookie().brlyrics == "peak") {

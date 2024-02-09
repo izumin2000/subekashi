@@ -28,6 +28,12 @@
         <main>
             <article id="mainarticle">
                 {% block content %}{% endblock %}
+                <section>
+                    <div id="agreement">
+                        <p>このサイトはcookieを使用しております。</p>
+                        <button type="button" onclick="agree(true)">OK!</button>
+                    </div>
+                </section>
             </article>
         </main>
         {% include './footer.html' %}
@@ -40,10 +46,10 @@
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-GJHM3M7SH1"></script>
     <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
 
-    gtag('config', 'G-GJHM3M7SH1');
+        gtag('config', 'G-GJHM3M7SH1');
     </script>
 </html>

@@ -127,7 +127,21 @@ function getCookie() {
 }
 
 
+// cookieの同意
+function agree(isagree) {
+    agreeEle = document.getElementById("agreement");
+    if (isagree) {
+        setCookie("agree", "yes");
+        agreeEle.style = "display: none";
+    }
+    if (getCookie().agree == undefined) {
+        agreeEle.style = "display: block";
+    }
+}
+
+
 // 読み込み時の実行
 window.onload = function() {
     getHeader();
+    agree(false);
 }
