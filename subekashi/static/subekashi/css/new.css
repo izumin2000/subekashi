@@ -68,23 +68,23 @@ details ul ul {
     margin-top: 15px;
 }
 
-.category {
+#categorys button {
     display: inline-block;
     margin: 10px 0 !important;
-    padding-left: 0px;
+    padding: 10px;
     height: 49.5px;
-    width: 150px;
+    width: fit-content;
     border: none;
     font-size: 25px;
     cursor: pointer;
     margin: 20px 0;
 }
 
-.category:hover {
+#categorys button:hover {
     background-color: #ccc;
 }
 
-.category:active {
+#categorys button:active {
     border: none;
     box-shadow: 0 0 0 2px #fff inset;
     background-color: #aaa;
