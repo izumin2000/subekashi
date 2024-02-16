@@ -20,6 +20,7 @@ urlpatterns = [
     path('ai', views.ai, name='ai'),
     path('setting', views.setting, name='setting'),
     path('ad', views.ad, name='ad'),
+    path('ad/post', views.adpost, name='adpost'),
     path('research', views.research, name='research'),
     path('error', views.error, name='error'),
     path('dev', views.dev, name='dev'),

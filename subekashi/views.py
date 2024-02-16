@@ -347,6 +347,8 @@ def ad(request) :
             adIns.save()
             if isCreate :
                 sendDiscord(DSP_DISCORD_URL, f"{urlForm}, {adIns.id}")
+        
+        return redirect("subekashi:adpost")
                 
     ads = set()
     for urlForm in urlForms :
@@ -359,9 +361,13 @@ def ad(request) :
         ads.add(adIns)
     
     dataD["ads"] = list(ads)
-    print(f"\033[31m{dataD}\033[0m")
     
     return render(request, "subekashi/ad.html", dataD)
+
+
+def adpost(request) :
+    dataD = initD()
+    return render(request, "subekashi/adpost.html", dataD)
 
 
 def research(request) :
