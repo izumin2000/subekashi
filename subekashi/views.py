@@ -34,13 +34,6 @@ def formatURL(link):
         return link
 
 
-def initD() :
-    dataD = {
-        "lastModified": Singleton.objects.filter(key = "lastModified").first().value,
-    }
-    return dataD
-
-
 def sendDiscord(url, content) :
     res = requests.post(url, data={'content': content})
     return res.status_code
@@ -60,7 +53,7 @@ def sha256(check) :
 
 
 def top(request):
-    dataD = initD()
+    dataD = dict()
     cookie = setCookie(request)
     songrange = cookie['songrange']
     jokerange = cookie['jokerange']
@@ -95,7 +88,7 @@ def top(request):
 
 
 def new(request) :
-    dataD = initD()
+    dataD = dict()
 
     if request.method == "POST":
         idForm = request.POST.get("songid")
@@ -190,7 +183,7 @@ def new(request) :
 
 
 def song(request, songId) :
-    dataD = initD()
+    dataD = dict()
     songIns = Song.objects.filter(pk = songId).first()
     isExist = bool(songIns)
     dataD["songIns"] = songIns
@@ -226,7 +219,7 @@ def song(request, songId) :
 
 
 def delete(request) :
-    dataD = initD()
+    dataD = dict()
     dataD["isDeleted"] = True
     dataD["songInsL"] = Song.objects.all()
     
@@ -248,7 +241,7 @@ def delete(request) :
 
 
 def ai(request) :
-    dataD = initD()
+    dataD = dict()
     dataD["songInsL"] = Song.objects.all()
 
     if request.method == "POST" :
@@ -264,7 +257,7 @@ def ai(request) :
 
 
 def channel(request, channelName) :
-    dataD = initD()
+    dataD = dict()
     dataD["channel"] = channelName
     songInsL = []
     for songIns in Song.objects.all() :
@@ -275,7 +268,7 @@ def channel(request, channelName) :
 
 
 def search(request) :
-    dataD = initD()
+    dataD = dict()
     dataD["songInsL"] = Song.objects.order_by("-posttime")
     query = request.GET
     dataD["query"] = f"{query.get('title')},{query.get('channel')},{query.get('lyrics')},{query.get('filter')}".replace("None", "")
@@ -283,12 +276,11 @@ def search(request) :
 
 
 def setting(request) :
-    dataD = initD()
-    return render(request, "subekashi/setting.html", dataD)
+    return render(request, "subekashi/setting.html")
 
 
 def ad(request) :
-    dataD = initD()
+    dataD = dict()
     check = ""
     urlForms = []
     for i in range(1, 4) :
@@ -364,8 +356,7 @@ def ad(request) :
 
 
 def adpost(request) :
-    dataD = initD()
-    return render(request, "subekashi/adpost.html", dataD)
+    return render(request, "subekashi/adpost.html")
 
 
 def research(request) :
@@ -377,7 +368,6 @@ def error(request) :
 
 
 def dev(request) :
-    dataD = initD()
     dataD = {"locked" : True}
     if request.method == "POST":
         password = request.POST.get("password")
