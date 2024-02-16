@@ -35,7 +35,7 @@
                 <p><i class="fas fa-eye"></i>{{ ad.view }} 回</p>
                 <p><i class="far fa-hand-pointer"></i>{{ ad.view }} 回</p>
                 <p><i class="far fa-clone"></i>{{ ad.dup }} 枠</p>
-                <p><i class="fas fa-tasks"></i>{{ ad.status }}</p>
+                <p><i class="fas fa-tasks"></i>{{ ad.get_status_display }}</p>
             </div>
         </id>
         {% endfor %}
