@@ -8,21 +8,39 @@
 <section>
     <h1>すべ歌詞DSP</h1>
     <div class="underline"></div>
-    <p class="error">{{ error }}</p>
-    <p class="error" id="errorjs">{{ error }}</p>
-    <form action="{% url 'subekashi:ad' %}" method="POST" id="adForm">{% csrf_token %}
-        <label>1つ目</label>
-        <input type="text" value="{{ url1 }}" id="url1" name="url1" placeholder="URLを入力" oninput="setad()"><br>
-        <input type="text" value="{{ ad1 }}" id="ad1" name="ad1" hidden>
-        <label>2つ目</label>
-        <input type="text" value="{{ url2 }}" id="url2" name="url2" placeholder="URLを入力" oninput="setad()"><br>
-        <input type="text" value="{{ ad2 }}" id="ad2" name="ad2" hidden>
-        <label>3つ目</label>
-        <input type="text" value="{{ url3 }}" id="url3" name="url3" placeholder="URLを入力" oninput="setad()"><br>
-        <input type="text" value="{{ ad3 }}" id="ad3" name="ad3" hidden>
-        <input type="text" value="{{ sha256 }}" id="sha256" name="sha256" hidden>
-        <input type="submit" value="送信" id="adsubmit">
-    </form>
+    <div id="wrapper">
+        <p class="error">{{ error }}</p>
+        <p class="error" id="errorjs">{{ error }}</p>
+        <form action="{% url 'subekashi:ad' %}" method="POST" id="adForm">{% csrf_token %}
+            <label>1枠目</label>
+            <input type="text" value="{{ url1 }}" id="url1" name="url1" placeholder="URLを入力" oninput="setad()"><br>
+            <input type="text" value="{{ ad1 }}" id="ad1" name="ad1" hidden>
+            <label>2枠目</label>
+            <input type="text" value="{{ url2 }}" id="url2" name="url2" placeholder="URLを入力" oninput="setad()"><br>
+            <input type="text" value="{{ ad2 }}" id="ad2" name="ad2" hidden>
+            <label>3枠目</label>
+            <input type="text" value="{{ url3 }}" id="url3" name="url3" placeholder="URLを入力" oninput="setad()"><br>
+            <input type="text" value="{{ ad3 }}" id="ad3" name="ad3" hidden>
+            <input type="text" value="{{ sha256 }}" id="sha256" name="sha256" hidden>
+            <input type="submit" value="送信" id="adsubmit">
+        </form>
+
+        {% for ad in ads %}
+        <id class="ad">
+            <div class="youtube">
+                <iframe src="https://www.youtube.com/embed/{{ ad.url | slice:'17:' }}" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+            </div>
+            <div class="adinfo">
+                <p><i class="fas fa-link"></i>{{ ad.url }}</p>
+                <p><i class="fas fa-eye"></i>{{ ad.view }} 回</p>
+                <p><i class="far fa-hand-pointer"></i>{{ ad.view }} 回</p>
+                <p><i class="far fa-clone"></i>{{ ad.dup }} 枠</p>
+                <p><i class="fas fa-tasks"></i>{{ ad.status }}</p>
+            </div>
+        </id>
+        {% endfor %}
+    </div>
+
 </section>
 {% endblock %}
 
