@@ -22,6 +22,9 @@ html {
 }
 
 body {
+    position: relative;
+    min-height: 100vh;
+    padding-bottom: 100px;
     margin: 0;
     padding: 0;
     -webkit-text-size-adjust: 100%;
@@ -181,6 +184,7 @@ p, li {
 a {
     color: #fff;
     text-decoration: underline 2px #fff;
+    text-underline-offset: 0.3ex;
     font-size: 22.5px;
     line-height: 32px;
 }
@@ -506,11 +510,8 @@ textarea {
     margin: 0 auto;
 }
 /* フッダー */
-.bottomelement {
-    margin-bottom: 20px;
-}
-
 footer {
+    position: absolute;
     width: 100%;
     bottom: 0;
     background-color: #2f3a44;

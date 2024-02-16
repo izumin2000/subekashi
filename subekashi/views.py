@@ -271,8 +271,6 @@ def channel(request, channelName) :
         if channelName in songIns.channel.replace(", ", ",").split(",") :
             songInsL.append(songIns)
     dataD["songInsL"] = songInsL
-    if 3 > len(songInsL) :
-        dataD["fixfooter"] = True
     return render(request, "subekashi/channel.html", dataD)
 
 

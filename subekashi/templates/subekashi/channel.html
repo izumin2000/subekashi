@@ -47,21 +47,6 @@
     {% else %}
         <p id="songnotfound">曲が見つかりませんでした</p>
     {% endif %}
-    <div id="tonew" class="dummybutton" onclick="tonew()"><p class="dummybuttonp">曲を登録する</p></div>
+    <div id="tonew" class="dummybutton" onclick="window.location.href = `{% url 'subekashi:new' %}?channel={{ channel }}`"><p class="dummybuttonp">曲を登録する</p></div>
 </section>
-{% endblock %}
-
-{% block js %}
-    <script src="{% static 'subekashi/js/fixfooter.js' %}?{{ lastModified }}" rel="stylesheet"></script>
-    <script>
-        function tonew() {
-            window.location.href = "{% url 'subekashi:new' %}?channel={{ channel }}";
-        }
-
-        window.addEventListener('load', function(){
-            if ('{{fixfooter}}') {
-                fixfooter();
-            }
-        });
-    </script>
 {% endblock %}
