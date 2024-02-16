@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from subekashi.models import Song, Ai, Singleton
+from subekashi.models import *
 import hashlib
 import requests
 import random
@@ -20,12 +20,18 @@ SHA256a = "5802ea2ddcf64db0efef04a2fa4b3a5b256d1b0f3d657031bd6a330ec54abefd"
 REPLACEBLE_HINSHIS = ["名詞", "動詞", "形容詞"]
 
 
-def formatURL(url) :
-    url = url.replace("m.youtube.com", "www.youtube.com")
-    if "https://www.youtube.com/watch" in url :
-        return "https://youtu.be/" + url[32:43]
-    else :
-        return url
+pattern = r'(?:\/|v=)([A-Za-z0-9_-]{11})(?:\?|&|$)'
+
+def isYouTubeLink(link):
+    videoID = re.search(pattern, link)
+    return videoID is not None
+
+def formatURL(link):
+    videoID = re.search(pattern, link)
+    if isYouTubeLink(link):
+        return "https://youtu.be/" + videoID.group(1)
+    else:
+        return link
 
 
 def initD() :
@@ -46,6 +52,11 @@ def setCookie(request):
     if 'jokerange' not in request.COOKIES:
         request.COOKIES['jokerange'] = 'off'
     return request.COOKIES
+
+
+def sha256(check) :
+    check += SECRET_KEY
+    return hashlib.sha256(check.encode()).hexdigest()
 
 
 def top(request):
@@ -280,10 +291,70 @@ def setting(request) :
 
 def ad(request) :
     dataD = initD()
+    check = ""
+    for i in range(1, 4) :
+        url = request.COOKIES.get(f"ad{i}") if request.COOKIES.get(f"ad{i}") else ""
+        dataD[f"url{i}"] = url
+        dataD[f"ad{i}"] = url
+        check += url
+        
+    dataD["sha256"] = sha256(check)
+    
     if request.method == "POST" :
-        urlForm = request.POST.get("url")
-        sendDiscord(urlForm, DSP_DISCORD_URL)
-    print(f"\033[31m{request.COOKIES}\033[0m")
+        checkPOST = ""
+        urlForms = []
+        adForms = []
+        for i in range(1, 4) :
+            urlForm = formatURL(request.POST.get(f"url{i}", ""))
+            adForm = formatURL(request.POST.get(f"ad{i}", ""))
+            sha256Form = request.POST.get("sha256")
+            
+            checkPOST += adForm
+            urlForms.append(urlForm)
+            adForms.append(adForm)
+            
+        if len(set(item.strip() for item in urlForms if item.strip())) != len([item.strip() for item in urlForms if item.strip()]) :
+            dataD["error"] = "URLが重複しています"
+            dataD[f"ad{i}"] = ""
+            dataD[f"url{i}"] = ""
+            urlForms[i - 1] = ""
+            dataD["sha256"] = sha256("".join(urlForms))
+            return render(request, "subekashi/ad.html", dataD)
+        
+        if sha256Form != sha256(checkPOST) :
+            dataD["error"] = "不正なパラメータが含まれています"
+            return render(request, "subekashi/ad.html", dataD)
+        
+        for i, urlForm, adForm in zip(range(1, 4), urlForms, adForms) :
+            if urlForm == adForm :
+                print(f"\033[31m{'urlsame'}\033[0m")
+                continue
+            
+            adIns = Ad.objects.filter(url = adForm).first()
+            if (adIns == None) and (adForm != "") :
+                dataD["error"] = "内部エラーが発生しました"
+                return render(request, "subekashi/ad.html", dataD)
+            elif adForm != "" :
+                adIns.delete()
+            
+            if urlForm == "" :
+                continue
+        
+            if not(isYouTubeLink(urlForm)) and (urlForm != "") :
+                dataD["error"] = "YouTubeのURLを入力してください"
+                dataD[f"ad{i}"] = ""
+                dataD[f"url{i}"] = ""
+                urlForms[i - 1] = ""
+                dataD["sha256"] = sha256("".join(urlForms))
+                return render(request, "subekashi/ad.html", dataD)
+            
+            adIns, isCreate = Ad.objects.get_or_create(url = urlForm)
+            print(f"\033[31m{adIns, isCreate}\033[0m")
+            if isCreate :
+                sendDiscord(DSP_DISCORD_URL, f"{urlForm}, {adIns.id}")
+            else :
+                dataD["error"] = f"{adIns.url}は既に誰かが登録されています"
+    
     return render(request, "subekashi/ad.html", dataD)
 
 

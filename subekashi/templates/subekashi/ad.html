@@ -8,10 +8,63 @@
 <section>
     <h1>すべ歌詞DSP</h1>
     <div class="underline"></div>
+    <p class="error">{{ error }}</p>
+    <p class="error" id="errorjs">{{ error }}</p>
     <form action="{% url 'subekashi:ad' %}" method="POST" id="adForm">{% csrf_token %}
-        <label>url</label>
-        <input type="text" id="url" name="url"><br>
-        <input type="submit" value="送信" id="adsubmit" disabled>
+        <label>1つ目</label>
+        <input type="text" value="{{ url1 }}" id="url1" name="url1" placeholder="URLを入力" oninput="setad()"><br>
+        <input type="text" value="{{ ad1 }}" id="ad1" name="ad1" hidden>
+        <label>2つ目</label>
+        <input type="text" value="{{ url2 }}" id="url2" name="url2" placeholder="URLを入力" oninput="setad()"><br>
+        <input type="text" value="{{ ad2 }}" id="ad2" name="ad2" hidden>
+        <label>3つ目</label>
+        <input type="text" value="{{ url3 }}" id="url3" name="url3" placeholder="URLを入力" oninput="setad()"><br>
+        <input type="text" value="{{ ad3 }}" id="ad3" name="ad3" hidden>
+        <input type="text" value="{{ sha256 }}" id="sha256" name="sha256" hidden>
+        <input type="submit" value="送信" id="adsubmit">
     </form>
 </section>
+{% endblock %}
+
+{% block js %}
+    <script>
+        pattern = /(?:\/|v=)([A-Za-z0-9_-]{11})(?:\?|&|$)/
+        function isYouTubeLink(link) {
+            var videoID = link.match(pattern);
+            return videoID != null
+        }
+        
+        function ShortLink(link) {
+            var videoID = link.match(pattern);
+            if (isYouTubeLink(link)) {
+                return "https://youtu.be/" + videoID[1];
+            } else {
+                return "";
+            }
+        }
+
+        function setad() {
+            adsubmitEle = document.getElementById("adsubmit");
+            errorjsEle = document.getElementById("errorjs");
+            isValid = true;
+            for (var i = 1; i <= 3; i++) {
+                url = document.getElementById("url" + String(i)).value;
+                if (url != "") {
+                    isValid = isValid && isYouTubeLink(url);
+                }
+                
+                adsubmitEle.disabled = !isValid;
+                errorjsEle.innerText = isValid ? "" : "YouTubeのリンクではありません";
+
+                if (isYouTubeLink(url) || url == "") {
+                    setCookie("ad" + i, ShortLink(url));
+                }
+            }
+        }
+
+        window.addEventListener('load', function(){
+            setad();
+            }
+        );
+    </script>
 {% endblock %}

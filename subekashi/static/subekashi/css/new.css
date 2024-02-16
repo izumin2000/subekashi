@@ -30,18 +30,6 @@ details ul ul {
     margin: 10px 0 0 70px;
 }
 
-.ok {
-    color: #090;
-}
-
-.warning {
-    color: #990;
-}
-
-.error {
-    color: #B60;
-}
-
 #fillFormButton {
     display: none;
     width: 250px;

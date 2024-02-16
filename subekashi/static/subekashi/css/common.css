@@ -189,6 +189,18 @@ a {
     font-family: 'Noto Sans JP', sans-serif !important;
 }
 
+.ok {
+    color: #090;
+}
+
+.warning {
+    color: #990;
+}
+
+.error {
+    color: #B60;
+}
+
 .underline {
     text-align: center;
     height: 8px;
