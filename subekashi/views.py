@@ -292,11 +292,13 @@ def setting(request) :
 def ad(request) :
     dataD = initD()
     check = ""
+    urlForms = []
     for i in range(1, 4) :
         url = request.COOKIES.get(f"ad{i}") if request.COOKIES.get(f"ad{i}") else ""
         dataD[f"url{i}"] = url
         dataD[f"ad{i}"] = url
         check += url
+        urlForms.append(url)
         
     dataD["sha256"] = sha256(check)
     
@@ -312,14 +314,6 @@ def ad(request) :
             checkPOST += adForm
             urlForms.append(urlForm)
             adForms.append(adForm)
-            
-        if len(set(item.strip() for item in urlForms if item.strip())) != len([item.strip() for item in urlForms if item.strip()]) :
-            dataD["error"] = "URLが重複しています"
-            dataD[f"ad{i}"] = ""
-            dataD[f"url{i}"] = ""
-            urlForms[i - 1] = ""
-            dataD["sha256"] = sha256("".join(urlForms))
-            return render(request, "subekashi/ad.html", dataD)
         
         if sha256Form != sha256(checkPOST) :
             dataD["error"] = "不正なパラメータが含まれています"
@@ -327,7 +321,6 @@ def ad(request) :
         
         for i, urlForm, adForm in zip(range(1, 4), urlForms, adForms) :
             if urlForm == adForm :
-                print(f"\033[31m{'urlsame'}\033[0m")
                 continue
             
             adIns = Ad.objects.filter(url = adForm).first()
@@ -335,7 +328,8 @@ def ad(request) :
                 dataD["error"] = "内部エラーが発生しました"
                 return render(request, "subekashi/ad.html", dataD)
             elif adForm != "" :
-                adIns.delete()
+                adIns.dup -= 1
+                adIns.save()
             
             if urlForm == "" :
                 continue
@@ -349,11 +343,23 @@ def ad(request) :
                 return render(request, "subekashi/ad.html", dataD)
             
             adIns, isCreate = Ad.objects.get_or_create(url = urlForm)
-            print(f"\033[31m{adIns, isCreate}\033[0m")
+            adIns.dup += 1
+            adIns.save()
             if isCreate :
                 sendDiscord(DSP_DISCORD_URL, f"{urlForm}, {adIns.id}")
-            else :
-                dataD["error"] = f"{adIns.url}は既に誰かが登録されています"
+                
+    ads = set()
+    for urlForm in urlForms :
+        if urlForm == "" : 
+            continue
+        adIns = Ad.objects.filter(url = urlForm).first()
+        if not adIns :
+            continue
+            
+        ads.add(adIns)
+    
+    dataD["ads"] = list(ads)
+    print(f"\033[31m{dataD}\033[0m")
     
     return render(request, "subekashi/ad.html", dataD)
 
