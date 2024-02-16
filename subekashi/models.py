@@ -51,8 +51,9 @@ class Ai(models.Model) :
 
 class Ad(models.Model) :
     url = models.CharField(default = "", max_length = 100)
-    view = models.IntegerField(default = 1)
-    click = models.IntegerField(default = 1)
+    view = models.IntegerField(default = 0)
+    click = models.IntegerField(default = 0)
+    dup = models.IntegerField(default = 0)
     isdisplay = models.BooleanField(default = False)
     
     def __str__(self):
