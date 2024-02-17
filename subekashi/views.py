@@ -5,7 +5,7 @@ import requests
 import random
 import random
 from rest_framework import viewsets
-from .serializer import SongSerializer, AiSerializer
+from .serializer import *
 from config.settings import *
 import re
 from django.utils import timezone
@@ -39,14 +39,6 @@ def sendDiscord(url, content) :
     return res.status_code
 
 
-def setCookie(request):
-    if 'songrange' not in request.COOKIES:
-        request.COOKIES['songrange'] = 'subeana'
-    if 'jokerange' not in request.COOKIES:
-        request.COOKIES['jokerange'] = 'off'
-    return request.COOKIES
-
-
 def sha256(check) :
     check += SECRET_KEY
     return hashlib.sha256(check.encode()).hexdigest()
@@ -54,9 +46,8 @@ def sha256(check) :
 
 def top(request):
     dataD = dict()
-    cookie = setCookie(request)
-    songrange = cookie['songrange']
-    jokerange = cookie['jokerange']
+    songrange = request.COOKIES.get("songrange", "subeana")
+    jokerange = request.COOKIES.get("jokerange", "off")
     
     if songrange == "all" :
         songInsL = Song.objects.all()
@@ -83,7 +74,14 @@ def top(request):
     if request.method == "POST":
         feedback = request.POST.get("feedback")
         sendDiscord(FEEDBACK_DISCORD_URL, feedback)
-        
+    
+    adInsL = Ad.objects.filter(status = "pass")
+    if adInsL :
+        adInsL = random.sample(list(adInsL), min(len(adInsL), 10))
+        adInsL = [adIns for adIns in adInsL for _ in range(adIns.dup)]
+        adIns = random.choice(adInsL) if adInsL else []
+        dataD["adIns"] = adIns if request.COOKIES.get("adrange", False) else ""
+    
     return render(request, 'subekashi/top.html', dataD)
 
 
@@ -416,6 +414,12 @@ class SongViewSet(viewsets.ReadOnlyModelViewSet):
 class AiViewSet(viewsets.ModelViewSet):
     queryset = Ai.objects.all()
     serializer_class = AiSerializer
+
+
+class AdViewSet(viewsets.ModelViewSet):
+    queryset = Ad.objects.all()
+    serializer_class = AdSerializer
+    
 
 def clean(request) :
     result = management.call_command("clean")
