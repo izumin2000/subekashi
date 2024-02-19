@@ -179,7 +179,7 @@ h2 {
 
 p, li {
     color: #fff;
-    font-size: 22.5px;
+    font-size: 22px;
     line-height: 32px;
 }
 
@@ -187,7 +187,7 @@ a {
     color: #fff;
     text-decoration: underline 2px #fff;
     text-underline-offset: 0.3ex;
-    font-size: 22.5px;
+    font-size: 22px;
     line-height: 32px;
 }
 
@@ -225,7 +225,7 @@ a {
 details {
     color: #FFF;
     cursor: pointer;
-    font-size: 22.5px;
+    font-size: 22px;
     line-height: 32px;
 }
 
@@ -325,7 +325,7 @@ input:focus::placeholder {
 
 label {
     color: #fff;
-    font-size: 22.5px;
+    font-size: 22px;
     line-height: 32px;
     margin-right: 20px;
 }
@@ -433,7 +433,7 @@ textarea {
 }
 
 .songtitle {
-    font-size: 20px;
+    font-size: 22px;
     margin-bottom: 5px;
     white-space:nowrap;
     overflow-wrap: break-word;
