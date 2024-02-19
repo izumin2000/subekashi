@@ -4,8 +4,12 @@
 
 @font-face {
     font-family: "Imitate";
-    src:
-        url("../GenZenGothicKaiC.woff2") format("woff2"),
+    src: url("../GenZenGothicKaiC.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Noto Sans JP";
+    src: url("../NotoSansJP-VariableFont_wght.woff2") format("woff2");
 }
 
 * {
@@ -16,9 +20,7 @@
 html {
     height: 100%;
     background-color: #000;
-    /* TODO ✦を表示させる */
     font-family: 'Imitate', 'Noto Sans JP', sans-serif;
-    font-weight: lighter !important;
 }
 
 body {
@@ -191,6 +193,7 @@ a {
 
 .sansfont {
     font-family: 'Noto Sans JP', sans-serif !important;
+    font-weight: 1000 !important;
 }
 
 .ok {
@@ -341,7 +344,6 @@ textarea {
     font-size: 25px;
     cursor: pointer;
     margin: 20px 0;
-    font-family: 'Noto Sans JP', sans-serif
 }
 
 .dummybuttons {
@@ -510,6 +512,10 @@ textarea {
     margin: 0 auto;
 }
 /* フッダー */
+#footer-wrapper {
+    padding-top: 100px;
+}
+
 footer {
     position: absolute;
     width: 100%;

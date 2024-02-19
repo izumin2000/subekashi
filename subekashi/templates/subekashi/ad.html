@@ -79,7 +79,7 @@
 {% endblock %}
 
 {% block js %}
-    <script>
+    <script defer>
         pattern = /(?:\/|v=)([A-Za-z0-9_-]{11})(?:\?|&|$)/
         function isYouTubeLink(link) {
             var videoID = link.match(pattern);

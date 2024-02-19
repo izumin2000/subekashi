@@ -22,7 +22,7 @@
 </section>
 {% endblock %}
 {% block js %}
-<script>
+<script defer>
     function backupf() {
         window.open(baseURL() + '/api/song/?format=json', '_blank');
         resetEle = document.getElementById("reset");

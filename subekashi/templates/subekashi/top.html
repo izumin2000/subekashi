@@ -155,7 +155,7 @@
 
 
 {% block js %}
-<script>
+<script defer>
     if ('{{ isAdDisplay }}' === "True") {
         let onceView = false;
         var adView = Number('{{ adIns.view }}')
@@ -213,5 +213,5 @@
     };
 }
 </script>
-<script src="https://www.youtube.com/iframe_api"></script>
+<script defer src="https://www.youtube.com/iframe_api"></script>
 {% endblock %}

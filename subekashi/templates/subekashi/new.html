@@ -169,8 +169,8 @@
 {% endblock %}
 
 {% block js %}
-<script src="{% static 'subekashi/js/newform.js' %}" rel="stylesheet"></script>
-<script>
+<script defer src="{% static 'subekashi/js/newform.js' %}" rel="stylesheet"></script>
+<script defer>
     window.addEventListener('load', function() {
         firstLoad('{{ id }}');
     });

@@ -37,7 +37,7 @@
     </body>
 
     {% block js %}{% endblock %}
-    <script src="{% static 'subekashi/js/base.js' %}?{{ lastModified }}" rel="stylesheet"></script>
+    <script defer src="{% static 'subekashi/js/base.js' %}?{{ lastModified }}" rel="stylesheet"></script>
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-GJHM3M7SH1"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
