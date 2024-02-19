@@ -36,8 +36,8 @@
         {% include './footer.html' %}
     </body>
 
-    {% block js %}{% endblock %}
     <script defer src="{% static 'subekashi/js/base.js' %}?{{ lastModified }}" rel="stylesheet"></script>
+    {% block js %}{% endblock %}
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-GJHM3M7SH1"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
