@@ -59,6 +59,10 @@
         <div class="youtube" id="ad">
             <iframe id="player" src="https://www.youtube.com/embed/{{ adIns.url | slice:'17:' }}?enablejsapi=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
         </div>
+        <div class="dummybuttons">
+            <a href="{% url 'subekashi:ad' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">宣伝する</p></div></a>
+            <a href="{% url 'subekashi:setting' %}#adrange"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">非表示にする</p></div></a>
+        </div>
     {% endif %}
 
     {% if aiInsL %}
