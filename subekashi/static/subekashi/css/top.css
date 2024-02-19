@@ -7,7 +7,9 @@
     position: relative;
     left: 50%;
     transform: translateX(-50%);
-    width: 480px;
+    width: 50vw;
+    min-width: 300px;
+    margin-bottom: 20px;
     aspect-ratio: 16 / 9;
 }
 
