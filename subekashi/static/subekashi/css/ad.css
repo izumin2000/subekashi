@@ -1,6 +1,5 @@
 #wrapper {
     margin: 0 auto;
-    padding-bottom: 50px;
     width: fit-content;
 }
 
@@ -68,4 +67,9 @@
 
 .fa-hand-pointer {
     margin-right: 10px;
+}
+
+#bottom-warning {
+    color: #999;
+    width: calc(50vw + 5px)
 }
