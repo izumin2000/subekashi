@@ -73,8 +73,7 @@
 {% endblock %}
 
 {% block js %}
-<script src="{% static 'subekashi/js/fixfooter.js' %}" rel="stylesheet"></script>
-<script>
+<script defer>
     window.addEventListener('load', function(){
         songlyricsEle = document.getElementById("songlyrics");
         if (songlyricsEle) {
@@ -84,10 +83,6 @@
             } else if (getCookie().brlyrics == "pack") {
                 songlyricsEle.innerHTML = songlyricsEle.innerHTML.replace(/(<br>\s*)+/g, "<br>");
             }
-        }
-
-        if ((!'{{ songIns.channel }}') | (!'{{ songIns.lyrics|slice:"1" }}')) {
-            fixfooter();
         }
     });
 

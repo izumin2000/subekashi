@@ -22,9 +22,7 @@
 </section>
 {% endblock %}
 {% block js %}
-<script src="{% static 'subekashi/js/fixfooter.js' %}" rel="stylesheet"></script>
-<script>
-    window.addEventListener('load', fixfooter);
+<script defer>
     function backupf() {
         window.open(baseURL() + '/api/song/?format=json', '_blank');
         resetEle = document.getElementById("reset");

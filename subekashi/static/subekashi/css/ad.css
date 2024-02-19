@@ -1,0 +1,71 @@
+#wrapper {
+    margin: 0 auto;
+    padding-bottom: 50px;
+    width: fit-content;
+}
+
+#adsubmit {
+    width: calc(50vw + 5px);
+    cursor: pointer;
+    margin-bottom: 40px;
+}
+
+@media (max-width: 720px) {
+    #adsubmit {
+        width: calc(65vw + 55px);
+    }
+}
+
+.ad {
+    display: block;
+    margin-bottom: 40px;
+}
+
+.youtube {
+    display: inline-block;
+    width: 320px;
+    aspect-ratio: 16 / 9;
+}
+
+.youtube iframe {
+    width: 100%;
+    height: 100%;
+}
+
+.adinfo {
+    display: inline-block;
+    vertical-align:top;
+    margin-left: 10px;
+}
+
+.adinfo p {
+    margin-top: 5px;
+}
+
+@media (max-width: 750px) {
+    .youtube {
+        display: block;
+        margin: 0 auto;
+    }
+
+    .adinfo {
+        display: block;
+        margin: 0 auto;
+    }
+}
+
+.fa-link {
+    margin-right: 6px;
+}
+
+.fa-clone, .fa-tasks  {
+    margin-right: 8px;
+}
+
+.fa-eye {
+    margin-right: 4px;
+}
+
+.fa-hand-pointer {
+    margin-right: 10px;
+}

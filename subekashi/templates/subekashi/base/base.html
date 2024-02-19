@@ -18,9 +18,6 @@
         <link rel="stylesheet" type="text/css" href="{% static 'subekashi/css/common.css'%}?{{ lastModified }}">
         <link rel="stylesheet" type="text/css" href="{% block css %}{% endblock %}?{{ lastModified }}">
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
-        <link rel="preconnect" href="https://fonts.googleapis.com">     <!-- sans font -->
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>        <!-- sans font -->
-        <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@900&display=swap" rel="stylesheet">      <!-- sans font -->
         <link rel="shortcut icon" href="{% static 'subekashi/image/icon.ico' %}">
     </head>
     <body>
@@ -39,11 +36,8 @@
         {% include './footer.html' %}
     </body>
 
-    <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script> <!-- toastr -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script defer src="{% static 'subekashi/js/base.js' %}?{{ lastModified }}" rel="stylesheet"></script>
     {% block js %}{% endblock %}
-    <script src="{% static 'subekashi/js/base.js' %}?{{ lastModified }}" rel="stylesheet"></script>
-    <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-GJHM3M7SH1"></script>
     <script>
         window.dataLayer = window.dataLayer || [];

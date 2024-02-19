@@ -53,6 +53,14 @@
         <a href="{% url 'subekashi:new' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">曲を登録する</p></div></a>
     </div>
     
+    {% if isAdDisplay %}
+        <h1>宣伝</h1>
+        <div class="underline"></div>
+        <div class="youtube" id="ad">
+            <iframe id="player" src="https://www.youtube.com/embed/{{ adIns.url | slice:'17:' }}?enablejsapi=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        </div>
+    {% endif %}
+
     {% if aiInsL %}
         <h1>生成された歌詞</h1>
         <div class="underline"></div>
@@ -122,13 +130,13 @@
  
     <h1>リンク</h1>
     <div class="underline"></div>
-    <a href="https://imicomweb.com/"><img id="imicom" src="{% static 'subekashi/image/imicom.png' %}"></a>
+    <a href="https://imicomweb.com/"><img id="imicom" src="{% static 'subekashi/image/imicom.png' %}" alt="イミコミュのロゴ" height="62" width="452"></a>
     <a href="https://www.youtube.com/@subeteanatanoseidesu" class="subeana"><h1>全てあなたの所為です。</h1></a>
     
     <h1>ポスト</h1>
     <div class="underline"></div>
     <div class="twitter-timeline-wrapper">
-        <a class="twitter-timeline" href="https://twitter.com/subekashi?ref_src=twsrc%5Etfw">Tweets by subekashi</a> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+        <a class="twitter-timeline" href="https://twitter.com/subekashi?ref_src=twsrc%5Etfw">Tweets by subekashi</a>
     </div>
 
     <h1>クレジット</h1>
@@ -137,6 +145,74 @@
         <p>本ソフトでは表示フォントに「源全角ゴ改」(<a href="https://drive.google.com/drive/folders/19WidrJoCmI5qLJV-eR_ydURIwxB2-DSH">https://drive.google.com/drive/folders/19WidrJoCmI5qLJV-eR_ydURIwxB2-DS</a>) を使用しています。</p>
         <p>Licensed under SIL Open Font License 1.1 <a href="http://scripts.sil.org/OFL">http://scripts.sil.org/OFL</a></p>
         <p>© 2021 全て語り手の所為です。</p>
+        <br>
+        <p>本ソフトでは表示フォントに「Noto Sans JP」(<a href="https://fonts.google.com/selection?query=noto">https://fonts.google.com/selection?query=noto</a>) を使用しています。</p>
+        <p>Licensed under SIL Open Font License 1.1 <a href="http://scripts.sil.org/OFL">http://scripts.sil.org/OFL</a></p>
+        <p>© 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'</p>
     </div>
 </section>
+{% endblock %}
+
+
+{% block js %}
+<script defer>
+    if ('{{ isAdDisplay }}' === "True") {
+        let onceView = false;
+        var adView = Number('{{ adIns.view }}')
+        var adClick = Number('{{ adIns.click }}')
+        window.addEventListener('scroll', async function () {
+            taeget_position = document.querySelector('#ad').getBoundingClientRect().top;
+                if (taeget_position <= window.innerHeight && onceView !== true) {
+                    onceView = true;
+                    await setad(adView + 1, adClick);
+                }
+            }
+        );
+
+        let onceClick = false;
+        function onYouTubeIframeAPIReady() {
+            var player = new YT.Player('player', {
+                events: {
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+
+            async function onPlayerStateChange(event) {
+                if ((event.data == YT.PlayerState.PLAYING) && (onceClick !== true)) {
+                    await setad(adView + 1, adClick + 1);
+                    onceClick = true;
+                }
+            }
+        }
+    }
+
+    async function setad(view, click) {
+    res = null
+    csrf = await getCSRF();
+    try {
+    res = await fetch(
+        baseURL() + "/api/ad/" + "{{ adIns.id }}" + "/?format=json",
+        {
+            method: "PUT",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(
+                {
+                    "view": view,
+                    "click": click,
+                }
+            ),
+            credentials: 'include',
+        });
+        if ( ! res.ok ) {
+            throw new RuntimeError(`getHeader: Response: ${res.status}`);
+        };
+    } finally {
+        return res
+    };
+}
+</script>
+<script defer src="https://www.youtube.com/iframe_api"></script>
+<script defer src="{% static 'subekashi/js/x.js' %}" ></script>
 {% endblock %}

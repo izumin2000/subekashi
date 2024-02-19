@@ -49,6 +49,22 @@ class Ai(models.Model) :
         return self.lyrics
 
 
+class Ad(models.Model) :
+    choices = (
+        ('still', '未審査'),
+        ('pass', '公開中'),
+        ('fail', '未通過'),
+    )
+    url = models.CharField(default = "", max_length = 100)
+    view = models.IntegerField(default = 0)
+    click = models.IntegerField(default = 0)
+    dup = models.IntegerField(default = 0)
+    status = models.CharField(default = "still", choices=choices, max_length=10)
+    
+    def __str__(self):
+        return self.url
+
+
 class Singleton(models.Model) :
     key = models.CharField(default = "", max_length = 100)
     value = models.CharField(default = "", max_length = 500)

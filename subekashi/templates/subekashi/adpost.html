@@ -1,0 +1,13 @@
+{% extends "subekashi/base/base.html" %}
+{% block title %}すべ歌詞DSP{% endblock %}
+{% block ogtitle %}すべ歌詞DSP{% endblock %}
+{% load static %}
+{% block css %}{% static 'subekashi/css/adpost.css'%}{% endblock %}
+
+{% block content %}
+<section>
+    <p>正常に枠を登録できました</p>
+    <p>審査が終わるまで数日お待ちください</p>
+    <button type="button" onclick="window.location.href = `{% url 'subekashi:ad' %}`">OK!</button>
+</section>
+{% endblock %}

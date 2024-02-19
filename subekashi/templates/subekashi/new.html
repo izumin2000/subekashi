@@ -53,7 +53,7 @@
             <li>歌詞を入力してください。</li>
             <li>インスト曲の場合、入力は不要です。</li>
             <li>形式は特に決まっていませんができるだけ、MVと同じように記述してくれると助かります。</li>
-            <li>将来的にはマークダウンなような形式を実装予定です。</li>
+            <li>将来的にはマークダウンのような形式を実装予定です。</li>
         </ul>
         <h2>オリジナル模倣</h2>
         <ul>
@@ -169,8 +169,8 @@
 {% endblock %}
 
 {% block js %}
-<script src="{% static 'subekashi/js/newform.js' %}" rel="stylesheet"></script>
-<script>
+<script defer src="{% static 'subekashi/js/newform.js' %}" rel="stylesheet"></script>
+<script defer>
     window.addEventListener('load', function() {
         firstLoad('{{ id }}');
     });

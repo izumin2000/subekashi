@@ -1,11 +1,11 @@
 from django.shortcuts import render, redirect
-from subekashi.models import Song, Ai, Singleton
+from subekashi.models import *
 import hashlib
 import requests
 import random
 import random
 from rest_framework import viewsets
-from .serializer import SongSerializer, AiSerializer
+from .serializer import *
 from config.settings import *
 import re
 from django.utils import timezone
@@ -20,19 +20,18 @@ SHA256a = "5802ea2ddcf64db0efef04a2fa4b3a5b256d1b0f3d657031bd6a330ec54abefd"
 REPLACEBLE_HINSHIS = ["名詞", "動詞", "形容詞"]
 
 
-def formatURL(url) :
-    url = url.replace("m.youtube.com", "www.youtube.com")
-    if "https://www.youtube.com/watch" in url :
-        return "https://youtu.be/" + url[32:43]
-    else :
-        return url
+pattern = r'(?:\/|v=)([A-Za-z0-9_-]{11})(?:\?|&|$)'
 
+def isYouTubeLink(link):
+    videoID = re.search(pattern, link)
+    return videoID is not None
 
-def initD() :
-    dataD = {
-        "lastModified": Singleton.objects.filter(key = "lastModified").first().value,
-    }
-    return dataD
+def formatURL(link):
+    videoID = re.search(pattern, link)
+    if isYouTubeLink(link):
+        return "https://youtu.be/" + videoID.group(1)
+    else:
+        return link
 
 
 def sendDiscord(url, content) :
@@ -40,19 +39,15 @@ def sendDiscord(url, content) :
     return res.status_code
 
 
-def setCookie(request):
-    if 'songrange' not in request.COOKIES:
-        request.COOKIES['songrange'] = 'subeana'
-    if 'jokerange' not in request.COOKIES:
-        request.COOKIES['jokerange'] = 'off'
-    return request.COOKIES
+def sha256(check) :
+    check += SECRET_KEY
+    return hashlib.sha256(check.encode()).hexdigest()
 
 
 def top(request):
-    dataD = initD()
-    cookie = setCookie(request)
-    songrange = cookie['songrange']
-    jokerange = cookie['jokerange']
+    dataD = dict()
+    songrange = request.COOKIES.get("songrange", "subeana")
+    jokerange = request.COOKIES.get("jokerange", "off")
     
     if songrange == "all" :
         songInsL = Song.objects.all()
@@ -79,12 +74,21 @@ def top(request):
     if request.method == "POST":
         feedback = request.POST.get("feedback")
         sendDiscord(FEEDBACK_DISCORD_URL, feedback)
-        
+    
+    isAdDisplay = request.COOKIES.get("adrange", "off") == "on"
+    dataD["isAdDisplay"] = isAdDisplay
+    adInsL = Ad.objects.filter(status = "pass") if isAdDisplay else ""
+    if adInsL :
+        adInsL = random.sample(list(adInsL), min(len(adInsL), 10))
+        adInsL = [adIns for adIns in adInsL for _ in range(adIns.dup)]
+        adIns = random.choice(adInsL) if adInsL else []
+        dataD["adIns"] = adIns
+    
     return render(request, 'subekashi/top.html', dataD)
 
 
 def new(request) :
-    dataD = initD()
+    dataD = dict()
 
     if request.method == "POST":
         idForm = request.POST.get("songid")
@@ -179,7 +183,7 @@ def new(request) :
 
 
 def song(request, songId) :
-    dataD = initD()
+    dataD = dict()
     songIns = Song.objects.filter(pk = songId).first()
     isExist = bool(songIns)
     dataD["songIns"] = songIns
@@ -215,7 +219,7 @@ def song(request, songId) :
 
 
 def delete(request) :
-    dataD = initD()
+    dataD = dict()
     dataD["isDeleted"] = True
     dataD["songInsL"] = Song.objects.all()
     
@@ -237,7 +241,7 @@ def delete(request) :
 
 
 def ai(request) :
-    dataD = initD()
+    dataD = dict()
     dataD["songInsL"] = Song.objects.all()
 
     if request.method == "POST" :
@@ -253,20 +257,18 @@ def ai(request) :
 
 
 def channel(request, channelName) :
-    dataD = initD()
+    dataD = dict()
     dataD["channel"] = channelName
     songInsL = []
     for songIns in Song.objects.all() :
         if channelName in songIns.channel.replace(", ", ",").split(",") :
             songInsL.append(songIns)
     dataD["songInsL"] = songInsL
-    if 3 > len(songInsL) :
-        dataD["fixfooter"] = True
     return render(request, "subekashi/channel.html", dataD)
 
 
 def search(request) :
-    dataD = initD()
+    dataD = dict()
     dataD["songInsL"] = Song.objects.order_by("-posttime")
     query = request.GET
     dataD["query"] = f"{query.get('title')},{query.get('channel')},{query.get('lyrics')},{query.get('filter')}".replace("None", "")
@@ -274,8 +276,87 @@ def search(request) :
 
 
 def setting(request) :
-    dataD = initD()
-    return render(request, "subekashi/setting.html", dataD)
+    return render(request, "subekashi/setting.html")
+
+
+def ad(request) :
+    dataD = dict()
+    check = ""
+    urlForms = []
+    for i in range(1, 4) :
+        url = request.COOKIES.get(f"ad{i}") if request.COOKIES.get(f"ad{i}") else ""
+        dataD[f"url{i}"] = url
+        dataD[f"ad{i}"] = url
+        check += url
+        urlForms.append(url)
+        
+    dataD["sha256"] = sha256(check)
+    
+    if request.method == "POST" :
+        checkPOST = ""
+        urlForms = []
+        adForms = []
+        for i in range(1, 4) :
+            urlForm = formatURL(request.POST.get(f"url{i}", ""))
+            adForm = formatURL(request.POST.get(f"ad{i}", ""))
+            sha256Form = request.POST.get("sha256")
+            
+            checkPOST += adForm
+            urlForms.append(urlForm)
+            adForms.append(adForm)
+        
+        if sha256Form != sha256(checkPOST) :
+            dataD["error"] = "不正なパラメータが含まれています"
+            return render(request, "subekashi/ad.html", dataD)
+        
+        for i, urlForm, adForm in zip(range(1, 4), urlForms, adForms) :
+            if urlForm == adForm :
+                continue
+            
+            adIns = Ad.objects.filter(url = adForm).first()
+            if (adIns == None) and (adForm != "") :
+                dataD["error"] = "内部エラーが発生しました"
+                return render(request, "subekashi/ad.html", dataD)
+            elif adForm != "" :
+                adIns.dup -= 1
+                adIns.save()
+            
+            if urlForm == "" :
+                continue
+        
+            if not(isYouTubeLink(urlForm)) and (urlForm != "") :
+                dataD["error"] = "YouTubeのURLを入力してください"
+                dataD[f"ad{i}"] = ""
+                dataD[f"url{i}"] = ""
+                urlForms[i - 1] = ""
+                dataD["sha256"] = sha256("".join(urlForms))
+                return render(request, "subekashi/ad.html", dataD)
+            
+            adIns, isCreate = Ad.objects.get_or_create(url = urlForm)
+            adIns.dup += 1
+            adIns.save()
+            if isCreate :
+                sendDiscord(DSP_DISCORD_URL, f"{urlForm}, {adIns.id}")
+        
+        return redirect("subekashi:adpost")
+                
+    ads = set()
+    for urlForm in urlForms :
+        if urlForm == "" : 
+            continue
+        adIns = Ad.objects.filter(url = urlForm).first()
+        if not adIns :
+            continue
+            
+        ads.add(adIns)
+    
+    dataD["ads"] = list(ads)
+    
+    return render(request, "subekashi/ad.html", dataD)
+
+
+def adpost(request) :
+    return render(request, "subekashi/adpost.html")
 
 
 def research(request) :
@@ -287,7 +368,6 @@ def error(request) :
 
 
 def dev(request) :
-    dataD = initD()
     dataD = {"locked" : True}
     if request.method == "POST":
         password = request.POST.get("password")
@@ -336,6 +416,12 @@ class SongViewSet(viewsets.ReadOnlyModelViewSet):
 class AiViewSet(viewsets.ModelViewSet):
     queryset = Ai.objects.all()
     serializer_class = AiSerializer
+
+
+class AdViewSet(viewsets.ModelViewSet):
+    queryset = Ad.objects.all()
+    serializer_class = AdSerializer
+    
 
 def clean(request) :
     result = management.call_command("clean")
