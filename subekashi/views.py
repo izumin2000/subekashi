@@ -75,12 +75,14 @@ def top(request):
         feedback = request.POST.get("feedback")
         sendDiscord(FEEDBACK_DISCORD_URL, feedback)
     
-    adInsL = Ad.objects.filter(status = "pass")
+    isAdDisplay = request.COOKIES.get("adrange", "off") == "on"
+    dataD["isAdDisplay"] = isAdDisplay
+    adInsL = Ad.objects.filter(status = "pass") if isAdDisplay else ""
     if adInsL :
         adInsL = random.sample(list(adInsL), min(len(adInsL), 10))
         adInsL = [adIns for adIns in adInsL for _ in range(adIns.dup)]
         adIns = random.choice(adInsL) if adInsL else []
-        dataD["adIns"] = adIns if request.COOKIES.get("adrange", False) else ""
+        dataD["adIns"] = adIns
     
     return render(request, 'subekashi/top.html', dataD)
 

@@ -94,6 +94,17 @@ async function getHeader() {
 }
 
 
+// CSRFの取得
+async function getCSRF() {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; csrftoken=`);
+    if (parts.length === 2) {
+        csrf = parts.pop().split(';').shift()
+        return csrf;
+    }
+}
+
+
 // クッキーの保存
 function setCookie(name, json) {
     let expire = '';

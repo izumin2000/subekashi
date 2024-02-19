@@ -53,11 +53,11 @@
         <a href="{% url 'subekashi:new' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">曲を登録する</p></div></a>
     </div>
     
-    {% if adIns %}
+    {% if isAdDisplay %}
         <h1>宣伝</h1>
         <div class="underline"></div>
-        <div class="youtube">
-            <iframe src="https://www.youtube.com/embed/{{ adIns.url | slice:'17:' }}" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        <div class="youtube" id="ad">
+            <iframe id="player" src="https://www.youtube.com/embed/{{ adIns.url | slice:'17:' }}?enablejsapi=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
         </div>
     {% endif %}
 
@@ -147,4 +147,67 @@
         <p>© 2021 全て語り手の所為です。</p>
     </div>
 </section>
+{% endblock %}
+
+
+{% block js %}
+<script>
+    if ('{{ isAdDisplay }}' === "True") {
+        let onceView = false;
+        var adView = Number('{{ adIns.view }}')
+        var adClick = Number('{{ adIns.click }}')
+        window.addEventListener('scroll', async function () {
+            taeget_position = document.querySelector('#ad').getBoundingClientRect().top;
+                if (taeget_position <= window.innerHeight && onceView !== true) {
+                    onceView = true;
+                    await setad(adView + 1, adClick);
+                }
+            }
+        );
+
+        let onceClick = false;
+        function onYouTubeIframeAPIReady() {
+            var player = new YT.Player('player', {
+                events: {
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+
+            async function onPlayerStateChange(event) {
+                if ((event.data == YT.PlayerState.PLAYING) && (onceClick !== true)) {
+                    await setad(adView + 1, adClick + 1);
+                    onceClick = true;
+                }
+            }
+        }
+    }
+
+    async function setad(view, click) {
+    res = null
+    csrf = await getCSRF();
+    try {
+    res = await fetch(
+        baseURL() + "/api/ad/" + "{{ adIns.id }}" + "/?format=json",
+        {
+            method: "PUT",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(
+                {
+                    "view": view,
+                    "click": click,
+                }
+            ),
+            credentials: 'include',
+        });
+        if ( ! res.ok ) {
+            throw new RuntimeError(`getHeader: Response: ${res.status}`);
+        };
+    } finally {
+        return res
+    };
+}
+</script>
+<script src="https://www.youtube.com/iframe_api"></script>
 {% endblock %}

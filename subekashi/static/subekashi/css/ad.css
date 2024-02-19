@@ -54,11 +54,15 @@
     }
 }
 
-.fa-link, .fa-clone  {
+.fa-link {
+    margin-right: 6px;
+}
+
+.fa-clone, .fa-tasks  {
     margin-right: 8px;
 }
 
-.fa-eye, .fa-tasks {
+.fa-eye {
     margin-right: 4px;
 }
 

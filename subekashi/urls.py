@@ -8,6 +8,7 @@ app_name='subekashi'
 defaultRouter = routers.DefaultRouter()
 defaultRouter.register('song', views.SongViewSet)
 defaultRouter.register('ai', views.AiViewSet)
+defaultRouter.register('ad', views.AdViewSet)
 
 urlpatterns = [
     path('admin', admin.site.urls),
