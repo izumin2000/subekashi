@@ -10,13 +10,13 @@ async function firstLoad(songId) {
         document.getElementById("channel").value = songResult.channel;
         fillForm();
         setSubmitButton("_", "_");
+        songGuessEles = document.getElementsByClassName("songGuess");
+        document.getElementById("songid").value = Number(songId);
     }
 
     isGetQuery = songId != "None"
-
+    autotextarea();
     checkExist();
-    songGuessEles = document.getElementsByClassName("songGuess");
-    document.getElementById("songid").value = Number(songId);
 }
 
 
