@@ -15,7 +15,7 @@
     }
 }
 
-.ad {
+.dsp {
     display: block;
     margin-bottom: 40px;
 }
@@ -31,13 +31,13 @@
     height: 100%;
 }
 
-.adinfo {
+.dspinfo {
     display: inline-block;
     vertical-align:top;
     margin-left: 10px;
 }
 
-.adinfo p {
+.dspinfo p {
     margin-top: 5px;
 }
 
@@ -47,9 +47,10 @@
         margin: 0 auto;
     }
 
-    .adinfo {
+    .dspinfo {
         display: block;
         margin: 0 auto;
+        width: fit-content;
     }
 }
 
@@ -67,9 +68,4 @@
 
 .fa-hand-pointer {
     margin-right: 10px;
-}
-
-#bottom-warning {
-    color: #999;
-    width: calc(50vw + 5px)
 }

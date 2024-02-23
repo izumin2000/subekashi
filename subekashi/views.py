@@ -418,7 +418,7 @@ class AiViewSet(viewsets.ModelViewSet):
     serializer_class = AiSerializer
 
 
-class AdViewSet(viewsets.ReadOnlyModelViewSet):
+class AdViewSet(viewsets.ModelViewSet):
     queryset = Ad.objects.all()
     serializer_class = AdSerializer
     
