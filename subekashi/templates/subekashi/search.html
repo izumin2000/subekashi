@@ -12,29 +12,36 @@
     <div class="underline"></div>
 
     <div id="searchform">
-        <label>タイトル　　</label>
-        <input type="text" id="title" class="sansfont" name="title" oninput="searchSong()"><br>
-        <label>チャンネル名</label>
-        <input type="text" id="channel" name="channel" oninput="searchSong()"><br>
-        <label>歌詞　　　　</label>
-        <input type="text" id="lyrics" name="lyrics" oninput="searchSong()"><br>
+        <div class="label-wrapper">
+            <label class="label-same">タイトル</label>
+            <input type="text" id="title" class="sansfont" name="title" oninput="searchSong()">
+        </div>
+        <div class="label-wrapper">
+            <label class="label-same">チャンネル名</label>
+            <input type="text" id="channel" name="channel" oninput="searchSong()">
+        </div>
+        <div class="label-wrapper">
+            <label class="label-same">歌詞</label>
+            <input type="text" id="lyrics" name="lyrics" oninput="searchSong()">
+        </div>
         <div id="categorysec">
-            <label>カテゴリ　　</label>
-            <select id="category" name="category" oninput="searchSong()">
-                <option>全ての模倣</option>
-                <option>.模倣</option>
-                <option>..模倣</option>
-                <option>教育模倣</option>
-                <option>アブジェ模倣</option>
-                <option>...模倣</option>
-                <option>表╱裏模倣</option>
-                <option>名の無い星が空に堕ちたら模倣</option>
-                <option>エヌ模倣</option>
-                <option>K²模倣</option>
-            </select>
-        </div><br>
-        <label>フィルタ</label>
-        <div onclick="searchSong()">
+            <div class="label-wrapper">
+                <label class="label-same">カテゴリ</label>
+                <select id="category" name="category" oninput="searchSong()">
+                    <option>全ての模倣</option>
+                    <option>.模倣</option>
+                    <option>..模倣</option>
+                    <option>教育模倣</option>
+                    <option>アブジェ模倣</option>
+                    <option>...模倣</option>
+                    <option>表╱裏模倣</option>
+                    <option>名の無い星が空に堕ちたら模倣</option>
+                    <option>エヌ模倣</option>
+                    <option>K²模倣</option>
+                </select>
+            </div>
+        </div>
+        <div onclick="searchSong()" id="checkboxs">
             <div class="devInput" onclick="devInput(0)">
                 <input type="checkbox" class="filters" value="isCompleted" oninput="searchSong()">
                 <label>作成途中</label>

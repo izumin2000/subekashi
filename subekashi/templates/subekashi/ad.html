@@ -8,73 +8,76 @@
 <section>
     <h1>すべ歌詞DSP</h1>
     <div class="underline"></div>
-    <div id="wrapper">
-        <details>
-            <summary>すべ歌詞DSPの使い方</summary>
-            <br><h3>概要</h3>
-            <ul>
-                <li>すべ歌詞DSPとは界隈曲を無料で宣伝できる広告プラットフォームです。</li>
-                <li>界隈曲が聴けるYouTubeのURLを登録することで、トップページに広告を配信することができます。</li>
-                <li>アップロード者本人以外の第三者でも界隈曲を宣伝できます。</li>
-            </ul>
-            <br><h3>枠</h3>
-            <ul>
-                <li>広告はページが読み込み時にランダムに配信され、界隈曲の「枠」の数が多いほど、配信される抽選確率が上がります。</li>
-                <li>初回アクセス時に枠が3枠分配布されるので、その枠を使い界隈曲を宣伝します。</li>
-                <li>界隈曲は重複して登録することができ、配信される確率を増やすことができます。</li>
-                <li>界隈の人が協力して同じ界隈曲を重複して登録することで3枠以上の枠を登録することができます。</li>
-            </ul>
-            <br><h3>対象の曲</h3>
-            <p>以下のような曲は配信されないので注意してください。</p>
-            <ul>
-                <li>界隈曲ではない曲</li>
-                <li>YouTubeで公開されていない曲</li>
-                <li>NSFW要素を含む曲</li>
-                <li>公開前の曲</li>
-                <li>無断転載の曲</li>
-            </ul>
-            <br><h3>アイコンの説明</h3>
-            <ul>
-                <li><i class="fas fa-link"></i>：リンク</li>
-                <li><i class="fas fa-eye"></i>：広告が表示された回数</li>
-                <li><i class="far fa-hand-pointer"></i>：広告がクリックされた数</li>
-                <li><i class="far fa-clone"></i>：広告の枠数</li>
-                <li><i class="fas fa-tasks"></i>：広告のステータス(未審査・公開中・未通過)</li>
-            </ul>
-        </details>
+    <details>
+        <summary>すべ歌詞DSPの使い方</summary>
+        <br><h3>概要</h3>
+        <ul>
+            <li>すべ歌詞DSPとは界隈曲を無料で宣伝できる広告プラットフォームです。</li>
+            <li>界隈曲が聴けるYouTubeのURLを登録することで、トップページに広告を配信することができます。</li>
+            <li>アップロード者本人以外の第三者でも界隈曲を宣伝できます。</li>
+        </ul>
+        <br><h3>枠</h3>
+        <ul>
+            <li>広告はページが読み込み時にランダムに配信され、界隈曲の「枠」の数が多いほど、配信される抽選確率が上がります。</li>
+            <li>初回アクセス時に枠が3枠分配布されるので、その枠を使い界隈曲を宣伝します。</li>
+            <li>界隈曲は重複して登録することができ、配信される確率を増やすことができます。</li>
+            <li>界隈の人が協力して同じ界隈曲を重複して登録することで3枠以上の枠を登録することができます。</li>
+        </ul>
+        <br><h3>対象の曲</h3>
+        <p>以下のような曲は配信されないので注意してください。</p>
+        <ul>
+            <li>界隈曲ではない曲</li>
+            <li>YouTubeで公開されていない曲</li>
+            <li>NSFW要素を含む曲</li>
+            <li>公開前の曲</li>
+            <li>無断転載の曲</li>
+        </ul>
+        <br><h3>アイコンの説明</h3>
+        <ul>
+            <li><i class="fas fa-link"></i>：リンク</li>
+            <li><i class="fas fa-eye"></i>：広告が表示された回数</li>
+            <li><i class="far fa-hand-pointer"></i>：広告がクリックされた数</li>
+            <li><i class="far fa-clone"></i>：広告の枠数</li>
+            <li><i class="fas fa-tasks"></i>：広告のステータス(未審査・公開中・未通過)</li>
+        </ul>
+    </details>
 
-        <p class="error">{{ error }}</p>
-        <p class="error" id="errorjs"></p>
-        <form action="{% url 'subekashi:ad' %}" method="POST" id="adForm">{% csrf_token %}
-            <label>1枠目</label>
+    <p class="error">{{ error }}</p>
+    <p class="error" id="errorjs"></p>
+    <form action="{% url 'subekashi:ad' %}" method="POST" id="adForm">{% csrf_token %}
+        <div class="label-wrapper">
+            <label class="label-same">1枠目</label>
             <input type="text" value="{{ url1 }}" id="url1" name="url1" placeholder="URLを入力" oninput="setad()"><br>
             <input type="text" value="{{ ad1 }}" id="ad1" name="ad1" hidden>
-            <label>2枠目</label>
+        </div>
+        <div class="label-wrapper">
+            <label class="label-same">2枠目</label>
             <input type="text" value="{{ url2 }}" id="url2" name="url2" placeholder="URLを入力" oninput="setad()"><br>
             <input type="text" value="{{ ad2 }}" id="ad2" name="ad2" hidden>
-            <label>3枠目</label>
+        </div>
+        <div class="label-wrapper">
+            <label class="label-same">3枠目</label>
             <input type="text" value="{{ url3 }}" id="url3" name="url3" placeholder="URLを入力" oninput="setad()"><br>
             <input type="text" value="{{ ad3 }}" id="ad3" name="ad3" hidden>
-            <input type="text" value="{{ sha256 }}" id="sha256" name="sha256" hidden>
-            <input type="submit" value="送信" id="adsubmit">
-        </form>
+        </div>
+        <input type="text" value="{{ sha256 }}" id="sha256" name="sha256" hidden>
+        <input type="submit" value="送信" id="adsubmit">
+    </form>
 
-        {% for ad in ads %}
-        <id class="dsp">
-            <div class="youtube">
-                <iframe src="https://www.youtube.com/embed/{{ ad.url | slice:'17:' }}" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-            </div>
-            <div class="dspinfo">
-                <p><i class="fas fa-link"></i>{{ ad.url }}</p>
-                <p><i class="fas fa-eye"></i>{{ ad.view }} 回</p>
-                <p><i class="far fa-hand-pointer"></i>{{ ad.click }} 回</p>
-                <p><i class="far fa-clone"></i>{{ ad.dup }} 枠</p>
-                <p><i class="fas fa-tasks"></i>{{ ad.get_status_display }}</p>
-            </div>
-        </id>
-        {% endfor %}
-    </div>
-
+    {% for ad in ads %}
+    <id class="dsp">
+        <div class="youtube">
+            <iframe src="https://www.youtube.com/embed/{{ ad.url | slice:'17:' }}" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+        <div class="dspinfo">
+            <p><i class="fas fa-link"></i>{{ ad.url }}</p>
+            <p><i class="fas fa-eye"></i>{{ ad.view }} 回</p>
+            <p><i class="far fa-hand-pointer"></i>{{ ad.click }} 回</p>
+            <p><i class="far fa-clone"></i>{{ ad.dup }} 枠</p>
+            <p><i class="fas fa-tasks"></i>{{ ad.get_status_display }}</p>
+        </div>
+    </id>
+    {% endfor %}
 </section>
 {% endblock %}
 

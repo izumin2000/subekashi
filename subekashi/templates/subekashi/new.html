@@ -102,16 +102,22 @@
     </details>
     <p class="detailP">最終更新日：2023年9月25日</p>
     <form action="{% url 'subekashi:new' %}" method="POST" id="newform">{% csrf_token %}
-        <input type="number" id="songid" name="songid" hidden><br>
-        <label>曲名*</label>
-        <input type="text" id="title" name="title" class="sansfont" oninput="checkExist()" value="{{ title }}"><br>
-        <label>作者*</label>
-        <input type="text" id="channel" name="channel" oninput="checkExist()" value="{{ channel }}"><br>
         <p id="isExist"></p>
+        <input type="number" id="songid" name="songid" hidden>
+        <div class="label-wrapper">
+            <label class="label-same">曲名*</label>
+            <input type="text" id="title" name="title" class="sansfont" oninput="checkExist()" value="{{ title }}">
+        </div>
+        <div class="label-wrapper">
+            <label class="label-same">チャンネル名*</label>
+            <input type="text" id="channel" name="channel" oninput="checkExist()" value="{{ channel }}">
+        </div>
         <button type="button" class="category sansfont" id="fillFormButton" onclick="fillForm()">下書きを自動入力</button>
-        <label>URL</label>
-        <input type="text" id="url" name="url" value="{{ url }}"><br>
-        <label>模倣</label>
+        <div class="label-wrapper">
+            <label class="label-same">URL</label>
+            <input type="text" id="url" name="url" value="{{ url }}">
+        </div>
+        <label id="imitate-label">模倣</label>
         <div id="imitate">
             <p>原曲から選択</p>
             <div id="categorys">
@@ -137,8 +143,10 @@
             <div id="imitatelists"></div>
             <input type="text" id="imitates" name="imitates" hidden>
         </div>
-        <label id="lyricslabel">歌詞</label>
-        <textarea id="lyrics" name="lyrics" oninput="autotextarea()"></textarea><br>
+        <div class="label-wrapper">
+            <label class="label-same">歌詞</label>
+            <textarea id="lyrics" name="lyrics" oninput="autotextarea()"></textarea>
+        </div>
         <div id="checkboxs">
             <input type="checkbox" id="isorginal" name="isorginal">
             <label onclick="divInput(0)">オリジナル模倣</label>
@@ -159,9 +167,12 @@
     <h1>削除依頼</h1>
     <div class="underline"></div>
     <form action="{% url 'subekashi:delete' %}" method="POST" id="deleteform">{% csrf_token %}
-        <input type="text" id="titleDelete" class="sansfont" name="title" value="{{ title }}" hidden><br>
-        <input type="text" id="channelDelete" name="channel" value="{{ channel }}" hidden><br>
-        <textarea id="reason" name="reason" oninput="setDeleteButton()" placeholder="削除理由"></textarea><br>
+        <input type="text" id="titleDelete" class="sansfont" name="title" value="{{ title }}" hidden>
+        <input type="text" id="channelDelete" name="channel" value="{{ channel }}" hidden>
+        <div class="label-wrapper">
+            <label class="label-same">削除理由</label>
+            <textarea id="reason" name="reason" oninput="setDeleteButton()"></textarea>
+        </div>
         <input type="submit" value="送信" id="deletesubmit" disabled>
     </form>
 </section>

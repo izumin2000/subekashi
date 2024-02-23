@@ -148,7 +148,7 @@ header {
 
 /* 基礎 */
 main {
-    margin-top: 64px;
+    margin-top: 40px;
 }
 
 #mainarticle {
@@ -159,8 +159,6 @@ h1 {
     text-align: center;
     color: #FFF;
     font-size: 40px;
-    line-height: 62.5px;
-    margin: 75px 0 10px 0;
     font-weight: lighter;
 }
 
@@ -279,39 +277,17 @@ details {
 	}
 }
 
-.googleblue {
-    color: #4285F4;
-}
-
-.googlered {
-    color: #DB4437;
-}
-
-.googleyellow {
-    color: #F4B400;
-}
-
-.googlegreen {
-    color: #0F9D58;
-}
-
 
 /* フォーム */
 input, select, option, textarea {
     height: 50px;
-    width: calc(50vw - 100px);
-    margin-top: 20px;
-    padding: 0 10px;
+    width: calc(100% - 144px);
+    padding-left: 10px;
     font-size: 25px;
     border: none;
     box-shadow: 0 0 0 1px #ccc inset;
     font-family: 'Imitate', 'Noto Sans JP', sans-serif;
-}
-
-@media (max-width: 720px) {
-    input, select, option, textarea {
-        width: calc(65vw - 50px);
-    }
+    align-items: center;
 }
 
 input:focus {
@@ -327,13 +303,54 @@ label {
     color: #fff;
     font-size: 22px;
     line-height: 32px;
-    margin-right: 20px;
+}
+
+input[type=checkbox] {
+    display: inline-block;
+    box-shadow: none;
+    height: 25px;
+    width: 25px;
+    margin: -5px 0 0 20px;
+    vertical-align: middle;
+}
+
+input[type=submit] {
+    width: 100%;
+}
+
+#checkboxs {
+    margin: 20px 0 20px -20px;
+}
+
+.label-same {
+    display: inline-block;
+    width: 150px;
+}
+
+.label-wrapper {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
 }
 
 textarea {
     height: 100px;
-    width: 80vw;
     padding: 10px;
+}
+
+@media (max-width: 640px) {
+    input, select, option, textarea {
+        width: calc(100% - 20px);
+    }
+
+    .label-wrapper {
+        flex-direction: column;
+    }
+
+    .label-same {
+        width: fit-content;
+        margin-bottom: 5px;
+    }
 }
 
 #submit, button, .dummybutton {
@@ -469,7 +486,7 @@ textarea {
 
 /* ソングゲッサー */
 #imitateTitle {
-    width: calc(100vw - 115px);
+    width: calc(100vw - 100px);
 }
 
 .songGuess {
