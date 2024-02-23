@@ -23,11 +23,11 @@ details ul ul {
 }
 
 #newform, #deleteform {
-    margin: 20px 0 65px 0;
+    margin: 20px 0;
 }
 
 #isExist {
-    margin: 10px 0 0 70px;
+    margin: 20px 0;
 }
 
 #fillFormButton {
@@ -36,19 +36,18 @@ details ul ul {
     margin-left: 71px !important;
 }
 
-#url {
-    margin: 10px 0 0 9px;
-}
-
 #imitate {
-    margin: 10px 0 ;
+    margin: 5px 0 30px 0 ;
     padding: 10px;
     background-color: #333;
 }
 
-#imitate label {
-    display: block;
-    margin-bottom: 10px;
+
+@media (max-width: 640px) {
+    #imitate-label {
+        display: block;
+        text-align: center;
+    }
 }
 
 .imitateP {
@@ -97,20 +96,6 @@ details ul ul {
     color: #aaa;
 }
 
-
-input[type=checkbox] {
-    display: inline-block;
-    box-shadow: none;
-    height: 25px;
-    width: 25px;
-    margin: -5px 0 0 10px;
-    vertical-align: middle;
-}
-
-#checkboxs {
-    margin: 20px 0 0 -10px;
-}
-
 #newsubmit {
     display: flex;
     justify-content: center;
@@ -124,7 +109,7 @@ input[type=checkbox] {
 #deletesubmit {
     padding-left: 0px;
     height: 49.5px;
-    width: 100px;
+    width: 100%;
     border: none;
     font-size: 25px;
     cursor: pointer;
