@@ -2,7 +2,7 @@
 {% block title %}すべ歌詞DSP{% endblock %}
 {% block ogtitle %}すべ歌詞DSP{% endblock %}
 {% load static %}
-{% block css %}{% static 'subekashi/css/ad.css'%}{% endblock %}
+{% block css %}{% static 'subekashi/css/dsp.css'%}{% endblock %}
 
 {% block content %}
 <section>
@@ -60,11 +60,11 @@
         </form>
 
         {% for ad in ads %}
-        <id class="ad">
+        <id class="dsp">
             <div class="youtube">
                 <iframe src="https://www.youtube.com/embed/{{ ad.url | slice:'17:' }}" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
             </div>
-            <div class="adinfo">
+            <div class="dspinfo">
                 <p><i class="fas fa-link"></i>{{ ad.url }}</p>
                 <p><i class="fas fa-eye"></i>{{ ad.view }} 回</p>
                 <p><i class="far fa-hand-pointer"></i>{{ ad.click }} 回</p>
@@ -73,8 +73,6 @@
             </div>
         </id>
         {% endfor %}
-
-        <p id="bottom-warning">※広告ブロッカーが入っていても機能しますが、一部レイアウトが崩れる可能性があります。</p>
     </div>
 
 </section>
