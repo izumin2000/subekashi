@@ -2,6 +2,7 @@
 {% block title %}登録と編集{% endblock %}
 {% block ogtitle %}登録と編集{% endblock %}
 {% load static %}
+{% load lastModified %}
 {% block css %}{% static 'subekashi/css/new.css'%}{% endblock %}
 
 {% block content %}
@@ -179,7 +180,7 @@
 {% endblock %}
 
 {% block js %}
-<script defer src="{% static 'subekashi/js/newform.js' %}" rel="stylesheet"></script>
+<script defer src="{% static 'subekashi/js/newform.js' %}?{% get_last_modified %}" rel="stylesheet"></script>
 <script defer>
     window.addEventListener('load', function() {
         firstLoad('{{ id }}');
