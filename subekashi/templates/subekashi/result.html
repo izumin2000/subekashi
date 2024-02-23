@@ -2,6 +2,7 @@
 {% block title %}歌詞の生成結果{% endblock %}
 {% block ogtitle %}歌詞の生成結果{% endblock %}
 {% load static %}
+{% load lastModified %}
 {% block css %}{% static 'subekashi/css/result.css'%}{% endblock %}
 
 {% block content %}
@@ -49,5 +50,5 @@
 {% endblock %}
 
 {% block js %}
-    <script defer src="{% static 'subekashi/js/result.js' %}?{{ lastModified }}" rel="stylesheet"></script>
+    <script defer src="{% static 'subekashi/js/result.js' %}?{% get_last_modified %}" rel="stylesheet"></script>
 {% endblock %}
