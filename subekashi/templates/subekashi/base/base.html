@@ -1,4 +1,6 @@
 {% load static %}
+{% load lastModified %}
+
 <!DOCTYPE html>
 
 <html lang="ja">
@@ -15,8 +17,8 @@
         <meta charset="utf-8">
         <meta name="google-site-verification" content="s75SuYL1wkP8Yb-9SNr8hkh_LBtdmo54X9GWi12L7CI" />
         <title>{% block title %}{% endblock %} |  全て歌詞の所為です。</title>
-        <link rel="stylesheet" type="text/css" href="{% static 'subekashi/css/common.css'%}?{{ lastModified }}">
-        <link rel="stylesheet" type="text/css" href="{% block css %}{% endblock %}?{{ lastModified }}">
+        <link rel="stylesheet" type="text/css" href="{% static 'subekashi/css/common.css'%}?{% get_last_modified %}">
+        <link rel="stylesheet" type="text/css" href="{% block css %}{% endblock %}?{% get_last_modified %}">
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"> <!-- font awesome -->
         <link rel="shortcut icon" href="{% static 'subekashi/image/icon.ico' %}">
     </head>
@@ -36,7 +38,7 @@
         {% include './footer.html' %}
     </body>
 
-    <script src="{% static 'subekashi/js/base.js' %}?{{ lastModified }}" rel="stylesheet"></script>
+    <script src="{% static 'subekashi/js/base.js' %}?{% get_last_modified %}" rel="stylesheet"></script>
     {% block js %}{% endblock %}
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-GJHM3M7SH1"></script>
     <script>
