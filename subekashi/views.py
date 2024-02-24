@@ -189,9 +189,11 @@ def song(request, songId) :
     dataD["songIns"] = songIns
     dataD["isExist"] = isExist
 
+    # TODO リファクタリング
     if isExist :
         dataD["channels"] = songIns.channel.replace(", ", ",").split(",")
         dataD["urls"] = songIns.url.replace(", ", ",").split(",")
+        jokerange = request.COOKIES.get("jokerange", "off")
         if songIns.imitate :
             imitateInsL = []
             imitates = songIns.imitate.split(",")
@@ -199,6 +201,8 @@ def song(request, songId) :
                 imitateInsQ = Song.objects.filter(id = int(imitateId))
                 if imitateInsQ :
                     imitateIns = imitateInsQ.first()
+                    if imitateIns.isjoke and (jokerange == "off") :
+                        continue
                     imitateInsL.append(imitateIns)
 
             dataD["imitateInsL"] = imitateInsL
@@ -210,6 +214,8 @@ def song(request, songId) :
                 imitatedInsQ = Song.objects.filter(id = int(imitatedId))
                 if imitatedInsQ :
                     imitatedIns = imitatedInsQ.first()
+                    if imitatedIns.isjoke and (jokerange == "off") :
+                        continue
                     imitatedInsL.append(imitatedIns)
 
             dataD["imitatedInsL"] = imitatedInsL
