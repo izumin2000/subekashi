@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from rest_framework.response import Response
 from subekashi.models import *
 import hashlib
 import requests
@@ -189,9 +190,11 @@ def song(request, songId) :
     dataD["songIns"] = songIns
     dataD["isExist"] = isExist
 
+    # TODO リファクタリング
     if isExist :
         dataD["channels"] = songIns.channel.replace(", ", ",").split(",")
         dataD["urls"] = songIns.url.replace(", ", ",").split(",")
+        jokerange = request.COOKIES.get("jokerange", "off")
         if songIns.imitate :
             imitateInsL = []
             imitates = songIns.imitate.split(",")
@@ -199,6 +202,8 @@ def song(request, songId) :
                 imitateInsQ = Song.objects.filter(id = int(imitateId))
                 if imitateInsQ :
                     imitateIns = imitateInsQ.first()
+                    if imitateIns.isjoke and (jokerange == "off") :
+                        continue
                     imitateInsL.append(imitateIns)
 
             dataD["imitateInsL"] = imitateInsL
@@ -210,6 +215,8 @@ def song(request, songId) :
                 imitatedInsQ = Song.objects.filter(id = int(imitatedId))
                 if imitatedInsQ :
                     imitatedIns = imitatedInsQ.first()
+                    if imitatedIns.isjoke and (jokerange == "off") :
+                        continue
                     imitatedInsL.append(imitatedIns)
 
             dataD["imitatedInsL"] = imitatedInsL
@@ -422,15 +429,33 @@ class AdViewSet(viewsets.ModelViewSet):
     queryset = Ad.objects.all()
     serializer_class = AdSerializer
     
+    def create(self, request, *args, **kwargs):
+        raise serializers.ValidationError("メソッドCREATEは受け付けていません")
+    
+    def update(self, request, *args, **kwargs):
+        if set(request.data.keys()) - {'view', 'click'}:
+            raise serializers.ValidationError("フィールドviewとフィールドclick以外の変更は受け付けていません")
+        
+        return super().update(request, *args, **kwargs)
+    
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
+    
+    def destroy(self, request, *args, **kwargs):
+        raise serializers.ValidationError("メソッドDELETEは受け付けていません")
+    
 
 def clean(request) :
     result = management.call_command("clean")
     res = {"result" : result if result else "競合は発生していません"}
     return JsonResponse(json.dumps(res, ensure_ascii=False), safe=False)
 
+
 def handle_404_error(request, exception=None):
     return render(request, 'subekashi/404.html', status=404)
     
+
 def handle_500_error(request):
     error_msg = traceback.format_exc()
     sendDiscord(ERROR_DISCORD_URL, error_msg)
