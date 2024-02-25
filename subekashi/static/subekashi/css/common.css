@@ -540,6 +540,8 @@ textarea {
     display: block;
     margin: 0 auto;
 }
+
+
 /* フッダー */
 #footer-wrapper {
     padding-top: 100px;
@@ -561,7 +563,6 @@ footer {
     float: left;
     top: 6px;
     left: 6px;
-    height: 24px;   
 }
 
 .footer-left p {
@@ -571,25 +572,39 @@ footer {
     margin: 3px 0 0 8px;
 }
 
+.footer-left i {
+    margin-left: 10px;
+}
+
+.footer-right {
+    position: relative;
+    float: right;
+    top: 5px;
+    right: 8px;
+}
+
 .footer-right a {
     font-size: 15px;
     line-height: 15px;
-    float: right;
     display: inline;
-    margin: 9px 8px 0 0;
     text-decoration: none;
     color: #fff;
 }
 
-@media(max-width: 440px) {
+@media(max-width: 450px) {
     .footer-container {
-        height: 64px;
-        text-align: center;
+        height: 54px;
     }
 
-    .footer-right a {
-        margin: 12px 0 0 12px;
-        float: left;
+    .footer-left, .footer-right {
+        position: static;
+        float: none;
+    }
+    
+    .footer-left p, .footer-right a {
+        display: block;
+        margin-top: 10px;
+        text-align: center;
     }
 }
 
