@@ -49,8 +49,8 @@
         </a>
     {% endfor %}
     <div class="dummybuttons">
-        <a href="{% url 'subekashi:search' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">もっと見る</p></div></a>
-        <a href="{% url 'subekashi:new' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">曲を登録する</p></div></a>
+        <a href="{% url 'subekashi:search' %}"><div class="dummybutton"><p >もっと見る</p></div></a>
+        <a href="{% url 'subekashi:new' %}"><div class="dummybutton"><p >曲を登録する</p></div></a>
     </div>
     
     {% if isAdDisplay %}
@@ -60,8 +60,8 @@
             <iframe id="player" src="https://www.youtube.com/embed/{{ adIns.url | slice:'17:' }}?enablejsapi=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
         </div>
         <div class="dummybuttons">
-            <a href="{% url 'subekashi:ad' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">宣伝する</p></div></a>
-            <a href="{% url 'subekashi:setting' %}#adrange"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">非表示にする</p></div></a>
+            <a href="{% url 'subekashi:ad' %}"><div class="dummybutton"><p >宣伝する</p></div></a>
+            <a href="{% url 'subekashi:setting' %}#adrange"><div class="dummybutton"><p >非表示にする</p></div></a>
         </div>
     {% endif %}
 
@@ -72,8 +72,8 @@
             <p class="lyrics">{{ aiIns.lyrics }}</p>
         {% endfor %}
         <div class="dummybuttons">
-            <a href="{% url 'subekashi:ai' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">もっと見る</p></div></a>
-            <a href="{% url 'subekashi:ai' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">曲を生成する</p></div></a>
+            <a href="{% url 'subekashi:ai' %}"><div class="dummybutton"><p >もっと見る</p></div></a>
+            <a href="{% url 'subekashi:ai' %}"><div class="dummybutton"><p >曲を生成する</p></div></a>
         </div>
     {% endif %}
 
@@ -120,8 +120,8 @@
             </a>
         {% endfor %}
             <div class="dummybuttons">
-                <a href="{% url 'subekashi:search' %}?filter=0"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">もっと見る</p></div></a>
-                <a href="{% url 'subekashi:new' %}"><div class="dummybutton dummybuttonf"><p class="dummybuttonp">曲を登録する</p></div></a>
+                <a href="{% url 'subekashi:search' %}?filter=0"><div class="dummybutton"><p >もっと見る</p></div></a>
+                <a href="{% url 'subekashi:new' %}"><div class="dummybutton"><p >曲を登録する</p></div></a>
             </div>
     {% endif %}
     

@@ -357,7 +357,7 @@ textarea {
 
 #submit, button, .dummybutton {
     padding-left: 0px;
-    height: 49.5px;
+    height: 50px;
     width: 100px;
     border: none;
     font-size: 25px;
@@ -371,12 +371,14 @@ textarea {
     justify-content: center;
 }
 
-.dummybuttons a {
-    text-decoration: none;
+@media (max-width: 450px) {
+    .dummybuttons {
+        display: block;
+    }
 }
 
-.dummybuttonf {
-    margin: 0 10px !important;
+.dummybuttons a {
+    text-decoration: none;
 }
 
 .dummybutton {
@@ -385,10 +387,16 @@ textarea {
     align-items: center;
     background-color: #eee;
     padding: 0 40px;
-    margin: auto 0;
+    margin: 0 10px;
 }
 
-.dummybuttonp {
+@media (max-width: 450px) {
+    .dummybutton {
+        margin: 10px auto;
+    }
+}
+
+.dummybutton p {
     color: #000;
     text-align: center;
     white-space: nowrap;
