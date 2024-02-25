@@ -10,10 +10,10 @@ async function firstLoad(songId) {
         document.getElementById("channel").value = songResult.channel;
         fillForm();
         setSubmitButton("_", "_");
-        songGuessEles = document.getElementsByClassName("songGuess");
         document.getElementById("songid").value = Number(songId);
     }
-
+    
+    songGuessEles = document.getElementsByClassName("songGuess");
     isGetQuery = songId != "None"
     autotextarea();
     checkExist();
@@ -185,10 +185,10 @@ function searchSong() {
         }
     } else {
         for (songGuessEle of songGuessEles) {
-            if (songGuessEle.id.match(imitateTitleValue) == null) {
-                songGuessEle.style.display = "none";
-            } else {
+            if (songGuessEle.dataset.title.includes(imitateTitleValue)) {
                 songGuessEle.style.display = "block";
+            } else {
+                songGuessEle.style.display = "none";
             }
         }
     }

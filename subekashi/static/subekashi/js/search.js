@@ -30,7 +30,7 @@ async function firstLoad(query) {
 function songFilter(key, value) {
     if (value) {
         songResult = songResult.filter(song => Boolean(song[key]));
-        songResult = songResult.filter(song => song[key].match(value));
+        songResult = songResult.filter(song => song[key].includes(value));
     }
     return songResult;
 }
