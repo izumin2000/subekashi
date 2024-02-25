@@ -15,7 +15,6 @@
         {% for url in urls %}
             <a class="songurl" href="{{ url }}"><i class="fas fa-link"></i>{{ url }}</a>
         {% endfor %}
-        <div></div>
         <p id="songimitateslabel"><i class="fas fa-tags fa-xs"></i></p>
         {% for imitateIns in imitateInsL %}
             <a class="songimitate" href="{% url 'subekashi:song' imitateIns.id %}">{{ imitateIns.title }}模倣</a>
@@ -57,7 +56,7 @@
         {% endif %}
 
         <div class="dummybuttons">
-            <div class="dummybutton dummybuttonf towrong" onclick="tonew()"><p class="dummybuttonp">編集と削除</p></div>
+            <div class="dummybutton towrong" onclick="tonew()"><p >編集と削除</p></div>
         </div>
         
         {% else %}
