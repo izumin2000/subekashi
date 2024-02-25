@@ -71,7 +71,8 @@
     </div>
     {% for songIns in songInsL %}
         <a href="{% url 'subekashi:song' songIns.id %}" class="buttona ">
-            <div class="songcard" id="song{{ songIns.id }}">
+            <!-- TOOD idをdata-titleへ -->
+            <div class="songcard" id="song{{ songIns.id }}">    
                 <div class="cardleft">
                     <p class="songtitle sansfont"><i class="fas fa-music"></i> {{ songIns.title|slice:"20" }}</p>
                     {% if songIns.channel|iscomma %}
