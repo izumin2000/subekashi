@@ -12,63 +12,68 @@
     <h1>曲の一覧と検索</h1>
     <div class="underline"></div>
 
-    <div id="searchform">
+    <form action="{% url 'subekashi:search' %}" method="POST" id="search-form">{% csrf_token %}
         <div class="label-wrapper">
-            <label class="label-same">タイトル</label>
-            <input type="text" id="title" class="sansfont" name="title" oninput="searchSong()">
-        </div>
-        <div class="label-wrapper">
-            <label class="label-same">チャンネル名</label>
-            <input type="text" id="channel" name="channel" oninput="searchSong()">
+            <label class="label-same" for="title">タイトル</label>
+            <input type="text" id="title" class="sansfont" name="title" value="{{ query.title }}">
         </div>
         <div class="label-wrapper">
-            <label class="label-same">歌詞</label>
-            <input type="text" id="lyrics" name="lyrics" oninput="searchSong()">
+            <label class="label-same" for="channel">チャンネル名</label>
+            <input type="text" id="channel" name="channel" value="{{ query.channel }}">
         </div>
-        <div id="categorysec">
-            <div class="label-wrapper">
-                <label class="label-same">カテゴリ</label>
-                <select id="category" name="category" oninput="searchSong()">
-                    <option>全ての模倣</option>
-                    <option>.模倣</option>
-                    <option>..模倣</option>
-                    <option>教育模倣</option>
-                    <option>アブジェ模倣</option>
-                    <option>...模倣</option>
-                    <option>表╱裏模倣</option>
-                    <option>名の無い星が空に堕ちたら模倣</option>
-                    <option>エヌ模倣</option>
-                    <option>K²模倣</option>
-                </select>
-            </div>
+        <div class="label-wrapper">
+            <label class="label-same" for="lyrics">歌詞</label>
+            <input type="text" id="lyrics" name="lyrics" value="{{ query.lyrics }}">
         </div>
-        <div onclick="searchSong()" id="checkboxs">
-            <div class="devInput" onclick="devInput(0)">
-                <input type="checkbox" class="filters" value="isCompleted" oninput="searchSong()">
-                <label>作成途中</label>
-            </div>
-            <div class="devInput" onclick="devInput(1)">
-                <input type="checkbox" class="filters" value="isoriginal" oninput="searchSong()">
-                <label>オリジナル模倣曲</label>
-            </div>
-            <div class="devInput" onclick="devInput(2)">
-                <input type="checkbox" class="filters" value="isjoke" oninput="searchSong()">
-                <label>ネタ曲</label>
-            </div>
-            <div class="devInput" onclick="devInput(3)">
-                <input type="checkbox" class="filters" value="isinst" oninput="searchSong()">
-                <label>インスト曲</label>
-            </div>
-            <div class="devInput" onclick="devInput(4)">
-                <input type="checkbox" class="filters" value="issubeana" oninput="searchSong()" checked>
-                <label>すべあな界隈曲</label>
-            </div>
-            <div class="devInput" onclick="devInput(5)">
-                <input type="checkbox" class="filters" value="isxx" oninput="searchSong()">
-                <label>すべあな界隈以外の曲</label>
-            </div>
+        <div class="label-wrapper">
+            <label class="label-same" for="url">URL</label>
+            <input type="text" id="url" name="url" value="{{ query.url }}">
         </div>
-    </div>
+        <div class="label-wrapper">
+            <label class="label-same" for="category">カテゴリ</label>
+            <select id="category" name="category">
+                <option value="all">指定無し</option>
+                <!-- TODO short対応時にvalueを変更 -->
+                <option value="10" {% if query.category == '10' %}selected{% endif %}>.模倣</option>
+                <option value="11" {% if query.category == '11' %}selected{% endif %}>..模倣</option>
+                <option value="12" {% if query.category == '12' %}selected{% endif %}>教育模倣</option>
+                <option value="13" {% if query.category == '13' %}selected{% endif %}>アブジェ模倣</option>
+                <option value="14" {% if query.category == '14' %}selected{% endif %}>...模倣</option>
+                <option value="15" {% if query.category == '15' %}selected{% endif %}>表╱裏模倣</option>
+                <option value="16" {% if query.category == '16' %}selected{% endif %}>名の無い星が空に堕ちたら模倣</option>
+                <option value="17" {% if query.category == '17' %}selected{% endif %}>エヌ模倣</option>
+                <option value="18" {% if query.category == '18' %}selected{% endif %}>K²模倣</option>
+            </select>
+        </div>
+        <div class="label-wrapper">
+            <label class="label-same" for="songrange">曲の表示</label>
+            <select id="songrange" name="songrange">
+                <option value="all" {% if query.songrange == 'all' %}selected{% endif %}>全て表示</option>
+                <option value="subeana" {% if query.songrange == 'subeana' %}selected{% endif %}>すべあな界隈曲のみを表示</option>
+                <option value="xx" {% if query.songrange == 'xx' %}selected{% endif %}>すべあな界隈曲以外を表示</option>
+            </select>
+        </div>
+        <div class="label-wrapper">
+            <label class="label-same" for="jokerange">ネタ曲の表示</label>
+            <select id="jokerange" name="jokerange">
+                <option value="on" {% if query.jokerange == 'on' %}selected{% endif %}>全て表示</option>
+                <option value="only" {% if query.jokerange == 'only' %}selected{% endif %}>ネタ曲のみを表示</option>
+                <option value="off" {% if query.jokerange == 'off' %}selected{% endif %}>ネタ曲のみを非表示</option>
+            </select>
+        </div>
+        
+        <input type="checkbox" class="filters" name="filters" value="islack" id="islack" {% if 'islack' in query.filters %}checked{% endif %}>
+        <label for="islack">作成途中</label>
+        <input type="checkbox" class="filters" name="filters" value="isdraft" id="isdraft" {% if 'isdraft' in query.filters %}checked{% endif %}>
+        <label for="isdraft">下書き</label>
+        <input type="checkbox" class="filters" name="filters" value="isoriginal" id="isoriginal" {% if 'isoriginal' in query.filters %}checked{% endif %}>
+        <label for="isoriginal">オリジナル模倣曲</label>
+        <input type="checkbox" class="filters" name="filters" value="isinst" id="isinst" {% if 'isinst' in query.filters %}checked{% endif %}>
+        <label for="isinst">インスト曲</label>
+        <input type="submit" value="検索" id="searchsubmit">
+    </form>
+
+    <p id="counter">{{ counter }}</p>
     {% for songIns in songInsL %}
         <a href="{% url 'subekashi:song' songIns.id %}" class="buttona ">
             <!-- TOOD idをdata-titleへ -->
@@ -109,16 +114,15 @@
             </div>
         </a>
     {% endfor %}
-    <p id="notfound">見つかりませんでした。</p>
 </section>
 {% endblock %}
 
 {% block js %}
-<script defer src="{% static 'subekashi/js/search.js' %}?{% get_last_modified %}" rel="stylesheet"></script>
+<!-- <script defer src="{% static 'subekashi/js/search.js' %}?{% get_last_modified %}" rel="stylesheet"></script>
 <script defer>
     window.addEventListener('load', function(){
         firstLoad('{{ query|safe }}');
         }
     )
-</script>
+</script> -->
 {% endblock %}
