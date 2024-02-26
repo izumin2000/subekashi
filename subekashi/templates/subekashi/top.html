@@ -7,6 +7,27 @@
 
 {% block content %}
 <section>
+    <h1>検索</h1>
+    <form action="{% url 'subekashi:top' %}" method="POST" id="search-form">{% csrf_token %}
+        <div class="label-wrapper">
+            <label class="label-same" for="title">タイトル</label>
+            <input type="text" id="title" class="sansfont" name="title">
+        </div>
+        <div class="label-wrapper">
+            <label class="label-same" for="channel">チャンネル名</label>
+            <input type="text" id="channel" name="channel">
+        </div>
+        <div class="label-wrapper">
+            <label class="label-same" for="lyrics">歌詞</label>
+            <input type="text" id="lyrics" name="lyrics">
+        </div>
+        <div class="label-wrapper">
+            <label class="label-same" for="url">URL</label>
+            <input type="text" id="url" name="url">
+        </div>
+        <input type="submit" value="検索" id="searchsubmit">
+    </form>
+
     <h1>新着</h1>
     <div class="underline"></div>
     {% for songIns in songInsL %}
@@ -120,7 +141,7 @@
             </a>
         {% endfor %}
             <div class="dummybuttons">
-                <a href="{% url 'subekashi:search' %}?filter=0"><div class="dummybutton"><p >もっと見る</p></div></a>
+                <a href="{% url 'subekashi:search' %}?filter=islack"><div class="dummybutton"><p >もっと見る</p></div></a>
                 <a href="{% url 'subekashi:new' %}"><div class="dummybutton"><p >曲を登録する</p></div></a>
             </div>
     {% endif %}

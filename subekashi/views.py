@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from rest_framework.response import Response
+from django.db.models import Q
 from subekashi.models import *
 import hashlib
 import requests
@@ -16,19 +16,20 @@ import json
 import traceback
 
 
-# パスワード関連
 SHA256a = "5802ea2ddcf64db0efef04a2fa4b3a5b256d1b0f3d657031bd6a330ec54abefd"
-REPLACEBLE_HINSHIS = ["名詞", "動詞", "形容詞"]
+INPUT_TEXTS = ["title", "channel", "lyrics", "url"]
+INPUT_SELECTS = ["category", "songrange", "jokerange"]
+INPUT_FLAGS = ["isdraft", "isoriginal", "isinst"]
+URL_PATTERN = r'(?:\/|v=)([A-Za-z0-9_-]{11})(?:\?|&|$)'
 
-
-pattern = r'(?:\/|v=)([A-Za-z0-9_-]{11})(?:\?|&|$)'
 
 def isYouTubeLink(link):
-    videoID = re.search(pattern, link)
+    videoID = re.search(URL_PATTERN, link)
     return videoID is not None
 
+
 def formatURL(link):
-    videoID = re.search(pattern, link)
+    videoID = re.search(URL_PATTERN, link)
     if isYouTubeLink(link):
         return "https://youtu.be/" + videoID.group(1)
     else:
@@ -43,6 +44,25 @@ def sendDiscord(url, content) :
 def sha256(check) :
     check += SECRET_KEY
     return hashlib.sha256(check.encode()).hexdigest()
+
+
+def filter_by_category(queryset, category):
+    return queryset.filter(
+        Q(imitate=category) |
+        Q(imitate__startswith=category + ',') |
+        Q(imitate__endswith=',' + category) |
+        Q(imitate__contains=',' + category + ',')
+    )
+
+
+islack = (
+    ~Q(channel="全てあなたの所為です。") &
+    (
+        (Q(isdeleted=False) & Q(url="")) |
+        (Q(isoriginal=False) & Q(issubeana=True) & Q(imitate="")) &
+        (Q(isinst=False) & Q(lyrics=""))
+    )
+)
 
 
 def top(request):
@@ -60,10 +80,7 @@ def top(request):
         songInsL = songInsL.filter(isjoke = False)
         
     dataD["songInsL"] = list(songInsL)[:-7:-1]
-    lackInsL = list(songInsL.filter(isdraft = True))
-    lackInsL += list(songInsL.filter(lyrics = "").exclude(isinst = True))
-    lackInsL += list(songInsL.filter(url = "").exclude(isdeleted = True))
-    lackInsL += list(songInsL.filter(imitate = "").exclude(issubeana = True).exclude(isoriginal = True))
+    lackInsL = list(songInsL.filter(islack))
     if lackInsL :
         lackInsL = random.sample(lackInsL, min(6, len(lackInsL)))
         dataD["lackInsL"] = lackInsL
@@ -72,9 +89,16 @@ def top(request):
     if aiInsL :
         dataD["aiInsL"] = aiInsL[min(10, len(aiInsL))::-1]
         
-    if request.method == "POST":
-        feedback = request.POST.get("feedback")
-        sendDiscord(FEEDBACK_DISCORD_URL, feedback)
+    if request.method == "POST" :
+        feedback = request.POST.get("feedback", None)
+        if feedback : sendDiscord(FEEDBACK_DISCORD_URL, feedback)
+        else :
+            query = {key: value for key, value in request.POST.items() if value}
+            songInsL = Song.objects.filter(**{f"{key}__icontains": value for key, value in query.items() if (key in INPUT_TEXTS)})
+            dataD["counter"] = f"{len(Song.objects.all())}曲中{len(songInsL)}曲表示しています。"
+            dataD["query"] = query
+            dataD["songInsL"] = songInsL.order_by("-posttime")
+            return render(request, "subekashi/search.html", dataD)
     
     isAdDisplay = request.COOKIES.get("adrange", "off") == "on"
     dataD["isAdDisplay"] = isAdDisplay
@@ -193,7 +217,7 @@ def song(request, songId) :
     # TODO リファクタリング
     if isExist :
         dataD["channels"] = songIns.channel.replace(", ", ",").split(",")
-        dataD["urls"] = songIns.url.replace(", ", ",").split(",")
+        dataD["urls"] = songIns.url.replace(", ", ",").split(",") if songIns.url else []
         jokerange = request.COOKIES.get("jokerange", "off")
         if songIns.imitate :
             imitateInsL = []
@@ -276,9 +300,50 @@ def channel(request, channelName) :
 
 def search(request) :
     dataD = dict()
-    dataD["songInsL"] = Song.objects.order_by("-posttime")
-    query = request.GET
-    dataD["query"] = f"{query.get('title')},{query.get('channel')},{query.get('lyrics')},{query.get('filter')}".replace("None", "")
+    query = {key: value for key, value in request.GET.items() if value and (key in INPUT_TEXTS + INPUT_SELECTS)}
+    query_select = {}
+    
+    if request.method == "GET" :
+        query_text = {f"{key}__icontains": value for key, value in query.items() if key in INPUT_TEXTS}
+        songInsL = Song.objects.filter(**query_text)
+        
+        query_select = {key: value for key, value in request.COOKIES.items() if value and (key in INPUT_SELECTS)}
+        print(query_select)
+        if query_select["songrange"] == "subeana" : songInsL = songInsL.filter(issubeana = True)
+        if query_select["songrange"] == "xx" : songInsL = songInsL.filter(issubeana = False)
+        if query_select["jokerange"] == "off" : songInsL = songInsL.filter(isjoke = False)
+        
+        filter = request.GET.get("filter", "")
+        query["filters"] = [filter]
+        if filter == "islack" : songInsL = songInsL.filter(islack)
+        elif filter : songInsL = songInsL.filter(**{filter: True})
+        
+    if request.method == "POST" :
+        query = {key: value for key, value in request.POST.items() if value}
+        songInsL = Song.objects.filter(**{f"{key}__icontains": value for key, value in query.items() if key in INPUT_TEXTS})
+        
+        filters = request.POST.getlist("filters")
+        query["filters"] = filters
+        filters_copy = filters.copy()
+        if "islack" in filters_copy :
+            songInsL = songInsL.filter(islack)
+            filters_copy.remove("islack")
+        songInsL = songInsL.filter(**{key: True for key in filters_copy})
+        
+        category = request.POST.get("category")
+        if category != "all" :songInsL = filter_by_category(Song.objects.all(), category)
+
+        songrange = request.POST.get("songrange")
+        if songrange == "subeana" : songInsL = songInsL.filter(issubeana = True)
+        if songrange == "xx" : songInsL = songInsL.filter(issubeana = False)
+        
+        jokerange = request.POST.get("jokerange")
+        if jokerange == "off" : songInsL = songInsL.filter(isjoke = False)
+        if jokerange == "only" : songInsL = songInsL.filter(isjoke = True)
+    
+    dataD["counter"] = f"{len(Song.objects.all())}曲中{len(songInsL)}曲表示しています。"
+    dataD["query"] = query | query_select
+    dataD["songInsL"] = songInsL.order_by("-posttime")
     return render(request, "subekashi/search.html", dataD)
 
 
