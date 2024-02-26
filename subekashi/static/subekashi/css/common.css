@@ -311,6 +311,7 @@ input[type=checkbox] {
 }
 
 input[type=submit] {
+    cursor: pointer;
     width: 100%;
 }
 
@@ -336,7 +337,7 @@ textarea {
 
 @media (max-width: 640px) {
     input, select, option, textarea {
-        width: calc(100% - 20px);
+        width: 100%;
     }
 
     .label-wrapper {

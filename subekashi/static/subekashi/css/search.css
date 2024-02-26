@@ -1,8 +1,5 @@
-@media (max-width: 515px) {
-    input, select {
-        margin-top: 0;
-        margin-bottom: 20px;
-    }
+#isdraft {
+    margin-left: 0;
 }
 
 .filters {
@@ -11,33 +8,12 @@
     width: 15px;
 }
 
-.devInput {
-    display: inline-block;
+.filters, label {
     cursor: pointer;
 }
 
-#joke {
-    cursor: pointer;
-}
-
-.devInput label {
-    cursor: pointer;
-}
-
-.dummybutton {
-    margin: 0 auto;
-}
-
-#imicom {
-    display: block;
-    margin: -25px auto 0 auto;
-    width: 500px;
-}
-
-@media (max-width: 640px) {
-    #imicom {
-        width: 75vw;
-    }
+#searchsubmit {
+    margin-top: 20px;
 }
 
 #notfound {
