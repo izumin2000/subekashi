@@ -62,8 +62,10 @@
             </select>
         </div>
         
+        <input type="checkbox" class="filters" name="filters" value="islack" id="islack" {% if 'islack' in query.filters %}checked{% endif %}>
+        <label for="islack">作成途中</label>
         <input type="checkbox" class="filters" name="filters" value="isdraft" id="isdraft" {% if 'isdraft' in query.filters %}checked{% endif %}>
-        <label for="isdraft">作成途中</label>
+        <label for="isdraft">下書き</label>
         <input type="checkbox" class="filters" name="filters" value="isoriginal" id="isoriginal" {% if 'isoriginal' in query.filters %}checked{% endif %}>
         <label for="isoriginal">オリジナル模倣曲</label>
         <input type="checkbox" class="filters" name="filters" value="isinst" id="isinst" {% if 'isinst' in query.filters %}checked{% endif %}>

@@ -1,4 +1,4 @@
-#isdraft {
+#islack {
     margin-left: 0;
 }
 
@@ -12,10 +12,6 @@
     cursor: pointer;
 }
 
-#searchsubmit {
-    margin-top: 20px;
-}
-
-#counter {
+#searchsubmit, #counter {
     margin-top: 20px;
 }
