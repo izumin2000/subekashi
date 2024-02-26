@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from rest_framework.response import Response
+from django.db.models import Q
 from subekashi.models import *
 import hashlib
 import requests
@@ -16,19 +16,19 @@ import json
 import traceback
 
 
-# パスワード関連
 SHA256a = "5802ea2ddcf64db0efef04a2fa4b3a5b256d1b0f3d657031bd6a330ec54abefd"
-REPLACEBLE_HINSHIS = ["名詞", "動詞", "形容詞"]
+INPUT_TEXTS = ["title", "channel", "lyrics", "url"]
+INPUT_SELECTS = ["category", "songrange", "jokerange"]
+INPUT_FLAGS = ["isdraft", "isoriginal", "isinst"]
+URL_PATTERN = r'(?:\/|v=)([A-Za-z0-9_-]{11})(?:\?|&|$)'
 
-
-pattern = r'(?:\/|v=)([A-Za-z0-9_-]{11})(?:\?|&|$)'
 
 def isYouTubeLink(link):
-    videoID = re.search(pattern, link)
+    videoID = re.search(URL_PATTERN, link)
     return videoID is not None
 
 def formatURL(link):
-    videoID = re.search(pattern, link)
+    videoID = re.search(URL_PATTERN, link)
     if isYouTubeLink(link):
         return "https://youtu.be/" + videoID.group(1)
     else:
@@ -273,12 +273,52 @@ def channel(request, channelName) :
     dataD["songInsL"] = songInsL
     return render(request, "subekashi/channel.html", dataD)
 
+def filter_by_category(queryset, category):
+    return queryset.filter(
+        Q(imitate=category) |    # カンマ区切りの場合、完全一致する場合
+        Q(imitate__startswith=category + ',') |    # 先頭にマッチ
+        Q(imitate__endswith=',' + category) |      # 末尾にマッチ
+        Q(imitate__contains=',' + category + ',')  # 中間にマッチ
+    )
+
 
 def search(request) :
     dataD = dict()
-    dataD["songInsL"] = Song.objects.order_by("-posttime")
-    query = request.GET
-    dataD["query"] = f"{query.get('title')},{query.get('channel')},{query.get('lyrics')},{query.get('filter')}".replace("None", "")
+    query = {key: value for key, value in request.GET.items() if value and (key in INPUT_TEXTS + INPUT_SELECTS)}
+    query_select = {}
+    
+    if request.method == "GET" :
+        query_text = {f"{key}__icontains": value for key, value in query.items() if key in INPUT_TEXTS}
+        songInsL = Song.objects.filter(**query_text)
+        
+        query_select = {key: value for key, value in request.COOKIES.items() if value and key in INPUT_SELECTS}
+        if query_select["songrange"] == "subeana" : songInsL = songInsL.filter(issubeana = True)
+        if query_select["songrange"] == "xx" : songInsL = songInsL.filter(issubeana = False)
+        if query_select["jokerange"] == "off" : songInsL = songInsL.filter(isjoke = False)
+        
+        filter = request.GET.get("filter", "")
+        if filter : songInsL = songInsL.filter(**{filter: True})
+        
+    if request.method == "POST" :
+        query = {key: value for key, value in request.POST.items() if value}
+        songInsL = Song.objects.filter(**{f"{key}__icontains": value for key, value in query.items() if key in INPUT_TEXTS})
+        filters = request.POST.getlist("filters")
+        query["filters"] = filters
+        songInsL = songInsL.filter(**{key: True for key in filters})
+        
+        category = request.POST.get("category")
+        if category != "all" :songInsL = filter_by_category(Song.objects.all(), category)
+
+        songrange = request.POST.get("songrange")
+        if songrange == "subeana" : songInsL = songInsL.filter(issubeana = True)
+        if songrange == "xx" : songInsL = songInsL.filter(issubeana = False)
+        
+        jokerange = request.POST.get("jokerange")
+        if jokerange == "off" : songInsL = songInsL.filter(isjoke = False)
+        if jokerange == "only" : songInsL = songInsL.filter(isjoke = True)
+
+    dataD["query"] = query | query_select
+    dataD["songInsL"] = songInsL.order_by("-posttime")
     return render(request, "subekashi/search.html", dataD)
 
 
