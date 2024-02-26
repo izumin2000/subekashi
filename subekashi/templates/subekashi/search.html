@@ -71,6 +71,7 @@
         <input type="submit" value="検索" id="searchsubmit">
     </form>
 
+    <p id="counter">{{ counter }}</p>
     {% for songIns in songInsL %}
         <a href="{% url 'subekashi:song' songIns.id %}" class="buttona ">
             <!-- TOOD idをdata-titleへ -->
@@ -111,7 +112,6 @@
             </div>
         </a>
     {% endfor %}
-    <p id="notfound">見つかりませんでした。</p>
 </section>
 {% endblock %}
 

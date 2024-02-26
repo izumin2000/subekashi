@@ -316,7 +316,9 @@ def search(request) :
         jokerange = request.POST.get("jokerange")
         if jokerange == "off" : songInsL = songInsL.filter(isjoke = False)
         if jokerange == "only" : songInsL = songInsL.filter(isjoke = True)
-
+    
+    
+    dataD["counter"] = f"{len(Song.objects.all())}曲中{len(songInsL)}曲表示しています。"
     dataD["query"] = query | query_select
     dataD["songInsL"] = songInsL.order_by("-posttime")
     return render(request, "subekashi/search.html", dataD)
