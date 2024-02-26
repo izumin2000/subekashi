@@ -27,6 +27,7 @@ def isYouTubeLink(link):
     videoID = re.search(URL_PATTERN, link)
     return videoID is not None
 
+
 def formatURL(link):
     videoID = re.search(URL_PATTERN, link)
     if isYouTubeLink(link):
@@ -45,6 +46,25 @@ def sha256(check) :
     return hashlib.sha256(check.encode()).hexdigest()
 
 
+def filter_by_category(queryset, category):
+    return queryset.filter(
+        Q(imitate=category) |
+        Q(imitate__startswith=category + ',') |
+        Q(imitate__endswith=',' + category) |
+        Q(imitate__contains=',' + category + ',')
+    )
+
+
+islack = (
+    ~Q(channel="全てあなたの所為です。") &
+    (
+        (Q(isdeleted=False) & Q(url="")) |
+        (Q(isoriginal=False) & Q(issubeana=True) & Q(imitate="")) &
+        (Q(isinst=False) & Q(lyrics=""))
+    )
+)
+
+
 def top(request):
     dataD = dict()
     songrange = request.COOKIES.get("songrange", "subeana")
@@ -60,10 +80,7 @@ def top(request):
         songInsL = songInsL.filter(isjoke = False)
         
     dataD["songInsL"] = list(songInsL)[:-7:-1]
-    lackInsL = list(songInsL.filter(isdraft = True))
-    lackInsL += list(songInsL.filter(lyrics = "").exclude(isinst = True))
-    lackInsL += list(songInsL.filter(url = "").exclude(isdeleted = True))
-    lackInsL += list(songInsL.filter(imitate = "").exclude(issubeana = True).exclude(isoriginal = True))
+    lackInsL = list(songInsL.filter(islack))
     if lackInsL :
         lackInsL = random.sample(lackInsL, min(6, len(lackInsL)))
         dataD["lackInsL"] = lackInsL
@@ -72,9 +89,16 @@ def top(request):
     if aiInsL :
         dataD["aiInsL"] = aiInsL[min(10, len(aiInsL))::-1]
         
-    if request.method == "POST":
-        feedback = request.POST.get("feedback")
-        sendDiscord(FEEDBACK_DISCORD_URL, feedback)
+    if request.method == "POST" :
+        feedback = request.POST.get("feedback", None)
+        if feedback : sendDiscord(FEEDBACK_DISCORD_URL, feedback)
+        else :
+            query = {key: value for key, value in request.POST.items() if value}
+            songInsL = Song.objects.filter(**{f"{key}__icontains": value for key, value in query.items() if (key in INPUT_TEXTS)})
+            dataD["counter"] = f"{len(Song.objects.all())}曲中{len(songInsL)}曲表示しています。"
+            dataD["query"] = query
+            dataD["songInsL"] = songInsL.order_by("-posttime")
+            return render(request, "subekashi/search.html", dataD)
     
     isAdDisplay = request.COOKIES.get("adrange", "off") == "on"
     dataD["isAdDisplay"] = isAdDisplay
@@ -274,25 +298,6 @@ def channel(request, channelName) :
     return render(request, "subekashi/channel.html", dataD)
 
 
-def filter_by_category(queryset, category):
-    return queryset.filter(
-        Q(imitate=category) |
-        Q(imitate__startswith=category + ',') |
-        Q(imitate__endswith=',' + category) |
-        Q(imitate__contains=',' + category + ',')
-    )
-
-
-islack = (
-    ~Q(channel="全てあなたの所為です。") &
-    (
-        (Q(isdeleted=False) & Q(url="")) |
-        (Q(isoriginal=False) & Q(issubeana=True) & Q(imitate="")) &
-        (Q(isinst=False) & Q(lyrics=""))
-    )
-)
-
-
 def search(request) :
     dataD = dict()
     query = {key: value for key, value in request.GET.items() if value and (key in INPUT_TEXTS + INPUT_SELECTS)}
@@ -318,7 +323,6 @@ def search(request) :
         songInsL = Song.objects.filter(**{f"{key}__icontains": value for key, value in query.items() if key in INPUT_TEXTS})
         
         filters = request.POST.getlist("filters")
-        print(f"\033[31m{filters}\033[0m")
         query["filters"] = filters
         filters_copy = filters.copy()
         if "islack" in filters_copy :
@@ -338,7 +342,6 @@ def search(request) :
         if jokerange == "only" : songInsL = songInsL.filter(isjoke = True)
     
     dataD["counter"] = f"{len(Song.objects.all())}曲中{len(songInsL)}曲表示しています。"
-    print(f"\033[31m{query}\033[0m")
     dataD["query"] = query | query_select
     dataD["songInsL"] = songInsL.order_by("-posttime")
     return render(request, "subekashi/search.html", dataD)
