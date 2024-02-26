@@ -193,7 +193,7 @@ def song(request, songId) :
     # TODO リファクタリング
     if isExist :
         dataD["channels"] = songIns.channel.replace(", ", ",").split(",")
-        dataD["urls"] = songIns.url.replace(", ", ",").split(",")
+        dataD["urls"] = songIns.url.replace(", ", ",").split(",") if songIns.url else []
         jokerange = request.COOKIES.get("jokerange", "off")
         if songIns.imitate :
             imitateInsL = []
