@@ -1,66 +1,39 @@
-section p, section a {
-    margin: 20px;
+#sonf-info p, #sonf-info a {
+    display: inline-block;
     font-size: 22px;
+    margin-bottom: 20px;
+    width: fit-content;
 }
 
-.fa-music, .fa-link {
+i {
+    font-size: 22px;
     margin-right: 10px;
 }
 
-.fa-user-circle, .fa-tags, .fa-sitemap {
-    margin-right: 20px;
-}
-
-#songtitle {
-    margin-left: 18px;
-}
-
-#songposttime {
+.fa-tags {
     font-size: 18px;
 }
 
-#songposttime i {
-    font-size: 22px;
-    margin-right: 7px;
+.fa-copy {
+    cursor: pointer;
 }
 
-.songurl, .songtitle {
-    display: block;
-    width: fit-content;
-    max-width: 90vw;
-    white-space: normal;
-    overflow-wrap: break-word;
-    margin-bottom: 20px;
-    font-size: 22px;
-}
-
-#songlyrics {
-    text-align: center;
-    margin-top: 40px;
-    line-height: 60px;
-}
-
-#songchannellabel, #songimitateslabel, #songimitatedslabel {
-    display: inline-block;
+.songurl, .songchannel, .songimitate {
     white-space: nowrap;
-    color: #fff;
-    margin: 0 -15px 0 20px;
+    margin-right: 15px;
 }
 
-#imitated {
-    margin-top: 15px;
-    padding-right: 24px;
+@media (max-width: 640px) {
+    .songurl {
+        display: block !important;
+        overflow: hidden;
+        width: calc(100vw - 60px) !important;
+    }
 }
 
-.songchannel, .songimitate {
-    display: inline;
-    white-space: nowrap;
-    margin: 0 20px 0 0;
-    font-size: 22px;
-}
-
-.songnotfound {
+#lyrics, .songnotfound {
     text-align: center;
+    line-height: 80px;
 }
 
 #tonew {

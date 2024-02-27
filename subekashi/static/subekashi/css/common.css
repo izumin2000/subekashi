@@ -185,6 +185,11 @@ a {
     line-height: 32px;
 }
 
+i {
+    color: #fff;
+    font-size: 22px;
+}
+
 .sansfont {
     font-family: 'Noto Sans JP', sans-serif !important;
     font-weight: 1000 !important;
@@ -568,7 +573,8 @@ footer {
 }
 
 .footer-left i {
-    margin-left: 10px;
+    margin: 0 5px;
+    font-size: 15px;
 }
 
 .footer-right {
