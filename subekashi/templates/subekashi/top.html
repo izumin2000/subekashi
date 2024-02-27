@@ -7,7 +7,13 @@
 
 {% block content %}
 <section>
+    <div id="news-wrapper">
+        <div id="news">
+            {{ news|safe }}
+        </div>
+    </div>
     <h1>検索</h1>
+    <div class="underline"></div>
     <form action="{% url 'subekashi:top' %}" method="POST" id="search-form">{% csrf_token %}
         <div class="label-wrapper">
             <label class="label-same" for="title">タイトル</label>
@@ -94,7 +100,7 @@
         {% endfor %}
         <div class="dummybuttons">
             <a href="{% url 'subekashi:ai' %}"><div class="dummybutton"><p >もっと見る</p></div></a>
-            <a href="{% url 'subekashi:ai' %}"><div class="dummybutton"><p >曲を生成する</p></div></a>
+            <a href="{% url 'subekashi:ai' %}"><div class="dummybutton"><p >歌詞を生成する</p></div></a>
         </div>
     {% endif %}
 
@@ -181,6 +187,37 @@
 
 {% block js %}
 <script defer>
+    const newsContainer = document.getElementById('news');
+    const newsElements = newsContainer.children;
+    let currentIndex = 0;
+
+    function showNextElement() {
+    for (let i = 0; i < newsElements.length; i++) {
+        newsElements[i].style.display = 'none';
+    }
+    
+    setTimeout(() => {
+        for (let i = 0; i < newsElements.length; i++) {
+            newsElements[i].style.transition = 'transform 1s ease';
+            newsElements[i].style.transform = 'translateY(100px)';
+        }
+    }, 9000);
+    
+    setTimeout(() => {
+        for (let i = 0; i < newsElements.length; i++) {
+            newsElements[i].style.transition = 'transform 1s ease';
+            newsElements[i].style.transform = 'translateY(0)';
+        }
+    }, 10000);
+    
+    newsElements[currentIndex].style.display = 'block';
+    currentIndex = (currentIndex + 1) % newsElements.length;
+    }
+    
+    showNextElement();
+    setInterval(showNextElement, 10000);
+
+
     if ('{{ isAdDisplay }}' === "True") {
         let onceView = false;
         var adView = Number('{{ adIns.view }}')

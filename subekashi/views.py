@@ -67,6 +67,10 @@ islack = (
 
 def top(request):
     dataD = dict()
+    
+    newsIns, _ = Singleton.objects.get_or_create(key = "news")
+    dataD["news"] = newsIns.value
+    
     songrange = request.COOKIES.get("songrange", "subeana")
     jokerange = request.COOKIES.get("jokerange", "off")
     

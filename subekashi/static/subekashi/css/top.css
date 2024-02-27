@@ -1,3 +1,27 @@
+#news-wrapper {
+    margin-top: 20px;
+    height: 80px;
+}
+
+#news {
+    background-color: #555;
+    width: 100%;
+    height: fit-content;
+    padding: 5px 5px 0 5px;
+    overflow-y: hidden;
+}
+
+#news > * {
+    display: block;
+    text-align: center;
+    font-size: 18px;
+    margin-bottom: 5px;
+}
+
+h1:nth-child(2) {
+    margin-top: 30px;
+}
+
 .youtube {
     display: inline-block;
     position: relative;
