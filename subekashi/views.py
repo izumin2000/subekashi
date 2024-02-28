@@ -274,10 +274,7 @@ def delete(request) :
         songIns = songIns.first()
         reasonForm = request.POST.get("reason")
         content = f"ID：{songIns.id}\n理由：{reasonForm}"
-        statusCode = sendDiscord(DELETE_DISCORD_URL, content)
-        if statusCode != 204 :
-            sendDiscord(ERROR_DISCORD_URL, f"削除フォーム時に{statusCode}エラーが発生しました")
-            return render(request, 'subekashi/500.html')
+        sendDiscord(DELETE_DISCORD_URL, content)
         
     return render(request, 'subekashi/song.html', dataD)
 
