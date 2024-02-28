@@ -34,7 +34,7 @@ get_random_secret_key()
 python manage.py runserver
 ```
 
-5. アクセス
+5. アクセス  
 [http://subekashi.localhost:8000/](http://subekashi.localhost:8000/) にアクセスとアプリの画面が表示されます。
 
 
@@ -42,13 +42,17 @@ python manage.py runserver
 全て歌詞の所為です。上で登録された情報はRESTfulなAPIで提供しています。  
 
 [https://lyrics.imicomweb.com/api/song](https://lyrics.imicomweb.com/api/song)：全て歌詞の所為です。に登録された曲の情報です。GET, HEAD, OPTIONSのみ受け付けています。
+
 [https://lyrics.imicomweb.com/api/ad](https://lyrics.imicomweb.com/api/ad)：全て歌詞の所為です。に登録された宣伝の情報です。GET, HEAD, OPTIONSとPUTのうちカラムviewとカラムclickの値の変更のみ受け付けています。
+
 [https://lyrics.imicomweb.com/api/ai](https://lyrics.imicomweb.com/api/ai)：正常に狂うのです。が生成した歌詞の情報です。GET, HEAD, OPTIONSとPUTのうちカラムscoreの変更のみ受け付けています。
 
 
 # リンク集
 - [全て歌詞の所為です。](https://lyrics.imicomweb.com/)
+
 - [全て歌詞の所為です。 YouTube](https://www.youtube.com/@subekashi)
+
 - [全て歌詞の所為です。 X](https://twitter.com/subekashi)
 
 
