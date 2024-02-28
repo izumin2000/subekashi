@@ -509,7 +509,7 @@ class AiViewSet(viewsets.ModelViewSet):
         raise serializers.ValidationError("メソッドCREATEは受け付けていません")
     
     def update(self, request, *args, **kwargs):
-        if set(request.data.keys()) - {'view', 'score'}:
+        if set(request.data.keys()) - {'score'}:
             raise serializers.ValidationError("フィールドscore以外の変更は受け付けていません")
         
         return super().update(request, *args, **kwargs)
