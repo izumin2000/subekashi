@@ -99,6 +99,13 @@ def top(request):
         else :
             query = {key: value for key, value in request.POST.items() if value}
             songInsL = Song.objects.filter(**{f"{key}__icontains": value for key, value in query.items() if (key in INPUT_TEXTS)})
+            query["songrange"] = request.COOKIES.get("songrange", "subeana")
+            query["jokerange"] = request.COOKIES.get("jokerange", "off")
+            
+            if query["songrange"] == "subeana" : songInsL = songInsL.filter(issubeana = True)
+            if query["songrange"] == "xx" : songInsL = songInsL.filter(issubeana = False)
+            if query["jokerange"] == "off" : songInsL = songInsL.filter(isjoke = False)
+            
             dataD["counter"] = f"{len(Song.objects.all())}曲中{len(songInsL)}曲表示しています。"
             dataD["query"] = query
             dataD["songInsL"] = songInsL.order_by("-posttime")
