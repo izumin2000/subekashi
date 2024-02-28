@@ -7,8 +7,10 @@
 
 {% block content %}
 <section>
+    <h1>ニュース</h1>
+    <div class="underline"></div>
     <div id="news-wrapper">
-        <div id="news">
+        <div id="news-display">
             {{ news|safe }}
         </div>
     </div>
@@ -187,35 +189,41 @@
 
 {% block js %}
 <script defer>
-    const newsContainer = document.getElementById('news');
-    const newsElements = newsContainer.children;
+    const newsDisplayEle = document.getElementById('news-display');
+    const newsArreyEle = document.createElement("div");
+    newsArreyEle.innerHTML = "{{ news|safe }}";
+    const newsEles = newsArreyEle.children;
     let currentIndex = 0;
 
-    function showNextElement() {
-    for (let i = 0; i < newsElements.length; i++) {
-        newsElements[i].style.display = 'none';
+    function showNews(newsEle_) {
+        newsEle = newsEle_.cloneNode(true)
+        newsDisplayEle.innerHTML = '';
+        newsDisplayEle.appendChild(newsEle);
+        const height = newsEle.clientHeight;
+        newsDisplayEle.style.height = `${height}px`;
+        
+        setTimeout(() => {
+            newsEle.style.opacity = '1';
+            newsEle.style.transform = 'translateY(0px)'; 
+        }, 1000);
+        
+        setTimeout(() => {
+            newsEle.style.opacity = '0';
+            newsEle.style.transform = 'translateY(-50px)'; 
+        }, 10000);
+        
+        setTimeout(() => {
+            newsEle.style.transform = 'translateY(50px)'; 
+        }, 11000);
     }
-    
-    setTimeout(() => {
-        for (let i = 0; i < newsElements.length; i++) {
-            newsElements[i].style.transition = 'transform 1s ease';
-            newsElements[i].style.transform = 'translateY(100px)';
-        }
-    }, 9000);
-    
-    setTimeout(() => {
-        for (let i = 0; i < newsElements.length; i++) {
-            newsElements[i].style.transition = 'transform 1s ease';
-            newsElements[i].style.transform = 'translateY(0)';
-        }
-    }, 10000);
-    
-    newsElements[currentIndex].style.display = 'block';
-    currentIndex = (currentIndex + 1) % newsElements.length;
+
+    function showNextNews() {
+        showNews(newsEles[currentIndex % newsEles.length])
+        currentIndex++;
     }
-    
-    showNextElement();
-    setInterval(showNextElement, 10000);
+
+    showNextNews();
+    setInterval(showNextNews, 11000);
 
 
     if ('{{ isAdDisplay }}' === "True") {

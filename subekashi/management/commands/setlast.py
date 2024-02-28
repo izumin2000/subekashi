@@ -11,7 +11,7 @@ class Command(BaseCommand):
             singletonIns.key = "lastModified"
             v = options['v']
             today = date.today().strftime("%Y-%m-%d")
-            singletonIns.value = f"{today}-{v}" if v else today
+            singletonIns.value = f"{today} (ver.{v})" if v else today
             singletonIns.save()
             
     def add_arguments(self, parser):

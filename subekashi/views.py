@@ -99,6 +99,13 @@ def top(request):
         else :
             query = {key: value for key, value in request.POST.items() if value}
             songInsL = Song.objects.filter(**{f"{key}__icontains": value for key, value in query.items() if (key in INPUT_TEXTS)})
+            query["songrange"] = request.COOKIES.get("songrange", "subeana")
+            query["jokerange"] = request.COOKIES.get("jokerange", "off")
+            
+            if query["songrange"] == "subeana" : songInsL = songInsL.filter(issubeana = True)
+            if query["songrange"] == "xx" : songInsL = songInsL.filter(issubeana = False)
+            if query["jokerange"] == "off" : songInsL = songInsL.filter(isjoke = False)
+            
             dataD["counter"] = f"{len(Song.objects.all())}曲中{len(songInsL)}曲表示しています。"
             dataD["query"] = query
             dataD["songInsL"] = songInsL.order_by("-posttime")
@@ -267,10 +274,7 @@ def delete(request) :
         songIns = songIns.first()
         reasonForm = request.POST.get("reason")
         content = f"ID：{songIns.id}\n理由：{reasonForm}"
-        statusCode = sendDiscord(DELETE_DISCORD_URL, content)
-        if statusCode != 204 :
-            sendDiscord(ERROR_DISCORD_URL, f"削除フォーム時に{statusCode}エラーが発生しました")
-            return render(request, 'subekashi/500.html')
+        sendDiscord(DELETE_DISCORD_URL, content)
         
     return render(request, 'subekashi/song.html', dataD)
 
@@ -500,6 +504,22 @@ class SongViewSet(viewsets.ReadOnlyModelViewSet):
 class AiViewSet(viewsets.ModelViewSet):
     queryset = Ai.objects.all()
     serializer_class = AiSerializer
+    
+    def create(self, request, *args, **kwargs):
+        raise serializers.ValidationError("メソッドCREATEは受け付けていません")
+    
+    def update(self, request, *args, **kwargs):
+        if set(request.data.keys()) - {'score'}:
+            raise serializers.ValidationError("フィールドscore以外の変更は受け付けていません")
+        
+        return super().update(request, *args, **kwargs)
+    
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
+    
+    def destroy(self, request, *args, **kwargs):
+        raise serializers.ValidationError("メソッドDELETEは受け付けていません")
 
 
 class AdViewSet(viewsets.ModelViewSet):
