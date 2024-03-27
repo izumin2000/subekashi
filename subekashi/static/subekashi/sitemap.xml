@@ -127,10 +127,6 @@
   <priority>0.8</priority>
 </url>
 <url>
-  <loc>https://lyrics.imicomweb.com/search?filter=1</loc>
-  <priority>0.8</priority>
-</url>
-<url>
   <loc>https://lyrics.imicomweb.com/songs/10</loc>
   <priority>0.7</priority>
 </url>

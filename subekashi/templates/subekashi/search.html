@@ -33,7 +33,9 @@
             <label class="label-same" for="category">カテゴリ</label>
             <select id="category" name="category">
                 <option value="all">指定無し</option>
-                <!-- TODO short対応時にvalueを変更 -->
+                <option value="7" {% if query.category == '7' %}selected{% endif %}>.[short]模倣</option>
+                <option value="8" {% if query.category == '8' %}selected{% endif %}>..[short]模倣</option>
+                <option value="9" {% if query.category == '9' %}selected{% endif %}>◘模倣</option>
                 <option value="10" {% if query.category == '10' %}selected{% endif %}>.模倣</option>
                 <option value="11" {% if query.category == '11' %}selected{% endif %}>..模倣</option>
                 <option value="12" {% if query.category == '12' %}selected{% endif %}>教育模倣</option>
