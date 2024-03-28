@@ -10,7 +10,7 @@ class Command(BaseCommand) :
             subprocess.check_output(['pip', 'install', '-r', 'requirements.txt'])
             subprocess.check_output(['python', 'manage.py', 'makemigrations'])
             subprocess.check_output(['python', 'manage.py', 'migrate'])
-            subprocess.check_output(['python', 'manage.py', 'collectstatic', '--noinput;'])
+            subprocess.check_output(['python', 'manage.py', 'collectstatic'])
             self.stdout.write(self.style.SUCCESS(f"デプロイが完了しました。"))
             command = ['git', 'rev-list', '--count', 'main']
             commit_count = subprocess.check_output(command).strip().decode('utf8')
