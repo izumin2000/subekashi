@@ -18,7 +18,7 @@
             {% if urls %}
                 {% for url in urls %}
                     <br><i class="fas fa-link"></i>
-                    <a class="songurl" href="{{ url }}">{{ url }}</a>
+                    <a class="songurl" href="{{ url }}" target="_blank">{{ url }}</a>
                     <i class="far fa-copy" onclick="copy('{{ url }}')"></i>
                 {% endfor %}
             {% endif %}
