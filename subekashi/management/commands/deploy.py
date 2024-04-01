@@ -16,6 +16,7 @@ class Command(BaseCommand) :
             command = ['git', 'rev-list', '--count', 'main']
             commit_count = subprocess.check_output(command).strip().decode('utf8')
             subprocess.check_output(['python', 'manage.py', 'setlast', '--v', commit_count])
+            self.stdout.write(self.style.SUCCESS(f"commit数: {commit_count}"))
             
             response = requests.post(
                 f'https://www.pythonanywhere.com/api/v0/user/{PYTHONANYWHERE_USERNAME}/webapps/lyrics.imicomweb.com/reload/',
