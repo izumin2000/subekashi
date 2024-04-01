@@ -43,7 +43,7 @@
                 <a class="songimitate" href="{% url 'subekashi:search' %}?filter=isinst">インスト曲</a>
             {% endif %}
             {% if not songIns.issubeana %}
-                <a class="songimitate" href="{% url 'subekashi:search' %}?issubeana=xx">すべあな界隈以外の曲</a>
+                <a class="songimitate" href="{% url 'subekashi:search' %}?issubeana=xx">すべあな界隈曲以外の界隈曲</a>
             {% endif %}
             {% if songIns.isdeleted %}
                 <p class="songimitate">非公開</p>
