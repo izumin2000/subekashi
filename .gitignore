@@ -9,3 +9,4 @@ sandbox
 mycommand.py
 backups/*
 private/*
+wordcloud.py
