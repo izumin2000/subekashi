@@ -13,11 +13,11 @@ class Command(BaseCommand) :
         wordcloud = WordCloud(
                 font_path=r"C:\Users\kanat\AppData\Local\Microsoft\Windows\Fonts\GenZenGothicKaiC.ttf",
                 collocations = False,
-                max_words = 6000,
+                max_words = 5000,
                 regexp=r"[\w']+",
                 stopwords = [],
                 colormap="summer_r",
-                width=8000,height=4500).generate(lyrics)
+                width=7680,height=4320).generate(lyrics)
 
         wordcloud.to_file(r"C:\Users\kanat\Documents\codes\subekashi\subekashi\words.jpeg")
         
