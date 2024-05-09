@@ -451,6 +451,10 @@ def research(request) :
     return render(request, "subekashi/research.html")
 
 
+def special(request) :
+    return render(request, "subekashi/special.html")
+
+
 def error(request) :
     return render(request, "subekashi/500.html")
 
