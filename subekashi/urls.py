@@ -23,6 +23,7 @@ urlpatterns = [
     path('ad', views.ad, name='ad'),
     path('ad/post', views.adpost, name='adpost'),
     path('research', views.research, name='research'),
+    path('special', views.special, name='special'),
     path('error', views.error, name='error'),
     path('dev', views.dev, name='dev'),
     path('github', views.github, name='github'),

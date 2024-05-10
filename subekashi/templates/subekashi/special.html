@@ -1,0 +1,27 @@
+{% extends "subekashi/base/base.html" %}
+{% block title %}スペシャルページ{% endblock %}
+{% block ogtitle %}スペシャルページ{% endblock %}
+{% load static %}
+{% load lastModified %}
+{% block css %}{% static 'subekashi/css/special.css'%}{% endblock %}
+
+{% block content %}
+<section id="special">
+    <h1>スペシャルページ</h1>
+    <div class="underline"></div>
+    <p>全てあなたの所為です。6周年を記念して、全て歌詞の所為です。のデータベースを用いて製作されたグラフィックアートを公開します。</p>
+    <p>画像が表示されていない場合はサーバーが画像を生成中ですので、しばらくお待ち下さい。</p>
+    {% for image in images %}
+        <div class="img-div">
+            <a href="{% static 'subekashi/image/special/'|add:image|add:'_8k.jpeg' %}" target="_blank">
+                <img src="{% static 'subekashi/image/special/'|add:image|add:'_hd.jpeg' %}" alt="{{ image }}" height="720" width="1280">
+            </a>
+            <div class="a-download">
+                <a href="{% static 'subekashi/image/special/'|add:image|add:'_hd.jpeg' %}" download><i class="fas fa-file-download"></i>低画質</a>
+                <a href="{% static 'subekashi/image/special/'|add:image|add:'_8k.jpeg' %}" download><i class="fas fa-file-download"></i>高画質</a>
+            </div>
+        </div>
+    {% endfor %}
+    ...
+</section>
+{% endblock %}

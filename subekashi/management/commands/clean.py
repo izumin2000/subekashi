@@ -42,7 +42,7 @@ class Command(BaseCommand):
             for songId in options['d'] :
                 songIns = getIns(songId)
                 if songIns :
-                    self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})を削除しました\n"))
+                    self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})を削除しました"))
                     songIns.delete()
 
         for songIns in Song.objects.all() :
@@ -50,7 +50,7 @@ class Command(BaseCommand):
             songImitate = songIns.imitate
             songImitateClean = commaClean(songImitate)
             if songImitate != songImitateClean :
-                self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})の模倣情報のエラーを修正しました\n"))
+                self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})の模倣情報のエラーを修正しました"))
                 songIns.imitate = songImitateClean
                 songIns.save()
             
@@ -58,7 +58,7 @@ class Command(BaseCommand):
             songImitated = songIns.imitated
             songImitatedClean = commaClean(songImitated)
             if songImitated != songImitatedClean :
-                self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})の被模倣情報のエラーを修正しました\n"))
+                self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})の被模倣情報のエラーを修正しました"))
                 songIns.imitated = songImitatedClean
                 songIns.save()
         
@@ -68,11 +68,11 @@ class Command(BaseCommand):
                 imitateIns = getIns(imitateId)
                 if imitateIns :
                     if songIns.id not in commaSplit(imitateIns.imitated) :
-                        self.stdout.write(self.style.SUCCESS(f"{imitateIns.id}({imitateIns})の被模倣情報に{songIns.id}({songIns})を追加しました\n"))
+                        self.stdout.write(self.style.SUCCESS(f"{imitateIns.id}({imitateIns})の被模倣情報に{songIns.id}({songIns})を追加しました"))
                         imitateIns.imitated = addId(imitateIns.imitated, songIns.id)
                         imitateIns.save()
                 else :
-                    self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})の被模倣情報から削除された曲{imitateId}を削除しました\n"))
+                    self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})の被模倣情報から削除された曲{imitateId}を削除しました"))
                     songIns.imitate = deleteId(songIns.imitate, imitateId)
                     songIns.save()
 
@@ -81,23 +81,23 @@ class Command(BaseCommand):
                 imitatedIns = getIns(imitatedId)
                 if imitatedIns :
                     if songIns.id not in commaSplit(imitatedIns.imitate) :
-                        self.stdout.write(self.style.SUCCESS(f"{imitatedIns.id}({imitatedIns})の模倣情報に{songIns.id}({songIns})を追加しました\n"))
+                        self.stdout.write(self.style.SUCCESS(f"{imitatedIns.id}({imitatedIns})の模倣情報に{songIns.id}({songIns})を追加しました"))
                         imitatedIns.imitate = addId(imitatedIns.imitate, songIns.id)
                         imitatedIns.save()
                 else :
-                    self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})の被模倣情報から削除された曲{imitatedId}を削除しました\n"))
+                    self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})の被模倣情報から削除された曲{imitatedId}を削除しました"))
                     songIns.imitated = deleteId(songIns.imitated, imitatedId)
                     songIns.save()
 
             # posttimeの埋め込み
             if songIns.posttime == None :
-                self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})のposttimeを更新しました。\n"))
+                self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})のposttimeを更新しました。"))
                 songIns.posttime = timezone.now()
                 songIns.save()
             
             # スラッシュの置換
             if "/" in songIns.title :
-                self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})のスラッシュをリプレイスしました\n"))
+                self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})のスラッシュをリプレイスしました"))
                 songIns.title = songIns.title.replace("/", "╱")
                 songIns.save()
 
