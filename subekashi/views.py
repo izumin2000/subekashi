@@ -452,7 +452,9 @@ def research(request) :
 
 
 def special(request) :
-    return render(request, "subekashi/special.html")
+    images = ["default", "autumn", "cool", "rainbow", "spring", "summer", "winter", "Blues_r", "BuGn_r", "BuPu_r", "GnBu_r", "Greens_r", "OrRd_r", "Spectral_r"]
+    detaD = {"images": images}
+    return render(request, "subekashi/special.html", detaD)
 
 
 def error(request) :

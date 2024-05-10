@@ -1,0 +1,29 @@
+#special p {
+    text-align: center;
+}
+
+.img-div {
+    margin-top: 50px;
+}
+
+.img-div img {
+    display: block;
+    margin: 0 auto;
+    height: 50%;
+    min-height: 180px;
+    width: 50%;
+    min-width: 320px;
+}
+
+.a-download {
+    display: flex;
+    justify-content: center;
+}
+
+.a-download a {
+    margin: 0 20px;
+}
+
+.a-download a i {
+    margin-right: 5px;
+}
