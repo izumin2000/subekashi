@@ -9,22 +9,23 @@
     <h1>正常に狂うのです。</h1>
     <div class="underline"></div>
     <form action="{% url 'subekashi:ai' %}" method="POST" id="aiForm">{% csrf_token %}
-        <label>使用モデル</label>
+        <!-- TODO selectにする -->
+        {% comment %} <label>使用モデル</label> {% endcomment %}
         <!-- <div class="devInput" onclick="devInput(0)"> -->
-        <div class="devInput">
-            <input type="radio" class="genetype" name="genetype" value="category" oninput="changetype(0)" checked>
-            <label>すべあな/全曲/評価込</label>
-        </div>
+        {% comment %} <div class="devInput"> {% endcomment %}
+            {% comment %} <input type="radio" class="genetype" name="genetype" value="category" oninput="changetype(0)" checked> {% endcomment %}
+            {% comment %} <label>すべあな/全曲/評価込</label> {% endcomment %}
+        {% comment %} </div> {% endcomment %}
         <!-- <div class="devInput" onclick="devInput(1)"> -->
-        <div class="devInput">
-            <input type="radio" class="genetype" name="genetype" value="song" oninput="changetype(1)" disabled>
-            <label><s>すべあな/全曲/評価無(開発中)</s></label>
-        </div>
-        <div class="devInput" onclick="devInput(2)">
-            <input type="radio" class="genetype" name="genetype" value="model" oninput="changetype(2)" disabled>
-            <label><s>すべあな/.枠(開発中)</s></label>
-        </div><br><br>
-        <p class="sansfont">総学習量: 1027161文字(1286曲, 3302評価)  最終更新: 2024年2月29日</p>
+        {% comment %} <div class="devInput"> {% endcomment %}
+            {% comment %} <input type="radio" class="genetype" name="genetype" value="song" oninput="changetype(1)" disabled> {% endcomment %}
+            {% comment %} <label><s>すべあな/全曲/評価無(開発中)</s></label> {% endcomment %}
+        {% comment %} </div> {% endcomment %}
+        {% comment %} <div class="devInput" onclick="devInput(2)"> {% endcomment %}
+            {% comment %} <input type="radio" class="genetype" name="genetype" value="model" oninput="changetype(2)" disabled> {% endcomment %}
+            {% comment %} <label><s>すべあな/.枠(開発中)</s></label> {% endcomment %}
+        {% comment %} </div><br><br> {% endcomment %}
+        <p class="sansfont">総学習量: 974581文字(2000曲, 4605評価)  最終更新: 2024年8月20日</p>
         <input type="submit" value="生成" id="submit">
     </form>
 </section>

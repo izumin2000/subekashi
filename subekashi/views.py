@@ -310,8 +310,8 @@ def search(request) :
     dataD = dict()
     query_select = {}
     
+    songInsL = Song.objects.all()  
     if request.method == "GET" :
-        songInsL = Song.objects.all()  
         query = {key: value for key, value in request.GET.items() if value}
         
         query_select_cookie = {key: value for key, value in request.COOKIES.items() if value and (key in INPUT_SELECTS)}
