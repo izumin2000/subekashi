@@ -1,13 +1,3 @@
-#aiForm {
-    margin-left: calc(32vw - 260px);
-}
-
-@media (max-width: 720px) {
-    #aiForm {
-        margin-left: 0;
-    }
-}
-
 .genetype {
     box-shadow: none;
     height: 15px;
