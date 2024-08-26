@@ -50,24 +50,20 @@
     margin-bottom: 15px;
 }
 
-#copysubmit {
-    display: flex;
-    justify-content: center;
+@media (max-width: 450px) {
+    #copy {
+        width: 100%;
+        padding: 0;
+    }
 }
 
-#copy {
-    width: 200px;
-    margin-right: 40px;
-}
-
-#submit {
-    width: 200px;
-    margin: 0;
-    padding-bottom: 0px;
+#copyresult {
+    margin-left: 10px;
 }
 
 @media (max-width: 450px) {
-    .dummybutton {
-        margin: 0 10px;
+    #copyresult {
+        text-align: center;
+        margin-left: 0;
     }
 }
