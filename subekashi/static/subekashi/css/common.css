@@ -352,7 +352,6 @@ textarea {
 }
 
 input[type=submit], button {
-    padding-left: 0px;
     height: 50px;
     width: 100%;
     border: none;
@@ -385,12 +384,13 @@ input[type=submit], button {
     height: 50px;
     width: 100px;
     padding: 0 40px;
-    margin: 0 10px;
+    margin: 20px 10px;
+    cursor: pointer;
 }
 
 @media (max-width: 450px) {
     .dummybutton {
-        margin: 10px auto;
+        margin: 20px auto;
     }
 }
 

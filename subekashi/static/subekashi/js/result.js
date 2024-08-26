@@ -20,7 +20,6 @@ function devInput(id, score) {
     for (s = 1; s <= 5; s++) {
         radioEle = document.getElementById(String(id) + String(s));
         radioEle.checked = false;
-
     }
     radioEle = document.getElementById(String(id) + String(score));
     radioEle.checked = true;
@@ -29,20 +28,6 @@ function devInput(id, score) {
 
 
 function copygood() {
-    toastr.options = {
-        "closeButton": false,
-        "debug": false,
-        "newestOnTop": false,
-        "progressBar": true,
-        "positionClass": "toast-bottom-right",
-        "preventDuplicates": false,
-        "onclick": null,
-        "timeOut": "3000",
-        "extendedTimeOut": "0",
-        "showEasing": "swing",
-        "hideEasing": "linear",
-    }
-
     checkgoodEles = document.getElementsByClassName("lyricdiv");
     copytext = ""
     for (checkgoodEle of checkgoodEles) {
@@ -51,11 +36,12 @@ function copygood() {
             copytext += checkgoodEle.children[0].innerText + "\n";
         }
     }
-
+    
+    copyresultEle = document.getElementById("copyresult");
     if (Boolean(navigator.clipboard)) {
         navigator.clipboard.writeText(copytext);
-        toastr.success(copytext + " をコピーしました！")
+        copyresultEle.innerText = "コピーしました。"
     } else {
-        toastr.warning("この機能はセキュリティの関係上、HTTPS環境上でしか動作しません。")
+        copyresultEle.innerText = "エラーが発生しました。"
     }
 }

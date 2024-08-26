@@ -42,9 +42,11 @@
         <input type="text" name="title" value="{{ title }}" hidden>
         <input type="number" name="similar" value="{{ similar }}" hidden>
         <div id="copysubmit">
-            <div class="dummybutton" onclick="copygood()"><p >最高の行をコピー</p></div>
-            <input type="submit" value="再生成">
+        <div class="dummybuttons">
+            <div class="dummybutton" id="copy" onclick="copygood()"><p>最高の行をコピー</p></div>
+            <input class="dummybutton" type="submit" value="再生成">
         </div>
+        <p id="copyresult"></p>
     </form>
 </section>
 {% endblock %}
