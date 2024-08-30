@@ -143,7 +143,7 @@ def new(request) :
         if ("" in [titleForm, channelForm]) :
             return render(request, "subekashi/500.html")
 
-        titleForm = titleForm.replace("/", "╱")
+        channelForm = channelForm.replace("/", "╱")
         if idForm :
             songIns = Song.objects.get(pk = int(idForm))
             songIns.title = titleForm

@@ -96,9 +96,9 @@ class Command(BaseCommand):
                 songIns.save()
             
             # スラッシュの置換
-            if "/" in songIns.title :
+            if "/" in songIns.channel :
                 self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})のスラッシュをリプレイスしました"))
-                songIns.title = songIns.title.replace("/", "╱")
+                songIns.channel = songIns.channel.replace("/", "╱")
                 songIns.save()
 
     def add_arguments(self, parser):
