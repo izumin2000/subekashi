@@ -285,10 +285,10 @@ def ai(request) :
 
     if request.method == "POST" :
         aiIns = Ai.objects.filter(genetype = "model", score = 0)
-        if len(aiIns) <= 25 :
+        if not aiIns.exists() :
             sendDiscord(ERROR_DISCORD_URL, "aiInsのデータがありません。")
             aiIns = Ai.objects.filter(genetype = "model")
-        dataD["aiInsL"] = random.sample(list(aiIns), 25)
+        dataD["aiInsL"] = random.sample(list(aiIns), min(25, aiIns.count()))
         return render(request, "subekashi/result.html", dataD)
     dataD["bestInsL"] = list(Ai.objects.filter(genetype = "model", score = 5))[:-300:-1]
     
