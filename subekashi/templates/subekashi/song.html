@@ -1,6 +1,6 @@
 {% extends "subekashi/base/base.html" %}
-{% block title %}{{ songIns.title }}{% endblock %}
-{% block ogtitle %}{{ songIns.title }}{% endblock %}
+
+
 {% load static %}
 {% block css %}{% static 'subekashi/css/song.css'%}{% endblock %}
 
@@ -69,10 +69,13 @@
         
         {% else %}
         {% if isDeleted %}
-        <p class="songnotfound">削除依頼が送信されました。</p>
+            <p class="songnotfound">削除依頼が送信されました。</p>
         {% else %}
             <p class="songnotfound">曲の情報が見つかりません。</p>        
         {% endif %}
+        <div class="dummybuttons">
+            <div class="dummybutton towrong" onclick="totop()"><p>トップに戻る</p></div>
+        </div>
     {% endif %}
 
 
@@ -95,6 +98,10 @@
 
     function tonew() {
         window.location.href = "{% url 'subekashi:new' %}?id={{ songIns.id }}";
+    };
+
+    function totop() {
+        window.location.href = "{% url 'subekashi:top' %}";
     };
 
     function copy(text) {

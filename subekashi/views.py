@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.db.models import Q
 from subekashi.models import *
+from subekashi.constants import *
 import hashlib
 import requests
 import random
@@ -66,7 +67,10 @@ islack = (
 
 
 def top(request):
-    dataD = dict()
+    dataD = {
+        "title" : "トップ",
+        "description": DEFAULT_DESCRIPTION
+    }
     
     newsIns, _ = Singleton.objects.get_or_create(key = "news")
     dataD["news"] = newsIns.value
@@ -124,7 +128,10 @@ def top(request):
 
 
 def new(request) :
-    dataD = dict()
+    dataD = {
+        "title" : "登録と編集",
+        "description": DEFAULT_DESCRIPTION
+    }
 
     if request.method == "POST":
         idForm = request.POST.get("songid")
@@ -219,8 +226,11 @@ def new(request) :
 
 
 def song(request, songId) :
-    dataD = dict()
     songIns = Song.objects.filter(pk = songId).first()
+    dataD = {
+        "title" : f"{songIns.title} / {songIns.channel}",
+        "description": DEFAULT_DESCRIPTION
+    }
     isExist = bool(songIns)
     dataD["songIns"] = songIns
     dataD["isExist"] = isExist
@@ -261,7 +271,10 @@ def song(request, songId) :
 
 
 def delete(request) :
-    dataD = dict()
+    dataD = {
+        "title" : "削除申請",
+        "description": DEFAULT_DESCRIPTION
+    }
     dataD["isDeleted"] = True
     dataD["songInsL"] = Song.objects.all()
     
@@ -280,15 +293,18 @@ def delete(request) :
 
 
 def ai(request) :
-    dataD = dict()
+    dataD = {
+        "title" : "歌詞生成",
+        "description": DEFAULT_DESCRIPTION
+    }
     dataD["songInsL"] = Song.objects.all()
 
     if request.method == "POST" :
         aiIns = Ai.objects.filter(genetype = "model", score = 0)
-        if len(aiIns) <= 25 :
+        if not aiIns.exists() :
             sendDiscord(ERROR_DISCORD_URL, "aiInsのデータがありません。")
             aiIns = Ai.objects.filter(genetype = "model")
-        dataD["aiInsL"] = random.sample(list(aiIns), 25)
+        dataD["aiInsL"] = random.sample(list(aiIns), min(25, aiIns.count()))
         return render(request, "subekashi/result.html", dataD)
     dataD["bestInsL"] = list(Ai.objects.filter(genetype = "model", score = 5))[:-300:-1]
     
@@ -296,7 +312,10 @@ def ai(request) :
 
 
 def channel(request, channelName) :
-    dataD = dict()
+    dataD = {
+        "title" : channelName,
+        "description": DEFAULT_DESCRIPTION
+    }
     dataD["channel"] = channelName
     songInsL = []
     for songIns in Song.objects.all() :
@@ -307,7 +326,10 @@ def channel(request, channelName) :
 
 
 def search(request) :
-    dataD = dict()
+    dataD = {
+        "title" : "一覧と検索",
+        "description": DEFAULT_DESCRIPTION
+    }
     query_select = {}
     
     songInsL = Song.objects.all()  
@@ -364,11 +386,18 @@ def search(request) :
 
 
 def setting(request) :
-    return render(request, "subekashi/setting.html")
+    dataD = {
+        "title" : "設定",
+        "description": DEFAULT_DESCRIPTION
+    }
+    return render(request, "subekashi/setting.html", dataD)
 
 
 def ad(request) :
-    dataD = dict()
+    dataD = {
+        "title" : "宣伝",
+        "description": DEFAULT_DESCRIPTION
+    }
     check = ""
     urlForms = []
     for i in range(1, 4) :
@@ -444,21 +473,37 @@ def ad(request) :
 
 
 def adpost(request) :
-    return render(request, "subekashi/adpost.html")
+    dataD = {
+        "title" : "申請完了",
+        "description": DEFAULT_DESCRIPTION
+    }
+    return render(request, "subekashi/adpost.html", dataD)
 
 
 def research(request) :
-    return render(request, "subekashi/research.html")
+    dataD = {
+        "title" : "研究",
+        "description": DEFAULT_DESCRIPTION
+    }
+    return render(request, "subekashi/research.html", dataD)
 
 
 def special(request) :
     images = ["graph_spring", "graph_random", "lyrics_default", "lyrics_icon", "lyrics_autumn", "lyrics_cool", "lyrics_rainbow", "lyrics_spring", "lyrics_summer", "lyrics_winter", "lyrics_Blues_r", "lyrics_BuGn_r", "lyrics_BuPu_r", "lyrics_GnBu_r", "lyrics_Greens_r", "lyrics_OrRd_r", "lyrics_Spectral_r"]
-    detaD = {"images": images}
-    return render(request, "subekashi/special.html", detaD)
+    dataD = {
+        "title" : "スペシャル",
+        "description": DEFAULT_DESCRIPTION,
+        "images": images
+    }
+    return render(request, "subekashi/special.html", dataD)
 
 
 def error(request) :
-    return render(request, "subekashi/500.html")
+    dataD = {
+        "title" : "エラー",
+        "description": DEFAULT_DESCRIPTION
+    }
+    return render(request, "subekashi/500.html", dataD)
 
 
 def dev(request) :
@@ -556,10 +601,18 @@ def clean(request) :
 
 
 def handle_404_error(request, exception=None):
-    return render(request, 'subekashi/404.html', status=404)
+    dataD = {
+        "title" : "全てエラーの所為です。",
+        "description": DEFAULT_DESCRIPTION
+    }
+    return render(request, 'subekashi/404.html', dataD, status=404)
     
 
 def handle_500_error(request):
+    dataD = {
+        "title" : "削除申請",
+        "description": DEFAULT_DESCRIPTION
+    }
     error_msg = traceback.format_exc()
     sendDiscord(ERROR_DISCORD_URL, error_msg)
-    return render(request, 'subekashi/500.html', status=500)
+    return render(request, 'subekashi/500.html', dataD, status=500)
