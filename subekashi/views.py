@@ -610,7 +610,7 @@ def handle_404_error(request, exception=None):
 
 def handle_500_error(request):
     dataD = {
-        "title" : "削除申請",
+        "title" : "全て五百の所為です。",
         "description": DEFAULT_DESCRIPTION
     }
     error_msg = traceback.format_exc()
