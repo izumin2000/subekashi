@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.db.models import Q
 from subekashi.models import *
-from subekashi.constants import settings
+from subekashi.constants.settings import *
 import hashlib
 import requests
 import random
@@ -15,13 +15,6 @@ from django.core import management
 from django.http import HttpResponse, JsonResponse
 import json
 import traceback
-
-
-SHA256a = "5802ea2ddcf64db0efef04a2fa4b3a5b256d1b0f3d657031bd6a330ec54abefd"
-INPUT_TEXTS = ["title", "channel", "lyrics", "url"]
-INPUT_SELECTS = ["category", "songrange", "jokerange"]
-INPUT_FLAGS = ["isdraft", "isoriginal", "isinst"]
-URL_PATTERN = r'(?:\/|v=)([A-Za-z0-9_-]{11})(?:\?|&|$)'
 
 
 def isYouTubeLink(link):
@@ -68,8 +61,8 @@ islack = (
 
 def top(request):
     dataD = {
-        "title" : "トップ",
-        "description": settings.DEFAULT_DESCRIPTION
+        "metatitle" : "トップ",
+        "metadescription": DEFAULT_DESCRIPTION
     }
     
     newsIns, _ = Singleton.objects.get_or_create(key = "news")
@@ -129,8 +122,8 @@ def top(request):
 
 def new(request) :
     dataD = {
-        "title" : "登録と編集",
-        "description": settings.DEFAULT_DESCRIPTION
+        "metatitle" : "登録と編集",
+        "metadescription": DEFAULT_DESCRIPTION
     }
 
     if request.method == "POST":
@@ -229,8 +222,8 @@ def song(request, songId) :
     songIns = Song.objects.filter(pk = songId).first()
     isExist = bool(songIns)
     dataD = {
-        "title" : f"{songIns.title} / {songIns.channel}" if songIns else "全て削除の所為です。",
-        "description": settings.DEFAULT_DESCRIPTION
+        "metatitle" : f"{songIns.title} / {songIns.channel}" if songIns else "全て削除の所為です。",
+        "metadescription": DEFAULT_DESCRIPTION
     }
     dataD["songIns"] = songIns
     dataD["isExist"] = isExist
@@ -272,8 +265,8 @@ def song(request, songId) :
 
 def delete(request) :
     dataD = {
-        "title" : "削除申請",
-        "description": settings.DEFAULT_DESCRIPTION
+        "metatitle" : "削除申請",
+        "metadescription": DEFAULT_DESCRIPTION
     }
     dataD["isDeleted"] = True
     dataD["songInsL"] = Song.objects.all()
@@ -294,8 +287,8 @@ def delete(request) :
 
 def ai(request) :
     dataD = {
-        "title" : "歌詞生成",
-        "description": settings.DEFAULT_DESCRIPTION
+        "metatitle" : "歌詞生成",
+        "metadescription": DEFAULT_DESCRIPTION
     }
     dataD["songInsL"] = Song.objects.all()
 
@@ -313,8 +306,8 @@ def ai(request) :
 
 def channel(request, channelName) :
     dataD = {
-        "title" : channelName,
-        "description": settings.DEFAULT_DESCRIPTION
+        "metatitle" : channelName,
+        "metadescription": DEFAULT_DESCRIPTION
     }
     dataD["channel"] = channelName
     songInsL = []
@@ -327,8 +320,8 @@ def channel(request, channelName) :
 
 def search(request) :
     dataD = {
-        "title" : "一覧と検索",
-        "description": settings.DEFAULT_DESCRIPTION
+        "metatitle" : "一覧と検索",
+        "metadescription": DEFAULT_DESCRIPTION
     }
     query_select = {}
     
@@ -387,16 +380,16 @@ def search(request) :
 
 def setting(request) :
     dataD = {
-        "title" : "設定",
-        "description": settings.DEFAULT_DESCRIPTION
+        "metatitle" : "設定",
+        "metadescription": DEFAULT_DESCRIPTION
     }
     return render(request, "subekashi/setting.html", dataD)
 
 
 def ad(request) :
     dataD = {
-        "title" : "宣伝",
-        "description": settings.DEFAULT_DESCRIPTION
+        "metatitle" : "宣伝",
+        "metadescription": DEFAULT_DESCRIPTION
     }
     check = ""
     urlForms = []
@@ -474,16 +467,16 @@ def ad(request) :
 
 def adpost(request) :
     dataD = {
-        "title" : "申請完了",
-        "description": settings.DEFAULT_DESCRIPTION
+        "metatitle" : "申請完了",
+        "metadescription": DEFAULT_DESCRIPTION
     }
     return render(request, "subekashi/adpost.html", dataD)
 
 
 def research(request) :
     dataD = {
-        "title" : "研究",
-        "description": settings.DEFAULT_DESCRIPTION
+        "metatitle" : "研究",
+        "metadescription": DEFAULT_DESCRIPTION
     }
     return render(request, "subekashi/research.html", dataD)
 
@@ -491,8 +484,8 @@ def research(request) :
 def special(request) :
     images = ["graph_spring", "graph_random", "lyrics_default", "lyrics_icon", "lyrics_autumn", "lyrics_cool", "lyrics_rainbow", "lyrics_spring", "lyrics_summer", "lyrics_winter", "lyrics_Blues_r", "lyrics_BuGn_r", "lyrics_BuPu_r", "lyrics_GnBu_r", "lyrics_Greens_r", "lyrics_OrRd_r", "lyrics_Spectral_r"]
     dataD = {
-        "title" : "スペシャル",
-        "description": settings.DEFAULT_DESCRIPTION,
+        "metatitle" : "スペシャル",
+        "metadescription": DEFAULT_DESCRIPTION,
         "images": images
     }
     return render(request, "subekashi/special.html", dataD)
@@ -500,8 +493,8 @@ def special(request) :
 
 def error(request) :
     dataD = {
-        "title" : "エラー",
-        "description": settings.DEFAULT_DESCRIPTION
+        "metatitle" : "エラー",
+        "metadescription": DEFAULT_DESCRIPTION
     }
     return render(request, "subekashi/500.html", dataD)
 
@@ -602,16 +595,16 @@ def clean(request) :
 
 def handle_404_error(request, exception=None):
     dataD = {
-        "title" : "全てエラーの所為です。",
-        "description": settings.DEFAULT_DESCRIPTION
+        "metatitle" : "全てエラーの所為です。",
+        "metadescription": DEFAULT_DESCRIPTION
     }
     return render(request, 'subekashi/404.html', dataD, status=404)
     
 
 def handle_500_error(request):
     dataD = {
-        "title" : "全て五百の所為です。",
-        "description": settings.DEFAULT_DESCRIPTION
+        "metatitle" : "全て五百の所為です。",
+        "metadescription": DEFAULT_DESCRIPTION
     }
     error_msg = traceback.format_exc()
     sendDiscord(ERROR_DISCORD_URL, error_msg)
