@@ -67,7 +67,7 @@ def top(request):
         "metadescription": DEFAULT_DESCRIPTION
     }
     
-    with open('subekashi/static/subekashi/md/news.md', 'r', encoding='utf-8') as file:
+    with open(os.path.join(BASE_DIR, 'subekashi/static/subekashi/md/news.md'), 'r', encoding='utf-8') as file:
         news_md = file.read()
         file.close()
         news_html = markdown.markdown(news_md)
