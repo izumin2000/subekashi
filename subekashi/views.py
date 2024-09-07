@@ -12,9 +12,11 @@ from config.settings import *
 import re
 from django.utils import timezone
 from django.core import management
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 import json
 import traceback
+import markdown
+from bs4 import BeautifulSoup
 
 
 def isYouTubeLink(link):
@@ -65,8 +67,17 @@ def top(request):
         "metadescription": DEFAULT_DESCRIPTION
     }
     
-    newsIns, _ = Singleton.objects.get_or_create(key = "news")
-    dataD["news"] = newsIns.value
+    with open('subekashi/static/subekashi/md/news.md', 'r', encoding='utf-8') as file:
+        news_md = file.read()
+        file.close()
+        news_html = markdown.markdown(news_md)
+        news_soup = BeautifulSoup(news_html, 'html.parser')
+    
+        for a in news_soup.find_all('a'):
+            a['target'] = '_blank'
+
+        news = str(news_soup).replace("\"", "\'")
+        dataD["news"] = news
     
     songrange = request.COOKIES.get("songrange", "subeana")
     jokerange = request.COOKIES.get("jokerange", "off")

@@ -42,7 +42,7 @@ function isCompleted(song) {
     if (!song.isdeleted) {
         columnL.push(song.url);
     }
-    if (!song.isoriginal && !song.issubeana) {
+    if (!song.isoriginal && song.issubeana) {
         columnL.push(song.imitate);
     }
     if (!song.isinst) {

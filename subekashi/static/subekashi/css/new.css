@@ -32,8 +32,8 @@ details ul ul {
 
 #fillFormButton {
     display: none;
-    width: 250px;
-    margin-left: 71px !important;
+    width: calc(100% - 147px);
+    margin-left: 147px !important;
 }
 
 #imitate {

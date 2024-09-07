@@ -189,7 +189,7 @@
 <script defer>
     const newsDisplayEle = document.getElementById('news-display');
     const newsArreyEle = document.createElement("div");
-    newsArreyEle.innerHTML = "{{ news|safe }}";
+    newsArreyEle.innerHTML = newsDisplayEle.innerHTML;
     const newsEles = newsArreyEle.children;
     let currentIndex = 0;
 
