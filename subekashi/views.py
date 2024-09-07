@@ -67,17 +67,21 @@ def top(request):
         "metadescription": DEFAULT_DESCRIPTION
     }
     
-    with open(os.path.join(BASE_DIR, 'subekashi/static/subekashi/md/news.md'), 'r', encoding='utf-8') as file:
-        news_md = file.read()
-        file.close()
-        news_html = markdown.markdown(news_md)
-        news_soup = BeautifulSoup(news_html, 'html.parser')
-    
-        for a in news_soup.find_all('a'):
-            a['target'] = '_blank'
+    news_path = os.path.join(BASE_DIR, 'subekashi/static/subekashi/md/news.md')
+    if os.path.exists(news_path):
+        with open(news_path, 'r', encoding='utf-8') as file:
+            news_md = file.read()
+            file.close()
+            news_html = markdown.markdown(news_md)
+            news_soup = BeautifulSoup(news_html, 'html.parser')
+        
+            for a in news_soup.find_all('a'):
+                a['target'] = '_blank'
 
-        news = str(news_soup).replace("\"", "\'")
-        dataD["news"] = news
+            news = str(news_soup)
+            dataD["news"] = news
+    else :
+        dataD["news"] = "<p>subekashi\static\subekashi\mdにnews.mdを加えてください</p>"
     
     songrange = request.COOKIES.get("songrange", "subeana")
     jokerange = request.COOKIES.get("jokerange", "off")
