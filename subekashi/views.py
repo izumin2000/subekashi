@@ -5,7 +5,6 @@ from subekashi.constants.settings import *
 import hashlib
 import requests
 import random
-import random
 from rest_framework import viewsets
 from .serializer import *
 from config.settings import *
@@ -522,19 +521,15 @@ def dev(request) :
         if password :
             if hashlib.sha256(password.encode()).hexdigest() == SHA256a :
                 dataD["locked"] = False
-        isgpt = request.GET.get("gpt")
 
-        if isgpt :
-            inp_gpt = request.POST.get("gpt")
-            if inp_gpt :
-                gpt_lines = inp_gpt.split("\n")[12:]
-                gpt_lines = [i for i in gpt_lines if i[0] != "="]
-                gpt_lines = sum(list(map(lambda i : re.split("、|。|？", i), gpt_lines)), [])
-                gpt_lines = set(map(lambda i : re.sub("{|}|/|「|」|（|）|(|)|[ -¡]", "", i), gpt_lines))
-                gpt_lines = [i for i in gpt_lines if (6 < len(i) < 22) and not(re.compile(r'[0-9a-zA-Z]+').search(i))]
-                [Ai.objects.create(lyrics = i, genetype = "model").save() for i in set(gpt_lines)]
+        inp_gpt = request.POST.get("gpt")
+        if inp_gpt :
+            gpt_lines = re.split("、|。|\?|？|\r\n", inp_gpt)
+            gpt_lines = set([i for i in gpt_lines if (6 < len(i) < 22)])
+            aiInsL = [Ai(lyrics=i, genetype="model") for i in gpt_lines]
+            Ai.objects.bulk_create(aiInsL)
 
-                dataD["locked"] = False
+            dataD["locked"] = False
             
     return render(request, "subekashi/dev.html", dataD)
 
