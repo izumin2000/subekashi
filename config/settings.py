@@ -32,6 +32,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_hosts.middleware.HostsResponseMiddleware',
+    'subekashi.middleware.restrict_ip.RestrictIPMiddleware'
 ]
 
 ROOT_URLCONF = 'config.urls'
