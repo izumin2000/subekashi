@@ -193,16 +193,3 @@ function searchSong() {
         }
     }
 }
-
-
-function divInput(n) {
-    checkboxIds = ["isorginal", "isdeleted", "isjoke", "isinst", "issubeana", "isdraft"];
-    checkboxEle = document.getElementById(checkboxIds[n]);
-    checkboxEle.checked = !checkboxEle.checked;
-}
-
-
-// window.addEventListener('beforeunload', function (event) {
-//     event.preventDefault()
-//     event.returnValue = ''
-// })
