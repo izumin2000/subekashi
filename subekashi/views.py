@@ -1,63 +1,25 @@
-from django.shortcuts import render, redirect
-from django.db.models import Q
+from config.settings import *
 from subekashi.models import *
+from .serializer import *
 from subekashi.constants.settings import *
+from subekashi.lib.url import *
+from subekashi.lib.discord import *
+from subekashi.lib.security import *
+from subekashi.lib.filter import *
+from django.shortcuts import render, redirect
+from django.http import JsonResponse
+from django.utils import timezone
+from django.core import management
+from rest_framework import viewsets
+from bs4 import BeautifulSoup
 import hashlib
 import requests
 import random
-from rest_framework import viewsets
-from .serializer import *
-from config.settings import *
 import re
-from django.utils import timezone
-from django.core import management
-from django.http import JsonResponse
 import json
 import traceback
 import markdown
-from bs4 import BeautifulSoup
 
-
-def isYouTubeLink(link):
-    videoID = re.search(URL_PATTERN, link)
-    return videoID is not None
-
-
-def formatURL(link):
-    videoID = re.search(URL_PATTERN, link)
-    if isYouTubeLink(link):
-        return "https://youtu.be/" + videoID.group(1)
-    else:
-        return link
-
-
-def sendDiscord(url, content) :
-    res = requests.post(url, data={'content': content})
-    return res.status_code
-
-
-def sha256(check) :
-    check += SECRET_KEY
-    return hashlib.sha256(check.encode()).hexdigest()
-
-
-def filter_by_category(queryset, category):
-    return queryset.filter(
-        Q(imitate=category) |
-        Q(imitate__startswith=category + ',') |
-        Q(imitate__endswith=',' + category) |
-        Q(imitate__contains=',' + category + ',')
-    )
-
-
-islack = (
-    ~Q(channel="全てあなたの所為です。") &
-    (
-        (Q(isdeleted=False) & Q(url="")) |
-        (Q(isoriginal=False) & Q(issubeana=True) & Q(imitate="")) &
-        (Q(isinst=False) & Q(lyrics=""))
-    )
-)
 
 
 def top(request):
@@ -66,7 +28,7 @@ def top(request):
         "metadescription": DEFAULT_DESCRIPTION
     }
     
-    news_path = os.path.join(BASE_DIR, 'subekashi/static/subekashi/md/news.md')
+    news_path = os.path.join(BASE_DIR, 'subekashi/constants/dynamic/news.md')
     if os.path.exists(news_path):
         with open(news_path, 'r', encoding='utf-8') as file:
             news_md = file.read()
@@ -80,7 +42,7 @@ def top(request):
             news = str(news_soup)
             dataD["news"] = news
     else :
-        dataD["news"] = "<p>subekashi\static\subekashi\mdにnews.mdを加えてください</p>"
+        dataD["news"] = "<p>subekashi/constants/dynamic/にnews.mdを加えてください</p>"
     
     songrange = request.COOKIES.get("songrange", "subeana")
     jokerange = request.COOKIES.get("jokerange", "off")
@@ -305,7 +267,14 @@ def ai(request) :
         "metadescription": DEFAULT_DESCRIPTION
     }
     dataD["songInsL"] = Song.objects.all()
-
+    
+    try:
+        from subekashi.constants.dynamic.ai import GENEINFO
+    except :
+        sendDiscord(ERROR_DISCORD_URL, "subekashi/constants/dynamic/ai.pyがありません。")
+        return render(request, 'subekashi/500.html', status=500)
+    dataD.update(GENEINFO)
+    
     if request.method == "POST" :
         aiIns = Ai.objects.filter(genetype = "model", score = 0)
         if not aiIns.exists() :
@@ -313,8 +282,9 @@ def ai(request) :
             aiIns = Ai.objects.filter(genetype = "model")
         dataD["aiInsL"] = random.sample(list(aiIns), min(25, aiIns.count()))
         return render(request, "subekashi/result.html", dataD)
-    dataD["bestInsL"] = list(Ai.objects.filter(genetype = "model", score = 5))[:-300:-1]
     
+    # TODO -300でIndexErrorになる問題の修正
+    dataD["bestInsL"] = list(Ai.objects.filter(genetype = "model", score = 5))[:-300:-1]
     return render(request, "subekashi/ai.html", dataD)
 
 

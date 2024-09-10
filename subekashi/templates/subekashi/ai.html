@@ -9,25 +9,9 @@
     <h1>正常に狂うのです。</h1>
     <div class="underline"></div>
     <form action="{% url 'subekashi:ai' %}" method="POST" id="aiForm">{% csrf_token %}
-        <!-- TODO selectにする -->
-        {% comment %} <label>使用モデル</label> {% endcomment %}
-        <!-- <div class="devInput" onclick="devInput(0)"> -->
-        {% comment %} <div class="devInput"> {% endcomment %}
-            {% comment %} <input type="radio" class="genetype" name="genetype" value="category" oninput="changetype(0)" checked> {% endcomment %}
-            {% comment %} <label>すべあな/全曲/評価込</label> {% endcomment %}
-        {% comment %} </div> {% endcomment %}
-        <!-- <div class="devInput" onclick="devInput(1)"> -->
-        {% comment %} <div class="devInput"> {% endcomment %}
-            {% comment %} <input type="radio" class="genetype" name="genetype" value="song" oninput="changetype(1)" disabled> {% endcomment %}
-            {% comment %} <label><s>すべあな/全曲/評価無(開発中)</s></label> {% endcomment %}
-        {% comment %} </div> {% endcomment %}
-        {% comment %} <div class="devInput" onclick="devInput(2)"> {% endcomment %}
-            {% comment %} <input type="radio" class="genetype" name="genetype" value="model" oninput="changetype(2)" disabled> {% endcomment %}
-            {% comment %} <label><s>すべあな/.枠(開発中)</s></label> {% endcomment %}
-        {% comment %} </div><br><br> {% endcomment %}
         <input type="submit" value="生成">
-        <p class="sansfont">総学習量: 1437591文字(3000曲)</p>
-        <p class="sansfont">最終更新: 2024年8月30日</p>
+        <p class="sansfont">総学習量: {{ WORD_COUNT }}文字({{ SONG_COUNT }}曲)</p>
+        <p class="sansfont">最終更新: {{ GENE_DATE }}</p>
     </form>
 </section>
 
