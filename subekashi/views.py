@@ -272,7 +272,7 @@ def ai(request) :
         from subekashi.constants.dynamic.ai import GENEINFO
     except :
         sendDiscord(ERROR_DISCORD_URL, "subekashi/constants/dynamic/ai.pyがありません。")
-        return render(request, 'subekashi/500.html', status=500)
+        GENEINFO = {}
     dataD.update(GENEINFO)
     
     if request.method == "POST" :
