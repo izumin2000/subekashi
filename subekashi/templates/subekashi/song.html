@@ -8,6 +8,7 @@
 <section>
     {% if isExist %}
         <div id="sonf-info">
+            {% comment %} TODO リファクタリング {% endcomment %}
             <i class="fas fa-music"></i>
             <p class="sansfont">{{ songIns.title }}</p>
             <br><i class="fas fa-user-circle"></i>
@@ -64,21 +65,24 @@
         {% endif %}
 
         <div class="dummybuttons">
-            <div class="dummybutton towrong" onclick="tonew()"><p >編集と削除</p></div>
+            <a href="{% url 'subekashi:new' %}?id={{ songIns.id }}">
+                <div class="dummybutton"><p>編集と削除</p></div>
+            </a>
         </div>
-        
-        {% else %}
+
+    {% else %}
         {% if isDeleted %}
             <p class="songnotfound">削除依頼が送信されました。</p>
         {% else %}
             <p class="songnotfound">曲の情報が見つかりません。</p>        
         {% endif %}
+        
         <div class="dummybuttons">
-            <div class="dummybutton towrong" onclick="totop()"><p>トップに戻る</p></div>
+            <a href="{% url 'subekashi:top' %}">
+                <div class="dummybutton"><p>トップに戻る</p></div>
+            </a>
         </div>
     {% endif %}
-
-
 </section>
 {% endblock %}
 
@@ -95,14 +99,6 @@
             }
         }
     });
-
-    function tonew() {
-        window.location.href = "{% url 'subekashi:new' %}?id={{ songIns.id }}";
-    };
-
-    function totop() {
-        window.location.href = "{% url 'subekashi:top' %}";
-    };
 
     function copy(text) {
         if (Boolean(navigator.clipboard)) {

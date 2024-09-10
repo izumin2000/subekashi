@@ -1,11 +1,12 @@
 from config.settings import *
 from subekashi.models import *
 from .serializer import *
-from subekashi.constants.settings import *
+from subekashi.constants.view import *
 from subekashi.lib.url import *
 from subekashi.lib.discord import *
 from subekashi.lib.security import *
 from subekashi.lib.filter import *
+from subekashi.lib.ip import *
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.utils import timezone
@@ -25,7 +26,6 @@ import markdown
 def top(request):
     dataD = {
         "metatitle" : "トップ",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     
     news_path = os.path.join(BASE_DIR, 'subekashi/constants/dynamic/news.md')
@@ -68,7 +68,8 @@ def top(request):
         
     if request.method == "POST" :
         feedback = request.POST.get("feedback", None)
-        if feedback : sendDiscord(FEEDBACK_DISCORD_URL, feedback)
+        content = f"フィードバック：{feedback}\nIP：{get_ip(request)}"
+        if feedback : sendDiscord(FEEDBACK_DISCORD_URL, content)
         else :
             query = {key: value for key, value in request.POST.items() if value}
             songInsL = Song.objects.filter(**{f"{key}__icontains": value for key, value in query.items() if (key in INPUT_TEXTS)})
@@ -99,7 +100,6 @@ def top(request):
 def new(request) :
     dataD = {
         "metatitle" : "登録と編集",
-        "metadescription": DEFAULT_DESCRIPTION
     }
 
     if request.method == "POST":
@@ -158,11 +158,7 @@ def new(request) :
         songIns.issubeana = int(bool(issubeanaForm))
         songIns.isdraft = int(bool(isdraftForm))
         songIns.posttime = timezone.now()
-        forwarded_addresses = request.META.get('HTTP_X_FORWARDED_FOR')
-        if forwarded_addresses:
-            songIns.ip = forwarded_addresses.split(',')[0]
-        else:
-            songIns.ip = request.META.get('REMOTE_ADDR')
+        songIns.ip = get_ip(request)
         songIns.save()
         
         imitateInsL = []
@@ -181,8 +177,7 @@ def new(request) :
         模倣 : {", ".join([imitate.title for imitate in imitateInsL])}\n\
         ネタ曲 : {"Yes" if songIns.isjoke else "No"}\n\
         IP : {songIns.ip}\n\
-        歌詞 : ```{songIns.lyrics}```\n\
-        \n'
+        歌詞 : ```{songIns.lyrics}```\n'
         requests.post(NEW_DISCORD_URL, data={'content': content})
         
         return render(request, 'subekashi/song.html', dataD)
@@ -199,7 +194,6 @@ def song(request, songId) :
     isExist = bool(songIns)
     dataD = {
         "metatitle" : f"{songIns.title} / {songIns.channel}" if songIns else "全て削除の所為です。",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     dataD["songIns"] = songIns
     dataD["isExist"] = isExist
@@ -208,6 +202,7 @@ def song(request, songId) :
     if isExist :
         dataD["channels"] = songIns.channel.replace(", ", ",").split(",")
         dataD["urls"] = songIns.url.replace(", ", ",").split(",") if songIns.url else []
+        description = ""
         jokerange = request.COOKIES.get("jokerange", "off")
         if songIns.imitate :
             imitateInsL = []
@@ -221,6 +216,7 @@ def song(request, songId) :
                     imitateInsL.append(imitateIns)
 
             dataD["imitateInsL"] = imitateInsL
+            description += f"模倣曲数：{len(imitateInsL)}, "
 
         if songIns.imitated :
             imitatedInsL = []
@@ -234,6 +230,11 @@ def song(request, songId) :
                     imitatedInsL.append(imitatedIns)
 
             dataD["imitatedInsL"] = imitatedInsL
+            description += f"被模倣曲数：{len(imitatedInsL)}, "
+        lyrics = songIns.lyrics[:min(100, len(songIns.lyrics))]
+        lyrics = lyrics.replace("\r\n", "")
+        description += f"歌詞: {lyrics}" if lyrics else ""
+        dataD["description"] = description
         return render(request, "subekashi/song.html", dataD)
     else :
         return render(request, 'subekashi/404.html', status=404)
@@ -242,7 +243,6 @@ def song(request, songId) :
 def delete(request) :
     dataD = {
         "metatitle" : "削除申請",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     dataD["isDeleted"] = True
     dataD["songInsL"] = Song.objects.all()
@@ -255,7 +255,13 @@ def delete(request) :
             return render(request, 'subekashi/500.html')
         songIns = songIns.first()
         reasonForm = request.POST.get("reason")
-        content = f"ID：{songIns.id}\n理由：{reasonForm}"
+        content = f' \
+        {ROOT_DIR}/songs/{songIns.id} \
+        タイトル：{songIns.title}\n\
+        チャンネル名：{songIns.channel}\n\
+        理由：{reasonForm}\n\
+        IP：{get_ip(request)}\
+        '
         sendDiscord(DELETE_DISCORD_URL, content)
         
     return render(request, 'subekashi/song.html', dataD)
@@ -264,7 +270,6 @@ def delete(request) :
 def ai(request) :
     dataD = {
         "metatitle" : "歌詞生成",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     dataD["songInsL"] = Song.objects.all()
     
@@ -272,7 +277,7 @@ def ai(request) :
         from subekashi.constants.dynamic.ai import GENEINFO
     except :
         sendDiscord(ERROR_DISCORD_URL, "subekashi/constants/dynamic/ai.pyがありません。")
-        return render(request, 'subekashi/500.html', status=500)
+        GENEINFO = {}
     dataD.update(GENEINFO)
     
     if request.method == "POST" :
@@ -291,7 +296,6 @@ def ai(request) :
 def channel(request, channelName) :
     dataD = {
         "metatitle" : channelName,
-        "metadescription": DEFAULT_DESCRIPTION
     }
     dataD["channel"] = channelName
     songInsL = []
@@ -305,7 +309,6 @@ def channel(request, channelName) :
 def search(request) :
     dataD = {
         "metatitle" : "一覧と検索",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     query_select = {}
     
@@ -365,7 +368,6 @@ def search(request) :
 def setting(request) :
     dataD = {
         "metatitle" : "設定",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     return render(request, "subekashi/setting.html", dataD)
 
@@ -373,7 +375,6 @@ def setting(request) :
 def ad(request) :
     dataD = {
         "metatitle" : "宣伝",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     check = ""
     urlForms = []
@@ -452,7 +453,6 @@ def ad(request) :
 def adpost(request) :
     dataD = {
         "metatitle" : "申請完了",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     return render(request, "subekashi/adpost.html", dataD)
 
@@ -460,7 +460,6 @@ def adpost(request) :
 def research(request) :
     dataD = {
         "metatitle" : "研究",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     return render(request, "subekashi/research.html", dataD)
 
@@ -478,7 +477,6 @@ def special(request) :
 def error(request) :
     dataD = {
         "metatitle" : "エラー",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     return render(request, "subekashi/500.html", dataD)
 
@@ -576,7 +574,6 @@ def clean(request) :
 def handle_404_error(request, exception=None):
     dataD = {
         "metatitle" : "全てエラーの所為です。",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     return render(request, 'subekashi/404.html', dataD, status=404)
     
@@ -584,7 +581,6 @@ def handle_404_error(request, exception=None):
 def handle_500_error(request):
     dataD = {
         "metatitle" : "全て五百の所為です。",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     error_msg = traceback.format_exc()
     sendDiscord(ERROR_DISCORD_URL, error_msg)

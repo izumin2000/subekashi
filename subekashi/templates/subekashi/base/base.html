@@ -1,4 +1,5 @@
 {% load static %}
+{% load description %}
 {% load lastModified %}
 
 <!DOCTYPE html>
@@ -14,8 +15,8 @@
         <meta name="og:url" content="https://lyrics.imicomweb.com/">
         <meta name="og:image" content="{% static 'subekashi/image/icon.png' %}">
         <meta name="twitter:image" content="{% static 'subekashi/image/icon.png' %}">
-        <meta name="og:description" content="{{ metadescription }}">
-        <meta name="description" content="{{ metadescription }}">
+        <meta name="og:description" content="{% get_description description %}">
+        <meta name="description" content="{% get_description description %}">
         <meta name="og:title" content="{{ metatitle }} | 全て歌詞の所為です。">
         <title>{{ metatitle }} |  全て歌詞の所為です。</title>
         <link rel="stylesheet" type="text/css" href="{% static 'subekashi/css/common.css'%}?{% get_last_modified %}">

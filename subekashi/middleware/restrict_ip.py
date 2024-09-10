@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from config.settings import *
+from subekashi.lib.ip import get_ip
 
 class RestrictIPMiddleware:
     def __init__(self, get_response):
@@ -12,14 +13,8 @@ class RestrictIPMiddleware:
             self.BAN_LIST = BAN_LIST
 
     def __call__(self, request):
-        # TODO IPアドレスを取得できる関数をlibで定義
-        forwarded_addresses = request.META.get('HTTP_X_FORWARDED_FOR')
-        if forwarded_addresses:
-            ip_address = forwarded_addresses.split(',')[0]
-        else:
-            ip_address = request.META.get('REMOTE_ADDR')
-        
-        if ip_address in self.BAN_LIST:
+        ip = get_ip(request)
+        if ip in self.BAN_LIST:
             return render(request, 'subekashi/500.html', status=500)
 
         response = self.get_response(request)
