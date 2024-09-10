@@ -267,7 +267,14 @@ def ai(request) :
         "metadescription": DEFAULT_DESCRIPTION
     }
     dataD["songInsL"] = Song.objects.all()
-
+    
+    try:
+        from subekashi.constants.dynamic.ai import GENEINFO
+    except :
+        sendDiscord(ERROR_DISCORD_URL, "subekashi/constants/dynamic/ai.pyがありません。")
+        return render(request, 'subekashi/500.html', status=500)
+    dataD.update(GENEINFO)
+    
     if request.method == "POST" :
         aiIns = Ai.objects.filter(genetype = "model", score = 0)
         if not aiIns.exists() :
@@ -275,8 +282,9 @@ def ai(request) :
             aiIns = Ai.objects.filter(genetype = "model")
         dataD["aiInsL"] = random.sample(list(aiIns), min(25, aiIns.count()))
         return render(request, "subekashi/result.html", dataD)
-    dataD["bestInsL"] = list(Ai.objects.filter(genetype = "model", score = 5))[:-300:-1]
     
+    # TODO -300でIndexErrorになる問題の修正
+    dataD["bestInsL"] = list(Ai.objects.filter(genetype = "model", score = 5))[:-300:-1]
     return render(request, "subekashi/ai.html", dataD)
 
 
