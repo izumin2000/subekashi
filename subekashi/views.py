@@ -25,7 +25,6 @@ import markdown
 def top(request):
     dataD = {
         "metatitle" : "トップ",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     
     news_path = os.path.join(BASE_DIR, 'subekashi/constants/dynamic/news.md')
@@ -99,7 +98,6 @@ def top(request):
 def new(request) :
     dataD = {
         "metatitle" : "登録と編集",
-        "metadescription": DEFAULT_DESCRIPTION
     }
 
     if request.method == "POST":
@@ -199,7 +197,6 @@ def song(request, songId) :
     isExist = bool(songIns)
     dataD = {
         "metatitle" : f"{songIns.title} / {songIns.channel}" if songIns else "全て削除の所為です。",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     dataD["songIns"] = songIns
     dataD["isExist"] = isExist
@@ -242,7 +239,6 @@ def song(request, songId) :
 def delete(request) :
     dataD = {
         "metatitle" : "削除申請",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     dataD["isDeleted"] = True
     dataD["songInsL"] = Song.objects.all()
@@ -264,7 +260,6 @@ def delete(request) :
 def ai(request) :
     dataD = {
         "metatitle" : "歌詞生成",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     dataD["songInsL"] = Song.objects.all()
     
@@ -291,7 +286,6 @@ def ai(request) :
 def channel(request, channelName) :
     dataD = {
         "metatitle" : channelName,
-        "metadescription": DEFAULT_DESCRIPTION
     }
     dataD["channel"] = channelName
     songInsL = []
@@ -305,7 +299,6 @@ def channel(request, channelName) :
 def search(request) :
     dataD = {
         "metatitle" : "一覧と検索",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     query_select = {}
     
@@ -365,7 +358,6 @@ def search(request) :
 def setting(request) :
     dataD = {
         "metatitle" : "設定",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     return render(request, "subekashi/setting.html", dataD)
 
@@ -373,7 +365,6 @@ def setting(request) :
 def ad(request) :
     dataD = {
         "metatitle" : "宣伝",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     check = ""
     urlForms = []
@@ -452,7 +443,6 @@ def ad(request) :
 def adpost(request) :
     dataD = {
         "metatitle" : "申請完了",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     return render(request, "subekashi/adpost.html", dataD)
 
@@ -460,7 +450,6 @@ def adpost(request) :
 def research(request) :
     dataD = {
         "metatitle" : "研究",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     return render(request, "subekashi/research.html", dataD)
 
@@ -478,7 +467,6 @@ def special(request) :
 def error(request) :
     dataD = {
         "metatitle" : "エラー",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     return render(request, "subekashi/500.html", dataD)
 
@@ -576,7 +564,6 @@ def clean(request) :
 def handle_404_error(request, exception=None):
     dataD = {
         "metatitle" : "全てエラーの所為です。",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     return render(request, 'subekashi/404.html', dataD, status=404)
     
@@ -584,7 +571,6 @@ def handle_404_error(request, exception=None):
 def handle_500_error(request):
     dataD = {
         "metatitle" : "全て五百の所為です。",
-        "metadescription": DEFAULT_DESCRIPTION
     }
     error_msg = traceback.format_exc()
     sendDiscord(ERROR_DISCORD_URL, error_msg)

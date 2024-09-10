@@ -102,6 +102,7 @@
         </ul>
     </details>
     <p class="detailP">最終更新日：2023年9月25日</p>
+    {% comment %} TODO subekashi:songに変更してPOST処理をsongに記述 {% endcomment %}
     <form action="{% url 'subekashi:new' %}" method="POST" id="newform">{% csrf_token %}
         <p id="isExist"></p>
         <input type="number" id="songid" name="songid" hidden>
