@@ -6,6 +6,7 @@ from subekashi.lib.url import *
 from subekashi.lib.discord import *
 from subekashi.lib.security import *
 from subekashi.lib.filter import *
+from subekashi.lib.ip import *
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.utils import timezone
@@ -67,7 +68,8 @@ def top(request):
         
     if request.method == "POST" :
         feedback = request.POST.get("feedback", None)
-        if feedback : sendDiscord(FEEDBACK_DISCORD_URL, feedback)
+        content = f"フィードバック：{feedback}\nIP：{get_ip(request)}"
+        if feedback : sendDiscord(FEEDBACK_DISCORD_URL, content)
         else :
             query = {key: value for key, value in request.POST.items() if value}
             songInsL = Song.objects.filter(**{f"{key}__icontains": value for key, value in query.items() if (key in INPUT_TEXTS)})
@@ -156,11 +158,7 @@ def new(request) :
         songIns.issubeana = int(bool(issubeanaForm))
         songIns.isdraft = int(bool(isdraftForm))
         songIns.posttime = timezone.now()
-        forwarded_addresses = request.META.get('HTTP_X_FORWARDED_FOR')
-        if forwarded_addresses:
-            songIns.ip = forwarded_addresses.split(',')[0]
-        else:
-            songIns.ip = request.META.get('REMOTE_ADDR')
+        songIns.ip = get_ip(request)
         songIns.save()
         
         imitateInsL = []
@@ -179,8 +177,7 @@ def new(request) :
         模倣 : {", ".join([imitate.title for imitate in imitateInsL])}\n\
         ネタ曲 : {"Yes" if songIns.isjoke else "No"}\n\
         IP : {songIns.ip}\n\
-        歌詞 : ```{songIns.lyrics}```\n\
-        \n'
+        歌詞 : ```{songIns.lyrics}```\n'
         requests.post(NEW_DISCORD_URL, data={'content': content})
         
         return render(request, 'subekashi/song.html', dataD)
@@ -258,7 +255,13 @@ def delete(request) :
             return render(request, 'subekashi/500.html')
         songIns = songIns.first()
         reasonForm = request.POST.get("reason")
-        content = f"ID：{songIns.id}\n理由：{reasonForm}"
+        content = f' \
+        {ROOT_DIR}/songs/{songIns.id} \
+        タイトル：{songIns.title}\n\
+        チャンネル名：{songIns.channel}\n\
+        理由：{reasonForm}\n\
+        IP：{get_ip(request)}\
+        '
         sendDiscord(DELETE_DISCORD_URL, content)
         
     return render(request, 'subekashi/song.html', dataD)
