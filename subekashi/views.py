@@ -1,63 +1,25 @@
-from django.shortcuts import render, redirect
-from django.db.models import Q
+from config.settings import *
 from subekashi.models import *
+from .serializer import *
 from subekashi.constants.settings import *
+from subekashi.lib.url import *
+from subekashi.lib.discord import *
+from subekashi.lib.security import *
+from subekashi.lib.filter import *
+from django.shortcuts import render, redirect
+from django.http import JsonResponse
+from django.utils import timezone
+from django.core import management
+from rest_framework import viewsets
+from bs4 import BeautifulSoup
 import hashlib
 import requests
 import random
-from rest_framework import viewsets
-from .serializer import *
-from config.settings import *
 import re
-from django.utils import timezone
-from django.core import management
-from django.http import JsonResponse
 import json
 import traceback
 import markdown
-from bs4 import BeautifulSoup
 
-
-def isYouTubeLink(link):
-    videoID = re.search(URL_PATTERN, link)
-    return videoID is not None
-
-
-def formatURL(link):
-    videoID = re.search(URL_PATTERN, link)
-    if isYouTubeLink(link):
-        return "https://youtu.be/" + videoID.group(1)
-    else:
-        return link
-
-
-def sendDiscord(url, content) :
-    res = requests.post(url, data={'content': content})
-    return res.status_code
-
-
-def sha256(check) :
-    check += SECRET_KEY
-    return hashlib.sha256(check.encode()).hexdigest()
-
-
-def filter_by_category(queryset, category):
-    return queryset.filter(
-        Q(imitate=category) |
-        Q(imitate__startswith=category + ',') |
-        Q(imitate__endswith=',' + category) |
-        Q(imitate__contains=',' + category + ',')
-    )
-
-
-islack = (
-    ~Q(channel="全てあなたの所為です。") &
-    (
-        (Q(isdeleted=False) & Q(url="")) |
-        (Q(isoriginal=False) & Q(issubeana=True) & Q(imitate="")) &
-        (Q(isinst=False) & Q(lyrics=""))
-    )
-)
 
 
 def top(request):
