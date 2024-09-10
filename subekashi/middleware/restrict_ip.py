@@ -9,7 +9,7 @@ class RestrictIPMiddleware:
         if os.path.exists(ban_path):
             with open(ban_path, 'r', encoding='utf-8') as file:
                 ban_md = file.read()
-                banL = ban_md.split("\n")
+                banL = ban_md.split("\n")[1:]
                 self.banL = banL
 
     def __call__(self, request):
@@ -20,7 +20,7 @@ class RestrictIPMiddleware:
         else:
             ip_address = request.META.get('REMOTE_ADDR')
         
-        if ip_address in self.banL and request.method in ['POST', 'PUT']:
+        if ip_address in self.banL:
             return render(request, 'subekashi/500.html', status=500)
 
         response = self.get_response(request)
