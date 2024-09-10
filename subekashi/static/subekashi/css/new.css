@@ -27,13 +27,24 @@ details ul ul {
 }
 
 #isExist {
-    margin: 20px 0;
+    margin: 20px 0 20px 150px;
 }
 
 #fillFormButton {
     display: none;
     width: calc(100% - 147px);
     margin-left: 147px !important;
+}
+@media (max-width: 640px) {
+    #isExist {
+        margin: 10px 0 20px 0;
+        text-align: center;
+    }
+
+    #fillFormButton {
+        width: 100%;
+        margin-left: 0px !important;
+    }
 }
 
 #imitate {
