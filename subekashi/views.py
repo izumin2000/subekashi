@@ -205,6 +205,7 @@ def song(request, songId) :
     if isExist :
         dataD["channels"] = songIns.channel.replace(", ", ",").split(",")
         dataD["urls"] = songIns.url.replace(", ", ",").split(",") if songIns.url else []
+        description = ""
         jokerange = request.COOKIES.get("jokerange", "off")
         if songIns.imitate :
             imitateInsL = []
@@ -218,6 +219,7 @@ def song(request, songId) :
                     imitateInsL.append(imitateIns)
 
             dataD["imitateInsL"] = imitateInsL
+            description += f"模倣曲数：{len(imitateInsL)}, "
 
         if songIns.imitated :
             imitatedInsL = []
@@ -231,6 +233,11 @@ def song(request, songId) :
                     imitatedInsL.append(imitatedIns)
 
             dataD["imitatedInsL"] = imitatedInsL
+            description += f"被模倣曲数：{len(imitatedInsL)}, "
+        lyrics = songIns.lyrics[:min(100, len(songIns.lyrics))]
+        lyrics = lyrics.replace("\r\n", "")
+        description += f"歌詞: {lyrics}" if lyrics else ""
+        dataD["description"] = description
         return render(request, "subekashi/song.html", dataD)
     else :
         return render(request, 'subekashi/404.html', status=404)
