@@ -66,7 +66,7 @@ def top(request):
         "metadescription": DEFAULT_DESCRIPTION
     }
     
-    news_path = os.path.join(BASE_DIR, 'subekashi/static/subekashi/md/news.md')
+    news_path = os.path.join(BASE_DIR, 'subekashi/constants/dynamic/news.md')
     if os.path.exists(news_path):
         with open(news_path, 'r', encoding='utf-8') as file:
             news_md = file.read()
@@ -80,7 +80,7 @@ def top(request):
             news = str(news_soup)
             dataD["news"] = news
     else :
-        dataD["news"] = "<p>subekashi\static\subekashi\mdにnews.mdを加えてください</p>"
+        dataD["news"] = "<p>subekashi/constants/dynamic/にnews.mdを加えてください</p>"
     
     songrange = request.COOKIES.get("songrange", "subeana")
     jokerange = request.COOKIES.get("jokerange", "off")
