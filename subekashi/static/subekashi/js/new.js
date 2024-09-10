@@ -63,7 +63,7 @@ function checkExist() {
             songResult = songResult[0];
             if (isCompleted(songResult)) {
                 isExistEle.innerHTML = "<span class='error'>この曲の記事は作成済みです。</span>";
-                fillFormButtonEle.style.display = "none";
+                fillFormButtonEle.style.display = "block";
             } else {
                 isExistEle.innerHTML = "<span class='warning'>この曲の記事は作成途中です。</span>";
                 fillFormButtonEle.style.display = "block";

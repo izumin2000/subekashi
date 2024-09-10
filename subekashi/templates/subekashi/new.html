@@ -104,7 +104,6 @@
     <p class="detailP">最終更新日：2023年9月25日</p>
     {% comment %} TODO subekashi:songに変更してPOST処理をsongに記述 {% endcomment %}
     <form action="{% url 'subekashi:new' %}" method="POST" id="newform">{% csrf_token %}
-        <p id="isExist"></p>
         <input type="number" id="songid" name="songid" hidden>
         <div class="label-wrapper">
             <label class="label-same">曲名*</label>
@@ -114,7 +113,8 @@
             <label class="label-same">チャンネル名*</label>
             <input type="text" id="channel" name="channel" oninput="checkExist()" value="{{ channel }}">
         </div>
-        <button type="button" class="category sansfont" id="fillFormButton" onclick="fillForm()">下書きを自動入力</button>
+        <p id="isExist"></p>
+        <button type="button" id="fillFormButton" class="sansfont" onclick="fillForm()">自動入力</button>
         <div class="label-wrapper">
             <label class="label-same">URL</label>
             <input type="text" id="url" name="url" value="{{ url }}">
