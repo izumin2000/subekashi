@@ -480,27 +480,12 @@ def special(request) :
     return render(request, "subekashi/special.html", dataD)
 
 
-def error(request) :
-    dataD = {
-        "metatitle" : "エラー",
-    }
-    return render(request, "subekashi/500.html", dataD)
-
-
-def github(request) :
-    return redirect("https://github.com/izumin2000/subekashi")
-
-
 def robots(request) :
     return redirect(f"{ROOT_DIR}/static/subekashi/robots.txt")
 
 
 def sitemap(request) :
     return redirect(f"{ROOT_DIR}/static/subekashi/sitemap.xml")
-
-
-def appleicon(request) :
-    return redirect(f"{ROOT_DIR}/static/subekashi/image/apple-touch-icon.png")
 
 
 class SongViewSet(viewsets.ReadOnlyModelViewSet):

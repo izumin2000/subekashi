@@ -24,11 +24,8 @@ urlpatterns = [
     path('ad/post', views.adpost, name='adpost'),
     path('research', views.research, name='research'),
     path('special', views.special, name='special'),
-    path('error', views.error, name='error'),
-    path('github', views.github, name='github'),
     path('robots.txt', views.robots, name='robots'),
     path('sitemap.xml', views.sitemap, name='sitemap'),
-    path('apple-touch-icon.png', views.appleicon, name='apple-touch-icon'),
     path('api/',include(defaultRouter.urls)),
     path('api/clean', views.clean, name='clean'),
 ]
