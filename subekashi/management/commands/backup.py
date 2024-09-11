@@ -1,8 +1,8 @@
 from config.settings import DEBUG, DATABASES
+from django.core.management.base import BaseCommand
 from datetime import datetime
 import os
 import shutil
-from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):

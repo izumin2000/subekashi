@@ -1,7 +1,6 @@
-import subprocess
 from django.core.management.base import BaseCommand
-from subekashi.models import *
 from config.local_settings import PYTHONANYWHERE_USERNAME, PYTHONANYWHERE_TOKEN
+import subprocess
 import requests
 
 
