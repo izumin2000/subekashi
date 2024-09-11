@@ -482,27 +482,6 @@ def error(request) :
     return render(request, "subekashi/500.html", dataD)
 
 
-def dev(request) :
-    dataD = {"locked" : True}
-    if request.method == "POST":
-        password = request.POST.get("password")
-
-        if password :
-            if hashlib.sha256(password.encode()).hexdigest() == SHA256a :
-                dataD["locked"] = False
-
-        inp_gpt = request.POST.get("gpt")
-        if inp_gpt :
-            gpt_lines = re.split("、|。|\?|？|\r\n", inp_gpt)
-            gpt_lines = set([i for i in gpt_lines if (6 < len(i) < 22)])
-            aiInsL = [Ai(lyrics=i, genetype="model") for i in gpt_lines]
-            Ai.objects.bulk_create(aiInsL)
-
-            dataD["locked"] = False
-            
-    return render(request, "subekashi/dev.html", dataD)
-
-
 def github(request) :
     return redirect("https://github.com/izumin2000/subekashi")
 
