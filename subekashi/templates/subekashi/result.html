@@ -10,44 +10,27 @@
     <h1>歌詞の生成結果</h1>
     <div class="underline"></div>
     {% for aiIns in aiInsL  %}
-        <div class="lyricdiv">
+        <div class="ai-ins">
             <p class="lyric">{{ aiIns.lyrics }}</p>
-            <div class="devInput" onclick="devInput('{{ aiIns.id }}', 5)">
-                <input type="radio" id="{{ aiIns.id }}5" class="score" value="5" oninput="setscore('{{ aiIns.id }}', 5)">
-                <label>最高</label>
+            <div class="evaluation">
+                <input type="radio" id="{{ aiIns.id }}1" class="score" name="radio{{ aiIns.id }}" oninput="setScore('{{ aiIns.id }}', 1)">
+                <label for="{{ aiIns.id }}1">悪い</label>
+                <input type="radio" id="{{ aiIns.id }}2" class="score" name="radio{{ aiIns.id }}" oninput="setScore('{{ aiIns.id }}', 2)">
+                <label for="{{ aiIns.id }}2">微妙</label>
+                <input type="radio" id="{{ aiIns.id }}3" class="score" name="radio{{ aiIns.id }}" oninput="setScore('{{ aiIns.id }}', 3)">
+                <label for="{{ aiIns.id }}3">普通</label>
+                <input type="radio" id="{{ aiIns.id }}4" class="score" name="radio{{ aiIns.id }}" oninput="setScore('{{ aiIns.id }}', 4)">
+                <label for="{{ aiIns.id }}4">良い</label>
+                <input type="radio" id="{{ aiIns.id }}5" class="score" name="radio{{ aiIns.id }}" oninput="setScore('{{ aiIns.id }}', 5)">
+                <label for="{{ aiIns.id }}5">最高</label>
             </div>
-            <div class="devInput" onclick="devInput('{{ aiIns.id }}', 4)">
-                <input type="radio" id="{{ aiIns.id }}4" class="score" value="4" oninput="setscore('{{ aiIns.id }}', 4)">
-                <label>良い</label>
-            </div>
-            <div class="devInput" onclick="devInput('{{ aiIns.id }}', 3)">
-                <input type="radio" id="{{ aiIns.id }}3" class="score" value="3" oninput="setscore('{{ aiIns.id }}', 3)">
-                <label>普通</label>
-            </div>
-            <div class="devInput" onclick="devInput('{{ aiIns.id }}', 2)">
-                <input type="radio" id="{{ aiIns.id }}2" class="score" value="2" oninput="setscore('{{ aiIns.id }}', 2)">
-                <label>微妙</label>
-            </div>
-            <div class="devInput" onclick="devInput('{{ aiIns.id }}', 1)">
-                <input type="radio" id="{{ aiIns.id }}1" class="score" value="1" oninput="setscore('{{ aiIns.id }}', 1)">
-                <label>悪い</label>
-            </div><br>
         </div>
     {% endfor %}
-</section>
-<section id="controlsection">
-    <form action="{% url 'subekashi:ai' %}" method="POST" id="controlForm">{% csrf_token %}
-        <input type="text" name="genetype" value="{{ genetype }}" hidden>
-        <input type="text" name="category" value="{{ category }}" hidden>
-        <input type="text" name="title" value="{{ title }}" hidden>
-        <input type="number" name="similar" value="{{ similar }}" hidden>
-        <div id="copysubmit">
-        <div class="dummybuttons">
-            <div class="dummybutton" id="copy" onclick="copygood()"><p>最高の行をコピー</p></div>
-            <input class="dummybutton" type="submit" value="再生成">
-        </div>
-        <p id="copyresult"></p>
-    </form>
+    <div class="dummybuttons resut-form">
+        <div class="dummybutton" id="copy" onclick="copyBest()"><p>最高の行をコピー</p></div>
+        <input class="dummybutton" type="submit" value="再生成">
+    </div>
+    <p id="copy-message"></p>
 </section>
 {% endblock %}
 
