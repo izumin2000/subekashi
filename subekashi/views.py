@@ -488,6 +488,14 @@ def sitemap(request) :
     return redirect(f"{ROOT_DIR}/static/subekashi/sitemap.xml")
 
 
+def favicon(request) :
+    return redirect(f"{ROOT_DIR}/static/subekashi/image/icon.ico")
+
+
+def trafficAdvice(request) :
+    return JsonResponse({}, safe=False)
+
+
 class SongViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Song.objects.all()
     serializer_class = SongSerializer
