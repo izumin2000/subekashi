@@ -311,6 +311,7 @@ def search(request) :
     dataD = {
         "metatitle" : "一覧と検索",
     }
+    query = {}
     query_select = {}
     
     songInsL = Song.objects.all()  
@@ -334,8 +335,12 @@ def search(request) :
         
         filter = request.GET.get("filter", "")
         query["filters"] = [filter]
-        if filter == "islack" : songInsL = songInsL.filter(islack)
-        elif filter : songInsL = songInsL.filter(**{filter: True})
+        # TODO 要リファクタリング
+        try:
+            if filter == "islack" : songInsL = songInsL.filter(islack)
+            elif filter : songInsL = songInsL.filter(**{filter: True})
+        except:
+            pass
         
     if request.method == "POST" :
         query = {key: value for key, value in request.POST.items() if value}
