@@ -18,9 +18,9 @@ class Command(BaseCommand):
             
         try:
             gpt_path = os.path.join(BASE_DIR, 'subekashi/constants/dynamic/gpt.txt')
-            with open(gpt_path, 'r', encoding='utf-8') as file:
-                gpt_text = file.read()
-                file.close()
+            file = open(gpt_path, 'r', encoding='utf-8')
+            gpt_text = file.read()
+            file.close()
         except :
             self.stdout.write(self.style.ERROR("subekashi/constants/dynamic/にgpt.txtが存在しません。"))
             return
