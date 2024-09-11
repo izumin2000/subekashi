@@ -1,12 +1,8 @@
 import requests
 from django.test import TestCase
 from django.urls import reverse
-from subekashi.models import Singleton
 
 class SongPageTest(TestCase) :
-    def setUp(self):
-        self.songleton = Singleton.objects.create(key="lastModified", value="2023-1-1")
-
     def test_access_song_pages(self):
         api_url = 'https://lyrics.imicomweb.com/api/song/'
         response = requests.get(api_url)

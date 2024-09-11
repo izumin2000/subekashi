@@ -63,8 +63,3 @@ class Ad(models.Model) :
     
     def __str__(self):
         return self.url
-
-
-class Singleton(models.Model) :
-    key = models.CharField(default = "", max_length = 100)
-    value = models.CharField(default = "", max_length = 500)
