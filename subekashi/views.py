@@ -40,7 +40,7 @@ def top(request):
         news = str(news_soup)
         dataD["news"] = news
     else :
-        dataD["news"] = "<p>subekashi/constants/dynamic/にnews.mdを加えてください</p>"
+        dataD["news"] = "python manage.py constを実行してください"
     
     songrange = request.COOKIES.get("songrange", "subeana")
     jokerange = request.COOKIES.get("jokerange", "off")
@@ -275,7 +275,7 @@ def ai(request) :
     try:
         from subekashi.constants.dynamic.ai import GENEINFO
     except :
-        sendDiscord(ERROR_DISCORD_URL, "subekashi/constants/dynamic/ai.pyがありません。")
+        sendDiscord(ERROR_DISCORD_URL, "python manage.py constを実行してください")
         GENEINFO = {}
     dataD.update(GENEINFO)
     

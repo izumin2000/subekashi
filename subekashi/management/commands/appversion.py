@@ -21,7 +21,7 @@ class Command(BaseCommand):
             file.close()
             self.stdout.write(self.style.SUCCESS(f"バージョン：{version}"))
         else :
-            self.stdout.write(self.style.ERROR("subekashi/constants/dynamic/にversion.pyが存在しません。"))
+            self.stdout.write(self.style.ERROR("python manage.py constを実行してください"))
         return
     
     def add_arguments(self, parser):

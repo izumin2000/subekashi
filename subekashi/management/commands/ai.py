@@ -22,7 +22,7 @@ class Command(BaseCommand):
             gpt_text = file.read()
             file.close()
         except :
-            self.stdout.write(self.style.ERROR("subekashi/constants/dynamic/にgpt.txtが存在しません。"))
+            self.stdout.write(self.style.ERROR("python manage.py constを実行してください"))
             return
         
         gpt_lines = re.split("、|。|\?|？|\r\n|\n", gpt_text)
