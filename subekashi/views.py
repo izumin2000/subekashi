@@ -13,10 +13,8 @@ from django.utils import timezone
 from django.core import management
 from rest_framework import viewsets
 from bs4 import BeautifulSoup
-import hashlib
 import requests
 import random
-import re
 import json
 import traceback
 import markdown
@@ -30,19 +28,19 @@ def top(request):
     
     news_path = os.path.join(BASE_DIR, 'subekashi/constants/dynamic/news.md')
     if os.path.exists(news_path):
-        with open(news_path, 'r', encoding='utf-8') as file:
-            news_md = file.read()
-            file.close()
-            news_html = markdown.markdown(news_md)
-            news_soup = BeautifulSoup(news_html, 'html.parser')
-        
-            for a in news_soup.find_all('a'):
-                a['target'] = '_blank'
+        file = open(news_path, 'r', encoding='utf-8')
+        news_md = file.read()
+        file.close()
+        news_html = markdown.markdown(news_md)
+        news_soup = BeautifulSoup(news_html, 'html.parser')
+    
+        for a in news_soup.find_all('a'):
+            a['target'] = '_blank'
 
-            news = str(news_soup)
-            dataD["news"] = news
+        news = str(news_soup)
+        dataD["news"] = news
     else :
-        dataD["news"] = "<p>subekashi/constants/dynamic/にnews.mdを加えてください</p>"
+        dataD["news"] = "python manage.py constを実行してください"
     
     songrange = request.COOKIES.get("songrange", "subeana")
     jokerange = request.COOKIES.get("jokerange", "off")
@@ -277,7 +275,7 @@ def ai(request) :
     try:
         from subekashi.constants.dynamic.ai import GENEINFO
     except :
-        sendDiscord(ERROR_DISCORD_URL, "subekashi/constants/dynamic/ai.pyがありません。")
+        sendDiscord(ERROR_DISCORD_URL, "python manage.py constを実行してください")
         GENEINFO = {}
     dataD.update(GENEINFO)
     
@@ -311,6 +309,7 @@ def search(request) :
     dataD = {
         "metatitle" : "一覧と検索",
     }
+    query = {}
     query_select = {}
     
     songInsL = Song.objects.all()  
@@ -334,8 +333,12 @@ def search(request) :
         
         filter = request.GET.get("filter", "")
         query["filters"] = [filter]
-        if filter == "islack" : songInsL = songInsL.filter(islack)
-        elif filter : songInsL = songInsL.filter(**{filter: True})
+        # TODO 要リファクタリング
+        try:
+            if filter == "islack" : songInsL = songInsL.filter(islack)
+            elif filter : songInsL = songInsL.filter(**{filter: True})
+        except:
+            pass
         
     if request.method == "POST" :
         query = {key: value for key, value in request.POST.items() if value}
@@ -475,38 +478,6 @@ def special(request) :
     return render(request, "subekashi/special.html", dataD)
 
 
-def error(request) :
-    dataD = {
-        "metatitle" : "エラー",
-    }
-    return render(request, "subekashi/500.html", dataD)
-
-
-def dev(request) :
-    dataD = {"locked" : True}
-    if request.method == "POST":
-        password = request.POST.get("password")
-
-        if password :
-            if hashlib.sha256(password.encode()).hexdigest() == SHA256a :
-                dataD["locked"] = False
-
-        inp_gpt = request.POST.get("gpt")
-        if inp_gpt :
-            gpt_lines = re.split("、|。|\?|？|\r\n", inp_gpt)
-            gpt_lines = set([i for i in gpt_lines if (6 < len(i) < 22)])
-            aiInsL = [Ai(lyrics=i, genetype="model") for i in gpt_lines]
-            Ai.objects.bulk_create(aiInsL)
-
-            dataD["locked"] = False
-            
-    return render(request, "subekashi/dev.html", dataD)
-
-
-def github(request) :
-    return redirect("https://github.com/izumin2000/subekashi")
-
-
 def robots(request) :
     return redirect(f"{ROOT_DIR}/static/subekashi/robots.txt")
 
@@ -515,8 +486,12 @@ def sitemap(request) :
     return redirect(f"{ROOT_DIR}/static/subekashi/sitemap.xml")
 
 
-def appleicon(request) :
-    return redirect(f"{ROOT_DIR}/static/subekashi/image/apple-touch-icon.png")
+def favicon(request) :
+    return redirect(f"{ROOT_DIR}/static/subekashi/image/icon.ico")
+
+
+def trafficAdvice(request) :
+    return JsonResponse({}, safe=False)
 
 
 class SongViewSet(viewsets.ReadOnlyModelViewSet):

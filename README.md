@@ -1,5 +1,5 @@
 # 全て歌詞の所為です。とは  
-『全て歌詞の所為です。』とは「[界隈曲](https://dic.nicovideo.jp/a/%E7%95%8C%E9%9A%88%E6%9B%B2)」と呼ばれる音楽ジャンルに焦点を当てた界隈曲情報掲載サイトです。
+『全て歌詞の所為です。』とは「[界隈曲](https://dic.nicovideo.jp/a/%E7%95%8C%E9%9A%88%E6%9B%B2)」と呼ばれる音楽ジャンルに焦点を当てた界隈曲情報掲載サイトです。  
 以下のような機能があります。
 - 界隈曲の情報の掲載機能
 - 界隈曲の情報の閲覧機能
@@ -11,13 +11,13 @@
 # 起動方法
 1. 必要パッケージの用意
 ```
-pip install -r requirements.txt
+$ pip install -r requirements.txt
 ```
 
 2. マイグレーション
 ```
-python manage.py makemigrations
-python manage.py migrate
+$ python manage.py makemigrations
+$ python manage.py migrate
 ```
 
 3. local_settings.pyの設定
@@ -26,17 +26,25 @@ python manage.py migrate
 from django.core.management.utils import get_random_secret_key
 get_random_secret_key()
 ```
-その後、local_settings.pyの変数`SECRET_KEY`に`get_random_secret_key()`で取得した値を入力します。
+その後、local_settings.pyの変数`SECRET_KEY`に`get_random_secret_key()`で取得した値を入力します。  
 また必要に応じて、local_settings.pyにDiscordの連携サービスウェブフックのURLを登録してください。
 
 4. サーバー起動
 ```
-python manage.py runserver
+$ python manage.py runserver
 ```
 
-5. アクセス  
-[http://subekashi.localhost:8000/](http://subekashi.localhost:8000/) にアクセスとアプリの画面が表示されます。
+5. 定数ファイルの作成
+全て歌詞の所為です。では高頻度で変わる定数ファイルを`subekashi/constants/dynamic`に.gitignore対象で保存しております。  
+必要に応じて以下のコマンドを実行して定数ファイルを生成してください。
 
+```
+$ python manage.py const
+```
+
+6. アクセス  
+[http://subekashi.localhost:8000/](http://subekashi.localhost:8000/) にアクセスとアプリの画面が表示されます。  
+エラーが発生した場合はissueで報告してください。
 
 # 全て歌詞の所為です。APIについて  
 全て歌詞の所為です。上で登録された情報はRESTfulなAPIで提供しています。  
@@ -47,6 +55,10 @@ python manage.py runserver
 
 [https://lyrics.imicomweb.com/api/ai](https://lyrics.imicomweb.com/api/ai)：正常に狂うのです。が生成した歌詞の情報です。GET, HEAD, OPTIONSとPUTのうちカラムscoreの変更のみ受け付けています。
 
+
+# コントリビューション
+現在、個人的にバックエンドのリファクタリングを行っております。  
+その関係上、主にフロントエンド周りを中心にコントリビューションをしていただけると嬉しいです。  
 
 # リンク集
 - [全て歌詞の所為です。](https://lyrics.imicomweb.com/)

@@ -1,6 +1,6 @@
 from django.contrib import admin
-from . import views
 from django.urls import path, include
+from . import views
 from rest_framework import routers
 
 app_name='subekashi'
@@ -24,12 +24,10 @@ urlpatterns = [
     path('ad/post', views.adpost, name='adpost'),
     path('research', views.research, name='research'),
     path('special', views.special, name='special'),
-    path('error', views.error, name='error'),
-    path('dev', views.dev, name='dev'),
-    path('github', views.github, name='github'),
     path('robots.txt', views.robots, name='robots'),
     path('sitemap.xml', views.sitemap, name='sitemap'),
-    path('apple-touch-icon.png', views.appleicon, name='apple-touch-icon'),
+    path('favicon.ico', views.favicon, name='favicon'),
+    path('.well-known/traffic-advice', views.trafficAdvice, name='traffic-advice'),
     path('api/',include(defaultRouter.urls)),
     path('api/clean', views.clean, name='clean'),
 ]

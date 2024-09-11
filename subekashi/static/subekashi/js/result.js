@@ -1,4 +1,4 @@
-async function setscore(id, score) {
+async function setScore(id, score) {
     res = await fetch(
         baseURL() + "/api/ai/" + id + "/?format=json",
         {
@@ -16,32 +16,23 @@ async function setscore(id, score) {
 }
 
 
-function devInput(id, score) {
-    for (s = 1; s <= 5; s++) {
-        radioEle = document.getElementById(String(id) + String(s));
-        radioEle.checked = false;
-    }
-    radioEle = document.getElementById(String(id) + String(score));
-    radioEle.checked = true;
-    setscore(id, score);
-}
-
-
-function copygood() {
-    checkgoodEles = document.getElementsByClassName("lyricdiv");
-    copytext = ""
-    for (checkgoodEle of checkgoodEles) {
-        isbest = checkgoodEle.children[1].children[0].checked;
-        if (isbest) {
-            copytext += checkgoodEle.children[0].innerText + "\n";
+function copyBest() {
+    aiInstEles = document.getElementsByClassName("ai-ins");
+    copyText = ""
+    for (aiInstEle of aiInstEles) {
+        isBest = aiInstEle.children[1].children[8].checked;
+        if (isBest) {
+            copyText += aiInstEle.children[0].innerText + "\n";
         }
     }
     
-    copyresultEle = document.getElementById("copyresult");
-    if (Boolean(navigator.clipboard)) {
-        navigator.clipboard.writeText(copytext);
-        copyresultEle.innerText = "コピーしました。"
+    copyMessageEle = document.getElementById("copy-message");
+    if (!copyText) {
+        copyMessageEle.innerHTML = '<span class="warning">コピーする行がありません。</span>'
+    } else if (Boolean(navigator.clipboard)) {
+        navigator.clipboard.writeText(copyText);
+        copyMessageEle.innerHTML = '<span class="ok">コピーしました。</span>'
     } else {
-        copyresultEle.innerText = "エラーが発生しました。"
+        copyMessageEle.innerHTML = '<span class="error">エラーが発生しました。</span>'
     }
 }

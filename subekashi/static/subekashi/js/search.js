@@ -91,10 +91,3 @@ function searchSong() {
         notfoundEle.style.display = "block";
     }
 }
-
-
-function devInput(filtertype) {
-    radioEle = document.getElementsByClassName("filters")[filtertype];
-    radioEle.checked = !radioEle.checked;
-    searchSong();
-}

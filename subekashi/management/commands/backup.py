@@ -1,32 +1,31 @@
-import requests
-import pickle
+from config.settings import DEBUG, DATABASES
+from django.core.management.base import BaseCommand
 from datetime import datetime
 import os
+import shutil
 
 
-BACKUP_FOLDER_NUMS = 30
-if "C:" in os.getcwd() :
-    BACKUP_FOLDER = "backups/"
-else :
-    BACKUP_FOLDER = "/home/izuminapp/izuminapp/backups/"
-
-
-files = os.listdir(BACKUP_FOLDER)
-now = datetime.now()
-if len(files) <= BACKUP_FOLDER_NUMS :
-    songs = requests.get("https://lyrics.imicomweb.com/api/song/?format=json").json()
-    if now.hour % 6 == 0 :
-        fileName = f"{BACKUP_FOLDER}{now.strftime('%Y-%m-%d-%H')}.pkl"
-        f = open(fileName, 'wb')
-        pickle.dump(songs, f)
-        f.close()
-
-
-if len(files) >= BACKUP_FOLDER_NUMS :
-    files.sort()
-    first_file = os.path.join(BACKUP_FOLDER, files[0])
+class Command(BaseCommand):
+    help = "バックアップ"
     
-    try:
-        os.remove(first_file)
-    except OSError as e:
-        print(f"ファイルの削除中にエラーが発生しました: {str(e)}")
+    def handle(self, *args, **options) :
+        BACKUP_FOLDER_NUMS = 30
+        BACKUP_FOLDER = "backups/" if DEBUG else "/home/izuminapp/izuminapp/backups/"
+
+        files = os.listdir(BACKUP_FOLDER)
+        now = datetime.now()
+        if len(files) <= BACKUP_FOLDER_NUMS :
+            if now.hour % 6 == 0 :
+                db_path = DATABASES['default']['NAME']
+                fileName = now.strftime('%Y-%m-%d-%H-%M-%S')
+                backup_path = os.path.join(BACKUP_FOLDER, f'{fileName}.sqlite3')
+                shutil.copy2(db_path, backup_path)
+
+        if len(files) >= BACKUP_FOLDER_NUMS :
+            files.sort()
+            first_file = os.path.join(BACKUP_FOLDER, files[0])
+            
+            try:
+                os.remove(first_file)
+            except OSError as e:
+                self.stdout.write(self.style.ERROR(f"ファイルの削除中にエラーが発生しました：{str(e)}"))

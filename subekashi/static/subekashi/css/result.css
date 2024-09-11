@@ -1,17 +1,27 @@
-.lyricdiv {
+.ai-ins {
     text-align: center;
 }
 
 .lyric {
     display: inline-block;
-    margin: 30px;
+    margin: 30px 0;
+    width: 15em;
 }
 
 @media (max-width: 960px) {
     .lyric {
         display: block;
-        margin: 50px 0 0 0;
+        margin: 50px auto 10px auto;
     }
+}
+
+.evaluation {
+    display: inline-block;
+}
+
+.evaluation label {
+    margin-right: 15px;
+    cursor: pointer;
 }
 
 .score {
@@ -20,34 +30,8 @@
     width: 15px;
 }
 
-.devInput {
-    display: inline-block;
-    cursor: pointer;
-    margin-left: 15px;
-}
-
-.devInput label {
-    cursor: pointer;
-}
-
-#controlsection {
+#resut-form {
     margin-top: 40px;
-}
-
-.controlsectioni {
-    margin: 10px 10px 10px calc(50vw - 500px);
-    border: 0;
-    padding: 0;
-}
-
-@media (max-width: 960px) {
-    .controlsectioni {
-        margin-left: 10px 10px 20px 0;
-    }
-}
-
-#controlForm {
-    margin-bottom: 15px;
 }
 
 @media (max-width: 450px) {
@@ -57,12 +41,12 @@
     }
 }
 
-#copyresult {
+#copy-message {
     margin-left: 10px;
 }
 
 @media (max-width: 450px) {
-    #copyresult {
+    #copy-message {
         text-align: center;
         margin-left: 0;
     }
