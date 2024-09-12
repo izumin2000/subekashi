@@ -29,5 +29,4 @@ urlpatterns = [
     path('favicon.ico', views.favicon, name='favicon'),
     path('.well-known/traffic-advice', views.trafficAdvice, name='traffic-advice'),
     path('api/',include(defaultRouter.urls)),
-    path('api/clean', views.clean, name='clean'),
 ]
