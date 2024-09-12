@@ -37,7 +37,7 @@
     <h1>新着</h1>
     <div class="underline"></div>
     {% for songIns in songInsL %}
-        <a href="{% url 'subekashi:song' songIns.id %}" class="buttona ">
+        <a href="{% url 'subekashi:song' songIns.id %}" class="buttona">
             <div class="songcard">
                 <div class="cardleft">
                     <p class="songtitle sansfont"><i class="fas fa-music"></i> {{ songIns.title|slice:"20" }}</p>
@@ -60,9 +60,9 @@
                     <br>
                     {% if songIns.url %}
                         {% if songIns.url|iscomma %}
-                            <object><a class="songurl" href="{{ songIns.url|commapop }}">{{ songIns.url|commapop|slice:"30" }}</a>など</object>
+                            <object><a class="songurl" href="{{ songIns.url|commapop }}" target="_blank">{{ songIns.url|commapop|slice:"30" }}</a>など</object>
                             {% else %}
-                            <object><a class="songurl" href="{{ songIns.url }}">{{ songIns.url|slice:"30" }}</a></object>
+                            <object><a class="songurl" href="{{ songIns.url }}" target="_blank">{{ songIns.url|slice:"30" }}</a></object>
                         {% endif %}
                     {% else %}
                         {% if songIns.isdeleted %}
@@ -108,7 +108,7 @@
         <h1>未完成</h1>
         <div class="underline"></div>
         {% for songIns in lackInsL %}
-            <a href="{% url 'subekashi:song' songIns.id %}" class="buttona ">
+            <a href="{% url 'subekashi:song' songIns.id %}" class="buttona">
                 <div class="songcard">
                     <div class="cardleft">
                         <p class="songtitle sansfont"><i class="fas fa-music"></i> {{ songIns.title|slice:"20" }}</p>
@@ -131,9 +131,9 @@
                         <br>
                         {% if songIns.url %}
                             {% if songIns.url|iscomma %}
-                                <object><a class="songurl" href="{{ songIns.url|commapop }}">{{ songIns.url|commapop|slice:"30" }}</a>など</object>
+                                <object><a class="songurl" href="{{ songIns.url|commapop }}" target="_blank">{{ songIns.url|commapop|slice:"30" }}</a>など</object>
                             {% else %}
-                                <object><a class="songurl" href="{{ songIns.url }}">{{ songIns.url|slice:"30" }}</a></object>
+                                <object><a class="songurl" href="{{ songIns.url }}" target="_blank">{{ songIns.url|slice:"30" }}</a></object>
                             {% endif %}
                         {% else %}
                             {% if songIns.isdeleted %}
@@ -161,8 +161,8 @@
  
     <h1>リンク</h1>
     <div class="underline"></div>
-    <a href="https://imicomweb.com/"><img id="imicom" src="{% static 'subekashi/image/imicom.png' %}" alt="イミコミュのロゴ" height="47" width="320"></a>
-    <a href="https://www.youtube.com/@subeteanatanoseidesu" class="subeana"><h1>全てあなたの所為です。</h1></a>
+    <a href="https://imicomweb.com/" target="_blank"><img id="imicom" src="{% static 'subekashi/image/imicom.png' %}" alt="イミコミュのロゴ" height="47" width="320"></a>
+    <a href="https://www.youtube.com/@subeteanatanoseidesu" class="subeana" target="_blank"><h1>全てあなたの所為です。</h1></a>
     
     <h1>ポスト</h1>
     <div class="underline"></div>
@@ -173,12 +173,12 @@
     <h1>クレジット</h1>
     <div class="underline"></div>
     <div id="credit">
-        <p>本ソフトでは表示フォントに「源全角ゴ改」(<a href="https://drive.google.com/drive/folders/19WidrJoCmI5qLJV-eR_ydURIwxB2-DSH">https://drive.google.com/drive/folders/19WidrJoCmI5qLJV-eR_ydURIwxB2-DS</a>) を使用しています。</p>
-        <p>Licensed under SIL Open Font License 1.1 <a href="http://scripts.sil.org/OFL">http://scripts.sil.org/OFL</a></p>
+        <p>本ソフトでは表示フォントに「源全角ゴ改」(<a href="https://drive.google.com/drive/folders/19WidrJoCmI5qLJV-eR_ydURIwxB2-DSH" target="_blank">https://drive.google.com/drive/folders/19WidrJoCmI5qLJV-eR_ydURIwxB2-DS</a>) を使用しています。</p>
+        <p>Licensed under SIL Open Font License 1.1 <a href="http://scripts.sil.org/OFL" target="_blank">http://scripts.sil.org/OFL</a></p>
         <p>© 2021 全て語り手の所為です。</p>
         <br>
-        <p>本ソフトでは表示フォントに「Noto Sans JP」(<a href="https://fonts.google.com/selection?query=noto">https://fonts.google.com/selection?query=noto</a>) を使用しています。</p>
-        <p>Licensed under SIL Open Font License 1.1 <a href="http://scripts.sil.org/OFL">http://scripts.sil.org/OFL</a></p>
+        <p>本ソフトでは表示フォントに「Noto Sans JP」(<a href="https://fonts.google.com/selection?query=noto" target="_blank">https://fonts.google.com/selection?query=noto</a>) を使用しています。</p>
+        <p>Licensed under SIL Open Font License 1.1 <a href="http://scripts.sil.org/OFL" target="_blank">http://scripts.sil.org/OFL</a></p>
         <p>© 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'</p>
     </div>
 </section>
