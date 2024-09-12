@@ -193,3 +193,18 @@ function searchSong() {
         }
     }
 }
+
+// フォームに変更があったかを検知
+isFormDirty = false;
+document.querySelectorAll('input, textarea').forEach((input) => {
+    input.addEventListener('change', () => {
+        isFormDirty = true;
+    });
+});
+
+// ページを離れる前に警告を表示
+window.addEventListener('beforeunload', (event) => {
+    if (isFormDirty) {
+        event.preventDefault();
+    }
+});

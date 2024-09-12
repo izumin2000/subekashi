@@ -24,7 +24,7 @@ class Command(BaseCommand):
         else :
             massage = "python manage.py constを実行してください"
             self.stdout.write(self.style.ERROR(massage))
-        return massage
+        return
     
     def add_arguments(self, parser):
         parser.add_argument('--v', required=False, type=str)
