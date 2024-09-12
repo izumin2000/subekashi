@@ -181,7 +181,7 @@ def new(request) :
     else :
         dataD["songInsL"] = Song.objects.all()
         dataD["id"] = request.GET.get("id")
-        dataD["channel"] = request.GET.get("channel")
+        dataD["channel"] = request.GET.get("channel") if request.GET.get("channel") else ""
 
         return render(request, 'subekashi/new.html', dataD)
 
