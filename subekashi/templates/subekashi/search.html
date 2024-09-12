@@ -77,7 +77,7 @@
 
     <p id="counter">{{ counter }}</p>
     {% for songIns in songInsL %}
-        <a href="{% url 'subekashi:song' songIns.id %}" class="buttona ">
+        <a href="{% url 'subekashi:song' songIns.id %}" class="buttona">
             <!-- TOOD idをdata-titleへ -->
             <div class="songcard" id="song{{ songIns.id }}">    
                 <div class="cardleft">
@@ -101,9 +101,9 @@
                     <br>
                     {% if songIns.url %}
                         {% if songIns.url|iscomma %}
-                            <object><a class="songurl" href="{{ songIns.url|commapop }}">{{ songIns.url|commapop|slice:"30" }}</a>など</object>
+                            <object><a class="songurl" href="{{ songIns.url|commapop }}" target="_blank">{{ songIns.url|commapop|slice:"30" }}</a>など</object>
                         {% else %}
-                            <object><a class="songurl" href="{{ songIns.url }}">{{ songIns.url|slice:"30" }}</a></object>
+                            <object><a class="songurl" href="{{ songIns.url }}" target="_blank">{{ songIns.url|slice:"30" }}</a></object>
                         {% endif %}
                         {% else %}
                         {% if songIns.isdeleted %}
