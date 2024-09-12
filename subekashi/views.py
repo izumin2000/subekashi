@@ -10,12 +10,10 @@ from subekashi.lib.ip import *
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.utils import timezone
-from django.core import management
 from rest_framework import viewsets
 from bs4 import BeautifulSoup
 import requests
 import random
-import json
 import traceback
 import markdown
 
@@ -540,12 +538,6 @@ class AdViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         raise serializers.ValidationError("メソッドDELETEは受け付けていません")
     
-
-def clean(request) :
-    result = management.call_command("clean")
-    res = {"result" : result if result else "競合は発生していません"}
-    return JsonResponse(json.dumps(res, ensure_ascii=False), safe=False)
-
 
 def handle_404_error(request, exception=None):
     dataD = {
