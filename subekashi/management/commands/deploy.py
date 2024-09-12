@@ -17,14 +17,17 @@ class Command(BaseCommand) :
         
         try:
             for command in COMMANDS:
-                subprocess.check_output(command.split())
+                output = subprocess.check_output(command.split())
+                if type(output) == bytes:
+                    output = output.decode()
+                self.stdout.write(self.style.NOTICE(output))
             
             response = requests.post(
                 f'https://www.pythonanywhere.com/api/v0/user/{PYTHONANYWHERE_USERNAME}/webapps/lyrics.imicomweb.com/reload/',
                 headers={'Authorization': f'Token {PYTHONANYWHERE_TOKEN}'}
             )
             if response.status_code == 200:
-                self.stdout.write(self.style.SUCCESS(f"デプロイが完了しました。"))
+                self.stdout.write(self.style.SUCCESS("デプロイが完了しました。"))
             else:
                 self.stderr.write(self.style.ERROR('{}: {!r}'.format(response.status_code, response.content)))
                 

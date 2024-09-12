@@ -19,10 +19,12 @@ class Command(BaseCommand):
             file = open(version_path, 'w', encoding='utf-8')
             file.write(f'VERSION = "{version}"')
             file.close()
-            self.stdout.write(self.style.SUCCESS(f"バージョン：{version}"))
+            massage = f"バージョン：{version}"
+            self.stdout.write(self.style.SUCCESS(massage))
         else :
-            self.stdout.write(self.style.ERROR("python manage.py constを実行してください"))
-        return
+            massage = "python manage.py constを実行してください"
+            self.stdout.write(self.style.ERROR(massage))
+        return massage
     
     def add_arguments(self, parser):
         parser.add_argument('--v', required=False, type=str)
