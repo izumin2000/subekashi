@@ -20,7 +20,7 @@ class Command(BaseCommand) :
                 output = subprocess.check_output(command.split())
                 if type(output) == bytes:
                     output = output.decode()
-                self.stdout.write(self.style.NOTICE(output))
+                self.stdout.write(self.style.HTTP_INFO(output))
             
             response = requests.post(
                 f'https://www.pythonanywhere.com/api/v0/user/{PYTHONANYWHERE_USERNAME}/webapps/lyrics.imicomweb.com/reload/',
