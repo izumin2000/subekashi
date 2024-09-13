@@ -17,7 +17,7 @@ class Command(BaseCommand):
         if len(files) <= BACKUP_FOLDER_NUMS :
             if now.hour % 6 == 0 :
                 db_path = DATABASES['default']['NAME']
-                fileName = now.strftime('%Y-%m-%d-%H-%M-%S')
+                fileName = now.strftime('%Y-%m-%d-%H')
                 backup_path = os.path.join(BACKUP_FOLDER, f'{fileName}.sqlite3')
                 shutil.copy2(db_path, backup_path)
 
