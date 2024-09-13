@@ -1,4 +1,8 @@
+#ai-section {
+    text-align: center;
+}
+
 .lyric {
     display: inline-block;
-    margin: 30px;
+    margin: 2em;
 }
