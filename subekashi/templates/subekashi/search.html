@@ -107,7 +107,7 @@
                         {% endif %}
                         {% else %}
                         {% if songIns.isdeleted %}
-                            <object><p class="songurl">非公開</p></object>
+                            <object><p class="songurl">非公開/削除済み</p></object>
                         {% else %}
                             <object><a class="songurl" href="{% url 'subekashi:new' %}?id={{ songIns.id }}">URL未登録</a></object>
                         {% endif %}
