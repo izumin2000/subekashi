@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from config.settings import *
 from subekashi.models import Ai
+from subekashi.constants.view import *
 import re
 import requests
 import os
@@ -22,7 +23,7 @@ class Command(BaseCommand):
             gpt_text = file.read()
             file.close()
         except :
-            self.stdout.write(self.style.ERROR("python manage.py constを実行してください"))
+            self.stdout.write(self.style.ERROR(CONST_ERROR))
             return
         
         gpt_lines = re.split("、|。|\?|？|\r\n|\n", gpt_text)

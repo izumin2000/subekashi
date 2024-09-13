@@ -1,4 +1,5 @@
 from django import template
+from subekashi.constants.view import *
 
 register = template.Library()
 
@@ -8,4 +9,4 @@ def get_last_modified():
         from subekashi.constants.dynamic.version import VERSION
         return VERSION
     except:
-        return "python manage.py constを実行してください"
+        return CONST_ERROR
