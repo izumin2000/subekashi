@@ -268,7 +268,6 @@ def ai(request) :
     dataD = {
         "metatitle" : "歌詞生成",
     }
-    dataD["songInsL"] = Song.objects.all()
     
     try:
         from subekashi.constants.dynamic.ai import GENEINFO
@@ -282,11 +281,10 @@ def ai(request) :
         if not aiIns.exists() :
             sendDiscord(ERROR_DISCORD_URL, "aiInsのデータがありません。")
             aiIns = Ai.objects.filter(genetype = "model")
-        dataD["aiInsL"] = random.sample(list(aiIns), min(25, aiIns.count()))
+        dataD["aiInsL"] = aiIns.order_by('?')[:25]
         return render(request, "subekashi/result.html", dataD)
     
-    # TODO -300でIndexErrorになる問題の修正
-    dataD["bestInsL"] = list(Ai.objects.filter(genetype = "model", score = 5))[:-300:-1]
+    dataD["bestInsL"] = Ai.objects.filter(genetype = "model", score = 5).order_by('?')[:300]
     return render(request, "subekashi/ai.html", dataD)
 
 
