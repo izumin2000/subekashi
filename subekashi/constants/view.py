@@ -3,3 +3,4 @@ INPUT_TEXTS = ["title", "channel", "lyrics", "url"]
 INPUT_SELECTS = ["category", "songrange", "jokerange"]
 INPUT_FLAGS = ["isdraft", "isoriginal", "isinst"]
 URL_PATTERN = r'(?:\/|v=)([A-Za-z0-9_-]{11})(?:\?|&|$)'
+CONST_ERROR = "エラー：python manage.py constを実行してください"

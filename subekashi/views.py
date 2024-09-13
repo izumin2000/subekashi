@@ -38,7 +38,7 @@ def top(request):
         news = str(news_soup)
         dataD["news"] = news
     else :
-        dataD["news"] = "python manage.py constを実行してください"
+        dataD["news"] = CONST_ERROR
     
     songrange = request.COOKIES.get("songrange", "subeana")
     jokerange = request.COOKIES.get("jokerange", "off")
@@ -268,12 +268,11 @@ def ai(request) :
     dataD = {
         "metatitle" : "歌詞生成",
     }
-    dataD["songInsL"] = Song.objects.all()
     
     try:
         from subekashi.constants.dynamic.ai import GENEINFO
     except :
-        sendDiscord(ERROR_DISCORD_URL, "python manage.py constを実行してください")
+        sendDiscord(ERROR_DISCORD_URL, CONST_ERROR)
         GENEINFO = {}
     dataD.update(GENEINFO)
     
@@ -282,11 +281,10 @@ def ai(request) :
         if not aiIns.exists() :
             sendDiscord(ERROR_DISCORD_URL, "aiInsのデータがありません。")
             aiIns = Ai.objects.filter(genetype = "model")
-        dataD["aiInsL"] = random.sample(list(aiIns), min(25, aiIns.count()))
+        dataD["aiInsL"] = aiIns.order_by('?')[:25]
         return render(request, "subekashi/result.html", dataD)
     
-    # TODO -300でIndexErrorになる問題の修正
-    dataD["bestInsL"] = list(Ai.objects.filter(genetype = "model", score = 5))[:-300:-1]
+    dataD["bestInsL"] = Ai.objects.filter(genetype = "model", score = 5).order_by('?')[:300]
     return render(request, "subekashi/ai.html", dataD)
 
 
@@ -300,6 +298,10 @@ def channel(request, channelName) :
         if channelName in songIns.channel.replace(", ", ",").split(",") :
             songInsL.append(songIns)
     dataD["songInsL"] = songInsL
+    titles = ", ".join([songIns.title for songIns in songInsL[::-1]])
+    if len(titles) >= 80:
+        titles = titles[:80] + "...など"
+    dataD["description"] = f"{channelName}の曲一覧：{titles}"
     return render(request, "subekashi/channel.html", dataD)
 
 
