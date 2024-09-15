@@ -202,6 +202,11 @@ document.querySelectorAll('input, textarea').forEach((input) => {
     });
 });
 
+// フォームが送信される際にisFormDirtyをリセット
+document.querySelector('form').addEventListener('submit', (event) => {
+    isFormDirty = false;
+});
+
 // ページを離れる前に警告を表示
 window.addEventListener('beforeunload', (event) => {
     if (isFormDirty) {
