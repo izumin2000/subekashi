@@ -36,7 +36,7 @@ def new(request) :
             songIns.title = titleForm
             songIns.channel = channelForm
         else :
-            songIns, _ = Song.objects.get_or_create(title = titleForm, channel = channelForm, defaults={"posttime" : timezone.now()})
+            songIns, _ = Song.objects.get_or_create(title = titleForm, channel = channelForm, defaults={"post_time" : timezone.now()})
         
         oldImitateS = set(songIns.imitate.split(",")) - set([''])
         newImitateS = set(imitatesForm.split(",")) - set([''])
@@ -49,14 +49,14 @@ def new(request) :
             imitatedInsL = set(imitatedIns.imitated.split(","))
             imitatedInsL.add(str(songIns.id))
             imitatedIns.imitated = ",".join(imitatedInsL)
-            imitatedIns.posttime = timezone.now()
+            imitatedIns.post_time = timezone.now()
             imitatedIns.save()
         for imitateId in deleteImitateS :
             imitatedIns = Song.objects.get(pk = imitateId)
             imitatedInsL = set(imitatedIns.imitated.split(","))
             imitatedInsL.remove(str(songIns.id))
             imitatedIns.imitated = ",".join(imitatedInsL)
-            imitatedIns.posttime = timezone.now()
+            imitatedIns.post_time = timezone.now()
             imitatedIns.save()
         songIns.imitate = imitatesForm
 
@@ -68,7 +68,7 @@ def new(request) :
         songIns.isinst = int(bool(isinstForm))
         songIns.issubeana = int(bool(issubeanaForm))
         songIns.isdraft = int(bool(isdraftForm))
-        songIns.posttime = timezone.now()
+        songIns.post_time = timezone.now()
         songIns.ip = get_ip(request)
         songIns.save()
         

@@ -70,5 +70,5 @@ def search(request) :
     
     dataD["counter"] = f"{len(Song.objects.all())}曲中{len(songInsL)}曲表示しています。"
     dataD["query"] = query | query_select
-    dataD["songInsL"] = songInsL.order_by("-posttime")
+    dataD["songInsL"] = songInsL.order_by("-post_time")
     return render(request, "subekashi/search.html", dataD)

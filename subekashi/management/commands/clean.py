@@ -89,10 +89,10 @@ class Command(BaseCommand):
                     songIns.imitated = deleteId(songIns.imitated, imitatedId)
                     songIns.save()
 
-            # posttimeの埋め込み
-            if songIns.posttime == None :
-                self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})のposttimeを更新しました。"))
-                songIns.posttime = timezone.now()
+            # post_timeの埋め込み
+            if songIns.post_time == None :
+                self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})のpost_timeを更新しました。"))
+                songIns.post_time = timezone.now()
                 songIns.save()
             
             # スラッシュの置換
