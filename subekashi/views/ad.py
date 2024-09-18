@@ -26,8 +26,8 @@ def ad(request) :
         urlForms = []
         adForms = []
         for i in range(1, 4) :
-            urlForm = formatURL(request.POST.get(f"url{i}", ""))
-            adForm = formatURL(request.POST.get(f"ad{i}", ""))
+            urlForm = format_yt_url(request.POST.get(f"url{i}", ""))
+            adForm = format_yt_url(request.POST.get(f"ad{i}", ""))
             sha256Form = request.POST.get("sha256")
             
             checkPOST += adForm
@@ -53,7 +53,7 @@ def ad(request) :
             if urlForm == "" :
                 continue
         
-            if not(isYouTubeLink(urlForm)) and (urlForm != "") :
+            if not(is_yt_link(urlForm)) and (urlForm != "") :
                 dataD["error"] = "YouTubeのURLを入力してください"
                 dataD[f"ad{i}"] = ""
                 dataD[f"url{i}"] = ""

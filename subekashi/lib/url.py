@@ -5,14 +5,14 @@ import re
 URL_PATTERN = r'(?:\/|v=)([A-Za-z0-9_-]{11})(?:\?|&|$)'
 
 
-def isYouTubeLink(link):
+def is_yt_link(link):
     videoID = re.search(URL_PATTERN, link)
     return videoID is not None
 
 
-def formatURL(link):
+def format_yt_url(link):
     videoID = re.search(URL_PATTERN, link)
-    if isYouTubeLink(link):
+    if is_yt_link(link):
         return "https://youtu.be/" + videoID.group(1)
     else:
         return link
