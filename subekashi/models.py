@@ -19,7 +19,7 @@ class Song(models.Model) :
     isinst = models.BooleanField(default = False)
     issubeana = models.BooleanField(default = True)
     ip = models.CharField(default = "", max_length = 100)
-    views = models.IntegerField(default = 0)
+    view = models.IntegerField(default = 0)
     like = models.IntegerField(default = 0)
 
     def __str__(self) :
