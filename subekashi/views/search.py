@@ -5,6 +5,11 @@ from subekashi.lib.url import *
 from subekashi.lib.filter import *
 
 
+INPUT_TEXTS = ["title", "channel", "lyrics", "url"]
+INPUT_SELECTS = ["category", "songrange", "jokerange"]
+INPUT_FLAGS = ["isdraft", "isoriginal", "isinst"]
+
+
 def search(request) :
     dataD = {
         "metatitle" : "一覧と検索",

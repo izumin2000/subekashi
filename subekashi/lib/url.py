@@ -2,6 +2,9 @@ from subekashi.constants.view import *
 import re
 
 
+URL_PATTERN = r'(?:\/|v=)([A-Za-z0-9_-]{11})(?:\?|&|$)'
+
+
 def isYouTubeLink(link):
     videoID = re.search(URL_PATTERN, link)
     return videoID is not None
