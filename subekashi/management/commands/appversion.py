@@ -1,7 +1,7 @@
 from config.settings import BASE_DIR
 from django.core.management.base import BaseCommand
 from datetime import date
-from subekashi.constants.view import *
+from subekashi.constants.constants import *
 import subprocess
 import os
 

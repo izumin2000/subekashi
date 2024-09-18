@@ -1,4 +1,4 @@
-from subekashi.constants.view import *
+from subekashi.constants.constants import *
 import re
 
 
