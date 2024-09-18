@@ -1,6 +1,5 @@
 from pathlib import Path
 import os
-from dotenv import find_dotenv, load_dotenv
 from .local_settings import *
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -63,8 +62,6 @@ AUTHENTICATION_BACKENDS = (
 WSGI_APPLICATION = 'config.wsgi.application'
 
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-
-load_dotenv(find_dotenv())
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
