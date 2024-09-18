@@ -1,6 +1,7 @@
 from django.db import models
 
 
+# TODO 要リファクタリング
 class Song(models.Model) :
     title = models.CharField(default = "", max_length = 500)
     channel = models.CharField(default = "", max_length = 500)
@@ -18,6 +19,8 @@ class Song(models.Model) :
     isinst = models.BooleanField(default = False)
     issubeana = models.BooleanField(default = True)
     ip = models.CharField(default = "", max_length = 100)
+    views = models.IntegerField(default = 0)
+    like = models.IntegerField(default = 0)
 
     def __str__(self) :
         return self.title
