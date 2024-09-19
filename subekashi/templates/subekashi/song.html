@@ -60,6 +60,14 @@
             <p>{{ songIns.post_time }}</p>
         </div>
 
+        {% if songIns.view %}
+            <p id="view"><i class="fas fa-play"></i>: {{ songIns.view }}</a>
+        {% endif %}
+
+        {% if songIns.like %}
+            <p id="like"><i class="far fa-thumbs-up"></i>: {{ songIns.like }}</a>
+        {% endif %}
+
         {% if songIns.lyrics %}
             <p id="lyrics">{{ songIns.lyrics }}</p>
         {% endif %}

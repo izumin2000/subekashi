@@ -31,6 +31,10 @@ i {
     }
 }
 
+#view, #like {
+    margin-bottom: 20px;
+}
+
 #lyrics, .songnotfound {
     text-align: center;
     line-height: 80px;
