@@ -1,5 +1,4 @@
 from django.shortcuts import render, redirect
-from config.settings import *
 from subekashi.models import *
 from subekashi.lib.url import *
 from subekashi.lib.security import *

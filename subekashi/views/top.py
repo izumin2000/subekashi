@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 import random
 import markdown
 
+INPUT_TEXTS = ["title", "channel", "lyrics", "url"]
 
 def top(request):
     dataD = {

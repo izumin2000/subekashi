@@ -1,4 +1,5 @@
 import requests
+from config.settings import *
 
 
 def sendDiscord(url, content) :

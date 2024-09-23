@@ -1,5 +1,4 @@
 from django.shortcuts import render
-from config.settings import *
 from subekashi.lib.discord import *
 import traceback
 
