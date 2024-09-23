@@ -5,6 +5,8 @@ import re
 URL_PATTERN = r'(?:\/|v=)([A-Za-z0-9_-]{11})(?:\?|&|$)'
 
 
+# TODO https://www.google.com/url?q=の処理
+# TODO www.の処理
 def re_yt_link(link):
     match = re.search(URL_PATTERN, link)
     return match    
