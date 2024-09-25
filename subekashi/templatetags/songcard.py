@@ -20,6 +20,7 @@ def get_channel(song):
     channel_url = reverse('subekashi:channel', args=[channel])
     return mark_safe(f'<object><a href="{channel_url}"><i class="fas fa-user-circle"></i>{channel}</a></object>')
 
+# TODO 定数化
 DEFALT_ICON = "fas fa-globe"
 URL_ICON = {
     "(?:^|\.)youtu\.be": "fab fa-youtube",
@@ -29,10 +30,9 @@ URL_ICON = {
     "(?:^|\.)twitter.com": "fab fa-twitter",
     "(?:^|\.)bandcamp.com": "fab fa-bandcamp",
     "drive.google.com": "fab fa-google-drive",
-    "(?:^|\.)nicovideo.jp": DEFALT_ICON,        # アイコンを追加する
+    "(?:^|\.)nicovideo.jp": DEFALT_ICON,        # TODO アイコンを追加する
     "(?:^|\.)bilibili.com": DEFALT_ICON,
     "scratch.mit.edu": DEFALT_ICON,
-    ".*": DEFALT_ICON,
 }
 
 
