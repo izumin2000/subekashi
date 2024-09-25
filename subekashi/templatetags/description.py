@@ -1,5 +1,5 @@
 from django import template
-from subekashi.constants.view import DEFAULT_DESCRIPTION
+from subekashi.constants.constants import DEFAULT_DESCRIPTION
 
 register = template.Library()
 

@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from config.settings import *
 from subekashi.models import Ai
-from subekashi.constants.view import *
+from subekashi.constants.constants import *
 import re
 import requests
 import os

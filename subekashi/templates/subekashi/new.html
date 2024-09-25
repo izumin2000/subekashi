@@ -142,6 +142,7 @@
             <p class="imitateP">もしくは模倣曲から選択</p>
             <div class="songGuesser sansfont">
                 <input type="text" id="imitateTitle" oninput="searchSong()" placeholder="タイトルを入力"><br>
+                {% comment %} TODO jsから持ってくる {% endcomment %}
                 {% for songIns in songInsL %}
                 <div class="songGuess" data-title="{{ songIns.title }}" onclick="clickSong('{{ songIns.id }}')">
                     <p><span class="channel"><i class="fas fa-user-circle"></i> {{ songIns.channel }}</span> <i class="fas fa-music"></i> {{ songIns.title }}</p>

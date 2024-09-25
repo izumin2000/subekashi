@@ -1,6 +1,7 @@
 from django.db import models
 
 
+# TODO 要リファクタリング
 class Song(models.Model) :
     title = models.CharField(default = "", max_length = 500)
     channel = models.CharField(default = "", max_length = 500)
@@ -8,8 +9,8 @@ class Song(models.Model) :
     lyrics = models.CharField(default = "", max_length = 10000, blank = True, null = True)
     imitate = models.CharField(default = "", max_length = 1000, blank = True, null = True)
     imitated = models.CharField(default = "", max_length = 1000, blank = True, null = True)
-    posttime = models.DateTimeField(blank = True, null = True)
-    uploaddata = models.DateField(blank = True, null = True)
+    post_time = models.DateTimeField(blank = True, null = True)     # TODO null成約を消す
+    upload_time = models.DateField(blank = True, null = True)
     isoriginal = models.BooleanField(default = False)
     isjoke = models.BooleanField(default = False)
     isdeleted = models.BooleanField(default = False)
@@ -18,6 +19,8 @@ class Song(models.Model) :
     isinst = models.BooleanField(default = False)
     issubeana = models.BooleanField(default = True)
     ip = models.CharField(default = "", max_length = 100)
+    view = models.IntegerField(default = 0)
+    like = models.IntegerField(default = 0)
 
     def __str__(self) :
         return self.title

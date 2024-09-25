@@ -152,7 +152,14 @@ main {
 }
 
 #mainarticle {
-    margin: 30px 30px 0 30px;
+    margin: 30px auto 0 auto;
+    max-width: 800px;
+}
+
+@media (max-width: 860px) {
+    #mainarticle {
+        margin: 30px 30px 0 30px;
+    }
 }
 
 h1 {
@@ -171,23 +178,15 @@ h2 {
     font-weight: lighter;
 }
 
-p, li {
+p, li, a, i, td, label, details {
     color: #fff;
     font-size: 22px;
     line-height: 32px;
 }
 
 a {
-    color: #fff;
     text-decoration: underline 2px #fff;
     text-underline-offset: 0.3ex;
-    font-size: 22px;
-    line-height: 32px;
-}
-
-i {
-    color: #fff;
-    font-size: 22px;
 }
 
 .sansfont {
@@ -222,10 +221,7 @@ i {
 }
 
 details {
-    color: #FFF;
     cursor: pointer;
-    font-size: 22px;
-    line-height: 32px;
 }
 
 
@@ -299,12 +295,6 @@ input:focus {
 
 input:focus::placeholder {
     color: transparent;
-}
-
-label {
-    color: #fff;
-    font-size: 22px;
-    line-height: 32px;
 }
 
 input[type=checkbox] {
@@ -420,86 +410,83 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
 
 /* ソングカード */
 .songcard {
-    height: 80px;
-    margin: 20px 0 ;
-    padding: 8px 0 0 0;
-    background-color: #333;
-    overflow: hidden;
-}
-
-.buttona {
-    display:block;
-    text-decoration: none;
-    height: 100%;
-}
-
-
-.cardleft {
-    text-align:left;
-    float:left;
-    padding: 0 15px;
-}
-
-.cardright {
     display: block;
-    padding: 0 15px;
-    text-align:right;
-}
-
-@media (max-width: 840px) {
-    .cardright {
-        display: none;
-        padding: 15px 0;
-    }
+    height: 80px;
+    width: 100%;
+    margin: 20px 0;
+    background-color: #333;
+    text-decoration: none;
+    border-collapse: collapse;
+    overflow: hidden;
+    position: relative;
 }
 
 .songcard:hover {
-    cursor: pointer;
     background-color: #555;
 }
 
-.songtitle {
-    font-size: 22px;
-    margin-bottom: 5px;
-    white-space:nowrap;
-    overflow-wrap: break-word;
+.songcard table {
+    width: 100%;
+    padding: 5px;
 }
 
-.songchannel {
-    font-size: 20px;
-    white-space:nowrap;
+.songcard td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 10px;
 }
 
-.songchannel i {
-    font-size: 20px;
+.songcard i {
+    margin-right: 5px;
 }
 
-.songlyrics {
-    display: inline-block;
-    font-size: 20px;
-    margin-bottom: 5px;
-    white-space:nowrap;
+.songcard-col1 {
+    display: block;
+    width: fit-content;
+    max-width: 12em;
 }
 
-.songurl {
-    display: inline-block;
-    font-size: 20px;
-    white-space:nowrap;
+.songcard-urls {
+    position: absolute;
+    top: 5px;
+    right: 0;
+    text-align: right;
 }
 
-.fa-user-friends {
-    font-size: 15px;
-    margin: 0 2px;
+.songcard-lyrics {
+    text-align: right;
+    max-width: 12em;
 }
+
+@media (max-width: 480px) {
+    .songcard-col1 {
+        width: 8em;
+    }
+
+    .songcard-like {
+        display: none;
+    }
+
+    .songcard-view {
+        width: 8em;
+        text-align: right;
+    }
+
+    .songcard-lyrics {
+        display: none;
+    }
+}
+
 
 /* ソングゲッサー */
 #imitateTitle {
-    width: calc(100vw - 100px);
+    width: calc(100% - 10px);
 }
 
 .songGuess {
     display: none;
-    width: calc(100vw - 100px);
+    width: calc(100% - 10px);
     margin: 5px 0;
     padding: 5px;
     background-color: #555;
@@ -605,10 +592,4 @@ footer {
         margin-top: 10px;
         text-align: center;
     }
-}
-
-
-/* toastr */
-.toast-close-button {
-    margin: 0px !important;
 }
