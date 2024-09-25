@@ -61,7 +61,8 @@ def new(request) :
         songIns.imitate = imitatesForm
 
         songIns.lyrics = lyricsForm
-        songIns.url = format_yt_url(urlForm)
+        # TODO urlFormのセキュリティチェック
+        songIns.url = clean_url(urlForm)
         songIns.isoriginal = int(bool(isorginalForm))
         songIns.isjoke = int(bool(isjokeForm))
         songIns.isdeleted = int(bool(isdeletedForm))
