@@ -9,7 +9,7 @@ class Song(models.Model) :
     lyrics = models.CharField(default = "", max_length = 10000, blank = True, null = True)
     imitate = models.CharField(default = "", max_length = 1000, blank = True, null = True)
     imitated = models.CharField(default = "", max_length = 1000, blank = True, null = True)
-    post_time = models.DateTimeField(blank = True, null = True)
+    post_time = models.DateTimeField(blank = True, null = True)     # TODO null成約を消す
     upload_time = models.DateField(blank = True, null = True)
     isoriginal = models.BooleanField(default = False)
     isjoke = models.BooleanField(default = False)

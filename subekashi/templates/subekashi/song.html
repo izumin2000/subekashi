@@ -56,8 +56,11 @@
                     <a class="songimitate" href="{% url 'subekashi:song' imitatedIns.id %}">{{ imitatedIns.title }}</a>
                 {% endfor %}
             {% endif %}
-            <br><i class="fas fa-file-signature"></i>
-            <p>{{ songIns.post_time }}</p>
+            {% if songIns.upload_time %}
+                <br><p><i class="far fa-calendar-alt"></i>{{ songIns.upload_time }}</p>
+            {% endif %}
+            <br><p><i class="fas fa-file-signature"></i>{{ songIns.post_time }}</p>
+            
         </div>
 
         {% if songIns.view %}
