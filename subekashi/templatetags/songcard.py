@@ -54,7 +54,8 @@ def get_url(song):
             
         icon = URL_ICON.get(domain, DEFALT_ICON)
         i_tags += f'<a href="{url}" target="_blank"><i class="{icon}"></i></a>'
-        return mark_safe(f'<object>{i_tags}</object>')
+        
+    return mark_safe(f'<object>{i_tags}</object>')
         
 
 @register.simple_tag
