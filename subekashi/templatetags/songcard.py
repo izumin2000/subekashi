@@ -4,6 +4,7 @@ from django.utils.safestring import mark_safe
 from django.template.loader import render_to_string
 from subekashi.lib.discord import *
 from urllib.parse import urlparse
+import re
 
 
 register = template.Library()
@@ -21,14 +22,17 @@ def get_channel(song):
 
 DEFALT_ICON = "fas fa-globe"
 URL_ICON = {
-    "youtu.be": "fab fa-youtube",
-    "youtube.com": "fab fa-youtube",
-    "soundcloud.com": "fab fa-soundcloud",
-    "x.com": "fab fa-twitter",
-    "twitter.com": "fab fa-twitter",
-    "bandcamp.com": "fab fa-bandcamp",
-    "bilibili.com": DEFALT_ICON,
+    "(?:^|\.)youtu\.be": "fab fa-youtube",
+    "(?:^|\.)youtube\.com": "fab fa-youtube",
+    "(?:^|\.)soundcloud\.com": "fab fa-soundcloud",
+    "(?:^|\.)x\.com": "fab fa-twitter",
+    "(?:^|\.)twitter.com": "fab fa-twitter",
+    "(?:^|\.)bandcamp.com": "fab fa-bandcamp",
+    "drive.google.com": "fab fa-google-drive",
+    "(?:^|\.)nicovideo.jp": DEFALT_ICON,        # アイコンを追加する
+    "(?:^|\.)bilibili.com": DEFALT_ICON,
     "scratch.mit.edu": DEFALT_ICON,
+    ".*": DEFALT_ICON,
 }
 
 
@@ -48,11 +52,13 @@ def get_url(song):
     # URLを登録しているのなら
     i_tags = ""
     for url in urls:
-        domain = urlparse(url).netloc.replace("www.", "")
-        if not any(allow == domain for allow in URL_ICON.keys()):
+        domain = urlparse(url).netloc
+        allow_pattern_list = [bool(re.match(allow_pattern, domain)) for allow_pattern in URL_ICON.keys()]
+        if any(allow_pattern_list):
+            icon = list(URL_ICON.values())[allow_pattern_list.index(True)]
+        else :
             sendDiscord(ERROR_DISCORD_URL, f"想定外のURLが添付されました：{url}")
-            
-        icon = URL_ICON.get(domain, DEFALT_ICON)
+            icon = DEFALT_ICON
         i_tags += f'<a href="{url}" target="_blank"><i class="{icon}"></i></a>'
         
     return mark_safe(f'<object>{i_tags}</object>')
