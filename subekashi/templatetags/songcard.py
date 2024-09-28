@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.template.loader import render_to_string
 from subekashi.lib.discord import *
+from config.settings import *
 from urllib.parse import urlparse
 import re
 
@@ -42,17 +43,17 @@ def get_view(song):
 # TODO 定数化
 DEFALT_ICON = "fas fa-globe"
 URL_ICON = {
-    r"(?:^|\.)youtu\.be$": "fab fa-youtube",
-    r"(?:^|\.)youtube\.com$": "fab fa-youtube",
-    r"(?:^|\.)soundcloud\.com$": "fab fa-soundcloud",
-    r"(?:^|\.)x\.com$": "fab fa-twitter",
-    r"(?:^|\.)twitter.com$": "fab fa-twitter",
-    r"(?:^|\.)bandcamp.com$": "fab fa-bandcamp",
-    r"drive\.google\.com": "fab fa-google-drive",
-    r"(?:^|\.)nicovideo\.jp$": DEFALT_ICON,        # TODO アイコンを追加する
-    r"(?:^|\.)bilibili\.com$": DEFALT_ICON,
+    r"(?:^|\.)youtu\.be$": "<i class='fab fa-youtube'></i>",
+    r"(?:^|\.)youtube\.com$": "<i class='fab fa-youtube'></i>",
+    r"(?:^|\.)soundcloud\.com$": "<i class='fab fa-soundcloud'></i>",
+    r"(?:^|\.)x\.com$": "<i class='fab fa-twitter'></i>",
+    r"(?:^|\.)twitter.com$": "<i class='fab fa-twitter'></i>",
+    r"(?:^|\.)bandcamp.com$": "<i class='fab fa-bandcamp'></i>",
+    r"drive\.google\.com": "<i class='fab fa-google-drive'></i>",
+    r"(?:^|\.)nicovideo\.jp$": f"<img src='{ROOT_DIR}/{STATIC_URL}subekashi/image/niconico.png' alt='ニコニコ動画'></img>",
+    r"(?:^|\.)bilibili\.com$": f"<img src='{ROOT_DIR}/{STATIC_URL}subekashi/image/bilibili.png' alt='ビリビリ動画'></img>",
+    r"imicomweb\.com": f"<img src='{ROOT_DIR}/{STATIC_URL}subekashi/image/imicomweb.png' alt='イミコミュ'></img>",
     r"scratch\.mit\.edu": DEFALT_ICON,
-    r"imicomweb\.com": DEFALT_ICON,
 }
 
 @register.simple_tag
@@ -76,11 +77,9 @@ def get_url(song):
         if any(pattern_list):
             icon = list(URL_ICON.values())[pattern_list.index(True)]
         else :
-            # sendDiscord(ERROR_DISCORD_URL, f"{ROOT_DIR}/songs/{song.id}\n想定外のURLが添付されました：{url}")
-            print([re.search(allow_pattern, domain) for allow_pattern in URL_ICON.keys()])
-            print(f'\033[31m{ROOT_DIR}/songs/{song.id}\n想定外のURLが添付されました：{url}\033[0m')
+            sendDiscord(ERROR_DISCORD_URL, f"{ROOT_DIR}/songs/{song.id}\n想定外のURLが添付されました：{url}")
             icon = DEFALT_ICON
-        i_tags += f'<a href="{url}" target="_blank"><i class="{icon}"></i></a>'
+        i_tags += f'<a href="{url}" target="_blank">{icon}</a>'
         
     return mark_safe(f'<object>{i_tags}</object>')
         
