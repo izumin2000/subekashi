@@ -446,6 +446,10 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     margin-right: 5px;
 }
 
+.songcard img {
+    height: 20px;
+}
+
 .songcard-col1 {
     display: block;
     width: fit-content;
