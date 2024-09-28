@@ -12,7 +12,7 @@ class Command(BaseCommand):
     
     def get_youtube_links(self, song):
         urls = song.url.split(",")
-        video_ids = [format_yt_url(url, True) for url in urls if is_yt_link(url)]
+        video_ids = [format_yt_url(url, True) for url in urls if is_yt_url(url)]
         return video_ids
     
     def get_youtube_api(self, video_id):
