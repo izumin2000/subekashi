@@ -60,11 +60,11 @@ def get_url(song):
     urls = song.url.replace(", ", ",").split(',') if song.url else ""
     
     # 非公開なら
-    if not urls and song.isdeleted:
+    if song.isdeleted:
         return '非公開/削除済み'
     
     # 未登録なら
-    if not urls and not song.isdeleted:
+    if not urls:
         new_url = reverse('subekashi:new')
         return mark_safe(f'<object><a href="{new_url}?id={song.id}">URL未登録</a></object>')
     
