@@ -41,7 +41,7 @@ def get_view(song):
 
 
 # TODO 定数化
-DEFALT_ICON = "fas fa-globe"
+DEFALT_ICON = "<i class='fas fa-globe'></i>"
 URL_ICON = {
     r"(?:^|\.)youtu\.be$": "<i class='fab fa-youtube'></i>",
     r"(?:^|\.)youtube\.com$": "<i class='fab fa-youtube'></i>",
