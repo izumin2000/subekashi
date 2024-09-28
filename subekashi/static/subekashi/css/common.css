@@ -450,16 +450,17 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     height: 20px;
 }
 
+.fa-eye-slash {
+    cursor: not-allowed;
+}
+
 .songcard-col1 {
     display: block;
     width: fit-content;
-    max-width: 12em;
+    max-width: 14em;
 }
 
 .songcard-urls {
-    position: absolute;
-    top: 5px;
-    right: 0;
     text-align: right;
 }
 
