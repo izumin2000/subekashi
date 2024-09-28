@@ -79,7 +79,7 @@ def new(request) :
             dataD["imitateInsL"] = imitateInsL
         dataD["songIns"] = songIns
         dataD["channels"] = songIns.channel.replace(", ", ",").split(",")
-        dataD["urls"] = songIns.url.replace(", ", ",").split(",")
+        dataD["urls"] = songIns.url.replace(", ", ",").split(",") if songIns.url else []
         dataD["isExist"] = True
 
         content = f'**{songIns.title}**\n\

@@ -1,15 +1,5 @@
-#islack {
-    margin-left: 0;
-}
-
-.filters {
-    box-shadow: none;
-    height: 15px;
-    width: 15px;
-}
-
-.filters, label {
-    cursor: pointer;
+#filters {
+    margin-left: -20px;
 }
 
 #searchsubmit, #counter {

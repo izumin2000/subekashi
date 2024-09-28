@@ -277,6 +277,10 @@ details {
 
 
 /* フォーム */
+label {
+    cursor: pointer;;
+}
+
 input, select, option, textarea {
     height: 50px;
     width: calc(100% - 144px);
@@ -304,6 +308,7 @@ input[type=checkbox] {
     width: 25px;
     margin: -5px 0 0 20px;
     vertical-align: middle;
+    cursor: pointer;
 }
 
 #checkboxs {
@@ -456,7 +461,7 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
 
 .songcard-lyrics {
     text-align: right;
-    max-width: 12em;
+    max-width: 18vw;
 }
 
 @media (max-width: 480px) {
