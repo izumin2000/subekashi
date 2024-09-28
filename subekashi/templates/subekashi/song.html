@@ -16,13 +16,11 @@
                 <a href="{% url 'subekashi:channel' channel %}">{{ channel }}</a>
             {% endfor %}
             
-            {% if urls %}
-                {% for url in urls %}
-                    <br><i class="fas fa-link"></i>
-                    <a class="songurl" href="{{ url }}" target="_blank">{{ url }}</a>
-                    <i class="far fa-copy" onclick="copy('{{ url }}')"></i>
-                {% endfor %}
-            {% endif %}
+            {% for url in urls %}
+                <br><i class="fas fa-link"></i>
+                <a class="songurl" href="{{ url }}" target="_blank">{{ url }}</a>
+                <i class="far fa-copy" onclick="copy('{{ url }}')"></i>
+            {% endfor %}
             
             <br><i class="fas fa-tags"></i>
             {% for imitateIns in imitateInsL %}
