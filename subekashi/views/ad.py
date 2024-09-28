@@ -52,7 +52,7 @@ def ad(request) :
             if urlForm == "" :
                 continue
         
-            if not(is_yt_link(urlForm)) and (urlForm != "") :
+            if not(is_yt_url(urlForm)) and (urlForm != "") :
                 dataD["error"] = "YouTubeのURLを入力してください"
                 dataD[f"ad{i}"] = ""
                 dataD[f"url{i}"] = ""
