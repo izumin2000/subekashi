@@ -452,6 +452,7 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
 
 .fa-eye-slash {
     cursor: not-allowed;
+    color: #888;
 }
 
 .songcard-col1 {
