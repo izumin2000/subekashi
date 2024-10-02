@@ -41,7 +41,7 @@ class Command(BaseCommand):
             yt_res["upload_time"] = upload_time
             
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f"エラー：{e}"))
+            pass
             
         return yt_res
     
@@ -70,7 +70,6 @@ class Command(BaseCommand):
         song.like = best_res.get("like", 0)
         song.upload_time = best_res.get("upload_time", None)
         song.save()
-        self.stdout.write(self.style.SUCCESS(f"{str(song.id).zfill(4)}({song.title})のYouTube情報：{best_res}"))
     
     def handle(self, *args, **options) :
         id = options["id"]
