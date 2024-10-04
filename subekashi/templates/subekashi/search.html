@@ -70,14 +70,22 @@
         </div>
     </div>
     <div id="filters">
-        <input type="checkbox" value="islack" id="islack">
-        <label for="islack">作成途中</label>
-        <input type="checkbox" value="isdraft" id="isdraft">
-        <label for="isdraft">下書き</label>
-        <input type="checkbox" value="isoriginal" id="isoriginal">
-        <label for="isoriginal">オリジナル模倣曲</label>
-        <input type="checkbox" value="isinst" id="isinst">
-        <label for="isinst">インスト曲</label>
+        <div class="checkbox-col">
+            <input type="checkbox" value="islack" id="islack">
+            <label for="islack">作成途中</label>
+        </div>
+        <div class="checkbox-col">
+            <input type="checkbox" value="isdraft" id="isdraft">
+            <label for="isdraft">下書き</label>
+        </div>
+        <div class="checkbox-col">
+            <input type="checkbox" value="isoriginal" id="isoriginal">
+            <label for="isoriginal">オリジナル模倣曲</label>
+        </div>
+        <div class="checkbox-col">
+            <input type="checkbox" value="isinst" id="isinst">
+            <label for="isinst">インスト曲</label>
+        </div>
     </div>
 
     <p id="counter">{{ counter }}</p>

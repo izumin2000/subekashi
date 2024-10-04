@@ -310,6 +310,10 @@ input:focus {
     box-shadow: 0 0 0 2px #fff inset;
 }
 
+.checkbox-col {
+    display: inline-block;
+}
+
 input[type=checkbox] {
     display: inline-block;
     box-shadow: none;
@@ -334,6 +338,10 @@ textarea {
         width: fit-content;
         display: block;
         margin: 0 auto;
+    }
+
+    .checkbox-col {
+        display: block;
     }
 }
 
