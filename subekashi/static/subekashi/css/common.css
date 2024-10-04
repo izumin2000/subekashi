@@ -417,7 +417,7 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
 
 
 /* ソングカード */
-.songcard {
+.song-card {
     display: block;
     height: 80px;
     width: 100%;
@@ -429,27 +429,27 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     position: relative;
 }
 
-.songcard:hover {
+.song-card:hover {
     background-color: #555;
 }
 
-.songcard table {
+.song-card table {
     width: 100%;
     padding: 5px;
 }
 
-.songcard td {
+.song-card td {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     padding-right: 10px;
 }
 
-.songcard i {
+.song-card i {
     margin-right: 5px;
 }
 
-.songcard img {
+.song-card img {
     height: 20px;
 }
 
@@ -458,36 +458,36 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     color: #888;
 }
 
-.songcard-col1 {
+.song-card-col1 {
     display: block;
     width: fit-content;
     max-width: 14em;
 }
 
-.songcard-urls {
+.song-card-urls {
     text-align: right;
 }
 
-.songcard-lyrics {
+.song-card-lyrics {
     text-align: right;
     max-width: 18vw;
 }
 
 @media (max-width: 480px) {
-    .songcard-col1 {
+    .song-card-col1 {
         width: 8em;
     }
 
-    .songcard-like {
+    .song-card-like {
         display: none;
     }
 
-    .songcard-view {
+    .song-card-view {
         width: 8em;
         text-align: right;
     }
 
-    .songcard-lyrics {
+    .song-card-lyrics {
         display: none;
     }
 }
@@ -495,7 +495,7 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
 
 /* ソングゲッサー */
 #imitateTitle {
-    width: calc(100% - 10px);
+    width: 100%;
 }
 
 .songGuess {

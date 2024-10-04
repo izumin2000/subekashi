@@ -1,6 +1,6 @@
 {% extends "subekashi/base/base.html" %}
 {% load static %}
-{% load songcard %}
+{% load song_card %}
 {% block css %}{% static 'subekashi/css/top.css' %}{% endblock %}
 
 {% block content %}
@@ -25,7 +25,7 @@
     <h1>新着</h1>
     <div class="underline"></div>
     {% for songIns in songInsL %}
-        {% render_songcard songIns %}
+        {% render_song_card songIns %}
     {% endfor %}
     <div class="dummybuttons">
         <a href="{% url 'subekashi:search' %}"><div class="dummybutton"><p>もっと見る</p></div></a>
@@ -59,7 +59,7 @@
         <h1>未完成</h1>
         <div class="underline"></div>
         {% for songIns in lackInsL %}
-            {% render_songcard songIns %}
+            {% render_song_card songIns %}
         {% endfor %}
             <div class="dummybuttons">
                 <a href="{% url 'subekashi:search' %}?filter=islack"><div class="dummybutton"><p>もっと見る</p></div></a>

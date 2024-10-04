@@ -2,7 +2,7 @@
 
 
 {% load static %}
-{% load songcard %}
+{% load song_card %}
 {% load lastModified %}
 {% block css %}{% static 'subekashi/css/search.css'%}{% endblock %}
 
@@ -99,7 +99,7 @@
 
     <p id="counter">{{ counter }}</p>
     {% for songIns in songInsL %}
-        {% render_songcard songIns %}
+        {% render_song_card songIns %}
     {% endfor %}
 </section>
 {% endblock %}

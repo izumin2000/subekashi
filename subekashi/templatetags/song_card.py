@@ -103,8 +103,8 @@ def get_lyrics(song):
 
 
 @register.simple_tag
-def render_songcard(song):
+def render_song_card(song):
     context = {
         'song': song,
     }
-    return render_to_string('subekashi/components/songcard.html', context)
+    return render_to_string('subekashi/components/song_card.html', context)
