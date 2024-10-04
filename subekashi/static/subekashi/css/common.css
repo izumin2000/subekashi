@@ -296,12 +296,13 @@ label {
 input, select, option, textarea {
     height: 50px;
     width: 100%;
-    padding-left: 0.2em;
+    padding: 0.2em;
     font-size: 25px;
     border: none;
     box-shadow: 0 0 0 1px #ccc inset;
     font-family: 'Imitate', 'Noto Sans JP', sans-serif;
     align-items: center;
+    box-sizing: border-box;
 }
 
 input:focus {

@@ -23,9 +23,9 @@ function menu() {
 // 可変テキストエリア
 function autotextarea() {
     let textarea = document.getElementById('lyrics');
-    let clientHeight = textarea.clientHeight - 20;
+    let clientHeight = textarea.clientHeight;
     textarea.style.height = clientHeight + 'px';
-    let scrollHeight = textarea.scrollHeight - 20;
+    let scrollHeight = textarea.scrollHeight;
     textarea.style.height = scrollHeight + 'px';
 }
 
