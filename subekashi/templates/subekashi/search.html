@@ -8,74 +8,77 @@
 
 {% block content %}
 <section>
-    
     <h1>曲の一覧と検索</h1>
     <div class="underline"></div>
 
-    <form action="{% url 'subekashi:search' %}" method="POST" id="search-form">{% csrf_token %}
+    <div id="inputs">
+        <div class="label-wrapper">
+            <label class="label-same" for="keyword">キーワード</label>
+            <input type="text" id="keyword" class="sansfont" value="{{ keyword }}">
+        </div>
         <div class="label-wrapper">
             <label class="label-same" for="title">タイトル</label>
-            <input type="text" id="title" class="sansfont" name="title" value="{{ query.title }}">
+            <input type="text" id="title" class="sansfont" name="title">
         </div>
         <div class="label-wrapper">
             <label class="label-same" for="channel">チャンネル名</label>
-            <input type="text" id="channel" name="channel" value="{{ query.channel }}">
+            <input type="text" id="channel">
         </div>
         <div class="label-wrapper">
             <label class="label-same" for="lyrics">歌詞</label>
-            <input type="text" id="lyrics" name="lyrics" value="{{ query.lyrics }}">
+            <input type="text" id="lyrics">
         </div>
         <div class="label-wrapper">
             <label class="label-same" for="url">URL</label>
-            <input type="text" id="url" name="url" value="{{ query.url }}">
+            <input type="text" id="url">
         </div>
+    </div>
+    <div id="selects">
         <div class="label-wrapper">
             <label class="label-same" for="category">カテゴリ</label>
             <select id="category" name="category">
                 <option value="all">指定無し</option>
-                <option value="7" {% if query.category == '7' %}selected{% endif %}>.[short]模倣</option>
-                <option value="8" {% if query.category == '8' %}selected{% endif %}>..[short]模倣</option>
-                <option value="9" {% if query.category == '9' %}selected{% endif %}>◘模倣</option>
-                <option value="10" {% if query.category == '10' %}selected{% endif %}>.模倣</option>
-                <option value="11" {% if query.category == '11' %}selected{% endif %}>..模倣</option>
-                <option value="12" {% if query.category == '12' %}selected{% endif %}>教育模倣</option>
-                <option value="13" {% if query.category == '13' %}selected{% endif %}>アブジェ模倣</option>
-                <option value="14" {% if query.category == '14' %}selected{% endif %}>...模倣</option>
-                <option value="15" {% if query.category == '15' %}selected{% endif %}>表╱裏模倣</option>
-                <option value="16" {% if query.category == '16' %}selected{% endif %}>名の無い星が空に堕ちたら模倣</option>
-                <option value="17" {% if query.category == '17' %}selected{% endif %}>エヌ模倣</option>
-                <option value="18" {% if query.category == '18' %}selected{% endif %}>K²模倣</option>
+                <option value="7">.[short]模倣</option>
+                <option value="8">..[short]模倣</option>
+                <option value="9">◘模倣</option>
+                <option value="10">.模倣</option>
+                <option value="11">..模倣</option>
+                <option value="12">教育模倣</option>
+                <option value="13">アブジェ模倣</option>
+                <option value="14">...模倣</option>
+                <option value="15">表╱裏模倣</option>
+                <option value="16">名の無い星が空に堕ちたら模倣</option>
+                <option value="17">エヌ模倣</option>
+                <option value="18">K²模倣</option>
             </select>
         </div>
         <div class="label-wrapper">
             <label class="label-same" for="songrange">曲の表示</label>
             <select id="songrange" name="songrange">
-                <option value="all" {% if query.songrange == 'all' %}selected{% endif %}>全て表示</option>
-                <option value="subeana" {% if query.songrange == 'subeana' %}selected{% endif %}>すべあな界隈曲のみを表示</option>
-                <option value="xx" {% if query.songrange == 'xx' %}selected{% endif %}>すべあな界隈曲以外を表示</option>
+                <option value="all">全て表示</option>
+                <option value="subeana">すべあな界隈曲のみを表示</option>
+                <option value="xx">すべあな界隈曲以外を表示</option>
             </select>
         </div>
         <div class="label-wrapper">
             <label class="label-same" for="jokerange">ネタ曲の表示</label>
             <select id="jokerange" name="jokerange">
-                <option value="on" {% if query.jokerange == 'on' %}selected{% endif %}>全て表示</option>
-                <option value="only" {% if query.jokerange == 'only' %}selected{% endif %}>ネタ曲のみを表示</option>
-                <option value="off" {% if query.jokerange == 'off' %}selected{% endif %}>ネタ曲のみを非表示</option>
+                <option value="on">全て表示</option>
+                <option value="only">ネタ曲のみを表示</option>
+                <option value="off">ネタ曲のみを非表示</option>
             </select>
         </div>
-        
-        <div id="filters">
-            <input type="checkbox" name="filters" value="islack" id="islack" {% if 'islack' in query.filters %}checked{% endif %}>
-            <label for="islack">作成途中</label>
-            <input type="checkbox" name="filters" value="isdraft" id="isdraft" {% if 'isdraft' in query.filters %}checked{% endif %}>
-            <label for="isdraft">下書き</label>
-            <input type="checkbox" name="filters" value="isoriginal" id="isoriginal" {% if 'isoriginal' in query.filters %}checked{% endif %}>
-            <label for="isoriginal">オリジナル模倣曲</label>
-            <input type="checkbox" name="filters" value="isinst" id="isinst" {% if 'isinst' in query.filters %}checked{% endif %}>
-            <label for="isinst">インスト曲</label>
-        </div>
-        <input type="submit" value="検索" id="searchsubmit">
-    </form>
+    </div>
+    <div id="filters">
+        <input type="checkbox" value="islack" id="islack">
+        <label for="islack">作成途中</label>
+        <input type="checkbox" value="isdraft" id="isdraft">
+        <label for="isdraft">下書き</label>
+        <input type="checkbox" value="isoriginal" id="isoriginal">
+        <label for="isoriginal">オリジナル模倣曲</label>
+        <input type="checkbox" value="isinst" id="isinst">
+        <label for="isinst">インスト曲</label>
+    </div>
 
     <p id="counter">{{ counter }}</p>
     {% for songIns in songInsL %}

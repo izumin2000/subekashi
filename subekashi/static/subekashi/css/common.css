@@ -277,14 +277,26 @@ details {
 
 
 /* フォーム */
+.label-wrapper {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
 label {
-    cursor: pointer;;
+    display: inline-block;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.label-same {
+    width: 8em;
 }
 
 input, select, option, textarea {
     height: 50px;
-    width: calc(100% - 144px);
-    padding-left: 10px;
+    width: 100%;
+    padding-left: 0.2em;
     font-size: 25px;
     border: none;
     box-shadow: 0 0 0 1px #ccc inset;
@@ -297,10 +309,6 @@ input:focus {
     box-shadow: 0 0 0 2px #fff inset;
 }
 
-input:focus::placeholder {
-    color: transparent;
-}
-
 input[type=checkbox] {
     display: inline-block;
     box-shadow: none;
@@ -311,38 +319,20 @@ input[type=checkbox] {
     cursor: pointer;
 }
 
-#checkboxs {
-    margin: 20px 0 20px -20px;
-}
-
-.label-same {
-    display: inline-block;
-    width: 150px;
-}
-
-.label-wrapper {
-    display: flex;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
 textarea {
     height: 100px;
     padding: 10px;
 }
 
 @media (max-width: 640px) {
-    input, select, option, textarea {
-        width: 100%;
-    }
-
     .label-wrapper {
-        flex-direction: column;
+        display: block;
     }
-
+    
     .label-same {
         width: fit-content;
-        margin-bottom: 5px;
+        display: block;
+        margin: 0 auto;
     }
 }
 
