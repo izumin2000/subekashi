@@ -107,6 +107,10 @@ details ul ul {
     color: #aaa;
 }
 
+#checkboxs {
+    margin: 20px 0 20px -20px;
+}
+
 #newsubmit {
     display: flex;
     justify-content: center;
