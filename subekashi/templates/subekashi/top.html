@@ -16,7 +16,7 @@
     <div class="underline"></div>
     <form action="{% url 'subekashi:search' %}" method="POST" id="search-form">{% csrf_token %}
         <div class="label-wrapper">
-            <label class="label-same" for="keyword">キーワード</label>
+            <label for="keyword">キーワード</label>
             <input type="text" id="keyword" class="sansfont" name="keyword">
         </div>
         <input type="submit" value="検索" id="searchsubmit">

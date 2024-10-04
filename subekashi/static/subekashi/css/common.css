@@ -289,7 +289,7 @@ label {
     margin-right: 10px;
 }
 
-.label-same {
+.label-wrapper label {
     width: 8em;
 }
 
@@ -329,7 +329,7 @@ textarea {
         display: block;
     }
     
-    .label-same {
+    .label-wrapper label {
         width: fit-content;
         display: block;
         margin: 0 auto;
