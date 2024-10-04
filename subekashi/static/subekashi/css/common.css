@@ -224,6 +224,10 @@ details {
     cursor: pointer;
 }
 
+summary {
+    margin-bottom: 20px;
+}
+
 
 /* メニュー */
 #menuarticle {

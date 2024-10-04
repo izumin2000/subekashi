@@ -16,77 +16,86 @@
             <label for="keyword">キーワード</label>
             <input type="text" id="keyword" class="sansfont" value="{{ keyword }}">
         </div>
-        <div class="form-col">
-            <label for="title">タイトル</label>
-            <input type="text" id="title" class="sansfont" name="title">
+        <details>
+            <summary>文字入力フォームを展開</summary>
+            <div class="form-col">
+                <label for="title">タイトル</label>
+                <input type="text" id="title" class="sansfont" name="title">
+            </div>
+            <div class="form-col">
+                <label for="channel">チャンネル名</label>
+                <input type="text" id="channel">
+            </div>
+            <div class="form-col">
+                <label for="lyrics">歌詞</label>
+                <input type="text" id="lyrics">
+            </div>
+            <div class="form-col">
+                <label for="url">URL</label>
+                <input type="text" id="url">
+            </div>
         </div>
-        <div class="form-col">
-            <label for="channel">チャンネル名</label>
-            <input type="text" id="channel">
+    </details>
+    <details>
+        <summary>選択肢フォームを展開</summary>
+        <div id="selects">
+            <div class="form-col">
+                <label for="category">カテゴリ</label>
+                <select id="category" name="category">
+                    <option value="all">指定無し</option>
+                    <option value="7">.[short]模倣</option>
+                    <option value="8">..[short]模倣</option>
+                    <option value="9">◘模倣</option>
+                    <option value="10">.模倣</option>
+                    <option value="11">..模倣</option>
+                    <option value="12">教育模倣</option>
+                    <option value="13">アブジェ模倣</option>
+                    <option value="14">...模倣</option>
+                    <option value="15">表╱裏模倣</option>
+                    <option value="16">名の無い星が空に堕ちたら模倣</option>
+                    <option value="17">エヌ模倣</option>
+                    <option value="18">K²模倣</option>
+                </select>
+            </div>
+            <div class="form-col">
+                <label for="songrange">曲の表示</label>
+                <select id="songrange" name="songrange">
+                    <option value="all">全て表示</option>
+                    <option value="subeana">すべあな界隈曲のみを表示</option>
+                    <option value="xx">すべあな界隈曲以外を表示</option>
+                </select>
+            </div>
+            <div class="form-col">
+                <label for="jokerange">ネタ曲の表示</label>
+                <select id="jokerange" name="jokerange">
+                    <option value="on">全て表示</option>
+                    <option value="only">ネタ曲のみを表示</option>
+                    <option value="off">ネタ曲のみを非表示</option>
+                </select>
+            </div>
         </div>
-        <div class="form-col">
-            <label for="lyrics">歌詞</label>
-            <input type="text" id="lyrics">
+    </details>
+    <details>
+        <summary>チェックボックスフォームを展開</summary>
+        <div id="filters">
+            <div class="checkbox-col">
+                <input type="checkbox" value="islack" id="islack">
+                <label for="islack">作成途中</label>
+            </div>
+            <div class="checkbox-col">
+                <input type="checkbox" value="isdraft" id="isdraft">
+                <label for="isdraft">下書き</label>
+            </div>
+            <div class="checkbox-col">
+                <input type="checkbox" value="isoriginal" id="isoriginal">
+                <label for="isoriginal">オリジナル模倣曲</label>
+            </div>
+            <div class="checkbox-col">
+                <input type="checkbox" value="isinst" id="isinst">
+                <label for="isinst">インスト曲</label>
+            </div>
         </div>
-        <div class="form-col">
-            <label for="url">URL</label>
-            <input type="text" id="url">
-        </div>
-    </div>
-    <div id="selects">
-        <div class="form-col">
-            <label for="category">カテゴリ</label>
-            <select id="category" name="category">
-                <option value="all">指定無し</option>
-                <option value="7">.[short]模倣</option>
-                <option value="8">..[short]模倣</option>
-                <option value="9">◘模倣</option>
-                <option value="10">.模倣</option>
-                <option value="11">..模倣</option>
-                <option value="12">教育模倣</option>
-                <option value="13">アブジェ模倣</option>
-                <option value="14">...模倣</option>
-                <option value="15">表╱裏模倣</option>
-                <option value="16">名の無い星が空に堕ちたら模倣</option>
-                <option value="17">エヌ模倣</option>
-                <option value="18">K²模倣</option>
-            </select>
-        </div>
-        <div class="form-col">
-            <label for="songrange">曲の表示</label>
-            <select id="songrange" name="songrange">
-                <option value="all">全て表示</option>
-                <option value="subeana">すべあな界隈曲のみを表示</option>
-                <option value="xx">すべあな界隈曲以外を表示</option>
-            </select>
-        </div>
-        <div class="form-col">
-            <label for="jokerange">ネタ曲の表示</label>
-            <select id="jokerange" name="jokerange">
-                <option value="on">全て表示</option>
-                <option value="only">ネタ曲のみを表示</option>
-                <option value="off">ネタ曲のみを非表示</option>
-            </select>
-        </div>
-    </div>
-    <div id="filters">
-        <div class="checkbox-col">
-            <input type="checkbox" value="islack" id="islack">
-            <label for="islack">作成途中</label>
-        </div>
-        <div class="checkbox-col">
-            <input type="checkbox" value="isdraft" id="isdraft">
-            <label for="isdraft">下書き</label>
-        </div>
-        <div class="checkbox-col">
-            <input type="checkbox" value="isoriginal" id="isoriginal">
-            <label for="isoriginal">オリジナル模倣曲</label>
-        </div>
-        <div class="checkbox-col">
-            <input type="checkbox" value="isinst" id="isinst">
-            <label for="isinst">インスト曲</label>
-        </div>
-    </div>
+    </details>
 
     <p id="counter">{{ counter }}</p>
     {% for songIns in songInsL %}
