@@ -106,17 +106,17 @@
     {% comment %} TODO subekashi:songに変更してPOST処理をsongに記述 {% endcomment %}
     <form action="{% url 'subekashi:new' %}" method="POST" id="newform">{% csrf_token %}
         <input type="number" id="songid" name="songid" hidden>
-        <div class="label-wrapper">
+        <div class="form-col">
             <label>曲名*</label>
             <input type="text" id="title" name="title" class="sansfont" oninput="checkExist()" value="{{ title }}">
         </div>
-        <div class="label-wrapper">
+        <div class="form-col">
             <label>チャンネル名*</label>
             <input type="text" id="channel" name="channel" oninput="checkExist()" value="{{ channel }}">
         </div>
         <p id="isExist"></p>
         <button type="button" id="fillFormButton" class="sansfont" onclick="fillForm()">自動入力</button>
-        <div class="label-wrapper">
+        <div class="form-col">
             <label>URL</label>
             <input type="text" id="url" name="url" value="{{ url }}">
         </div>
@@ -152,7 +152,7 @@
             <div id="imitatelists"></div>
             <input type="text" id="imitates" name="imitates" hidden>
         </div>
-        <div class="label-wrapper">
+        <div class="form-col">
             <label>歌詞</label>
             <textarea id="lyrics" name="lyrics" oninput="autotextarea()"></textarea>
         </div>
@@ -178,7 +178,7 @@
     <form action="{% url 'subekashi:delete' %}" method="POST" id="deleteform">{% csrf_token %}
         <input type="text" id="titleDelete" class="sansfont" name="title" value="{{ title }}" hidden>
         <input type="text" id="channelDelete" name="channel" value="{{ channel }}" hidden>
-        <div class="label-wrapper">
+        <div class="form-col">
             <label>削除理由</label>
             <textarea id="reason" name="reason" oninput="setDeleteButton()"></textarea>
         </div>

@@ -277,7 +277,7 @@ details {
 
 
 /* フォーム */
-.label-wrapper {
+.form-col {
     display: flex;
     align-items: center;
     margin-bottom: 20px;
@@ -289,7 +289,7 @@ label {
     margin-right: 10px;
 }
 
-.label-wrapper label {
+.form-col label {
     width: 8em;
 }
 
@@ -326,11 +326,11 @@ textarea {
 }
 
 @media (max-width: 640px) {
-    .label-wrapper {
+    .form-col {
         display: block;
     }
     
-    .label-wrapper label {
+    .form-col label {
         width: fit-content;
         display: block;
         margin: 0 auto;
