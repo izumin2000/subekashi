@@ -224,6 +224,10 @@ details {
     cursor: pointer;
 }
 
+summary {
+    margin-bottom: 20px;
+}
+
 
 /* メニュー */
 #menuarticle {
@@ -277,19 +281,32 @@ details {
 
 
 /* フォーム */
+.form-col {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
 label {
-    cursor: pointer;;
+    display: inline-block;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.form-col label {
+    width: 8em;
 }
 
 input, select, option, textarea {
     height: 50px;
-    width: calc(100% - 144px);
-    padding-left: 10px;
+    width: 100%;
+    padding: 0.2em;
     font-size: 25px;
     border: none;
     box-shadow: 0 0 0 1px #ccc inset;
     font-family: 'Imitate', 'Noto Sans JP', sans-serif;
     align-items: center;
+    box-sizing: border-box;
 }
 
 input:focus {
@@ -297,8 +314,8 @@ input:focus {
     box-shadow: 0 0 0 2px #fff inset;
 }
 
-input:focus::placeholder {
-    color: transparent;
+.checkbox-col {
+    display: inline-block;
 }
 
 input[type=checkbox] {
@@ -311,38 +328,24 @@ input[type=checkbox] {
     cursor: pointer;
 }
 
-#checkboxs {
-    margin: 20px 0 20px -20px;
-}
-
-.label-same {
-    display: inline-block;
-    width: 150px;
-}
-
-.label-wrapper {
-    display: flex;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
 textarea {
     height: 100px;
     padding: 10px;
 }
 
 @media (max-width: 640px) {
-    input, select, option, textarea {
-        width: 100%;
+    .form-col {
+        display: block;
     }
-
-    .label-wrapper {
-        flex-direction: column;
-    }
-
-    .label-same {
+    
+    .form-col label {
         width: fit-content;
-        margin-bottom: 5px;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .checkbox-col {
+        display: block;
     }
 }
 
@@ -414,7 +417,7 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
 
 
 /* ソングカード */
-.songcard {
+.song-card {
     display: block;
     height: 80px;
     width: 100%;
@@ -426,27 +429,27 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     position: relative;
 }
 
-.songcard:hover {
+.song-card:hover {
     background-color: #555;
 }
 
-.songcard table {
+.song-card table {
     width: 100%;
     padding: 5px;
 }
 
-.songcard td {
+.song-card td {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     padding-right: 10px;
 }
 
-.songcard i {
+.song-card i {
     margin-right: 5px;
 }
 
-.songcard img {
+.song-card img {
     height: 20px;
 }
 
@@ -455,62 +458,69 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     color: #888;
 }
 
-.songcard-col1 {
+.song-card-col1 {
     display: block;
     width: fit-content;
     max-width: 14em;
 }
 
-.songcard-urls {
+.song-card-urls {
     text-align: right;
 }
 
-.songcard-lyrics {
+.song-card-lyrics {
     text-align: right;
     max-width: 18vw;
 }
 
 @media (max-width: 480px) {
-    .songcard-col1 {
+    .song-card-col1 {
         width: 8em;
     }
 
-    .songcard-like {
+    .song-card-like {
         display: none;
     }
 
-    .songcard-view {
+    .song-card-view {
         width: 8em;
         text-align: right;
     }
 
-    .songcard-lyrics {
+    .song-card-lyrics {
         display: none;
     }
 }
 
 
 /* ソングゲッサー */
-#imitateTitle {
-    width: calc(100% - 10px);
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
 }
 
-.songGuess {
-    display: none;
+.song-guesser {
     width: calc(100% - 10px);
     margin: 5px 0;
     padding: 5px;
     background-color: #555;
     cursor: pointer;
     overflow-x: hidden;
+    opacity: 0;
+    animation: fadeIn 0.3s ease forwards;
 }
 
 .channel {
     color: #ccc;
 }
 
-.songGuess:hover {
-    background-color: #444;
+.song-guesser:hover {
+    background-color: #777;
 }
 
 

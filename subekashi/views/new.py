@@ -95,9 +95,7 @@ def new(request) :
         
         return render(request, 'subekashi/song.html', dataD)
     
-    else :
-        dataD["songInsL"] = Song.objects.all()
-        dataD["id"] = request.GET.get("id")
-        dataD["channel"] = request.GET.get("channel") if request.GET.get("channel") else ""
+    dataD["id"] = request.GET.get("id")
+    dataD["channel"] = request.GET.get("channel") if request.GET.get("channel") else ""
 
-        return render(request, 'subekashi/new.html', dataD)
+    return render(request, 'subekashi/new.html', dataD)

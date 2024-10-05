@@ -1,6 +1,6 @@
 {% extends "subekashi/base/base.html" %}
 {% load static %}
-{% load songcard %}
+{% load song_card %}
 {% block css %}{% static 'subekashi/css/top.css' %}{% endblock %}
 
 {% block content %}
@@ -14,22 +14,10 @@
     </div>
     <h1>検索</h1>
     <div class="underline"></div>
-    <form action="{% url 'subekashi:top' %}" method="POST" id="search-form">{% csrf_token %}
-        <div class="label-wrapper">
-            <label class="label-same" for="title">タイトル</label>
-            <input type="text" id="title" class="sansfont" name="title">
-        </div>
-        <div class="label-wrapper">
-            <label class="label-same" for="channel">チャンネル名</label>
-            <input type="text" id="channel" name="channel">
-        </div>
-        <div class="label-wrapper">
-            <label class="label-same" for="lyrics">歌詞</label>
-            <input type="text" id="lyrics" name="lyrics">
-        </div>
-        <div class="label-wrapper">
-            <label class="label-same" for="url">URL</label>
-            <input type="text" id="url" name="url">
+    <form action="{% url 'subekashi:search' %}" method="POST" id="search-form">{% csrf_token %}
+        <div class="form-col">
+            <label for="keyword">キーワード</label>
+            <input type="text" id="keyword" class="sansfont" name="keyword">
         </div>
         <input type="submit" value="検索" id="searchsubmit">
     </form>
@@ -37,7 +25,7 @@
     <h1>新着</h1>
     <div class="underline"></div>
     {% for songIns in songInsL %}
-        {% render_songcard songIns %}
+        {% render_song_card songIns %}
     {% endfor %}
     <div class="dummybuttons">
         <a href="{% url 'subekashi:search' %}"><div class="dummybutton"><p>もっと見る</p></div></a>
@@ -71,7 +59,7 @@
         <h1>未完成</h1>
         <div class="underline"></div>
         {% for songIns in lackInsL %}
-            {% render_songcard songIns %}
+            {% render_song_card songIns %}
         {% endfor %}
             <div class="dummybuttons">
                 <a href="{% url 'subekashi:search' %}?filter=islack"><div class="dummybutton"><p>もっと見る</p></div></a>

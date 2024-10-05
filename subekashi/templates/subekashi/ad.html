@@ -46,18 +46,18 @@
     <p class="error">{{ error }}</p>
     <p class="error" id="errorjs"></p>
     <form action="{% url 'subekashi:ad' %}" method="POST" id="adForm">{% csrf_token %}
-        <div class="label-wrapper">
-            <label class="label-same">1枠目</label>
+        <div class="form-col">
+            <label>1枠目</label>
             <input type="text" value="{{ url1 }}" id="url1" name="url1" placeholder="URLを入力" oninput="setad()"><br>
             <input type="text" value="{{ ad1 }}" id="ad1" name="ad1" hidden>
         </div>
-        <div class="label-wrapper">
-            <label class="label-same">2枠目</label>
+        <div class="form-col">
+            <label>2枠目</label>
             <input type="text" value="{{ url2 }}" id="url2" name="url2" placeholder="URLを入力" oninput="setad()"><br>
             <input type="text" value="{{ ad2 }}" id="ad2" name="ad2" hidden>
         </div>
-        <div class="label-wrapper">
-            <label class="label-same">3枠目</label>
+        <div class="form-col">
+            <label>3枠目</label>
             <input type="text" value="{{ url3 }}" id="url3" name="url3" placeholder="URLを入力" oninput="setad()"><br>
             <input type="text" value="{{ ad3 }}" id="ad3" name="ad3" hidden>
         </div>
