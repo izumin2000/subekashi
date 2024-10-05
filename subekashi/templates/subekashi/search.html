@@ -11,16 +11,16 @@
     <h1>曲の一覧と検索</h1>
     <div class="underline"></div>
 
-    <div id="inputs">
+    <div id="inputs" class="sansfont">
         <div class="form-col">
             <label for="keyword">キーワード</label>
-            <input type="text" id="keyword" class="sansfont" value="{{ keyword }}">
+            <input type="text" id="keyword">
         </div>
         <details>
             <summary>文字入力フォームを展開</summary>
             <div class="form-col">
                 <label for="title">タイトル</label>
-                <input type="text" id="title" class="sansfont" name="title">
+                <input type="text" id="title">
             </div>
             <div class="form-col">
                 <label for="channel">チャンネル名</label>
@@ -36,7 +36,7 @@
             </div>
         </div>
     </details>
-    <details>
+    <details class="sansfont">
         <summary>選択肢フォームを展開</summary>
         <div id="selects">
             <div class="form-col">
@@ -75,7 +75,7 @@
             </div>
         </div>
     </details>
-    <details>
+    <details class="sansfont">
         <summary>チェックボックスフォームを展開</summary>
         <div id="filters">
             <div class="checkbox-col">

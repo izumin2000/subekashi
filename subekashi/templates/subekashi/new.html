@@ -196,11 +196,5 @@
 {% endblock %}
 
 {% block js %}
-<script defer src="{% static 'subekashi/js/new.js' %}?{% get_last_modified %}" rel="stylesheet"></script>
-<script defer>
-    window.addEventListener('load', function() {
-        firstLoad('{{ id }}');
-    });
-</script>
-
+<script defer src="{% static 'subekashi/js/new.js' %}?{% get_last_modified %}"></script>
 {% endblock %}

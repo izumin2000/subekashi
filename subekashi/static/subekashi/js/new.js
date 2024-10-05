@@ -1,24 +1,22 @@
-var songJson, songResult, songGuessEles, imitateList = [], isGetQuery = false;
+var songJson, songResult, imitateList = [], isGetQuery = false;
 
-async function firstLoad(songId) {
-    res = await fetch(baseURL() + "/api/song/?format=json");
-    songJson = await res.json();
-
-    if (songId != "None") {
-        songResult = songJson.filter(song => song.id == songId)[0];
+window.addEventListener('load', async function () {
+    songJson = await getSongJson();
+    const currentUrl = window.location.href;
+    const url = new URL(currentUrl);
+    const id = url.searchParams.get('id');
+    if (id) {
+        songResult = songJson.filter(song => song.id == id)[0];
         document.getElementById("title").value = songResult.title;
         document.getElementById("channel").value = songResult.channel;
         fillForm();
         setSubmitButton("_", "_");
-        document.getElementById("songid").value = Number(songId);
     }
-    
-    songGuessEles = document.getElementsByClassName("songGuess");
-    isGetQuery = songId != "None"
+
+    isGetQuery = Boolean(id)
     autotextarea();
     checkExist();
-}
-
+});
 
 function setSubmitButton(titleValue, channelValue) {
     submitEle = document.getElementById("newsubmit");

@@ -9,12 +9,13 @@ import requests
 
 def new(request) :
     dataD = {
-        "metatitle" : "登録と編集",
+        "metatitle": "登録と編集",
+        "channel": request.GET.get("channel", "")
     }
 
+    id = request.GET.get("id")
     # TODO song.pyに
     if request.method == "POST":
-        idForm = request.POST.get("songid")
         titleForm = request.POST.get("title")
         channelForm = request.POST.get("channel")
         urlForm = request.POST.get("url")
@@ -31,8 +32,8 @@ def new(request) :
             return render(request, "subekashi/500.html")
 
         channelForm = channelForm.replace("/", "╱")
-        if idForm :
-            songIns = Song.objects.get(pk = int(idForm))
+        if id :
+            songIns = Song.objects.get(pk = int(id))
             songIns.title = titleForm
             songIns.channel = channelForm
         else :
@@ -94,8 +95,4 @@ def new(request) :
         requests.post(NEW_DISCORD_URL, data={'content': content})
         
         return render(request, 'subekashi/song.html', dataD)
-    
-    dataD["id"] = request.GET.get("id")
-    dataD["channel"] = request.GET.get("channel") if request.GET.get("channel") else ""
-
     return render(request, 'subekashi/new.html', dataD)
