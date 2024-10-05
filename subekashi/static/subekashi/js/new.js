@@ -168,30 +168,21 @@ function appendSong(id) {
 
 
 function clickSong(id) {
-    imitateTitleValue = document.getElementById("imitateTitle").value;
-    imitateTitleValue.value = "";
-    for (songGuessEle of songGuessEles) {
-        songGuessEle.style.display = "none";
-    }
+    document.getElementById("imitateTitle").value = "";
+    renderSongGuesser();
     appendSong(id);
 }
 
 
-function searchSong() {
-    imitateTitleValue = document.getElementById("imitateTitle").value;
-    if (imitateTitleValue == "") {
-        for (songGuessEle of songGuessEles) {
-            songGuessEle.style.display = "none";
-        }
-    } else {
-        for (songGuessEle of songGuessEles) {
-            if (songGuessEle.dataset.title.includes(imitateTitleValue)) {
-                songGuessEle.style.display = "block";
-            } else {
-                songGuessEle.style.display = "none";
-            }
-        }
+function renderSongGuesser() {
+    // 以前のリクエストが存在する場合、そのリクエストをキャンセルする
+    if (songGuesserController) {
+        songGuesserController.abort();
     }
+    songGuesserController = new AbortController();
+
+    imitateTitle = document.getElementById("imitateTitle").value;
+    getSongGuessers(imitateTitle, "song-guesser", songGuesserController.signal);
 }
 
 // フォームに変更があったかを検知

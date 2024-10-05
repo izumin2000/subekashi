@@ -105,7 +105,8 @@
     <p class="detailP">最終更新日：2023年9月25日</p>
     {% comment %} TODO subekashi:songに変更してPOST処理をsongに記述 {% endcomment %}
     <form action="{% url 'subekashi:new' %}" method="POST" id="newform">{% csrf_token %}
-        <input type="number" id="songid" name="songid" hidden>
+        {% comment %} TODO songidを.GET.getで取得するようにする {% endcomment %}
+        <input type="number" id="songid" name="songid" hidden>　
         <div class="form-col">
             <label>曲名*</label>
             <input type="text" id="title" name="title" class="sansfont" oninput="checkExist()" value="{{ title }}">
@@ -140,14 +141,9 @@
                 <button type="button" onclick="appendCategory(13)">無題です。模倣</button>
             </div>
             <p class="imitateP">もしくは模倣曲から選択</p>
-            <div class="songGuesser sansfont">
-                <input type="text" id="imitateTitle" oninput="searchSong()" placeholder="タイトルを入力"><br>
-                {% comment %} TODO jsから持ってくる {% endcomment %}
-                {% for songIns in songInsL %}
-                <div class="songGuess" data-title="{{ songIns.title }}" onclick="clickSong('{{ songIns.id }}')">
-                    <p><span class="channel"><i class="fas fa-user-circle"></i> {{ songIns.channel }}</span> <i class="fas fa-music"></i> {{ songIns.title }}</p>
-                </div>
-                {% endfor %}
+            <div>
+                <input type="text" id="imitateTitle" oninput="renderSongGuesser()" placeholder="タイトルかチャンネル名を入力"><br>
+                <div id="song-guesser" class="sansfont"></div>
             </div>
             <div id="imitatelists"></div>
             <input type="text" id="imitates" name="imitates" hidden>

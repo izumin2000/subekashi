@@ -494,26 +494,33 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
 
 
 /* ソングゲッサー */
-#imitateTitle {
-    width: 100%;
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
 }
 
-.songGuess {
-    display: none;
+.song-guesser {
     width: calc(100% - 10px);
     margin: 5px 0;
     padding: 5px;
     background-color: #555;
     cursor: pointer;
     overflow-x: hidden;
+    opacity: 0;
+    animation: fadeIn 0.3s ease forwards;
 }
 
 .channel {
     color: #ccc;
 }
 
-.songGuess:hover {
-    background-color: #444;
+.song-guesser:hover {
+    background-color: #777;
 }
 
 

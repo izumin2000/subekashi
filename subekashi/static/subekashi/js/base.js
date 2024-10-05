@@ -51,6 +51,62 @@ function isCompleted(song) {
     return !columnL.includes("");
 }
 
+// Song APIの取得
+var isGetSongJson = false;
+var songJson;
+async function getSongJson() {
+    if (isGetSongJson) {
+        return songJson;
+    }
+
+    res = await fetch(baseURL() + "/api/song/?format=json");
+    songJson = await res.json();
+    isGetSongJson = true;
+    return songJson;
+}
+
+
+function sleep(s) {
+    return new Promise(resolve => setTimeout(resolve, s*1000));
+}
+
+function appendSongGuesser(song, toEle) { 
+    songGuesser = `<div class="song-guesser" onclick="clickSong('${song.id}')">
+        <p><span class="channel"><i class="fas fa-user-circle"></i>${song.channel}</span> 
+        <i class="fas fa-music"></i> ${song.title}</p> 
+    </div>`;
+    songGuesserEle = new DOMParser().parseFromString(songGuesser, "text/html").body.firstElementChild; 
+    toEle.appendChild(songGuesserEle)
+}
+
+var songGuesserController;
+async function getSongGuessers(text, to, signal) {
+    var toEle = document.getElementById(to);
+    while (toEle.firstChild) {
+        toEle.removeChild(toEle.firstChild);
+    }
+
+    if (text == "") {
+        return;
+    }
+
+    songJson = await getSongJson();
+    try {
+        songJson = await getSongJson();
+        songStack = songJson.filter(song => song.title.includes(text)).concat(songJson.filter(song => song.channel.includes(text)));
+
+        for (const song of songStack) {
+            // キャンセルが要求されているか確認
+            if (signal.aborted) {
+                throw new Error("Operation aborted");
+            }
+
+            appendSongGuesser(song, toEle);
+            await sleep(0.05);
+        }
+    } catch (error) {
+    }
+}
 
 // グローバルヘッダーの取得
 async function getHeader() {
