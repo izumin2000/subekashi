@@ -18,13 +18,13 @@
             
             {% for url in urls %}
                 <br><i class="fas fa-link"></i>
-                <a class="songurl" href="{{ url }}" target="_blank">{{ url }}</a>
                 <i class="far fa-copy" onclick="copy('{{ url }}')"></i>
+                <a class="songurl" href="{{ url }}" target="_blank">{{ url }}</a>
             {% endfor %}
             
             <br><i class="fas fa-tags"></i>
             {% for imitateIns in imitateInsL %}
-                <a class="songimitate" href="{% url 'subekashi:song' imitateIns.id %}">{{ imitateIns.title }}模倣</a>
+                <a class="songimitate sansfont" href="{% url 'subekashi:song' imitateIns.id %}">{{ imitateIns.title }}模倣</a>
             {% endfor %}
             {% if songIns.channel == "全てあなたの所為です。" %}
                 <p class="songimitate">オリジナル</p>
@@ -51,7 +51,7 @@
             {% if imitatedInsL %}
                 <br><i class="fas fa-sitemap"></i>
                 {% for imitatedIns in imitatedInsL %}
-                    <a class="songimitate" href="{% url 'subekashi:song' imitatedIns.id %}">{{ imitatedIns.title }}</a>
+                    <a class="songimitate sansfont" href="{% url 'subekashi:song' imitatedIns.id %}">{{ imitatedIns.title }}</a>
                 {% endfor %}
             {% endif %}
             {% if songIns.upload_time %}
