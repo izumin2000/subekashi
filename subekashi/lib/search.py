@@ -1,11 +1,12 @@
 from subekashi.models import Song
 from subekashi.lib.filter import *
+import math
 
 NUMBER_FORMS = ["view", "like", "post_time", "upload_time"]
 NUMBER_GT_FORMS = [f"{column}_gt" for column in NUMBER_FORMS]
 NUMBER_LT_FORMS = [f"{column}_lt" for column in NUMBER_FORMS]
 
-PAGE_SIZE = 50
+DEFALT_PAGE_SIZE = 50
 
 # タプルの第1引数はqueryのカラム名、第2引数はobject.filterで使うField lookups
 FORM_TYPE = {
@@ -26,13 +27,13 @@ def get_song_filter():
             FLITER_DATA[column] = filter + lookup
     
     return FLITER_DATA
-    
 
 # songの全カラム検索
 def song_search(query):
     FORM_TYPE = get_song_filter()
     
     filters = {}
+    statistics = {}
     query = {value: key[0] for value, key in query.items()}
     for column, value in query.items():
         if not FORM_TYPE.get(column):       # Songカラムに無いqueryは無視
@@ -52,19 +53,34 @@ def song_search(query):
         if query.get("imitated"):
             song_qs = song_qs.filter(include_imitated(query["imitated"]))
         
-        # queryにNUMBER_FORM関係がある場合youtubeのurlを含むsongのみに絞る
-        if len(set(query.keys()) & set(NUMBER_GT_FORMS + NUMBER_LT_FORMS)):
+        # NUMBER_FORMかソートがある場合、youtubeのurlを含むsongのみに絞る
+        has_number_form = len(set(query.keys()) & set(NUMBER_GT_FORMS + NUMBER_LT_FORMS)) >= 1
+        has_sort = query.get("sort", False)
+        if has_number_form or has_sort:
             song_qs = song_qs.filter(include_youtube)
         
         if query.get("islack"):
             song_qs = song_qs.filter(islack)
         
+        if query.get("sort"):
+            song_qs = song_qs.order_by(query["sort"])
+        
+        count = song_qs.count()
+        statistics["count"] = count
         if query.get("page"):
             page = int(query["page"])
-            song_qs = song_qs[(page - 1) * PAGE_SIZE:page * PAGE_SIZE]
+            page_size = int(query["page_size"]) if query.get("page_size") else DEFALT_PAGE_SIZE
+            statistics["page"] = page
+            statistics["page_size"] = page_size
+            max_page = math.ceil(count/page_size)
+            statistics["max_page"] = max_page
+            if page > max_page:
+                raise IndexError(f"最大ページ数{max_page}を超えています")
+            song_qs = song_qs[(page - 1) * page_size : page * page_size]
         
     except Exception as e:
         return {"error": str(e)}
-        
-    return song_qs.order_by("-post_time")
+    
+    
+    return song_qs, statistics
     
