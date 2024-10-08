@@ -1,4 +1,4 @@
-<div class="song-guesser" data-id="{{ song.id }}">
-    <p><span class="channel"><i class="fas fa-user-circle"></i>{{ song.channel }}</span> 
-    <i class="fas fa-music"></i>{{ song.title }}</p> 
+<div class="song-guesser" onclick=songGuesserClick({{ song.id }})>
+    <p><span class="channel"><i class="fas fa-user-circle"></i> {{ song.channel }}</span> 
+    <i class="fas fa-music"></i> {{ song.title }}</p> 
 </div>

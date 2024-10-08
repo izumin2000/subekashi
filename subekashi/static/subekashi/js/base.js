@@ -69,6 +69,7 @@ function sleep(s) {
     return new Promise(resolve => setTimeout(resolve, s*1000));
 }
 
+
 function stringToHTML(string, multi=false) {
     const devEle = document.createElement("div");
     devEle.innerHTML = string;
@@ -86,6 +87,7 @@ function appendSongGuesser(songGuesser, toEle) {
     songGuesserEle = stringToHTML(songGuesser);
     toEle.appendChild(songGuesserEle)
 }
+
 
 var songGuesserController;
 async function getSongGuessers(text, to, signal) {
@@ -106,13 +108,14 @@ async function getSongGuessers(text, to, signal) {
                 return;
             }
             
-            songGuesser = getSongGuesser(song);
-            appendSongGuesser(songGuesserEle, toEle);
+            appendSongGuesser(songGuesser, toEle);
             await sleep(0.05);
         }
     } catch (error) {
+        console.error(error)
     }
 }
+
 
 // グローバルヘッダーの取得
 async function getHeader() {
@@ -127,9 +130,8 @@ async function getHeader() {
     } catch ( error ) {
         console.error(error);
 
-        const p = document.createElement("p");
-        p.textContent = "ヘッダーを読み込めませんでした。再読み込みをお試しください。";
-        imicomHeaderEle.append(p);
+        imiN_loadingEle = document.getElementsByClassName("imiN_loading")[0];
+        imiN_loadingEle.innerHTML = "グローバルヘッダーを読み込めませんでした。";
     }
 
     const headerEle = document.getElementsByTagName("header")[0];

@@ -113,7 +113,7 @@
         </div>
         <div class="form-col">
             <label>チャンネル名*</label>
-            <input type="text" id="channel" name="channel" oninput="checkExist()" value="{{ channel }}">
+            <input type="text" id="channel" name="channel" class="sansfont" oninput="checkExist()" value="{{ channel }}">
         </div>
         <p id="isExist"></p>
         <button type="button" id="fillFormButton" class="sansfont" onclick="fillForm()">自動入力</button>
@@ -142,7 +142,7 @@
             </div>
             <p class="imitateP">もしくは模倣曲から選択</p>
             <div>
-                <input type="text" id="imitateTitle" oninput="renderSongGuesser()" placeholder="タイトルかチャンネル名を入力"><br>
+                <input type="text" id="imitateTitle" class="sansfont" oninput="renderSongGuesser()" placeholder="タイトルかチャンネル名を入力"><br>
                 <div id="song-guesser" class="sansfont"></div>
             </div>
             <div id="imitatelists"></div>

@@ -1,7 +1,8 @@
 var songJson, songResult, imitateList = [], isGetQuery = false;
 
+
 window.addEventListener('load', async function () {
-    songJson = await getSongJson();
+    songJson = await getJson("song");
     const currentUrl = window.location.href;
     const url = new URL(currentUrl);
     const id = url.searchParams.get('id');
@@ -17,6 +18,7 @@ window.addEventListener('load', async function () {
     autotextarea();
     checkExist();
 });
+
 
 function setSubmitButton(titleValue, channelValue) {
     submitEle = document.getElementById("newsubmit");
@@ -122,24 +124,26 @@ function deleteImitate(id) {
 
 
 function appendImitate(song) {
-    imitateEle = document.createElement('div');
-    imitateInnerEle = `\
-    <p>\
-    <span class='channel'>\
-        <i class='fas fa-user-circle'></i>\
-        ${ song.channel }\
-    </span>\
-    <i class='fas fa-music'></i>\
-    ${ song.title }\
-    <span class='deleteSong' onclick="deleteImitate('${ song.id }')">\
-        <i class='far fa-trash-alt'></i>\
-        <a>削除</a>\
-    </span>\
-    </p>`
-    imitateEle.innerHTML = imitateInnerEle;
-    imitateEle.id = `imitate${song.id}`;
+    // TODO data-id化
+    imitate = `
+    <div id=${ song.id }>
+        <p>
+            <span class='channel'>
+                <i class='fas fa-user-circle'></i>
+                ${ song.channel }
+            </span>
+            <i class='fas fa-music'></i>
+            ${ song.title }
+            <span class='deleteSong' onclick="deleteImitate('${ song.id }')">
+                <i class='far fa-trash-alt'></i>
+                <a>削除</a>
+            </span>
+        </p>
+    </div>
+    `
+
     imitatelistsEle = document.getElementById('imitatelists');
-    imitatelistsEle.appendChild(imitateEle);
+    imitatelistsEle.appendChild(stringToHTML(imitate));
 
     if (imitateList.length == 0) {
         imitateList[0] = song.id;
@@ -151,24 +155,10 @@ function appendImitate(song) {
 }
 
 
+// TODO data化
 function appendCategory(categoryId) {
     subeanaSongs = songJson.filter(song => song.channel == "全てあなたの所為です。");
     appendImitate(subeanaSongs[categoryId]);
-}
-
-
-function appendSong(id) {
-    subeanaSongs = songJson.filter(song => song.id == id);
-    appendImitate(subeanaSongs[0]);
-    titleEle = document.getElementById("imitateTitle");
-    titleEle.value = "";
-}
-
-
-function clickSong(id) {
-    document.getElementById("imitateTitle").value = "";
-    renderSongGuesser();
-    appendSong(id);
 }
 
 
@@ -177,11 +167,20 @@ function renderSongGuesser() {
     if (songGuesserController) {
         songGuesserController.abort();
     }
-    songGuesserController = new AbortController();
 
+    songGuesserController = new AbortController();
     imitateTitle = document.getElementById("imitateTitle").value;
     getSongGuessers(imitateTitle, "song-guesser", songGuesserController.signal);
 }
+
+
+function songGuesserClick(id) {
+    document.getElementById("imitateTitle").value = "";
+    renderSongGuesser();
+    imitateSong = songJson.filter(song => song.id == id)[0];
+    appendImitate(imitateSong);
+};
+
 
 // フォームに変更があったかを検知
 isFormDirty = false;
@@ -191,14 +190,16 @@ document.querySelectorAll('input, textarea').forEach((input) => {
     });
 });
 
-// フォームが送信される際にisFormDirtyをリセット
-document.querySelector('form').addEventListener('submit', (event) => {
-    isFormDirty = false;
-});
 
 // ページを離れる前に警告を表示
 window.addEventListener('beforeunload', (event) => {
     if (isFormDirty) {
         event.preventDefault();
     }
+});
+
+
+// フォームが送信される際にisFormDirtyをリセット
+document.querySelector('form').addEventListener('submit', (event) => {
+    isFormDirty = false;
 });
