@@ -15,3 +15,5 @@ from subekashi.views.song import song
 from subekashi.views.songapi import SongAPI
 from subekashi.views.special import special
 from subekashi.views.top import top
+from subekashi.views.components.song_cards import song_cards
+from subekashi.views.components.song_guessers import song_guessers
