@@ -20,7 +20,7 @@
 html {
     height: 100%;
     background-color: #000;
-    font-family: 'Imitate', 'Noto Sans JP', sans-serif;
+    font-family: 'Imitate', 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif, Meiryo;
 }
 
 body {
@@ -190,7 +190,7 @@ a {
 }
 
 .sansfont {
-    font-family: 'Noto Sans JP', sans-serif !important;
+    font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans',  sans-serif !important;
     font-weight: 1000 !important;
 }
 
@@ -304,7 +304,7 @@ input, select, option, textarea {
     font-size: 25px;
     border: none;
     box-shadow: 0 0 0 1px #ccc inset;
-    font-family: 'Imitate', 'Noto Sans JP', sans-serif;
+    font-family: 'Imitate', 'Noto Sans JP',  'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif, Meiryo;
     align-items: center;
     box-sizing: border-box;
 }
@@ -356,7 +356,7 @@ input[type=submit], button {
     font-size: 25px;
     cursor: pointer;
     margin: 20px 0;
-    font-family: 'Imitate', 'Noto Sans JP', sans-serif;
+    font-family: 'Imitate', 'Noto Sans JP',  'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif, Meiryo;
 }
 
 .dummybuttons {
