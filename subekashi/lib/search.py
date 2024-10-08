@@ -41,44 +41,44 @@ def song_search(query):
         
         filters.update({FORM_TYPE[column]: value})
     
-    try :
+    try:
         song_qs = Song.objects.filter(**filters)
         
-        if query.get("keyword"):
+        if "keyword" in query:
             song_qs = song_qs.filter(include_keyword(query["keyword"]))
             
-        if query.get("imitate"):
+        if "imitate" in query:
             song_qs = song_qs.filter(include_imitate(query["imitate"]))
         
-        if query.get("imitated"):
+        if "imitated" in query:
             song_qs = song_qs.filter(include_imitated(query["imitated"]))
         
         # NUMBER_FORMかソートがある場合、youtubeのurlを含むsongのみに絞る
         has_number_form = len(set(query.keys()) & set(NUMBER_GT_FORMS + NUMBER_LT_FORMS)) >= 1
-        has_sort = query.get("sort", False)
+        has_sort = "sort" in query
         if has_number_form or has_sort:
             song_qs = song_qs.filter(include_youtube)
         
-        if query.get("islack"):
+        if "islack" in query:
             song_qs = song_qs.filter(islack)
         
-        if query.get("sort"):
+        if "sort" in query:
             song_qs = song_qs.order_by(query["sort"])
         
         count = song_qs.count()
-        if query.get("count"):
+        if "count" in query:
             statistics["count"] = count
         
         query_size = int(query.get("size", 0))
-        if not query.get("page") and query_size:
+        if "page" not in query and query_size:
             song_qs = song_qs[:query_size]
             
-        if query.get("page"):
+        if "page" in query:
             page = int(query["page"])
             size = query_size if query_size else DEFALT_SIZE
             statistics["page"] = page
             statistics["size"] = size
-            max_page = math.ceil(count/size)
+            max_page = math.ceil(count / size)
             statistics["max_page"] = max_page
             if page > max_page:
                 raise IndexError(f"最大ページ数{max_page}を超えています")
@@ -86,7 +86,6 @@ def song_search(query):
         
     except Exception as e:
         return {"error": str(e)}
-    
     
     return song_qs, statistics
     
