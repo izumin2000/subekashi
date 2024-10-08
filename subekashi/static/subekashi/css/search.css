@@ -1,7 +1,16 @@
-#filters {
+.ml-none {
     margin-left: -20px;
 }
 
-#searchsubmit, #counter {
-    margin-top: 20px;
+.dummybuttons {
+    margin: 20px 0;
+}
+
+#search {
+    margin: 0;
+    width: calc(100% - 227px);
+}
+
+#isauto {
+    margin-right: 0;
 }
