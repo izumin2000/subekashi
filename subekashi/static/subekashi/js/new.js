@@ -52,7 +52,7 @@ function checkExist() {
     fillFormButtonEle = document.getElementById("fillFormButton");
 
     if ((titleValue != "") && (channelValue != "")) {
-        titleValue = titleValue.replace(/\//g, "╱");
+        channelValue = channelValue.replace(/\//g, "╱");
         songResult = songJson.filter(song => song.title == titleValue).filter(song => song.channel == channelValue);
         if (songResult.length == 0) {
             isExistEle.innerHTML = "<span class='ok'>この曲は登録されていません。</span>";
