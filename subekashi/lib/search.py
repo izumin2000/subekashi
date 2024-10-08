@@ -66,7 +66,9 @@ def song_search(query):
             song_qs = song_qs.order_by(query["sort"])
         
         count = song_qs.count()
-        statistics["count"] = count
+        if query.get("count"):
+            statistics["count"] = count
+        
         if query.get("page"):
             page = int(query["page"])
             page_size = int(query["page_size"]) if query.get("page_size") else DEFALT_PAGE_SIZE

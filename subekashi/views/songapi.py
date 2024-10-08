@@ -26,12 +26,13 @@ class SongAPI(viewsets.ReadOnlyModelViewSet):
         try:
             result_qs, statistics = self.get_queryset()
             result = self.get_serializer(result_qs, many=True).data
-            if request.GET.get("search") == "True":
-                response_data = statistics
-                response_data["result"] = result
-                return Response(response_data)
+            if len(statistics) == 0:
+                return Response(result)
+            
+            response_data = statistics
+            response_data["result"] = result
+            return Response(response_data)
 
-            return Response(result)
 
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
