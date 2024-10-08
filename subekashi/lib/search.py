@@ -6,7 +6,7 @@ NUMBER_FORMS = ["view", "like", "post_time", "upload_time"]
 NUMBER_GT_FORMS = [f"{column}_gt" for column in NUMBER_FORMS]
 NUMBER_LT_FORMS = [f"{column}_lt" for column in NUMBER_FORMS]
 
-DEFALT_PAGE_SIZE = 50
+DEFALT_SIZE = 50
 
 # タプルの第1引数はqueryのカラム名、第2引数はobject.filterで使うField lookups
 FORM_TYPE = {
@@ -69,16 +69,20 @@ def song_search(query):
         if query.get("count"):
             statistics["count"] = count
         
+        query_size = int(query.get("size", 0))
+        if not query.get("page") and query_size:
+            song_qs = song_qs[:query_size]
+            
         if query.get("page"):
             page = int(query["page"])
-            page_size = int(query["page_size"]) if query.get("page_size") else DEFALT_PAGE_SIZE
+            size = query_size if query_size else DEFALT_SIZE
             statistics["page"] = page
-            statistics["page_size"] = page_size
-            max_page = math.ceil(count/page_size)
+            statistics["size"] = size
+            max_page = math.ceil(count/size)
             statistics["max_page"] = max_page
             if page > max_page:
                 raise IndexError(f"最大ページ数{max_page}を超えています")
-            song_qs = song_qs[(page - 1) * page_size : page * page_size]
+            song_qs = song_qs[(page - 1) * size : page * size]
         
     except Exception as e:
         return {"error": str(e)}
