@@ -51,18 +51,17 @@ function isCompleted(song) {
     return !columnL.includes("");
 }
 
-// Song APIの取得
-var isGetSongJson = false;
-var songJson;
-async function getSongJson() {
-    if (isGetSongJson) {
-        return songJson;
+
+var jsonDatas = {}
+async function getJson(path) {
+    if (jsonDatas[path]) {
+        return jsonDatas[path];
     }
 
-    res = await fetch(baseURL() + "/api/song/?format=json");
-    songJson = await res.json();
-    isGetSongJson = true;
-    return songJson;
+    res = await fetch(`${baseURL()}/api/${path}`);
+    json = await res.json();
+    jsonDatas[path] = json;
+    return json;
 }
 
 
@@ -93,13 +92,11 @@ async function getSongGuessers(text, to, signal) {
     }
 
     try {
-        songJson = await getSongJson();
-        songStack = songJson.filter(song => song.title.includes(text)).concat(songJson.filter(song => song.channel.includes(text)));
-
-        for (const song of songStack) {
+        songGuessers = await getJson(`html/song_guessers?keyword=${text}`);
+        for (songGuesser of songGuessers) {
             // キャンセルが要求されているか確認
             if (signal.aborted) {
-                throw new Error("Operation aborted");
+                return;
             }
             
             songGuesser = getSongGuesser(song);
