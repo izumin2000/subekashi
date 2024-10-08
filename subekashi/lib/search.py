@@ -34,7 +34,11 @@ def song_search(query):
     
     filters = {}
     statistics = {}
-    query = {value: key[0] for value, key in query.items()}
+    for key, value in query.items():
+        if type(value) != list:
+            continue
+        query[key] = value[0]
+        
     for column, value in query.items():
         if not FORM_TYPE.get(column):       # Songカラムに無いqueryは無視
             continue
