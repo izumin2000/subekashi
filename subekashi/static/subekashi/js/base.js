@@ -70,11 +70,7 @@ function sleep(s) {
     return new Promise(resolve => setTimeout(resolve, s*1000));
 }
 
-function appendSongGuesser(song, toEle) { 
-    songGuesser = `<div class="song-guesser" onclick="clickSong('${song.id}')">
-        <p><span class="channel"><i class="fas fa-user-circle"></i>${song.channel}</span> 
-        <i class="fas fa-music"></i> ${song.title}</p> 
-    </div>`;
+function appendSongGuesser(songGuesser, toEle) {
     songGuesserEle = new DOMParser().parseFromString(songGuesser, "text/html").body.firstElementChild; 
     toEle.appendChild(songGuesserEle)
 }
@@ -90,7 +86,6 @@ async function getSongGuessers(text, to, signal) {
         return;
     }
 
-    songJson = await getSongJson();
     try {
         songJson = await getSongJson();
         songStack = songJson.filter(song => song.title.includes(text)).concat(songJson.filter(song => song.channel.includes(text)));
@@ -100,8 +95,9 @@ async function getSongGuessers(text, to, signal) {
             if (signal.aborted) {
                 throw new Error("Operation aborted");
             }
-
-            appendSongGuesser(song, toEle);
+            
+            songGuesser = getSongGuesser(song);
+            appendSongGuesser(songGuesserEle, toEle);
             await sleep(0.05);
         }
     } catch (error) {
