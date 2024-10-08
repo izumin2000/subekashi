@@ -70,8 +70,12 @@ function sleep(s) {
     return new Promise(resolve => setTimeout(resolve, s*1000));
 }
 
+function stringToHTML(string) {
+    return new DOMParser().parseFromString(string, "text/html").body.firstElementChild;
+}
+
 function appendSongGuesser(songGuesser, toEle) {
-    songGuesserEle = new DOMParser().parseFromString(songGuesser, "text/html").body.firstElementChild; 
+    songGuesserEle = stringToHTML(songGuesser);
     toEle.appendChild(songGuesserEle)
 }
 
