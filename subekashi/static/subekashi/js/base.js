@@ -71,7 +71,9 @@ function sleep(s) {
 }
 
 function stringToHTML(string) {
-    return new DOMParser().parseFromString(string, "text/html").body.firstElementChild;
+    const devEle = document.createElement("div");
+    devEle.innerHTML = string;
+    return devEle.children;
 }
 
 function appendSongGuesser(songGuesser, toEle) {
@@ -117,10 +119,7 @@ async function getHeader() {
             throw new RuntimeError(`getHeader: Response: ${res.status}`);
         }
         
-        const devEle = document.createElement("div");
-        devEle.innerHTML = text;
-        const imicomEle = devEle.children;
-        imicomHeaderEle.append(...imicomEle);
+        imicomHeaderEle.append(...stringToHTML(text));
     } catch ( error ) {
         console.error(error);
 
