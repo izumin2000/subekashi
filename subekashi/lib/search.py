@@ -56,6 +56,9 @@ def song_search(query):
         
         if "imitated" in query:
             song_qs = song_qs.filter(include_imitated(query["imitated"]))
+            
+        if "guesser" in query:
+            song_qs = song_qs.filter(include_guesser(query["guesser"]))
         
         # NUMBER_FORMかソートがある場合、youtubeのurlを含むsongのみに絞る
         has_number_form = len(set(query.keys()) & set(NUMBER_GT_FORMS + NUMBER_LT_FORMS)) >= 1

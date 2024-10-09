@@ -1,6 +1,14 @@
 from django.db.models import Q
 
 
+def include_keyword(keyword):
+    return (
+        Q(title__contains=keyword) |
+        Q(channel__contains=keyword) |
+        Q(lyrics__contains=keyword) |
+        Q(url__contains=keyword)
+    )
+    
 def include_imitate(imitate):
     imitate = str(imitate)
     return (
