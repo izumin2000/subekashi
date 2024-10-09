@@ -19,10 +19,10 @@ def include_imitated(imitated):
         Q(imitated__contains=',' + imitated + ',')
     )
 
-def include_keyword(keyword):
+def include_guesser(guesser):
     return (
-        Q(title__contains=keyword) |
-        Q(channel__contains=keyword)
+        Q(title__contains=guesser) |
+        Q(channel__contains=guesser)
     )
     
 include_youtube = Q(url__contains="https://youtu.be/")

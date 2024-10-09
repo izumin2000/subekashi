@@ -101,7 +101,7 @@ async function getSongGuessers(text, to, signal) {
     }
 
     try {
-        songGuessers = await getJson(`html/song_guessers?keyword=${text}`);
+        songGuessers = await getJson(`html/song_guessers?guesser=${text}`);
         for (songGuesser of songGuessers) {
             // キャンセルが要求されているか確認
             if (signal.aborted) {
