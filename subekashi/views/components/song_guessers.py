@@ -14,7 +14,7 @@ def song_guessers(request):
         result.append(render_to_string('subekashi/components/song_guesser.html', {'song': song}))
     
     if statistics["count"] > SIZE:
-        message = "最大表示件数に達しました。これ以上の候補を表示するには条件を絞ってください。"
+        message = "これ以上の候補を表示する為には条件を絞ってください。"
     else:
         message = "これ以上の検索結果はありません。"
     result.append(f"<p>{message}</p>")
