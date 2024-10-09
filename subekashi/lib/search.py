@@ -6,6 +6,15 @@ NUMBER_FORMS = ["view", "like", "post_time", "upload_time"]
 NUMBER_GT_FORMS = [f"{column}_gt" for column in NUMBER_FORMS]
 NUMBER_LT_FORMS = [f"{column}_lt" for column in NUMBER_FORMS]
 
+LIB_FILTERS = {
+    "keyword": include_keyword,
+    "imitate": include_imitate,
+    "imitated": include_imitated,
+    "guesser": include_guesser,
+    "youtube": include_youtube,
+    "islack": islack,
+}
+
 DEFALT_SIZE = 50
 
 # タプルの第1引数はqueryのカラム名、第2引数はobject.filterで使うField lookups
@@ -47,30 +56,22 @@ def song_search(query):
     
     try:
         song_qs = Song.objects.filter(**filters)
-        
-        if "keyword" in query:
-            song_qs = song_qs.filter(include_keyword(query["keyword"]))
+
+        for key, filter_func in LIB_FILTERS.items():
+            # NUMBER_FORMかソートがある場合youtubeのurlを含むsongのみに絞る
+            if key == "youtube":
+                has_number_form = len(set(query.keys()) & set(NUMBER_GT_FORMS + NUMBER_LT_FORMS)) >= 1
+                has_sort = "sort" in query
+                if has_number_form or has_sort:
+                    song_qs = song_qs.filter(include_youtube)
+                continue
             
-        if "imitate" in query:
-            song_qs = song_qs.filter(include_imitate(query["imitate"]))
-        
-        if "imitated" in query:
-            song_qs = song_qs.filter(include_imitated(query["imitated"]))
+            if key == "sort":
+                song_qs = song_qs.filter(islack)
+                continue
             
-        if "guesser" in query:
-            song_qs = song_qs.filter(include_guesser(query["guesser"]))
-        
-        # NUMBER_FORMかソートがある場合、youtubeのurlを含むsongのみに絞る
-        has_number_form = len(set(query.keys()) & set(NUMBER_GT_FORMS + NUMBER_LT_FORMS)) >= 1
-        has_sort = "sort" in query
-        if has_number_form or has_sort:
-            song_qs = song_qs.filter(include_youtube)
-        
-        if "islack" in query:
-            song_qs = song_qs.filter(islack)
-        
-        if "sort" in query:
-            song_qs = song_qs.order_by(query["sort"])
+            if key in query:
+                song_qs = song_qs.filter(filter_func(query[key]))
         
         count = song_qs.count()
         if "count" in query:
