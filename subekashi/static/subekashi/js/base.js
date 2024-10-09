@@ -60,7 +60,11 @@ async function getJson(path) {
 
     res = await fetch(`${baseURL()}/api/${path}`);
     json = await res.json();
-    jsonDatas[path] = json;
+
+    if (!path.includes("?")) {
+        jsonDatas[path] = json;
+    }
+
     return json;
 }
 
