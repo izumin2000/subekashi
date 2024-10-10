@@ -77,6 +77,9 @@ def song_search(query):
         if "count" in query:
             statistics["count"] = count
         
+        if not count:
+            return Song.objects.none(), statistics
+        
         query_size = int(query.get("size", 0))
         if "page" not in query and query_size:
             song_qs = song_qs[:query_size]
