@@ -1,93 +1,135 @@
-var songJson, songResult, subeanaSongs, songEles;
-var isLoaded = false;
+var page = 1;
 
-async function firstLoad(query) {
-    res = await fetch(baseURL() + "/api/song/?format=json");
-    songJson = await res.json();
-    subeanaSongs = songJson.filter(song => song.channel == "全てあなたの所為です。");
-    songEles = document.getElementsByClassName("song-card");
 
-    query = query.split(",")
-    if (query[0]) ddocument.getElementById("title").value = query[0];
-    if (query[1]) ddocument.getElementById("channel").value = query[1];
-    if (query[2]) document.getElementById("lyrics").value = query[2];
+// フォームに変更があったかを検知
+isFormDirty = false;
+window.addEventListener('load', async function () {
+    renderSearch();
+    document.querySelectorAll('input:not(#menu), select').forEach((form) => {
+        form.addEventListener('change', () => {
+            isFormDirty = true;
+            renderSearch();
+        });
+    });
+    // TODO cookieの読み込み
+});
 
-    radioEles = document.getElementsByClassName("filters");
-    for (radioEle of radioEles) {
-        if (radioEle.value != "issubeana") {
-            radioEle.checked = false;
+
+REMOVES = ["menu"]
+function getInputIds() {
+    const inputs = document.querySelectorAll('input');
+    ids = Array.from(inputs).map(input => input.id);
+    ids = ids.filter(id => !REMOVES.includes(id))
+    return ids;
+}
+
+
+// TODO 実装
+function keywordToQuery(keyword) {
+    return {};
+}
+
+
+function songrangeToQuery(songrange) {
+    if (songrange == "subeana") {
+        return { "issubeana": true };
+    } else if (songrange == "xx") {
+        return { "issubeana": false };
+    };
+    return {}
+}
+
+
+function isjokeToQuery(isjoke) {
+    if (isjoke == "only") {
+        return { "isjoke": true };
+    } else if (isjoke == "off") {
+        return { "isjoke": false };
+    };
+    return {};
+}
+
+
+function formToQuery() {
+    query = {};
+    form_ids = getInputIds();
+    for (form_id of form_ids) {
+        value = document.getElementById(form_id).value;
+        checkbox_ids = form_ids.filter(id => id.startsWith("is"));
+        if (checkbox_ids.includes(form_id)) {
+            value = document.getElementById(form_id).checked;
+            if (!value) {
+                continue;
+            }
+            value = "True";
+        }
+        if (form_id == "keyword") {
+            query = { ...query, ...keywordToQuery(value) };
+        }
+        if (form_id == "songrange") {
+            query = { ...query, ...songrangeToQuery(value) };
+        }
+        if (form_id == "isjoke") {
+            query = { ...query, ...isjokeToQuery(value) };
+        }
+
+        if (value !== "") {
+            query[form_id] = value;
         }
     }
-    if (query[3] != "") {
-        radioEles[Number(query[3])].checked = true;
-    }
-
-    isLoaded = true;
-    searchSong();
+    query["page"] = page;
+    return query;
 }
 
 
-function songFilter(key, value) {
-    if (value) {
-        songResult = songResult.filter(song => Boolean(song[key]));
-        songResult = songResult.filter(song => song[key].includes(value));
-    }
-    return songResult;
+// queryからURLクエリの文字列に変換 例：{"hoge":1, "isok": true}なら"?hoge=1&isok=True}"
+function toQueryString(query) {
+    const params = Object.entries(query)
+        .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+        .join('&');
+    return params ? `?${params}` : '';
 }
 
 
-function searchSong() {
-    if (!isLoaded) {
-        return
+// TODO 実装
+function paging() {
+    return
+}
+
+
+var SearchController;
+function renderSearch() {
+    // 以前のリクエストが存在する場合、そのリクエストをキャンセルする
+    if (SearchController) {
+        SearchController.abort();
     }
 
-    songResult = songJson.concat();
-    channelValue = document.getElementById("channel").value;
-    titleValue = document.getElementById("title").value;
-    lyricsValue = document.getElementById("lyrics").value;
+    SearchController = new AbortController();
+    search(SearchController.signal);
+}
 
-    filterEles = Array.from(document.getElementsByClassName("filters")).filter(filterEle => filterEle.checked);
-    filterL = (filterEles.map(filterEle => filterEle.value));
 
-    // issubeanaとisxxが両方選択されている場合は無視
-    if (filterL.includes("issubeana") && filterL.includes("isxx")) {
-        filterL.splice(filterL.indexOf("issubeana"), 1);
-        filterL.splice(filterL.indexOf("isxx"), 1);
+async function search(signal) {
+    var songCardsEle = document.getElementById("song-cards");
+    while (songCardsEle.firstChild) {
+        songCardsEle.removeChild(songCardsEle.firstChild);
     }
 
-    categoryValue = document.getElementById("category").value;
-    if (categoryValue != "全ての模倣") {
-        categoryId = subeanaSongs.filter(song => song.title == categoryValue.slice(0, -2)).map(song => song.id)[0];
-        songResult = songFilter("imitate", String(categoryId));
-    }
+    try {
+        query = formToQuery()
+        songCards = await getJson(`html/song_cards${toQueryString(query)}`);
+        for (songCard of songCards) {
+            // キャンセルが要求されているか確認
+            if (signal.aborted) {
+                return;
+            }
 
-    titleValue = titleValue.replace(/\//g, "╱");
-
-    songResult = songFilter("channel", channelValue);
-    songResult = songFilter("title", titleValue);
-    songResult = songFilter("lyrics", lyricsValue);
-    
-    const filters = {
-        "isCompleted": song => !isCompleted(song),
-        "isoriginal": song => song.isoriginal,
-        "isjoke": song => song.isjoke,
-        "isinst": song => song.isinst,
-        "issubeana": song => song.issubeana,
-        "isxx": song => !song.issubeana,
-    };
-    
-    filterL.forEach(filter => {
-        if(filters[filter]) songResult = songResult.filter(filters[filter]);
-    });
-
-    songResultId = songResult.map(song => song.id);
-    Array.from(songEles).map(songEle => songEle.style.display = "none");
-    songResultId.map(songId => document.getElementById("song" + songId).style.display = "block");
-
-    notfoundEle = document.getElementById("notfound");     
-    if (songResult.length) {
-        notfoundEle.style.display = "none";
-    } else {
-        notfoundEle.style.display = "block";
+            songCardEle = stringToHTML(songCard);
+            songCardsEle = document.getElementById("song-cards");
+            songCardsEle.appendChild(songCardEle)        
+            await sleep(0.05);
+        }
+    } catch (error) {
+        console.error(error)
     }
 }
