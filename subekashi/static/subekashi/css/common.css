@@ -228,6 +228,11 @@ summary {
     margin-bottom: 20px;
 }
 
+#loading {
+    display: block;
+    width: 120px;
+    margin: 0 auto;
+}
 
 /* メニュー */
 #menuarticle {

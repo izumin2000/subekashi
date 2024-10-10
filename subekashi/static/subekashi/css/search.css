@@ -6,11 +6,7 @@
     margin: 20px 0;
 }
 
-#search {
-    margin: 0;
-    width: calc(100% - 227px);
-}
-
-#isauto {
-    margin-right: 0;
+#search-button {
+    margin-bottom: 20px;
+    width: 100%;
 }

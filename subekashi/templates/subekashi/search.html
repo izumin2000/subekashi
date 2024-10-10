@@ -55,7 +55,7 @@
             <select id="sort" name="sort">
                 <option value="" {% if sort == '' %}selected{% endif %}></option>
                 <option value="" {% if sort == '' %}selected{% endif %}></option>
-                <option value="" {% if sort == '' %}selected{% endif %}></option>
+                <option value="random" {% if sort == 'random' %}selected{% endif %}>ランダム</option>
             </select>
         </div>
         <div class="checkbox-col ml-none">
@@ -75,20 +75,11 @@
             <label for="isinst">インスト曲</label>
         </div>
     </details>
-    <div class="dummybuttons">
-        <div class="dummybutton" id="search" onclick="search()"><p>検索</p></div>
-        <div id="isauto-wrapper">
-            <input type="checkbox" value="isauto" id="isauto" {% if isauto %}checked{% endif %}>
-            <label for="isauto">自動更新</label>
-        </div>
-    </div>
-
-    {% for songIns in songInsL %}
-        {% render_song_card songIns %}
-    {% endfor %}
+    <input type="submit" id="search-button" onclick="renderSearch()">検索</input>
+    <div id="song-cards"></div>
 </section>
 {% endblock %}
 
 {% block js %}
-<script></script>
+<script src="{% static 'subekashi/js/search.js' %}?{% get_last_modified %}"></script>
 {% endblock %}
