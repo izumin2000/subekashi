@@ -66,13 +66,14 @@ def song_search(query):
                     song_qs = song_qs.filter(include_youtube)
                 continue
             
-            if key == "sort":
+            if (key in query) and (key == "islack"):
                 song_qs = song_qs.filter(islack)
                 continue
             
             if key in query:
                 song_qs = song_qs.filter(filter_func(query[key]))
         
+        # TODO ソートの実装
         count = song_qs.count()
         if "count" in query:
             statistics["count"] = count
