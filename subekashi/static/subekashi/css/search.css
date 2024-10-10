@@ -2,6 +2,12 @@
     margin-left: -20px;
 }
 
+@media (max-width: 640px) {
+    .checkbox-col {
+        margin-left: -20px;
+    }
+}
+
 .dummybuttons {
     margin: 20px 0;
 }

@@ -433,6 +433,8 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     border-collapse: collapse;
     overflow: hidden;
     position: relative;
+    opacity: 0;
+    animation: fadeIn 0.3s ease forwards;
 }
 
 .song-card:hover {
