@@ -91,10 +91,20 @@ function toQueryString(query) {
 }
 
 
-// TODO 実装
 function paging() {
-    return
+    page++;
+    document.getElementById("loading").remove();
+    search(SearchController.signal, page);
 }
+
+// #loadingが映ったらpagingを実行
+const observer = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            paging();
+        }
+    });
+}, { threshold: 1.0 });
 
 
 var SearchController;
@@ -105,18 +115,19 @@ function renderSearch() {
     }
 
     SearchController = new AbortController();
-    search(SearchController.signal);
+    search(SearchController.signal, page);
 }
 
 
-async function search(signal) {
+async function search(signal, page) {
     var songCardsEle = document.getElementById("song-cards");
-    while (songCardsEle.firstChild) {
+    while ((songCardsEle.firstChild) && (page == 1)) {
         songCardsEle.removeChild(songCardsEle.firstChild);
     }
 
     try {
-        query = formToQuery()
+        query = formToQuery();
+        query["page"] = page;
         songCards = await getJson(`html/song_cards${toQueryString(query)}`);
         for (songCard of songCards) {
             // キャンセルが要求されているか確認
@@ -129,6 +140,10 @@ async function search(signal) {
             songCardsEle.appendChild(songCardEle)        
             await sleep(0.05);
         }
+
+        // #loadingを監視
+        const loadingElement = document.querySelector('#loading');
+        observer.observe(loadingElement);
     } catch (error) {
         console.error(error)
     }
