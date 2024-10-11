@@ -41,23 +41,22 @@ def query_to_filters(query):
     filters = {}
     FORM_TYPE = get_song_filter()
     
-    for key, value in query.items():
-        if type(value) != list:
-            continue
-        query[key] = value[0]
-        
     for column, value in query.items():
         if not FORM_TYPE.get(column):       # Songカラムに無いqueryは無視
             continue
         
+        if type(value) == list:
+            value = value[0]
+        
         if column.startswith("is") and (value in ["True", "true", 1]):
             value = True
             
-        if column.startswith("is") and (value in ["False", "false", 1]):
+        if column.startswith("is") and (value in ["False", "false", 0]):
             value = False
             
         filters.update({FORM_TYPE[column]: value})
         
+    print(filters)
     return filters
     
     
