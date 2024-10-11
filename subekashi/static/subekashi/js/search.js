@@ -15,11 +15,11 @@ window.addEventListener('load', async function () {
 });
 
 
-REMOVES = ["menu"]
+IGNORE_INPUTS = ["menu"]
 function getInputIds() {
-    const inputs = document.querySelectorAll('input');
+    const inputs = document.querySelectorAll('input, select');
     ids = Array.from(inputs).map(input => input.id);
-    ids = ids.filter(id => !REMOVES.includes(id))
+    ids = ids.filter(id => !IGNORE_INPUTS.includes(id))
     return ids;
 }
 
@@ -49,34 +49,48 @@ function isjokeToQuery(isjoke) {
     return {};
 }
 
+function cleanQuery(query) {
+    Object.keys(query).forEach(key => {
+        if (query[key] === "") {
+            delete query[key];
+        }
+    });
+    
+    return query;
+}
+
 
 function formToQuery() {
     query = {};
     form_ids = getInputIds();
+    checkbox_ids = form_ids.filter(id => id.startsWith("is"));
     for (form_id of form_ids) {
-        value = document.getElementById(form_id).value;
-        checkbox_ids = form_ids.filter(id => id.startsWith("is"));
+        // checkboxなら
         if (checkbox_ids.includes(form_id)) {
             value = document.getElementById(form_id).checked;
             if (!value) {
                 continue;
             }
-            value = "True";
+            query[form_id] = "True";
+            continue
         }
+        value = document.getElementById(form_id).value;
         if (form_id == "keyword") {
             query = { ...query, ...keywordToQuery(value) };
+            continue
         }
         if (form_id == "songrange") {
             query = { ...query, ...songrangeToQuery(value) };
-        }
-        if (form_id == "isjoke") {
-            query = { ...query, ...isjokeToQuery(value) };
-        }
+            continue
 
-        if (value !== "") {
-            query[form_id] = value;
         }
+        if (form_id == "jokerange") {
+            query = { ...query, ...isjokeToQuery(value) };
+            continue
+        }
+        query[form_id] = value;
     }
+    query = cleanQuery(query);
     query["page"] = page;
     return query;
 }
@@ -143,7 +157,9 @@ async function search(signal, page) {
 
         // #loadingを監視
         const loadingElement = document.querySelector('#loading');
-        observer.observe(loadingElement);
+        if (loadingElement) {
+            observer.observe(loadingElement);
+        }
     } catch (error) {
         console.error(error)
     }
