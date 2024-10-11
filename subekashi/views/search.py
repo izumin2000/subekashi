@@ -1,11 +1,12 @@
 from django.shortcuts import render
 
 QUERY_OR_COOKIE_FORMS = [
+    ("isdetail", "isdetail", "False"),
     ("songrange", "issubeana", "subeana"),
     ("jokerange", "isjoke", "off"),
     ("sort", "sort", "post_time"),
-    ("isauto", "isauto", True),
 ]
+
 # TODO constantsに移動
 FILER_FORMS = ["issubeana", "isjoke", "isdraft", "isoriginal", "isinst"]
 
