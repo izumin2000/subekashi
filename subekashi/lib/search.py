@@ -91,6 +91,7 @@ def song_search(query):
             statistics["count"] = count
         
         if not count:
+            statistics["max_page"] = 1
             return Song.objects.none(), statistics
         
         query_size = int(query.get("size", 0))
