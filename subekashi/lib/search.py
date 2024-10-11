@@ -37,12 +37,10 @@ def get_song_filter():
     
     return FLITER_DATA
 
-# songの全カラム検索
-def song_search(query):
+def query_to_filters(query):
+    filters = {}
     FORM_TYPE = get_song_filter()
     
-    filters = {}
-    statistics = {}
     for key, value in query.items():
         if type(value) != list:
             continue
@@ -52,7 +50,21 @@ def song_search(query):
         if not FORM_TYPE.get(column):       # Songカラムに無いqueryは無視
             continue
         
+        if column.startswith("is") and (value in ["True", "true", 1]):
+            value = True
+            
+        if column.startswith("is") and (value in ["False", "false", 1]):
+            value = False
+            
         filters.update({FORM_TYPE[column]: value})
+        
+    return filters
+    
+    
+# songの全カラム検索
+def song_search(query):
+    filters = query_to_filters(query)
+    statistics = {}
     
     try:
         song_qs = Song.objects.filter(**filters)
