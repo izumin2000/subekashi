@@ -1,3 +1,9 @@
+@media (min-width: 640px) {
+    .form-col label {
+        width: 9em !important;
+    }
+}
+
 .ml-none {
     margin-left: -20px;
 }

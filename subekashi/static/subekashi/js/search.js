@@ -172,9 +172,6 @@ async function search(signal, page) {
         query = formToQuery();
         query["page"] = page;
         let songCards = await getJson(`html/song_cards${toQueryString(query)}`);
-        if (!songCards) {
-            return;
-        }
         for (let songCard of songCards) {
             // キャンセルが要求されているか確認
             if (signal.aborted) {
@@ -194,6 +191,5 @@ async function search(signal, page) {
         };
     } catch (error) {
         console.error(error);
-        pass;
     };
 };

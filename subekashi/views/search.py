@@ -4,7 +4,7 @@ QUERY_OR_COOKIE_FORMS = [
     ("isdetail", "isdetail", "False"),
     ("songrange", "issubeana", "subeana"),
     ("jokerange", "isjoke", "off"),
-    ("sort", "sort", "post_time"),
+    ("sort", "sort", "-post_time"),
 ]
 
 # TODO constantsに移動
