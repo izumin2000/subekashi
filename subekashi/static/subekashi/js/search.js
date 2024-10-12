@@ -39,7 +39,6 @@ function setSearchCookie(e) {
         const cookieFormEle = document.getElementById(id);
         value = cookieFormEle.value;
     }
-    console.log(id, value);
     setCookie(`search_${id}`, value);
 };
 
@@ -51,8 +50,9 @@ function getInputIds() {
 };
 
 
-function keywordToQuery() {
-    return {}
+function keywordToQuery(keyword) {
+    // TODO コマンドの処理
+    return { "keyword" : keyword }
 };
 
 
