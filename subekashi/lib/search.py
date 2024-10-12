@@ -41,14 +41,15 @@ def get_song_filter():
 def clean_query(query):
     for column, value in query.items():
         if type(value) == list:
-            query[column] = value[0]
+            value = value[0]
         
         if column.startswith("is") and (value in ["True", "true", 1]):
-            query[column] = True
+            value = True
             
         if column.startswith("is") and (value in ["False", "false", 0]):
-            query[column] = False
+            value = False
     
+        query[column] = value
     return query
 
 def query_to_filters(query):
@@ -124,7 +125,6 @@ def song_search(query):
             song_qs = song_qs[(page - 1) * size : page * size]
         
     except Exception as e:
-        print(e)
         return {"error": str(e)}
     
     return song_qs, statistics
