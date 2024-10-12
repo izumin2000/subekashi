@@ -38,17 +38,18 @@ def get_song_filter():
     
     return FLITER_DATA
 
-def clean_query_value(column, value):
-    if type(value) == list:
-        value = value[0]
-    
-    if column.startswith("is") and (value in ["True", "true", 1]):
-        value = True
+def clean_query(query):
+    for column, value in query.items():
+        if type(value) == list:
+            query[column] = value[0]
         
-    if column.startswith("is") and (value in ["False", "false", 0]):
-        value = False
+        if column.startswith("is") and (value in ["True", "true", 1]):
+            query[column] = True
+            
+        if column.startswith("is") and (value in ["False", "false", 0]):
+            query[column] = False
     
-    return value
+    return query
 
 def query_to_filters(query):
     filters = {}
@@ -58,13 +59,13 @@ def query_to_filters(query):
         if not FORM_TYPE.get(column):       # Songカラムに無いqueryは無視
             continue
         
-        value = clean_query_value(column, value)
         filters.update({FORM_TYPE[column]: value})
         
     return filters
     
 # songの全カラム検索
 def song_search(query):
+    query = clean_query(query)
     filters = query_to_filters(query)
     statistics = {}
     
@@ -75,8 +76,7 @@ def song_search(query):
             # NUMBER_FORMかソートがある場合youtubeのurlを含むsongのみに絞る
             if key == "youtube":
                 has_number_form = len(set(query.keys()) & set(NUMBER_GT_FORMS + NUMBER_LT_FORMS)) >= 1
-                has_sort = "sort" in query
-                if has_number_form or has_sort:
+                if has_number_form:
                     song_qs = song_qs.filter(include_youtube)
                 continue
             
@@ -85,10 +85,21 @@ def song_search(query):
                 continue
             
             if key in query:
-                value = clean_query_value(key, query[key])
+                value = query[key]
                 song_qs = song_qs.filter(filter_func(value))
         
-        # TODO ソートの実装
+        if "sort" in query:
+            sort = query["sort"]
+            if sort in ["upload_time", "-upload_time"]:
+                song_qs = song_qs.filter(upload_time__isnull = False)
+            if sort in ["view", "-view"]:
+                song_qs = song_qs.filter(view__gt = 0)
+            if sort in ["like", "-like"]:
+                song_qs = song_qs.filter(like__gt = 0)
+            if sort == "random":
+                sort = "?"
+            song_qs = song_qs.order_by(sort)
+
         count = song_qs.count()
         if "count" in query:
             statistics["count"] = count
@@ -113,6 +124,7 @@ def song_search(query):
             song_qs = song_qs[(page - 1) * size : page * size]
         
     except Exception as e:
+        print(e)
         return {"error": str(e)}
     
     return song_qs, statistics
