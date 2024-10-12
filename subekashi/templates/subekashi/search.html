@@ -75,11 +75,18 @@
             </select>
         </div>
         <div class="form-col">
-            {% comment %} TODO 並び替え {% endcomment %}
             <label for="sort">並び替え</label>
             <select id="sort" name="sort">
-                <option value="" {% if sort == '' %}selected{% endif %}></option>
-                <option value="" {% if sort == '' %}selected{% endif %}></option>
+                <option value="id" {% if sort == 'id' %}selected{% endif %}>新規登録順(早い順)</option>
+                <option value="-id" {% if sort == '-id' %}selected{% endif %}>新規登録順(遅い順)</option>
+                <option value="post_time" {% if sort == 'post_time' %}selected{% endif %}>更新順(早い順)</option>
+                <option value="-post_time" {% if sort == '-post_time' %}selected{% endif %}>更新順(遅い順)</option>
+                <option value="upload_time" {% if sort == 'upload_time' %}selected{% endif %}>アップロード日順(早い順)</option>
+                <option value="-upload_time" {% if sort == '-upload_time' %}selected{% endif %}>アップロード日順(遅い順)</option>
+                <option value="-view" {% if sort == '-view' %}selected{% endif %}>再生回数が多い順</option>
+                <option value="view" {% if sort == 'view' %}selected{% endif %}>再生回数が少ない順</option>
+                <option value="-like" {% if sort == '-like' %}selected{% endif %}>高評価数が多い順</option>
+                <option value="like" {% if sort == 'like' %}selected{% endif %}>高評価数が少ない順</option>
                 <option value="random" {% if sort == 'random' %}selected{% endif %}>ランダム</option>
             </select>
         </div>
