@@ -1,17 +1,24 @@
 var page = 1;
 
 
-// フォームに変更があったかを検知
-isFormDirty = false;
+isFormDirty = false;        // フォームに変更があったかを検知
+COOKIE_FORMS = ["songrange", "jokerange", "sort"];
 window.addEventListener('load', async function () {
     renderSearch();
 
-    document.querySelectorAll('input:not(#menu), select').forEach((form) => {
-        form.addEventListener('change', () => {
+    document.querySelectorAll('input:not(#menu), select').forEach((formEle) => {
+        formEle.addEventListener('change', () => {
             isFormDirty = true;
             renderSearch();
         });
     });
+
+    for (cookieForm of COOKIE_FORMS) {
+        cookieFormEle = document.getElementById(cookieForm);
+        cookieFormEle.addEventListener('change', (event) => {
+            setSearchCookie(event);
+        });
+    };
 });
 
 
@@ -19,13 +26,34 @@ function getInputIds() {
     const inputs = document.querySelectorAll('input, select');
     ids = Array.from(inputs).map(input => input.id);
     return ids;
-}
+};
 
 
-// TODO 実装
-function keywordToQuery(keyword) {
-    return {};
-}
+function setSearchCookie(e) {
+    DETAILS_ID = "isdetail"
+    id = e.target.id ? e.target.id : DETAILS_ID;
+    if (id == DETAILS_ID) {
+        const cookieFormEle = document.getElementById(DETAILS_ID);
+        value = cookieFormEle.open ? "False" : "True";
+    } else {
+        const cookieFormEle = document.getElementById(id);
+        value = cookieFormEle.value;
+    }
+    console.log(id, value);
+    setCookie(`search_${id}`, value);
+};
+
+
+function getInputIds() {
+    const inputs = document.querySelectorAll('input, select');
+    ids = Array.from(inputs).map(input => input.id);
+    return ids;
+};
+
+
+function keywordToQuery() {
+    return {}
+};
 
 
 function songrangeToQuery(songrange) {
@@ -34,8 +62,8 @@ function songrangeToQuery(songrange) {
     } else if (songrange == "xx") {
         return { "issubeana": false };
     };
-    return {}
-}
+    return {};
+};
 
 
 function isjokeToQuery(isjoke) {
@@ -45,7 +73,7 @@ function isjokeToQuery(isjoke) {
         return { "isjoke": false };
     };
     return {};
-}
+};
 
 
 function cleanQuery(query) {
@@ -56,7 +84,7 @@ function cleanQuery(query) {
     });
     
     return query;
-}
+};
 
 
 function formToQuery() {
@@ -71,28 +99,28 @@ function formToQuery() {
                 continue;
             }
             query[formId] = "True";
-            continue
+            continue;
         }
         value = document.getElementById(formId).value;
         if (formId == "keyword") {
             query = { ...query, ...keywordToQuery(value) };
-            continue
+            continue;
         }
         if (formId == "songrange") {
             query = { ...query, ...songrangeToQuery(value) };
-            continue
+            continue;
 
         }
         if (formId == "jokerange") {
             query = { ...query, ...isjokeToQuery(value) };
-            continue
+            continue;
         }
         query[formId] = value;
     }
     query = cleanQuery(query);
     query["page"] = page;
     return query;
-}
+};
 
 
 // queryからURLクエリの文字列に変換 例：{"hoge":1, "isok": true}なら"?hoge=1&isok=True}"
@@ -101,14 +129,14 @@ function toQueryString(query) {
         .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
         .join('&');
     return params ? `?${params}` : '';
-}
+};
 
 
 function paging() {
     page++;
     document.getElementById("loading").remove();
     search(SearchController.signal, page);
-}
+};
 
 
 // #loadingが映ったらpagingを実行
@@ -116,7 +144,7 @@ const observer = new IntersectionObserver((entries, observer) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
             paging();
-        }
+        };
     });
 }, { threshold: 1.0 });
 
@@ -126,11 +154,11 @@ function renderSearch() {
     // 以前のリクエストが存在する場合、そのリクエストをキャンセルする
     if (SearchController) {
         SearchController.abort();
-    }
+    };
 
     SearchController = new AbortController();
     search(SearchController.signal, page);
-}
+};
 
 
 async function search(signal, page) {
@@ -147,11 +175,11 @@ async function search(signal, page) {
             // キャンセルが要求されているか確認
             if (signal.aborted) {
                 return;
-            }
+            };
 
             songCardEle = stringToHTML(songCard);
             songCardsEle = document.getElementById("song-cards");
-            songCardsEle.appendChild(songCardEle)        
+            songCardsEle.appendChild(songCardEle);
             await sleep(0.05);
         }
 
@@ -159,8 +187,8 @@ async function search(signal, page) {
         const loadingElement = document.querySelector('#loading');
         if (loadingElement) {
             observer.observe(loadingElement);
-        }
+        };
     } catch (error) {
-        console.error(error)
-    }
-}
+        console.error(error);
+    };
+};
