@@ -11,6 +11,9 @@ class SongAPI(viewsets.ReadOnlyModelViewSet):
     cached_data = None
 
     def get_queryset(self):
+        if self.action == 'retrieve':
+            return super().get_queryset()  # 標準のクエリセットを使用
+
         if self.cached_data is None:
             query = dict(self.request.query_params)
             result = song_search(query)
@@ -33,6 +36,11 @@ class SongAPI(viewsets.ReadOnlyModelViewSet):
             response_data["result"] = result
             return Response(response_data)
 
-
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    def retrieve(self, request, *args, **kwargs):
+        # `song_id` に基づいて個別の `Song` を取得
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
