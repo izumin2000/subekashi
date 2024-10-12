@@ -5,21 +5,19 @@ var page = 1;
 isFormDirty = false;
 window.addEventListener('load', async function () {
     renderSearch();
+
     document.querySelectorAll('input:not(#menu), select').forEach((form) => {
         form.addEventListener('change', () => {
             isFormDirty = true;
             renderSearch();
         });
     });
-    // TODO cookieの読み込み
 });
 
 
-IGNORE_INPUTS = ["menu"]
 function getInputIds() {
     const inputs = document.querySelectorAll('input, select');
     ids = Array.from(inputs).map(input => input.id);
-    ids = ids.filter(id => !IGNORE_INPUTS.includes(id))
     return ids;
 }
 
@@ -49,6 +47,7 @@ function isjokeToQuery(isjoke) {
     return {};
 }
 
+
 function cleanQuery(query) {
     Object.keys(query).forEach(key => {
         if (query[key] === "") {
@@ -62,33 +61,33 @@ function cleanQuery(query) {
 
 function formToQuery() {
     query = {};
-    form_ids = getInputIds();
-    checkbox_ids = form_ids.filter(id => id.startsWith("is"));
-    for (form_id of form_ids) {
+    formIds = getInputIds();
+    checkboxIds = formIds.filter(id => id.startsWith("is"));
+    for (formId of formIds) {
         // checkboxなら
-        if (checkbox_ids.includes(form_id)) {
-            value = document.getElementById(form_id).checked;
+        if (checkboxIds.includes(formId)) {
+            value = document.getElementById(formId).checked;
             if (!value) {
                 continue;
             }
-            query[form_id] = "True";
+            query[formId] = "True";
             continue
         }
-        value = document.getElementById(form_id).value;
-        if (form_id == "keyword") {
+        value = document.getElementById(formId).value;
+        if (formId == "keyword") {
             query = { ...query, ...keywordToQuery(value) };
             continue
         }
-        if (form_id == "songrange") {
+        if (formId == "songrange") {
             query = { ...query, ...songrangeToQuery(value) };
             continue
 
         }
-        if (form_id == "jokerange") {
+        if (formId == "jokerange") {
             query = { ...query, ...isjokeToQuery(value) };
             continue
         }
-        query[form_id] = value;
+        query[formId] = value;
     }
     query = cleanQuery(query);
     query["page"] = page;
@@ -110,6 +109,7 @@ function paging() {
     document.getElementById("loading").remove();
     search(SearchController.signal, page);
 }
+
 
 // #loadingが映ったらpagingを実行
 const observer = new IntersectionObserver((entries, observer) => {
