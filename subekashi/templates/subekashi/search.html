@@ -13,7 +13,7 @@
 
     <div class="form-col">
         <label for="keyword">キーワード</label>
-        <input type="text" id="keyword" value={{ request.GET.keyword }}>
+        <input type="text" id="keyword" placeholder="タイトル・チャンネル名・歌詞・URL" value={{ request.GET.keyword }}>
     </div>
     <details id="isdetail" onclick="setSearchCookie(event)" {% if isdetail == "True" %}open{% endif %}>
         <summary>詳細検索</summary>
@@ -59,11 +59,11 @@
             <input type="number" id="like_lt" value={{ request.GET.url }}>
         </div>
         <div class="form-col">
-            <label for="upload_time_lt">アップ日/以前</label>
+            <label for="upload_time_lt"><i class="fab fa-youtube"></i>投稿日/以前</label>
             <input type="date" id="upload_time_lt" value={{ request.GET.url }}>
         </div>
         <div class="form-col">
-            <label for="upload_time_gt">アップ日/以後</label>
+            <label for="upload_time_gt"><i class="fab fa-youtube"></i>投稿日/以後</label>
             <input type="date" id="upload_time_gt" value={{ request.GET.url }}>
         </div>
         <div class="form-col">
@@ -104,12 +104,12 @@
         <div class="form-col">
             <label for="sort">並び替え</label>
             <select id="sort" name="sort">
-                <option value="id" {% if sort == 'id' %}selected{% endif %}>新規登録順(早い順)</option>
-                <option value="-id" {% if sort == '-id' %}selected{% endif %}>新規登録順(遅い順)</option>
-                <option value="post_time" {% if sort == 'post_time' %}selected{% endif %}>更新順(早い順)</option>
-                <option value="-post_time" {% if sort == '-post_time' %}selected{% endif %}>更新順(遅い順)</option>
-                <option value="upload_time" {% if sort == 'upload_time' %}selected{% endif %}>アップロード日順(早い順)</option>
-                <option value="-upload_time" {% if sort == '-upload_time' %}selected{% endif %}>アップロード日順(遅い順)</option>
+                <option value="id" {% if sort == 'id' %}selected{% endif %}>新規登録日が早い順</option>
+                <option value="-id" {% if sort == '-id' %}selected{% endif %}>新規登録日が遅い順</option>
+                <option value="post_time" {% if sort == 'post_time' %}selected{% endif %}>更新日が早い順</option>
+                <option value="-post_time" {% if sort == '-post_time' %}selected{% endif %}>更新遅日がい順</option>
+                <option value="upload_time" {% if sort == 'upload_time' %}selected{% endif %}>YouTube投稿日が早い順</option>
+                <option value="-upload_time" {% if sort == '-upload_time' %}selected{% endif %}>YouTube投稿日が遅い順</option>
                 <option value="-view" {% if sort == '-view' %}selected{% endif %}>再生回数が多い順</option>
                 <option value="view" {% if sort == 'view' %}selected{% endif %}>再生回数が少ない順</option>
                 <option value="-like" {% if sort == '-like' %}selected{% endif %}>高評価数が多い順</option>
