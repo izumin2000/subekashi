@@ -34,7 +34,7 @@
             <input type="text" id="url" value={{ request.GET.url }}>
         </div>
         <div class="form-col">
-            <label for="songrange">曲の表示</label>
+            <label for="songrange">界隈曲の種類</label>
             <select id="songrange" name="songrange">
                 <option value="all" {% if songrange == 'all' %}selected{% endif %}>全て表示</option>
                 <option value="subeana" {% if songrange == 'subeana' %}selected{% endif %}>すべあな界隈曲のみを表示</option>
@@ -42,7 +42,7 @@
             </select>
         </div>
         <div class="form-col">
-            <label for="jokerange">ネタ曲の表示</label>
+            <label for="jokerange">ネタ曲</label>
             <select id="jokerange" name="jokerange">
                 <option value="on" {% if jokerange == 'on' %}selected{% endif %}>全て表示</option>
                 <option value="only" {% if jokerange == 'only' %}selected{% endif %}>ネタ曲のみを表示</option>
