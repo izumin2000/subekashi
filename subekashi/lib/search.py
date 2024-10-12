@@ -58,7 +58,7 @@ def query_to_filters(query):
         if not FORM_TYPE.get(column):       # Songカラムに無いqueryは無視
             continue
         
-        clean_query_value(column, value)
+        value = clean_query_value(column, value)
         filters.update({FORM_TYPE[column]: value})
         
     return filters
