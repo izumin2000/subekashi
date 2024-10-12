@@ -23,7 +23,7 @@ window.addEventListener('load', async function () {
 
 
 function getInputIds() {
-    const inputs = document.querySelectorAll('input, select');
+    const inputs = document.querySelectorAll('input:not(#menu), select');
     ids = Array.from(inputs).map(input => input.id);
     return ids;
 };
@@ -56,6 +56,7 @@ function keywordToQuery(keyword) {
 };
 
 
+// TODO ?songrange=で直接GETできるようにする
 function songrangeToQuery(songrange) {
     if (songrange == "subeana") {
         return { "issubeana": true };
@@ -170,14 +171,17 @@ async function search(signal, page) {
     try {
         query = formToQuery();
         query["page"] = page;
-        songCards = await getJson(`html/song_cards${toQueryString(query)}`);
-        for (songCard of songCards) {
+        let songCards = await getJson(`html/song_cards${toQueryString(query)}`);
+        if (!songCards) {
+            return;
+        }
+        for (let songCard of songCards) {
             // キャンセルが要求されているか確認
             if (signal.aborted) {
                 return;
             };
 
-            songCardEle = stringToHTML(songCard);
+            let songCardEle = stringToHTML(songCard);
             songCardsEle = document.getElementById("song-cards");
             songCardsEle.appendChild(songCardEle);
             await sleep(0.05);
@@ -190,5 +194,6 @@ async function search(signal, page) {
         };
     } catch (error) {
         console.error(error);
+        pass;
     };
 };

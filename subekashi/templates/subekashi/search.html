@@ -33,6 +33,31 @@
             <label for="url">URL</label>
             <input type="text" id="url" value={{ request.GET.url }}>
         </div>
+        {% comment %} TODO YouTubeボタン {% endcomment %}
+        <div class="form-col">
+            <label for="view_gt">再生回数/以上</label>
+            <input type="number" id="view_gt" value={{ request.GET.url }}>
+        </div>
+        <div class="form-col">
+            <label for="view_lt">再生回数/以下</label>
+            <input type="number" id="view_lt" value={{ request.GET.url }}>
+        </div>
+        <div class="form-col">
+            <label for="like_gt">高評価数/以上</label>
+            <input type="number" id="like_gt" value={{ request.GET.url }}>
+        </div>
+        <div class="form-col">
+            <label for="like_lt">高評価数/以下</label>
+            <input type="number" id="like_lt" value={{ request.GET.url }}>
+        </div>
+        <div class="form-col">
+            <label for="upload_time_lt">アップ日/以前</label>
+            <input type="date" id="upload_time_lt" value={{ request.GET.url }}>
+        </div>
+        <div class="form-col">
+            <label for="upload_time_gt">アップ日/以後</label>
+            <input type="date" id="upload_time_gt" value={{ request.GET.url }}>
+        </div>
         <div class="form-col">
             <label for="songrange">界隈曲の種類</label>
             <select id="songrange" name="songrange">
