@@ -2,6 +2,7 @@ from subekashi.models import Song
 from subekashi.lib.filter import *
 import math
 
+# TODO 定数をconstantsに移動
 NUMBER_FORMS = ["view", "like", "post_time", "upload_time"]
 NUMBER_GT_FORMS = [f"{column}_gt" for column in NUMBER_FORMS]
 NUMBER_LT_FORMS = [f"{column}_lt" for column in NUMBER_FORMS]
@@ -37,6 +38,18 @@ def get_song_filter():
     
     return FLITER_DATA
 
+def clean_query_value(column, value):
+    if type(value) == list:
+        value = value[0]
+    
+    if column.startswith("is") and (value in ["True", "true", 1]):
+        value = True
+        
+    if column.startswith("is") and (value in ["False", "false", 0]):
+        value = False
+    
+    return value
+
 def query_to_filters(query):
     filters = {}
     FORM_TYPE = get_song_filter()
@@ -45,20 +58,10 @@ def query_to_filters(query):
         if not FORM_TYPE.get(column):       # Songカラムに無いqueryは無視
             continue
         
-        if type(value) == list:
-            value = value[0]
-        
-        if column.startswith("is") and (value in ["True", "true", 1]):
-            value = True
-            
-        if column.startswith("is") and (value in ["False", "false", 0]):
-            value = False
-            
+        clean_query_value(column, value)
         filters.update({FORM_TYPE[column]: value})
         
-    print(filters)
     return filters
-    
     
 # songの全カラム検索
 def song_search(query):
@@ -82,7 +85,8 @@ def song_search(query):
                 continue
             
             if key in query:
-                song_qs = song_qs.filter(filter_func(query[key]))
+                value = clean_query_value(key, query[key])
+                song_qs = song_qs.filter(filter_func(value))
         
         # TODO ソートの実装
         count = song_qs.count()
