@@ -3,6 +3,7 @@
 
 {% load static %}
 {% load last_modified %}
+{% load categorys %}
 {% block css %}{% static 'subekashi/css/new.css'%}{% endblock %}
 
 {% block content %}
@@ -124,22 +125,7 @@
         <label id="imitate-label">模倣</label>
         <div id="imitate">
             <p>原曲から選択</p>
-            <div id="categorys">
-                <button type="button" onclick="appendCategory(0)">DSC模倣</button>
-                <button type="button" onclick="appendCategory(1)">.[short]模倣</button>
-                <button type="button" onclick="appendCategory(2)">..[short]模倣</button>
-                <button type="button" onclick="appendCategory(3)">◘模倣</button>
-                <button type="button" onclick="appendCategory(4)">.模倣</button>
-                <button type="button" onclick="appendCategory(5)">..模倣</button>
-                <button type="button" onclick="appendCategory(6)">教育模倣</button>
-                <button type="button" onclick="appendCategory(7)">アブジェ模倣</button>
-                <button type="button" onclick="appendCategory(8)">...模倣</button>
-                <button type="button" onclick="appendCategory(9)">表/裏模倣</button>
-                <button type="button" onclick="appendCategory(10)">名の無い星模倣</button>
-                <button type="button" onclick="appendCategory(11)">エヌ模倣</button>
-                <button type="button" onclick="appendCategory(12)">K²模倣</button>
-                <button type="button" onclick="appendCategory(13)">無題です。模倣</button>
-            </div>
+            {% render_categorys %}
             <p class="imitateP">もしくは模倣曲から選択</p>
             <div>
                 <input type="text" id="imitateTitle" class="sansfont" oninput="renderSongGuesser()" placeholder="タイトルかチャンネル名を入力"><br>

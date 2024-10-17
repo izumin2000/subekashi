@@ -115,18 +115,17 @@ function setImitates() {
 }
 
 
-function deleteImitate(id) {
-    imitateEle = document.getElementById(`imitate${id}`);
+function deleteImitate(imitateId) {
+    imitateEle = document.getElementById(`imitate-${imitateId}`);
     imitateEle.remove();
-    imitateList = imitateList.filter(i => i != id);
+    imitateList = imitateList.filter(id => id != imitateId);
     setImitates();
 }
 
 
 function appendImitate(song) {
-    // TODO data-id化
     imitate = `
-    <div id=${ song.id }>
+    <div id="imitate-${ song.id }">
         <p>
             <span class='channel'>
                 <i class='fas fa-user-circle'></i>
@@ -134,7 +133,7 @@ function appendImitate(song) {
             </span>
             <i class='fas fa-music'></i>
             ${ song.title }
-            <span class='deleteSong' onclick="deleteImitate('${ song.id }')">
+            <span class='deleteSong' onclick="deleteImitate(${ song.id })">
                 <i class='far fa-trash-alt'></i>
                 <a>削除</a>
             </span>
@@ -155,11 +154,12 @@ function appendImitate(song) {
 }
 
 
-// TODO data化
-function appendCategory(categoryId) {
+// 模倣曲の選択
+document.getElementById('categorys').addEventListener('click', function (event) {
+    const categoryId = event.target.getAttribute('data-category');
     subeanaSongs = songJson.filter(song => song.channel == "全てあなたの所為です。");
-    appendImitate(subeanaSongs[categoryId]);
-}
+    appendImitate(subeanaSongs[Number(categoryId)]);
+});
 
 
 function renderSongGuesser() {
