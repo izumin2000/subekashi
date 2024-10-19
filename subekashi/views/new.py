@@ -61,7 +61,7 @@ def new(request) :
             imitatedIns.save()
         songIns.imitate = imitatesForm
 
-        songIns.lyrics = lyricsForm
+        songIns.lyrics = lyricsForm.replace("\r\n", "\n")
         # TODO urlFormのセキュリティチェック
         songIns.url = clean_url(urlForm)
         songIns.isoriginal = int(bool(isorginalForm))
