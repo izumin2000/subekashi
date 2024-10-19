@@ -19,7 +19,6 @@ window.addEventListener('load', async function () {
     checkExist();
 });
 
-
 function setSubmitButton(titleValue, channelValue) {
     submitEle = document.getElementById("newsubmit");
     if ((titleValue == "") || (channelValue == "")) {
@@ -28,7 +27,6 @@ function setSubmitButton(titleValue, channelValue) {
         submitEle.disabled = false;
     }
 }
-
 
 function setDeleteButton() {
     reasonValue = document.getElementById("reason").value;
@@ -43,7 +41,6 @@ function setDeleteButton() {
         deleteEle.disabled = true;
     }
 }
-
 
 function checkExist() {
     titleValue = document.getElementById("title").value;
@@ -83,7 +80,6 @@ function checkExist() {
     setDeleteButton();
 };
 
-
 function fillForm() {
     if (songResult.url == "非公開") {
         document.getElementById("isdeleted").checked = true;
@@ -108,12 +104,10 @@ function fillForm() {
     document.getElementById("isdeleted").checked = songResult.isdeleted;
 }
 
-
 function setImitates() {
     imitatesEle = document.getElementById("imitates");
     imitatesEle.value = imitateList.join();
 }
-
 
 function deleteImitate(imitateId) {
     imitateEle = document.getElementById(`imitate-${imitateId}`);
@@ -121,7 +115,6 @@ function deleteImitate(imitateId) {
     imitateList = imitateList.filter(id => id != imitateId);
     setImitates();
 }
-
 
 function appendImitate(song) {
     imitate = `
@@ -153,14 +146,9 @@ function appendImitate(song) {
     setImitates();
 }
 
-
-// 模倣曲の選択
-document.getElementById('categorys').addEventListener('click', function (event) {
-    const categoryId = event.target.getAttribute('data-category');
-    subeanaSongs = songJson.filter(song => song.channel == "全てあなたの所為です。");
-    appendImitate(subeanaSongs[Number(categoryId)]);
-});
-
+function categoryClick(song) {
+    appendImitate(song);
+}
 
 function renderSongGuesser() {
     // 以前のリクエストが存在する場合、そのリクエストをキャンセルする
@@ -173,14 +161,12 @@ function renderSongGuesser() {
     getSongGuessers(imitateTitle, "song-guesser", songGuesserController.signal);
 }
 
-
 function songGuesserClick(id) {
     document.getElementById("imitateTitle").value = "";
     renderSongGuesser();
     imitateSong = songJson.filter(song => song.id == id)[0];
     appendImitate(imitateSong);
 };
-
 
 // フォームに変更があったかを検知
 isFormDirty = false;
@@ -190,14 +176,12 @@ document.querySelectorAll('input, textarea').forEach((input) => {
     });
 });
 
-
 // ページを離れる前に警告を表示
 window.addEventListener('beforeunload', (event) => {
     if (isFormDirty) {
         event.preventDefault();
     }
 });
-
 
 // フォームが送信される際にisFormDirtyをリセット
 document.querySelector('form').addEventListener('submit', (event) => {

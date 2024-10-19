@@ -83,6 +83,10 @@ details ul ul {
     background-color: #aaa;
 }
 
+#categorys span {
+    font-size: 17px;
+}
+
 #imitatelists {
     margin: 10px 0 0 10px;
 }
@@ -97,10 +101,6 @@ details ul ul {
     margin-left: 15px;
     color: #aaa;
     cursor: pointer;
-}
-
-.deleteSong a {
-    color: #aaa;
 }
 
 #checkboxs {
