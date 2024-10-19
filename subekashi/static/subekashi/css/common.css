@@ -475,15 +475,18 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     display: block;
     width: fit-content;
     max-width: 14em;
+    padding-left: 5px;
 }
 
 .song-card-urls {
     text-align: right;
+    padding-right: 0 !important;
 }
 
 .song-card-lyrics {
     text-align: right;
     max-width: 18vw;
+    padding-right: 0 !important;
 }
 
 @media (max-width: 480px) {
