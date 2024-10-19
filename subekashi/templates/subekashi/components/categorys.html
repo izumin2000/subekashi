@@ -4,7 +4,7 @@
     {% for song in song_qs %}
         <button type="button"
             onclick="categoryClick({
-                category: '{{ song.id }}',
+                id: '{{ song.id }}',
                 title: '{{ song.title }}',
                 channel: '全てあなたの所為です。'
             })">
