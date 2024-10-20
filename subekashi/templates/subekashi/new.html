@@ -2,7 +2,8 @@
 
 
 {% load static %}
-{% load lastModified %}
+{% load last_modified %}
+{% load categorys %}
 {% block css %}{% static 'subekashi/css/new.css'%}{% endblock %}
 
 {% block content %}
@@ -105,70 +106,63 @@
     <p class="detailP">最終更新日：2023年9月25日</p>
     {% comment %} TODO subekashi:songに変更してPOST処理をsongに記述 {% endcomment %}
     <form action="{% url 'subekashi:new' %}" method="POST" id="newform">{% csrf_token %}
-        <input type="number" id="songid" name="songid" hidden>
-        <div class="label-wrapper">
-            <label class="label-same">曲名*</label>
+        {% comment %} TODO songidを.GET.getで取得するようにする {% endcomment %}
+        <input type="number" id="songid" name="songid" hidden>　
+        <div class="form-col">
+            <label>曲名*</label>
             <input type="text" id="title" name="title" class="sansfont" oninput="checkExist()" value="{{ title }}">
         </div>
-        <div class="label-wrapper">
-            <label class="label-same">チャンネル名*</label>
-            <input type="text" id="channel" name="channel" oninput="checkExist()" value="{{ channel }}">
+        <div class="form-col">
+            <label>チャンネル名*</label>
+            <input type="text" id="channel" name="channel" class="sansfont" oninput="checkExist()" value="{{ channel }}">
         </div>
         <p id="isExist"></p>
         <button type="button" id="fillFormButton" class="sansfont" onclick="fillForm()">自動入力</button>
-        <div class="label-wrapper">
-            <label class="label-same">URL</label>
+        <div class="form-col">
+            <label>URL</label>
             <input type="text" id="url" name="url" value="{{ url }}">
         </div>
         <label id="imitate-label">模倣</label>
-        <div id="imitate">
+        <div id="imitate-div">
             <p>原曲から選択</p>
-            <div id="categorys">
-                <button type="button" onclick="appendCategory(0)">DSC模倣</button>
-                <button type="button" onclick="appendCategory(1)">.[short]模倣</button>
-                <button type="button" onclick="appendCategory(2)">..[short]模倣</button>
-                <button type="button" onclick="appendCategory(3)">◘模倣</button>
-                <button type="button" onclick="appendCategory(4)">.模倣</button>
-                <button type="button" onclick="appendCategory(5)">..模倣</button>
-                <button type="button" onclick="appendCategory(6)">教育模倣</button>
-                <button type="button" onclick="appendCategory(7)">アブジェ模倣</button>
-                <button type="button" onclick="appendCategory(8)">...模倣</button>
-                <button type="button" onclick="appendCategory(9)">表/裏模倣</button>
-                <button type="button" onclick="appendCategory(10)">名の無い星模倣</button>
-                <button type="button" onclick="appendCategory(11)">エヌ模倣</button>
-                <button type="button" onclick="appendCategory(12)">K²模倣</button>
-                <button type="button" onclick="appendCategory(13)">無題です。模倣</button>
-            </div>
-            <p class="imitateP">もしくは模倣曲から選択</p>
-            <div class="songGuesser sansfont">
-                <input type="text" id="imitateTitle" oninput="searchSong()" placeholder="タイトルを入力"><br>
-                {% comment %} TODO jsから持ってくる {% endcomment %}
-                {% for songIns in songInsL %}
-                <div class="songGuess" data-title="{{ songIns.title }}" onclick="clickSong('{{ songIns.id }}')">
-                    <p><span class="channel"><i class="fas fa-user-circle"></i> {{ songIns.channel }}</span> <i class="fas fa-music"></i> {{ songIns.title }}</p>
-                </div>
-                {% endfor %}
+            {% render_categorys %}
+            <p id="imitate-sub">もしくは模倣曲から選択</p>
+            <div>
+                <input type="text" id="imitateTitle" class="sansfont" oninput="renderSongGuesser()" placeholder="タイトルかチャンネル名を入力"><br>
+                <div id="song-guesser" class="sansfont"></div>
             </div>
             <div id="imitatelists"></div>
             <input type="text" id="imitates" name="imitates" hidden>
         </div>
-        <div class="label-wrapper">
-            <label class="label-same">歌詞</label>
+        <div class="form-col">
+            <label>歌詞</label>
             <textarea id="lyrics" name="lyrics" oninput="autotextarea()"></textarea>
         </div>
         <div id="checkboxs">
-            <input type="checkbox" id="isorginal" name="isorginal">
-            <label for="isorginal">オリジナル模倣</label>
-            <input type="checkbox" id="isdeleted" name="isdeleted">
-            <label for="isdeleted">非公開/削除済み</label>
-            <input type="checkbox" id="isjoke" name="isjoke">
-            <label for="isjoke">ネタ曲</label>
-            <input type="checkbox" id="isinst" name="isinst">
-            <label for="isinst">インスト</label>
-            <input type="checkbox" id="issubeana" name="issubeana" checked>
-            <label for="issubeana">すべあな界隈曲</label><br>
-            <input type="checkbox" id="isdraft" name="isdraft">
-            <label for="isdraft">下書き</label><br>
+            <div class="checkbox-col">
+                <input type="checkbox" id="isorginal" name="isorginal">
+                <label for="isorginal">オリジナル模倣</label>
+            </div>
+            <div class="checkbox-col">
+                <input type="checkbox" id="isdeleted" name="isdeleted">
+                <label for="isdeleted">非公開/削除済み</label>
+            </div>
+            <div class="checkbox-col">
+                <input type="checkbox" id="isjoke" name="isjoke">
+                <label for="isjoke">ネタ曲</label>
+            </div>
+            <div class="checkbox-col">
+                <input type="checkbox" id="isinst" name="isinst">
+                <label for="isinst">インスト</label>
+            </div>
+            <div class="checkbox-col">
+                <input type="checkbox" id="issubeana" name="issubeana" checked>
+                <label for="issubeana">すべあな界隈曲</label>
+            </div>
+            <div class="checkbox-col">
+                <input type="checkbox" id="isdraft" name="isdraft">
+                <label for="isdraft">下書き</label>
+            </div>
         </div>
         <input type="submit" value="登録" id="newsubmit" disabled>
     </form>
@@ -178,8 +172,8 @@
     <form action="{% url 'subekashi:delete' %}" method="POST" id="deleteform">{% csrf_token %}
         <input type="text" id="titleDelete" class="sansfont" name="title" value="{{ title }}" hidden>
         <input type="text" id="channelDelete" name="channel" value="{{ channel }}" hidden>
-        <div class="label-wrapper">
-            <label class="label-same">削除理由</label>
+        <div class="form-col">
+            <label>削除理由</label>
             <textarea id="reason" name="reason" oninput="setDeleteButton()"></textarea>
         </div>
         <input type="submit" value="送信" id="deletesubmit" disabled>
@@ -188,11 +182,5 @@
 {% endblock %}
 
 {% block js %}
-<script defer src="{% static 'subekashi/js/new.js' %}?{% get_last_modified %}" rel="stylesheet"></script>
-<script defer>
-    window.addEventListener('load', function() {
-        firstLoad('{{ id }}');
-    });
-</script>
-
+<script defer src="{% static 'subekashi/js/new.js' %}?{% get_last_modified %}"></script>
 {% endblock %}

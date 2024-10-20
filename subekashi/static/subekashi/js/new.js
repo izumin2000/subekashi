@@ -1,24 +1,23 @@
-var songJson, songResult, songGuessEles, imitateList = [], isGetQuery = false;
+var songJson, songResult, imitateList = [], isGetQuery = false;
 
-async function firstLoad(songId) {
-    res = await fetch(baseURL() + "/api/song/?format=json");
-    songJson = await res.json();
 
-    if (songId != "None") {
-        songResult = songJson.filter(song => song.id == songId)[0];
+window.addEventListener('load', async function () {
+    songJson = await getJson("song");
+    const currentUrl = window.location.href;
+    const url = new URL(currentUrl);
+    const id = url.searchParams.get('id');
+    if (id) {
+        songResult = songJson.filter(song => song.id == id)[0];
         document.getElementById("title").value = songResult.title;
         document.getElementById("channel").value = songResult.channel;
         fillForm();
         setSubmitButton("_", "_");
-        document.getElementById("songid").value = Number(songId);
     }
-    
-    songGuessEles = document.getElementsByClassName("songGuess");
-    isGetQuery = songId != "None"
+
+    isGetQuery = Boolean(id)
     autotextarea();
     checkExist();
-}
-
+});
 
 function setSubmitButton(titleValue, channelValue) {
     submitEle = document.getElementById("newsubmit");
@@ -28,7 +27,6 @@ function setSubmitButton(titleValue, channelValue) {
         submitEle.disabled = false;
     }
 }
-
 
 function setDeleteButton() {
     reasonValue = document.getElementById("reason").value;
@@ -44,7 +42,6 @@ function setDeleteButton() {
     }
 }
 
-
 function checkExist() {
     titleValue = document.getElementById("title").value;
     document.getElementById("titleDelete").value = titleValue;
@@ -54,7 +51,7 @@ function checkExist() {
     fillFormButtonEle = document.getElementById("fillFormButton");
 
     if ((titleValue != "") && (channelValue != "")) {
-        titleValue = titleValue.replace(/\//g, "╱");
+        channelValue = channelValue.replace(/\//g, "╱");
         songResult = songJson.filter(song => song.title == titleValue).filter(song => song.channel == channelValue);
         if (songResult.length == 0) {
             isExistEle.innerHTML = "<span class='ok'>この曲は登録されていません。</span>";
@@ -83,7 +80,6 @@ function checkExist() {
     setDeleteButton();
 };
 
-
 function fillForm() {
     if (songResult.url == "非公開") {
         document.getElementById("isdeleted").checked = true;
@@ -108,40 +104,38 @@ function fillForm() {
     document.getElementById("isdeleted").checked = songResult.isdeleted;
 }
 
-
 function setImitates() {
     imitatesEle = document.getElementById("imitates");
     imitatesEle.value = imitateList.join();
 }
 
-
-function deleteImitate(id) {
-    imitateEle = document.getElementById(`imitate${id}`);
+function deleteImitate(imitateId) {
+    imitateEle = document.getElementById(`imitate-${imitateId}`);
     imitateEle.remove();
-    imitateList = imitateList.filter(i => i != id);
+    imitateList = imitateList.filter(id => id != imitateId);
     setImitates();
 }
 
-
 function appendImitate(song) {
-    imitateEle = document.createElement('div');
-    imitateInnerEle = `\
-    <p>\
-    <span class='channel'>\
-        <i class='fas fa-user-circle'></i>\
-        ${ song.channel }\
-    </span>\
-    <i class='fas fa-music'></i>\
-    ${ song.title }\
-    <span class='deleteSong' onclick="deleteImitate('${ song.id }')">\
-        <i class='far fa-trash-alt'></i>\
-        <a>削除</a>\
-    </span>\
-    </p>`
-    imitateEle.innerHTML = imitateInnerEle;
-    imitateEle.id = `imitate${song.id}`;
+    imitate = `
+    <div id="imitate-${ song.id }">
+        <p>
+            <span class='channel'>
+                <i class='fas fa-user-circle'></i>
+                ${ song.channel }
+            </span>
+            <i class='fas fa-music'></i>
+            ${ song.title }
+            <span class='deleteSong' onclick="deleteImitate(${ song.id })">
+                <i class='far fa-trash-alt'></i>
+                <a>削除</a>
+            </span>
+        </p>
+    </div>
+    `
+
     imitatelistsEle = document.getElementById('imitatelists');
-    imitatelistsEle.appendChild(imitateEle);
+    imitatelistsEle.appendChild(stringToHTML(imitate));
 
     if (imitateList.length == 0) {
         imitateList[0] = song.id;
@@ -152,47 +146,27 @@ function appendImitate(song) {
     setImitates();
 }
 
-
-function appendCategory(categoryId) {
-    subeanaSongs = songJson.filter(song => song.channel == "全てあなたの所為です。");
-    appendImitate(subeanaSongs[categoryId]);
+function categoryClick(song) {
+    appendImitate(song);
 }
 
-
-function appendSong(id) {
-    subeanaSongs = songJson.filter(song => song.id == id);
-    appendImitate(subeanaSongs[0]);
-    titleEle = document.getElementById("imitateTitle");
-    titleEle.value = "";
-}
-
-
-function clickSong(id) {
-    imitateTitleValue = document.getElementById("imitateTitle").value;
-    imitateTitleValue.value = "";
-    for (songGuessEle of songGuessEles) {
-        songGuessEle.style.display = "none";
+function renderSongGuesser() {
+    // 以前のリクエストが存在する場合、そのリクエストをキャンセルする
+    if (songGuesserController) {
+        songGuesserController.abort();
     }
-    appendSong(id);
+
+    songGuesserController = new AbortController();
+    imitateTitle = document.getElementById("imitateTitle").value;
+    getSongGuessers(imitateTitle, "song-guesser", songGuesserController.signal);
 }
 
-
-function searchSong() {
-    imitateTitleValue = document.getElementById("imitateTitle").value;
-    if (imitateTitleValue == "") {
-        for (songGuessEle of songGuessEles) {
-            songGuessEle.style.display = "none";
-        }
-    } else {
-        for (songGuessEle of songGuessEles) {
-            if (songGuessEle.dataset.title.includes(imitateTitleValue)) {
-                songGuessEle.style.display = "block";
-            } else {
-                songGuessEle.style.display = "none";
-            }
-        }
-    }
-}
+function songGuesserClick(id) {
+    document.getElementById("imitateTitle").value = "";
+    renderSongGuesser();
+    imitateSong = songJson.filter(song => song.id == id)[0];
+    appendImitate(imitateSong);
+};
 
 // フォームに変更があったかを検知
 isFormDirty = false;
@@ -202,14 +176,14 @@ document.querySelectorAll('input, textarea').forEach((input) => {
     });
 });
 
-// フォームが送信される際にisFormDirtyをリセット
-document.querySelector('form').addEventListener('submit', (event) => {
-    isFormDirty = false;
-});
-
 // ページを離れる前に警告を表示
 window.addEventListener('beforeunload', (event) => {
     if (isFormDirty) {
         event.preventDefault();
     }
+});
+
+// フォームが送信される際にisFormDirtyをリセット
+document.querySelector('form').addEventListener('submit', (event) => {
+    isFormDirty = false;
 });

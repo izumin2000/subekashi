@@ -20,7 +20,7 @@
 html {
     height: 100%;
     background-color: #000;
-    font-family: 'Imitate', 'Noto Sans JP', sans-serif;
+    font-family: 'Imitate', 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif, Meiryo;
 }
 
 body {
@@ -190,7 +190,7 @@ a {
 }
 
 .sansfont {
-    font-family: 'Noto Sans JP', sans-serif !important;
+    font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans',  sans-serif !important;
     font-weight: 1000 !important;
 }
 
@@ -224,6 +224,15 @@ details {
     cursor: pointer;
 }
 
+summary {
+    margin-bottom: 20px;
+}
+
+#loading {
+    display: block;
+    width: 120px;
+    margin: 0 auto;
+}
 
 /* メニュー */
 #menuarticle {
@@ -277,19 +286,32 @@ details {
 
 
 /* フォーム */
+.form-col {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
 label {
-    cursor: pointer;;
+    display: inline-block;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+.form-col label {
+    width: 8em;
 }
 
 input, select, option, textarea {
     height: 50px;
-    width: calc(100% - 144px);
-    padding-left: 10px;
+    width: 100%;
+    padding: 0.2em;
     font-size: 25px;
     border: none;
     box-shadow: 0 0 0 1px #ccc inset;
-    font-family: 'Imitate', 'Noto Sans JP', sans-serif;
+    font-family: 'Imitate', 'Noto Sans JP',  'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif, Meiryo;
     align-items: center;
+    box-sizing: border-box;
 }
 
 input:focus {
@@ -297,8 +319,8 @@ input:focus {
     box-shadow: 0 0 0 2px #fff inset;
 }
 
-input:focus::placeholder {
-    color: transparent;
+.checkbox-col {
+    display: inline-block;
 }
 
 input[type=checkbox] {
@@ -311,38 +333,24 @@ input[type=checkbox] {
     cursor: pointer;
 }
 
-#checkboxs {
-    margin: 20px 0 20px -20px;
-}
-
-.label-same {
-    display: inline-block;
-    width: 150px;
-}
-
-.label-wrapper {
-    display: flex;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
 textarea {
     height: 100px;
     padding: 10px;
 }
 
 @media (max-width: 640px) {
-    input, select, option, textarea {
-        width: 100%;
+    .form-col {
+        display: block;
     }
-
-    .label-wrapper {
-        flex-direction: column;
-    }
-
-    .label-same {
+    
+    .form-col label {
         width: fit-content;
-        margin-bottom: 5px;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .checkbox-col {
+        display: block;
     }
 }
 
@@ -353,12 +361,13 @@ input[type=submit], button {
     font-size: 25px;
     cursor: pointer;
     margin: 20px 0;
-    font-family: 'Imitate', 'Noto Sans JP', sans-serif;
+    font-family: 'Imitate', 'Noto Sans JP',  'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif, Meiryo;
 }
 
 .dummybuttons {
     display: flex;
     justify-content: center;
+    align-items: center;
 }
 
 @media (max-width: 450px) {
@@ -412,9 +421,8 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     cursor: not-allowed;
 }
 
-
 /* ソングカード */
-.songcard {
+.song-card {
     display: block;
     height: 80px;
     width: 100%;
@@ -424,29 +432,31 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     border-collapse: collapse;
     overflow: hidden;
     position: relative;
+    opacity: 0;
+    animation: fadeIn 0.3s ease forwards;
 }
 
-.songcard:hover {
+.song-card:hover {
     background-color: #555;
 }
 
-.songcard table {
+.song-card table {
     width: 100%;
     padding: 5px;
 }
 
-.songcard td {
+.song-card td {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     padding-right: 10px;
 }
 
-.songcard i {
+.song-card i {
     margin-right: 5px;
 }
 
-.songcard img {
+.song-card img {
     height: 20px;
 }
 
@@ -455,62 +465,109 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     color: #888;
 }
 
-.songcard-col1 {
+.song-card-col1 {
     display: block;
     width: fit-content;
     max-width: 14em;
+    padding-left: 5px;
 }
 
-.songcard-urls {
+.song-card-urls {
     text-align: right;
+    padding-right: 0 !important;
 }
 
-.songcard-lyrics {
+.song-card-lyrics {
     text-align: right;
     max-width: 18vw;
+    padding-right: 0 !important;
 }
 
 @media (max-width: 480px) {
-    .songcard-col1 {
+    .song-card-col1 {
         width: 8em;
     }
 
-    .songcard-like {
+    .song-card-like {
         display: none;
     }
 
-    .songcard-view {
+    .song-card-view {
         width: 8em;
         text-align: right;
     }
 
-    .songcard-lyrics {
+    .song-card-lyrics {
         display: none;
     }
 }
 
 
-/* ソングゲッサー */
-#imitateTitle {
-    width: calc(100% - 10px);
+/* カテゴリボタン */
+#imitate-div {
+    margin: 5px 0 20px 0;
+    padding: 10px;
+    background-color: #333;
 }
 
-.songGuess {
-    display: none;
+#imitate-div #imitate-sub {
+    margin-top: 20px;
+}
+
+#categorys button {
+    display: inline-block;
+    margin: 5px 0 !important;
+    padding: 10px;
+    height: 49.5px;
+    width: fit-content;
+    border: none;
+    font-size: 25px;
+    cursor: pointer;
+    margin: 20px 0;
+}
+
+#categorys button:hover {
+    background-color: #ccc;
+}
+
+#categorys button:active {
+    border: none;
+    box-shadow: 0 0 0 2px #fff inset;
+    background-color: #aaa;
+}
+
+#categorys span {
+    font-size: 17px;
+}
+
+/* ソングゲッサー */
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+.song-guesser {
     width: calc(100% - 10px);
     margin: 5px 0;
     padding: 5px;
     background-color: #555;
     cursor: pointer;
     overflow-x: hidden;
+    opacity: 0;
+    animation: fadeIn 0.3s ease forwards;
 }
 
 .channel {
     color: #ccc;
 }
 
-.songGuess:hover {
-    background-color: #444;
+.song-guesser:hover {
+    background-color: #777;
 }
 
 

@@ -1,7 +1,28 @@
-#filters {
+@media (min-width: 640px) {
+    .form-col label {
+        width: 9em !important;
+    }
+}
+
+.ml-none {
     margin-left: -20px;
 }
 
-#searchsubmit, #counter {
-    margin-top: 20px;
+@media (max-width: 640px) {
+    .checkbox-col {
+        margin-left: -20px;
+    }
+}
+
+.dummybuttons {
+    margin: 20px 0;
+}
+
+#search-button {
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+#song-cards {
+    min-height: 50vh;
 }

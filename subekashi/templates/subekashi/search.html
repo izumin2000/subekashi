@@ -2,88 +2,125 @@
 
 
 {% load static %}
-{% load songcard %}
-{% load lastModified %}
+{% load categorys %}
+{% load song_card %}
+{% load last_modified %}
 {% block css %}{% static 'subekashi/css/search.css'%}{% endblock %}
 
 {% block content %}
 <section>
-    
     <h1>曲の一覧と検索</h1>
     <div class="underline"></div>
 
-    <form action="{% url 'subekashi:search' %}" method="POST" id="search-form">{% csrf_token %}
-        <div class="label-wrapper">
-            <label class="label-same" for="title">タイトル</label>
-            <input type="text" id="title" class="sansfont" name="title" value="{{ query.title }}">
+    <div class="form-col">
+        <label for="keyword">キーワード</label>
+        <input type="text" id="keyword" placeholder="タイトル・チャンネル名・歌詞・URL" value="{{ request.GET.keyword }}">
+    </div>
+    <details id="isdetail" onclick="setSearchCookie(event)" {% if isdetail == "True" %}open{% endif %}>
+        <summary>詳細検索</summary>
+        <div class="form-col">
+            <label for="title">タイトル</label>
+            <input type="text" id="title" value="{{ request.GET.title }}">
         </div>
-        <div class="label-wrapper">
-            <label class="label-same" for="channel">チャンネル名</label>
-            <input type="text" id="channel" name="channel" value="{{ query.channel }}">
+        <div class="form-col">
+            <label for="channel">チャンネル名</label>
+            <input type="text" id="channel" value="{{ request.GET.channel }}">
         </div>
-        <div class="label-wrapper">
-            <label class="label-same" for="lyrics">歌詞</label>
-            <input type="text" id="lyrics" name="lyrics" value="{{ query.lyrics }}">
+        <div class="form-col">
+            <label for="lyrics">歌詞</label>
+            <input type="text" id="lyrics" value="{{ request.GET.lyrics }}">
         </div>
-        <div class="label-wrapper">
-            <label class="label-same" for="url">URL</label>
-            <input type="text" id="url" name="url" value="{{ query.url }}">
+        <div class="form-col">
+            <label for="url">URL</label>
+            <input type="text" id="url" value="{{ request.GET.url }}">
         </div>
-        <div class="label-wrapper">
-            <label class="label-same" for="category">カテゴリ</label>
-            <select id="category" name="category">
-                <option value="all">指定無し</option>
-                <option value="7" {% if query.category == '7' %}selected{% endif %}>.[short]模倣</option>
-                <option value="8" {% if query.category == '8' %}selected{% endif %}>..[short]模倣</option>
-                <option value="9" {% if query.category == '9' %}selected{% endif %}>◘模倣</option>
-                <option value="10" {% if query.category == '10' %}selected{% endif %}>.模倣</option>
-                <option value="11" {% if query.category == '11' %}selected{% endif %}>..模倣</option>
-                <option value="12" {% if query.category == '12' %}selected{% endif %}>教育模倣</option>
-                <option value="13" {% if query.category == '13' %}selected{% endif %}>アブジェ模倣</option>
-                <option value="14" {% if query.category == '14' %}selected{% endif %}>...模倣</option>
-                <option value="15" {% if query.category == '15' %}selected{% endif %}>表╱裏模倣</option>
-                <option value="16" {% if query.category == '16' %}selected{% endif %}>名の無い星が空に堕ちたら模倣</option>
-                <option value="17" {% if query.category == '17' %}selected{% endif %}>エヌ模倣</option>
-                <option value="18" {% if query.category == '18' %}selected{% endif %}>K²模倣</option>
-            </select>
+        {% comment %} TODO YouTubeボタン {% endcomment %}
+        <label for="imitate">模倣</label>
+        <div id="imitate-div">
+            <p>曲ID</p>
+            <input type="text" id="imitate" value="{{ request.GET.imitate }}" oninput="renderSongGuesser()" placeholder="タイトル・チャンネル名から入力">
+            <div id="song-guesser" class="sansfont"></div>
+            <p id="imitate-sub">もしくは原曲から入力</p>
+            {% render_categorys %}
         </div>
-        <div class="label-wrapper">
-            <label class="label-same" for="songrange">曲の表示</label>
+        <div class="form-col">
+            <label for="view_gt">再生回数/以上</label>
+            <input type="number" id="view_gt" value="{{ request.GET.view_gt }}">
+        </div>
+        <div class="form-col">
+            <label for="view_lt">再生回数/以下</label>
+            <input type="number" id="view_lt" value="{{ request.GET.view_lt }}">
+        </div>
+        <div class="form-col">
+            <label for="like_gt">高評価数/以上</label>
+            <input type="number" id="like_gt" value="{{ request.GET.like_gt }}">
+        </div>
+        <div class="form-col">
+            <label for="like_lt">高評価数/以下</label>
+            <input type="number" id="like_lt" value="{{ request.GET.like_lt }}">
+        </div>
+        <div class="form-col">
+            <label for="upload_time_lt"><i class="fab fa-youtube"></i>投稿日/以前</label>
+            <input type="date" id="upload_time_lt" value="{{ request.GET.upload_time_lt }}">
+        </div>
+        <div class="form-col">
+            <label for="upload_time_gt"><i class="fab fa-youtube"></i>投稿日/以後</label>
+            <input type="date" id="upload_time_gt" value="{{ request.GET.upload_time_gt }}">
+        </div>
+        <div class="form-col">
+            <label for="songrange">界隈曲の種類</label>
             <select id="songrange" name="songrange">
-                <option value="all" {% if query.songrange == 'all' %}selected{% endif %}>全て表示</option>
-                <option value="subeana" {% if query.songrange == 'subeana' %}selected{% endif %}>すべあな界隈曲のみを表示</option>
-                <option value="xx" {% if query.songrange == 'xx' %}selected{% endif %}>すべあな界隈曲以外を表示</option>
+                <option value="all" {% if songrange == 'all' %}selected{% endif %}>全て表示</option>
+                <option value="subeana" {% if songrange == 'subeana' %}selected{% endif %}>すべあな界隈曲のみを表示</option>
+                <option value="xx" {% if songrange == 'xx' %}selected{% endif %}>すべあな界隈曲以外を表示</option>
             </select>
         </div>
-        <div class="label-wrapper">
-            <label class="label-same" for="jokerange">ネタ曲の表示</label>
+        <div class="form-col">
+            <label for="jokerange">ネタ曲</label>
             <select id="jokerange" name="jokerange">
-                <option value="on" {% if query.jokerange == 'on' %}selected{% endif %}>全て表示</option>
-                <option value="only" {% if query.jokerange == 'only' %}selected{% endif %}>ネタ曲のみを表示</option>
-                <option value="off" {% if query.jokerange == 'off' %}selected{% endif %}>ネタ曲のみを非表示</option>
+                <option value="on" {% if jokerange == 'on' %}selected{% endif %}>全て表示</option>
+                <option value="only" {% if jokerange == 'only' %}selected{% endif %}>ネタ曲のみを表示</option>
+                <option value="off" {% if jokerange == 'off' %}selected{% endif %}>ネタ曲のみを非表示</option>
             </select>
         </div>
-        
-        <div id="filters">
-            <input type="checkbox" name="filters" value="islack" id="islack" {% if 'islack' in query.filters %}checked{% endif %}>
+        <div class="form-col">
+            <label for="sort">並び替え</label>
+            <select id="sort" name="sort">
+                <option value="id" {% if sort == 'id' %}selected{% endif %}>新規登録日が早い順</option>
+                <option value="-id" {% if sort == '-id' %}selected{% endif %}>新規登録日が遅い順</option>
+                <option value="post_time" {% if sort == 'post_time' %}selected{% endif %}>更新日が早い順</option>
+                <option value="-post_time" {% if sort == '-post_time' %}selected{% endif %}>更新日が遅い順</option>
+                <option value="upload_time" {% if sort == 'upload_time' %}selected{% endif %}>YouTube投稿日が早い順</option>
+                <option value="-upload_time" {% if sort == '-upload_time' %}selected{% endif %}>YouTube投稿日が遅い順</option>
+                <option value="-view" {% if sort == '-view' %}selected{% endif %}>再生回数が多い順</option>
+                <option value="view" {% if sort == 'view' %}selected{% endif %}>再生回数が少ない順</option>
+                <option value="-like" {% if sort == '-like' %}selected{% endif %}>高評価数が多い順</option>
+                <option value="like" {% if sort == 'like' %}selected{% endif %}>高評価数が少ない順</option>
+                <option value="random" {% if sort == 'random' %}selected{% endif %}>ランダム</option>
+            </select>
+        </div>
+        <div class="checkbox-col ml-none">
+            <input type="checkbox" value="islack" id="islack" {% if islack %}checked{% endif %}>
             <label for="islack">作成途中</label>
-            <input type="checkbox" name="filters" value="isdraft" id="isdraft" {% if 'isdraft' in query.filters %}checked{% endif %}>
+        </div>
+        <div class="checkbox-col">
+            <input type="checkbox" value="isdraft" id="isdraft" {% if isdraft %}checked{% endif %}>
             <label for="isdraft">下書き</label>
-            <input type="checkbox" name="filters" value="isoriginal" id="isoriginal" {% if 'isoriginal' in query.filters %}checked{% endif %}>
+        </div>
+        <div class="checkbox-col">
+            <input type="checkbox" value="isoriginal" id="isoriginal" {% if isoriginal %}checked{% endif %}>
             <label for="isoriginal">オリジナル模倣曲</label>
-            <input type="checkbox" name="filters" value="isinst" id="isinst" {% if 'isinst' in query.filters %}checked{% endif %}>
+        </div>
+        <div class="checkbox-col">
+            <input type="checkbox" value="isinst" id="isinst" {% if isinst %}checked{% endif %}>
             <label for="isinst">インスト曲</label>
         </div>
-        <input type="submit" value="検索" id="searchsubmit">
-    </form>
-
-    <p id="counter">{{ counter }}</p>
-    {% for songIns in songInsL %}
-        {% render_songcard songIns %}
-    {% endfor %}
+    </details>
+    <input type="submit" id="search-button" onclick="renderSearch()">検索</input>
+    <div id="song-cards"></div>
 </section>
 {% endblock %}
 
 {% block js %}
-<script></script>
+<script src="{% static 'subekashi/js/search.js' %}?{% get_last_modified %}"></script>
 {% endblock %}

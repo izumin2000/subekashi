@@ -23,9 +23,9 @@ function menu() {
 // 可変テキストエリア
 function autotextarea() {
     let textarea = document.getElementById('lyrics');
-    let clientHeight = textarea.clientHeight - 20;
+    let clientHeight = textarea.clientHeight;
     textarea.style.height = clientHeight + 'px';
-    let scrollHeight = textarea.scrollHeight - 20;
+    let scrollHeight = textarea.scrollHeight;
     textarea.style.height = scrollHeight + 'px';
 }
 
@@ -52,6 +52,75 @@ function isCompleted(song) {
 }
 
 
+var jsonDatas = {}
+async function getJson(path) {
+    if (jsonDatas[path]) {
+        return jsonDatas[path];
+    }
+
+    res = await fetch(`${baseURL()}/api/${path}`);
+    json = await res.json();
+
+    if (!path.includes("?")) {
+        jsonDatas[path] = json;
+    }
+
+    return json;
+}
+
+
+function sleep(s) {
+    return new Promise(resolve => setTimeout(resolve, s*1000));
+}
+
+
+function stringToHTML(string, multi=false) {
+    const devEle = document.createElement("div");
+    devEle.innerHTML = string;
+    htmls = devEle.children; 
+
+    if (multi) {
+        return htmls;
+    }
+
+    return htmls[0];
+}
+
+
+function appendSongGuesser(songGuesser, toEle) {
+    songGuesserEle = stringToHTML(songGuesser);
+    toEle.appendChild(songGuesserEle)
+}
+
+
+var songGuesserController;
+async function getSongGuessers(text, to, signal) {
+    var toEle = document.getElementById(to);
+    while (toEle.firstChild) {
+        toEle.removeChild(toEle.firstChild);
+    }
+
+    if (text == "") {
+        return;
+    }
+
+    try {
+        songGuessers = await getJson(`html/song_guessers?guesser=${text}`);
+        for (songGuesser of songGuessers) {
+            // キャンセルが要求されているか確認
+            if (signal.aborted) {
+                return;
+            }
+            
+            appendSongGuesser(songGuesser, toEle);
+            await sleep(0.05);
+        }
+    } catch (error) {
+        console.error(error)
+    }
+}
+
+
 // グローバルヘッダーの取得
 async function getHeader() {
     try {
@@ -61,16 +130,12 @@ async function getHeader() {
             throw new RuntimeError(`getHeader: Response: ${res.status}`);
         }
         
-        const devEle = document.createElement("div");
-        devEle.innerHTML = text;
-        const imicomEle = devEle.children;
-        imicomHeaderEle.append(...imicomEle);
+        imicomHeaderEle.append(...stringToHTML(text, true));
     } catch ( error ) {
         console.error(error);
 
-        const p = document.createElement("p");
-        p.textContent = "ヘッダーを読み込めませんでした。再読み込みをお試しください。";
-        imicomHeaderEle.append(p);
+        imiN_loadingEle = document.getElementsByClassName("imiN_loading")[0];
+        imiN_loadingEle.innerHTML = "グローバルヘッダーを読み込めませんでした。";
     }
 
     const headerEle = document.getElementsByTagName("header")[0];
