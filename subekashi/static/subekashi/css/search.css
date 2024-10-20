@@ -22,3 +22,7 @@
     margin-bottom: 20px;
     width: 100%;
 }
+
+#song-cards {
+    min-height: 50vh;
+}

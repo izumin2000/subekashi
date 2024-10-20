@@ -50,36 +50,6 @@ details ul ul {
     }
 }
 
-.imitateP {
-    margin-top: 15px;
-}
-
-#categorys button {
-    display: inline-block;
-    margin: 10px 0 !important;
-    padding: 10px;
-    height: 49.5px;
-    width: fit-content;
-    border: none;
-    font-size: 25px;
-    cursor: pointer;
-    margin: 20px 0;
-}
-
-#categorys button:hover {
-    background-color: #ccc;
-}
-
-#categorys button:active {
-    border: none;
-    box-shadow: 0 0 0 2px #fff inset;
-    background-color: #aaa;
-}
-
-#categorys span {
-    font-size: 17px;
-}
-
 #imitatelists {
     margin: 10px 0 0 10px;
 }

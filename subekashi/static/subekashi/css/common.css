@@ -421,12 +421,6 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     cursor: not-allowed;
 }
 
-#imitate-div {
-    margin: 5px 0 20px 0;
-    padding: 10px;
-    background-color: #333;
-}
-
 /* ソングカード */
 .song-card {
     display: block;
@@ -508,6 +502,43 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     }
 }
 
+
+/* カテゴリボタン */
+#imitate-div {
+    margin: 5px 0 20px 0;
+    padding: 10px;
+    background-color: #333;
+}
+
+#imitate-div #imitate-sub {
+    margin-top: 20px;
+}
+
+#categorys button {
+    display: inline-block;
+    margin: 5px 0 !important;
+    padding: 10px;
+    height: 49.5px;
+    width: fit-content;
+    border: none;
+    font-size: 25px;
+    cursor: pointer;
+    margin: 20px 0;
+}
+
+#categorys button:hover {
+    background-color: #ccc;
+}
+
+#categorys button:active {
+    border: none;
+    box-shadow: 0 0 0 2px #fff inset;
+    background-color: #aaa;
+}
+
+#categorys span {
+    font-size: 17px;
+}
 
 /* ソングゲッサー */
 @keyframes fadeIn {
