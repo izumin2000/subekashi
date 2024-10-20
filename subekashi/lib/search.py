@@ -94,9 +94,9 @@ def song_search(query):
             if sort in ["upload_time", "-upload_time"]:
                 song_qs = song_qs.filter(upload_time__isnull = False)
             if sort in ["view", "-view"]:
-                song_qs = song_qs.filter(view__gt = 0)
+                song_qs = song_qs.filter(view__isnull = False)
             if sort in ["like", "-like"]:
-                song_qs = song_qs.filter(like__gt = 0)
+                song_qs = song_qs.filter(like__isnull = False)
             if sort == "random":
                 sort = "?"
             song_qs = song_qs.order_by(sort)
