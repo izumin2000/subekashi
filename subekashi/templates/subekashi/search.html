@@ -2,6 +2,7 @@
 
 
 {% load static %}
+{% load categorys %}
 {% load song_card %}
 {% load last_modified %}
 {% block css %}{% static 'subekashi/css/search.css'%}{% endblock %}
@@ -13,58 +14,58 @@
 
     <div class="form-col">
         <label for="keyword">キーワード</label>
-        <input type="text" id="keyword" placeholder="タイトル・チャンネル名・歌詞・URL" value={{ request.GET.keyword }}>
+        <input type="text" id="keyword" placeholder="タイトル・チャンネル名・歌詞・URL" value="{{ request.GET.keyword }}">
     </div>
     <details id="isdetail" onclick="setSearchCookie(event)" {% if isdetail == "True" %}open{% endif %}>
         <summary>詳細検索</summary>
         <div class="form-col">
             <label for="title">タイトル</label>
-            <input type="text" id="title" value={{ request.GET.title }}>
+            <input type="text" id="title" value="{{ request.GET.title }}">
         </div>
         <div class="form-col">
             <label for="channel">チャンネル名</label>
-            <input type="text" id="channel" value={{ request.GET.title }}>
+            <input type="text" id="channel" value="{{ request.GET.channel }}">
         </div>
         <div class="form-col">
             <label for="lyrics">歌詞</label>
-            <input type="text" id="lyrics" value={{ request.GET.title }}>
+            <input type="text" id="lyrics" value="{{ request.GET.lyrics }}">
         </div>
         <div class="form-col">
             <label for="url">URL</label>
-            <input type="text" id="url" value={{ request.GET.url }}>
+            <input type="text" id="url" value="{{ request.GET.url }}">
         </div>
         {% comment %} TODO YouTubeボタン {% endcomment %}
-        {% comment %} <div class="form-col">
-            <label for="imitate">模倣</label>
-            <input type="text" id="imitate" value={{ request.GET.url }}>
+        <label for="imitate">模倣</label>
+        <div id="imitate-div">
+            <p>曲ID</p>
+            <input type="text" id="imitate" value="{{ request.GET.url }}" oninput="renderSongGuesser()" placeholder="タイトル・チャンネル名から入力">
+            <div id="song-guesser" class="sansfont"></div>
+            <p id="imitate-sub">もしくは原曲から入力</p>
+            {% render_categorys %}
         </div>
         <div class="form-col">
-            <label for="imitated">被模倣</label>
-            <input type="text" id="imitated" value={{ request.GET.url }}>
-        </div> {% endcomment %}
-        <div class="form-col">
             <label for="view_gt">再生回数/以上</label>
-            <input type="number" id="view_gt" value={{ request.GET.url }}>
+            <input type="number" id="view_gt" value="{{ request.GET.url }}">
         </div>
         <div class="form-col">
             <label for="view_lt">再生回数/以下</label>
-            <input type="number" id="view_lt" value={{ request.GET.url }}>
+            <input type="number" id="view_lt" value="{{ request.GET.url }}">
         </div>
         <div class="form-col">
             <label for="like_gt">高評価数/以上</label>
-            <input type="number" id="like_gt" value={{ request.GET.url }}>
+            <input type="number" id="like_gt" value="{{ request.GET.url }}">
         </div>
         <div class="form-col">
             <label for="like_lt">高評価数/以下</label>
-            <input type="number" id="like_lt" value={{ request.GET.url }}>
+            <input type="number" id="like_lt" value="{{ request.GET.url }}">
         </div>
         <div class="form-col">
             <label for="upload_time_lt"><i class="fab fa-youtube"></i>投稿日/以前</label>
-            <input type="date" id="upload_time_lt" value={{ request.GET.url }}>
+            <input type="date" id="upload_time_lt" value="{{ request.GET.url }}">
         </div>
         <div class="form-col">
             <label for="upload_time_gt"><i class="fab fa-youtube"></i>投稿日/以後</label>
-            <input type="date" id="upload_time_gt" value={{ request.GET.url }}>
+            <input type="date" id="upload_time_gt" value="{{ request.GET.url }}">
         </div>
         <div class="form-col">
             <label for="songrange">界隈曲の種類</label>
@@ -80,26 +81,6 @@
                 <option value="on" {% if jokerange == 'on' %}selected{% endif %}>全て表示</option>
                 <option value="only" {% if jokerange == 'only' %}selected{% endif %}>ネタ曲のみを表示</option>
                 <option value="off" {% if jokerange == 'off' %}selected{% endif %}>ネタ曲のみを非表示</option>
-            </select>
-        </div>
-        <div class="form-col">
-            <label for="imitate">模倣</label>
-            <select id="imitate" name="imitate">
-                <option value="" {% if imimtete == '' %}selected{% endif %}>全て表示</option>
-                <option value="6" {% if imimtete == '6' %}selected{% endif %}>DSC模倣</option>
-                <option value="7" {% if imimtete == '7' %}selected{% endif %}>.[short]模倣</option>
-                <option value="8" {% if imimtete == '8' %}selected{% endif %}>..[short]模倣</option>
-                <option value="9" {% if imimtete == '9' %}selected{% endif %}>◘模倣</option>
-                <option value="10" {% if imimtete == '10' %}selected{% endif %}>.模倣</option>
-                <option value="11" {% if imimtete == '11' %}selected{% endif %}>..模倣</option>
-                <option value="12" {% if imimtete == '12' %}selected{% endif %}>教育模倣</option>
-                <option value="13" {% if imimtete == '13' %}selected{% endif %}>アブジェ模倣</option>
-                <option value="14" {% if imimtete == '14' %}selected{% endif %}>...模倣</option>
-                <option value="15" {% if imimtete == '15' %}selected{% endif %}>表/裏模倣</option>
-                <option value="16" {% if imimtete == '16' %}selected{% endif %}>名の無い星模倣</option>
-                <option value="17" {% if imimtete == '17' %}selected{% endif %}>エヌ模倣</option>
-                <option value="18" {% if imimtete == '18' %}selected{% endif %}>K²模倣</option>
-                <option value="19" {% if imimtete == '19' %}selected{% endif %}>無題です。模倣</option>
             </select>
         </div>
         <div class="form-col">
