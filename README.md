@@ -23,6 +23,9 @@ $ python manage.py migrate
 3. local_settings.pyの設定
 以下のコードを実行し鍵を生成します。
 ```py
+python manage.py shell
+```
+```py
 from django.core.management.utils import get_random_secret_key
 get_random_secret_key()
 ```
@@ -59,6 +62,7 @@ $ python manage.py const
 # コントリビューション
 現在、個人的にバックエンドのリファクタリングを行っております。  
 その関係上、主にフロントエンド周りを中心にコントリビューションをしていただけると嬉しいです。  
+特に`id`と`class`の命名規則をケバブケースにする[イシュー](https://github.com/izumin2000/subekashi/issues/316)を行っていただけると嬉しいです。
 
 # リンク集
 - [全て歌詞の所為です。](https://lyrics.imicomweb.com/)

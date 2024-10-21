@@ -1,12 +1,15 @@
 var page = 1;
-
+const FORMQUERYS = 'input:not(#menu), select'
 
 isFormDirty = false;        // フォームに変更があったかを検知
 COOKIE_FORMS = ["songrange", "jokerange", "sort"];
 window.addEventListener('load', async function () {
+    document.getElementById("keyword").focus();
+    document.getElementById("keyword").click();
+
     renderSearch();
 
-    document.querySelectorAll('input:not(#menu), select').forEach((formEle) => {
+    document.querySelectorAll(FORMQUERYS).forEach((formEle) => {
         formEle.addEventListener('change', () => {
             isFormDirty = true;
             renderSearch();
@@ -22,7 +25,7 @@ window.addEventListener('load', async function () {
 })
 
 function getInputIds() {
-    const inputs = document.querySelectorAll('input:not(#menu), select');
+    const inputs = document.querySelectorAll(FORMQUERYS);
     ids = Array.from(inputs).map(input => input.id);
     return ids;
 }
@@ -41,7 +44,7 @@ function setSearchCookie(e) {
 }
 
 function getInputIds() {
-    const inputs = document.querySelectorAll('input, select');
+    const inputs = document.querySelectorAll(FORMQUERYS);
     ids = Array.from(inputs).map(input => input.id);
     return ids;
 }
@@ -180,11 +183,15 @@ async function search(signal, page) {
     while ((songCardsEle.firstChild) && (page == 1)) {
         songCardsEle.removeChild(songCardsEle.firstChild);
     }
+    
+    loadingEle = stringToHTML(`<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`)
+    songCardsEle.appendChild(loadingEle)
 
     try {
         query = formToQuery();
         query["page"] = page;
         let songCards = await getJson(`html/song_cards${toQueryString(query)}`);
+        document.getElementById("loading").remove();
         for (let songCard of songCards) {
             // キャンセルが要求されているか確認
             if (signal.aborted) {
