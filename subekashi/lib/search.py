@@ -12,7 +12,6 @@ LIB_FILTERS = {
     "imitate": include_imitate,
     "imitated": include_imitated,
     "guesser": include_guesser,
-    "youtube": include_youtube,
     "islack": islack,
 }
 
@@ -74,13 +73,6 @@ def song_search(query):
         song_qs = Song.objects.filter(**filters)
 
         for key, filter_func in LIB_FILTERS.items():
-            # NUMBER_FORMかソートがある場合youtubeのurlを含むsongのみに絞る
-            if key == "youtube":
-                has_number_form = len(set(query.keys()) & set(NUMBER_GT_FORMS + NUMBER_LT_FORMS)) >= 1
-                if has_number_form:
-                    song_qs = song_qs.filter(include_youtube)
-                continue
-            
             if (key in query) and (key == "islack"):
                 song_qs = song_qs.filter(islack)
                 continue
@@ -94,9 +86,9 @@ def song_search(query):
             if sort in ["upload_time", "-upload_time"]:
                 song_qs = song_qs.filter(upload_time__isnull = False)
             if sort in ["view", "-view"]:
-                song_qs = song_qs.filter(view__isnull = False)
+                song_qs = song_qs.filter(view__gt = 0)
             if sort in ["like", "-like"]:
-                song_qs = song_qs.filter(like__isnull = False)
+                song_qs = song_qs.filter(like__gt = 0)
             if sort == "random":
                 sort = "?"
             song_qs = song_qs.order_by(sort)

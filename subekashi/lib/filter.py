@@ -33,8 +33,6 @@ def include_guesser(guesser):
         Q(channel__contains=guesser)
     )
     
-include_youtube = Q(url__startswith="https://youtu.be/")
-
 islack = (
     ~Q(channel="全てあなたの所為です。") &
     (
