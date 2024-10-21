@@ -4,6 +4,9 @@ const FORMQUERYS = 'input:not(#menu), select'
 isFormDirty = false;        // フォームに変更があったかを検知
 COOKIE_FORMS = ["songrange", "jokerange", "sort"];
 window.addEventListener('load', async function () {
+    document.getElementById("keyword").focus();
+    document.getElementById("keyword").click();
+
     renderSearch();
 
     document.querySelectorAll(FORMQUERYS).forEach((formEle) => {
