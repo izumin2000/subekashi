@@ -1,12 +1,12 @@
 var page = 1;
-
+const FORMQUERYS = 'input:not(#menu), select'
 
 isFormDirty = false;        // フォームに変更があったかを検知
 COOKIE_FORMS = ["songrange", "jokerange", "sort"];
 window.addEventListener('load', async function () {
     renderSearch();
 
-    document.querySelectorAll('input:not(#menu), select').forEach((formEle) => {
+    document.querySelectorAll(FORMQUERYS).forEach((formEle) => {
         formEle.addEventListener('change', () => {
             isFormDirty = true;
             renderSearch();
@@ -22,7 +22,7 @@ window.addEventListener('load', async function () {
 })
 
 function getInputIds() {
-    const inputs = document.querySelectorAll('input:not(#menu), select');
+    const inputs = document.querySelectorAll(FORMQUERYS);
     ids = Array.from(inputs).map(input => input.id);
     return ids;
 }
@@ -41,7 +41,7 @@ function setSearchCookie(e) {
 }
 
 function getInputIds() {
-    const inputs = document.querySelectorAll('input, select');
+    const inputs = document.querySelectorAll(FORMQUERYS);
     ids = Array.from(inputs).map(input => input.id);
     return ids;
 }
