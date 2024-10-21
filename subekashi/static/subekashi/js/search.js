@@ -180,11 +180,15 @@ async function search(signal, page) {
     while ((songCardsEle.firstChild) && (page == 1)) {
         songCardsEle.removeChild(songCardsEle.firstChild);
     }
+    
+    loadingEle = stringToHTML(`<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`)
+    songCardsEle.appendChild(loadingEle)
 
     try {
         query = formToQuery();
         query["page"] = page;
         let songCards = await getJson(`html/song_cards${toQueryString(query)}`);
+        document.getElementById("loading").remove();
         for (let songCard of songCards) {
             // キャンセルが要求されているか確認
             if (signal.aborted) {
