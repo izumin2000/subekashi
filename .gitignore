@@ -5,6 +5,7 @@ db.sqlite3
 local_settings.py
 mycommand.py
 wordcloud.py
+sitemap.xml
 .env
 sandbox
 backups/*
