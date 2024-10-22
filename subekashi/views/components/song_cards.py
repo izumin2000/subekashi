@@ -30,6 +30,6 @@ def song_cards(request):
         result.append(render_to_string('subekashi/components/song_card.html', {'song': song}))
     
     if page != statistics["max_page"]:
-        result.append(f"<img id='loading' src='{ROOT_DIR}/{STATIC_URL}subekashi/image/loading.gif' alt='loading'></img>")
+        result.append(f"<img id='loading' src='{STATIC_DIR}/subekashi/image/loading.gif' alt='loading'></img>")
         
     return JsonResponse(result, safe=False)
