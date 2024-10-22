@@ -4,7 +4,7 @@ from config.settings import *
 from subekashi.models import *
 from subekashi.lib.url import *
 from subekashi.lib.ip import *
-import requests
+from subekashi.lib.discord import *
 
 
 def new(request) :
@@ -91,8 +91,7 @@ def new(request) :
         ネタ曲 : {"Yes" if songIns.isjoke else "No"}\n\
         IP : {songIns.ip}\n\
         歌詞 : ```{songIns.lyrics}```\n'
-        # TODO senddiscordにする
-        requests.post(NEW_DISCORD_URL, data={'content': content})
+        sendDiscord(NEW_DISCORD_URL, content)
         
         return render(request, 'subekashi/song.html', dataD)
     return render(request, 'subekashi/new.html', dataD)
