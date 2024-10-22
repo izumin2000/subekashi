@@ -9,7 +9,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, STATIC_URL)
 ROOT_DIR = "http://subekashi.localhost:8000" if DEBUG else "https://lyrics.imicomweb.com"
 STATIC_DIR = os.path.join(ROOT_DIR, STATIC_URL).rstrip('/')
 
-# TODO STATIC_DIRの追加と置換
 ALLOWED_HOSTS = [
     'subekashi.localhost',
     'lyrics.imicomweb.com',

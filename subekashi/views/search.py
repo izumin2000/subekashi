@@ -7,7 +7,6 @@ QUERY_OR_COOKIE_FORMS = [
     ("sort", "sort", "-post_time"),
 ]
 
-# TODO constantsに移動
 FILER_FORMS = ["issubeana", "isjoke", "isdraft", "isoriginal", "isinst"]
 
 def search(request) :

@@ -14,7 +14,7 @@ def new(request) :
     }
 
     id = request.GET.get("id")
-    # TODO song.pyに
+    # TODO songビューに
     if request.method == "POST":
         titleForm = request.POST.get("title")
         channelForm = request.POST.get("channel")
@@ -62,7 +62,7 @@ def new(request) :
         songIns.imitate = imitatesForm
 
         songIns.lyrics = lyricsForm.replace("\r\n", "\n")
-        # TODO urlFormのセキュリティチェック
+        # TODO urlFormがURL_ICONにあるかのセキュリティチェック
         songIns.url = clean_url(urlForm)
         songIns.isoriginal = int(bool(isorginalForm))
         songIns.isjoke = int(bool(isjokeForm))
