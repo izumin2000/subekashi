@@ -20,7 +20,8 @@ def delete(request) :
         songIns = songIns.first()
         reasonForm = request.POST.get("reason")
         content = f' \
-        {ROOT_DIR}/songs/{songIns.id} \
+        ```{songIns.id}``` \n\
+        {ROOT_DIR}/songs/{songIns.id} \n\
         タイトル：{songIns.title}\n\
         チャンネル名：{songIns.channel}\n\
         理由：{reasonForm}\n\
