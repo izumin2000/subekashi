@@ -199,7 +199,6 @@ async function search(signal, page) {
             };
 
             let songCardEle = stringToHTML(songCard);
-            songCardsEle = document.getElementById("song-cards");
             songCardsEle.appendChild(songCardEle);
             await sleep(0.05);
         }
@@ -210,6 +209,8 @@ async function search(signal, page) {
             observer.observe(loadingElement);
         }
     } catch (error) {
-        console.error(error);
+        const errorStr = "<p class='warning'><i class='warning fas fa-exclamation-triangle'></i>エラーが発生しました。検索ボタンをもう一度押すか再読み込みしてください。</p>";
+        const errorEle = stringToHTML(errorStr);
+        songCardsEle.appendChild(errorEle);
     }
 }
