@@ -13,7 +13,6 @@ def new(request) :
         "channel": request.GET.get("channel", "")
     }
 
-    id = request.GET.get("id")
     # TODO songビューに
     if request.method == "POST":
         titleForm = request.POST.get("title")
@@ -30,10 +29,26 @@ def new(request) :
 
         if ("" in [titleForm, channelForm]) :
             return render(request, "subekashi/500.html")
+        
+        ip = get_ip(request)
+        get_id = request.GET.get("id")
+        id = int(get_id) if get_id else Song.objects.last().id + 1
+        
+        content = f'\n\
+            {ROOT_DIR}/songs/{id}\n\
+        タイトル：{titleForm}\n\
+        チャンネル : {channelForm}\n\
+        URL : {urlForm}\n\
+        ネタ曲 : {"Yes" if isjokeForm else "No"}\n\
+        IP : {ip}\n\
+        歌詞 : ```{lyricsForm}```'
+        is_ok = sendDiscord(NEW_DISCORD_URL, content)
+        if not is_ok:
+            return render(request, 'subekashi/500.html', status=500)
 
         channelForm = channelForm.replace("/", "╱")
-        if id :
-            songIns = Song.objects.get(pk = int(id))
+        if get_id :
+            songIns = Song.objects.get(pk = get_id)
             songIns.title = titleForm
             songIns.channel = channelForm
         else :
@@ -71,7 +86,7 @@ def new(request) :
         songIns.issubeana = int(bool(issubeanaForm))
         songIns.isdraft = int(bool(isdraftForm))
         songIns.post_time = timezone.now()
-        songIns.ip = get_ip(request)
+        songIns.ip = ip
         songIns.save()
         
         imitateInsL = []
@@ -82,16 +97,6 @@ def new(request) :
         dataD["channels"] = songIns.channel.replace(", ", ",").split(",")
         dataD["urls"] = songIns.url.replace(", ", ",").split(",") if songIns.url else []
         dataD["isExist"] = True
-
-        content = f'**{songIns.title}**\n\
-        {ROOT_DIR}/songs/{songIns.id}\n\
-        チャンネル : {songIns.channel}\n\
-        URL : {songIns.url}\n\
-        模倣 : {", ".join([imitate.title for imitate in imitateInsL])}\n\
-        ネタ曲 : {"Yes" if songIns.isjoke else "No"}\n\
-        IP : {songIns.ip}\n\
-        歌詞 : ```{songIns.lyrics}```\n'
-        sendDiscord(NEW_DISCORD_URL, content)
         
         return render(request, 'subekashi/song.html', dataD)
     return render(request, 'subekashi/new.html', dataD)
