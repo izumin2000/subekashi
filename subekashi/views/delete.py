@@ -27,6 +27,8 @@ def delete(request) :
         理由：{reasonForm}\n\
         IP：{get_ip(request)}\
         '
-        sendDiscord(DELETE_DISCORD_URL, content)
+        is_ok = sendDiscord(DELETE_DISCORD_URL, content)
+        if not is_ok:
+            return render(request, 'subekashi/500.html', status=500)
         
     return render(request, 'subekashi/song.html', dataD)
