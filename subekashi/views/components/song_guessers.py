@@ -1,9 +1,11 @@
 from django.template.loader import render_to_string
 from django.http import JsonResponse
 from subekashi.lib.search import song_search
+from django_ratelimit.decorators import ratelimit
 
 
 SIZE = 50
+@ratelimit(key='ip', rate='2/second', method=['GET', 'POST'], block=True)
 def song_guessers(request):
     result = []
     query = dict(request.GET)

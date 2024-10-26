@@ -3,11 +3,16 @@ from subekashi.lib.search import song_search
 from ..serializer import SongSerializer
 from rest_framework import viewsets, status
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
+
+class SongThrottle(UserRateThrottle):
+    rate= '2/second'
 
 
 class SongAPI(viewsets.ReadOnlyModelViewSet):
     queryset = Song.objects.all()
     serializer_class = SongSerializer
+    throttle_classes = [SongThrottle]
     cached_data = None
 
     def get_queryset(self):

@@ -3,8 +3,10 @@ from django.http import JsonResponse
 from config.settings import *
 from subekashi.models import Song
 from subekashi.lib.search import song_search
+from django_ratelimit.decorators import ratelimit
 
 
+@ratelimit(key='ip', rate='2/second', method=['GET', 'POST'], block=True)
 def song_cards(request):
     result = []
     query = dict(request.GET)
