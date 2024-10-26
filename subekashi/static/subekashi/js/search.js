@@ -49,6 +49,33 @@ function getInputIds() {
     return ids;
 }
 
+const KEY_ALIAS = {
+    ":" : ["：", "=", "＝"],
+    "title": ["Title", "t", "T", "タイトル"],
+    "channel": ["Channel", "c", "C", "チャンネル名"],
+    "lyrics": ["Lyrics", "l", "L", "歌詞"],
+    "url": ["URL", "Url", "u", "U", "link", "Link"],
+    "songrange": ["SongRange", "Songrange", "SR", "sr", "界隈曲の種類", "種類"],
+    "jokerange": ["JokeRange", "Jokerange", "JR", "jr", "ネタ曲", "ネタ"],
+    "sort": ["Sort", "s", "S", "並び替え", "ソート"],
+    "islack": ["IsLack", "isLack", "Islack", "ir", "IR", "作成途中"],
+    "isdraft": ["IsDraft", "isDraft", "Isdraft", "id", "ID", "作成途中"], 
+    "isoriginal": ["IsOriginal", "isOriginal", "Isoriginal", "io", "IO", "オリジナル模倣曲", "オリジナル模倣", "オリジナル"],
+    "isinst": ["IsInst", "isInst", "Isinst", "ii", "II", "インスト曲", "インスト"]
+}
+
+// TODO スラッシュコマンドの実装
+function clean_keyword(query) {
+    for (let key in KEY_ALIAS) {
+        KEY_ALIAS[key].forEach(KEY_ALIAS => {
+            const regex = new RegExp(`\\b${KEY_ALIAS}\\b`, 'g'); // 単語全体に一致
+            query = query.replace(regex, key);
+        });
+    }
+    return query;
+}
+
+
 function keywordToQuery(keyword) {
     // TODO コマンドの処理
     return { "keyword" : keyword }
