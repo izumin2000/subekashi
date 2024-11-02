@@ -14,11 +14,16 @@ class Command(BaseCommand):
     
     def get_best_youtube_view(self, songs):
         best_view = 0
+        is_deleted = True
         video_ids = self.get_youtube_links(songs)
         best_res = {}
 
         for video_id in video_ids:
             yt_res = get_youtube_api(video_id)
+            if yt_res == {}:
+                continue
+            
+            is_deleted = False
             view = yt_res.get("view", 0)
             like = yt_res.get("like", 0)
             upload_time = yt_res.get("upload_time", None)
@@ -27,11 +32,12 @@ class Command(BaseCommand):
                 best_res["view"] = view
                 best_res["like"] = like
                 best_res["upload_time"] = upload_time
+        
+        best_res["is_deleted"] = is_deleted
         return best_res
     
     def save_song(self, song, best_res):
-        if not any(best_res):
-            return
+        song.isdeleted = best_res.get("is_deleted", False)
         
         song.view = best_res.get("view", 0)
         song.like = best_res.get("like", 0)
