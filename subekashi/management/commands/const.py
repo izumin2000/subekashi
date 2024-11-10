@@ -24,6 +24,4 @@ class Command(BaseCommand):
             file.close()
             self.stdout.write(self.style.SUCCESS(f"ファイル{file_name}を作成しました。"))
         
-        sitemap_path = os.path.join(BASE_DIR, 'subekashi/static/subekashi/sitemap.xml')
-        if not os.path.exists(sitemap_path):
-            management.call_command("sitemap")
+        management.call_command("sitemap")

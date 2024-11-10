@@ -3,6 +3,7 @@ from django.conf import settings
 from subekashi.models import Song
 import os
 from xml.etree.ElementTree import Element, SubElement, ElementTree
+from django.core import management
 
 class Command(BaseCommand):
     help = "subekashi/static/subekashi/にsitemap.xmlを生成する"
@@ -35,6 +36,8 @@ class Command(BaseCommand):
         tree = ElementTree(urlset)
         tree.write(sitemap_path, encoding='utf-8', xml_declaration=True)
 
+        management.call_command("collectstatic")
+        
         self.stdout.write(self.style.SUCCESS(f'Sitemap generated at {sitemap_path}'))
 
     def add_url(self, urlset, loc, priority):
