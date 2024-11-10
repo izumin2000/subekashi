@@ -3,7 +3,7 @@ import os
 from .local_settings import *
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-STATIC_URL = '/static/'
+STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, STATIC_URL)
 
 ROOT_DIR = "http://subekashi.localhost:8000" if DEBUG else "https://lyrics.imicomweb.com"
