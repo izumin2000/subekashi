@@ -25,7 +25,7 @@ def get_channel(song):
 @register.simple_tag
 def get_like(song):
     like = song.like
-    if like == 0:
+    if not like:
         return ""
     
     return mark_safe(f'<i class="far fa-thumbs-up"></i>{like}')
@@ -34,7 +34,7 @@ def get_like(song):
 @register.simple_tag
 def get_view(song):
     view = song.view
-    if view == 0:
+    if not view:
         return ""
     
     return mark_safe(f'<i class="fas fa-play"></i>{view}')

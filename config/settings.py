@@ -4,6 +4,7 @@ from .local_settings import *
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 ROOT_DIR = "http://subekashi.localhost:8000" if DEBUG else "https://lyrics.imicomweb.com"
+# TODO STATIC_DIRの追加と置換
 ALLOWED_HOSTS = [
     'subekashi.localhost',
     'lyrics.imicomweb.com',

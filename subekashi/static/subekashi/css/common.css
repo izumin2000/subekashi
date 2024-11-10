@@ -20,7 +20,7 @@
 html {
     height: 100%;
     background-color: #000;
-    font-family: 'Imitate', 'Noto Sans JP', sans-serif;
+    font-family: 'Imitate', 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif, Meiryo;
 }
 
 body {
@@ -190,7 +190,7 @@ a {
 }
 
 .sansfont {
-    font-family: 'Noto Sans JP', sans-serif !important;
+    font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans',  sans-serif !important;
     font-weight: 1000 !important;
 }
 
@@ -228,6 +228,11 @@ summary {
     margin-bottom: 20px;
 }
 
+#loading {
+    display: block;
+    width: 120px;
+    margin: 0 auto;
+}
 
 /* メニュー */
 #menuarticle {
@@ -304,7 +309,7 @@ input, select, option, textarea {
     font-size: 25px;
     border: none;
     box-shadow: 0 0 0 1px #ccc inset;
-    font-family: 'Imitate', 'Noto Sans JP', sans-serif;
+    font-family: 'Imitate', 'Noto Sans JP',  'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif, Meiryo;
     align-items: center;
     box-sizing: border-box;
 }
@@ -356,12 +361,13 @@ input[type=submit], button {
     font-size: 25px;
     cursor: pointer;
     margin: 20px 0;
-    font-family: 'Imitate', 'Noto Sans JP', sans-serif;
+    font-family: 'Imitate', 'Noto Sans JP',  'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif, Meiryo;
 }
 
 .dummybuttons {
     display: flex;
     justify-content: center;
+    align-items: center;
 }
 
 @media (max-width: 450px) {
@@ -415,7 +421,6 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     cursor: not-allowed;
 }
 
-
 /* ソングカード */
 .song-card {
     display: block;
@@ -427,6 +432,8 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     border-collapse: collapse;
     overflow: hidden;
     position: relative;
+    opacity: 0;
+    animation: fadeIn 0.3s ease forwards;
 }
 
 .song-card:hover {
@@ -462,15 +469,18 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     display: block;
     width: fit-content;
     max-width: 14em;
+    padding-left: 5px;
 }
 
 .song-card-urls {
     text-align: right;
+    padding-right: 0 !important;
 }
 
 .song-card-lyrics {
     text-align: right;
     max-width: 18vw;
+    padding-right: 0 !important;
 }
 
 @media (max-width: 480px) {
@@ -492,6 +502,43 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     }
 }
 
+
+/* カテゴリボタン */
+#imitate-div {
+    margin: 5px 0 20px 0;
+    padding: 10px;
+    background-color: #333;
+}
+
+#imitate-div #imitate-sub {
+    margin-top: 20px;
+}
+
+#categorys button {
+    display: inline-block;
+    margin: 5px 0 !important;
+    padding: 10px;
+    height: 49.5px;
+    width: fit-content;
+    border: none;
+    font-size: 25px;
+    cursor: pointer;
+    margin: 20px 0;
+}
+
+#categorys button:hover {
+    background-color: #ccc;
+}
+
+#categorys button:active {
+    border: none;
+    box-shadow: 0 0 0 2px #fff inset;
+    background-color: #aaa;
+}
+
+#categorys span {
+    font-size: 17px;
+}
 
 /* ソングゲッサー */
 @keyframes fadeIn {

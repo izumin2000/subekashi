@@ -51,18 +51,21 @@ function isCompleted(song) {
     return !columnL.includes("");
 }
 
-// Song APIの取得
-var isGetSongJson = false;
-var songJson;
-async function getSongJson() {
-    if (isGetSongJson) {
-        return songJson;
+
+var jsonDatas = {}
+async function getJson(path) {
+    if (jsonDatas[path]) {
+        return jsonDatas[path];
     }
 
-    res = await fetch(baseURL() + "/api/song/?format=json");
-    songJson = await res.json();
-    isGetSongJson = true;
-    return songJson;
+    res = await fetch(`${baseURL()}/api/${path}`);
+    json = await res.json();
+
+    if (!path.includes("?")) {
+        jsonDatas[path] = json;
+    }
+
+    return json;
 }
 
 
@@ -70,14 +73,25 @@ function sleep(s) {
     return new Promise(resolve => setTimeout(resolve, s*1000));
 }
 
-function appendSongGuesser(song, toEle) { 
-    songGuesser = `<div class="song-guesser" onclick="clickSong('${song.id}')">
-        <p><span class="channel"><i class="fas fa-user-circle"></i>${song.channel}</span> 
-        <i class="fas fa-music"></i> ${song.title}</p> 
-    </div>`;
-    songGuesserEle = new DOMParser().parseFromString(songGuesser, "text/html").body.firstElementChild; 
+
+function stringToHTML(string, multi=false) {
+    const devEle = document.createElement("div");
+    devEle.innerHTML = string;
+    htmls = devEle.children; 
+
+    if (multi) {
+        return htmls;
+    }
+
+    return htmls[0];
+}
+
+
+function appendSongGuesser(songGuesser, toEle) {
+    songGuesserEle = stringToHTML(songGuesser);
     toEle.appendChild(songGuesserEle)
 }
+
 
 var songGuesserController;
 async function getSongGuessers(text, to, signal) {
@@ -90,23 +104,22 @@ async function getSongGuessers(text, to, signal) {
         return;
     }
 
-    songJson = await getSongJson();
     try {
-        songJson = await getSongJson();
-        songStack = songJson.filter(song => song.title.includes(text)).concat(songJson.filter(song => song.channel.includes(text)));
-
-        for (const song of songStack) {
+        songGuessers = await getJson(`html/song_guessers?guesser=${text}`);
+        for (songGuesser of songGuessers) {
             // キャンセルが要求されているか確認
             if (signal.aborted) {
-                throw new Error("Operation aborted");
+                return;
             }
-
-            appendSongGuesser(song, toEle);
+            
+            appendSongGuesser(songGuesser, toEle);
             await sleep(0.05);
         }
     } catch (error) {
+        console.error(error)
     }
 }
+
 
 // グローバルヘッダーの取得
 async function getHeader() {
@@ -117,16 +130,12 @@ async function getHeader() {
             throw new RuntimeError(`getHeader: Response: ${res.status}`);
         }
         
-        const devEle = document.createElement("div");
-        devEle.innerHTML = text;
-        const imicomEle = devEle.children;
-        imicomHeaderEle.append(...imicomEle);
+        imicomHeaderEle.append(...stringToHTML(text, true));
     } catch ( error ) {
         console.error(error);
 
-        const p = document.createElement("p");
-        p.textContent = "ヘッダーを読み込めませんでした。再読み込みをお試しください。";
-        imicomHeaderEle.append(p);
+        imiN_loadingEle = document.getElementsByClassName("imiN_loading")[0];
+        imiN_loadingEle.innerHTML = "グローバルヘッダーを読み込めませんでした。";
     }
 
     const headerEle = document.getElementsByTagName("header")[0];

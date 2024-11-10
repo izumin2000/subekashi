@@ -1,0 +1,14 @@
+{% load categorys %}
+
+<div id="categorys">
+    {% for song in song_qs %}
+        <button type="button"
+            onclick="categoryClick({
+                id: '{{ song.id }}',
+                title: '{{ song.title }}',
+                channel: '全てあなたの所為です。'
+            })">
+            {% clean_title song.title %}<span>模倣</span>
+        </button>
+    {% endfor %}
+</div>
