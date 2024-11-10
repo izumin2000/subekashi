@@ -4,14 +4,12 @@
     }
 }
 
-.ml-none {
-    margin-left: -20px;
+input[type=checkbox] {
+    margin-left: 0;
 }
 
-@media (max-width: 640px) {
-    .checkbox-col {
-        margin-left: -20px;
-    }
+.checkbox-col label {
+    margin-right: 20px;
 }
 
 .dummybuttons {
