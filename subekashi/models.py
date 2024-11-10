@@ -2,11 +2,12 @@ from django.db import models
 
 
 # TODO 要リファクタリング
+# TODO lyricsをtextgieldへ
 class Song(models.Model) :
     title = models.CharField(default = "", max_length = 500)
     channel = models.CharField(default = "", max_length = 500)
     url = models.CharField(default = "", max_length = 500, blank = True, null = True)
-    lyrics = models.CharField(default = "", max_length = 10000, blank = True, null = True)
+    lyrics = models.CharField(default = "", max_length = 10000, blank = True, null = True)      
     imitate = models.CharField(default = "", max_length = 1000, blank = True, null = True)
     imitated = models.CharField(default = "", max_length = 1000, blank = True, null = True)
     post_time = models.DateTimeField()
