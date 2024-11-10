@@ -17,7 +17,9 @@ def song_guessers(request):
     
     if statistics["count"] > SIZE:
         message = "これ以上の候補を表示する為には条件を絞ってください。"
+    if statistics["count"] > 0:
+        message = "これ以上の検索結果はありません。<br>ヒットしなかったり、追加できない場合、一度下書きとして登録してから再読み込みしてください。"
     else:
-        message = "これ以上の検索結果はありません。"
+        message = "検索結果はありません。<br>ヒットしなかったり、追加できない場合、一度下書きとして登録してから再読み込みしてください。"
     result.append(f"<p>{message}</p>")
     return JsonResponse(result, safe=False)
