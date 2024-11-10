@@ -2,7 +2,6 @@ from subekashi.models import Song
 from subekashi.lib.filter import *
 import math
 
-# TODO 定数をconstantsに移動
 NUMBER_FORMS = ["view", "like", "post_time", "upload_time"]
 NUMBER_GT_FORMS = [f"{column}_gt" for column in NUMBER_FORMS]
 NUMBER_LT_FORMS = [f"{column}_lt" for column in NUMBER_FORMS]

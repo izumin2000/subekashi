@@ -9,7 +9,7 @@ class Command(BaseCommand):
     help = "バックアップ"
     
     def handle(self, *args, **options) :
-        BACKUP_FOLDER_NUMS = 30
+        BACKUP_FOLDER_NUMS = 50
         BACKUP_FOLDER = "backups/" if DEBUG else "/home/izuminapp/izuminapp/backups/"
 
         files = os.listdir(BACKUP_FOLDER)

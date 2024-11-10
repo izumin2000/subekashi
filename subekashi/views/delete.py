@@ -20,12 +20,15 @@ def delete(request) :
         songIns = songIns.first()
         reasonForm = request.POST.get("reason")
         content = f' \
-        {ROOT_DIR}/songs/{songIns.id} \
+        ```{songIns.id}``` \n\
+        {ROOT_DIR}/songs/{songIns.id} \n\
         タイトル：{songIns.title}\n\
         チャンネル名：{songIns.channel}\n\
         理由：{reasonForm}\n\
         IP：{get_ip(request)}\
         '
-        sendDiscord(DELETE_DISCORD_URL, content)
+        is_ok = sendDiscord(DELETE_DISCORD_URL, content)
+        if not is_ok:
+            return render(request, 'subekashi/500.html', status=500)
         
     return render(request, 'subekashi/song.html', dataD)

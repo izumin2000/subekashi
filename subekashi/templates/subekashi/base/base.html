@@ -18,8 +18,10 @@
         <meta name="og:description" content="{% get_description description %}">
         <meta name="description" content="{% get_description description %}">
         <meta name="og:title" content="{{ metatitle }} | 全て歌詞の所為です。">
-        <title>{{ metatitle }} |  全て歌詞の所為です。</title>
+        <title>{{ metatitle }} | 全て歌詞の所為です。</title>
         <link rel="stylesheet" type="text/css" href="{% static 'subekashi/css/common.css'%}?{% get_last_modified %}">
+        <link rel="stylesheet" type="text/css" href="{% static 'subekashi/css/components/song_card.css'%}?{% get_last_modified %}">
+        <link rel="stylesheet" type="text/css" href="{% static 'subekashi/css/components/song_guesser.css'%}?{% get_last_modified %}">
         <link rel="stylesheet" type="text/css" href="{% block css %}{% endblock %}?{% get_last_modified %}">
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" > <!-- font awesome -->
         <link rel="shortcut icon" href="{% static 'subekashi/image/icon.ico' %}">
@@ -30,12 +32,6 @@
         <main>
             <article id="mainarticle">
                 {% block content %}{% endblock %}
-                <section>
-                    <div id="agreement">
-                        <p>このサイトはcookieを使用しております。</p>
-                        <button type="button" onclick="agree(true)">OK!</button>
-                    </div>
-                </section>
             </article>
         </main>
         {% include './footer.html' %}

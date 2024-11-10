@@ -105,9 +105,8 @@
     </details>
     <p class="detailP">最終更新日：2023年9月25日</p>
     {% comment %} TODO subekashi:songに変更してPOST処理をsongに記述 {% endcomment %}
+    {% comment %} TODO 曲名とチャンネル名・もしくはURLから自動的に登録できる機能の追加 {% endcomment %}
     <form action="{% url 'subekashi:new' %}" method="POST" id="newform">{% csrf_token %}
-        {% comment %} TODO songidを.GET.getで取得するようにする {% endcomment %}
-        <input type="number" id="songid" name="songid" hidden>　
         <div class="form-col">
             <label>曲名*</label>
             <input type="text" id="title" name="title" class="sansfont" oninput="checkExist()" value="{{ title }}">
@@ -167,6 +166,7 @@
         <input type="submit" value="登録" id="newsubmit" disabled>
     </form>
 
+    {% comment %} TODO 専用のフォームに分ける {% endcomment %}
     <h1>削除依頼</h1>
     <div class="underline"></div>
     <form action="{% url 'subekashi:delete' %}" method="POST" id="deleteform">{% csrf_token %}

@@ -3,8 +3,12 @@ import os
 from .local_settings import *
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, STATIC_URL)
+
 ROOT_DIR = "http://subekashi.localhost:8000" if DEBUG else "https://lyrics.imicomweb.com"
-# TODO STATIC_DIRの追加と置換
+STATIC_DIR = os.path.join(ROOT_DIR, STATIC_URL).rstrip('/')
+
 ALLOWED_HOSTS = [
     'subekashi.localhost',
     'lyrics.imicomweb.com',
@@ -109,6 +113,3 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 DEFAULT_AUTO_FIELD='django.db.models.AutoField'
-
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-STATIC_URL = 'static/'
