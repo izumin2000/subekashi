@@ -36,7 +36,7 @@ class Command(BaseCommand):
         tree = ElementTree(urlset)
         tree.write(sitemap_path, encoding='utf-8', xml_declaration=True)
 
-        management.call_command("collectstatic")
+        management.call_command("collectstatic", "--noinput")
         
         self.stdout.write(self.style.SUCCESS(f'Sitemap generated at {sitemap_path}'))
 
