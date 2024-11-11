@@ -98,7 +98,7 @@
                 <option value="random" {% if sort == 'random' %}selected{% endif %}>ランダム</option>
             </select>
         </div>
-        <div class="checkbox-col ml-none">
+        <div class="checkbox-col">
             <input type="checkbox" value="islack" id="islack" {% if islack %}checked{% endif %}>
             <label for="islack">作成途中</label>
         </div>
@@ -113,6 +113,10 @@
         <div class="checkbox-col">
             <input type="checkbox" value="isinst" id="isinst" {% if isinst %}checked{% endif %}>
             <label for="isinst">インスト曲</label>
+        </div>
+        <div class="checkbox-col">
+            <input type="checkbox" value="isdeleted" id="isdeleted" {% if isdeleted %}checked{% endif %}>
+            <label for="isdeleted">非公開/削除済み</label>
         </div>
     </details>
     <input type="submit" id="search-button" onclick="renderSearch()">検索</input>

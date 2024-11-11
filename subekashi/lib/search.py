@@ -21,7 +21,7 @@ FORM_TYPE = {
     "text": (["title", "channel", "lyrics", "url"], "__icontains"),
     "number_gt": (NUMBER_GT_FORMS , "__gte"),
     "number_lt": (NUMBER_LT_FORMS , "__lte"),
-    "bool": (["issubeana", "isjoke", "isdraft", "isoriginal", "isinst"], "")
+    "bool": (["issubeana", "isjoke", "isdraft", "isoriginal", "isinst", "isdeleted"], "")
 }
 
 # 各queryのカラムとそれに対応するField lookupsを記した辞書の生成
