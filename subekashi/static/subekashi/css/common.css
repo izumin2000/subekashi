@@ -159,6 +159,42 @@ aside a:hover aside p {
 
 
 /* SP向けメニュー */
+#sp_menu {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    height: 50vh;
+    width: 100vw;
+    bottom: 0;
+    padding-bottom: 60px;
+    background-color: #000000aa;
+    overflow-y: scroll;
+    z-index: 999;
+}
+
+#sp_menu a {
+    margin-top: 5px;
+    text-align: center;
+}
+
+#sp_menu i {
+    display: inline-block;
+    margin: 1vh;
+    font-size: 24px;
+}
+
+#sp_menu p {
+    display: inline-block;
+}
+
+#sp_menu_hor {
+    display: block;
+    width: 90%;
+    height: 2px;
+    margin: 10px auto;
+    background-color: #ffffff66;
+}
+
 #tab_bar {
     display: flex;
     position: fixed;
@@ -169,14 +205,14 @@ aside a:hover aside p {
     bottom: 0;
     margin: 0 auto;
     height: 50px;
-    width: 150vw;
+    width: 100vw;
     background-color: #000;
     z-index: 999;
 }
 
 #tab_bar i {
     font-size: 30px;
-    margin: 0 25px;
+    margin: 0 5vw;
 }
 
 /* 基礎 */
