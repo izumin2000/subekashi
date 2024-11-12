@@ -108,7 +108,7 @@ async function getSongGuessers(text, to, signal) {
 
 
 // グローバルヘッダーの取得
-var globalHeaderWrapperEle = document.getElementById("global_header_wrapper");
+var globalHeaderWrapperEle = document.getElementById("global-header-wrapper");
 async function getHeader() {
     try {
         const globalHeaderRes = await fetch("https://script.google.com/macros/s/AKfycbx6kVTjsvQ5bChKtRMp1KCRr56NkkhFlOXhYv3a_1HK-q8UJTgIvFzI1TTpzIWGbpY6/exec?type=full");
@@ -141,11 +141,11 @@ async function getHeader() {
 
     console.log(globalHeaderEle)
     var imiNNews = globalHeaderEle.getElementsByClassName("imiN_news")[0].children[0].innerText;
-    document.getElementById("global_news").innerText = imiNNews;
+    document.getElementById("global-news").innerText = imiNNews;
     var imiN_notice1 = globalHeaderEle.getElementsByClassName("imiN_notice")[0].children[0].innerHTML.replace("<br>", "")
-    document.getElementsByClassName("global_notice")[0].innerText = imiN_notice1;
+    document.getElementsByClassName("global-notice")[0].innerText = imiN_notice1;
     var imiN_notice2 = globalHeaderEle.getElementsByClassName("imiN_notice")[0].children[1].innerHTML.replace("<br>", "")
-    document.getElementsByClassName("global_notice")[1].innerText = imiN_notice2;
+    document.getElementsByClassName("global-notice")[1].innerText = imiN_notice2;
 }
 
 

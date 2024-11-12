@@ -45,7 +45,7 @@ header {
     top: calc(-1 * var(--imiN-header-height));
 }
 
-#global_header_wrapper {
+#global-header-wrapper {
 	display: flex;
 	align-items: center;
     justify-content: center;
@@ -55,17 +55,17 @@ header {
 	background-color: #fff;
 }
 
-#global_header_wrapper a, #global_header_wrapper p {
+#global-header-wrapper a, #global-header-wrapper p {
     color: #000;
     margin: 0 10px;
     font-size: 16px;
 }
 
-#global_header_wrapper a:hover, #global_header_wrapper p:hover {
+#global-header-wrapper a:hover, #global-header-wrapper p:hover {
     text-decoration: underline;
 }
 
-#global_message {
+#global-message {
     position: absolute;
     width: 100%;
     height: 0;
@@ -76,11 +76,11 @@ header {
     transition: all 0.5s ease;
 }
 
-#global_header_wrapper:hover + #global_message {
+#global-header-wrapper:hover + #global-message {
     height: 100px;
 }
 
-#global_message p {
+#global-message p {
     opacity: 0;
     position: relative;
     text-align: center;
@@ -91,20 +91,20 @@ header {
     transition: all 0.5s ease;
 }
 
-#global_header_wrapper:hover + #global_message p {
+#global-header-wrapper:hover + #global-message p {
     opacity: 1;
     z-index: 999;
 }
 
-#global_news {
+#global-news {
     margin: 5px 0;
 }
 
-.global_notice {
+.global-notice {
     font-size: 12px !important;
 }
 
-#subekashi_header {
+#subekashi-header {
 	position: sticky;
 	top: 0;
 }
