@@ -116,6 +116,46 @@ header {
     text-decoration: none;
 }
 
+/* サイドバー */
+aside {
+    display: block;
+    position: fixed;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    font-size: 32px;
+    width: 1.2em;
+    overflow-x: hidden;
+    background-color: #000000aa;
+    z-index: 99;
+}
+
+aside:hover {
+    width: 9em
+}
+
+aside a {
+    display: block;
+    white-space: nowrap;
+    margin-top: 5px;
+}
+
+aside a:hover {
+    background-color: #ffffff33;
+}
+
+aside i {
+    width: 1em;
+    margin: 0.5em;
+}
+
+aside p {
+    display: inline-block;
+}
+
+aside a:hover aside p {
+    text-decoration: underline 2px #fff;
+}
 
 /* 基礎 */
 main {
