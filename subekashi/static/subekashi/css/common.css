@@ -157,6 +157,28 @@ aside a:hover aside p {
     text-decoration: underline 2px #fff;
 }
 
+
+/* SP向けメニュー */
+#tab_bar {
+    display: flex;
+    position: fixed;
+    justify-content: center;
+    align-items: center;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 0;
+    margin: 0 auto;
+    height: 50px;
+    width: 150vw;
+    background-color: #000;
+    z-index: 999;
+}
+
+#tab_bar i {
+    font-size: 30px;
+    margin: 0 25px;
+}
+
 /* 基礎 */
 main {
     margin-top: 40px;
