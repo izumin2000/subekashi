@@ -1,7 +1,3 @@
-:root {
-	--imiN-header-height: 30px;
-}
-
 @font-face {
     font-family: "Imitate";
     src: url("../GenZenGothicKaiC.woff2") format("woff2");
@@ -40,9 +36,6 @@ header {
     width: 100%;
     background-color: #000;
     border-bottom: solid 4px #fff;
-    position: sticky;
-    overflow: hidden;
-    top: calc(-1 * var(--imiN-header-height));
 }
 
 #global-header-wrapper {
@@ -51,7 +44,7 @@ header {
     justify-content: center;
 	position: relative;
 	width: 100%;
-    height: 29px;
+    height: 30px;
 	background-color: #fff;
 }
 
@@ -73,27 +66,21 @@ header {
     left: 0;
     margin: 0 auto;
     background-color: #fff;
-    transition: all 0.5s ease;
+    z-index: 0;
 }
 
 #global-header-wrapper:hover + #global-message {
-    height: 100px;
+    height: 65px;
+    opacity: 1;
+    z-index: 99;
 }
 
 #global-message p {
-    opacity: 0;
     position: relative;
     text-align: center;
     color: #000;
     font-size: 16px;
     line-height: 16px;
-    z-index: 0;
-    transition: all 0.5s ease;
-}
-
-#global-header-wrapper:hover + #global-message p {
-    opacity: 1;
-    z-index: 999;
 }
 
 #global-news {
@@ -105,71 +92,28 @@ header {
 }
 
 #subekashi-header {
-	position: sticky;
-	top: 0;
+    display: flex;
+    position: relative;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1;
+    height: 60px;
 }
 
-.header-left {
-    margin-left: 8px;
-    float: left;
-}
-
-.logo {
+#subekashi-header img {
     display: inline-block;
     height: 45px;
-    margin-top: 10px;
+    margin: 10px 10px 5px 0;
     border-radius:50%;
 }
 
-.logomoji {
+#subekashi-header a {
     display: inline-block;
     vertical-align: top; 
-    margin-top: 18px;
-    font-size: 30px;
-    line-height: 30px;
+    font-size: 32px;
     color: #FFF;
     text-decoration: none;
-}
-
-.header-right {
-    margin: 8px 8px 0 0;
-    float: right;
-}
-
-.header-right nav a {
-    display: inline-block;
-    font-size: 25px;
-    line-height: 25px;
-    margin-right: 8px;
-    text-decoration: none;
-    color: #ddd;
-    cursor: pointer;
-    transition: color 0.5s;
-    vertical-align: top;
-}
-
-.header-right nav a i {
-    font-size: 48px;
-}
-
-.header-right nav a:hover {
-    text-decoration: underline #ddd;
-    text-underline-offset: 3px;
-    transition: color 0.5s;
-}
-
-@media (max-width: 420px) {
-    .logo {
-        display: none;
-    }
-
-    .header-left {
-        margin-left: 10px;
-    }
-}
-
-.clear {
-    clear: both;
 }
 
 

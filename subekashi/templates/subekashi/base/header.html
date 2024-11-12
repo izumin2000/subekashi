@@ -10,9 +10,9 @@
     </div>
     
     <div id="subekashi-header">
-        <div class="header-left">
-            <a href="{% url 'subekashi:top' %}" class="sansfont"><img name="thumbnail" class="logo" src="{% static 'subekashi/image/icon.png' %}" alt="全て歌詞の所為です。のロゴ" height="45" width="45" loading="lazy"></a>
-            <a href="{% url 'subekashi:top' %}" class="logomoji">全て歌詞の所為です。</a>
-        </div>
+        <a href="{% url 'subekashi:top' %}">
+            <img name="thumbnail" src="{% static 'subekashi/image/icon.png' %}" alt="全て歌詞の所為です。のロゴ" height="45" width="45" loading="lazy">
+        </a>
+        <a href="{% url 'subekashi:top' %}">全て歌詞の所為です。</a>
     </div>
 </header>
