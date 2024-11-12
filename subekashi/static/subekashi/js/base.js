@@ -6,19 +6,6 @@ function baseURL() {
 }
 
 
-// メニューの切り替え
-var isMain = true;
-var menuarticleEle = document.getElementById("menuarticle");
-function menu() {
-    menuarticleEle.classList.toggle("shown");
-    const menuiconEle = document.getElementById("menuicon");
-    menuiconEle.classList.toggle("fa-bars");
-    menuiconEle.classList.toggle("fa-times");
-
-    isMain =! isMain;
-}
-
-
 // 可変テキストエリア
 function autotextarea() {
     let textarea = document.getElementById('lyrics');

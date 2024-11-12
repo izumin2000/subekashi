@@ -14,17 +14,5 @@
             <a href="{% url 'subekashi:top' %}" class="sansfont"><img name="thumbnail" class="logo" src="{% static 'subekashi/image/icon.png' %}" alt="全て歌詞の所為です。のロゴ" height="45" width="45" loading="lazy"></a>
             <a href="{% url 'subekashi:top' %}" class="logomoji">全て歌詞の所為です。</a>
         </div>
-
-        <div class="header-right">
-            <nav>
-                <a onclick="menu(this)" id="menubutton" class="menubutton"> 
-                    <i id="menuicon" class="fas fa-bars"></i>
-                </a>
-            </nav>
-        </div>
-
-        <div class="clear"></div>
-        
-        {% include './menu.html' %}
     </div>
 </header>

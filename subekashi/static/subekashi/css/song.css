@@ -15,21 +15,18 @@ i {
     margin-bottom: 22px;
 }
 
+.url-p {
+    display: inline-block;
+}
+
 .fa-copy {
-    cursor: pointer;
+    margin-left: 10px;
 }
 
 .songurl, .songchannel, .songimitate {
-    white-space: nowrap;
+    display: inline-block;
+    overflow-wrap: anywhere;
     margin-right: 15px;
-}
-
-@media (max-width: 640px) {
-    .songurl {
-        display: block !important;
-        overflow: hidden;
-        width: calc(100vw - 60px) !important;
-    }
 }
 
 #view, #like {
