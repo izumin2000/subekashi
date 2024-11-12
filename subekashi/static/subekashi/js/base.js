@@ -9,7 +9,6 @@ function baseURL() {
 // メニューの切り替え
 var isMain = true;
 var menuarticleEle = document.getElementById("menuarticle");
-var imicomHeaderEle = document.getElementById("imiN_header");
 function menu() {
     menuarticleEle.classList.toggle("shown");
     const menuiconEle = document.getElementById("menuicon");
@@ -122,40 +121,44 @@ async function getSongGuessers(text, to, signal) {
 
 
 // グローバルヘッダーの取得
+var globalHeaderWrapperEle = document.getElementById("global_header_wrapper");
 async function getHeader() {
     try {
-        const res = await fetch("https://script.google.com/macros/s/AKfycbx6kVTjsvQ5bChKtRMp1KCRr56NkkhFlOXhYv3a_1HK-q8UJTgIvFzI1TTpzIWGbpY6/exec?type=full");
-        const text = await res.text();
-        if ( ! res.ok ) {
-            throw new RuntimeError(`getHeader: Response: ${res.status}`);
+        const globalHeaderRes = await fetch("https://script.google.com/macros/s/AKfycbx6kVTjsvQ5bChKtRMp1KCRr56NkkhFlOXhYv3a_1HK-q8UJTgIvFzI1TTpzIWGbpY6/exec?type=full");
+        if (!globalHeaderRes.ok) {
+            throw new RuntimeError(`getHeader: Response: ${globalHeaderRes.status}`);
         }
-        
-        imicomHeaderEle.append(...stringToHTML(text, true));
+        var globalHeaderText = await globalHeaderRes.text();
+        var globalHeaderEle = stringToHTML(globalHeaderText, true)[1]
     } catch ( error ) {
-        console.error(error);
-
-        imiN_loadingEle = document.getElementsByClassName("imiN_loading")[0];
-        imiN_loadingEle.innerHTML = "グローバルヘッダーを読み込めませんでした。";
+        globalHeaderEle.innerHTML = "グローバルヘッダーエラー";
     }
 
-    const headerEle = document.getElementsByTagName("header")[0];
-    headerEle.style.top = `-${imicomHeaderEle.clientHeight + 5}px`;
 
-    
-    var imiN_listEles = document.getElementsByClassName("imiN_list")[0].children;
-    Array.from(imiN_listEles).forEach(function(imiN_listEle) {
-        imiN_listEle.children[0].className = "sansfont";
-        imiN_listEle.children[0].style = "color: #000; font-size: 16px;"
-    })
+    globalHeaderWrapperEle.firstChild.remove();
+    globalHeaderWrapperEle.firstChild.remove();
+    const globalHeaderItemEles = Array.from(globalHeaderEle.getElementsByClassName("imiN_list")[0].children).slice(1, -1);
+    for (var globalHeaderItemEle of globalHeaderItemEles) {
+        const aTag = globalHeaderItemEle.closest('a');
 
-    var faultEle = document.getElementsByClassName("fault")[0].children[0];
-    faultEle.style = "color: #FFF; font-size: 16px";
-    
-    var imiN_header_innerEle = document.getElementsByClassName("imiN_header_inner")[0];
-    imiN_header_innerEle.style = "padding-left: 0"
+        const spOnly = globalHeaderItemEle.querySelector('span.sp_only');
+        const pcOnly = globalHeaderItemEle.querySelector('span.pc_only');
 
-    var imiN_noticeEle = document.getElementsByClassName("imiN_notice")[0].childNodes[2];
-    imiN_noticeEle.style = "color: #777"
+        if (spOnly && pcOnly) {
+            aTag.innerText = pcOnly.innerHTML;
+        } else {
+            aTag.innerText = globalHeaderItemEle.innerText;
+        }
+        globalHeaderWrapperEle.appendChild(globalHeaderItemEle);
+    }
+
+    console.log(globalHeaderEle)
+    var imiNNews = globalHeaderEle.getElementsByClassName("imiN_news")[0].children[0].innerText;
+    document.getElementById("global_news").innerText = imiNNews;
+    var imiN_notice1 = globalHeaderEle.getElementsByClassName("imiN_notice")[0].children[0].innerHTML.replace("<br>", "")
+    document.getElementsByClassName("global_notice")[0].innerText = imiN_notice1;
+    var imiN_notice2 = globalHeaderEle.getElementsByClassName("imiN_notice")[0].children[1].innerHTML.replace("<br>", "")
+    document.getElementsByClassName("global_notice")[1].innerText = imiN_notice2;
 }
 
 
