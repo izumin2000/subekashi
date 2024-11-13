@@ -1,6 +1,6 @@
 from subekashi.views.ad import ad
 from subekashi.views.adapi import AdAPI
-from subekashi.views.adpost import adpost
+from subekashi.views.ad_complete import ad_complete
 from subekashi.views.ai import ai
 from subekashi.views.aiapi import AiAPI
 from subekashi.views.channel import channel

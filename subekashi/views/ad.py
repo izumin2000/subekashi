@@ -66,7 +66,7 @@ def ad(request) :
             if isCreate :
                 sendDiscord(DSP_DISCORD_URL, f"{urlForm}, {adIns.id}")
         
-        return redirect("subekashi:adpost")
+        return redirect("subekashi:ad_complete")
                 
     ads = set()
     for urlForm in urlForms :

@@ -7,3 +7,7 @@ section {
     text-align: center;
     width: 100%;
 }
+
+button {
+    width: 200px;
+}
