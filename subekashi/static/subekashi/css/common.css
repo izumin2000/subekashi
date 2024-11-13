@@ -175,7 +175,7 @@ aside a:hover aside p {
     display: none;
     flex-direction: column;
     position: fixed;
-    height: 40vh;
+    height: 60vh;
     width: 100vw;
     bottom: 0;
     background-color: #000000aa;
@@ -186,7 +186,7 @@ aside a:hover aside p {
 }
 
 #sp_menu a {
-    margin-top: 5px;
+    margin-top: 10px;
     text-align: center;
 }
 
@@ -229,8 +229,8 @@ aside a:hover aside p {
     }
 }
 
-.tab_bar_bottom {
-    display: none !important;
+.tab_bar_suspend {
+    bottom: 32px !important;
 }
 
 #tab_bar i {

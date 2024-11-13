@@ -142,19 +142,24 @@ function setGlobalHeader(type) {
     });
     var imiNNews = globalHeaderEle.getElementsByClassName("imiN_news")[0].children[0].innerText;
     document.getElementById(`${type}-global-news`).innerText = imiNNews;
-    var imiN_notice1 = globalHeaderEle.getElementsByClassName("imiN_notice")[0].children[0].innerHTML.replace("<br>", "")
-    document.getElementsByClassName(`${type}-global-notice`)[0].innerText = imiN_notice1;
-    var imiN_notice2 = globalHeaderEle.getElementsByClassName("imiN_notice")[0].children[1].innerHTML.replace("<br>", "")
-    document.getElementsByClassName(`${type}-global-notice`)[1].innerText = imiN_notice2;
+    var imiNNotice1 = globalHeaderEle.getElementsByClassName("imiN_notice")[0].children[0].innerHTML.replace("<br>", "")
+    document.getElementsByClassName(`${type}-global-notice`)[0].innerText = imiNNotice1;
+    var imiNNotice2 = globalHeaderEle.getElementsByClassName("imiN_notice")[0].children[1].innerHTML.replace("<br>", "")
+    document.getElementsByClassName(`${type}-global-notice`)[1].innerText = imiNNotice2;
 }
 
 // #sp_menuの切り替え
+var isSpMenuOpen = false
 document.getElementById("toggle-tab-bar").addEventListener("click", function () {
-    const menu = document.getElementById("sp_menu");
-    if (menu.style.display === "flex") {
-        menu.style.display = "none";
+    const menuEle = document.getElementById("sp_menu");
+    const tabBarEle = document.getElementById("tab_bar");
+    if (isSpMenuOpen) {
+        menuEle.style.display = "none";
+        isSpMenuOpen = false;
     } else {
-        menu.style.display = "flex";
+        isSpMenuOpen = true;
+        menuEle.style.display = "flex";
+        tabBarEle.removeAttribute("class", "tab_bar_suspend");
     }
 });
 
@@ -164,7 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const isScrollable = document.documentElement.scrollHeight > window.innerHeight;
     if (!isScrollable) {
-        return;
+        tabBarEle.setAttribute("class", "tab_bar_suspend");
     }
 
     // スクロール時のイベントを設定
@@ -173,10 +178,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const bottomPosition = document.documentElement.scrollHeight;
 
         // 一番下までスクロールされた場合は非表示、そうでない場合は表示
-        if (scrollPosition >= bottomPosition - 2) {
-            tabBarEle.setAttribute("class", "tab_bar_bottom");
+        if ((scrollPosition >= bottomPosition - 1) && !isSpMenuOpen) {
+            tabBarEle.setAttribute("class", "tab_bar_suspend");
         } else {
-            tabBarEle.removeAttribute("class", "tab_bar_bottom");
+            tabBarEle.removeAttribute("class", "tab_bar_suspend");
         }
     });
 });
