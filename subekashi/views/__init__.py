@@ -8,7 +8,6 @@ from subekashi.views.delete import delete
 from subekashi.views.errors import *
 from subekashi.views.file import *
 from subekashi.views.new import new
-from subekashi.views.research import research
 from subekashi.views.search import search
 from subekashi.views.setting import setting
 from subekashi.views.song import song
