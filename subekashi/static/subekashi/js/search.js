@@ -1,5 +1,5 @@
 var page = 1;
-const FORMQUERYS = 'input:not(#menu), select'
+const FORMQUERYS = 'input, select'
 
 isFormDirty = false;        // フォームに変更があったかを検知
 COOKIE_FORMS = ["songrange", "jokerange", "sort"];

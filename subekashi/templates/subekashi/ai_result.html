@@ -3,10 +3,10 @@
 
 {% load static %}
 {% load last_modified %}
-{% block css %}{% static 'subekashi/css/result.css'%}{% endblock %}
+{% block css %}{% static 'subekashi/css/ai_result.css'%}{% endblock %}
 
 {% block content %}
-<section id="resultsection">
+<section>
     <h1>歌詞の生成結果</h1>
     <div class="underline"></div>
     {% for aiIns in aiInsL  %}
@@ -26,14 +26,13 @@
             </div>
         </div>
     {% endfor %}
-    <div class="dummybuttons result-form">
+    <div class="dummybuttons ai-result-form">
         <div class="dummybutton" id="copy" onclick="copyBest()"><p>最高の行をコピー</p></div>
-        <input class="dummybutton" type="submit" value="再生成">
-    </div>
+        <input class="dummybutton" type="submit" value="再生成" onclick="location.reload()"></input>
     <p id="copy-message"></p>
 </section>
 {% endblock %}
 
 {% block js %}
-    <script defer src="{% static 'subekashi/js/result.js' %}?{% get_last_modified %}" rel="stylesheet"></script>
+    <script defer src="{% static 'subekashi/js/ai_result.js' %}?{% get_last_modified %}" rel="stylesheet"></script>
 {% endblock %}

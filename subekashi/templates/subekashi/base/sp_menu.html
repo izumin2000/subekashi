@@ -1,0 +1,29 @@
+{% load static %}
+
+<div id="sp_menu" class="sansfont">
+    <a href="{% url 'subekashi:top' %}"><i class="fas fa-home"></i><p>トップ</p></a>
+    <a href="{% url 'subekashi:new' %}"><i class="fa fa-plus"></i><p>新規登録</p></a>
+    <a href="{% url 'subekashi:search' %}"><i class="fas fa-search"></i><p>検索</p></a>
+    <a href="{% url 'subekashi:ai' %}"><i class="fa fa-robot"></i><p>歌詞生成</p></a>
+    <a href="{% url 'subekashi:ad' %}"><i class="fas fa-bullhorn"></i><p>宣伝</p></a>
+    <a href="{% url 'subekashi:special' %}"><i class="far fa-star"></i><p>スペシャル</p></a>
+    <a href="{% url 'subekashi:setting' %}"><i class="fas fa-cog"></i><p>設定</p></a>
+    <a href="https://www.youtube.com/@subeteanatanoseidesu" target="_blank"><i class="far fa-user"></i><p>全てあなたの所為です。</p></a>
+    <div id="sp-global-header">
+        <div id="sp-global-items-wrapper" class="sansfont">
+        <p>界隈グローバルヘッダーの読み込み中...</p>
+        </div>
+        <div id="sp-global-message">
+            <p id="sp-global-news"></p>
+            <p class="sp-global-notice"></p>
+            <p class="sp-global-notice"></p>
+        </div>
+    </div>
+</div>
+<div id="tab_bar">
+    <a href="{% url 'subekashi:top' %}"><i class="fas fa-home"></i></a>
+    <a href="{% url 'subekashi:new' %}"><i class="fa fa-plus"></i></a>
+    <a href="{% url 'subekashi:search' %}"><i class="fas fa-search"></i></a>
+    <a href="{% url 'subekashi:ai' %}"><i class="fa fa-robot"></i></a>
+    <i class="fas fa-bars" id="toggle-tab-bar"></i>
+</div>

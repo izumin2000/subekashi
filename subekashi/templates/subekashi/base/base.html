@@ -29,11 +29,13 @@
     </head>
     <body>
         {% include './header.html' %}
+        {% include './aside.html' %}
         <main>
             <article id="mainarticle">
                 {% block content %}{% endblock %}
             </article>
         </main>
+        {% include './sp_menu.html' %}
         {% include './footer.html' %}
     </body>
 

@@ -5,21 +5,6 @@ function baseURL() {
     return protocolAndDomain;
 }
 
-
-// メニューの切り替え
-var isMain = true;
-var menuarticleEle = document.getElementById("menuarticle");
-var imicomHeaderEle = document.getElementById("imiN_header");
-function menu() {
-    menuarticleEle.classList.toggle("shown");
-    const menuiconEle = document.getElementById("menuicon");
-    menuiconEle.classList.toggle("fa-bars");
-    menuiconEle.classList.toggle("fa-times");
-
-    isMain =! isMain;
-}
-
-
 // 可変テキストエリア
 function autotextarea() {
     let textarea = document.getElementById('lyrics');
@@ -28,7 +13,6 @@ function autotextarea() {
     let scrollHeight = textarea.scrollHeight;
     textarea.style.height = scrollHeight + 'px';
 }
-
 
 // songが情報不足ではないかどうか
 function isCompleted(song) {
@@ -51,7 +35,6 @@ function isCompleted(song) {
     return !columnL.includes("");
 }
 
-
 var jsonDatas = {}
 async function getJson(path) {
     if (jsonDatas[path]) {
@@ -68,11 +51,9 @@ async function getJson(path) {
     return json;
 }
 
-
 function sleep(s) {
     return new Promise(resolve => setTimeout(resolve, s*1000));
 }
-
 
 function stringToHTML(string, multi=false) {
     const devEle = document.createElement("div");
@@ -86,12 +67,10 @@ function stringToHTML(string, multi=false) {
     return htmls[0];
 }
 
-
 function appendSongGuesser(songGuesser, toEle) {
-    songGuesserEle = stringToHTML(songGuesser);
+    var songGuesserEle = stringToHTML(songGuesser);
     toEle.appendChild(songGuesserEle)
 }
-
 
 var songGuesserController;
 async function getSongGuessers(text, to, signal) {
@@ -120,44 +99,87 @@ async function getSongGuessers(text, to, signal) {
     }
 }
 
-
 // グローバルヘッダーの取得
-async function getHeader() {
+var globalHeaderEle, globalItemEles;
+async function getGlobalHeader() {
     try {
-        const res = await fetch("https://script.google.com/macros/s/AKfycbx6kVTjsvQ5bChKtRMp1KCRr56NkkhFlOXhYv3a_1HK-q8UJTgIvFzI1TTpzIWGbpY6/exec?type=full");
-        const text = await res.text();
-        if ( ! res.ok ) {
-            throw new RuntimeError(`getHeader: Response: ${res.status}`);
-        }
-        
-        imicomHeaderEle.append(...stringToHTML(text, true));
+        var globalHeaderRes = await fetch("https://script.google.com/macros/s/AKfycbx6kVTjsvQ5bChKtRMp1KCRr56NkkhFlOXhYv3a_1HK-q8UJTgIvFzI1TTpzIWGbpY6/exec?type=full");
     } catch ( error ) {
-        console.error(error);
-
-        imiN_loadingEle = document.getElementsByClassName("imiN_loading")[0];
-        imiN_loadingEle.innerHTML = "グローバルヘッダーを読み込めませんでした。";
+        globalHeaderEle.innerHTML = "グローバルヘッダーエラー";
+        return;
     }
 
-    const headerEle = document.getElementsByTagName("header")[0];
-    headerEle.style.top = `-${imicomHeaderEle.clientHeight + 5}px`;
-
-    
-    var imiN_listEles = document.getElementsByClassName("imiN_list")[0].children;
-    Array.from(imiN_listEles).forEach(function(imiN_listEle) {
-        imiN_listEle.children[0].className = "sansfont";
-        imiN_listEle.children[0].style = "color: #000; font-size: 16px;"
-    })
-
-    var faultEle = document.getElementsByClassName("fault")[0].children[0];
-    faultEle.style = "color: #FFF; font-size: 16px";
-    
-    var imiN_header_innerEle = document.getElementsByClassName("imiN_header_inner")[0];
-    imiN_header_innerEle.style = "padding-left: 0"
-
-    var imiN_noticeEle = document.getElementsByClassName("imiN_notice")[0].childNodes[2];
-    imiN_noticeEle.style = "color: #777"
+    var globalHeaderText = await globalHeaderRes.text();
+    globalHeaderEle = stringToHTML(globalHeaderText, true)[1]
+    globalItemEles = Array.from(globalHeaderEle.getElementsByClassName("imiN_list")[0].children)
+    .slice(1, -1)
+    .map(itemEle => formatGlobalHeaderItem(itemEle));
+    setGlobalHeader("pc");
+    setGlobalHeader("sp");
 }
 
+function formatGlobalHeaderItem(itemEle) {
+    var aTag = itemEle.closest('a');
+
+    var spOnly = itemEle.querySelector('span.sp_only');
+    var pcOnly = itemEle.querySelector('span.pc_only');
+
+    if (spOnly && pcOnly) {
+        aTag.innerText = pcOnly.innerHTML;
+    } else {
+        aTag.innerText = itemEle.innerText;
+    }
+
+    return itemEle;
+}
+
+function setGlobalHeader(type) {
+    var globalItemsWrapperEle = document.getElementById(`${type}-global-items-wrapper`)
+    globalItemsWrapperEle.firstChild.remove();
+    globalItemsWrapperEle.firstChild.remove();
+    globalItemEles.forEach(globalItemEle => {
+        globalItemsWrapperEle.appendChild(globalItemEle.cloneNode(true));
+    });
+    var imiNNews = globalHeaderEle.getElementsByClassName("imiN_news")[0].children[0].innerText;
+    document.getElementById(`${type}-global-news`).innerText = imiNNews;
+    var imiN_notice1 = globalHeaderEle.getElementsByClassName("imiN_notice")[0].children[0].innerHTML.replace("<br>", "")
+    document.getElementsByClassName(`${type}-global-notice`)[0].innerText = imiN_notice1;
+    var imiN_notice2 = globalHeaderEle.getElementsByClassName("imiN_notice")[0].children[1].innerHTML.replace("<br>", "")
+    document.getElementsByClassName(`${type}-global-notice`)[1].innerText = imiN_notice2;
+}
+
+// #sp_menuの切り替え
+document.getElementById("toggle-tab-bar").addEventListener("click", function () {
+    const menu = document.getElementById("sp_menu");
+    if (menu.style.display === "flex") {
+        menu.style.display = "none";
+    } else {
+        menu.style.display = "flex";
+    }
+});
+
+// tab_barをページ一番下までスクロールしたら非表示
+document.addEventListener("DOMContentLoaded", () => {
+    const tabBarEle = document.getElementById("tab_bar");
+
+    const isScrollable = document.documentElement.scrollHeight > window.innerHeight;
+    if (!isScrollable) {
+        return;
+    }
+
+    // スクロール時のイベントを設定
+    window.addEventListener("scroll", () => {
+        const scrollPosition = window.scrollY + window.innerHeight;
+        const bottomPosition = document.documentElement.scrollHeight;
+
+        // 一番下までスクロールされた場合は非表示、そうでない場合は表示
+        if (scrollPosition >= bottomPosition - 2) {
+            tabBarEle.setAttribute("class", "tab_bar_bottom");
+        } else {
+            tabBarEle.removeAttribute("class", "tab_bar_bottom");
+        }
+    });
+});
 
 // CSRFの取得
 async function getCSRF() {
@@ -168,7 +190,6 @@ async function getCSRF() {
         return csrf;
     }
 }
-
 
 // クッキーの保存
 function setCookie(name, json) {
@@ -186,7 +207,6 @@ function setCookie(name, json) {
     document.cookie = cookies;
 };
 
-
 // クッキーの取得
 function getCookie() {
     var cookieDict = {};
@@ -202,8 +222,7 @@ function getCookie() {
     return cookieDict;
 }
 
-
 // 読み込み時の実行
 window.onload = function() {
-    getHeader();
+    getGlobalHeader();
 }

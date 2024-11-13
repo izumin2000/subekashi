@@ -1,3 +1,4 @@
+from config.settings import DEBUG
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from subekashi.models import Song
@@ -36,7 +37,8 @@ class Command(BaseCommand):
         tree = ElementTree(urlset)
         tree.write(sitemap_path, encoding='utf-8', xml_declaration=True)
 
-        management.call_command("collectstatic", "--noinput")
+        if not DEBUG:
+            management.call_command("collectstatic", "--noinput")
         
         self.stdout.write(self.style.SUCCESS(f'Sitemap generated at {sitemap_path}'))
 

@@ -1,7 +1,3 @@
-:root {
-	--imiN-header-height: 30px;
-}
-
 @font-face {
     font-family: "Imitate";
     src: url("../GenZenGothicKaiC.woff2") format("woff2");
@@ -40,111 +36,236 @@ header {
     width: 100%;
     background-color: #000;
     border-bottom: solid 4px #fff;
-    position: sticky;
-    overflow: hidden;
-    top: calc(-1 * var(--imiN-header-height));
 }
 
-.imiN_header {
+@media (max-width: 960px) {
+    #pc-global-header {
+        display: none;
+    }
+}
+
+#pc-global-items-wrapper {
 	display: flex;
 	align-items: center;
+    justify-content: center;
 	position: relative;
 	width: 100%;
+    height: 30px;
 	background-color: #fff;
 }
 
-.imiN_header.hide {
-	display: none!important;
-}
-
-.imiN_loading {
-	font-size: 1.12em;
-	color: #444;
-	margin-left: 10px;
-}
-
-.imiN_headerOverwrite {
-    left: 0 !important;
-    right: 0 !important;
-    margin: auto;
-    text-align: center;
-    background-color: #FFF !important;
-    color: #000 !important;
-}
-
-.imiN_news p {
+#pc-global-items-wrapper a, #pc-global-items-wrapper p {
     color: #000;
-    font-size: 20px;
+    margin: 0 10px;
+    font-size: 16px;
 }
 
-.subekashi_header {
-	position: sticky;
-	top: 0;
+#pc-global-items-wrapper a:hover, #pc-global-items-wrapper p:hover {
+    text-decoration: underline;
 }
 
-.header-left {
-    margin-left: 8px;
-    float: left;
+#pc-global-message {
+    position: absolute;
+    width: 100%;
+    height: 0;
+    right: 0;
+    left: 0;
+    margin: 0 auto;
+    background-color: #fff;
+    z-index: 0;
 }
 
-.logo {
+#pc-global-items-wrapper:hover + #pc-global-message {
+    height: 65px;
+    opacity: 1;
+    z-index: 99;
+}
+
+#pc-global-message p {
+    position: relative;
+    text-align: center;
+    color: #000;
+    font-size: 16px;
+    line-height: 16px;
+}
+
+#pc-global-news {
+    margin: 5px 0;
+}
+
+.pc-global-notice {
+    font-size: 12px !important;
+}
+
+#subekashi-header {
+    display: flex;
+    position: relative;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1;
+    height: 60px;
+}
+
+#subekashi-header img {
     display: inline-block;
     height: 45px;
-    margin-top: 10px;
+    margin: 10px 10px 5px 0;
     border-radius:50%;
 }
 
-.logomoji {
+#subekashi-header a {
     display: inline-block;
     vertical-align: top; 
-    margin-top: 18px;
-    font-size: 30px;
-    line-height: 30px;
+    font-size: 32px;
     color: #FFF;
     text-decoration: none;
 }
 
-.header-right {
-    margin: 8px 8px 0 0;
-    float: right;
+/* サイドバー */
+aside {
+    display: block;
+    position: fixed;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    font-size: 32px;
+    width: 1.2em;
+    overflow-x: hidden;
+    background-color: #000000aa;
+    z-index: 99;
 }
 
-.header-right nav a {
-    display: inline-block;
-    font-size: 25px;
-    line-height: 25px;
-    margin-right: 8px;
-    text-decoration: none;
-    color: #ddd;
-    cursor: pointer;
-    transition: color 0.5s;
-    vertical-align: top;
-}
-
-.header-right nav a i {
-    font-size: 48px;
-}
-
-.header-right nav a:hover {
-    text-decoration: underline #ddd;
-    text-underline-offset: 3px;
-    transition: color 0.5s;
-}
-
-@media (max-width: 420px) {
-    .logo {
+@media (max-width: 960px) {
+    aside {
         display: none;
     }
+}
 
-    .header-left {
-        margin-left: 10px;
+aside:hover {
+    width: 9em
+}
+
+aside a {
+    display: block;
+    white-space: nowrap;
+    margin-top: 5px;
+}
+
+aside a:hover {
+    background-color: #ffffff33;
+}
+
+aside i {
+    width: 1em;
+    margin: 0.5em;
+}
+
+aside p {
+    display: inline-block;
+}
+
+aside a:hover aside p {
+    text-decoration: underline 2px #fff;
+}
+
+
+/* SP向けメニュー */
+#sp_menu {
+    display: none;
+    flex-direction: column;
+    position: fixed;
+    height: 40vh;
+    width: 100vw;
+    bottom: 0;
+    background-color: #000000aa;
+    border-top: solid #ffffffaa 2px;
+    padding-bottom: 1em;
+    overflow-y: scroll;
+    z-index: 999;
+}
+
+#sp_menu a {
+    margin-top: 5px;
+    text-align: center;
+}
+
+#sp_menu i {
+    display: inline-block;
+    margin: 1vh;
+    font-size: 24px;
+}
+
+#sp_menu p {
+    display: inline-block;
+}
+
+#sp_menu_hor {
+    display: block;
+    width: 90%;
+    height: 2px;
+    margin: 10px auto;
+    background-color: #ffffff66;
+}
+
+#tab_bar {
+    display: flex;
+    position: fixed;
+    justify-content: center;
+    align-items: center;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 0;
+    margin: 0 auto;
+    height: 50px;
+    width: 100vw;
+    background-color: #000;
+    z-index: 999;
+}
+
+@media (min-width: 960px) {
+    #tab_bar {
+        display: none;
     }
 }
 
-.clear {
-    clear: both;
+.tab_bar_bottom {
+    display: none !important;
 }
 
+#tab_bar i {
+    font-size: 30px;
+    margin: 0 5vw;
+    cursor: pointer;
+}
+
+#sp-global-header {
+    display: block;
+    background-color: #ffffffaa;
+    margin: 2em auto 0 auto;
+    width: 100%;
+}
+
+#sp-global-header p, #sp-global-header a {
+    display: block;
+    text-align: center;
+    margin: 1em auto;
+    color: #000;
+    width: 90vw;
+}
+
+#sp-global-items-wrapper a {
+    text-decoration: underline 2px #000;
+}
+
+#sp-global-message {
+    margin-bottom: 4em;
+}
+
+.sp-global-notice {
+    font-size: 15px;
+    line-height: 15px;
+}
 
 /* 基礎 */
 main {
@@ -232,56 +353,6 @@ summary {
     display: block;
     width: 120px;
     margin: 0 auto;
-}
-
-/* メニュー */
-#menuarticle {
-    display: none;
-    justify-content: center;
-    align-items: center;
-    overflow-y: scroll;
-}
-
-#menuarticle.shown {
-    display: flex !important;
-    margin-top: 0;
-    height: calc(100vh - 60px);
-    width: 100vw;
-    overflow: hidden;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    background: linear-gradient(180deg, #000, #000, 70vh, #005);
-}
-
-#menuarticle ul {
-    list-style: none;
-    margin-bottom: 90px;
-}
-
-#menuarticle ul li a {
-    list-style-type: none;
-    text-align: center;
-    vertical-align: middle;
-    padding: 2vh 0;
-    font-size: 30px !important;
-    line-height: 60px !important;
-    text-decoration: underline;
-}
-
-@media(min-height: 426px) and (max-height: 524px) {
-	#menuarticle h2 {
-		display: none;
-	}
-	#menuarticle ul li a {
-		margin-bottom: -5px;
-	}
-}
-
-@media(max-height: 425px) {
-	#menuarticle li {
-		margin-bottom: -15px;
-	}
 }
 
 
