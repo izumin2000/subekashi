@@ -38,6 +38,12 @@ header {
     border-bottom: solid 4px #fff;
 }
 
+@media (max-width: 960px) {
+    #pc-global-header {
+        display: none;
+    }
+}
+
 #pc-global-items-wrapper {
 	display: flex;
 	align-items: center;
@@ -130,6 +136,12 @@ aside {
     z-index: 99;
 }
 
+@media (max-width: 960px) {
+    aside {
+        display: none;
+    }
+}
+
 aside:hover {
     width: 9em
 }
@@ -209,6 +221,12 @@ aside a:hover aside p {
     width: 100vw;
     background-color: #000;
     z-index: 999;
+}
+
+@media (min-width: 960px) {
+    #tab_bar {
+        display: none;
+    }
 }
 
 #tab_bar i {
