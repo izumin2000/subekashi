@@ -229,6 +229,10 @@ aside a:hover aside p {
     }
 }
 
+.tab_bar_bottom {
+    display: none !important;
+}
+
 #tab_bar i {
     font-size: 30px;
     margin: 0 5vw;

@@ -158,6 +158,28 @@ document.getElementById("toggle-tab-bar").addEventListener("click", function () 
     }
 });
 
+// tab_barをページ一番下までスクロールしたら非表示
+document.addEventListener("DOMContentLoaded", () => {
+    const tabBarEle = document.getElementById("tab_bar");
+
+    const isScrollable = document.documentElement.scrollHeight > window.innerHeight;
+    if (!isScrollable) {
+        return;
+    }
+
+    // スクロール時のイベントを設定
+    window.addEventListener("scroll", () => {
+        const scrollPosition = window.scrollY + window.innerHeight;
+        const bottomPosition = document.documentElement.scrollHeight;
+
+        // 一番下までスクロールされた場合は非表示、そうでない場合は表示
+        if (scrollPosition >= bottomPosition - 2) {
+            tabBarEle.setAttribute("class", "tab_bar_bottom");
+        } else {
+            tabBarEle.removeAttribute("class", "tab_bar_bottom");
+        }
+    });
+});
 
 // CSRFの取得
 async function getCSRF() {
