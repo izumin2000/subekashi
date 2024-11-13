@@ -93,7 +93,7 @@ header {
     margin: 5px 0;
 }
 
-.global-notice {
+.pc-global-notice {
     font-size: 12px !important;
 }
 
@@ -251,6 +251,7 @@ aside a:hover aside p {
     text-align: center;
     margin: 1em auto;
     color: #000;
+    width: 90vw;
 }
 
 #sp-global-items-wrapper a {
