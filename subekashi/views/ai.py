@@ -22,7 +22,7 @@ def ai(request) :
             sendDiscord(ERROR_DISCORD_URL, "aiInsのデータがありません。")
             aiIns = Ai.objects.filter(genetype = "model")
         dataD["aiInsL"] = aiIns.order_by('?')[:25]
-        return render(request, "subekashi/result.html", dataD)
+        return render(request, "subekashi/ai_result.html", dataD)
     
     dataD["bestInsL"] = Ai.objects.filter(genetype = "model", score = 5).order_by('?')[:300]
     return render(request, "subekashi/ai.html", dataD)
