@@ -160,7 +160,7 @@ aside a:hover aside p {
 
 /* SP向けメニュー */
 #sp_menu {
-    display: flex;
+    display: none;
     flex-direction: column;
     position: fixed;
     height: 40vh;
