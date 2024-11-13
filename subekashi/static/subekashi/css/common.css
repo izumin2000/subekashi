@@ -200,12 +200,10 @@ aside a:hover aside p {
     display: inline-block;
 }
 
-#sp_menu_hor {
-    display: block;
-    width: 90%;
-    height: 2px;
-    margin: 10px auto;
-    background-color: #ffffff66;
+#sp_version, #sp_version i {
+    margin: 1em 0 0.5em 0;
+    text-align: center;
+    font-size: 16px;
 }
 
 #tab_bar {
@@ -242,7 +240,7 @@ aside a:hover aside p {
 #sp-global-header {
     display: block;
     background-color: #ffffffaa;
-    margin: 2em auto 0 auto;
+    margin: 0 auto;
     width: 100%;
 }
 
@@ -592,7 +590,7 @@ footer {
     
     .footer-left p, .footer-right a {
         display: block;
-        margin-top: 10px;
+        margin-top: 15px;
         text-align: center;
     }
 }
