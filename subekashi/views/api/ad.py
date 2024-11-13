@@ -1,6 +1,6 @@
 from subekashi.models import Ad
 from rest_framework import viewsets, serializers
-from ..serializer import AdSerializer
+from ...serializer import AdSerializer
 
 
 class AdAPI(viewsets.ModelViewSet):

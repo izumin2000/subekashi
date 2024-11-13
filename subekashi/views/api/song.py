@@ -1,6 +1,6 @@
 from subekashi.models import Song
 from subekashi.lib.search import song_search
-from ..serializer import SongSerializer
+from ...serializer import SongSerializer
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle

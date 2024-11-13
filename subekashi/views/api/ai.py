@@ -1,7 +1,7 @@
 
 from subekashi.models import Ai
 from rest_framework import viewsets, serializers
-from ..serializer import AiSerializer
+from ...serializer import AiSerializer
 
 class AiAPI(viewsets.ModelViewSet):
     queryset = Ai.objects.all()
