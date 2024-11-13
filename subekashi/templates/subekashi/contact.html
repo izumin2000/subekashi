@@ -1,0 +1,14 @@
+{% extends "subekashi/base/base.html" %}
+{% load static %}
+{% block css %}{% static 'subekashi/css/contact.css' %}{% endblock %}
+
+{% block content %}
+<section>
+    <h1>フィードバック</h1>
+    <div class="underline"></div>
+    <form action="{% url 'subekashi:contact' %}" method="POST">{% csrf_token %}
+        <textarea id="contact" name="contact" placeholder="不具合の内容・機能の提案・再掲載してほしい削除された曲の情報を入力"></textarea>
+        <input id="contactsend" type="submit" name="submit" value="送信">
+    </form>
+</section>
+{% endblock %}

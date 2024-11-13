@@ -14,6 +14,7 @@ urlpatterns = [
     path('admin', admin.site.urls),
     path('', top, name='top'),
     path('new', new, name='new'),
+    path('contact', contact, name='contact'),
     path('delete', delete, name='delete'),
     path('songs', search, name='search'),
     path('songs/<int:songId>', song, name='song'),

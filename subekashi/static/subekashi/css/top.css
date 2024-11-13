@@ -85,17 +85,6 @@ h1:nth-child(2) {
     }
 }
 
-#feedback {
-    width: calc(100% - 20px);
-}
-
-#feedbacksend {
-    display: block;
-    width: 200px;
-    margin: 20px auto;
-    padding: 0;
-}
-
 .twitter-timeline-wrapper {
     padding: 20px 0;
 }

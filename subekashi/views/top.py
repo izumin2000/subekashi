@@ -54,16 +54,6 @@ def top(request):
     if aiInsL :
         dataD["aiInsL"] = aiInsL[min(10, len(aiInsL))::-1]
         
-    if request.method == "POST" :
-        feedback = request.POST.get("feedback")
-        if not feedback:
-            return render(request, 'subekashi/500.html', status=500)
-            
-        content = f"フィードバック：{feedback}\nIP：{get_ip(request)}"
-        is_ok = sendDiscord(FEEDBACK_DISCORD_URL, content)
-        if not is_ok:
-            return render(request, 'subekashi/500.html', status=500)
-
     isAdDisplay = request.COOKIES.get("adrange", "off") == "on"
     dataD["isAdDisplay"] = isAdDisplay
     adInsL = Ad.objects.filter(status = "pass") if isAdDisplay else ""

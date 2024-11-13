@@ -1,0 +1,10 @@
+#contact {
+    width: calc(100% - 20px);
+}
+
+#contactsend {
+    display: block;
+    width: 200px;
+    margin: 20px auto;
+    padding: 0;
+}
