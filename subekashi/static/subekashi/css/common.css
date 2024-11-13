@@ -38,7 +38,7 @@ header {
     border-bottom: solid 4px #fff;
 }
 
-#pc-global-header-wrapper {
+#pc-global-items-wrapper {
 	display: flex;
 	align-items: center;
     justify-content: center;
@@ -48,13 +48,13 @@ header {
 	background-color: #fff;
 }
 
-#pc-global-header-wrapper a, #pc-global-header-wrapper p {
+#pc-global-items-wrapper a, #pc-global-items-wrapper p {
     color: #000;
     margin: 0 10px;
     font-size: 16px;
 }
 
-#pc-global-header-wrapper a:hover, #pc-global-header-wrapper p:hover {
+#pc-global-items-wrapper a:hover, #pc-global-items-wrapper p:hover {
     text-decoration: underline;
 }
 
@@ -69,7 +69,7 @@ header {
     z-index: 0;
 }
 
-#pc-global-header-wrapper:hover + #pc-global-message {
+#pc-global-items-wrapper:hover + #pc-global-message {
     height: 65px;
     opacity: 1;
     z-index: 99;
@@ -163,10 +163,12 @@ aside a:hover aside p {
     display: flex;
     flex-direction: column;
     position: fixed;
-    height: 60vh;
+    height: 40vh;
     width: 100vw;
     bottom: 0;
     background-color: #000000aa;
+    border-top: solid #ffffffaa 2px;
+    padding-bottom: 1em;
     overflow-y: scroll;
     z-index: 999;
 }
@@ -212,6 +214,34 @@ aside a:hover aside p {
 #tab_bar i {
     font-size: 30px;
     margin: 0 5vw;
+    cursor: pointer;
+}
+
+#sp-global-header {
+    display: block;
+    background-color: #ffffffaa;
+    margin: 2em auto 0 auto;
+    width: 100%;
+}
+
+#sp-global-header p, #sp-global-header a {
+    display: block;
+    text-align: center;
+    margin: 1em auto;
+    color: #000;
+}
+
+#sp-global-items-wrapper a {
+    text-decoration: underline 2px #000;
+}
+
+#sp-global-message {
+    margin-bottom: 4em;
+}
+
+.sp-global-notice {
+    font-size: 15px;
+    line-height: 15px;
 }
 
 /* 基礎 */

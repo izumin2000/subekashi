@@ -100,7 +100,7 @@ async function getSongGuessers(text, to, signal) {
 }
 
 // グローバルヘッダーの取得
-var globalHeaderEle, globalHeaderItemEles;
+var globalHeaderEle, globalItemEles;
 async function getGlobalHeader() {
     try {
         var globalHeaderRes = await fetch("https://script.google.com/macros/s/AKfycbx6kVTjsvQ5bChKtRMp1KCRr56NkkhFlOXhYv3a_1HK-q8UJTgIvFzI1TTpzIWGbpY6/exec?type=full");
@@ -111,7 +111,7 @@ async function getGlobalHeader() {
 
     var globalHeaderText = await globalHeaderRes.text();
     globalHeaderEle = stringToHTML(globalHeaderText, true)[1]
-    globalHeaderItemEles = Array.from(globalHeaderEle.getElementsByClassName("imiN_list")[0].children)
+    globalItemEles = Array.from(globalHeaderEle.getElementsByClassName("imiN_list")[0].children)
     .slice(1, -1)
     .map(itemEle => formatGlobalHeaderItem(itemEle));
     setGlobalHeader("pc");
@@ -134,11 +134,11 @@ function formatGlobalHeaderItem(itemEle) {
 }
 
 function setGlobalHeader(type) {
-    var globalHeaderWrapperEle = document.getElementById(`${type}-global-header-wrapper`)
-    globalHeaderWrapperEle.firstChild.remove();
-    globalHeaderWrapperEle.firstChild.remove();
-    globalHeaderItemEles.forEach(globalHeaderItemEle => {
-        globalHeaderWrapperEle.appendChild(globalHeaderItemEle.cloneNode(true));
+    var globalItemsWrapperEle = document.getElementById(`${type}-global-items-wrapper`)
+    globalItemsWrapperEle.firstChild.remove();
+    globalItemsWrapperEle.firstChild.remove();
+    globalItemEles.forEach(globalItemEle => {
+        globalItemsWrapperEle.appendChild(globalItemEle.cloneNode(true));
     });
     var imiNNews = globalHeaderEle.getElementsByClassName("imiN_news")[0].children[0].innerText;
     document.getElementById(`${type}-global-news`).innerText = imiNNews;

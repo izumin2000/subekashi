@@ -9,16 +9,16 @@
     <a href="{% url 'subekashi:special' %}"><i class="far fa-star"></i><p>スペシャル</p></a>
     <a href="{% url 'subekashi:setting' %}"><i class="fas fa-cog"></i><p>設定</p></a>
     <a href="https://www.youtube.com/@subeteanatanoseidesu" target="_blank"><i class="far fa-user"></i><p>全てあなたの所為です。</p></a>
-    <div id="sp_menu_hor"></div>
-    <div id="sp-global-header-wrapper" class="sansfont">
+    <div id="sp-global-header">
+        <div id="sp-global-items-wrapper" class="sansfont">
         <p>loading...</p>
+        </div>
+        <div id="sp-global-message">
+            <p id="sp-global-news"></p>
+            <p class="sp-global-notice"></p>
+            <p class="sp-global-notice"></p>
+        </div>
     </div>
-    <div id="sp-global-message">
-        <p id="sp-global-news"></p>
-        <p class="sp-global-notice"></p>
-        <p class="sp-global-notice"></p>
-    </div>
-
 </div>
 <div id="tab_bar">
     <a href="{% url 'subekashi:top' %}"><i class="fas fa-home"></i></a>
