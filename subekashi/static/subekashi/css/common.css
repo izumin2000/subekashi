@@ -38,7 +38,7 @@ header {
     border-bottom: solid 4px #fff;
 }
 
-#global-header-wrapper {
+#pc-global-header-wrapper {
 	display: flex;
 	align-items: center;
     justify-content: center;
@@ -48,17 +48,17 @@ header {
 	background-color: #fff;
 }
 
-#global-header-wrapper a, #global-header-wrapper p {
+#pc-global-header-wrapper a, #pc-global-header-wrapper p {
     color: #000;
     margin: 0 10px;
     font-size: 16px;
 }
 
-#global-header-wrapper a:hover, #global-header-wrapper p:hover {
+#pc-global-header-wrapper a:hover, #pc-global-header-wrapper p:hover {
     text-decoration: underline;
 }
 
-#global-message {
+#pc-global-message {
     position: absolute;
     width: 100%;
     height: 0;
@@ -69,13 +69,13 @@ header {
     z-index: 0;
 }
 
-#global-header-wrapper:hover + #global-message {
+#pc-global-header-wrapper:hover + #pc-global-message {
     height: 65px;
     opacity: 1;
     z-index: 99;
 }
 
-#global-message p {
+#pc-global-message p {
     position: relative;
     text-align: center;
     color: #000;
@@ -83,7 +83,7 @@ header {
     line-height: 16px;
 }
 
-#global-news {
+#pc-global-news {
     margin: 5px 0;
 }
 
@@ -163,10 +163,9 @@ aside a:hover aside p {
     display: flex;
     flex-direction: column;
     position: fixed;
-    height: 50vh;
+    height: 60vh;
     width: 100vw;
     bottom: 0;
-    padding-bottom: 60px;
     background-color: #000000aa;
     overflow-y: scroll;
     z-index: 999;

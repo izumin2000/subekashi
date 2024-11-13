@@ -5,7 +5,6 @@ function baseURL() {
     return protocolAndDomain;
 }
 
-
 // 可変テキストエリア
 function autotextarea() {
     let textarea = document.getElementById('lyrics');
@@ -14,7 +13,6 @@ function autotextarea() {
     let scrollHeight = textarea.scrollHeight;
     textarea.style.height = scrollHeight + 'px';
 }
-
 
 // songが情報不足ではないかどうか
 function isCompleted(song) {
@@ -37,7 +35,6 @@ function isCompleted(song) {
     return !columnL.includes("");
 }
 
-
 var jsonDatas = {}
 async function getJson(path) {
     if (jsonDatas[path]) {
@@ -54,11 +51,9 @@ async function getJson(path) {
     return json;
 }
 
-
 function sleep(s) {
     return new Promise(resolve => setTimeout(resolve, s*1000));
 }
-
 
 function stringToHTML(string, multi=false) {
     const devEle = document.createElement("div");
@@ -72,12 +67,10 @@ function stringToHTML(string, multi=false) {
     return htmls[0];
 }
 
-
 function appendSongGuesser(songGuesser, toEle) {
-    songGuesserEle = stringToHTML(songGuesser);
+    var songGuesserEle = stringToHTML(songGuesser);
     toEle.appendChild(songGuesserEle)
 }
-
 
 var songGuesserController;
 async function getSongGuessers(text, to, signal) {
@@ -106,48 +99,54 @@ async function getSongGuessers(text, to, signal) {
     }
 }
 
-
 // グローバルヘッダーの取得
-var globalHeaderWrapperEle = document.getElementById("global-header-wrapper");
-async function getHeader() {
+var globalHeaderEle, globalHeaderItemEles;
+async function getGlobalHeader() {
     try {
-        const globalHeaderRes = await fetch("https://script.google.com/macros/s/AKfycbx6kVTjsvQ5bChKtRMp1KCRr56NkkhFlOXhYv3a_1HK-q8UJTgIvFzI1TTpzIWGbpY6/exec?type=full");
-        if (!globalHeaderRes.ok) {
-            throw new RuntimeError(`getHeader: Response: ${globalHeaderRes.status}`);
-        }
-        var globalHeaderText = await globalHeaderRes.text();
-        var globalHeaderEle = stringToHTML(globalHeaderText, true)[1]
+        var globalHeaderRes = await fetch("https://script.google.com/macros/s/AKfycbx6kVTjsvQ5bChKtRMp1KCRr56NkkhFlOXhYv3a_1HK-q8UJTgIvFzI1TTpzIWGbpY6/exec?type=full");
     } catch ( error ) {
         globalHeaderEle.innerHTML = "グローバルヘッダーエラー";
+        return;
     }
 
-
-    globalHeaderWrapperEle.firstChild.remove();
-    globalHeaderWrapperEle.firstChild.remove();
-    const globalHeaderItemEles = Array.from(globalHeaderEle.getElementsByClassName("imiN_list")[0].children).slice(1, -1);
-    for (var globalHeaderItemEle of globalHeaderItemEles) {
-        const aTag = globalHeaderItemEle.closest('a');
-
-        const spOnly = globalHeaderItemEle.querySelector('span.sp_only');
-        const pcOnly = globalHeaderItemEle.querySelector('span.pc_only');
-
-        if (spOnly && pcOnly) {
-            aTag.innerText = pcOnly.innerHTML;
-        } else {
-            aTag.innerText = globalHeaderItemEle.innerText;
-        }
-        globalHeaderWrapperEle.appendChild(globalHeaderItemEle);
-    }
-
-    console.log(globalHeaderEle)
-    var imiNNews = globalHeaderEle.getElementsByClassName("imiN_news")[0].children[0].innerText;
-    document.getElementById("global-news").innerText = imiNNews;
-    var imiN_notice1 = globalHeaderEle.getElementsByClassName("imiN_notice")[0].children[0].innerHTML.replace("<br>", "")
-    document.getElementsByClassName("global-notice")[0].innerText = imiN_notice1;
-    var imiN_notice2 = globalHeaderEle.getElementsByClassName("imiN_notice")[0].children[1].innerHTML.replace("<br>", "")
-    document.getElementsByClassName("global-notice")[1].innerText = imiN_notice2;
+    var globalHeaderText = await globalHeaderRes.text();
+    globalHeaderEle = stringToHTML(globalHeaderText, true)[1]
+    globalHeaderItemEles = Array.from(globalHeaderEle.getElementsByClassName("imiN_list")[0].children)
+    .slice(1, -1)
+    .map(itemEle => formatGlobalHeaderItem(itemEle));
+    setGlobalHeader("pc");
+    setGlobalHeader("sp");
 }
 
+function formatGlobalHeaderItem(itemEle) {
+    var aTag = itemEle.closest('a');
+
+    var spOnly = itemEle.querySelector('span.sp_only');
+    var pcOnly = itemEle.querySelector('span.pc_only');
+
+    if (spOnly && pcOnly) {
+        aTag.innerText = pcOnly.innerHTML;
+    } else {
+        aTag.innerText = itemEle.innerText;
+    }
+
+    return itemEle;
+}
+
+function setGlobalHeader(type) {
+    var globalHeaderWrapperEle = document.getElementById(`${type}-global-header-wrapper`)
+    globalHeaderWrapperEle.firstChild.remove();
+    globalHeaderWrapperEle.firstChild.remove();
+    globalHeaderItemEles.forEach(globalHeaderItemEle => {
+        globalHeaderWrapperEle.appendChild(globalHeaderItemEle.cloneNode(true));
+    });
+    var imiNNews = globalHeaderEle.getElementsByClassName("imiN_news")[0].children[0].innerText;
+    document.getElementById(`${type}-global-news`).innerText = imiNNews;
+    var imiN_notice1 = globalHeaderEle.getElementsByClassName("imiN_notice")[0].children[0].innerHTML.replace("<br>", "")
+    document.getElementsByClassName(`${type}-global-notice`)[0].innerText = imiN_notice1;
+    var imiN_notice2 = globalHeaderEle.getElementsByClassName("imiN_notice")[0].children[1].innerHTML.replace("<br>", "")
+    document.getElementsByClassName(`${type}-global-notice`)[1].innerText = imiN_notice2;
+}
 
 // CSRFの取得
 async function getCSRF() {
@@ -158,7 +157,6 @@ async function getCSRF() {
         return csrf;
     }
 }
-
 
 // クッキーの保存
 function setCookie(name, json) {
@@ -176,7 +174,6 @@ function setCookie(name, json) {
     document.cookie = cookies;
 };
 
-
 // クッキーの取得
 function getCookie() {
     var cookieDict = {};
@@ -192,8 +189,7 @@ function getCookie() {
     return cookieDict;
 }
 
-
 // 読み込み時の実行
 window.onload = function() {
-    getHeader();
+    getGlobalHeader();
 }
