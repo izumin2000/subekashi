@@ -2,6 +2,7 @@ from subekashi.views.ad import ad
 from subekashi.views.api.ad import AdAPI
 from subekashi.views.ad_complete import ad_complete
 from subekashi.views.ai import ai
+from subekashi.views.ai_result import ai_result
 from subekashi.views.api.ai import AiAPI
 from subekashi.views.channel import channel
 from subekashi.views.delete import delete
