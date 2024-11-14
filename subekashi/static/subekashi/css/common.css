@@ -530,67 +530,44 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
 
 /* フッダー */
 #footer-wrapper {
-    padding-top: 100px;
+    height: 100px;
 }
 
 footer {
     position: absolute;
-    width: 100%;
     bottom: 0;
+    width: 100%;
+    height: 32px;
     background-color: #2f3a44;
 }
 
-.footer-container {
-    height: 32px;
-}
-
-.footer-left {
-    position: relative;
-    float: left;
-    top: 6px;
-    left: 6px;
-}
-
-.footer-left p {
-    color: #fff;
+footer p {
+    text-align: center;
     font-size: 15px;
     line-height: 15px;
-    margin: 3px 0 0 8px;
+    margin-top: 10px;
 }
 
-.footer-left i {
-    margin: 0 5px;
-    font-size: 15px;
+#version {
+    margin-right: 1em;
 }
 
-.footer-right {
-    position: relative;
-    float: right;
-    top: 5px;
-    right: 8px;
-}
-
-.footer-right a {
+.fa-history {
+    display: block;
     font-size: 15px;
     line-height: 15px;
-    display: inline;
+    margin-right: 0.5em;
+}
+
+footer a {
+    font-size: 15px;
+    line-height: 15px;
     text-decoration: none;
-    color: #fff;
+    margin-left: 1em;
 }
 
-@media(max-width: 450px) {
-    .footer-container {
-        height: 54px;
-    }
-
-    .footer-left, .footer-right {
-        position: static;
-        float: none;
-    }
-    
-    .footer-left p, .footer-right a {
-        display: block;
-        margin-top: 15px;
-        text-align: center;
+@media(max-width: 960px) {
+    #version {
+        display: none;
     }
 }
