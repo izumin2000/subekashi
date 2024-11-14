@@ -180,14 +180,13 @@ aside a:hover aside p {
     bottom: 0;
     background-color: #000000aa;
     border-top: solid #ffffffaa 2px;
-    padding-bottom: 1em;
+    padding: 1em 0;
     overflow-y: scroll;
     z-index: 999;
 }
 
 #sp_menu a {
-    margin-top: 10px;
-    text-align: center;
+    margin: 5px auto;
 }
 
 #sp_menu i {
@@ -254,6 +253,7 @@ aside a:hover aside p {
 
 #sp-global-items-wrapper a {
     text-decoration: underline 2px #000;
+    width: fit-content;
 }
 
 #sp-global-message {
