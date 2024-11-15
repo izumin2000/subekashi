@@ -362,9 +362,17 @@ summary {
 }
 
 label {
+    position: relative;
     display: inline-block;
     cursor: pointer;
     margin-right: 10px;
+}
+
+.required::after {
+    content: "*";
+    color: #B60;
+    position: absolute;
+    top: -5px;
 }
 
 .form-col label {

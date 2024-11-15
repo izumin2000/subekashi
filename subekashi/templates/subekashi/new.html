@@ -108,12 +108,12 @@
     {% comment %} TODO 曲名とチャンネル名・もしくはURLから自動的に登録できる機能の追加 {% endcomment %}
     <form action="{% url 'subekashi:new' %}" method="POST" id="newform">{% csrf_token %}
         <div class="form-col">
-            <label>曲名*</label>
-            <input type="text" id="title" name="title" class="sansfont" oninput="checkExist()" value="{{ title }}">
+            <label class="required">曲名</label>
+            <input type="text" id="title" name="title" class="sansfont" oninput="checkExist()" value="{{ title }}" required>
         </div>
         <div class="form-col">
-            <label>チャンネル名*</label>
-            <input type="text" id="channel" name="channel" class="sansfont" oninput="checkExist()" value="{{ channel }}">
+            <label class="required">チャンネル名</label>
+            <input type="text" id="channel" name="channel" class="sansfont" oninput="checkExist()" value="{{ channel }}" required>
         </div>
         <p id="isExist"></p>
         <button type="button" id="fillFormButton" class="sansfont" onclick="fillForm()">自動入力</button>
@@ -164,6 +164,7 @@
             </div>
         </div>
         <input type="submit" value="登録" id="newsubmit" disabled>
+        <p><span class="error">*</span>は入力必須項目です。</p>
     </form>
 
     {% comment %} TODO 専用のフォームに分ける {% endcomment %}
@@ -173,10 +174,11 @@
         <input type="text" id="titleDelete" class="sansfont" name="title" value="{{ title }}" hidden>
         <input type="text" id="channelDelete" name="channel" value="{{ channel }}" hidden>
         <div class="form-col">
-            <label>削除理由</label>
-            <textarea id="reason" name="reason" oninput="setDeleteButton()"></textarea>
+            <label class="required">削除理由</label>
+            <textarea id="reason" name="reason" oninput="setDeleteButton()" required></textarea>
         </div>
         <input type="submit" value="送信" id="deletesubmit" disabled>
+        <p><span class="error">*</span>は入力必須項目です。</p>
     </form>
 </section>
 {% endblock %}
