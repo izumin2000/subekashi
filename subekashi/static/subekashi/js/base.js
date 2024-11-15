@@ -163,6 +163,24 @@ document.getElementById("toggle-tab-bar").addEventListener("click", function () 
     }
 });
 
+document.body.addEventListener('click', (event) => {
+    const menuEle = document.getElementById("sp_menu");
+    if (event.target.closest('#sp_menu')) {
+        return;
+    }
+
+    if (event.target.closest('#toggle-tab-bar')) {
+        return;
+    }
+
+    if (!isSpMenuOpen) {
+        return;
+    }
+
+    menuEle.style.display = "none";
+    isSpMenuOpen = false;
+});
+
 // tab_barをページ一番下までスクロールしたら非表示
 document.addEventListener("DOMContentLoaded", () => {
     const tabBarEle = document.getElementById("tab_bar");
