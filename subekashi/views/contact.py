@@ -9,13 +9,20 @@ def contact(request):
     }
     
     if request.method == "POST" :
-        contact = request.POST.get("contact")
-        if not contact:
-            return render(request, 'subekashi/500.html', status=500)
-            
-        content = f"フィードバック：{contact}\nIP：{get_ip(request)}"
+        contact_type = request.POST.get("contact-type")
+        detail = request.POST.get("detail")
+        if (not contact_type) or (not detail):
+            dataD["result"] = "入力必須項目を入力してください。"
+            return render(request, 'subekashi/contact.html', dataD)
+
+        content = f"種類：{contact_type}\n\
+        詳細：{detail}\n\
+        IP：{get_ip(request)}"
         is_ok = sendDiscord(CONTACT_DISCORD_URL, content)
         if not is_ok:
-            return render(request, 'subekashi/500.html', status=500)
+            dataD["result"] = "内部エラーが発生しました。"
+            return render(request, 'subekashi/contact.html', dataD)
+        
+        dataD["result"] = "ok"
         
     return render(request, 'subekashi/contact.html', dataD)
