@@ -127,8 +127,8 @@ aside {
     display: block;
     position: fixed;
     top: 50%;
-    left: 0;
     transform: translateY(-50%);
+    left: 0;
     font-size: 32px;
     width: 1.2em;
     overflow-x: hidden;
@@ -143,13 +143,13 @@ aside {
 }
 
 aside:hover {
-    width: 9em
+    width: 7.5em
 }
 
 aside a {
     display: block;
     white-space: nowrap;
-    margin-top: 5px;
+    margin: 5px 0;
 }
 
 aside a:hover {
