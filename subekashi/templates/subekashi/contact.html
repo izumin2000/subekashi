@@ -4,11 +4,27 @@
 
 {% block content %}
 <section>
-    <h1>フィードバック</h1>
+    <h1>お問い合わせ</h1>
     <div class="underline"></div>
     <form action="{% url 'subekashi:contact' %}" method="POST">{% csrf_token %}
-        <textarea id="contact" name="contact" placeholder="不具合の内容・機能の提案・再掲載してほしい削除された曲の情報を入力"></textarea>
-        <input id="contactsend" type="submit" name="submit" value="送信">
+        <div class="form-col">
+            <label for="songrange">お問い合わせの種類</label>
+            <select id="songrange" name="songrange" required>
+                <option value="" disabled selected>選択してください</option>
+                <option value="不具合の報告">不具合の報告</option>
+                <option value="機能の提案">機能の提案</option>
+                <option value="質問">質問</option>
+                <option value="その他">その他</option>
+            </select>
+        </div>
+        <div class="form-col">
+            <label>詳細</label>
+            <textarea id="contact" name="contact" required></textarea>
+        </div>
+        <input id="send" type="submit" name="submit" value="送信">
     </form>
+    <h1>返信一覧</h1>
+    <div class="underline"></div>
+    <p>開発中...</p>
 </section>
 {% endblock %}
