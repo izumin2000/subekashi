@@ -372,7 +372,7 @@ label {
     content: "*";
     color: #B60;
     position: absolute;
-    top: -5px;
+    bottom: 5px;
 }
 
 .form-col label {
