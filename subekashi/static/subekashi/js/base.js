@@ -106,7 +106,8 @@ async function getGlobalHeader() {
     try {
         var globalHeaderRes = await fetch("https://script.google.com/macros/s/AKfycbx6kVTjsvQ5bChKtRMp1KCRr56NkkhFlOXhYv3a_1HK-q8UJTgIvFzI1TTpzIWGbpY6/exec?type=full");
     } catch ( error ) {
-        globalHeaderEle.innerHTML = "グローバルヘッダーエラー";
+        document.getElementById("pc-global-items-wrapper").innerHTML = "<p>界隈グローバルヘッダーエラー</p>";
+        document.getElementById("sp-global-items-wrapper").innerHTML = "<p>界隈グローバルヘッダーエラー</p>";
         return;
     }
 
@@ -135,7 +136,7 @@ function formatGlobalHeaderItem(itemEle) {
 }
 
 function setGlobalHeader(type) {
-    var globalItemsWrapperEle = document.getElementById(`${type}-global-items-wrapper`)
+    var globalItemsWrapperEle = document.getElementById(`${type}-global-items-wrapper`);
     globalItemsWrapperEle.firstChild.remove();
     globalItemsWrapperEle.firstChild.remove();
     globalItemEles.forEach(globalItemEle => {
