@@ -6,13 +6,14 @@ function baseURL() {
 }
 
 // 可変テキストエリア
-function autotextarea() {
-    let textarea = document.getElementById('lyrics');
-    let clientHeight = textarea.clientHeight;
-    textarea.style.height = clientHeight + 'px';
-    let scrollHeight = textarea.scrollHeight;
-    textarea.style.height = scrollHeight + 'px';
-}
+document.querySelectorAll('textarea').forEach((textarea) => {
+    textarea.oninput = function () {
+        let clientHeight = textarea.clientHeight;
+        textarea.style.height = clientHeight + 'px';
+        let scrollHeight = textarea.scrollHeight;
+        textarea.style.height = scrollHeight + 'px';
+    };
+});
 
 // songが情報不足ではないかどうか
 function isCompleted(song) {
