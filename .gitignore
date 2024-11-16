@@ -9,8 +9,12 @@ sitemap.xml
 .env
 sandbox
 backups/*
+!backups
 private/*
 dynamic/*
+!dynamic
 subekashi/constants/dynamic/*
 __pycache__
 !__init__.py
+sessions/*
+!sessions
