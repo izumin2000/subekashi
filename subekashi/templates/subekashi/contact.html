@@ -17,7 +17,7 @@
             <select id="contact-type" name="contact-type" required>
                 <option value="" disabled selected>選択してください</option>
                 <option value="不具合の報告">不具合の報告</option>
-                <option value="機能の提案">機能の提案</option>
+                <option value="提案">機能の提案</option>
                 <option value="質問">質問</option>
                 <option value="その他">その他</option>
             </select>
@@ -31,6 +31,13 @@
     </form>
     <h1>返信一覧</h1>
     <div class="underline"></div>
-    <p>開発中...</p>
+    {% for contact in contact_qs %}
+        <div class="contact">
+            <p class="info">No. {{ contact.id }}　投稿日：{{ contact.post_time }}</p>
+            <p class="detail">{{ contact.detail }}</p>
+            <i class="fas fa-arrow-down"></i>
+            <p class="answer">{{ contact.answer }}</p>
+        </div>
+    {% endfor %}
 </section>
 {% endblock %}
