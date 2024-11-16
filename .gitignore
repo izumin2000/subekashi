@@ -9,8 +9,13 @@ sitemap.xml
 .env
 sandbox
 backups/*
+!backups/
+!backups/.gitkeep
 private/*
 dynamic/*
 subekashi/constants/dynamic/*
 __pycache__
 !__init__.py
+sessions/*
+!sessions/
+!sessions/.gitkeep

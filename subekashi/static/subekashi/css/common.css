@@ -127,8 +127,8 @@ aside {
     display: block;
     position: fixed;
     top: 50%;
-    left: 0;
     transform: translateY(-50%);
+    left: 0;
     font-size: 32px;
     width: 1.2em;
     overflow-x: hidden;
@@ -143,13 +143,13 @@ aside {
 }
 
 aside:hover {
-    width: 9em
+    width: 7.5em
 }
 
 aside a {
     display: block;
     white-space: nowrap;
-    margin-top: 5px;
+    margin: 5px 0;
 }
 
 aside a:hover {
@@ -175,19 +175,18 @@ aside a:hover aside p {
     display: none;
     flex-direction: column;
     position: fixed;
-    height: 40vh;
+    height: 60vh;
     width: 100vw;
     bottom: 0;
     background-color: #000000aa;
     border-top: solid #ffffffaa 2px;
-    padding-bottom: 1em;
+    padding: 1em 0;
     overflow-y: scroll;
     z-index: 999;
 }
 
 #sp_menu a {
-    margin-top: 5px;
-    text-align: center;
+    margin: 5px auto;
 }
 
 #sp_menu i {
@@ -200,12 +199,10 @@ aside a:hover aside p {
     display: inline-block;
 }
 
-#sp_menu_hor {
-    display: block;
-    width: 90%;
-    height: 2px;
-    margin: 10px auto;
-    background-color: #ffffff66;
+#sp_version, #sp_version i {
+    margin: 1em 0 0.5em 0;
+    text-align: center;
+    font-size: 16px;
 }
 
 #tab_bar {
@@ -229,8 +226,8 @@ aside a:hover aside p {
     }
 }
 
-.tab_bar_bottom {
-    display: none !important;
+.tab_bar_suspend {
+    bottom: 32px !important;
 }
 
 #tab_bar i {
@@ -242,7 +239,7 @@ aside a:hover aside p {
 #sp-global-header {
     display: block;
     background-color: #ffffffaa;
-    margin: 2em auto 0 auto;
+    margin: 0 auto;
     width: 100%;
 }
 
@@ -256,6 +253,7 @@ aside a:hover aside p {
 
 #sp-global-items-wrapper a {
     text-decoration: underline 2px #000;
+    width: fit-content;
 }
 
 #sp-global-message {
@@ -364,9 +362,17 @@ summary {
 }
 
 label {
+    position: relative;
     display: inline-block;
     cursor: pointer;
     margin-right: 10px;
+}
+
+.required::after {
+    content: "*";
+    color: #B60;
+    position: absolute;
+    bottom: 5px;
 }
 
 .form-col label {
@@ -532,67 +538,44 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
 
 /* フッダー */
 #footer-wrapper {
-    padding-top: 100px;
+    height: 100px;
 }
 
 footer {
     position: absolute;
-    width: 100%;
     bottom: 0;
+    width: 100%;
+    height: 32px;
     background-color: #2f3a44;
 }
 
-.footer-container {
-    height: 32px;
-}
-
-.footer-left {
-    position: relative;
-    float: left;
-    top: 6px;
-    left: 6px;
-}
-
-.footer-left p {
-    color: #fff;
+footer p {
+    text-align: center;
     font-size: 15px;
     line-height: 15px;
-    margin: 3px 0 0 8px;
+    margin-top: 10px;
 }
 
-.footer-left i {
-    margin: 0 5px;
-    font-size: 15px;
+#version {
+    margin-right: 1em;
 }
 
-.footer-right {
-    position: relative;
-    float: right;
-    top: 5px;
-    right: 8px;
-}
-
-.footer-right a {
+.fa-history {
+    display: block;
     font-size: 15px;
     line-height: 15px;
-    display: inline;
+    margin-right: 0.5em;
+}
+
+footer a {
+    font-size: 15px;
+    line-height: 15px;
     text-decoration: none;
-    color: #fff;
+    margin-left: 1em;
 }
 
-@media(max-width: 450px) {
-    .footer-container {
-        height: 54px;
-    }
-
-    .footer-left, .footer-right {
-        position: static;
-        float: none;
-    }
-    
-    .footer-left p, .footer-right a {
-        display: block;
-        margin-top: 10px;
-        text-align: center;
+@media(max-width: 960px) {
+    #version {
+        display: none;
     }
 }

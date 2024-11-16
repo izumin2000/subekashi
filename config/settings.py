@@ -66,7 +66,8 @@ AUTHENTICATION_BACKENDS = (
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+SESSION_ENGINE = 'django.contrib.sessions.backends.file'
+SESSION_FILE_PATH = 'sessions'
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases

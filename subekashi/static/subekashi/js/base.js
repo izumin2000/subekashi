@@ -6,13 +6,14 @@ function baseURL() {
 }
 
 // 可変テキストエリア
-function autotextarea() {
-    let textarea = document.getElementById('lyrics');
-    let clientHeight = textarea.clientHeight;
-    textarea.style.height = clientHeight + 'px';
-    let scrollHeight = textarea.scrollHeight;
-    textarea.style.height = scrollHeight + 'px';
-}
+document.querySelectorAll('textarea').forEach((textarea) => {
+    textarea.oninput = function () {
+        let clientHeight = textarea.clientHeight;
+        textarea.style.height = clientHeight + 'px';
+        let scrollHeight = textarea.scrollHeight;
+        textarea.style.height = scrollHeight + 'px';
+    };
+});
 
 // songが情報不足ではないかどうか
 function isCompleted(song) {
@@ -105,7 +106,8 @@ async function getGlobalHeader() {
     try {
         var globalHeaderRes = await fetch("https://script.google.com/macros/s/AKfycbx6kVTjsvQ5bChKtRMp1KCRr56NkkhFlOXhYv3a_1HK-q8UJTgIvFzI1TTpzIWGbpY6/exec?type=full");
     } catch ( error ) {
-        globalHeaderEle.innerHTML = "グローバルヘッダーエラー";
+        document.getElementById("pc-global-items-wrapper").innerHTML = "<p>界隈グローバルヘッダーエラー</p>";
+        document.getElementById("sp-global-items-wrapper").innerHTML = "<p>界隈グローバルヘッダーエラー</p>";
         return;
     }
 
@@ -134,7 +136,7 @@ function formatGlobalHeaderItem(itemEle) {
 }
 
 function setGlobalHeader(type) {
-    var globalItemsWrapperEle = document.getElementById(`${type}-global-items-wrapper`)
+    var globalItemsWrapperEle = document.getElementById(`${type}-global-items-wrapper`);
     globalItemsWrapperEle.firstChild.remove();
     globalItemsWrapperEle.firstChild.remove();
     globalItemEles.forEach(globalItemEle => {
@@ -142,20 +144,43 @@ function setGlobalHeader(type) {
     });
     var imiNNews = globalHeaderEle.getElementsByClassName("imiN_news")[0].children[0].innerText;
     document.getElementById(`${type}-global-news`).innerText = imiNNews;
-    var imiN_notice1 = globalHeaderEle.getElementsByClassName("imiN_notice")[0].children[0].innerHTML.replace("<br>", "")
-    document.getElementsByClassName(`${type}-global-notice`)[0].innerText = imiN_notice1;
-    var imiN_notice2 = globalHeaderEle.getElementsByClassName("imiN_notice")[0].children[1].innerHTML.replace("<br>", "")
-    document.getElementsByClassName(`${type}-global-notice`)[1].innerText = imiN_notice2;
+    var imiNNotice1 = globalHeaderEle.getElementsByClassName("imiN_notice")[0].children[0].innerHTML.replace("<br>", "")
+    document.getElementsByClassName(`${type}-global-notice`)[0].innerText = imiNNotice1;
+    var imiNNotice2 = globalHeaderEle.getElementsByClassName("imiN_notice")[0].children[1].innerHTML.replace("<br>", "")
+    document.getElementsByClassName(`${type}-global-notice`)[1].innerText = imiNNotice2;
 }
 
 // #sp_menuの切り替え
+var isSpMenuOpen = false
 document.getElementById("toggle-tab-bar").addEventListener("click", function () {
-    const menu = document.getElementById("sp_menu");
-    if (menu.style.display === "flex") {
-        menu.style.display = "none";
+    const menuEle = document.getElementById("sp_menu");
+    const tabBarEle = document.getElementById("tab_bar");
+    if (isSpMenuOpen) {
+        menuEle.style.display = "none";
+        isSpMenuOpen = false;
     } else {
-        menu.style.display = "flex";
+        isSpMenuOpen = true;
+        menuEle.style.display = "flex";
+        tabBarEle.removeAttribute("class", "tab_bar_suspend");
     }
+});
+
+document.body.addEventListener('click', (event) => {
+    const menuEle = document.getElementById("sp_menu");
+    if (event.target.closest('#sp_menu')) {
+        return;
+    }
+
+    if (event.target.closest('#toggle-tab-bar')) {
+        return;
+    }
+
+    if (!isSpMenuOpen) {
+        return;
+    }
+
+    menuEle.style.display = "none";
+    isSpMenuOpen = false;
 });
 
 // tab_barをページ一番下までスクロールしたら非表示
@@ -164,7 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const isScrollable = document.documentElement.scrollHeight > window.innerHeight;
     if (!isScrollable) {
-        return;
+        tabBarEle.setAttribute("class", "tab_bar_suspend");
     }
 
     // スクロール時のイベントを設定
@@ -173,10 +198,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const bottomPosition = document.documentElement.scrollHeight;
 
         // 一番下までスクロールされた場合は非表示、そうでない場合は表示
-        if (scrollPosition >= bottomPosition - 2) {
-            tabBarEle.setAttribute("class", "tab_bar_bottom");
+        if ((scrollPosition >= bottomPosition - 1) && !isSpMenuOpen) {
+            tabBarEle.setAttribute("class", "tab_bar_suspend");
         } else {
-            tabBarEle.removeAttribute("class", "tab_bar_bottom");
+            tabBarEle.removeAttribute("class", "tab_bar_suspend");
         }
     });
 });

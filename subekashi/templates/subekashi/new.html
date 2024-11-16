@@ -20,8 +20,8 @@
             <li>*がついているラベルは入力が必須です。</li>
             <li>大文字・小文字・空白文字は全て区別されます。</li>
             <li>それ以外の曲の情報は削除されることがあります。</li>
-            <li>界隈曲にも関わらず曲の情報が削除された場合は、<a href="{% url 'subekashi:top' %}#feedback">こちら</a>からご連絡ください。</li>
-            <li>稀に登録時にエラーが発生することがありますので、発生した場合は<a href="{% url 'subekashi:top' %}#feedback">こちら</a>からご連絡ください。</li>
+            <li>界隈曲にも関わらず曲の情報が削除された場合は、<a href="{% url 'subekashi:top' %}#contact">こちら</a>からご連絡ください。</li>
+            <li>稀に登録時にエラーが発生することがありますので、発生した場合は<a href="{% url 'subekashi:top' %}#contact">こちら</a>からご連絡ください。</li>
             <li>荒らしに対しては削除・IP BAN・法的措置といった、対処をする場合があります。</li>
         </ul>
         <h2>曲名</h2>
@@ -95,7 +95,7 @@
         <ul>
             <li>曲の情報を登録するボタンです。</li>
             <li>タイトルとチャンネル名を入力すると、登録ができる状態になります。</li>
-            <li>稀にタイトルとチャンネル名を入力しても登録できない不具合が発生するので、発生次第<a href="{% url 'subekashi:top' %}#feedback">こちら</a>からご連絡ください。</li>
+            <li>稀にタイトルとチャンネル名を入力しても登録できない不具合が発生するので、発生次第<a href="{% url 'subekashi:top' %}#contact">こちら</a>からご連絡ください。</li>
         </ul>
         <h2>削除依頼</h2>
         <ul>
@@ -108,17 +108,17 @@
     {% comment %} TODO 曲名とチャンネル名・もしくはURLから自動的に登録できる機能の追加 {% endcomment %}
     <form action="{% url 'subekashi:new' %}" method="POST" id="newform">{% csrf_token %}
         <div class="form-col">
-            <label>曲名*</label>
-            <input type="text" id="title" name="title" class="sansfont" oninput="checkExist()" value="{{ title }}">
+            <label class="required" for="title">曲名</label>
+            <input type="text" id="title" name="title" class="sansfont" oninput="checkExist()" value="{{ title }}" required>
         </div>
         <div class="form-col">
-            <label>チャンネル名*</label>
-            <input type="text" id="channel" name="channel" class="sansfont" oninput="checkExist()" value="{{ channel }}">
+            <label class="required" for="channel">チャンネル名</label>
+            <input type="text" id="channel" name="channel" class="sansfont" oninput="checkExist()" value="{{ channel }}" required>
         </div>
         <p id="isExist"></p>
         <button type="button" id="fillFormButton" class="sansfont" onclick="fillForm()">自動入力</button>
         <div class="form-col">
-            <label>URL</label>
+            <label for="url">URL</label>
             <input type="text" id="url" name="url" value="{{ url }}">
         </div>
         <label id="imitate-label">模倣</label>
@@ -127,15 +127,15 @@
             {% render_categorys %}
             <p id="imitate-sub">もしくは模倣曲から選択</p>
             <div>
-                <input type="text" id="imitateTitle" class="sansfont" oninput="renderSongGuesser()" placeholder="タイトルかチャンネル名を入力"><br>
+                <input type="text" id="imitateTitle" class="sansfont" oninput="renderSongGuesser()" placeholder="タイトルかチャンネル名を入力">
                 <div id="song-guesser" class="sansfont"></div>
             </div>
             <div id="imitatelists"></div>
             <input type="text" id="imitates" name="imitates" hidden>
         </div>
         <div class="form-col">
-            <label>歌詞</label>
-            <textarea id="lyrics" name="lyrics" oninput="autotextarea()"></textarea>
+            <label for="lyrics">歌詞</label>
+            <textarea id="lyrics" name="lyrics"></textarea>
         </div>
         <div id="checkboxs">
             <div class="checkbox-col">
@@ -164,19 +164,21 @@
             </div>
         </div>
         <input type="submit" value="登録" id="newsubmit" disabled>
+        <p><span class="error">*</span>は入力必須項目です。</p>
     </form>
 
     {% comment %} TODO 専用のフォームに分ける {% endcomment %}
     <h1>削除依頼</h1>
-    <div class="underline"></div>
+    <div class="underline" for="deleteform"></div>
     <form action="{% url 'subekashi:delete' %}" method="POST" id="deleteform">{% csrf_token %}
         <input type="text" id="titleDelete" class="sansfont" name="title" value="{{ title }}" hidden>
         <input type="text" id="channelDelete" name="channel" value="{{ channel }}" hidden>
         <div class="form-col">
-            <label>削除理由</label>
-            <textarea id="reason" name="reason" oninput="setDeleteButton()"></textarea>
+            <label class="required">削除理由</label>
+            <textarea id="reason" name="reason" oninput="setDeleteButton()" required></textarea>
         </div>
         <input type="submit" value="送信" id="deletesubmit" disabled>
+        <p><span class="error">*</span>は入力必須項目です。</p>
     </form>
 </section>
 {% endblock %}

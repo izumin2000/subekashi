@@ -7,7 +7,7 @@ QUERY_OR_COOKIE_FORMS = [
     ("sort", "sort", "-post_time"),
 ]
 
-FILER_FORMS = ["issubeana", "isjoke", "isdraft", "isoriginal", "isinst"]
+FILER_FORMS = ["issubeana", "isjoke", "isdraft", "isoriginal", "isinst", "isdeleted"]
 
 def search(request) :
     dataD = {

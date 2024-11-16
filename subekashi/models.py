@@ -1,13 +1,12 @@
 from django.db import models
 
 
-# TODO 要リファクタリング
-# TODO lyricsをtextgieldへ
+# TODO DBの見直し
 class Song(models.Model) :
     title = models.CharField(default = "", max_length = 500)
     channel = models.CharField(default = "", max_length = 500)
     url = models.CharField(default = "", max_length = 500, blank = True, null = True)
-    lyrics = models.CharField(default = "", max_length = 10000, blank = True, null = True)      
+    lyrics = models.TextField(default = "", max_length = 10000, blank = True, null = True)      
     imitate = models.CharField(default = "", max_length = 1000, blank = True, null = True)
     imitated = models.CharField(default = "", max_length = 1000, blank = True, null = True)
     post_time = models.DateTimeField()
@@ -44,6 +43,13 @@ class Version(models.Model) :
     editedtime = models.DateTimeField(blank = True, null = True)
     ip = models.CharField(default = "", max_length = 100)
 
+
+class Contact(models.Model) :
+    detail = models.TextField(max_length = 10000)
+    post_time = models.DateField()
+    answer = models.TextField(blank = True, null = True, max_length = 10000)
+    
+    
 class Ai(models.Model) :
     lyrics = models.CharField(default = "", max_length = 100)
     score = models.IntegerField(default = 0)
