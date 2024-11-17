@@ -15,7 +15,6 @@ window.addEventListener('load', async function () {
     }
 
     isGetQuery = Boolean(id)
-    autotextarea();
     checkExist();
 });
 
