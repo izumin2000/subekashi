@@ -9,7 +9,7 @@ def contact(request):
         "metatitle" : "お問い合わせ",
     }
     
-    contact_qs = Contact.objects.all().order_by("-id")
+    contact_qs = Contact.objects.exclude(answer = "").order_by("-id")
     dataD["contact_qs"] = contact_qs
     
     if request.method == "POST" :
