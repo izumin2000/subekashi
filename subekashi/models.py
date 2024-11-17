@@ -49,6 +49,8 @@ class Contact(models.Model) :
     post_time = models.DateField()
     answer = models.TextField(blank = True, null = True, max_length = 10000)
     
+    def __str__(self) :
+        return self.detail[:30]
     
 class Ai(models.Model) :
     lyrics = models.CharField(default = "", max_length = 100)
