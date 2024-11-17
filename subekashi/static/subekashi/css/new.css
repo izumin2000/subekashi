@@ -50,6 +50,12 @@ details ul ul {
     }
 }
 
+#imitate-search {
+    margin: 5px 0 10px 0;
+    padding: 0;
+    width: 100%;
+}
+
 #imitatelists {
     margin: 10px 0 0 10px;
 }
