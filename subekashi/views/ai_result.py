@@ -6,7 +6,7 @@ from subekashi.lib.discord import *
 
 def ai_result(request) :
     dataD = {
-        "metatitle" : "歌詞生成結果",
+        "metatitle" : "歌詞の生成結果",
     }
     
     aiIns = Ai.objects.filter(genetype = "model", score = 0)
