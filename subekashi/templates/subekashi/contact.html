@@ -34,9 +34,9 @@
     {% for contact in contact_qs %}
         <div class="contact">
             <p class="info">No. {{ contact.id }}　投稿日：{{ contact.post_time }}</p>
-            <p class="detail">{{ contact.detail }}</p>
+            <p class="detail">{{ contact.detail | linebreaksbr }}</p>
             <i class="fas fa-arrow-down"></i>
-            <p class="answer">{{ contact.answer }}</p>
+            <p class="answer">{{ contact.answer | linebreaksbr }}</p>
         </div>
     {% endfor %}
 </section>
