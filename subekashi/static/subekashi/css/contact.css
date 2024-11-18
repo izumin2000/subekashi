@@ -3,13 +3,13 @@
 }
 
 .contact {
-    background-color: #222;
-    margin-bottom: 10px;
+    background-color: #333;
+    margin-bottom: 15px;
     padding: 10px;
 }
 
 .detail, .answer {
-    background-color: #444;
+    background-color: #666;
     padding: 10px;
 }
 
