@@ -30,6 +30,7 @@ def format_x_url(url):
     clean_url = urlunparse(parsed_url._replace(query='', fragment=''))
     return clean_url
 
+# TODO xのurlクエリを削除
 def clean_url(urls):
     urls = urls.replace("https://www.google.com/url?q=", "")
     urls = urls.replace("https://www.", "https://")
