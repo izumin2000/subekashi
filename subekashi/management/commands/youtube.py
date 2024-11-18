@@ -17,6 +17,9 @@ class Command(BaseCommand):
         is_deleted = True
         video_ids = self.get_youtube_links(songs)
         best_res = {}
+        
+        if not video_ids :
+            return {}
 
         for video_id in video_ids:
             yt_res = get_youtube_api(video_id)
@@ -49,11 +52,17 @@ class Command(BaseCommand):
         if id:
             song = Song.objects.get(pk = id)
             best_res = self.get_best_youtube_view(song)
+            if not best_res:
+                return
+            
             self.save_song(song, best_res)
             return
         
         for song in Song.objects.all():
             best_res = self.get_best_youtube_view(song)
+            if not best_res:
+                continue
+            
             self.save_song(song, best_res)
         
     def add_arguments(self, parser):
