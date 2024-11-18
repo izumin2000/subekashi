@@ -33,18 +33,6 @@ def new(request) :
         ip = get_ip(request)
         get_id = request.GET.get("id")
         id = int(get_id) if get_id else Song.objects.last().id + 1
-        
-        content = f'\n\
-            {ROOT_DIR}/songs/{id}\n\
-        タイトル：{titleForm}\n\
-        チャンネル : {channelForm}\n\
-        URL : {urlForm}\n\
-        ネタ曲 : {"Yes" if isjokeForm else "No"}\n\
-        IP : {ip}\n\
-        歌詞 : ```{lyricsForm}```'
-        is_ok = sendDiscord(NEW_DISCORD_URL, content)
-        if not is_ok:
-            return render(request, 'subekashi/500.html', status=500)
 
         channelForm = channelForm.replace("/", "╱")
         if get_id :
@@ -78,7 +66,8 @@ def new(request) :
 
         songIns.lyrics = lyricsForm.replace("\r\n", "\n")
         # TODO urlFormがURL_ICONにあるかのセキュリティチェック
-        songIns.url = clean_url(urlForm)
+        urls = clean_url(urlForm)
+        songIns.url = urls
         songIns.isoriginal = int(bool(isorginalForm))
         songIns.isjoke = int(bool(isjokeForm))
         songIns.isdeleted = int(bool(isdeletedForm))
@@ -88,6 +77,19 @@ def new(request) :
         songIns.post_time = timezone.now()
         songIns.ip = ip
         songIns.save()
+        
+                
+        content = f'\n\
+        {ROOT_DIR}/songs/{id}\n\
+        タイトル：{titleForm}\n\
+        チャンネル : {channelForm}\n\
+        URL : {urls}\n\
+        ネタ曲 : {"Yes" if isjokeForm else "No"}\n\
+        IP : {ip}\n\
+        歌詞 : ```{lyricsForm}```'
+        is_ok = sendDiscord(NEW_DISCORD_URL, content)
+        if not is_ok:
+            return render(request, 'subekashi/500.html', status=500)
         
         imitateInsL = []
         if songIns.imitate :
