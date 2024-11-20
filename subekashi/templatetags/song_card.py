@@ -59,6 +59,7 @@ URL_ICON = {
 @register.simple_tag
 def get_url(song):
     urls = song.url.replace(", ", ",").split(',') if song.url else ""
+    i_tags = ""
     
     # 非公開なら
     if song.isdeleted:
@@ -68,8 +69,6 @@ def get_url(song):
     elif not urls:
         new_url = reverse('subekashi:new')
         return mark_safe(f'<object><a href="{new_url}?id={song.id}">URL未登録</a></object>')
-    
-    i_tags = ""
     
     # URLを登録しているのなら
     for url in urls:
