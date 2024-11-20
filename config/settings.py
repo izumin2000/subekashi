@@ -6,8 +6,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, "subekashi", STATIC_URL).rstrip('/')
 
-ROOT_DIR = "http://subekashi.localhost:8000" if DEBUG else "https://lyrics.imicomweb.com"
-STATIC_DIR = os.path.join(ROOT_DIR, STATIC_URL).rstrip('/')
+ROOT_URL = "http://subekashi.localhost:8000" if DEBUG else "https://lyrics.imicomweb.com"
+STATIC_DIR = os.path.join(ROOT_URL, STATIC_URL).rstrip('/')
 
 ALLOWED_HOSTS = [
     'subekashi.localhost',

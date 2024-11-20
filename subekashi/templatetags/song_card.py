@@ -78,7 +78,7 @@ def get_url(song):
         if any(pattern_list):
             icon = list(URL_ICON.values())[pattern_list.index(True)]
         else :
-            sendDiscord(ERROR_DISCORD_URL, f"{ROOT_DIR}/songs/{song.id}\n想定外のURLが添付されました：{url}")
+            sendDiscord(ERROR_DISCORD_URL, f"{ROOT_URL}/songs/{song.id}\n想定外のURLが添付されました：{url}")
             icon = DEFALT_ICON
         i_tags += f'<a href="{url}" target="_blank">{icon}</a>'
         
