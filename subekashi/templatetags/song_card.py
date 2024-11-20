@@ -60,16 +60,16 @@ URL_ICON = {
 def get_url(song):
     urls = song.url.replace(", ", ",").split(',') if song.url else ""
     
+    # 非公開なら
+    if song.isdeleted:
+        i_tags += "<i class='far fa-eye-slash'></i>"
+    
     # 未登録なら
-    if not urls:
+    elif not urls:
         new_url = reverse('subekashi:new')
         return mark_safe(f'<object><a href="{new_url}?id={song.id}">URL未登録</a></object>')
     
     i_tags = ""
-    
-    # 非公開なら
-    if song.isdeleted:
-        i_tags += "<i class='far fa-eye-slash'></i>"
     
     # URLを登録しているのなら
     for url in urls:
