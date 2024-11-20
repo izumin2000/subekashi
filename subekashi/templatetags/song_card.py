@@ -50,9 +50,9 @@ URL_ICON = {
     r"(?:^|\.)twitter.com$": "<i class='fab fa-twitter'></i>",
     r"(?:^|\.)bandcamp.com$": "<i class='fab fa-bandcamp'></i>",
     r"drive\.google\.com": "<i class='fab fa-google-drive'></i>",
-    r"(?:^|\.)nicovideo\.jp$": f"<img src='{STATIC_DIR}/subekashi/image/niconico.png' alt='ニコニコ動画'></img>",
-    r"(?:^|\.)bilibili\.com$": f"<img src='{STATIC_DIR}/subekashi/image/bilibili.png' alt='ビリビリ動画'></img>",
-    r"imicomweb\.com": f"<img src='{STATIC_DIR}/subekashi/image/imicomweb.png' alt='イミコミュ'></img>",
+    r"(?:^|\.)nicovideo\.jp$": f"<img src='{STATIC_FULL_URL}/subekashi/image/niconico.png' alt='ニコニコ動画'></img>",
+    r"(?:^|\.)bilibili\.com$": f"<img src='{STATIC_FULL_URL}/subekashi/image/bilibili.png' alt='ビリビリ動画'></img>",
+    r"imicomweb\.com": f"<img src='{STATIC_FULL_URL}/subekashi/image/imicomweb.png' alt='イミコミュ'></img>",
     r"scratch\.mit\.edu": DEFALT_ICON,
 }
 
