@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_hosts',
     'subekashi',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -36,7 +37,12 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_hosts.middleware.HostsResponseMiddleware',
-    'subekashi.middleware.restrict_ip.RestrictIPMiddleware'
+    'subekashi.middleware.restrict_ip.RestrictIPMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
 ]
 
 ROOT_URLCONF = 'config.urls'
