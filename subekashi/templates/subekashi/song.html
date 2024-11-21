@@ -30,22 +30,22 @@
                 <p class="songimitate">オリジナル</p>
             {% endif %}
             {% if songIns.isdraft %}
-                <a class="songimitate" href="{% url 'subekashi:search' %}?filter=isdraft">下書き</a>
+                <a class="songimitate" href="{% url 'subekashi:search' %}?isdraft=True">下書き</a>
             {% endif %}
             {% if songIns.isoriginal %}
-                <a class="songimitate" href="{% url 'subekashi:search' %}?filter=isoriginal">オリジナル模倣</a>
+                <a class="songimitate" href="{% url 'subekashi:search' %}?isoriginal=True">オリジナル模倣</a>
             {% endif %}
             {% if songIns.isjoke %}
                 <a class="songimitate" href="{% url 'subekashi:search' %}?isjoke=only">ネタ曲</a>
             {% endif %}
             {% if songIns.isinst %}
-                <a class="songimitate" href="{% url 'subekashi:search' %}?filter=isinst">インスト曲</a>
+                <a class="songimitate" href="{% url 'subekashi:search' %}?isinst=True">インスト曲</a>
             {% endif %}
             {% if not songIns.issubeana %}
                 <a class="songimitate" href="{% url 'subekashi:search' %}?issubeana=xx">すべあな界隈曲以外の界隈曲</a>
             {% endif %}
             {% if songIns.isdeleted %}
-                <p class="songimitate">非公開/削除済み</p>
+                <a class="songimitate" href="{% url 'subekashi:search' %}?isdeleted=True">非公開/削除済み</a>
             {% endif %}
             
             {% if imitatedInsL %}
