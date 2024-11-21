@@ -50,15 +50,16 @@ URL_ICON = {
     r"(?:^|\.)twitter.com$": "<i class='fab fa-twitter'></i>",
     r"(?:^|\.)bandcamp.com$": "<i class='fab fa-bandcamp'></i>",
     r"drive\.google\.com": "<i class='fab fa-google-drive'></i>",
-    r"(?:^|\.)nicovideo\.jp$": f"<img src='{STATIC_DIR}/subekashi/image/niconico.png' alt='ニコニコ動画'></img>",
-    r"(?:^|\.)bilibili\.com$": f"<img src='{STATIC_DIR}/subekashi/image/bilibili.png' alt='ビリビリ動画'></img>",
-    r"imicomweb\.com": f"<img src='{STATIC_DIR}/subekashi/image/imicomweb.png' alt='イミコミュ'></img>",
+    r"(?:^|\.)nicovideo\.jp$": f"<img src='{STATIC_FULL_URL}/subekashi/image/niconico.png' alt='ニコニコ動画'></img>",
+    r"(?:^|\.)bilibili\.com$": f"<img src='{STATIC_FULL_URL}/subekashi/image/bilibili.png' alt='ビリビリ動画'></img>",
+    r"imicomweb\.com": f"<img src='{STATIC_FULL_URL}/subekashi/image/imicomweb.png' alt='イミコミュ'></img>",
     r"scratch\.mit\.edu": DEFALT_ICON,
 }
 
 @register.simple_tag
 def get_url(song):
     urls = song.url.replace(", ", ",").split(',') if song.url else ""
+    i_tags = ""
     
     # 非公開なら
     if song.isdeleted:
@@ -69,8 +70,6 @@ def get_url(song):
         new_url = reverse('subekashi:new')
         return mark_safe(f'<object><a href="{new_url}?id={song.id}">URL未登録</a></object>')
     
-    i_tags = ""
-    
     # URLを登録しているのなら
     for url in urls:
         domain = urlparse(url).netloc
@@ -78,7 +77,7 @@ def get_url(song):
         if any(pattern_list):
             icon = list(URL_ICON.values())[pattern_list.index(True)]
         else :
-            sendDiscord(ERROR_DISCORD_URL, f"{ROOT_DIR}/songs/{song.id}\n想定外のURLが添付されました：{url}")
+            sendDiscord(ERROR_DISCORD_URL, f"{ROOT_URL}/songs/{song.id}\n想定外のURLが添付されました：{url}")
             icon = DEFALT_ICON
         i_tags += f'<a href="{url}" target="_blank">{icon}</a>'
         

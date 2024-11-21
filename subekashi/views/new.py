@@ -80,7 +80,7 @@ def new(request) :
         
                 
         content = f'\n\
-        {ROOT_DIR}/songs/{id}\n\
+        {ROOT_URL}/songs/{id}\n\
         タイトル：{titleForm}\n\
         チャンネル : {channelForm}\n\
         URL : {urls}\n\

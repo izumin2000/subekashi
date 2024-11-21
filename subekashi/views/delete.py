@@ -21,7 +21,7 @@ def delete(request) :
         reasonForm = request.POST.get("reason")
         content = f' \
         ```{songIns.id}``` \n\
-        {ROOT_DIR}/songs/{songIns.id} \n\
+        {ROOT_URL}/songs/{songIns.id} \n\
         タイトル：{songIns.title}\n\
         チャンネル名：{songIns.channel}\n\
         理由：{reasonForm}\n\
