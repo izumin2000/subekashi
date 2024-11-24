@@ -10,7 +10,6 @@ STATICFILES_DIRS = [
 ]
 
 ROOT_URL = "http://subekashi.localhost:8000" if DEBUG else "https://lyrics.imicomweb.com"
-STATIC_FULL_URL = os.path.join(ROOT_URL, STATIC_URL).rstrip('/')
 
 CORS_ALLOW_CREDENTIALS = True
 ALLOWED_HOSTS = [

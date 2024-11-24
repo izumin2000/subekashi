@@ -1,6 +1,5 @@
 from django.template.loader import render_to_string
 from django.http import JsonResponse
-from config.settings import *
 from subekashi.models import Song
 from subekashi.lib.search import song_search
 from django_ratelimit.decorators import ratelimit
@@ -32,6 +31,6 @@ def song_cards(request):
         result.append(render_to_string('subekashi/components/song_card.html', {'song': song}))
     
     if page != statistics["max_page"]:
-        result.append(f"<img id='loading' src='{STATIC_FULL_URL}/subekashi/image/loading.gif' alt='loading'></img>")
+        result.append(f"<img id='loading' src='static/subekashi/image/loading.gif' alt='loading'></img>")
         
     return JsonResponse(result, safe=False)
