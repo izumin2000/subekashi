@@ -196,6 +196,7 @@ function renderSearch() {
     search(SearchController.signal, page);
 }
 
+var retry = 0;
 async function search(signal, page) {
     loadingEle = stringToHTML(`<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`)
     songCardsEle.appendChild(loadingEle)
@@ -222,9 +223,17 @@ async function search(signal, page) {
             observer.observe(loadingElement);
         }
     } catch (error) {
+        if (retry < 5) {
+            await sleep(0.2 * 2 ** retry);
+            renderSearch();
+            retry++;
+            return;
+        }
+
         const errorStr = "<p class='warning'><i class='warning fas fa-exclamation-triangle'></i>エラーが発生しました。検索ボタンをもう一度押すか再読み込みしてください。</p>";
         const errorEle = stringToHTML(errorStr);
         songCardsEle.appendChild(errorEle);
+        retry = 0;
     }
 }
 
