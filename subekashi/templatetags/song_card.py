@@ -3,7 +3,6 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.template.loader import render_to_string
 from subekashi.lib.discord import *
-from config.settings import *
 from urllib.parse import urlparse
 import re
 
@@ -50,9 +49,9 @@ URL_ICON = {
     r"(?:^|\.)twitter.com$": "<i class='fab fa-twitter'></i>",
     r"(?:^|\.)bandcamp.com$": "<i class='fab fa-bandcamp'></i>",
     r"drive\.google\.com": "<i class='fab fa-google-drive'></i>",
-    r"(?:^|\.)nicovideo\.jp$": f"<img src='{STATIC_FULL_URL}/subekashi/image/niconico.png' alt='ニコニコ動画'></img>",
-    r"(?:^|\.)bilibili\.com$": f"<img src='{STATIC_FULL_URL}/subekashi/image/bilibili.png' alt='ビリビリ動画'></img>",
-    r"imicomweb\.com": f"<img src='{STATIC_FULL_URL}/subekashi/image/imicomweb.png' alt='イミコミュ'></img>",
+    r"(?:^|\.)nicovideo\.jp$": f"<img src='static/subekashi/image/niconico.png' alt='ニコニコ動画'></img>",
+    r"(?:^|\.)bilibili\.com$": f"<img src='static/subekashi/image/bilibili.png' alt='ビリビリ動画'></img>",
+    r"imicomweb\.com": f"<img src='static/subekashi/image/imicomweb.png' alt='イミコミュ'></img>",
     r"scratch\.mit\.edu": DEFALT_ICON,
 }
 

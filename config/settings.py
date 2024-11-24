@@ -3,11 +3,13 @@ import os
 from .local_settings import *
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, "subekashi", STATIC_URL).rstrip('/')
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "subekashi" ,"static"),
+]
 
 ROOT_URL = "http://subekashi.localhost:8000" if DEBUG else "https://lyrics.imicomweb.com"
-STATIC_FULL_URL = os.path.join(ROOT_URL, STATIC_URL).rstrip('/')
 
 CORS_ALLOW_CREDENTIALS = True
 ALLOWED_HOSTS = [
