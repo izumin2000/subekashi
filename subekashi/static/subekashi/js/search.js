@@ -179,26 +179,17 @@ function toQueryString(query) {
     return params ? `?${params}` : '';
 }
 
-function paging() {
-    page++;
-    document.getElementById("loading").remove();
-    search(SearchController.signal, page);
-}
-
-// #loadingが映ったらpagingを実行
-const observer = new IntersectionObserver((entries, observer) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            paging();
-        }
-    })
-}, { threshold: 1.0 })
-
-var SearchController;
+var SearchController, songCardsEle;
 function renderSearch() {
     // 以前のリクエストが存在する場合、そのリクエストをキャンセルする
     if (SearchController) {
         SearchController.abort();
+    }
+
+    page = 1;
+    songCardsEle = document.getElementById("song-cards");
+    while (songCardsEle.firstChild) {
+        songCardsEle.removeChild(songCardsEle.firstChild);
     }
 
     SearchController = new AbortController();
@@ -206,11 +197,6 @@ function renderSearch() {
 }
 
 async function search(signal, page) {
-    var songCardsEle = document.getElementById("song-cards");
-    while ((songCardsEle.firstChild) && (page == 1)) {
-        songCardsEle.removeChild(songCardsEle.firstChild);
-    }
-    
     loadingEle = stringToHTML(`<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`)
     songCardsEle.appendChild(loadingEle)
 
@@ -240,4 +226,20 @@ async function search(signal, page) {
         const errorEle = stringToHTML(errorStr);
         songCardsEle.appendChild(errorEle);
     }
+}
+
+// #loadingが映ったら次のページを表示
+const observer = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            paging();
+        }
+    })
+}, { threshold: 1.0 })
+
+// 2ページ目以降を表示
+function paging() {
+    page++;
+    document.getElementById("loading").remove();
+    search(SearchController.signal, page);
 }

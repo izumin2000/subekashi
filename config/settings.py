@@ -9,6 +9,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, "subekashi", STATIC_URL).rstrip('/')
 ROOT_URL = "http://subekashi.localhost:8000" if DEBUG else "https://lyrics.imicomweb.com"
 STATIC_FULL_URL = os.path.join(ROOT_URL, STATIC_URL).rstrip('/')
 
+CORS_ALLOW_CREDENTIALS = True
 ALLOWED_HOSTS = [
     'subekashi.localhost',
     'lyrics.imicomweb.com',
@@ -25,6 +26,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_hosts',
     'subekashi',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -36,7 +38,12 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_hosts.middleware.HostsResponseMiddleware',
-    'subekashi.middleware.restrict_ip.RestrictIPMiddleware'
+    'subekashi.middleware.restrict_ip.RestrictIPMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
 ]
 
 ROOT_URLCONF = 'config.urls'
