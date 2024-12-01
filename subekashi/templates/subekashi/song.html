@@ -29,6 +29,9 @@
             {% if songIns.channel == "全てあなたの所為です。" %}
                 <p class="songimitate">オリジナル</p>
             {% endif %}
+            {% if islack %}
+                <a class="songimitate" href="{% url 'subekashi:search' %}?islack=True">作成途中</a>
+            {% endif %}
             {% if songIns.isdraft %}
                 <a class="songimitate" href="{% url 'subekashi:search' %}?isdraft=True">下書き</a>
             {% endif %}

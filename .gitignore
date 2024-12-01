@@ -15,7 +15,8 @@ private/*
 dynamic/*
 subekashi/constants/dynamic/*
 __pycache__
-!__init__.py
+static/
+!*/static/
 sessions/*
 !sessions/
 !sessions/.gitkeep
