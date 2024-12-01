@@ -222,6 +222,8 @@ async function search(signal, page) {
         if (loadingElement) {
             observer.observe(loadingElement);
         }
+
+        retry = 0;
     } catch (error) {
         if (retry < 5) {
             await sleep(0.2 * 2 ** retry);
