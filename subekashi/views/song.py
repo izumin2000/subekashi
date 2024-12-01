@@ -1,18 +1,21 @@
-from subekashi.models import *
 from django.shortcuts import render
+from subekashi.models import *
+from subekashi.lib.filter import islack
 
 
 def song(request, songId) :
-    songIns = Song.objects.filter(pk = songId).first()
+    # TODO リファクタリング
+    songIns = Song.objects.filter(pk = songId)
     isExist = bool(songIns)
     dataD = {
-        "metatitle" : f"{songIns.title} / {songIns.channel}" if songIns else "全て削除の所為です。",
+        "isExist" : isExist,
+        "islack" : bool(songIns.filter(islack))
     }
-    dataD["songIns"] = songIns
-    dataD["isExist"] = isExist
 
-    # TODO リファクタリング
     if isExist :
+        songIns = songIns.first()
+        dataD["metatitle"] = f"{songIns.title} / {songIns.channel}" if songIns else "全て削除の所為です。"
+        dataD["songIns"] = songIns
         dataD["channels"] = songIns.channel.replace(", ", ",").split(",")
         dataD["urls"] = songIns.url.replace(", ", ",").split(",") if songIns.url else []
         description = ""
