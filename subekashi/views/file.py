@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from config.settings import *
 
 
-
+# TODO subekashi:***へ
 def robots(request) :
     return redirect(f"{ROOT_URL}/static/subekashi/robots.txt")
 

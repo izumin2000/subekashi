@@ -16,6 +16,7 @@ def top(request):
         "metatitle" : "トップ",
     }
     
+    # TODO from subekashi.lib.fileの利用
     news_path = os.path.join(BASE_DIR, 'subekashi/constants/dynamic/news.md')
     if os.path.exists(news_path):
         file = open(news_path, 'r', encoding='utf-8')
