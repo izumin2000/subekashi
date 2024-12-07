@@ -107,6 +107,7 @@
     {% comment %} TODO subekashi:songに変更してPOST処理をsongに記述 {% endcomment %}
     {% comment %} TODO 曲名とチャンネル名・もしくはURLから自動的に登録できる機能の追加 {% endcomment %}
     <form action="{% url 'subekashi:new' %}" method="POST" id="newform">{% csrf_token %}
+        <input type="text" name="id" value="{{ request.GET.id }}" hidden>
         <div class="form-col">
             <label class="required" for="title">曲名</label>
             <input type="text" id="title" name="title" class="sansfont" oninput="checkExist()" value="{{ title }}" required>

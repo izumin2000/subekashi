@@ -31,7 +31,7 @@ def new(request) :
             return render(request, "subekashi/500.html")
         
         ip = get_ip(request)
-        get_id = request.GET.get("id")
+        get_id = request.POST.get("id")
         id = int(get_id) if get_id else Song.objects.last().id + 1
 
         channelForm = channelForm.replace("/", "╱")

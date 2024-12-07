@@ -68,17 +68,19 @@ header {
     position: absolute;
     width: 100%;
     height: 0;
-    right: 0;
-    left: 0;
     margin: 0 auto;
     background-color: #fff;
     z-index: 0;
+    opacity: 0;
+    transition: all 300ms 0s ease;
 }
 
 #pc-global-items-wrapper:hover + #pc-global-message {
     height: 65px;
-    opacity: 1;
     z-index: 99;
+    opacity: 1;
+    transition: all 300ms 0s ease;
+    transition-delay: 0.2s;
 }
 
 #pc-global-message p {
@@ -86,7 +88,17 @@ header {
     text-align: center;
     color: #000;
     font-size: 16px;
+    line-height: 0px;
+    bottom: 20px;
+    pointer-events: none;
+    transition: all 300ms 0s ease;
+}
+
+#pc-global-items-wrapper:hover + #pc-global-message p {
     line-height: 16px;
+    bottom: 0px;
+    transition: all 300ms 0s ease;
+    transition-delay: 0.2s;
 }
 
 #pc-global-news {
@@ -130,10 +142,11 @@ aside {
     transform: translateY(-50%);
     left: 0;
     font-size: 32px;
-    width: 1.2em;
+    width: 1.25em;
     overflow-x: hidden;
     background-color: #000000aa;
     z-index: 99;
+    transition: all 300ms 0s ease;
 }
 
 @media (max-width: 960px) {
@@ -549,15 +562,19 @@ footer {
     background-color: #2f3a44;
 }
 
-footer p {
+footer p, footer a, footer i {
     text-align: center;
     font-size: 15px;
     line-height: 15px;
-    margin-top: 10px;
+    margin: 5px 5px;
+}
+
+footer a {
+    margin-left: 0;
 }
 
 #version {
-    margin-right: 1em;
+    margin: 0 1em;
 }
 
 .fa-history {
@@ -567,15 +584,13 @@ footer p {
     margin-right: 0.5em;
 }
 
-footer a {
-    font-size: 15px;
-    line-height: 15px;
-    text-decoration: none;
-    margin-left: 1em;
-}
-
 @media(max-width: 960px) {
     #version {
         display: none;
     }
+
+    footer a {
+        margin-left: 1em;
+    }
+
 }
