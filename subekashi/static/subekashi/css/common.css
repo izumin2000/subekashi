@@ -562,15 +562,19 @@ footer {
     background-color: #2f3a44;
 }
 
-footer p {
+footer p, footer a, footer i {
     text-align: center;
     font-size: 15px;
     line-height: 15px;
-    margin-top: 10px;
+    margin: 5px 5px;
+}
+
+footer a {
+    margin-left: 0;
 }
 
 #version {
-    margin-right: 1em;
+    margin: 0 1em;
 }
 
 .fa-history {
@@ -584,4 +588,9 @@ footer p {
     #version {
         display: none;
     }
+
+    footer a {
+        margin-left: 1em;
+    }
+
 }
