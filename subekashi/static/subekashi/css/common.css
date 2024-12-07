@@ -68,17 +68,19 @@ header {
     position: absolute;
     width: 100%;
     height: 0;
-    right: 0;
-    left: 0;
     margin: 0 auto;
     background-color: #fff;
     z-index: 0;
+    opacity: 0;
+    transition: all 300ms 0s ease;
 }
 
 #pc-global-items-wrapper:hover + #pc-global-message {
     height: 65px;
-    opacity: 1;
     z-index: 99;
+    opacity: 1;
+    transition: all 300ms 0s ease;
+    transition-delay: 0.2s;
 }
 
 #pc-global-message p {
@@ -86,7 +88,17 @@ header {
     text-align: center;
     color: #000;
     font-size: 16px;
+    line-height: 0px;
+    bottom: 20px;
+    pointer-events: none;
+    transition: all 300ms 0s ease;
+}
+
+#pc-global-items-wrapper:hover + #pc-global-message p {
     line-height: 16px;
+    bottom: 0px;
+    transition: all 300ms 0s ease;
+    transition-delay: 0.2s;
 }
 
 #pc-global-news {
