@@ -580,13 +580,6 @@ footer p {
     margin-right: 0.5em;
 }
 
-footer a {
-    font-size: 15px;
-    line-height: 15px;
-    text-decoration: none;
-    margin-left: 1em;
-}
-
 @media(max-width: 960px) {
     #version {
         display: none;

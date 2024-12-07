@@ -73,8 +73,6 @@ $ python manage.py const
 
 
 # クレジット
-© 2024 全てあなたの所為です。
-
 本ソフトでは表示フォントに「源全角ゴ改」(https://drive.google.com/drive/folders/19WidrJoCmI5qLJV-eR_ydURIwxB2-DS) を使用しています。
 Licensed under SIL Open Font License 1.1 http://scripts.sil.org/OFL
 © 2021 全て語り手の所為です。
