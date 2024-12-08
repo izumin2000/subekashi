@@ -21,6 +21,7 @@ i {
 
 .fa-copy {
     margin-left: 10px;
+    cursor: pointer;
 }
 
 .songurl, .songchannel, .songimitate {
