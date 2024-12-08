@@ -184,11 +184,35 @@ aside a:hover aside p {
 
 
 /* SP向けメニュー */
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+}
+
 #sp_menu {
     display: none;
     flex-direction: column;
     position: fixed;
-    height: 60vh;
+    height: 70vh;
     width: 100vw;
     bottom: 0;
     background-color: #000000aa;
@@ -196,6 +220,7 @@ aside a:hover aside p {
     padding: 1em 0;
     overflow-y: scroll;
     z-index: 999;
+    transition: display 0.3s ease;
 }
 
 #sp_menu a {

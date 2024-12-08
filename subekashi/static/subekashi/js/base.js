@@ -151,17 +151,21 @@ function setGlobalHeader(type) {
 }
 
 // #sp_menuの切り替え
-var isSpMenuOpen = false
+var isSpMenuOpen = false;
 document.getElementById("toggle-tab-bar").addEventListener("click", function () {
     const menuEle = document.getElementById("sp_menu");
-    const tabBarEle = document.getElementById("tab_bar");
+
     if (isSpMenuOpen) {
-        menuEle.style.display = "none";
+        menuEle.style.animation = "slideDown 0.3s forwards";
+        menuEle.addEventListener("animationend", function hideMenu() {
+            menuEle.style.display = "none";
+            menuEle.removeEventListener("animationend", hideMenu);
+        });
         isSpMenuOpen = false;
     } else {
-        isSpMenuOpen = true;
         menuEle.style.display = "flex";
-        tabBarEle.removeAttribute("class", "tab_bar_suspend");
+        menuEle.style.animation = "slideUp 0.3s forwards";
+        isSpMenuOpen = true;
     }
 });
 
