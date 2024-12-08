@@ -49,9 +49,9 @@ URL_ICON = {
     r"(?:^|\.)twitter.com$": "<i class='fab fa-twitter'></i>",
     r"(?:^|\.)bandcamp.com$": "<i class='fab fa-bandcamp'></i>",
     r"drive\.google\.com": "<i class='fab fa-google-drive'></i>",
-    r"(?:^|\.)nicovideo\.jp$": f"<img src='static/subekashi/image/niconico.png' alt='ニコニコ動画'></img>",
-    r"(?:^|\.)bilibili\.com$": f"<img src='static/subekashi/image/bilibili.png' alt='ビリビリ動画'></img>",
-    r"imicomweb\.com": f"<img src='static/subekashi/image/imicomweb.png' alt='イミコミュ'></img>",
+    r"(?:^|\.)nicovideo\.jp$": f"<img src='/static/subekashi/image/niconico.png' alt='ニコニコ動画'></img>",
+    r"(?:^|\.)bilibili\.com$": f"<img src='/static/subekashi/image/bilibili.png' alt='ビリビリ動画'></img>",
+    r"imicomweb\.com": f"<img src='/static/subekashi/image/imicomweb.png' alt='イミコミュ'></img>",
     r"scratch\.mit\.edu": DEFALT_ICON,
 }
 
@@ -77,7 +77,7 @@ def get_url(song):
             icon = list(URL_ICON.values())[pattern_list.index(True)]
         else :
             sendDiscord(ERROR_DISCORD_URL, f"{ROOT_URL}/songs/{song.id}\n想定外のURLが添付されました：{url}")
-            icon = DEFALT_ICON
+            icon = "<i class='fas fa-exclamation-circle'></i>"
         i_tags += f'<a href="{url}" target="_blank">{icon}</a>'
         
     return mark_safe(f'<object>{i_tags}</object>')
