@@ -52,7 +52,8 @@ URL_ICON = {
     r"(?:^|\.)nicovideo\.jp$": f"<img src='/static/subekashi/image/niconico.png' alt='ニコニコ動画'></img>",
     r"(?:^|\.)bilibili\.com$": f"<img src='/static/subekashi/image/bilibili.png' alt='ビリビリ動画'></img>",
     r"imicomweb\.com": f"<img src='/static/subekashi/image/imicomweb.png' alt='イミコミュ'></img>",
-    r"scratch\.mit\.edu": DEFALT_ICON,
+    r"scratch\.mit\.edu": "<i class='fas fa-cat'></i>",
+    r"linkco\.re": "<i class='fas fa-align-justify'></i>",
 }
 
 @register.simple_tag
