@@ -23,14 +23,14 @@ details ul ul {
 }
 
 #isExist {
-    margin: 20px 0 20px 150px;
+    margin: 20px 0;
 }
 
 #fillFormButton {
     display: none;
-    width: calc(100% - 147px);
-    margin-left: 147px !important;
+    width: 100%;
 }
+
 @media (max-width: 640px) {
     #isExist {
         margin: 10px 0 20px 0;
