@@ -36,7 +36,10 @@ def new(request) :
 
         channelForm = channelForm.replace("/", "╱")
         if get_id :
-            songIns = Song.objects.get(pk = get_id)
+            song_qs = Song.objects.filter(pk = get_id)
+            if not song_qs.exists():
+                return render(request, 'subekashi/404.html', status=404)
+            songIns = song_qs.first()
             songIns.title = titleForm
             songIns.channel = channelForm
         else :
