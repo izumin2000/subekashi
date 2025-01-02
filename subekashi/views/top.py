@@ -24,6 +24,10 @@ def top(request):
         file.close()
         news_html = markdown.markdown(news_md)
         news_soup = BeautifulSoup(news_html, 'html.parser')
+        
+        strong_tags = news_soup.find_all('strong')
+        for strong_tag in strong_tags:
+            strong_tag['style'] = 'font-size: 24px; margin: 0 4px'
     
         for a in news_soup.find_all('a'):
             a['target'] = '_blank'
