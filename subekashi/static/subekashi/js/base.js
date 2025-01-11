@@ -104,7 +104,7 @@ async function getSongGuessers(text, to, signal) {
 var globalHeaderEle, globalItemEles;
 async function getGlobalHeader() {
     try {
-        var globalHeaderRes = await fetch("https://script.google.com/macros/s/AKfycbx6kVTjsvQ5bChKtRMp1KCRr56NkkhFlOXhYv3a_1HK-q8UJTgIvFzI1TTpzIWGbpY6/exec?type=full");
+        var globalHeaderRes = await fetch("https://global-header.imicom.workers.dev/");
     } catch ( error ) {
         document.getElementById("pc-global-items-wrapper").innerHTML = "<p>界隈グローバルヘッダーエラー</p>";
         document.getElementById("sp-global-items-wrapper").innerHTML = "<p>界隈グローバルヘッダーエラー</p>";
@@ -112,7 +112,7 @@ async function getGlobalHeader() {
     }
 
     var globalHeaderText = await globalHeaderRes.text();
-    globalHeaderEle = stringToHTML(globalHeaderText, true)[1]
+    globalHeaderEle = stringToHTML(globalHeaderText)
     globalItemEles = Array.from(globalHeaderEle.getElementsByClassName("imiN_list")[0].children)
     .slice(1, -1)
     .map(itemEle => formatGlobalHeaderItem(itemEle));
