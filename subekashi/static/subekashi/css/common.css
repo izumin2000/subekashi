@@ -163,6 +163,7 @@ aside a {
     display: block;
     white-space: nowrap;
     margin: 5px 0;
+    text-decoration: none;
 }
 
 aside a:hover {
@@ -174,11 +175,23 @@ aside i {
     margin: 0.5em;
 }
 
-aside p {
-    display: inline-block;
+aside i::before {
+    width: 1em;
 }
 
-aside a:hover aside p {
+aside p {
+    display: inline-block;
+    margin-left: -10px;
+    opacity: 0;
+    transition: all 300ms 0s ease;
+}
+
+aside:hover p {
+    margin-left: 0;
+    opacity: 1;
+}
+
+aside p:hover {
     text-decoration: underline 2px #fff;
 }
 
