@@ -1,11 +1,13 @@
 @font-face {
     font-family: "Imitate";
     src: url("../GenZenGothicKaiC.woff2") format("woff2");
+    font-display: swap;
 }
 
 @font-face {
     font-family: "Noto Sans JP";
     src: url("../NotoSansJP-VariableFont_wght.woff2") format("woff2");
+    font-display: swap;
 }
 
 * {
