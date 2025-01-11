@@ -255,3 +255,27 @@ function getCookie() {
 window.onload = function() {
     getGlobalHeader();
 }
+
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+        caches.open('font-cache').then((cache) => {
+            return cache.addAll([
+                '../GenZenGothicKaiC.woff2',
+                '../NotoSansJP-VariableFont_wght.woff2'
+            ]);
+        })
+    );
+});
+
+self.addEventListener('fetch', (event) => {
+    url = event.request.url;
+    if (url.includes('GenZenGothicKaiC.woff2') || url.includes('../NotoSansJP-VariableFont_wght.woff2')) {
+        event.respondWith(
+            caches.match(event.request).then((response) => {
+                return response || fetch(event.request);
+            })
+        );
+    }
+});
+
+
