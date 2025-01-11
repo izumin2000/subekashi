@@ -82,6 +82,7 @@
             </a>
         </div>
 
+    {% comment %} TODO この条件は不要なので消す {% endcomment %}
     {% else %}
         {% if isDeleted %}
             <p class="songnotfound">削除依頼が送信されました。</p>
@@ -99,6 +100,7 @@
 {% endblock %}
 
 {% block js %}
+{% comment %} TODO バックエンドで処理 {% endcomment %}
 <script defer>
     window.addEventListener('load', function(){
         songlyricsEle = document.getElementById("lyrics");
