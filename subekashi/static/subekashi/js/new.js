@@ -18,6 +18,7 @@ window.addEventListener('load', async function () {
     checkExist();
 });
 
+// TODO requiredを利用
 function setSubmitButton(titleValue, channelValue) {
     submitEle = document.getElementById("newsubmit");
     if ((titleValue == "") || (channelValue == "")) {
@@ -27,19 +28,17 @@ function setSubmitButton(titleValue, channelValue) {
     }
 }
 
-function setDeleteButton() {
+// TODO checkValidityを利用
+document.getElementById('reason').addEventListener('input', () => {
     reasonValue = document.getElementById("reason").value;
     deleteEle = document.getElementById("deletesubmit");
-    if (songResult) {
-        if ((reasonValue == "") || (songResult.length == 0)) {
-            deleteEle.disabled = true;
-        } else {
-            deleteEle.disabled = false;
-        }
-    } else {
-        deleteEle.disabled = true;
+
+    if (!songResult) {
+        return;
     }
-}
+
+    deleteEle.disabled = (reasonValue == "") || (songResult.length == 0);
+})
 
 function checkExist() {
     titleValue = document.getElementById("title").value;
@@ -76,7 +75,6 @@ function checkExist() {
     }
 
     setSubmitButton(titleValue, channelValue);
-    setDeleteButton();
 };
 
 function fillForm() {
@@ -169,7 +167,7 @@ function songGuesserClick(id) {
 
 // フォームに変更があったかを検知
 isFormDirty = false;
-document.querySelectorAll('input, textarea').forEach((input) => {
+document.querySelectorAll('input, textarea:not(#reason)').forEach((input) => {
     input.addEventListener('change', () => {
         isFormDirty = true;
     });
