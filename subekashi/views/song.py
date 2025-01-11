@@ -6,13 +6,12 @@ from subekashi.lib.filter import islack
 def song(request, songId) :
     # TODO リファクタリング
     songIns = Song.objects.filter(pk = songId)
-    isExist = bool(songIns)
     dataD = {
-        "isExist" : isExist,
+        "isExist" : songIns.exists(),
         "islack" : bool(songIns.filter(islack))
     }
 
-    if isExist :
+    if songIns.exists() :
         songIns = songIns.first()
         dataD["metatitle"] = f"{songIns.title} / {songIns.channel}" if songIns else "全て削除の所為です。"
         dataD["songIns"] = songIns
