@@ -1,0 +1,26 @@
+{% extends "subekashi/base/base.html" %}
+
+{% load static %}
+{% load last_modified %}
+{% block css %}{% static 'subekashi/css/song.css'%}{% endblock %}
+
+{% block content %}
+<section>
+    <h1>削除申請</h1>
+    <div class="underline"></div>
+    <p><span class="text-label">タイトル</span>{{ song.title }}</p>
+    <p><span class="text-label">チャンネル名</span>{{ song.channel }}</p>
+    <form action="{% url 'subekashi:song' song.id %}" method="POST">{% csrf_token %}
+        <div class="form-col">
+            <label class="required">削除理由</label>
+            <textarea id="reason" name="reason" required></textarea>
+        </div>
+        <input type="submit" value="送信" id="deletesubmit" disabled>
+        <p><span class="error">*</span>は入力必須項目です。</p>
+    </form>
+</section>
+{% endblock %}
+
+{% block js %}
+<script defer src="{% static 'subekashi/js/song_delete.js' %}?{% get_last_modified %}"></script>
+{% endblock %}

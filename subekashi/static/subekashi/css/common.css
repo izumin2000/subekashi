@@ -361,6 +361,12 @@ a {
     text-underline-offset: 0.3ex;
 }
 
+.text-label {
+    display: inline-block;
+    width: 7em;
+    margin-bottom: 15px;
+}
+
 .sansfont {
     font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans',  sans-serif !important;
     font-weight: 1000 !important;

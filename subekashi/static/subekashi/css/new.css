@@ -18,7 +18,7 @@ details ul ul {
     font-size: 15px;
 }
 
-#newform, #deleteform {
+#newform {
     margin: 20px 0;
 }
 
@@ -74,40 +74,4 @@ details ul ul {
 
 #checkboxs {
     margin: 20px 0 20px -20px;
-}
-
-#newsubmit {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #eee;
-    padding: 0 10px;
-    margin: 20px 0;
-    cursor: pointer;
-}
-
-#deletesubmit {
-    padding-left: 0px;
-    height: 49.5px;
-    width: 100%;
-    border: none;
-    font-size: 25px;
-    cursor: pointer;
-    margin: 20px 0;
-}
-
-#deletesubmit:hover {
-    background-color: #ccc;
-}
-
-#deletesubmit:active {
-    border: none;
-    box-shadow: 0 0 0 2px #fff inset;
-    background-color: #aaa;
-}
-
-#deletesubmit:disabled {
-    background-color: #ccc;
-    box-shadow: none;
-    cursor: not-allowed;
 }

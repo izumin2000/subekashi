@@ -168,20 +168,6 @@
         <input type="submit" value="登録" id="newsubmit" disabled>
         <p><span class="error">*</span>は入力必須項目です。</p>
     </form>
-
-    {% comment %} TODO 専用のフォームに分ける {% endcomment %}
-    <h1>削除依頼</h1>
-    <div class="underline" for="deleteform"></div>
-    <form action="{% url 'subekashi:delete' %}" method="POST" id="deleteform">{% csrf_token %}
-        <input type="text" id="titleDelete" class="sansfont" name="title" value="{{ title }}" hidden>
-        <input type="text" id="channelDelete" name="channel" value="{{ channel }}" hidden>
-        <div class="form-col">
-            <label class="required">削除理由</label>
-            <textarea id="reason" name="reason" required></textarea>
-        </div>
-        <input type="submit" value="送信" id="deletesubmit" disabled>
-        <p><span class="error">*</span>は入力必須項目です。</p>
-    </form>
 </section>
 {% endblock %}
 

@@ -6,13 +6,13 @@ from subekashi.views.ai_result import ai_result
 from subekashi.views.api.ai import AiAPI
 from subekashi.views.channel import channel
 from subekashi.views.contact import contact
-from subekashi.views.delete import delete
 from subekashi.views.errors import *
 from subekashi.views.file import *
 from subekashi.views.new import new
 from subekashi.views.search import search
 from subekashi.views.setting import setting
 from subekashi.views.song import song
+from subekashi.views.song_delete import song_delete
 from subekashi.views.api.song import SongAPI
 from subekashi.views.special import special
 from subekashi.views.top import top

@@ -28,23 +28,9 @@ function setSubmitButton(titleValue, channelValue) {
     }
 }
 
-// TODO checkValidityを利用
-document.getElementById('reason').addEventListener('input', () => {
-    reasonValue = document.getElementById("reason").value;
-    deleteEle = document.getElementById("deletesubmit");
-
-    if (!songResult) {
-        return;
-    }
-
-    deleteEle.disabled = (reasonValue == "") || (songResult.length == 0);
-})
-
 function checkExist() {
     titleValue = document.getElementById("title").value;
-    document.getElementById("titleDelete").value = titleValue;
     channelValue = document.getElementById("channel").value;
-    document.getElementById("channelDelete").value = channelValue;
     isExistEle = document.getElementById("isExist");
     fillFormButtonEle = document.getElementById("fillFormButton");
 
@@ -167,7 +153,7 @@ function songGuesserClick(id) {
 
 // フォームに変更があったかを検知
 isFormDirty = false;
-document.querySelectorAll('input, textarea:not(#reason)').forEach((input) => {
+document.querySelectorAll('input, textarea').forEach((input) => {
     input.addEventListener('change', () => {
         isFormDirty = true;
     });
