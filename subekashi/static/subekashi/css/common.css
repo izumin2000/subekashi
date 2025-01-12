@@ -589,6 +589,52 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     font-size: 17px;
 }
 
+/* トースト */
+@keyframes slideIn {
+    from {
+        top: -80px;
+    }
+
+    to {
+        top: 34px;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        top: 34px;
+    }
+
+    to {
+        top: -80px;
+    }
+}
+
+.toast {
+position: fixed;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90vw;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    z-index: 1000;
+    animation: slideIn 0.4s forwards, slideOut 0.4s 8s forwards;
+}
+
+.toast p {
+    color: #000;
+    font-weight: bold;
+}
+
+.sucsess {
+    
+}
+
 /* フッダー */
 #footer-wrapper {
     height: 100px;
