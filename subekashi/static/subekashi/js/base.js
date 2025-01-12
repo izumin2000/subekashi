@@ -36,6 +36,7 @@ function isCompleted(song) {
     return !columnL.includes("");
 }
 
+// DRFのAPIの取得
 var jsonDatas = {}
 async function getJson(path) {
     if (jsonDatas[path]) {
@@ -52,10 +53,12 @@ async function getJson(path) {
     return json;
 }
 
+// s秒間プログラムを停止
 function sleep(s) {
     return new Promise(resolve => setTimeout(resolve, s*1000));
 }
 
+// 文字列からHTML要素に変換
 function stringToHTML(string, multi=false) {
     const devEle = document.createElement("div");
     devEle.innerHTML = string;
@@ -68,6 +71,7 @@ function stringToHTML(string, multi=false) {
     return htmls[0];
 }
 
+// song guesserの表示
 function appendSongGuesser(songGuesser, toEle) {
     var songGuesserEle = stringToHTML(songGuesser);
     toEle.appendChild(songGuesserEle)
@@ -256,6 +260,7 @@ window.onload = function() {
     getGlobalHeader();
 }
 
+// フォントのキャッシュ
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open('font-cache').then((cache) => {
