@@ -18,3 +18,4 @@ from subekashi.views.special import special
 from subekashi.views.top import top
 from subekashi.views.components.song_cards import song_cards
 from subekashi.views.components.song_guessers import song_guessers
+from subekashi.views.components.toast import toast

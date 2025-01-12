@@ -1,5 +1,6 @@
 {% load static %}
 {% load description %}
+{% load toast %}
 {% load last_modified %}
 
 <!DOCTYPE html>
@@ -31,6 +32,8 @@
         {% include './header.html' %}
         {% include './aside.html' %}
         <main>
+            {% get_toast toast_type toast_text %}
+            <div id="toast-container"></div>
             <article id="mainarticle">
                 {% block content %}{% endblock %}
             </article>

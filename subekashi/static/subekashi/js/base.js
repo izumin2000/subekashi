@@ -53,7 +53,7 @@ async function getJson(path) {
     return json;
 }
 
-// s秒間プログラムを停止
+// s秒間プログラムを停止 awaitが必須
 function sleep(s) {
     return new Promise(resolve => setTimeout(resolve, s*1000));
 }
@@ -69,6 +69,22 @@ function stringToHTML(string, multi=false) {
     }
 
     return htmls[0];
+}
+
+// トーストを動的に表示する関数
+async function showToast(icon, text) {
+    try {
+        const response = await fetch(`/api/html/toast?icon=${encodeURIComponent(icon)}&text=${encodeURIComponent(text)}`);
+        if (!response.ok) throw new Error('Failed to fetch toast');
+
+        const data = await response.json();
+        const toastHTML = stringToHTML(data.toast);
+
+        const toastContainerEle = document.getElementById('toast-container');
+        toastContainerEle.appendChild(toastHTML);
+    } catch (error) {
+        console.error('Error showing toast:', error);
+    }
 }
 
 // song guesserの表示
@@ -282,5 +298,3 @@ self.addEventListener('fetch', (event) => {
         );
     }
 });
-
-
