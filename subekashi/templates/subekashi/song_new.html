@@ -10,28 +10,71 @@
 <section>
     <h1>YouTubeのリンクから登録</h1>
     <div class="underline"></div>
-    <form action="{% url 'subekashi:song_new' %}" method="POST" id="new-auto-form">{% csrf_token %}
+    <form action="{% url 'subekashi:song_new' %}" method="POST" id="new-form-auto">{% csrf_token %}
         <div class="form-col">
-            <label for="url">URL</label>
-            <input type="text" id="url" name="url" value="{{ request.GET.url }}">
+            <label class="required" for="url"><i class="fab fa-youtube"></i>リンク</label>
+            <input type="url" id="url" name="url" value="{{ request.GET.url }}">
         </div>
-        <input type="submit" value="登録" id="new-auto-submit" name="auto" disabled>
+        <div id="checkboxs">
+            <div class="checkbox-col">
+                <input type="checkbox" id="is-orginal-auto" name="is-orginal-auto">
+                <label for="is-orginal-auto">オリジナル模倣</label>
+            </div>
+            <div class="checkbox-col">
+                <input type="checkbox" id="is-deleted-auto" name="is-deleted-auto">
+                <label for="is-deleted-auto">非公開/削除済み</label>
+            </div>
+            <div class="checkbox-col">
+                <input type="checkbox" id="is-joke-auto" name="is-joke-auto">
+                <label for="is-joke-auto">ネタ曲</label>
+            </div>
+            <div class="checkbox-col">
+                <input type="checkbox" id="is-inst-auto" name="is-inst-auto">
+                <label for="is-inst-auto">インスト</label>
+            </div>
+            <div class="checkbox-col">
+                <input type="checkbox" id="is-subeana-auto" name="is-subeana-auto" checked>
+                <label for="is-subeana-auto">すべあな界隈曲</label>
+            </div>
+        </div>
+        <input type="submit" value="登録" id="new-submit-auto" disabled>
         <p><span class="error">*</span>は入力必須項目です。</p>
     </form>
         
     <h1>曲名とチャンネル名から登録</h1>
     <div class="underline"></div>
-    <form action="{% url 'subekashi:song_new' %}" method="POST" id="new-manual-form">{% csrf_token %}
+    <form action="{% url 'subekashi:song_new' %}" method="POST" id="new-form-manual">{% csrf_token %}
         <div class="form-col">
             <label class="required" for="title">曲名</label>
-            <input type="text" id="title" name="title" class="sansfont" oninput="checkExist()" value="{{ request.GET.title }}" required>
+            <input type="text" id="title" name="title" class="sansfont" value="{{ request.GET.title }}" required>
         </div>
         <div class="form-col">
             <label class="required" for="channel">チャンネル名</label>
-            <input type="text" id="channel" name="channel" class="sansfont" oninput="checkExist()" value="{{ request.GET.channel }}" required>
+            <input type="text" id="channel" name="channel" class="sansfont" value="{{ request.GET.channel }}" required>
         </div>
-        <p id="isExist"></p>
-        <input type="submit" value="登録" id="new-manual-submit" name="manual" disabled>
+        <div id="checkboxs">
+            <div class="checkbox-col">
+                <input type="checkbox" id="is-orginal-manual" name="is-orginal-manual">
+                <label for="is-orginal-manual">オリジナル模倣</label>
+            </div>
+            <div class="checkbox-col">
+                <input type="checkbox" id="is-deleted-manual" name="is-deleted-manual">
+                <label for="is-deleted-manual">非公開/削除済み</label>
+            </div>
+            <div class="checkbox-col">
+                <input type="checkbox" id="is-joke-manual" name="is-joke-manual">
+                <label for="is-joke-manual">ネタ曲</label>
+            </div>
+            <div class="checkbox-col">
+                <input type="checkbox" id="is-inst-manual" name="is-inst-manual">
+                <label for="is-inst-manual">インスト</label>
+            </div>
+            <div class="checkbox-col">
+                <input type="checkbox" id="is-subeana-manual" name="is-subeana-manual" checked>
+                <label for="is-subeana-manual">すべあな界隈曲</label>
+            </div>
+        </div>
+        <input type="submit" value="登録" id="new-submit-manual" disabled>
         <p><span class="error">*</span>は入力必須項目です。</p>
     </form>
 

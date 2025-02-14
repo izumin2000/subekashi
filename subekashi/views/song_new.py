@@ -5,6 +5,7 @@ from subekashi.models import *
 from subekashi.lib.url import *
 from subekashi.lib.ip import *
 from subekashi.lib.discord import *
+from subekashi.lib.youtube import *
 
 
 def song_new(request) :
@@ -12,39 +13,57 @@ def song_new(request) :
         "metatitle": "登録と編集",
     }
 
-    # TODO songビューに
     if request.method == "POST":
-        titleForm = request.POST.get("title")
-        channelForm = request.POST.get("channel")
-        urlForm = request.POST.get("url")
+        title = request.POST.get("title", "")
+        channel = request.POST.get("channel", "")
+        url = request.POST.get("url", "")
+        is_orginal = request.POST.get("is-orginal-auto")
+        is_deleted = request.POST.get("is-deleted-auto")
+        is_joke = request.POST.get("is-joke-auto")
+        is_inst = request.POST.get("is-inst-auto")
+        is_subeana = request.POST.get("is-subeana-auto")
         
+        if is_yt_url(url) :
+            yt_id = format_yt_url(url, id=True)
+            yt_res = get_youtube_api(yt_id)
+            title = yt_res.get("title", "")
+            channel = yt_res.get("channel", "")
+        
+        if ("" in [title, channel]) :
+            return render(request, "subekashi/500.html", status=500)
+        
+        channel_cleand = channel.replace("/", "╱")
+        # TODO urlがURL_ICONにあるかのセキュリティチェック
+        url = clean_url(url)
         ip = get_ip(request)
-        id = Song.objects.last().id + 1
+        
+        song_obj = Song(
+            title = title,
+            channel = channel_cleand,
+            url = url,
+            post_time = timezone.now(),
+            is_orginal = is_orginal,
+            is_deleted = is_deleted,
+            is_joke = is_joke,
+            is_inst = is_inst,
+            is_subeana = is_subeana,
+            ip = ip
+        )
+        song_id = song_obj.id
         
         content = f'\n\
-        {ROOT_URL}/songs/{id}\n\
-        タイトル：{titleForm}\n\
-        チャンネル : {channelForm}\n\
-        URL : {urls}\n\
+        {ROOT_URL}/songs/{song_id}\n\
+        タイトル：{title}\n\
+        チャンネル : {channel_cleand}\n\
+        URL : {url}\n\
+        ネタ曲 : {"Yes" if is_joke else "False"}\n\
+        すべあな模倣曲 : {"Yes" if is_subeana else "False"}\n\
         IP : {ip}```'
         is_ok = sendDiscord(NEW_DISCORD_URL, content)
         if not is_ok:
             return render(request, 'subekashi/500.html', status=500)
         
-        channelForm = channelForm.replace("/", "╱")
-        songIns, _ = Song.objects.get_or_create(title = titleForm, channel = channelForm, defaults={"post_time" : timezone.now()})
+        song_obj.save()
         
-        # TODO urlFormがURL_ICONにあるかのセキュリティチェック
-        urls = clean_url(urlForm)
-        songIns.url = urls
-        songIns.post_time = timezone.now()
-        songIns.ip = ip
-        songIns.save()
-        
-        dataD["songIns"] = songIns
-        dataD["channels"] = songIns.channel.replace(", ", ",").split(",")
-        dataD["urls"] = songIns.url.replace(", ", ",").split(",") if songIns.url else []
-        dataD["isExist"] = True
-        
-        return render(request, 'subekashi/song_edit.html', dataD)
+        return redirect(request, 'subekashi/song_edit.html', song_id)
     return render(request, 'subekashi/song_new.html', dataD)
