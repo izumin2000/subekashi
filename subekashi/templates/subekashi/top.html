@@ -29,7 +29,7 @@
     {% endfor %}
     <div class="dummybuttons">
         <a href="{% url 'subekashi:search' %}"><div class="dummybutton"><p>もっと見る</p></div></a>
-        <a href="{% url 'subekashi:new' %}"><div class="dummybutton"><p>曲を登録する</p></div></a>
+        <a href="{% url 'subekashi:song_new' %}"><div class="dummybutton"><p>曲を登録する</p></div></a>
     </div>
     
     {% if isAdDisplay %}
@@ -63,7 +63,7 @@
         {% endfor %}
             <div class="dummybuttons">
                 <a href="{% url 'subekashi:search' %}?islack=True"><div class="dummybutton"><p>もっと見る</p></div></a>
-                <a href="{% url 'subekashi:new' %}"><div class="dummybutton"><p>曲を登録する</p></div></a>
+                <a href="{% url 'subekashi:song_new' %}"><div class="dummybutton"><p>曲を登録する</p></div></a>
             </div>
     {% endif %}
  

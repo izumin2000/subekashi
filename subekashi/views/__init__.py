@@ -8,11 +8,11 @@ from subekashi.views.channel import channel
 from subekashi.views.contact import contact
 from subekashi.views.errors import *
 from subekashi.views.file import *
-from subekashi.views.new import new
 from subekashi.views.search import search
 from subekashi.views.setting import setting
 from subekashi.views.song import song
 from subekashi.views.song_delete import song_delete
+from subekashi.views.song_new import song_new
 from subekashi.views.api.song import SongAPI
 from subekashi.views.special import special
 from subekashi.views.top import top

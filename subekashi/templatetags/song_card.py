@@ -67,7 +67,7 @@ def get_url(song):
     
     # 未登録なら
     elif not urls:
-        new_url = reverse('subekashi:new')
+        new_url = reverse('subekashi:song_new')
         return mark_safe(f'<object><a href="{new_url}?id={song.id}">URL未登録</a></object>')
     
     # URLを登録しているのなら
@@ -94,7 +94,7 @@ def get_lyrics(song):
     
     # 歌詞を登録していないのなら
     if not lyrics and not song.isinst:
-        new_url = reverse('subekashi:new')
+        new_url = reverse('subekashi:song_new')
         return mark_safe(f'<object><a href="{new_url}?id={song.id}"><i class="fas fa-align-center"></i>歌詞未登録</a></object>')
     
     # 歌詞を登録しているのなら
