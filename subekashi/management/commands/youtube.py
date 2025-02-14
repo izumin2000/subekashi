@@ -22,6 +22,7 @@ class Command(BaseCommand):
             return {}
 
         for video_id in video_ids:
+            sleep(2)
             yt_res = get_youtube_api(video_id)
             if yt_res == {}:
                 continue

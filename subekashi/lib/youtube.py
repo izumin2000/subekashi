@@ -5,7 +5,6 @@ from time import sleep
 
 
 def get_youtube_api(video_id):
-    sleep(2)
     yt_res = {}
     
     try:
