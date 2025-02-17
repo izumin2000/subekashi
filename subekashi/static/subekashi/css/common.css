@@ -617,7 +617,7 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
 }
 
 .toast {
-position: fixed;
+    position: fixed;
     top: -50px;
     left: 50%;
     transform: translateX(-50%);
@@ -632,13 +632,13 @@ position: fixed;
     animation: slideIn 0.4s forwards, slideOut 0.4s 8s forwards;
 }
 
+.long-time {
+    animation: slideIn 0.4s forwards, slideOut 0.4s 16s forwards;
+}
+
 .toast p {
     color: #000;
     font-weight: bold;
-}
-
-.sucsess {
-    
 }
 
 /* フッダー */

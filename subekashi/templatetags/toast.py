@@ -14,7 +14,9 @@ def get_toast(icon, text):
         "error": "fas fa-times-circle error"
     }
     icon_class = ICON_DICT[icon] if icon in ICON_DICT else ""
+    toast_class = "toast" if len(text) < 50 else "toast long-time"
     context = {
+        "toast_class": toast_class,
         "icon_class": icon_class,
         "text": text
     }
