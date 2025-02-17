@@ -372,6 +372,10 @@ a {
     font-weight: 1000 !important;
 }
 
+.info {
+    color: #09F;
+}
+
 .ok {
     color: #090;
 }
@@ -598,7 +602,7 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
 /* トースト */
 @keyframes slideIn {
     from {
-        top: -80px;
+        top: -120px;
     }
 
     to {
@@ -612,7 +616,7 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     }
 
     to {
-        top: -80px;
+        top: -120px;
     }
 }
 
@@ -629,11 +633,11 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     text-align: center;
     font-family: Arial, sans-serif;
     z-index: 1000;
-    animation: slideIn 0.4s forwards, slideOut 0.4s 8s forwards;
+    animation: slideIn 0.5s forwards, slideOut 0.5s 8s forwards;
 }
 
 .long-time {
-    animation: slideIn 0.4s forwards, slideOut 0.4s 16s forwards;
+    animation: slideIn 0.5s forwards, slideOut 0.5s 16s forwards;
 }
 
 .toast p {

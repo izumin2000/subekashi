@@ -9,6 +9,7 @@ def get_toast(icon, text):
         return
     
     ICON_DICT = {
+        "info": "fas fa-info-circle info",
         "ok": "fas fa-check-square ok",
         "warning": "fas fa-exclamation-triangle warning",
         "error": "fas fa-times-circle error"
