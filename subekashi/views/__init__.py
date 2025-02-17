@@ -12,6 +12,7 @@ from subekashi.views.search import search
 from subekashi.views.setting import setting
 from subekashi.views.song import song
 from subekashi.views.song_delete import song_delete
+from subekashi.views.song_edit import song_edit
 from subekashi.views.song_new import song_new
 from subekashi.views.api.song import SongAPI
 from subekashi.views.special import special

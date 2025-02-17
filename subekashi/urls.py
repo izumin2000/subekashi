@@ -17,6 +17,7 @@ urlpatterns = [
     path('songs', search, name='search'),
     path('songs/new', song_new, name='song_new'),
     path('songs/<int:song_id>', song, name='song'),
+    path('songs/<int:song_id>/edit', song_edit, name='song_edit'),
     path('songs/<int:song_id>/delete', song_delete, name='song_delete'),
     path('channel/<str:channelName>', channel, name='channel'),
     path('search', search, name='search_sub'),  #いつか消す
