@@ -13,7 +13,7 @@ def get_toast(icon, text):
         "warning": "fas fa-exclamation-triangle warning",
         "error": "fas fa-times-circle error"
     }
-    icon_class = ICON_DICT[icon]
+    icon_class = ICON_DICT[icon] if icon in ICON_DICT else ""
     context = {
         "icon_class": icon_class,
         "text": text
