@@ -17,12 +17,13 @@ def song_new(request) :
         title = request.POST.get("title", "")
         channel = request.POST.get("channel", "")
         url = request.POST.get("url", "")
-        is_orginal = request.POST.get("is-orginal-auto")
-        is_deleted = request.POST.get("is-deleted-auto")
-        is_joke = request.POST.get("is-joke-auto")
-        is_inst = request.POST.get("is-inst-auto")
-        is_subeana = request.POST.get("is-subeana-auto")
+        is_original = bool(request.POST.get("is-original-auto"))
+        is_deleted = bool(request.POST.get("is-deleted-auto"))
+        is_joke = bool(request.POST.get("is-joke-auto"))
+        is_inst = bool(request.POST.get("is-inst-auto"))
+        is_subeana = bool(request.POST.get("is-subeana-auto"))
         
+        yt_res = {}
         if is_yt_url(url) :
             yt_id = format_yt_url(url, id=True)
             yt_res = get_youtube_api(yt_id)
@@ -42,13 +43,18 @@ def song_new(request) :
             channel = channel_cleand,
             url = url,
             post_time = timezone.now(),
-            is_orginal = is_orginal,
-            is_deleted = is_deleted,
-            is_joke = is_joke,
-            is_inst = is_inst,
-            is_subeana = is_subeana,
+            isoriginal = is_original,
+            isdeleted = is_deleted,
+            isjoke = is_joke,
+            isinst = is_inst,
+            issubeana = is_subeana,
+            upload_time = yt_res.get("upload_time", None),
+            view = yt_res.get("view", None),
+            like = yt_res.get("like", None),
             ip = ip
         )
+        
+        song_obj.save()
         song_id = song_obj.id
         
         content = f'\n\
@@ -61,9 +67,8 @@ def song_new(request) :
         IP : {ip}```'
         is_ok = sendDiscord(NEW_DISCORD_URL, content)
         if not is_ok:
+            song_obj.delete()
             return render(request, 'subekashi/500.html', status=500)
         
-        song_obj.save()
-        
-        return redirect(request, 'subekashi/song_edit.html', song_id)
+        return redirect(f'/songs/{song_id}/edit')
     return render(request, 'subekashi/song_new.html', dataD)

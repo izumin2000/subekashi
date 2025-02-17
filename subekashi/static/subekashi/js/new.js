@@ -79,7 +79,7 @@ function fillForm() {
         }
     }
     document.getElementById("lyrics").value = songResult.lyrics;
-    document.getElementById("isorginal").checked = songResult.isoriginal;
+    document.getElementById("isoriginal").checked = songResult.isoriginal;
     document.getElementById("isjoke").checked = songResult.isjoke;
     document.getElementById("isinst").checked = songResult.isinst;
     document.getElementById("issubeana").checked = songResult.issubeana;
