@@ -21,161 +21,78 @@
     <div class="underline"></div>
     <form action="{% url 'subekashi:song_new' %}" method="POST" id="new-form-auto">{% csrf_token %}
         <div class="form-col">
-            <label for="url">YouTubeの<br>動画リンク<i class="fas fa-info-circle" onclick="showTutorial('')"></i></label>
+            <label for="url">YouTubeの<br>動画リンク<i class="fas fa-info-circle" onclick="showTutorial('youtube-url')"></i></label>
             <input type="url" id="url" name="url" value="{{ request.GET.url }}" required>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-original-auto" name="is-original-auto">
             <label for="is-original-auto">オリジナル模倣</label>
-            <i class="fas fa-info-circle" onclick="showTutorial('')"></i>
+            <i class="fas fa-info-circle" onclick="showTutorial('is-original')"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-deleted-auto" name="is-deleted-auto">
             <label for="is-deleted-auto">非公開/削除済み</label>
-            <i class="fas fa-info-circle" onclick="showTutorial('')"></i>
+            <i class="fas fa-info-circle" onclick="showTutorial('is-deleted')"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-joke-auto" name="is-joke-auto">
             <label for="is-joke-auto">ネタ曲</label>
-            <i class="fas fa-info-circle" onclick="showTutorial('')"></i>
+            <i class="fas fa-info-circle" onclick="showTutorial('is-joke')"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-inst-auto" name="is-inst-auto">
             <label for="is-inst-auto">インスト</label>
-            <i class="fas fa-info-circle" onclick="showTutorial('')"></i>
+            <i class="fas fa-info-circle" onclick="showTutorial('is-inst')"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-subeana-auto" name="is-subeana-auto" checked>
             <label for="is-subeana-auto">すべあな界隈曲</label>
-            <i class="fas fa-info-circle" onclick="showTutorial('')"></i>
+            <i class="fas fa-info-circle" onclick="showTutorial('is-subeana')"></i>
         </div>
         <input type="submit" value="登録" id="new-submit-auto" disabled>
     </form>
     
-    <h1>曲名とチャンネル名から登録<i class="fas fa-info-circle" onclick="showTutorial('')"></i></h1>
+    <h1>曲名とチャンネル名から登録<i class="fas fa-info-circle" onclick="showTutorial('new-form-manual')"></i></h1>
     <div class="underline"></div>
     <form action="{% url 'subekashi:song_new' %}" method="POST" id="new-form-manual">{% csrf_token %}
         <div class="form-col">
-            <label for="title">曲名<i class="fas fa-info-circle" onclick="showTutorial('')"></i></label>
+            <label for="title">曲名<i class="fas fa-info-circle" onclick="showTutorial('title')"></i></label>
             <input type="text" id="title" name="title" class="sansfont" value="{{ request.GET.title }}" required>
         </div>
         <div class="form-col">
-            <label for="channel">チャンネル名<i class="fas fa-info-circle" onclick="showTutorial('')"></i></label>
+            <label for="channel">チャンネル名<i class="fas fa-info-circle" onclick="showTutorial('channel')"></i></label>
             <input type="text" id="channel" name="channel" class="sansfont" value="{{ request.GET.channel }}" required>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-original-manual" name="is-original-manual">
             <label for="is-original-manual">オリジナル模倣</label>
-            <i class="fas fa-info-circle" onclick="showTutorial('')"></i>
+            <i class="fas fa-info-circle" onclick="showTutorial('is-original')"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-deleted-manual" name="is-deleted-manual">
             <label for="is-deleted-manual">非公開/削除済み</label>
-            <i class="fas fa-info-circle" onclick="showTutorial('')"></i>
+            <i class="fas fa-info-circle" onclick="showTutorial('is-deleted')"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-joke-manual" name="is-joke-manual">
             <label for="is-joke-manual">ネタ曲</label>
-            <i class="fas fa-info-circle" onclick="showTutorial('')"></i>
+            <i class="fas fa-info-circle" onclick="showTutorial('is-joke')"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-inst-manual" name="is-inst-manual">
             <label for="is-inst-manual">インスト</label>
-            <i class="fas fa-info-circle" onclick="showTutorial('')"></i>
+            <i class="fas fa-info-circle" onclick="showTutorial('is-inst')"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-subeana-manual" name="is-subeana-manual" checked>
             <label for="is-subeana-manual">すべあな界隈曲</label>
-            <i class="fas fa-info-circle" onclick="showTutorial('')"></i>
+            <i class="fas fa-info-circle" onclick="showTutorial('is-subeana')"></i>
         </div>
         <input type="submit" value="登録" id="new-submit-manual" >
     </form>
 
-    {% comment %} TODO blogにまとめる {% endcomment %}
-        <h2>曲名</h2>
-        <ul>
-            <li>曲名を入力してください。</li>
-            <li>YouTube上のタイトルより、一般的に知られているタイトルを入力することオススメします。</li>
-            <li>例）<a href="https://youtu.be/zNdHRM5DC1o" target="_blank">https://youtu.be/zNdHRM5DC1o</a>の場合、タイトルは『zNdHRM5DC1o』ではなく、『巡』で登録することをオススメします。</li>
-        </ul>
-        <h2>作者</h2>
-        <ul>
-            <li>作者を入力してください。</li>
-            <li>作者が複数ある場合、半角コンマ(,)で区切ってください。</li>
-        </ul>
-        <h2>URL</h2>
-        <ul>
-            <li>URLを入力してください。</li>
-            <li>登録したいURLが複数ある場合、半角コンマ(,)で区切ってください。</li>
-            <li>転載動画のURLの記載はお控えください。</li>
-        </ul>
-        <h2>模倣</h2>
-        <ul>
-            <li>模倣元・オマージュ元・歌詞の引用元・アレンジ元の曲を入力してください。</li>
-            <li>全てあなたの所為です。の曲からの模倣は専用のボタンから追加できます。</li>
-            <li><a href="https://www.youtube.com/watch?v=9Ray9iBnP0w" target="_blank">◘</a>の模倣曲は代わりに.の模倣曲として登録してください。</li>
-            <li>全てあなたの所為です。の模倣曲以外からの模倣はタイトルを入力して追加してください。</li>
-            <li>模倣曲のタイトルを入力してもヒットしない場合はまず、その模倣曲を情報を登録してください。</li>
-            <li>曲は複数入力ができます。</li>
-            <li>曲の削除は削除ボタンからできます。</li>
-        </ul>
-        <h2>歌詞</h2>
-        <ul>
-            <li>歌詞を入力してください。</li>
-            <li>インスト曲の場合、入力は不要です。</li>
-            <li>形式は特に決まっていませんができるだけ、MVと同じように記述してくれると助かります。</li>
-            <li>将来的にはマークダウンのような形式を実装予定です。</li>
-        </ul>
-        <h2>オリジナル模倣</h2>
-        <ul>
-            <li>いわゆるオリジナル模倣曲・フリースタイル模倣曲の場合はチェックをつけてください。</li>
-            <li>例）『<a href="https://youtu.be/XkIKM80-Znc?si=j1Zr9TGQ4r6WJNzI" target="_blank">∴∴∴∴</a>』, 『<a href="https://youtu.be/zDUvoKUOviQ?si=PCEGV4vWQS_PVbpC" target="_blank">天秤にかけて</a>』, 『<a href="https://youtu.be/Z7NuHcBTQ4w" target="_blank">色素</a>』など。</li>
-        </ul>
-        <h2>非公開/削除済み</h2>
-        <ul>
-            <li>URL先にアクセスしても視聴できない場合、チェックしてください。</li>
-            <li>限定公開の場合はチェックする必要はありません。</li>
-        </ul>
-        <h2>ネタ曲</h2>
-        <ul>
-            <li>ネタに走っている曲の場合、チェックしてください。</li>
-            <li>歌詞がトチ狂っていたり、本当の狂気について考えたりしている曲はネタ曲です。</li>
-            <li>ネタ曲かどうかの判断は個人の判断に任せます。</li>
-        </ul>
-        <h2>インスト</h2>
-        <ul>
-            <li>歌詞の無い曲の場合はチェックしてください。</li>
-            <li>『<a href="https://www.youtube.com/watch?v=evR5ei8_e5s" target="_blank">M.A.Z.[short]</a>』, 『<a href="https://youtu.be/2P62pozC9Zc" target="_blank">またの御アクセスをお待ちしております。</a>』, 『<a href="https://youtu.be/BrUcribiF4w?si=DgBmy0GSxgFyndjd">V</a>』など。</li>
-        </ul>
-        <h2>すべあな界隈曲</h2>
-        <ul>
-            <li>すべあな界隈曲の場合はチェックしてください。</li>
-            <li>すべあな界隈曲かどうかの判断は個人の判断に任せます。</li>
-        </ul>
-        <h2>下書き</h2>
-        <ul>
-            <li>下書きとして投稿したい場合はチェックしてください。</li>
-            <li>下書きした内容は下書きとしてマークされます。</li>
-            <li>入力途中だけど投稿したいときに利用してください。</li>
-            <li>下書きした内容は誰でも閲覧できる状態になります。</li>
-        </ul>
-        <h2>登録ボタン</h2>
-        <ul>
-            <li>曲の情報を登録するボタンです。</li>
-            <li>タイトルとチャンネル名を入力すると、登録ができる状態になります。</li>
-            <li>稀にタイトルとチャンネル名を入力しても登録できない不具合が発生するので、発生次第<a href="{% url 'subekashi:top' %}#contact">こちら</a>からご連絡ください。</li>
-        </ul>
-        <h2>削除依頼</h2>
-        <ul>
-            <li>開発者に曲の削除依頼を送ります。</li>
-            <li>実際に削除の対応をするまでに時間がかかる場合があります。</li>
-        </ul>
-    </details>
-    <p class="detailP">最終更新日：2025年2月17日</p>
-
-    <h1>???から登録</h1>
+    <h1>???から登録<i class="fas fa-info-circle" onclick="showToast('', '<span style=\'color: red;\'>~~~@z@ÆÐäÞÚÊ엂빪풾𐇺</span>');"></i></h1>
     <div class="underline"></div>
-    <p>現在開発中...</p>
 </section>
 {% endblock %}
 
