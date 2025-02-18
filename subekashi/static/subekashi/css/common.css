@@ -657,7 +657,7 @@ input::placeholder {
 /* トースト */
 @keyframes slideIn {
     from {
-        top: -120px;
+        top: -340px;
     }
 
     to {
@@ -671,7 +671,7 @@ input::placeholder {
     }
 
     to {
-        top: -120px;
+        top: -340px;
     }
 }
 
@@ -695,9 +695,14 @@ input::placeholder {
     animation: slideIn 0.5s forwards, slideOut 0.5s 16s forwards;
 }
 
-.toast p {
+.toast p, .toast a {
     color: #111;
     font-weight: bold;
+    line-height: normal;
+}
+
+.toast a {
+    text-decoration: underline 2px #111;
 }
 
 /* フッダー */
