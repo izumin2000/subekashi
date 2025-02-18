@@ -431,15 +431,16 @@ label {
     text-align: center;
 }
 
-.required::after {
-    content: "*";
-    color: #B60;
-    position: absolute;
-    bottom: 5px;
+details {
+    text-align: center;
+}
+
+details p {
+    margin: 15px 0;
 }
 
 .form-col label {
-    width: 8em;
+    width: 9em;
 }
 
 input, select, option, textarea {
@@ -466,7 +467,7 @@ input:focus {
 }
 
 .checkbox-col label {
-    width: 12rem;
+    width: 8em;
 }
 
 input[type=checkbox] {
@@ -500,7 +501,7 @@ textarea {
     }
     
     input {
-        width: 92%;
+        width:100%;
     }
 }
 
@@ -580,6 +581,10 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     cursor: not-allowed;
 }
 
+input::placeholder {
+    text-align: center;
+}
+
 
 /* カテゴリボタン */
 #imitate-div {
@@ -588,20 +593,30 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     background-color: #333;
 }
 
+#imitate-div p {
+    text-align: center;
+    word-break: break-all;
+}
+
 #imitate-div #imitate-sub {
     margin-top: 20px;
 }
 
+#categorys {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
 #categorys button {
     display: inline-block;
-    margin: 5px 0 !important;
+    margin: 5px !important;
     padding: 10px;
     height: 49.5px;
     width: fit-content;
     border: none;
     font-size: 25px;
     cursor: pointer;
-    margin: 20px 0;
 }
 
 #categorys button:hover {
@@ -616,6 +631,25 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
 
 #categorys span {
     font-size: 17px;
+}
+
+#imitate-search {
+    margin: 10px 0;
+    width: 100%;
+    padding: 0;
+}
+
+#imitatelists {
+    margin-top: 20px;
+}
+
+#imitatelists div {
+    margin: 5px 0;
+}
+
+.fa-trash-alt {
+    margin-left: 5px;
+    cursor: pointer;
 }
 
 /* トースト */

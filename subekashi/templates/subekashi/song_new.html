@@ -8,90 +8,90 @@
 
 {% block content %}
 <section>
-    <h1>YouTubeのリンクから登録</h1>
+    <details>
+        <summary>曲の登録/編集にあたっての注意（クリックして展開）</summary>
+        <p>界隈曲ならすべあな界隈以外の曲も登録ができます。</p>
+        <p>それ以外の曲は掲載対象ではない為、削除されることがあります。</p>
+        <p>大文字・小文字・空白文字は全て区別されます。</p>
+        <p>登録時にエラーが発生した場合は<a href="{% url 'subekashi:contact' %}">こちら</a>からご連絡ください。</p>
+        <p>荒らしに対しては削除・BAN・法的措置といった対処をする場合があります。</p>
+    </details>
+
+    <h1>YouTubeの動画リンクから登録<i class="fas fa-info-circle" onclick="showTutorial('new-form-auto')"></i></h1>
     <div class="underline"></div>
     <form action="{% url 'subekashi:song_new' %}" method="POST" id="new-form-auto">{% csrf_token %}
         <div class="form-col">
-            <label class="required" for="url"><i class="fab fa-youtube"></i>リンク</label>
-            <input type="url" id="url" name="url" value="{{ request.GET.url }}">
+            <label for="url">YouTubeの<br>動画リンク<i class="fas fa-info-circle" onclick="showTutorial('')"></i></label>
+            <input type="url" id="url" name="url" value="{{ request.GET.url }}" required>
         </div>
-        <div id="checkboxs">
-            <div class="checkbox-col">
-                <input type="checkbox" id="is-original-auto" name="is-original-auto">
-                <label for="is-original-auto">オリジナル模倣</label>
-            </div>
-            <div class="checkbox-col">
-                <input type="checkbox" id="is-deleted-auto" name="is-deleted-auto">
-                <label for="is-deleted-auto">非公開/削除済み</label>
-            </div>
-            <div class="checkbox-col">
-                <input type="checkbox" id="is-joke-auto" name="is-joke-auto">
-                <label for="is-joke-auto">ネタ曲</label>
-            </div>
-            <div class="checkbox-col">
-                <input type="checkbox" id="is-inst-auto" name="is-inst-auto">
-                <label for="is-inst-auto">インスト</label>
-            </div>
-            <div class="checkbox-col">
-                <input type="checkbox" id="is-subeana-auto" name="is-subeana-auto" checked>
-                <label for="is-subeana-auto">すべあな界隈曲</label>
-            </div>
+        <div class="checkbox-col">
+            <input type="checkbox" id="is-original-auto" name="is-original-auto">
+            <label for="is-original-auto">オリジナル模倣</label>
+            <i class="fas fa-info-circle" onclick="showTutorial('')"></i>
+        </div>
+        <div class="checkbox-col">
+            <input type="checkbox" id="is-deleted-auto" name="is-deleted-auto">
+            <label for="is-deleted-auto">非公開/削除済み</label>
+            <i class="fas fa-info-circle" onclick="showTutorial('')"></i>
+        </div>
+        <div class="checkbox-col">
+            <input type="checkbox" id="is-joke-auto" name="is-joke-auto">
+            <label for="is-joke-auto">ネタ曲</label>
+            <i class="fas fa-info-circle" onclick="showTutorial('')"></i>
+        </div>
+        <div class="checkbox-col">
+            <input type="checkbox" id="is-inst-auto" name="is-inst-auto">
+            <label for="is-inst-auto">インスト</label>
+            <i class="fas fa-info-circle" onclick="showTutorial('')"></i>
+        </div>
+        <div class="checkbox-col">
+            <input type="checkbox" id="is-subeana-auto" name="is-subeana-auto" checked>
+            <label for="is-subeana-auto">すべあな界隈曲</label>
+            <i class="fas fa-info-circle" onclick="showTutorial('')"></i>
         </div>
         <input type="submit" value="登録" id="new-submit-auto" disabled>
-        <p><span class="error">*</span>は入力必須項目です。</p>
     </form>
-        
-    <h1>曲名とチャンネル名から登録</h1>
+    
+    <h1>曲名とチャンネル名から登録<i class="fas fa-info-circle" onclick="showTutorial('')"></i></h1>
     <div class="underline"></div>
     <form action="{% url 'subekashi:song_new' %}" method="POST" id="new-form-manual">{% csrf_token %}
         <div class="form-col">
-            <label class="required" for="title">曲名</label>
+            <label for="title">曲名<i class="fas fa-info-circle" onclick="showTutorial('')"></i></label>
             <input type="text" id="title" name="title" class="sansfont" value="{{ request.GET.title }}" required>
         </div>
         <div class="form-col">
-            <label class="required" for="channel">チャンネル名</label>
+            <label for="channel">チャンネル名<i class="fas fa-info-circle" onclick="showTutorial('')"></i></label>
             <input type="text" id="channel" name="channel" class="sansfont" value="{{ request.GET.channel }}" required>
         </div>
-        <div id="checkboxs">
-            <div class="checkbox-col">
-                <input type="checkbox" id="is-original-manual" name="is-original-manual">
-                <label for="is-original-manual">オリジナル模倣</label>
-            </div>
-            <div class="checkbox-col">
-                <input type="checkbox" id="is-deleted-manual" name="is-deleted-manual">
-                <label for="is-deleted-manual">非公開/削除済み</label>
-            </div>
-            <div class="checkbox-col">
-                <input type="checkbox" id="is-joke-manual" name="is-joke-manual">
-                <label for="is-joke-manual">ネタ曲</label>
-            </div>
-            <div class="checkbox-col">
-                <input type="checkbox" id="is-inst-manual" name="is-inst-manual">
-                <label for="is-inst-manual">インスト</label>
-            </div>
-            <div class="checkbox-col">
-                <input type="checkbox" id="is-subeana-manual" name="is-subeana-manual" checked>
-                <label for="is-subeana-manual">すべあな界隈曲</label>
-            </div>
+        <div class="checkbox-col">
+            <input type="checkbox" id="is-original-manual" name="is-original-manual">
+            <label for="is-original-manual">オリジナル模倣</label>
+            <i class="fas fa-info-circle" onclick="showTutorial('')"></i>
+        </div>
+        <div class="checkbox-col">
+            <input type="checkbox" id="is-deleted-manual" name="is-deleted-manual">
+            <label for="is-deleted-manual">非公開/削除済み</label>
+            <i class="fas fa-info-circle" onclick="showTutorial('')"></i>
+        </div>
+        <div class="checkbox-col">
+            <input type="checkbox" id="is-joke-manual" name="is-joke-manual">
+            <label for="is-joke-manual">ネタ曲</label>
+            <i class="fas fa-info-circle" onclick="showTutorial('')"></i>
+        </div>
+        <div class="checkbox-col">
+            <input type="checkbox" id="is-inst-manual" name="is-inst-manual">
+            <label for="is-inst-manual">インスト</label>
+            <i class="fas fa-info-circle" onclick="showTutorial('')"></i>
+        </div>
+        <div class="checkbox-col">
+            <input type="checkbox" id="is-subeana-manual" name="is-subeana-manual" checked>
+            <label for="is-subeana-manual">すべあな界隈曲</label>
+            <i class="fas fa-info-circle" onclick="showTutorial('')"></i>
         </div>
         <input type="submit" value="登録" id="new-submit-manual" >
-        <p><span class="error">*</span>は入力必須項目です。</p>
     </form>
 
     {% comment %} TODO blogにまとめる {% endcomment %}
-    <details>
-        <summary>フォームの使い方と注意（クリックして展開）</summary>
-        <h2>概要</h2>
-        <ul>
-            <li>このフォームで界隈曲を登録や編集ができます。</li>
-            <li>*がついているラベルは入力が必須です。</li>
-            <li>大文字・小文字・空白文字は全て区別されます。</li>
-            <li>界隈曲ならすべあな界隈以外の曲も登録ができます。</li>
-            <li>それ以外の曲の情報は削除されることがあります。</li>
-            <li>界隈曲にも関わらず曲の情報が削除された場合は、<a href="{% url 'subekashi:contact' %}">こちら</a>からご連絡ください。</li>
-            <li>稀に登録時にエラーが発生することがありますので、発生した場合は<a href="{% url 'subekashi:contact' %}">こちら</a>からご連絡ください。</li>
-            <li>荒らしに対しては削除・IP BAN・法的措置といった、対処をする場合があります。</li>
-        </ul>
         <h2>曲名</h2>
         <ul>
             <li>曲名を入力してください。</li>
@@ -171,7 +171,7 @@
             <li>実際に削除の対応をするまでに時間がかかる場合があります。</li>
         </ul>
     </details>
-    <p class="detailP">最終更新日：2023年9月25日</p>
+    <p class="detailP">最終更新日：2025年2月17日</p>
 
     <h1>???から登録</h1>
     <div class="underline"></div>
@@ -180,5 +180,5 @@
 {% endblock %}
 
 {% block js %}
-<script defer src="{% static 'subekashi/js/new.js' %}?{% get_last_modified %}"></script>
+<script defer src="{% static 'subekashi/js/song_new.js' %}?{% get_last_modified %}"></script>
 {% endblock %}

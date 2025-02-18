@@ -111,7 +111,6 @@ function appendImitate(song) {
             ${ song.title }
             <span class='deleteSong' onclick="deleteImitate(${ song.id })">
                 <i class='far fa-trash-alt'></i>
-                <a>削除</a>
             </span>
         </p>
     </div>

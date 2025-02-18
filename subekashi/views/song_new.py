@@ -10,7 +10,7 @@ from subekashi.lib.youtube import *
 
 def song_new(request) :
     dataD = {
-        "metatitle": "登録と編集",
+        "metatitle": "曲の登録",
     }
 
     if request.method == "POST":
