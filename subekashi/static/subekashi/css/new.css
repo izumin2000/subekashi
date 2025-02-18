@@ -1,34 +1,15 @@
 details {
-    margin-top: 50px;
+    text-align: center;
 }
 
-details h2 {
-    margin: 20px 0 10px 0;
+details p {
+    margin: 15px 0;
 }
 
-details ul li {
-    margin: 0 0 10px 25px;
-}
-
-details ul ul {
-    margin-left: 40px;
-}
-
-.detailP {
-    font-size: 15px;
-}
-
-#newform {
-    margin: 20px 0;
-}
-
-#isExist {
-    margin: 20px 0;
-}
-
-#fillFormButton {
-    display: none;
-    width: 100%;
+h1 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 @media (max-width: 640px) {
@@ -48,30 +29,4 @@ details ul ul {
         display: block;
         text-align: center;
     }
-}
-
-#imitate-search {
-    margin: 5px 0 10px 0;
-    padding: 0;
-    width: 100%;
-}
-
-#imitatelists {
-    margin: 10px 0 0 10px;
-}
-
-.imitatelist {
-    display: inline-block;
-    background-color: #666;
-    padding: 10px;
-}
-
-.deleteSong {
-    margin-left: 15px;
-    color: #aaa;
-    cursor: pointer;
-}
-
-#checkboxs {
-    margin: 20px 0 20px -20px;
 }

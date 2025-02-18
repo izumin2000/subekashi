@@ -428,7 +428,7 @@ label {
     position: relative;
     display: inline-block;
     cursor: pointer;
-    margin-right: 10px;
+    text-align: center;
 }
 
 .required::after {
@@ -460,7 +460,13 @@ input:focus {
 }
 
 .checkbox-col {
-    display: inline-block;
+    display: block;
+    text-align: center;
+    margin: 5px 0;
+}
+
+.checkbox-col label {
+    width: 12rem;
 }
 
 input[type=checkbox] {
@@ -492,6 +498,10 @@ textarea {
     .checkbox-col {
         display: block;
     }
+    
+    input {
+        width: 92%;
+    }
 }
 
 input[type=submit], button {
@@ -502,6 +512,15 @@ input[type=submit], button {
     cursor: pointer;
     margin: 20px 0;
     font-family: 'Imitate', 'Noto Sans JP',  'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif, Meiryo;
+}
+
+.fa-info-circle {
+    margin-left: 10px;
+    cursor: pointer;
+}
+
+.checkbox-col .fa-info-circle {
+    margin-left: 0px;
 }
 
 .dummybuttons {
