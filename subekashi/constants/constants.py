@@ -7,47 +7,42 @@ MAX_ID = 9223372036854775807
 ASIDE_PAGES = [
     {
         "url": "subekashi:top",
-        "icon": "fas fa-home",
-        "name": "トップ"
+        "name": "トップ",
+        "icon": "fas fa-home"
     },
     {
         "url": "subekashi:song_new",
-        "icon": "fa fa-plus",
-        "name": "新規登録"
+        "name": "新規登録",
+        "icon": "fa fa-plus"
     },
     {
         "url": "subekashi:search",
-        "icon": "fas fa-search",
-        "name": "検索"
+        "name": "検索",
+        "icon": "fas fa-search"
     },
     {
         "url": "subekashi:ai",
-        "icon": "fa fa-robot",
-        "name": "歌詞生成"
+        "name": "歌詞生成",
+        "icon": "fa fa-robot"
     },
     {
         "url": "subekashi:ad",
-        "icon": "fas fa-bullhorn",
-        "name": "宣伝"
+        "name": "宣伝",
+        "icon": "fas fa-bullhorn"
     },
     {
         "url": "subekashi:special",
-        "icon": "far fa-star",
-        "name": "スペシャル"
+        "name": "スペシャル",
+        "icon": "far fa-star"
     },
     {
         "url": "subekashi:contact",
-        "icon": "fas fa-envelope",
-        "name": "お問い合わせ"
+        "name": "お問い合わせ",
+        "icon": "fas fa-envelope"
     },
     {
         "url": "subekashi:setting",
-        "icon": "fas fa-cog",
-        "name": "設定"
+        "name": "設定",
+        "icon": "fas fa-cog"
     }
-]
-
-# TODO urls.pyを参考にページを追加する
-PAGES = ASIDE_PAGES + [
-    
 ]
