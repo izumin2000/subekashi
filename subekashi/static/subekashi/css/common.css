@@ -161,15 +161,30 @@ aside:hover {
     width: 7.5em
 }
 
+aside table {
+    border: 0px none;
+    width: 100%;
+    border-spacing: 0;
+}
+
+aside td {
+    padding: 2px 0;
+}
+
+aside tr:hover {
+    background-color: #ffffff33;
+}
+
+aside tr td:nth-child(1) i {
+    display: inline-block;
+    width: 20px;
+    text-align: center;
+}
+
 aside a {
     display: block;
     white-space: nowrap;
-    margin: 5px 0;
     text-decoration: none;
-}
-
-aside a:hover {
-    background-color: #ffffff33;
 }
 
 aside i {
@@ -193,7 +208,7 @@ aside:hover p {
     opacity: 1;
 }
 
-aside p:hover {
+aside a:hover p {
     text-decoration: underline 2px #fff;
 }
 
@@ -319,10 +334,6 @@ aside p:hover {
 }
 
 /* 基礎 */
-main {
-    margin-top: 40px;
-}
-
 #mainarticle {
     margin: 30px auto 0 auto;
     max-width: 800px;
