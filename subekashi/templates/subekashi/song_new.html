@@ -2,7 +2,6 @@
 
 
 {% load static %}
-{% load last_modified %}
 {% load categorys %}
 {% block css %}{% static 'subekashi/css/song_new.css'%}{% endblock %}
 
@@ -97,5 +96,5 @@
 {% endblock %}
 
 {% block js %}
-<script defer src="{% static 'subekashi/js/song_new.js' %}?{% get_last_modified %}"></script>
+<script defer src="{% static 'subekashi/js/song_new.js' %}?{{ version }}"></script>
 {% endblock %}

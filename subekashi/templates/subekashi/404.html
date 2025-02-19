@@ -1,8 +1,6 @@
 {% extends "subekashi/base/base.html" %}
 
-
 {% load static %}
-{% load last_modified %}
 {% block css %}{% static 'subekashi/css/error.css'%}{% endblock %}
 
 {% block content %}
@@ -22,5 +20,5 @@
 {% endblock %}
 
 {% block js %}
-    <script defer src="{% static 'subekashi/js/error.js' %}?{% get_last_modified %}" rel="stylesheet"></script>
+    <script defer src="{% static 'subekashi/js/error.js' %}?{{ version }}" rel="stylesheet"></script>
 {% endblock %}

@@ -1,5 +1,4 @@
 {% load static %}
-{% load last_modified %}
 
 <div id="footer-wrapper">
     <footer>
@@ -7,7 +6,7 @@
             当サイトは非公式です。
             <span id="version">
                 <i class="fa fa-history"></i>
-                {% get_last_modified %}
+                {{ version }}
             </span>
             <a href="https://github.com/izumin2000/subekashi" target="_blank"><i class="fab fa-github"></i>GitHub</a>
         </p>
