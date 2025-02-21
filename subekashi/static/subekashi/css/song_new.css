@@ -3,3 +3,13 @@ h1 {
     align-items: center;
     justify-content: center;
 }
+
+#new-form-auto-info {
+    text-align: center;
+    min-height: 32px;
+}
+
+#new-form-auto-info a {
+    color: #B60;
+    text-decoration: underline 2px #B60;
+}
