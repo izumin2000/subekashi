@@ -24,27 +24,27 @@
             <input type="url" id="url" name="url" value="{{ request.GET.url }}" required>
         </div>
         <div class="checkbox-col">
-            <input type="checkbox" id="is-original-auto" name="is-original-auto">
+            <input type="checkbox" id="is-original-auto" name="is-original-auto" data-sync="original">
             <label for="is-original-auto">オリジナル模倣</label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-original')"></i>
         </div>
         <div class="checkbox-col">
-            <input type="checkbox" id="is-deleted-auto" name="is-deleted-auto">
+            <input type="checkbox" id="is-deleted-auto" name="is-deleted-auto" data-sync="deleted">
             <label for="is-deleted-auto">非公開/削除済み</label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-deleted')"></i>
         </div>
         <div class="checkbox-col">
-            <input type="checkbox" id="is-joke-auto" name="is-joke-auto">
+            <input type="checkbox" id="is-joke-auto" name="is-joke-auto" data-sync="joke">
             <label for="is-joke-auto">ネタ曲</label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-joke')"></i>
         </div>
         <div class="checkbox-col">
-            <input type="checkbox" id="is-inst-auto" name="is-inst-auto">
+            <input type="checkbox" id="is-inst-auto" name="is-inst-auto" data-sync="inst">
             <label for="is-inst-auto">インスト</label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-inst')"></i>
         </div>
         <div class="checkbox-col">
-            <input type="checkbox" id="is-subeana-auto" name="is-subeana-auto" checked>
+            <input type="checkbox" id="is-subeana-auto" name="is-subeana-auto" data-sync="subeana" checked>
             <label for="is-subeana-auto">すべあな界隈曲</label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-subeana')"></i>
         </div>
@@ -64,27 +64,27 @@
             <input type="text" id="channel" name="channel" class="sansfont" value="{{ request.GET.channel }}" required>
         </div>
         <div class="checkbox-col">
-            <input type="checkbox" id="is-original-manual" name="is-original-manual">
+            <input type="checkbox" id="is-original-manual" name="is-original-manual" data-sync="original">
             <label for="is-original-manual">オリジナル模倣</label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-original')"></i>
         </div>
         <div class="checkbox-col">
-            <input type="checkbox" id="is-deleted-manual" name="is-deleted-manual">
+            <input type="checkbox" id="is-deleted-manual" name="is-deleted-manual" data-sync="deleted">
             <label for="is-deleted-manual">非公開/削除済み</label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-deleted')"></i>
         </div>
         <div class="checkbox-col">
-            <input type="checkbox" id="is-joke-manual" name="is-joke-manual">
+            <input type="checkbox" id="is-joke-manual" name="is-joke-manual" data-sync="joke">
             <label for="is-joke-manual">ネタ曲</label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-joke')"></i>
         </div>
         <div class="checkbox-col">
-            <input type="checkbox" id="is-inst-manual" name="is-inst-manual">
+            <input type="checkbox" id="is-inst-manual" name="is-inst-manual" data-sync="inst">
             <label for="is-inst-manual">インスト</label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-inst')"></i>
         </div>
         <div class="checkbox-col">
-            <input type="checkbox" id="is-subeana-manual" name="is-subeana-manual" checked>
+            <input type="checkbox" id="is-subeana-manual" name="is-subeana-manual" data-sync="subeana" checked>
             <label for="is-subeana-manual">すべあな界隈曲</label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-subeana')"></i>
         </div>

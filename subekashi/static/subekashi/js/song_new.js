@@ -16,11 +16,21 @@ window.addEventListener('load', async function () {
     songJson = await getJson("song");
 });
 
-
+// チュートリアルトーストの表示
 function showTutorial(place) {
     const tutorial = TUTORIALS[place];
     showToast("info", tutorial);
 }
+
+// チェックボックスの同期
+document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const syncGroup = this.getAttribute('data-sync');
+        document.querySelectorAll(`input[data-sync="${syncGroup}"]`).forEach(cb => {
+            cb.checked = this.checked;
+        });
+    });
+});
 
 // URL入力フォームの入力チェック
 const urlEle = document.getElementById('url');
