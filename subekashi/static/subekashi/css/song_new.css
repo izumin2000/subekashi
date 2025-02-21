@@ -4,7 +4,7 @@ h1 {
     justify-content: center;
 }
 
-#new-form-auto-info {
+#new-form-auto-info, #new-form-manual-info {
     text-align: center;
     min-height: 32px;
 }
@@ -12,4 +12,9 @@ h1 {
 #new-form-auto-info a {
     color: #B60;
     text-decoration: underline 2px #B60;
+}
+
+#new-form-manual-info a {
+    color: #990;
+    text-decoration: underline 2px #990;
 }
