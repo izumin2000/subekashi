@@ -6,6 +6,7 @@ from subekashi.lib.url import *
 from subekashi.lib.ip import *
 from subekashi.lib.discord import *
 from subekashi.lib.youtube import *
+from subekashi.lib.search import song_search
 
 
 def song_new(request) :
@@ -23,13 +24,29 @@ def song_new(request) :
         is_inst = bool(request.POST.get("is-inst-auto"))
         is_subeana = bool(request.POST.get("is-subeana-auto"))
         
+        # YouTube APIから情報取得
         yt_res = {}
         if is_yt_url(url) :
             yt_id = format_yt_url(url, id=True)
             yt_res = get_youtube_api(yt_id)
             title = yt_res.get("title", "")
             channel = yt_res.get("channel", "")
+            
+        # URLがYouTubeのURLでない場合はエラー
+        if not is_yt_url(url) and url:
+            return render(request, "subekashi/500.html", status=500)
         
+        # URLが複数ならエラー
+        if "," in url:
+            return render(request, "subekashi/500.html", status=500)
+        
+        # 既に登録されているURLの場合はエラー
+        cleaned_url = clean_url(url)
+        song_qs, _ = song_search({"url": cleaned_url})
+        if song_qs.exists() and url:
+            return render(request, "subekashi/500.html", status=500)
+        
+        # タイトルとチャンネルが空の場合はエラー
         if ("" in [title, channel]) :
             return render(request, "subekashi/500.html", status=500)
         
