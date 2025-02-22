@@ -47,6 +47,13 @@ urlEle.addEventListener('input', function () {
         return;
     }
 
+    // URLが複数の場合
+    if (inputUrlEle.includes(",")) {
+        newFormAutoInfoEle.innerHTML = "<span class='error'>複数のURLを入力することはできません</span>";
+        newSubmitAutoEle.disabled = true;
+        return;
+    }
+
     // URLがYouTubeのURLでない場合
     if (videoId === null) {
         newFormAutoInfoEle.innerHTML = "<span class='error'>YouTubeの動画URLを入力してください</span>";
@@ -59,7 +66,7 @@ urlEle.addEventListener('input', function () {
     // 既に登録されているURLの場合
     if (existingSong) {
         newFormAutoInfoEle.innerHTML = `<span class='error'>このURLは<br>
-        song ID：${existingSong.id}<br>
+        song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
         タイトル：${existingSong.title}<br>
         チャンネル名：${existingSong.channel}<br>
         として<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">既に登録されています</a></span>`;
