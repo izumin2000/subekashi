@@ -50,15 +50,14 @@ def song_new(request) :
         if ("" in [title, channel]) :
             return render(request, "subekashi/500.html", status=500)
         
-        channel_cleand = channel.replace("/", "╱")
-        # TODO urlがURL_ICONにあるかのセキュリティチェック
-        url = clean_url(url)
+        cleand_channel = channel.replace("/", "╱")
+        # TODO cleaned_urlがURL_ICONにあるかのセキュリティチェック
         ip = get_ip(request)
         
         song_obj = Song(
             title = title,
-            channel = channel_cleand,
-            url = url,
+            channel = cleand_channel,
+            url = cleaned_url,
             post_time = timezone.now(),
             isoriginal = is_original,
             isdeleted = is_deleted,
@@ -75,10 +74,11 @@ def song_new(request) :
         song_id = song_obj.id
         
         content = f'\n\
+        新規作成されました\n\
         {ROOT_URL}/songs/{song_id}\n\
         タイトル：{title}\n\
-        チャンネル : {channel_cleand}\n\
-        URL : {url}\n\
+        チャンネル : {cleand_channel}\n\
+        URL : {cleaned_url}\n\
         ネタ曲 : {"Yes" if is_joke else "False"}\n\
         すべあな模倣曲 : {"Yes" if is_subeana else "False"}\n\
         IP : {ip}```'
