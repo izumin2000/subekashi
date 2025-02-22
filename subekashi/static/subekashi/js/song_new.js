@@ -1,7 +1,9 @@
+// 初期化
 var songJson;
-window.addEventListener('load', async function () {
+async function init() {
     songJson = await getJson("song");
-});
+};
+window.addEventListener('load', init);
 
 // チェックボックスの同期
 document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
@@ -15,7 +17,7 @@ document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
 
 // URL入力フォームの入力チェック
 const urlEle = document.getElementById('url');
-urlEle.addEventListener('input', function () {
+function checkAutoForm() {
     const newSubmitAutoEle = document.getElementById('new-submit-auto');
     const newFormAutoInfoEle = document.getElementById('new-form-auto-info');
     const inputUrlEle = urlEle.value;
@@ -60,7 +62,9 @@ urlEle.addEventListener('input', function () {
     newSubmitAutoEle.disabled = false;
 
     newSubmitAutoEle.disabled = urlEle.value == '';
-});
+};
+
+urlEle.addEventListener('input', checkAutoForm)
 
 // タイトル・チャンネル名入力フォームの入力チェック
 var channelEle = document.getElementById('channel');
@@ -110,3 +114,10 @@ function checkManualForm() {
 
 channelEle.addEventListener('input', checkManualForm);
 titleEle.addEventListener('input', checkManualForm);
+
+// ページから戻ってきたときの処理
+window.addEventListener("pageshow", function () {
+    init();
+    checkAutoForm();
+    checkManualForm();
+});
