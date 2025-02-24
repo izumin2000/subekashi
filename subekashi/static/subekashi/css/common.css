@@ -374,6 +374,7 @@ a {
 
 .text-label {
     display: inline-block;
+    text-align: center;
     width: 7em;
     margin-bottom: 15px;
 }
@@ -652,11 +653,11 @@ input::placeholder {
     padding: 0;
 }
 
-#imitatelists {
+#imitatelist {
     margin-top: 20px;
 }
 
-#imitatelists div {
+#imitatelist div {
     margin: 5px 0;
 }
 
