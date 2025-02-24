@@ -16,10 +16,12 @@
     <h1>{{ metatitle }}</h1>
     <div class="underline"></div>
     <form action="{% url 'subekashi:song_edit' song.id %}" method="POST" id="song-edit-form">{% csrf_token %}
+        {% comment %} TODO 別名の入力項目を追加 {% endcomment %}
         <div class="form-col">
             <label for="title">曲名<i class="fas fa-info-circle" onclick="showTutorial('title')"></i></label>
             <input type="text" id="title" name="title" class="sansfont" value="{{ song.title }}" required>
         </div>
+        {% comment %} TODO チャンネルを複数入力化 {% endcomment %}
         <div class="form-col">
             <label for="channel">チャンネル名<i class="fas fa-info-circle" onclick="showTutorial('channel')"></i></label>
             <input type="text" id="channel" name="channel" class="sansfont" value="{{ song.channel }}" required>
@@ -35,7 +37,7 @@
             {% render_categorys %}
             <p id="imitate-sub">もしくは模倣曲から選択</p>
             <input type="text" id="imitate-title" class="sansfont" oninput="renderSongGuesser()" placeholder="タイトルかチャンネル名を入力">
-            <div class="dummybutton" id="imitate-search" onclick="renderSongGuesser()"><p>最新の情報を取得</p></div>
+            <div class="dummybutton" id="imitate-search" onclick="renderSongGuesser()"><p>最新の情報を取得して検索</p></div>
             <div id="song-guesser" class="sansfont"></div>
             <div id="imitate-list"></div>
             <input type="text" id="imitate" name="imitate" value="{{ song.imitate }}" hidden>
