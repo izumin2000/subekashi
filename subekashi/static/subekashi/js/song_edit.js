@@ -1,9 +1,10 @@
-var songJson, imitateList = [], songGuesserController;
+var songJson, imitateList = [], songGuesserController, song_id;
 
 // 初期化
 var songJson;
 async function init() {
     songJson = await getJson("song");
+    song_id = window.location.pathname.split("/")[2];
 };
 window.addEventListener('load', init);
 
@@ -135,7 +136,21 @@ function checkUrlForm() {
             isUrlValid = false;
             return;
         }
-    }    
+
+        const existingSong = songJson.find(song => (song.url.includes(url)) && (song.id != song_id));
+        // 既に登録されているURLの場合
+        if (existingSong) {
+            songEditInfoUrlEle.innerHTML = `<span class='error'>このURLは<br>
+            song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
+            タイトル：${existingSong.title}<br>
+            チャンネル名：${existingSong.channel}<br>
+            として<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">既に登録されています</a><br>
+            この記事を削除したい場合は、<a href="${baseURL()}/songs/${song_id}/delete?reason=song ID：${existingSong.id}と被っています。" target="_blank">こちら</a>をクリックしてください。
+            </span>`;
+            isUrlValid = false;
+            return;
+        }
+    }
     isUrlValid = true;
     songEditInfoUrlEle.innerHTML = "";
 }

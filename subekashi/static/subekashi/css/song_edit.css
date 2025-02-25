@@ -8,7 +8,12 @@
     margin-bottom: 20px
 }
 
-.song-edit-info a {
+#song-edit-info-title-channel a {
     color: #990;
     text-decoration: underline 2px #990;
+}
+
+#song-edit-info-url a {
+    color: #B60;
+    text-decoration: underline 2px #B60;
 }
