@@ -5,6 +5,7 @@
 
 .song-edit-info {
     text-align: center;
+    min-height: 32px;
     margin-bottom: 20px
 }
 

@@ -26,13 +26,13 @@
             <label for="channel">チャンネル名<i class="fas fa-info-circle" onclick="showTutorial('channel')"></i></label>
             <input type="text" id="channel" name="channel" class="sansfont" value="{{ song.channel }}" required>
         </div>
-        <p class="song-edit-info" id="song-edit-info-title-channel"></p>
+        <p class="song-edit-info" id="song-edit-info-title-channel"><img id='loading' src="{% static 'subekashi/image/loading.gif' %}" alt='loading'></img></p>
         {% comment %} TODO URLを複数入力形式に {% endcomment %}
         <div class="form-col">
             <label for="url">URL<br>(複数可)<i class="fas fa-info-circle" onclick="showTutorial('url')"></i></label>
             <input type="text" id="url" name="url" value="{{ song.url }}">
         </div>
-        <p class="song-edit-info" id="song-edit-info-url"></p>
+        <p class="song-edit-info" id="song-edit-info-url"><img id='loading' src="{% static 'subekashi/image/loading.gif' %}" alt='loading'></img></p>
         <label id="imitate-label">模倣<i class="fas fa-info-circle" onclick="showTutorial('imitate')"></i></label>
         <div id="imitate-div">
             <p>原曲から選択</p>

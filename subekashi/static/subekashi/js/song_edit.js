@@ -5,6 +5,8 @@ var songJson;
 async function init() {
     songJson = await getJson("song");
     song_id = window.location.pathname.split("/")[2];
+    checkTitleChannelForm();
+    checkUrlForm();
 };
 window.addEventListener('load', init);
 
@@ -83,7 +85,23 @@ function checkTitleChannelForm() {
 
     // タイトルとチャンネル名が空の場合
     if (titleEle.value === '' || channelEle.value === '') {
-        songEditInfoTitleChannelEle.innerHTML = "<span class='error'>タイトルとチャンネル名を入力してください</span>";
+        songEditInfoTitleChannelEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>タイトルとチャンネル名を入力してください</span>";
+        isTitleChannelValid = false;
+        return;
+    }
+
+    // タイトルにスペースが含まれている場合
+    if (titleEle.value != titleEle.value.trim()) {
+        songEditInfoTitleChannelEle.innerHTML = `<span class="info"><i class='fas fa-info-circle info'></i>タイトルにスペースが含まれています。<br>意図して入力していない場合、削除してください。</span>`;
+    }
+
+    // チャンネル名にスペースが含まれている場合
+    if (channelEle.value != channelEle.value.trim()) {
+        songEditInfoTitleChannelEle.innerHTML = `<span class="info"><i class='fas fa-info-circle info'></i>チャンネル名にスペースが含まれています。<br>意図して入力していない場合、削除してください。</span>`;
+    }
+
+    // 読み込み中なら
+    if (!songJson) {
         isTitleChannelValid = false;
         return;
     }
@@ -95,7 +113,7 @@ function checkTitleChannelForm() {
         const isMultipleSongURL = existingSong.url.includes(',');
         const existingSongURL = isMultipleSongURL ? existingSong.url.split(",")[0] : existingSong.url;
 
-        songEditInfoTitleChannelEle.innerHTML = `<span class="warning">
+        songEditInfoTitleChannelEle.innerHTML = `<span class="warning"><i class="fas fa-exclamation-triangle warning"></i>
         タイトル・チャンネル名ともに一致している曲が<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">見つかりました。</a><br>
         song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
         登録されているURL：<a href="${existingSongURL}" target="_blank">${existingSongURL}</a>${isMultipleSongURL ? 'など' : ''}<br>
@@ -104,16 +122,6 @@ function checkTitleChannelForm() {
         </span>`;
         isTitleChannelValid = false;
         return;
-    }
-
-    // タイトルにスペースが含まれている場合
-    if (titleEle.value != titleEle.value.trim()) {
-        songEditInfoTitleChannelEle.innerHTML = `<span class="info">タイトルにスペースが含まれています。<br>意図して入力していない場合、削除してください。</span>`;
-    }
-
-    // チャンネル名にスペースが含まれている場合
-    if (channelEle.value != channelEle.value.trim()) {
-        songEditInfoTitleChannelEle.innerHTML = `<span class="info">チャンネル名にスペースが含まれています。<br>意図して入力していない場合、削除してください。</span>`;
     }
 
     // タイトルとチャンネル名が入力されている場合
@@ -140,7 +148,7 @@ function checkUrlForm() {
         const existingSong = songJson.find(song => (song.url.includes(url)) && (song.id != song_id));
         // 既に登録されているURLの場合
         if (existingSong) {
-            songEditInfoUrlEle.innerHTML = `<span class='error'>このURLは<br>
+            songEditInfoUrlEle.innerHTML = `<span class='error'><i class='fas fa-ban error'></i>このURLは<br>
             song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
             タイトル：${existingSong.title}<br>
             チャンネル名：${existingSong.channel}<br>
@@ -152,7 +160,7 @@ function checkUrlForm() {
         }
     }
     isUrlValid = true;
-    songEditInfoUrlEle.innerHTML = "";
+    songEditInfoUrlEle.innerHTML = "<span class='ok'><i class='fas fa-check-circle ok'></i>登録可能な状態です</span>";
 }
 urlEle.addEventListener('input', checkUrlForm);
 
