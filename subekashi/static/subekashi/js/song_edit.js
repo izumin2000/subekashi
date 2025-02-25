@@ -12,15 +12,15 @@ async function init() {
 window.addEventListener('load', init);
 
 // ビューに渡すimitateカラムの値を#imitateにセット
+var imitateEle = document.getElementById("imitate");
 function setImitate() {
-    imitateEle = document.getElementById("imitate");
     imitateEle.value = imitateList.join();
+    checkButton();
 }
 
 // 模倣一覧からimitateIdを削除
 function deleteImitate(imitateId) {
-    imitateEle = document.getElementById(`imitate-${imitateId}`);
-    imitateEle.remove();
+    document.getElementById(`imitate-${imitateId}`).remove();
     imitateList = imitateList.filter(id => id != imitateId);        // imitateListからimitateIdを削除
     setImitate();       // imitateListの内容を#imitateにセット
 }
@@ -28,7 +28,7 @@ function deleteImitate(imitateId) {
 // 模倣一覧にsongを追加
 function appendImitate(song) {
     // #imitate-listにsongの情報を追加
-    imitateStr = `
+    const imitateStr = `
     <div id="imitate-${ song.id }">
         <p>
             <span class='channel'>
@@ -44,7 +44,7 @@ function appendImitate(song) {
     </div>
     `
 
-    imitateListEle = document.getElementById('imitate-list');
+    var imitateListEle = document.getElementById('imitate-list');
     imitateListEle.appendChild(stringToHTML(imitateStr));
 
     imitateList.push(song.id);      // imitateListにsong.idを追加
@@ -64,7 +64,7 @@ function renderSongGuesser() {
     }
 
     songGuesserController = new AbortController();
-    imitateTitle = document.getElementById("imitate-title").value;
+    var imitateTitle = document.getElementById("imitate-title").value;
     getSongGuessers(imitateTitle, "song-guesser", songGuesserController.signal);
 }
 
@@ -177,13 +177,42 @@ function checkUrlForm() {
 urlEle.addEventListener('input', checkUrlForm);
 
 // 登録ボタン
+const lyricsEle = document.getElementById("lyrics")
 function checkButton() {
+    // ボタンのdisabledの変更
     const songEditSubmitEle = document.getElementById('song-edit-submit');
     songEditSubmitEle.disabled = !(isTitleChannelValid && isUrlValid)
+
+    // 未完成に関する変数の定義
+    var message = "";
+    var is_lack = false;
+    
+    // URLの未完成
+    if (!document.getElementById("is-deleted").checked && (urlEle.value == "")) {
+        message += "<li>「非公開/削除済み」にチェックをつけるか、URLを入力してください。</li>"
+        is_lack = true;
+    }
+    
+    // 模倣の未完成
+    if (!document.getElementById("is-original").checked && (imitateEle.value == "")) {
+        message += "<li>「オリジナル模倣」にチェックをつけるか、模倣曲を1曲以上登録してください。</li>"
+        is_lack = true;
+    }
+
+    // 歌詞の未完成
+    if (!document.getElementById("is-inst").checked && (lyricsEle.value == "")) {
+        message += "<li>「インスト」にチェックをつけるか、歌詞を入力してください。</li>"
+        is_lack = true;
+    }
+    
+    // 登録ボタンの下のメッセージ
+    document.getElementById('song-edit-info-submit').innerHTML = is_lack ? `<span class='info'>
+    <i class='fas fa-info-circle info'></i>
+    記事を完成させるためには、以下の入力を行ってください。<ul>${message}</ul>
+    </span>` : ``;
 }
-channelEle.addEventListener('input', checkButton);
-titleEle.addEventListener('input', checkButton);
-urlEle.addEventListener('input', checkButton);
+document.querySelectorAll('input, textarea').forEach(input => input.addEventListener('input', checkButton));
+
 
 
 // フォームに変更があったかを検知

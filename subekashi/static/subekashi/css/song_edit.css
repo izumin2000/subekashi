@@ -18,3 +18,11 @@
     color: #B60;
     text-decoration: underline 2px #B60;
 }
+
+#song-edit-info-submit li {
+    color: #09F;
+}
+
+ul {
+    list-style-position: inside;
+}
