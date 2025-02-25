@@ -122,6 +122,25 @@ function checkTitleChannelForm() {
 channelEle.addEventListener('input', checkTitleChannelForm);
 titleEle.addEventListener('input', checkTitleChannelForm);
 
+// URLの入力チェック
+const urlEle = document.getElementById('url');
+var isUrlValid = true;
+function checkUrlForm() {
+    const songEditInfoUrlEle = document.getElementById('song-edit-info-url');
+
+    for (url of urlEle.value.split(',')) {
+        // urlでない場合
+        if (!url.match(/^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/)) {
+            songEditInfoUrlEle.innerHTML = "<span class='error'>入力形式が正しくありません</span>";
+            isUrlValid = false;
+            return;
+        }
+    }    
+    isUrlValid = true;
+    songEditInfoUrlEle.innerHTML = "";
+}
+urlEle.addEventListener('input', checkUrlForm);
+
 // フォームに変更があったかを検知
 var isFormDirty = false;
 document.querySelectorAll('input, textarea').forEach((input) => {
