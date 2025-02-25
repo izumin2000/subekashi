@@ -7,6 +7,7 @@ async function init() {
     song_id = window.location.pathname.split("/")[2];
     checkTitleChannelForm();
     checkUrlForm();
+    checkButton();
 };
 window.addEventListener('load', init);
 
@@ -80,7 +81,6 @@ const titleEle = document.getElementById('title');
 const channelEle = document.getElementById('channel');
 var isTitleChannelValid = false;
 function checkTitleChannelForm() {
-    const songEditSubmitEle = document.getElementById('song-edit-submit');
     const songEditInfoTitleChannelEle = document.getElementById('song-edit-info-title-channel');
 
     // タイトルとチャンネル名が空の場合
@@ -175,6 +175,16 @@ function checkUrlForm() {
     songEditInfoUrlEle.innerHTML = "<span class='ok'><i class='fas fa-check-circle ok'></i>登録可能な状態です</span>";
 }
 urlEle.addEventListener('input', checkUrlForm);
+
+// 登録ボタン
+function checkButton() {
+    const songEditSubmitEle = document.getElementById('song-edit-submit');
+    songEditSubmitEle.disabled = !(isTitleChannelValid && isUrlValid)
+}
+channelEle.addEventListener('input', checkButton);
+titleEle.addEventListener('input', checkButton);
+urlEle.addEventListener('input', checkButton);
+
 
 // フォームに変更があったかを検知
 var isFormDirty = false;
