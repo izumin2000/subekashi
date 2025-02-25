@@ -400,6 +400,10 @@ a {
     color: #B60;
 }
 
+.fa-info-circle, .fa-check-circle, .fa-exclamation-triangle, .fa-ban {
+    margin-right: 10px;
+}
+
 .underline {
     text-align: center;
     height: 8px;

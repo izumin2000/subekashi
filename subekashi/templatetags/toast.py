@@ -10,9 +10,9 @@ def get_toast(icon, text):
     
     ICON_DICT = {
         "info": "fas fa-info-circle info",
-        "ok": "fas fa-check-square ok",
+        "ok": "fas fa-check-circle ok",
         "warning": "fas fa-exclamation-triangle warning",
-        "error": "fas fa-times-circle error"
+        "error": "fas fa-ban error"
     }
     icon_class = ICON_DICT[icon] if icon in ICON_DICT else ""
     toast_class = "toast" if len(text) < 50 else "toast long-time"
