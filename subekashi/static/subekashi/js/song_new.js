@@ -70,8 +70,8 @@ urlEle.addEventListener('input', checkAutoForm)
 var channelEle = document.getElementById('channel');
 var titleEle = document.getElementById('title');
 function checkManualForm() {
-    channelEle = document.getElementById('channel');
-    titleEle = document.getElementById('title');
+    const channelEle = document.getElementById('channel');
+    const titleEle = document.getElementById('title');
 
     // どちらかが空の場合
     if (channelEle.value === '' || titleEle.value === '') {
@@ -92,7 +92,7 @@ function checkManualForm() {
         タイトル・チャンネル名ともに一致している曲が<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">見つかりました。</a><br>
         song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
         登録されているURL：<a href="${existingSongURL}" target="_blank">${existingSongURL}</a>${isMultipleSongURL ? 'など' : ''}<br>
-        既に登録している曲と登録しようとしている曲が別の曲に限り、登録することができます。</span>`;
+        既に登録されている曲と登録しようとしている曲が別の曲に限り、登録することができます。</span>`;
         return;
     }
     

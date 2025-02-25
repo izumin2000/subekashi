@@ -1,4 +1,4 @@
-var page = 1;
+var page = 1, songGuesserController;
 const FORMQUERYS = 'input, select'
 
 isFormDirty = false;        // フォームに変更があったかを検知
