@@ -15,39 +15,18 @@ document.querySelectorAll('textarea').forEach((textarea) => {
     };
 });
 
-// songが情報不足ではないかどうか
-function isCompleted(song) {
-    if (song.isdraft) {
-        return false;
-    }
-    if (song.channel == "全てあなたの所為です。") {
-        return true;
-    }
-    columnL = [];
-    if (!song.isdeleted) {
-        columnL.push(song.url);
-    }
-    if (!song.isoriginal && song.issubeana) {
-        columnL.push(song.imitate);
-    }
-    if (!song.isinst) {
-        columnL.push(song.lyrics);
-    }
-    return !columnL.includes("");
-}
-
 // DRFのAPIの取得
-var jsonDatas = {}
+var jsonData = {}
 async function getJson(path) {
-    if (jsonDatas[path]) {
-        return jsonDatas[path];
+    if (jsonData[path]) {
+        return jsonData[path];
     }
 
     res = await fetch(`${baseURL()}/api/${path}`);
     json = await res.json();
 
     if (!path.includes("?")) {
-        jsonDatas[path] = json;
+        jsonData[path] = json;
     }
 
     return json;
@@ -306,6 +285,7 @@ function getYouTubeVideoId(url) {
     return match ? match[1] : null;
 }
 
+// チュートリアルトーストの表示
 const TUTORIALS = {
     "new-form-auto": "YouTubeのリンクからタイトル・チャンネル名を自動で取得して登録するフォームです。既に登録してあるURLは登録できません。",
     "youtube-url": "YouTubeのURLを入力してください。<br>「後で見る」を含むプレイリスト内の動画のURLでも大丈夫です。<br>無断転載された動画のURLの記載はお控えください。",
@@ -324,7 +304,6 @@ const TUTORIALS = {
     "delete": "開発者に記事の削除依頼を送ります。実際に削除の対応をするまでに時間がかかる場合があります。"
 }
 
-// チュートリアルトーストの表示
 function showTutorial(place) {
     const tutorial = TUTORIALS[place];
     showToast("info", tutorial);
