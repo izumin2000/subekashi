@@ -137,10 +137,22 @@ var isUrlValid = true;
 function checkUrlForm() {
     const songEditInfoUrlEle = document.getElementById('song-edit-info-url');
 
+    // URLが空の場合
+    if (urlEle.value === '') {
+        songEditInfoUrlEle.innerHTML = "";
+        return;
+    }
+
     for (url of urlEle.value.split(',')) {
         // urlでない場合
         if (!url.match(/^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/)) {
-            songEditInfoUrlEle.innerHTML = "<span class='error'>入力形式が正しくありません</span>";
+            songEditInfoUrlEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>入力形式が正しくありません</span>";
+            isUrlValid = false;
+            return;
+        }
+
+        // 読み込み中なら
+        if (!songJson) {
             isUrlValid = false;
             return;
         }
