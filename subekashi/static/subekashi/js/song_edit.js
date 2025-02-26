@@ -125,7 +125,7 @@ function checkTitleChannelForm() {
     }
 
     // タイトルとチャンネル名が入力されている場合
-    songEditInfoTitleChannelEle.innerHTML = "";
+    songEditInfoTitleChannelEle.innerHTML = "<span class='ok'><i class='fas fa-check-circle ok'></i>登録可能な状態です</span>";
     isTitleChannelValid = true;
 }
 channelEle.addEventListener('input', checkTitleChannelForm);
