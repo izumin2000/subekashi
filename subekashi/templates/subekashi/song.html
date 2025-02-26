@@ -79,6 +79,9 @@
         <a href="{% url 'subekashi:song_edit' songIns.id %}">
             <div class="dummybutton"><p>編集</p></div>
         </a>
+        <a href="{% url 'subekashi:song_delete' songIns.id %}">
+            <div class="dummybutton"><p>削除申請</p></div>
+        </a>
     </div>
 </section>
 {% endblock %}
