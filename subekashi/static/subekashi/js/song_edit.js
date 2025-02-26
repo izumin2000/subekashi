@@ -2,12 +2,14 @@ var songJson, imitateList = [], songGuesserController, song_id;
 
 // 初期化
 var songJson;
+const lyricsEle = document.getElementById("lyrics")
 async function init() {
     songJson = await getJson("song");
     song_id = window.location.pathname.split("/")[2];
     checkTitleChannelForm();
     checkUrlForm();
     checkButton();
+    lyricsEle.dispatchEvent(new Event("input"));
 };
 window.addEventListener('load', init);
 
@@ -177,7 +179,6 @@ function checkUrlForm() {
 urlEle.addEventListener('input', checkUrlForm);
 
 // 登録ボタン
-const lyricsEle = document.getElementById("lyrics")
 function checkButton() {
     // ボタンのdisabledの変更
     const songEditSubmitEle = document.getElementById('song-edit-submit');

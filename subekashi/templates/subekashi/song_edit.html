@@ -46,7 +46,7 @@
         </div>
         <div class="form-col">
             <label for="lyrics">歌詞<i class="fas fa-info-circle" onclick="showTutorial('lyrics')"></i></label>
-            <textarea id="lyrics" name="lyrics" value="{{ song.lyrics }}"></textarea>
+            <textarea id="lyrics" name="lyrics">{{ song.lyrics }}</textarea>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-original" name="is-original" {% if song.isoriginal %}checked{% endif %}>
