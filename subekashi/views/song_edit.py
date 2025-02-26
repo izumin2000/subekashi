@@ -5,6 +5,7 @@ from subekashi.models import *
 from subekashi.lib.url import *
 from subekashi.lib.ip import *
 from subekashi.lib.discord import *
+from subekashi.lib.search import song_search
 
 
 def song_edit(request, song_id) :
@@ -20,40 +21,53 @@ def song_edit(request, song_id) :
         "song": song_obj,
     }
 
-    # TODO songビューに
     if request.method == "POST":
-        titleForm = request.POST.get("title")
-        channelForm = request.POST.get("channel")
-        urlForm = request.POST.get("url")
-        imitatesForm = request.POST.get("imitates")
-        lyricsForm = request.POST.get("lyrics")
-        isoriginalForm = request.POST.get("isoriginal")
-        isdeletedForm = request.POST.get("isdeleted")
-        isjokeForm = request.POST.get("isjoke")
-        isinstForm = request.POST.get("isinst")
-        issubeanaForm = request.POST.get("issubeana")
-        isdraftForm = request.POST.get("isdraft")
-
-        if ("" in [titleForm, channelForm]) :
-            return render(request, "subekashi/500.html")
+        title = request.POST.get("title", "")
+        channel = request.POST.get("channel", "")
+        url = request.POST.get("url", "")
+        imitates = request.POST.get("imitates", "")
+        lyrics = request.POST.get("lyrics", "")
+        is_original = bool(request.POST.get("is-original"))
+        is_deleted = bool(request.POST.get("is-deleted"))
+        is_joke = bool(request.POST.get("is-joke"))
+        is_inst = bool(request.POST.get("is-inst"))
+        is_subeana = bool(request.POST.get("is-subeana"))
+        is_draft = bool(request.POST.get("is-draft"))
         
+        # 既に登録されているURLの場合はエラー
+        cleaned_url = clean_url(url)
+        cleaned_url_list = cleaned_url.split(",")
+        for cleaned_url_item in cleaned_url_list:
+            song_qs, _ = song_search({"url": cleaned_url_item})
+            if song_qs.exists() and url:
+                return render(request, "subekashi/500.html", status=500)
+        
+        # タイトルとチャンネルが空の場合はエラー
+        if ("" in [title, channel]) :
+            return render(request, "subekashi/500.html", status=500)
+        
+        # 模倣関係以外のsong_objの更新
         ip = get_ip(request)
-        get_id = request.POST.get("id")
-        id = int(get_id) if get_id else Song.objects.last().id + 1
+        cleand_channel = channel.replace("/", "╱")
+        song_obj.update(
+            title = title,
+            channel = cleand_channel,
+            url = cleaned_url,
+            post_time = timezone.now(),
+            isoriginal = is_original,
+            isdeleted = is_deleted,
+            isjoke = is_joke,
+            isinst = is_inst,
+            issubeana = is_subeana,
+            ip = ip
+        )
 
-        channelForm = channelForm.replace("/", "╱")
-        if get_id :
-            song_qs = Song.objects.filter(pk = get_id)
-            if not song_qs.exists():
-                return render(request, 'subekashi/404.html', status=404)
-            songIns = song_qs.first()
-            songIns.title = titleForm
-            songIns.channel = channelForm
-        else :
-            songIns, _ = Song.objects.get_or_create(title = titleForm, channel = channelForm, defaults={"post_time" : timezone.now()})
         
-        oldImitateS = set(songIns.imitate.split(",")) - set([''])
-        newImitateS = set(imitatesForm.split(",")) - set([''])
+
+        
+        old_imitate_list = song_obj.imitate.split(",")
+        oldImitateS = set(old_imitate_list) - set([''])
+        newImitateS = set(imitates.split(",")) - set([''])
 
         appendImitateS = newImitateS - oldImitateS
         deleteImitateS = oldImitateS - newImitateS
@@ -72,18 +86,18 @@ def song_edit(request, song_id) :
             imitatedIns.imitated = ",".join(imitatedInsL)
             imitatedIns.post_time = timezone.now()
             imitatedIns.save()
-        songIns.imitate = imitatesForm
+        songIns.imitate = imitates
 
-        songIns.lyrics = lyricsForm.replace("\r\n", "\n")
-        # TODO urlFormがURL_ICONにあるかのセキュリティチェック
-        urls = clean_url(urlForm)
+        songIns.lyrics = lyrics.replace("\r\n", "\n")
+        # TODO urlがURL_ICONにあるかのセキュリティチェック
+        urls = clean_url(url)
         songIns.url = urls
-        songIns.isoriginal = int(bool(isoriginalForm))
-        songIns.isjoke = int(bool(isjokeForm))
-        songIns.isdeleted = int(bool(isdeletedForm))
-        songIns.isinst = int(bool(isinstForm))
-        songIns.issubeana = int(bool(issubeanaForm))
-        songIns.isdraft = int(bool(isdraftForm))
+        songIns.isoriginal = int(bool(is_original))
+        songIns.isjoke = int(bool(is_joke))
+        songIns.isdeleted = int(bool(is_deleted))
+        songIns.isinst = int(bool(is_inst))
+        songIns.issubeana = int(bool(is_subeana))
+        songIns.isdraft = int(bool(is_draft))
         songIns.post_time = timezone.now()
         songIns.ip = ip
         songIns.save()
@@ -91,12 +105,12 @@ def song_edit(request, song_id) :
                 
         content = f'\n\
         {ROOT_URL}/songs/{id}\n\
-        タイトル：{titleForm}\n\
-        チャンネル : {channelForm}\n\
+        タイトル：{title}\n\
+        チャンネル : {channel}\n\
         URL : {urls}\n\
-        ネタ曲 : {"Yes" if isjokeForm else "No"}\n\
+        ネタ曲 : {"Yes" if is_joke else "No"}\n\
         IP : {ip}\n\
-        歌詞 : ```{lyricsForm}```'
+        歌詞 : ```{lyrics}```'
         is_ok = sendDiscord(NEW_DISCORD_URL, content)
         if not is_ok:
             return render(request, 'subekashi/500.html', status=500)
