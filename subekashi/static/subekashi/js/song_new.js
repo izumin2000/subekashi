@@ -46,6 +46,12 @@ function checkAutoForm() {
         return;
     }
 
+    // 読み込み中なら
+    if (!songJson) {
+        isTitleChannelValid = false;
+        return;
+    }
+
     const existingSong = songJson.find(song => getYouTubeVideoId(song.url) === videoId);
 
     // 既に登録されているURLの場合

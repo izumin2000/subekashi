@@ -38,6 +38,10 @@ function appendImitateList(song) {
 // 読み込み時に模倣一覧を描画
 var imitateEle = document.getElementById("imitate");
 function initImitateList() {
+    if (!imitateEle.value) {
+        return;
+    }
+    
     const imitateIdList = imitateEle.value.split(",");
     for (const imitateId of imitateIdList) {
         const imitateSong = songJson.find(song => song.id == imitateId);
