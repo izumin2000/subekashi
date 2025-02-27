@@ -92,17 +92,17 @@ def song_edit(request, song_id) :
             delete_imitate.save()
 
         # song_objの更新
-        song_obj.title = title,
-        song_obj.channel = cleand_channel,
-        song_obj.url = cleaned_url,
-        song_obj.lyrics = cleand_lyrics,
-        song_obj.imitate = imitates,
-        song_obj.isoriginal = is_original,
-        song_obj.isdeleted = is_deleted,
-        song_obj.isjoke = is_joke,
-        song_obj.isinst = is_inst,
-        song_obj.issubeana = is_subeana,
-        song_obj.isdraft = is_draft,
+        song_obj.title = title
+        song_obj.channel = cleand_channel
+        song_obj.url = cleaned_url
+        song_obj.lyrics = cleand_lyrics
+        song_obj.imitate = imitates
+        song_obj.isoriginal = is_original
+        song_obj.isdeleted = is_deleted
+        song_obj.isjoke = is_joke
+        song_obj.isinst = is_inst
+        song_obj.issubeana = is_subeana
+        song_obj.isdraft = is_draft
         song_obj.post_time = timezone.now()
         song_obj.ip = ip
         song_obj.save()
