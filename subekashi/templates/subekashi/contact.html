@@ -6,11 +6,7 @@
 <section>
     <h1>お問い合わせ</h1>
     <div class="underline"></div>
-    {% if result == "ok" %}
-        <p class="ok result">お問い合わせを送信しました。</p>
-    {% elif result != "" %}
-        <p class="error result">{{ result }}</p>
-    {% endif %}
+
     <form action="{% url 'subekashi:contact' %}" method="POST">{% csrf_token %}
         <div class="form-col">
             <label for="contact-type" class="required">お問い合わせの種類</label>
@@ -40,4 +36,15 @@
         </div>
     {% endfor %}
 </section>
+{% endblock %}
+
+{% block js %}
+<script defer src="{% static 'subekashi/js/contact.js' %}?{{ version }}"></script>
+<script defer>
+    {% if result == "ok" %}
+        showToast("ok", "お問い合わせを送信しました。")
+    {% elif result != "" %}
+        showToast("error", "{{ result }}")
+    {% endif %}
+</script>
 {% endblock %}
