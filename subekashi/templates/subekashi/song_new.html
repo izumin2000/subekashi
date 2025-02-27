@@ -18,7 +18,7 @@
 
     <h1>YouTubeの動画リンクから登録<i class="fas fa-info-circle" onclick="showTutorial('new-form-auto')"></i></h1>
     <div class="underline"></div>
-    <form action="{% url 'subekashi:song_new' %}" method="POST" id="new-form-auto">{% csrf_token %}
+    <form action="{% url 'subekashi:song_new' %}?toast=auto" method="POST" id="new-form-auto">{% csrf_token %}
         <div class="form-col">
             <label for="url">YouTubeの<br>動画リンク<i class="fas fa-info-circle" onclick="showTutorial('youtube-url')"></i></label>
             <input type="url" id="url" name="url" value="{{ request.GET.url }}" required>
@@ -54,7 +54,7 @@
     
     <h1>曲名とチャンネル名から登録<i class="fas fa-info-circle" onclick="showTutorial('new-form-manual')"></i></h1>
     <div class="underline"></div>
-    <form action="{% url 'subekashi:song_new' %}" method="POST" id="new-form-manual">{% csrf_token %}
+    <form action="{% url 'subekashi:song_new' %}?toast=manual" method="POST" id="new-form-manual">{% csrf_token %}
         <div class="form-col">
             <label for="title">曲名<i class="fas fa-info-circle" onclick="showTutorial('title')"></i></label>
             <input type="text" id="title" name="title" class="sansfont" value="{{ request.GET.title }}" required>

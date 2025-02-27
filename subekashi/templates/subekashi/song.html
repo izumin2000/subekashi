@@ -87,8 +87,8 @@
 {% endblock %}
 
 {% block js %}
-{% comment %} TODO バックエンドで処理 {% endcomment %}
 <script defer>
+    {% comment %} TODO バックエンドで処理 {% endcomment %}
     window.addEventListener('load', function(){
         songlyricsEle = document.getElementById("lyrics");
         if (songlyricsEle) {
@@ -108,5 +108,10 @@
             aleat("コピーできませんでした。");
         }
     };
+
+    if ("{{ request.GET.toast }}" == "edit") {
+        showToast("ok", "登録しました。")
+    }
+</script>
 </script>
 {% endblock %}

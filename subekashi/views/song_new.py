@@ -91,5 +91,5 @@ def song_new(request) :
             song.delete()
             return render(request, 'subekashi/500.html', status=500)
         
-        return redirect(f'/songs/{song_id}/edit')
+        return redirect(f'/songs/{song_id}/edit?toast={request.GET.get("toast")}')
     return render(request, 'subekashi/song_new.html', dataD)

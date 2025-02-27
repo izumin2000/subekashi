@@ -90,5 +90,13 @@
     if ("{{ error }}") {
         showToast("error", "{{ error }}")
     }
+
+    if ("{{ request.GET.toast }}" == "auto") {
+        showToast("ok", "登録しました。続けて模倣・歌詞等を登録することができます。")
+    }
+    
+    if ("{{ request.GET.toast }}" == "manual") {
+        showToast("ok", "登録しました。続けてURL・模倣・歌詞等を登録することができます。")
+    }
 </script>
 {% endblock %}

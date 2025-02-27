@@ -109,5 +109,5 @@ def song_edit(request, song_id) :
         song.ip = ip
         song.save()
         
-        return redirect(f'/songs/{song_id}')
+        return redirect(f'/songs/{song_id}?toast=edit')
     return render(request, 'subekashi/song_edit.html', dataD)
