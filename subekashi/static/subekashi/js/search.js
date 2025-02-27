@@ -1,7 +1,6 @@
 var page = 1, songGuesserController;
-const FORMQUERYS = 'input, select'
+const FORMQUERYS = 'input:not(#search-button), select'
 
-isFormDirty = false;        // フォームに変更があったかを検知
 COOKIE_FORMS = ["songrange", "jokerange", "sort"];
 window.addEventListener('load', async function () {
     document.getElementById("keyword").focus();
@@ -11,7 +10,6 @@ window.addEventListener('load', async function () {
 
     document.querySelectorAll(FORMQUERYS).forEach((formEle) => {
         formEle.addEventListener('change', () => {
-            isFormDirty = true;
             renderSearch();
         });
     });
