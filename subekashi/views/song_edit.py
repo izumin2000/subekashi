@@ -40,11 +40,13 @@ def song_edit(request, song_id) :
         for cleaned_url_item in cleaned_url_list:
             existing_song, _ = song_search({"url": cleaned_url_item})
             if url and existing_song.exists() and existing_song.first().id != song_id :
-                return render(request, "subekashi/500.html", status=500)
+                dataD["error"] = "URLは既に登録されています。"
+                return render(request, 'subekashi/song_edit.html', dataD)
 
         # タイトルとチャンネルが空の場合はエラー
         if ("" in [title, channel]) :
-            return render(request, "subekashi/500.html", status=500)
+            dataD["error"] = "タイトルかチャンネルが空です。"
+            return render(request, 'subekashi/song_edit.html', dataD)
         
         # DB保存用に変数を用意
         ip = get_ip(request)
@@ -61,10 +63,10 @@ def song_edit(request, song_id) :
         ネタ曲 : {"Yes" if is_joke else "False"}\n\
         すべあな模倣曲 : {"Yes" if is_subeana else "False"}\n\
         IP : {ip}```'
-        # is_ok = sendDiscord(NEW_DISCORD_URL, content)
-        # if not is_ok:
-        #     song_obj.delete()
-        #     return render(request, 'subekashi/500.html', status=500)
+        is_ok = sendDiscord(NEW_DISCORD_URL, content)
+        if not is_ok:
+            song_obj.delete()
+            return render(request, 'subekashi/500.html', status=500)
 
         # 新しい模倣の追加
         old_imitate_id_set = set(song_obj.imitate.split(",")) - set([""])       # 元々の各模倣のID

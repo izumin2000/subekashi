@@ -34,21 +34,25 @@ def song_new(request) :
             
         # URLがYouTubeのURLでない場合はエラー
         if not is_yt_url(url) and url:
-            return render(request, "subekashi/500.html", status=500)
+            dataD["error"] = "URLがYouTubeのURLではありません。"
+            return render(request, 'subekashi/song_new.html', dataD)
         
         # URLが複数ならエラー
         if "," in url:
-            return render(request, "subekashi/500.html", status=500)
+            dataD["error"] = "URLは複数入力できません。"
+            return render(request, 'subekashi/song_new.html', dataD)
         
         # 既に登録されているURLの場合はエラー
         cleaned_url = clean_url(url)
         song_qs, _ = song_search({"url": cleaned_url})
         if song_qs.exists() and url:
-            return render(request, "subekashi/500.html", status=500)
+            dataD["error"] = "URLは既に登録されています。"
+            return render(request, 'subekashi/song_new.html', dataD)
         
-        # タイトルとチャンネルが空の場合はエラー
+        # タイトルかチャンネルが空の場合はエラー
         if ("" in [title, channel]) :
-            return render(request, "subekashi/500.html", status=500)
+            dataD["error"] = "タイトルかチャンネルが空です。"
+            return render(request, 'subekashi/song_new.html', dataD)
         
         cleand_channel = channel.replace("/", "╱")
         # TODO cleaned_urlがURL_ICONにあるかのセキュリティチェック

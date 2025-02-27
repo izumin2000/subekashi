@@ -86,4 +86,9 @@
 
 {% block js %}
 <script defer src="{% static 'subekashi/js/song_edit.js' %}?{{ version }}"></script>
+<script defer>
+    if ("{{ error }}") {
+        showToast("error", "{{ error }}")
+    }
+</script>
 {% endblock %}
