@@ -1,4 +1,4 @@
-var songJson, imitateList = [], songGuesserController, song_id;
+var songJson, imitateIdList = [], songGuesserController, song_id;
 
 // 初期化
 var songJson;
@@ -42,7 +42,7 @@ function initImitateList() {
         return;
     }
     
-    const imitateIdList = imitateEle.value.split(",");
+    imitateIdList = imitateEle.value.split(",");
     for (const imitateId of imitateIdList) {
         const imitateSong = songJson.find(song => song.id == imitateId);
         appendImitateList(imitateSong);
@@ -51,22 +51,22 @@ function initImitateList() {
 
 // ビューに渡すimitateカラムの値を#imitateにセット
 function setImitate() {
-    imitateEle.value = imitateList.join();
+    imitateEle.value = imitateIdList.join();
     checkButton();
 }
 
 // 模倣一覧からimitateIdを削除
 function deleteImitate(imitateId) {
     document.getElementById(`imitate-${imitateId}`).remove();
-    imitateList = imitateList.filter(id => id != imitateId);        // imitateListからimitateIdを削除
-    setImitate();       // imitateListの内容を#imitateにセット
+    imitateIdList = imitateIdList.filter(id => id != imitateId);        // imitateIdListからimitateIdを削除
+    setImitate();       // imitateIdListの内容を#imitateにセット
 }
 
 // 模倣一覧にsongを追加
 function appendImitate(song) {
     appendImitateList(song)
-    imitateList.push(song.id);      // imitateListにsong.idを追加
-    setImitate();       // imitateListの内容を#imitateにセット
+    imitateIdList.push(song.id);      // imitateIdListにsong.idを追加
+    setImitate();       // imitateIdListの内容を#imitateにセット
 }
 
 // すべあな原曲から選択
