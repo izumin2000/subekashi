@@ -2,6 +2,8 @@
 var songJson;
 async function init() {
     songJson = await getJson("song");
+    checkAutoForm();
+    checkManualForm();
 };
 window.addEventListener('load', init);
 
@@ -118,6 +120,4 @@ titleEle.addEventListener('input', checkManualForm);
 // ページから戻ってきたときの処理
 window.addEventListener("pageshow", function () {
     init();
-    checkAutoForm();
-    checkManualForm();
 });
