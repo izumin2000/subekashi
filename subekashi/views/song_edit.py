@@ -10,15 +10,15 @@ from subekashi.lib.search import song_search
 
 def song_edit(request, song_id) :
     try :
-        song_obj = Song.objects.get(pk = song_id)
+        song = Song.objects.get(pk = song_id)
     except :
         return render(request, 'subekashi/404.html', status=404)
     
     MAX_META_TITLE = 25
-    metatitle = f"{song_obj.title}の編集" if len(song_obj.title) < MAX_META_TITLE else f"{song_obj.title[:MAX_META_TITLE]}...の編集"
+    metatitle = f"{song.title}の編集" if len(song.title) < MAX_META_TITLE else f"{song.title[:MAX_META_TITLE]}...の編集"
     dataD = {
         "metatitle": metatitle,
-        "song": song_obj,
+        "song": song,
     }
 
     if request.method == "POST":
@@ -65,11 +65,11 @@ def song_edit(request, song_id) :
         IP : {ip}```'
         is_ok = sendDiscord(NEW_DISCORD_URL, content)
         if not is_ok:
-            song_obj.delete()
+            song.delete()
             return render(request, 'subekashi/500.html', status=500)
 
         # 新しい模倣の追加
-        old_imitate_id_set = set(song_obj.imitate.split(",")) - set([""])       # 元々の各模倣のID
+        old_imitate_id_set = set(song.imitate.split(",")) - set([""])       # 元々の各模倣のID
         new_imitate_id_set = set(imitates.split(",")) - set([""])       # ユーザーが入力した各模倣のID
 
         append_imitate_id_set = new_imitate_id_set - old_imitate_id_set     # 編集によって新しく追加された各模倣のID
@@ -93,21 +93,21 @@ def song_edit(request, song_id) :
             delete_imitate.imitated = ",".join(delete_imitated_id_set)
             delete_imitate.save()
 
-        # song_objの更新
-        song_obj.title = title
-        song_obj.channel = cleand_channel
-        song_obj.url = cleaned_url
-        song_obj.lyrics = cleand_lyrics
-        song_obj.imitate = imitates
-        song_obj.isoriginal = is_original
-        song_obj.isdeleted = is_deleted
-        song_obj.isjoke = is_joke
-        song_obj.isinst = is_inst
-        song_obj.issubeana = is_subeana
-        song_obj.isdraft = is_draft
-        song_obj.post_time = timezone.now()
-        song_obj.ip = ip
-        song_obj.save()
+        # songの更新
+        song.title = title
+        song.channel = cleand_channel
+        song.url = cleaned_url
+        song.lyrics = cleand_lyrics
+        song.imitate = imitates
+        song.isoriginal = is_original
+        song.isdeleted = is_deleted
+        song.isjoke = is_joke
+        song.isinst = is_inst
+        song.issubeana = is_subeana
+        song.isdraft = is_draft
+        song.post_time = timezone.now()
+        song.ip = ip
+        song.save()
         
         return redirect(f'/songs/{song_id}')
     return render(request, 'subekashi/song_edit.html', dataD)

@@ -58,7 +58,7 @@ def song_new(request) :
         # TODO cleaned_urlがURL_ICONにあるかのセキュリティチェック
         ip = get_ip(request)
         
-        song_obj = Song(
+        song = Song(
             title = title,
             channel = cleand_channel,
             url = cleaned_url,
@@ -74,8 +74,8 @@ def song_new(request) :
             ip = ip
         )
         
-        song_obj.save()
-        song_id = song_obj.id
+        song.save()
+        song_id = song.id
         
         content = f'\n\
         新規作成されました\n\
@@ -88,7 +88,7 @@ def song_new(request) :
         IP : {ip}```'
         is_ok = sendDiscord(NEW_DISCORD_URL, content)
         if not is_ok:
-            song_obj.delete()
+            song.delete()
             return render(request, 'subekashi/500.html', status=500)
         
         return redirect(f'/songs/{song_id}/edit')
