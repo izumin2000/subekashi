@@ -138,7 +138,7 @@ function checkTitleChannelForm() {
         既に登録されている曲と登録しようとしている曲が別の曲に限り、登録することができます。<br>
         この記事を削除したい場合は、<a href="${baseURL()}/songs/${song_id}/delete?reason=song ID：${existingSong.id}と被っています。" target="_blank">こちら</a>をクリックしてください。
         </span>`;
-        isTitleChannelValid = false;
+        isTitleChannelValid = true;
         return;
     }
 
@@ -211,7 +211,9 @@ function checkButton() {
     }
     
     // 模倣の未完成
-    if (!document.getElementById("is-original").checked && (imitateEle.value == "")) {
+    const is_original = document.getElementById("is-original").checked;
+    const is_subeana = document.getElementById("is-subeana").checked;
+    if (!is_original && is_subeana && (imitateEle.value == "") && (channelEle.value != "全てあなたの所為です。")) {
         message += "<li>「オリジナル模倣」にチェックをつけるか、模倣曲を1曲以上登録してください。</li>"
         is_lack = true;
     }
