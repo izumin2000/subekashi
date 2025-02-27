@@ -18,11 +18,11 @@ def song_new(request) :
         title = request.POST.get("title", "")
         channel = request.POST.get("channel", "")
         url = request.POST.get("url", "")
-        is_original = bool(request.POST.get("is-original-auto"))
-        is_deleted = bool(request.POST.get("is-deleted-auto"))
-        is_joke = bool(request.POST.get("is-joke-auto"))
-        is_inst = bool(request.POST.get("is-inst-auto"))
-        is_subeana = bool(request.POST.get("is-subeana-auto"))
+        is_original = bool(request.POST.get("is-original-auto", "") + request.POST.get("is-original-manual", ""))
+        is_deleted = bool(request.POST.get("is-deleted-auto", "") + request.POST.get("is-deleted-manual", ""))
+        is_joke = bool(request.POST.get("is-joke-auto", "") + request.POST.get("is-joke-manual", ""))
+        is_inst = bool(request.POST.get("is-inst-auto", "") + request.POST.get("is-inst-manual", ""))
+        is_subeana = bool(request.POST.get("is-subeana-auto", "") + request.POST.get("is-subeana-manual", ""))
         
         # YouTube APIから情報取得
         yt_res = {}

@@ -22,11 +22,11 @@ def song_edit(request, song_id) :
     }
 
     if request.method == "POST":
-        title = request.POST.get("title")
-        channel = request.POST.get("channel")
-        url = request.POST.get("url")
-        imitates = request.POST.get("imitate")
-        lyrics = request.POST.get("lyrics")
+        title = request.POST.get("title", "")
+        channel = request.POST.get("channel", "")
+        url = request.POST.get("url", "")
+        imitates = request.POST.get("imitate", "")
+        lyrics = request.POST.get("lyrics", "")
         is_original = bool(request.POST.get("is-original"))
         is_deleted = bool(request.POST.get("is-deleted"))
         is_joke = bool(request.POST.get("is-joke"))
