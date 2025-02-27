@@ -9,12 +9,43 @@ async function init() {
     checkTitleChannelForm();
     checkUrlForm();
     checkButton();
-    lyricsEle.dispatchEvent(new Event("input"));
+    initImitateList();
 };
 window.addEventListener('load', init);
 
-// ビューに渡すimitateカラムの値を#imitateにセット
+// 模倣リストの末尾にsongを追加
+function appendImitateList(song) {
+    const imitateStr = `
+    <div id="imitate-${song.id}">
+        <p>
+            <span class='channel'>
+                <i class='fas fa-user-circle'></i>
+                ${song.channel}
+            </span>
+            <i class='fas fa-music'></i>
+            ${song.title}
+            <span onclick="deleteImitate(${song.id})">
+                <i class='far fa-trash-alt'></i>
+            </span>
+        </p>
+    </div>
+    `;
+
+    var imitateListEle = document.getElementById('imitate-list');
+    imitateListEle.appendChild(stringToHTML(imitateStr));
+}
+
+// 読み込み時に模倣一覧を描画
 var imitateEle = document.getElementById("imitate");
+function initImitateList() {
+    const imitateIdList = imitateEle.value.split(",");
+    for (const imitateId of imitateIdList) {
+        const imitateSong = songJson.find(song => song.id == imitateId);
+        appendImitateList(imitateSong);
+    }
+}
+
+// ビューに渡すimitateカラムの値を#imitateにセット
 function setImitate() {
     imitateEle.value = imitateList.join();
     checkButton();
@@ -29,26 +60,7 @@ function deleteImitate(imitateId) {
 
 // 模倣一覧にsongを追加
 function appendImitate(song) {
-    // #imitate-listにsongの情報を追加
-    const imitateStr = `
-    <div id="imitate-${ song.id }">
-        <p>
-            <span class='channel'>
-                <i class='fas fa-user-circle'></i>
-                ${ song.channel }
-            </span>
-            <i class='fas fa-music'></i>
-            ${ song.title }
-            <span onclick="deleteImitate(${ song.id })">
-                <i class='far fa-trash-alt'></i>
-            </span>
-        </p>
-    </div>
-    `
-
-    var imitateListEle = document.getElementById('imitate-list');
-    imitateListEle.appendChild(stringToHTML(imitateStr));
-
+    appendImitateList(song)
     imitateList.push(song.id);      // imitateListにsong.idを追加
     setImitate();       // imitateListの内容を#imitateにセット
 }
@@ -66,14 +78,14 @@ function renderSongGuesser() {
     }
 
     songGuesserController = new AbortController();
-    var imitateTitle = document.getElementById("imitate-title").value;
+    const imitateTitle = document.getElementById("imitate-title").value;
     getSongGuessers(imitateTitle, "song-guesser", songGuesserController.signal);
 }
 
 // すべあな原曲以外からから選択
 function songGuesserClick(id) {
     document.getElementById("imitate-title").value = "";
-    imitateSong = songJson.find(song => song.id == id);
+    const imitateSong = songJson.find(song => song.id == id);
     appendImitate(imitateSong);
     renderSongGuesser();
 };
