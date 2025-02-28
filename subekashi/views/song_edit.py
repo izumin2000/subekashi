@@ -63,7 +63,7 @@ def song_edit(request, song_id) :
         ネタ曲 : {"Yes" if is_joke else "False"}\n\
         すべあな模倣曲 : {"Yes" if is_subeana else "False"}\n\
         IP : {ip}```'
-        is_ok = sendDiscord(NEW_DISCORD_URL, content)
+        is_ok = send_discord(NEW_DISCORD_URL, content)
         if not is_ok:
             song.delete()
             return render(request, 'subekashi/500.html', status=500)

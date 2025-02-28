@@ -29,7 +29,7 @@ def song(request, song_id) :
         理由：{reason}\n\
         IP：{get_ip(request)}\
         '
-        is_ok = sendDiscord(DELETE_DISCORD_URL, content)
+        is_ok = send_discord(DELETE_DISCORD_URL, content)
         if not is_ok:
             # TODO これもtoastを表示
             return render(request, 'subekashi/500.html', status=500)

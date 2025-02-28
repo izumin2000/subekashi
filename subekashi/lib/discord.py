@@ -2,8 +2,7 @@ from config.settings import *
 import requests
 
 
-# TODO send_discordへ
-def sendDiscord(url, content):
+def send_discord(url, content):
     # urlが設定されていなかったら何もしない(コントリビュータ向け)
     if not url:
         return True
