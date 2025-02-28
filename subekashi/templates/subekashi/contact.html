@@ -42,9 +42,9 @@
 <script defer src="{% static 'subekashi/js/contact.js' %}?{{ version }}"></script>
 <script defer>
     {% if result == "ok" %}
-        showToast("ok", "お問い合わせを送信しました。")
-    {% elif result != "" %}
-        showToast("error", "{{ result }}")
+        showToast("ok", "お問い合わせを送信しました。");
+    {% elif result != None %}
+        showToast("error", "{{ result }}");
     {% endif %}
 </script>
 {% endblock %}
