@@ -167,31 +167,25 @@
     }
 
     async function setad(view, click) {
-    res = null
-    csrf = await getCSRF();
-    try {
-    res = await fetch(
-        baseURL() + "/api/ad/" + "{{ adIns.id }}" + "/?format=json",
-        {
-            method: "PUT",
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(
-                {
-                    "view": view,
-                    "click": click,
-                }
-            ),
-            credentials: 'include',
-        });
-        if ( ! res.ok ) {
-            throw new RuntimeError(`getHeader: Response: ${res.status}`);
-        };
-    } finally {
-        return res
+        const csrf = await getCSRF();
+        await fetch(
+            baseURL() + "/api/ad/" + "{{ adIns.id }}" + "/?format=json",
+            {
+                method: "PUT",
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrf
+                },
+                body: JSON.stringify(
+                    {
+                        "view": view,
+                        "click": click,
+                    }
+                ),
+                credentials: 'include',
+            }
+        )
     };
-}
 </script>
 <script defer src="https://www.youtube.com/iframe_api"></script>
 <script defer src="{% static 'subekashi/js/x.js' %}" ></script>

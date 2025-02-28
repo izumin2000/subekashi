@@ -1,11 +1,13 @@
 // 評価された点数を送信
 async function setScore(id, score) {
-    res = await fetch(
+    const csrf = await getCSRF();
+    await fetch(
         baseURL() + "/api/ai/" + id + "/?format=json",
         {
             method: "PUT",
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrf
             },
             body: JSON.stringify(
                 {
@@ -13,7 +15,7 @@ async function setScore(id, score) {
                 }
             )
         }
-    );
+    )
 }
 
 // 最高の行をコピー
