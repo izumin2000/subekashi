@@ -1,6 +1,5 @@
 from django.urls import resolve
 from subekashi.constants.constants import *
-from subekashi.constants.dynamic.version import VERSION
 
 def context_processors(request):
     try:
