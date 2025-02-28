@@ -87,9 +87,15 @@ function renderSongGuesser() {
 }
 
 // すべあな原曲以外からから選択
-function songGuesserClick(id) {
+async function songGuesserClick(id) {
     document.getElementById("imitate-title").value = "";
-    const imitateSong = songJson.find(song => song.id == id);
+    var imitateSong = songJson.find(song => song.id == id);
+
+    // song_editページ読み込み後にidが登録された場合にsongJsonを再取得
+    if (!imitateSong) {
+        imitateSong = await getJson(`song/${id}`)
+    }
+
     appendImitate(imitateSong);
     renderSongGuesser();
 };
