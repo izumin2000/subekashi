@@ -75,20 +75,21 @@ function categoryClick(song) {
 }
 
 // すべあな原曲以外からから選択する際の検索
+const imitateTitleEle = document.getElementById("imitate-title");
 function renderSongGuesser() {
     // 以前のリクエストが存在する場合、そのリクエストをキャンセルする
     if (songGuesserController) {
         songGuesserController.abort();
     }
 
+    const imitateTitle = imitateTitleEle.value;
     songGuesserController = new AbortController();
-    const imitateTitle = document.getElementById("imitate-title").value;
     getSongGuessers(imitateTitle, "song-guesser", songGuesserController.signal);
 }
 
 // すべあな原曲以外からから選択
 async function songGuesserClick(id) {
-    document.getElementById("imitate-title").value = "";
+    imitateTitleEle.value = "";
     var imitateSong = songJson.find(song => song.id == id);
 
     // song_editページ読み込み後にidが登録された場合にsongJsonを再取得
@@ -238,7 +239,12 @@ function checkButton() {
 }
 document.querySelectorAll('input, textarea').forEach(input => input.addEventListener('input', checkButton));
 
-
+// 模倣検索フォームにてエンターの入力を防ぐ
+imitateTitleEle.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+        event.preventDefault(); // Enterキーの動作を無効化
+    }
+});
 
 // フォームに変更があったかを検知
 var isFormDirty = false;
