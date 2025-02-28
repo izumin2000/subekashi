@@ -501,6 +501,11 @@ textarea {
     padding: 10px;
 }
 
+sup {
+    margin-left: 5px;
+    color: #B60;
+}
+
 @media (max-width: 640px) {
     .form-col {
         display: block;

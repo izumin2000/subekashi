@@ -1,5 +1,5 @@
-.result {
-    margin-bottom: 10px;
+#contact-form p {
+    text-align: center;
 }
 
 .contact {
@@ -20,6 +20,7 @@
     text-align: center;
 }
 
-.info {
+.meta {
+    text-align: center;
     font-size: 16px;
 }
