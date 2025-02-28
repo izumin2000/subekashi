@@ -3,50 +3,15 @@
 
 <aside>
     <table>
+    {% for aside_page in aside_pages %}
         <tr>
-            <td><a class="sansfont" href="{% url 'subekashi:top' %}"><i class="fas fa-home"></i></a></td>
-            <td><a class="sansfont" href="{% url 'subekashi:top' %}"><p>トップ</p></a></td>
+            <td><a class="sansfont" href="{% url aside_page.url %}"><i class="{{ aside_page.icon }}"></i></a></td>
+            <td><a class="sansfont" href="{% url aside_page.url %}"><p>{{ aside_page.name }}</p></a></td>
         </tr>
-        <tr>
-            <td><a class="sansfont" href="{% url 'subekashi:song_new' %}"><i class="fa fa-plus"></i></a></td>
-            <td><a class="sansfont" href="{% url 'subekashi:song_new' %}"><p>新規登録</p></a></td>
-        </tr>
-        <tr>
-            <td><a class="sansfont" href="{% url 'subekashi:search' %}"><i class="fas fa-search"></i></a></td>
-            <td><a class="sansfont" href="{% url 'subekashi:search' %}"><p>検索</p></a></td>
-        </tr>
-        <tr>
-            <td><a class="sansfont" href="{% url 'subekashi:ai' %}"><i class="fa fa-robot"></i></a></td>
-            <td><a class="sansfont" href="{% url 'subekashi:ai' %}"><p>歌詞生成</p></a></td>
-        </tr>
-        <tr>
-            <td><a class="sansfont" href="{% url 'subekashi:ad' %}"><i class="fas fa-bullhorn"></i></a></td>
-            <td><a class="sansfont" href="{% url 'subekashi:ad' %}"><p>宣伝</p></a></td>
-        </tr>
-        <tr>
-            <td><a class="sansfont" href="{% url 'subekashi:special' %}"><i class="far fa-star"></i></a></td>
-            <td><a class="sansfont" href="{% url 'subekashi:special' %}"><p>スペシャル</p></a></td>
-        </tr>
-        <tr>
-            <td><a class="sansfont" href="{% url 'subekashi:contact' %}"><i class="fas fa-envelope"></i></a></td>
-            <td><a class="sansfont" href="{% url 'subekashi:contact' %}"><p>お問い合わせ</p></a></td>
-        </tr>
-        <tr>
-            <td><a class="sansfont" href="{% url 'subekashi:setting' %}"><i class="fas fa-cog"></i></a></td>
-            <td><a class="sansfont" href="{% url 'subekashi:setting' %}"><p>設定</p></a></td>
-        </tr>
+    {% endfor %}
         <tr>
             <td><a href="https://www.youtube.com/@subeteanatanoseidesu" target="_blank"><i class="far fa-user"></i></a></td>
             <td><a href="https://www.youtube.com/@subeteanatanoseidesu" target="_blank"><p>全てあなたの所為です。</p></a></td>
         </tr>
     </table>
 </aside>
-
-{% comment %} 
-{% for aside_page in aside_pages %}
-    <tr>
-        <td><a class="sansfont" href="{% url 'aside_page.url' %}"><i class="{{ aside_page.icon }}"></i></a></td>
-        <td><a class="sansfont" href="{% url 'aside_page.url' %}"><p>{{ aside_page.name }}</p></a></td>
-    </tr>
-{% endfor %}
-{% endcomment %}
