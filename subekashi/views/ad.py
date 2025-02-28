@@ -64,7 +64,7 @@ def ad(request) :
             adIns.dup += 1
             adIns.save()
             if isCreate :
-                sendDiscord(DSP_DISCORD_URL, f"{urlForm}, {adIns.id}")
+                send_discord(DSP_DISCORD_URL, f"{urlForm}, {adIns.id}")
         
         return redirect("subekashi:ad_complete")
                 

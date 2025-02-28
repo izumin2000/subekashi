@@ -15,5 +15,5 @@ def handle_500_error(request):
         "metatitle" : "全て五百の所為です。",
     }
     error_msg = traceback.format_exc()
-    sendDiscord(ERROR_DISCORD_URL, error_msg)
+    send_discord(ERROR_DISCORD_URL, error_msg)
     return render(request, 'subekashi/500.html', dataD, status=500)

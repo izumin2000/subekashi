@@ -12,7 +12,7 @@ def ai(request) :
     try:
         from subekashi.constants.dynamic.ai import GENEINFO
     except :
-        sendDiscord(ERROR_DISCORD_URL, CONST_ERROR)
+        send_discord(ERROR_DISCORD_URL, CONST_ERROR)
         GENEINFO = {}
     dataD.update(GENEINFO)
     

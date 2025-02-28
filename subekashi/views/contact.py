@@ -33,7 +33,7 @@ def contact(request):
             {('連絡先: ' + reply) if reply else ''}\n\
             IP：{get_ip(request)}\n\
         "
-        is_ok = sendDiscord(CONTACT_DISCORD_URL, contact)
+        is_ok = send_discord(CONTACT_DISCORD_URL, contact)
         if not is_ok:
             dataD["result"] = "内部エラーが発生しました。"
             return render(request, 'subekashi/contact.html', dataD)
