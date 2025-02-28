@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from subekashi.lib.url import *
 from subekashi.lib.youtube import *
 from subekashi.models import Song
+from time import sleep
 
 
 class Command(BaseCommand):
