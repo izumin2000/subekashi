@@ -1,6 +1,8 @@
 // 初期化
 var songJson;
+const urlEle = document.getElementById('url');
 async function init() {
+    urlEle.focus();     // #urlにカーソルをあわせる
     songJson = await getJson("song");
     checkAutoForm();
     checkManualForm();
@@ -18,7 +20,6 @@ document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
 });
 
 // URL入力フォームの入力チェック
-const urlEle = document.getElementById('url');
 function checkAutoForm() {
     const newSubmitAutoEle = document.getElementById('new-submit-auto');
     const newFormAutoInfoEle = document.getElementById('new-form-auto-info');
