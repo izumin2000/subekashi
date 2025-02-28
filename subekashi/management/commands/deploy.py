@@ -16,16 +16,24 @@ class Command(BaseCommand) :
         ]
         
         try:
+            # エラーハンドリング
+            if (PYTHONANYWHERE_USERNAME == "") or (PYTHONANYWHERE_TOKEN == "") :
+                raise ValueError("PYTHONANYWHERE_USERNAMEかPYTHONANYWHERE_TOKENが空です。")
+            
+            # コマンドを1行ずつ実行
             for command in COMMANDS:
                 output = subprocess.check_output(command.split())
                 if type(output) == bytes:
                     output = output.decode()
                 self.stdout.write(self.style.HTTP_INFO(output))
             
+            # アプリをリロード
             response = requests.post(
                 f'https://www.pythonanywhere.com/api/v0/user/{PYTHONANYWHERE_USERNAME}/webapps/lyrics.imicomweb.com/reload/',
                 headers={'Authorization': f'Token {PYTHONANYWHERE_TOKEN}'}
             )
+            
+            # リロードの通信に失敗したら
             if response.status_code == 200:
                 self.stdout.write(self.style.SUCCESS("デプロイが完了しました。"))
             else:
