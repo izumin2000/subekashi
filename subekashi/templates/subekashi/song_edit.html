@@ -7,6 +7,17 @@
 
 {% block content %}
 <section>
+    {% if request.GET.toast %}
+        <div class="dummybuttons">
+            <a href="{% url 'subekashi:song_new' %}">
+                <div class="dummybutton"><p>続けて新規登録する</p></div>
+            </a>
+            <a href="{% url 'subekashi:song' song.id %}">
+                <div class="dummybutton"><p>登録した記事を見る</p></div>
+            </a>
+        </div>
+    {% endif %}
+    
     <details>
         <summary>曲の編集にあたっての注意（クリックして展開）</summary>
         <p>登録時にエラーが発生した場合は<a href="{% url 'subekashi:contact' %}">こちら</a>からご連絡ください。</p>
