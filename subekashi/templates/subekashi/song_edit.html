@@ -87,16 +87,12 @@
 {% block js %}
 <script defer src="{% static 'subekashi/js/song_edit.js' %}?{{ version }}"></script>
 <script defer>
-    if ("{{ error }}") {
-        showToast("error", "{{ error }}")
-    }
-
-    if ("{{ request.GET.toast }}" == "auto") {
-        showToast("ok", "登録しました。続けて模倣・歌詞等を登録することができます。")
-    }
-    
-    if ("{{ request.GET.toast }}" == "manual") {
-        showToast("ok", "登録しました。続けてURL・模倣・歌詞等を登録することができます。")
-    }
+    {% if error %}
+        showToast("error", "{{ error }}");
+    {% elif request.GET.toast == "auto" %}
+        showToast("ok", "登録しました。続けて模倣・歌詞等を登録することができます。");
+    {% elif request.GET.toast == "manual" %}
+        showToast("ok", "登録しました。続けてURL・模倣・歌詞等を登録することができます。");
+    {% endif %}
 </script>
 {% endblock %}
