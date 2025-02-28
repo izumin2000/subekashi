@@ -5,6 +5,10 @@ import pytz
 
 def get_youtube_api(video_id):
     try:
+        # YOUTUBE_API_KEYが空なら
+        if YOUTUBE_API_KEY == "":
+            return {}
+        
         # YouTubeからデータを取得
         youtube = build("youtube", "v3", developerKey=YOUTUBE_API_KEY)
         request = youtube.videos().list(

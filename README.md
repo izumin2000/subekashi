@@ -17,33 +17,38 @@ gitコマンドとpythonコマンドが使えることが前提です。
 git clone https://github.com/izumin2000/subekashi.git --depth 1
 ```
 
-2. 仮想環境の作成（必要に応じて）
+2. カレントディレクトリの変更
+```
+cd subekashi
+```
+
+3. 仮想環境の作成（必要に応じて）
 pythonのvenvを利用して仮想環境`.env`を作成します。
 ```
 python -m venv .env
 ```
 
-3. 仮想環境の起動（必要に応じて）
+4. 仮想環境の起動（必要に応じて）
 ```
 .env/Scripts/activate.ps1;
 ```
 
-4. ライブラリのインストール
+5. ライブラリのインストール
 ```
 pip install -r requirements.txt
 ```
 
-5. local_setting.pyの作成
+6. local_setting.pyの作成
 ```
-cp lib/local_setting_sample.py lib/local_setting.py
+cp config/local_settings_sample.py config/local_settings.py
 ```
 
-6. シェルの起動
+7. シェルの起動
 ```
 python manage.py shell
 ```
 
-7. 鍵の生成
+8. 鍵の生成
 以下のpythonコードを実行して鍵を生成します。
 鍵の値はコピーしてください。
 ```py
@@ -53,26 +58,26 @@ quit()
 ```
 `quit()`実行時にエラーが出力されますが、気にしなくて大丈夫です。
 
-7. local_settings.pyの設定
+9. local_settings.pyの設定
 `lib/local_settings.py`を開き、コピーした値を`SECRET_KEY`に代入します。  
 ```py
 SECRET_KEY = "=*************************************************"
 ```
 
-8. マイグレーション
+10. マイグレーション
 ```
 python manage.py makemigrations
 python manage.py migrate
 ```
 
-9. データベースの初期値の設定
+11. データベースの初期値の設定
 マイグレーションした直後はデータベースにデータが入っておらずエラーになる処理がある為、以下のコマンドを実行して初期値を追加します。
 ```
 python manage.py loaddata songs.json
 ```
 初期値には全てあなたの所為です。の全曲と『12』・『15』・『17』が登録されています。
 
-10. 定数ファイルの作成（必要に応じて）
+12. 定数ファイルの作成（必要に応じて）
 全て歌詞の所為です。では高頻度で変わる定数ファイルを.gitignore対象で`subekashi/constants/dynamic`に保存しております。  
 必要に応じて以下のコマンドを実行して定数ファイルを生成してください。
 ```
