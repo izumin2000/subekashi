@@ -34,10 +34,7 @@ def include_guesser(guesser):
     )
     
 islack = (
-    ~Q(channel="全てあなたの所為です。") &
-    (
-        (Q(isdeleted=False) & Q(url="")) |
-        (Q(isoriginal=False) & Q(issubeana=True) & Q(imitate="")) &
-        (Q(isinst=False) & Q(lyrics=""))
-    )
+    (Q(isdeleted=False) & Q(url="")) |
+    (Q(isoriginal=False) & Q(issubeana=True) & Q(imitate="") & ~Q(channel="全てあなたの所為です。")) | 
+    (Q(isinst=False) & Q(lyrics=""))
 )

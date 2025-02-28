@@ -6,38 +6,51 @@
 <section>
     <h1>お問い合わせ</h1>
     <div class="underline"></div>
-    {% if result == "ok" %}
-        <p class="ok result">お問い合わせを送信しました。</p>
-    {% elif result != "" %}
-        <p class="error result">{{ result }}</p>
-    {% endif %}
-    <form action="{% url 'subekashi:contact' %}" method="POST">{% csrf_token %}
+
+    <form action="{% url 'subekashi:contact' %}" method="POST" id="contact-form">{% csrf_token %}
         <div class="form-col">
-            <label for="contact-type" class="required">お問い合わせの種類</label>
+            <label for="contact-type">お問い合わせの<br>種類<sup>*</sup></label>
             <select id="contact-type" name="contact-type" required>
                 <option value="" disabled selected>選択してください</option>
                 <option value="不具合の報告">不具合の報告</option>
                 <option value="提案">機能の提案</option>
                 <option value="質問">質問</option>
+                <option value="掲載拒否">掲載拒否</option>
                 <option value="その他">その他</option>
             </select>
         </div>
         <div class="form-col">
-            <label for="detail" class="required">詳細</label>
+            <label for="detail">詳細<sup>*</sup></label>
             <textarea id="detail" name="detail" required></textarea>
         </div>
-        <input id="send" type="submit" name="submit" value="送信">
-        <p><span class="error">*</span>は入力必須です。</p>
+        <div class="form-col">
+            <label for="reply" id="reply-label">連絡先<i class="fas fa-info-circle" onclick="showTutorial('reply')"></i></label>
+            <input type="text" id="reply" name="reply" placeholder="X・Discord・メール" required>
+        </div>
+        <input type="submit" id="content-submit" name="content-submit" value="送信">
+        <p id="contact-info"></p>
+        <p><sup>*</sup>は入力必須です。</p>
     </form>
     <h1>返信一覧</h1>
     <div class="underline"></div>
     {% for contact in contact_qs %}
         <div class="contact">
-            <p class="info">No. {{ contact.id }}　投稿日：{{ contact.post_time }}</p>
+            <p class="meta">No. {{ contact.id }}　投稿日：{{ contact.post_time }}</p>
             <p class="detail">{{ contact.detail | linebreaksbr }}</p>
             <i class="fas fa-arrow-down"></i>
             <p class="answer">{{ contact.answer | linebreaksbr }}</p>
         </div>
     {% endfor %}
 </section>
+{% endblock %}
+
+{% block js %}
+<script defer src="{% static 'subekashi/js/contact.js' %}?{{ version }}"></script>
+<script defer>
+    {% if result == "ok" %}
+        showToast("ok", "お問い合わせを送信しました。");
+    {% elif result != None %}
+        showToast("error", "{{ result }}");
+    {% endif %}
+</script>
 {% endblock %}

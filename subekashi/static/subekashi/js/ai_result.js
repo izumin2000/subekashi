@@ -1,10 +1,13 @@
+// 評価された点数を送信
 async function setScore(id, score) {
-    res = await fetch(
+    const csrf = await getCSRF();
+    await fetch(
         baseURL() + "/api/ai/" + id + "/?format=json",
         {
             method: "PUT",
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrf
             },
             body: JSON.stringify(
                 {
@@ -12,27 +15,36 @@ async function setScore(id, score) {
                 }
             )
         }
-    );
+    )
 }
 
-
+// 最高の行をコピー
 function copyBest() {
-    aiInstEles = document.getElementsByClassName("ai-ins");
+    // コピーするテキストを抽選
+    const aiInstEles = document.getElementsByClassName("ai-ins");
     copyText = ""
-    for (aiInstEle of aiInstEles) {
+    for (const aiInstEle of aiInstEles) {
         isBest = aiInstEle.children[1].children[8].checked;
         if (isBest) {
             copyText += aiInstEle.children[0].innerText + "\n";
         }
     }
     
-    copyMessageEle = document.getElementById("copy-message");
-    if (!copyText) {
-        copyMessageEle.innerHTML = '<span class="warning">コピーする行がありません。</span>'
-    } else if (Boolean(navigator.clipboard)) {
-        navigator.clipboard.writeText(copyText);
-        copyMessageEle.innerHTML = '<span class="ok">コピーしました。</span>'
-    } else {
-        copyMessageEle.innerHTML = '<span class="error">エラーが発生しました。</span>'
+    // コピーできない環境なら
+    if (!Boolean(navigator.clipboard)) {
+        showToast("error", "エラーが発生しました。");
+        return;
     }
+
+    // 最高評価の歌詞が無いのなら
+    if (!copyText) {
+        showToast("warning", "コピーする行がありません。");
+        return;
+    }
+
+    // コピー処理
+    navigator.clipboard.writeText(copyText);
+    showToast("ok", "コピーしました。");
 }
+
+showToast("ok", "歌詞を生成しました。");

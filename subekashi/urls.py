@@ -13,11 +13,12 @@ defaultRouter.register('ad', AdAPI)
 urlpatterns = [
     path('admin', admin.site.urls),
     path('', top, name='top'),
-    path('new', new, name='new'),
     path('contact', contact, name='contact'),
-    path('delete', delete, name='delete'),
     path('songs', search, name='search'),
-    path('songs/<int:songId>', song, name='song'),
+    path('songs/new', song_new, name='song_new'),
+    path('songs/<int:song_id>', song, name='song'),
+    path('songs/<int:song_id>/edit', song_edit, name='song_edit'),
+    path('songs/<int:song_id>/delete', song_delete, name='song_delete'),
     path('channel/<str:channelName>', channel, name='channel'),
     path('search', search, name='search_sub'),  #いつか消す
     path('ai', ai, name='ai'),
@@ -33,4 +34,5 @@ urlpatterns = [
     path('api/',include(defaultRouter.urls)),
     path('api/html/song_cards', song_cards, name='song_cards'),
     path('api/html/song_guessers', song_guessers, name='song_guessers'),
+    path('api/html/toast', toast, name='toast'),
 ]

@@ -15,47 +15,18 @@ document.querySelectorAll('textarea').forEach((textarea) => {
     };
 });
 
-// songが情報不足ではないかどうか
-function isCompleted(song) {
-    if (song.isdraft) {
-        return false;
-    }
-    if (song.channel == "全てあなたの所為です。") {
-        return true;
-    }
-    columnL = [];
-    if (!song.isdeleted) {
-        columnL.push(song.url);
-    }
-    if (!song.isoriginal && song.issubeana) {
-        columnL.push(song.imitate);
-    }
-    if (!song.isinst) {
-        columnL.push(song.lyrics);
-    }
-    return !columnL.includes("");
-}
-
-var jsonDatas = {}
+// DRFのAPIの取得
 async function getJson(path) {
-    if (jsonDatas[path]) {
-        return jsonDatas[path];
-    }
-
     res = await fetch(`${baseURL()}/api/${path}`);
-    json = await res.json();
-
-    if (!path.includes("?")) {
-        jsonDatas[path] = json;
-    }
-
-    return json;
+    return await res.json();
 }
 
+// s秒間プログラムを停止 awaitが必須
 function sleep(s) {
     return new Promise(resolve => setTimeout(resolve, s*1000));
 }
 
+// 文字列からHTML要素に変換
 function stringToHTML(string, multi=false) {
     const devEle = document.createElement("div");
     devEle.innerHTML = string;
@@ -68,6 +39,23 @@ function stringToHTML(string, multi=false) {
     return htmls[0];
 }
 
+// トーストを動的に表示する関数
+async function showToast(icon, text) {
+    try {
+        const response = await fetch(`/api/html/toast?icon=${encodeURIComponent(icon)}&text=${encodeURIComponent(text)}`);
+        if (!response.ok) throw new Error('Failed to fetch toast');
+
+        const data = await response.json();
+        const toastHTML = stringToHTML(data.toast);
+
+        const toastContainerEle = document.getElementById('toast-container');
+        toastContainerEle.appendChild(toastHTML);
+    } catch (error) {
+        console.error('Error showing toast:', error);
+    }
+}
+
+// song guesserの表示
 function appendSongGuesser(songGuesser, toEle) {
     var songGuesserEle = stringToHTML(songGuesser);
     toEle.appendChild(songGuesserEle)
@@ -256,6 +244,7 @@ window.onload = function() {
     getGlobalHeader();
 }
 
+// フォントのキャッシュ
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open('font-cache').then((cache) => {
@@ -278,4 +267,34 @@ self.addEventListener('fetch', (event) => {
     }
 });
 
+// YouTubeのURLから動画IDを取得
+function getYouTubeVideoId(url) {
+    const regex = /(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/.*[?&]v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+}
 
+// チュートリアルトーストの表示
+const TUTORIALS = {
+    "new-form-auto": "YouTubeのリンクからタイトル・チャンネル名を自動で取得して登録するフォームです。既に登録してあるURLは登録できません。",
+    "youtube-url": "YouTubeのURLを入力してください。<br>「後で見る」を含むプレイリスト内の動画のURLでも大丈夫です。<br>無断転載された動画のURLの記載はお控えください。",
+    "is-original": "オリジナル模倣曲・フリースタイル模倣曲の場合はチェックをつけてください。<br>例）<a href='https://youtu.be/XkIKM80-Znc' target='_blank'>∴∴∴∴</a> <a href='https://youtu.be/zDUvoKUOviQ' target='_blank'>天秤にかけて</a>",
+    "is-deleted": "アクセスしても視聴できない場合にチェックしてください。<br>限定公開の場合はチェックする必要はありません。",
+    "is-joke": "ネタに走っている曲の場合にチェックしてください。<br>ネタ曲かどうかの判断は個人の判断に任せます。",
+    "is-inst": "歌詞の無い曲の場合にチェックしてください。<br>例）<a href='https://youtu.be/6-h8cW_Han8' target='_blank'>明日へ降る雨</a> <a href='https://youtu.be/2P62pozC9Zc' target='_blank'>またの御アクセスをお待ちしております。</a>",
+    "is-subeana": "すべあな界隈曲の場合はチェックしてください。<br>すべあな界隈曲かどうかの判断は個人の判断に任せます。",
+    "new-form-manual": "手動でタイトル・チャンネル名を入力するフォームです。",
+    "title": "YouTube上のタイトルや曲名を入力してください。<br>曲によっては複数のタイトルがある場合もあるので、その場合は一般的に知られているタイトルを入力することをオススメします。<span style='font-size: 10px'>将来的に曲の別名を入力できる機能を実装予定です。</span>",
+    "channel": "チャンネル名やアーティスト名を入力してください。<br>複数のアーティストが関わっている場合はコンマ(,)で区切って入力してください。<br>複数の名義がある場合は、現在使われている名義・チャンネル名を入力してください。<span style='font-size: 10px'>将来的に名義に関する情報を入力できる機能を実装予定です。</span>",
+    "url": "URLを入力してください。<br>半角コンマ(,)で区切ることで複数のURLを登録することができます。<br>転載動画のURLの記載はお控えください。",
+    "imitate": "模倣元・オマージュ元・歌詞の引用元・アレンジ元の曲を入力してください。<br>全てあなたの所為です。の曲を選択するときは上部のボタンから、それ以外の曲を選択するときは下部の入力欄から検索することで選択できます。<br>入力欄に模倣曲のタイトルを入力してもヒットしない場合はまず、その模倣曲を情報を登録してください。<br>模倣曲は複数曲選択できます。",
+    "lyrics": "歌詞を入力してください。<br>インスト曲の場合は入力は不要です。<br>形式は特に決まっていませんが、できるだけMVと同じように記述してくれると助かります。",
+    "is-draft": "下書きとして投稿したい場合はチェックしてください。<br>入力途中だけど投稿したいときに利用してください。<br>下書きした内容は誰でも閲覧できる状態になります。",
+    "delete": "開発者に記事の削除依頼を送ります。<br>実際に削除の対応をするまでに時間がかかる場合があります。",
+    "reply": "返信が必要な場合ここに、X(旧：Twitter)のアカウントID、もしくはDiscordのユーザーID、もしくはメールアドレスを入力してください。<br>掲載拒否のお問い合わせの場合入力が必須です。",
+}
+
+function showTutorial(place) {
+    const tutorial = TUTORIALS[place];
+    showToast("info", tutorial);
+}

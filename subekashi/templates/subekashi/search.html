@@ -4,7 +4,6 @@
 {% load static %}
 {% load categorys %}
 {% load song_card %}
-{% load last_modified %}
 {% block css %}{% static 'subekashi/css/search.css'%}{% endblock %}
 
 {% block content %}
@@ -119,11 +118,11 @@
             <label for="isdeleted">非公開/削除済み</label>
         </div>
     </details>
-    <input type="submit" id="search-button" onclick="renderSearch()">検索</input>
+    <input type="submit" id="search-button" value="検索" onclick="renderSearch()"></input>
     <div id="song-cards"></div>
 </section>
 {% endblock %}
 
 {% block js %}
-<script src="{% static 'subekashi/js/search.js' %}?{% get_last_modified %}"></script>
+<script src="{% static 'subekashi/js/search.js' %}?{{ version }}"></script>
 {% endblock %}

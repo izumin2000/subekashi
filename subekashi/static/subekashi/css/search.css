@@ -1,15 +1,5 @@
-@media (min-width: 640px) {
-    .form-col label {
-        width: 9em !important;
-    }
-}
-
-input[type=checkbox] {
-    margin-left: 0;
-}
-
-.checkbox-col label {
-    margin-right: 20px;
+#imitate-div p {
+    margin-bottom: 0;
 }
 
 .dummybuttons {

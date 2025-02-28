@@ -17,7 +17,7 @@
 
 html {
     height: 100%;
-    background-color: #000;
+    background-color: #111;
     font-family: 'Imitate', 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif, Meiryo;
 }
 
@@ -57,7 +57,7 @@ header {
 }
 
 #pc-global-items-wrapper a, #pc-global-items-wrapper p {
-    color: #000;
+    color: #111;
     margin: 0 10px;
     font-size: 16px;
 }
@@ -88,7 +88,7 @@ header {
 #pc-global-message p {
     position: relative;
     text-align: center;
-    color: #000;
+    color: #111;
     font-size: 16px;
     line-height: 0px;
     bottom: 20px;
@@ -146,7 +146,7 @@ aside {
     font-size: 32px;
     width: 1.25em;
     overflow-x: hidden;
-    background-color: #000000aa;
+    background-color: #111111aa;
     z-index: 99;
     transition: all 300ms 0s ease;
 }
@@ -161,15 +161,30 @@ aside:hover {
     width: 7.5em
 }
 
+aside table {
+    border: 0px none;
+    width: 100%;
+    border-spacing: 0;
+}
+
+aside td {
+    padding: 2px 0;
+}
+
+aside tr:hover {
+    background-color: #ffffff33;
+}
+
+aside tr td:nth-child(1) i {
+    display: inline-block;
+    width: 20px;
+    text-align: center;
+}
+
 aside a {
     display: block;
     white-space: nowrap;
-    margin: 5px 0;
     text-decoration: none;
-}
-
-aside a:hover {
-    background-color: #ffffff33;
 }
 
 aside i {
@@ -193,7 +208,7 @@ aside:hover p {
     opacity: 1;
 }
 
-aside p:hover {
+aside a:hover p {
     text-decoration: underline 2px #fff;
 }
 
@@ -230,7 +245,7 @@ aside p:hover {
     height: 70vh;
     width: 100vw;
     bottom: 0;
-    background-color: #000000aa;
+    background-color: #111111aa;
     border-top: solid #ffffffaa 2px;
     padding: 1em 0;
     overflow-y: scroll;
@@ -269,7 +284,7 @@ aside p:hover {
     margin: 0 auto;
     height: 50px;
     width: 100vw;
-    background-color: #000;
+    background-color: #111;
     z-index: 999;
 }
 
@@ -300,12 +315,12 @@ aside p:hover {
     display: block;
     text-align: center;
     margin: 1em auto;
-    color: #000;
+    color: #111;
     width: 90vw;
 }
 
 #sp-global-items-wrapper a {
-    text-decoration: underline 2px #000;
+    text-decoration: underline 2px #111;
     width: fit-content;
 }
 
@@ -319,10 +334,6 @@ aside p:hover {
 }
 
 /* 基礎 */
-main {
-    margin-top: 40px;
-}
-
 #mainarticle {
     margin: 30px auto 0 auto;
     max-width: 800px;
@@ -361,9 +372,20 @@ a {
     text-underline-offset: 0.3ex;
 }
 
+.text-label {
+    display: inline-block;
+    text-align: center;
+    width: 7em;
+    margin-bottom: 15px;
+}
+
 .sansfont {
     font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans',  sans-serif !important;
     font-weight: 1000 !important;
+}
+
+.info {
+    color: #09F;
 }
 
 .ok {
@@ -376,6 +398,10 @@ a {
 
 .error {
     color: #B60;
+}
+
+.fa-info-circle, .fa-check-circle, .fa-exclamation-triangle, .fa-ban {
+    margin-right: 10px;
 }
 
 .underline {
@@ -418,18 +444,19 @@ label {
     position: relative;
     display: inline-block;
     cursor: pointer;
-    margin-right: 10px;
+    text-align: center;
 }
 
-.required::after {
-    content: "*";
-    color: #B60;
-    position: absolute;
-    bottom: 5px;
+details {
+    text-align: center;
+}
+
+details p {
+    margin: 15px 0;
 }
 
 .form-col label {
-    width: 8em;
+    width: 9em;
 }
 
 input, select, option, textarea {
@@ -450,7 +477,13 @@ input:focus {
 }
 
 .checkbox-col {
-    display: inline-block;
+    display: block;
+    text-align: center;
+    margin: 5px 0;
+}
+
+.checkbox-col label {
+    width: 8em;
 }
 
 input[type=checkbox] {
@@ -468,6 +501,11 @@ textarea {
     padding: 10px;
 }
 
+sup {
+    margin-left: 5px;
+    color: #B60;
+}
+
 @media (max-width: 640px) {
     .form-col {
         display: block;
@@ -482,6 +520,10 @@ textarea {
     .checkbox-col {
         display: block;
     }
+    
+    input {
+        width:100%;
+    }
 }
 
 input[type=submit], button {
@@ -492,6 +534,16 @@ input[type=submit], button {
     cursor: pointer;
     margin: 20px 0;
     font-family: 'Imitate', 'Noto Sans JP',  'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif, Meiryo;
+    border-radius: 10px;
+}
+
+.fa-info-circle {
+    margin-left: 10px;
+    cursor: pointer;
+}
+
+.checkbox-col .fa-info-circle {
+    margin-left: 0px;
 }
 
 .dummybuttons {
@@ -520,6 +572,7 @@ input[type=submit], button {
     padding: 0 40px;
     margin: 20px 10px;
     cursor: pointer;
+    border-radius: 10px;
 }
 
 @media (max-width: 450px) {
@@ -529,7 +582,7 @@ input[type=submit], button {
 }
 
 .dummybutton p {
-    color: #000;
+    color: #111;
     text-align: center;
     white-space: nowrap;
     padding-top: 5px;
@@ -551,6 +604,10 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     cursor: not-allowed;
 }
 
+input::placeholder {
+    text-align: center;
+}
+
 
 /* カテゴリボタン */
 #imitate-div {
@@ -559,20 +616,30 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     background-color: #333;
 }
 
+#imitate-div p {
+    text-align: center;
+    word-break: break-all;
+}
+
 #imitate-div #imitate-sub {
     margin-top: 20px;
 }
 
+#categorys {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
 #categorys button {
     display: inline-block;
-    margin: 5px 0 !important;
+    margin: 5px !important;
     padding: 10px;
     height: 49.5px;
     width: fit-content;
     border: none;
     font-size: 25px;
     cursor: pointer;
-    margin: 20px 0;
 }
 
 #categorys button:hover {
@@ -587,6 +654,76 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
 
 #categorys span {
     font-size: 17px;
+}
+
+#imitate-search {
+    margin: 10px 0;
+    width: 100%;
+    padding: 0;
+}
+
+#imitatelist {
+    margin-top: 20px;
+}
+
+#imitatelist div {
+    margin: 5px 0;
+}
+
+.fa-trash-alt {
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+/* トースト */
+@keyframes slideIn {
+    from {
+        top: -340px;
+    }
+
+    to {
+        top: 34px;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        top: 34px;
+    }
+
+    to {
+        top: -340px;
+    }
+}
+
+.toast {
+    position: fixed;
+    top: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90vw;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(8px);
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    font-family: Arial, sans-serif;
+    z-index: 1000;
+    animation: slideIn 0.5s forwards, slideOut 0.5s 8s forwards;
+}
+
+.long-time {
+    animation: slideIn 0.5s forwards, slideOut 0.5s 16s forwards;
+}
+
+.toast p, .toast a {
+    color: #111;
+    font-weight: bold;
+    line-height: normal;
+}
+
+.toast a {
+    text-decoration: underline 2px #111;
 }
 
 /* フッダー */

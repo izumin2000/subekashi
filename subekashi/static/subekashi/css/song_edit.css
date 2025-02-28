@@ -1,0 +1,32 @@
+.dummybutton {
+    width: 120px;
+}
+
+#imitate-label {
+    display: block;
+    text-align: center;
+}
+
+.song-edit-info {
+    text-align: center;
+    min-height: 32px;
+    margin-bottom: 20px
+}
+
+#song-edit-info-title-channel a {
+    color: #990;
+    text-decoration: underline 2px #990;
+}
+
+#song-edit-info-url a {
+    color: #B60;
+    text-decoration: underline 2px #B60;
+}
+
+#song-edit-info-submit li {
+    color: #09F;
+}
+
+ul {
+    list-style-position: inside;
+}

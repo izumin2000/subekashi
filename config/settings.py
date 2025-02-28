@@ -42,11 +42,8 @@ MIDDLEWARE = [
     'django_hosts.middleware.HostsResponseMiddleware',
     'subekashi.middleware.restrict_ip.RestrictIPMiddleware',
     'subekashi.middleware.cache.CacheControlMiddleware',
+    'subekashi.middleware.rate_limit.RatelimitMiddleware',
     'corsheaders.middleware.CorsMiddleware',
-]
-
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -64,8 +61,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'subekashi.lib.context_processors.context_processors',
             ],
-            
         },
     },
 ]

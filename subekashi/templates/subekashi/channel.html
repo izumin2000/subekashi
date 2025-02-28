@@ -15,7 +15,7 @@
         <p id="songnotfound">曲が見つかりませんでした</p>
     {% endfor %}
     <div class="dummybuttons">
-        <a href="{% url 'subekashi:new' %}?channel={{ channel }}">
+        <a href="{% url 'subekashi:song_new' %}?channel={{ channel }}">
             <div class="dummybutton"><p>曲を登録する</p></div>
         </a>
     </div>

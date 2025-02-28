@@ -17,7 +17,7 @@
     <form action="{% url 'subekashi:search' %}" method="GET" id="search-form">
         <div class="form-col">
             <label for="keyword">キーワード</label>
-            <input type="text" id="keyword" class="sansfont" name="keyword" placeholder="タイトル・チャンネル名・歌詞・URL">
+            <input type="text" id="keyword" name="keyword" placeholder="タイトル・チャンネル名・歌詞・URL">
         </div>
         <input type="submit" value="検索" id="searchsubmit">
     </form>
@@ -29,7 +29,7 @@
     {% endfor %}
     <div class="dummybuttons">
         <a href="{% url 'subekashi:search' %}"><div class="dummybutton"><p>もっと見る</p></div></a>
-        <a href="{% url 'subekashi:new' %}"><div class="dummybutton"><p>曲を登録する</p></div></a>
+        <a href="{% url 'subekashi:song_new' %}"><div class="dummybutton"><p>曲を登録する</p></div></a>
     </div>
     
     {% if isAdDisplay %}
@@ -63,7 +63,7 @@
         {% endfor %}
             <div class="dummybuttons">
                 <a href="{% url 'subekashi:search' %}?islack=True"><div class="dummybutton"><p>もっと見る</p></div></a>
-                <a href="{% url 'subekashi:new' %}"><div class="dummybutton"><p>曲を登録する</p></div></a>
+                <a href="{% url 'subekashi:song_new' %}"><div class="dummybutton"><p>曲を登録する</p></div></a>
             </div>
     {% endif %}
  
@@ -81,7 +81,7 @@
     <h1>クレジット</h1>
     <div class="underline"></div>
     <div id="credit">
-        <p>本ソフトでは表示フォントに「源全ゴシック」(<a href="https://drive.google.com/drive/folders/19WidrJoCmI5qLJV-eR_ydURIwxB2-DSH" target="_blank">https://drive.google.com/drive/folders/19WidrJoCmI5qLJV-eR_ydURIwxB2-DS</a>) を使用しています。</p>
+        <p>本ソフトでは表示フォントに「源全ゴシック」(<a href="https://drive.google.com/drive/folders/19WidrJoCmI5qLJV-eR_ydURIwxB2-DSH" target="_blank">https://drive.google.com/drive/folders/19WidrJoCmI5qLJV-eR_ydURIwxB2-DSH</a>) を使用しています。</p>
         <p>Licensed under SIL Open Font License 1.1 <a href="http://scripts.sil.org/OFL" target="_blank">http://scripts.sil.org/OFL</a></p>
         <p>© 2021 全て語り手の所為です。</p>
         <br>
@@ -167,31 +167,25 @@
     }
 
     async function setad(view, click) {
-    res = null
-    csrf = await getCSRF();
-    try {
-    res = await fetch(
-        baseURL() + "/api/ad/" + "{{ adIns.id }}" + "/?format=json",
-        {
-            method: "PUT",
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(
-                {
-                    "view": view,
-                    "click": click,
-                }
-            ),
-            credentials: 'include',
-        });
-        if ( ! res.ok ) {
-            throw new RuntimeError(`getHeader: Response: ${res.status}`);
-        };
-    } finally {
-        return res
+        const csrf = await getCSRF();
+        await fetch(
+            baseURL() + "/api/ad/" + "{{ adIns.id }}" + "/?format=json",
+            {
+                method: "PUT",
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrf
+                },
+                body: JSON.stringify(
+                    {
+                        "view": view,
+                        "click": click,
+                    }
+                ),
+                credentials: 'include',
+            }
+        )
     };
-}
 </script>
 <script defer src="https://www.youtube.com/iframe_api"></script>
 <script defer src="{% static 'subekashi/js/x.js' %}" ></script>

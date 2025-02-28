@@ -5,7 +5,7 @@
 {% block css %}{% static 'subekashi/css/ai.css'%}{% endblock %}
 
 {% block content %}
-<section>
+<section id="ai-section">
     <h1>正常に狂うのです。</h1>
     <div class="underline"></div>
     <form action="{% url 'subekashi:ai_result' %}" method="POST">{% csrf_token %}
@@ -13,11 +13,9 @@
         <p class="sansfont">総学習量: {{ WORD_COUNT }}文字({{ SONG_COUNT }}曲)</p>
         <p class="sansfont">最終更新: {{ GENE_DATE }}</p>
     </form>
-</section>
 
-<section id="ai-section">
-    <h1>最高評価の歌詞</h1>
     {% comment %} TODO underlineをh1にマージ {% endcomment %}
+    <h1>最高評価の歌詞</h1>
     <div class="underline"></div>
     {% for bestIns in bestInsL  %}
         <p class="lyric">{{ bestIns.lyrics }}</p>

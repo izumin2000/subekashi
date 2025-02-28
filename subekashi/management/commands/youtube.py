@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from subekashi.lib.url import *
 from subekashi.lib.youtube import *
 from subekashi.models import Song
+from time import sleep
 
 
 class Command(BaseCommand):
@@ -22,6 +23,7 @@ class Command(BaseCommand):
             return {}
 
         for video_id in video_ids:
+            sleep(2)
             yt_res = get_youtube_api(video_id)
             if yt_res == {}:
                 continue
