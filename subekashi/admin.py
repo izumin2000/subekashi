@@ -4,7 +4,7 @@ from .models import *
 
 
 class SongAdmin(admin.ModelAdmin):
-    fields = ["title", "channel", "url", "imitate", "imitated", "lyrics", "view", "like", "post_time", "upload_time", "isoriginal", "isjoke", "issubeana", "isdeleted", "isinst", "isarchived", "isdraft"]
+    fields = ["title", "channel", "url", "imitate", "imitated", "lyrics", "view", "like", "post_time", "upload_time", "isoriginal", "isjoke", "issubeana", "isdeleted", "isinst", "isdraft"]
 
 admin.site.register(Song, SongAdmin)
 
