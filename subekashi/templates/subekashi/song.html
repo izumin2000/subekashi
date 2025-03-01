@@ -22,13 +22,13 @@
         {% endfor %}
         
         <br><i class="fas fa-tags"></i>
-        {% for imitateIns in imitateInsL %}
-            <a class="songimitate sansfont" href="{% url 'subekashi:song' imitateIns.id %}">{{ imitateIns.title }}模倣</a>
+        {% for imitate in imitate_list %}
+            <a class="songimitate sansfont" href="{% url 'subekashi:song' imitate.id %}">{{ imitate.title }}模倣</a>
         {% endfor %}
         {% if song.channel == "全てあなたの所為です。" %}
             <p class="songimitate">オリジナル</p>
         {% endif %}
-        {% if islack %}
+        {% if is_lack %}
             <a class="songimitate" href="{% url 'subekashi:search' %}?islack=True">作成途中</a>
         {% endif %}
         {% if song.isdraft %}
@@ -50,10 +50,10 @@
             <a class="songimitate" href="{% url 'subekashi:search' %}?isdeleted=True">非公開/削除済み</a>
         {% endif %}
         
-        {% if imitatedInsL %}
+        {% if imitated_list %}
             <br><i class="fas fa-sitemap"></i>
-            {% for imitatedIns in imitatedInsL %}
-                <a class="songimitate sansfont" href="{% url 'subekashi:song' imitatedIns.id %}">{{ imitatedIns.title }}</a>
+            {% for imitated in imitated_list %}
+                <a class="songimitate sansfont" href="{% url 'subekashi:song' imitated.id %}">{{ imitated.title }}</a>
             {% endfor %}
         {% endif %}
         {% if song.upload_time %}
