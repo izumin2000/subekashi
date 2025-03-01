@@ -7,10 +7,10 @@ NUMBER_GT_FORMS = [f"{column}_gt" for column in NUMBER_FORMS]
 NUMBER_LT_FORMS = [f"{column}_lt" for column in NUMBER_FORMS]
 
 LIB_FILTERS = {
-    "keyword": include_keyword,
-    "imitate": include_imitate,
-    "imitated": include_imitated,
-    "guesser": include_guesser,
+    "keyword": filter_by_keyword,
+    "imitate": filter_by_imitate,
+    "imitated": filter_by_imitated,
+    "guesser": filter_by_guesser,
     "islack": islack,
 }
 

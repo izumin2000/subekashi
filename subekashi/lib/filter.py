@@ -1,7 +1,7 @@
 from django.db.models import Q
 
 
-def include_keyword(keyword):
+def filter_by_keyword(keyword):
     return (
         Q(title__contains=keyword) |
         Q(channel__contains=keyword) |
@@ -9,7 +9,7 @@ def include_keyword(keyword):
         Q(url__contains=keyword)
     )
     
-def include_imitate(imitate):
+def filter_by_imitate(imitate):
     imitate = str(imitate)
     return (
         Q(imitate=imitate) |
@@ -18,7 +18,7 @@ def include_imitate(imitate):
         Q(imitate__contains=',' + imitate + ',')
     )
 
-def include_imitated(imitated):
+def filter_by_imitated(imitated):
     imitated = str(imitated)
     return (
         Q(imitated=imitated) |
@@ -27,7 +27,7 @@ def include_imitated(imitated):
         Q(imitated__contains=',' + imitated + ',')
     )
 
-def include_guesser(guesser):
+def filter_by_guesser(guesser):
     return (
         Q(title__contains=guesser) |
         Q(channel__contains=guesser)
