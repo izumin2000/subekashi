@@ -11,7 +11,7 @@ register = template.Library()
 
 @register.simple_tag
 def get_channel(song):
-    channels = song.channel.replace(", ", ",").split(',')
+    channels = song.channel.split(',')
     # 合作なら
     if len(channels) >= 2:
         return mark_safe('<i class="fas fa-user-friends"></i>合作')
@@ -58,7 +58,7 @@ URL_ICON = {
 
 @register.simple_tag
 def get_url(song):
-    urls = song.url.replace(", ", ",").split(',') if song.url else ""
+    urls = song.url.split(',') if song.url else ""
     i_tags = ""
     
     # 非公開なら

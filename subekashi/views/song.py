@@ -16,7 +16,7 @@ def song(request, song_id) :
         "islack": islack.check(song.__dict__)
     }
     
-    dataD["urls"] = song.url.replace(", ", ",").split(",") if song.url else []
+    dataD["urls"] = song.url.split(",") if song.url else []
     description = ""
     jokerange = request.COOKIES.get("jokerange", "off")
     if song.imitate :

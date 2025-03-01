@@ -9,7 +9,7 @@ def channel(request, channelName) :
     dataD["channel"] = channelName
     songInsL = []
     for songIns in Song.objects.all() :
-        if channelName in songIns.channel.replace(", ", ",").split(",") :
+        if channelName in songIns.channel.split(",") :
             songInsL.append(songIns)
     dataD["songInsL"] = songInsL
     titles = ", ".join([songIns.title for songIns in songInsL[::-1]])
