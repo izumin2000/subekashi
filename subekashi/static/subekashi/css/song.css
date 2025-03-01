@@ -1,22 +1,16 @@
-#sonf-info p, #sonf-info a {
+#tags p, #tags a {
     display: inline-block;
     font-size: 22px;
-    margin-bottom: 20px;
     width: fit-content;
 }
 
 i {
     font-size: 22px;
-    margin-right: 10px;
+    margin: 0 10px 0 5px;
 }
 
 .fa-tags {
     font-size: 18px;
-    margin-bottom: 22px;
-}
-
-.url-p {
-    display: inline-block;
 }
 
 .fa-copy {
@@ -30,11 +24,50 @@ i {
     margin-right: 15px;
 }
 
-#view, #like {
-    margin-bottom: 20px;
+details {
+    background-color: #333;
+    padding: 5px;
+    border-radius: 10px;
 }
 
-#lyrics, .songnotfound {
+details[open] {
+    cursor: default;
+}
+
+details:hover {
+    background-color: #555;
+}
+
+details[open]:hover {
+    background-color: #333;
+}
+
+summary {
+    text-align: left;
+    list-style: none;
+    margin-bottom: 0;
+    cursor: pointer;
+    border-radius: 10px;
+}
+
+summary:hover {
+    background-color: #555;
+}
+
+summary::-webkit-details-marker {
+    display: none;
+}
+
+details i {
+    margin-left: 0;
+}
+
+.imitate {
+    transform: rotate(180deg);
+}
+
+#lyrics {
     text-align: center;
     line-height: 50px;
+    margin-top: 75px;
 }
