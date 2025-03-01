@@ -268,7 +268,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 // YouTubeのURLから動画IDを取得
-function getYouTubeVideoId(url) {
+function getYouTubeId(url) {
     const regex = /(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/.*[?&]v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
     const match = url.match(regex);
     return match ? match[1] : null;
@@ -276,7 +276,7 @@ function getYouTubeVideoId(url) {
 
 // YouTubeのURLから動画IDを取得
 function formatYouTubeURL(url) {
-    youtube_id = getYouTubeVideoId(url)
+    youtube_id = getYouTubeId(url)
     if (!youtube_id) {
         return url;
     }

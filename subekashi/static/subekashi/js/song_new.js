@@ -24,7 +24,7 @@ function checkAutoForm() {
     const newSubmitAutoEle = document.getElementById('new-submit-auto');
     const newFormAutoInfoEle = document.getElementById('new-form-auto-info');
     const inputUrlEle = urlEle.value;
-    const videoId = getYouTubeVideoId(inputUrlEle);
+    const videoId = getYouTubeId(inputUrlEle);
 
     // URLが空の場合
     if (inputUrlEle === '') {
@@ -53,7 +53,7 @@ function checkAutoForm() {
         return;
     }
 
-    const existingSong = songJson.find(song => getYouTubeVideoId(song.url) === videoId);
+    const existingSong = songJson.find(song => getYouTubeId(song.url) === videoId);
 
     // 既に登録されているURLの場合
     if (existingSong) {
