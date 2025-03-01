@@ -52,7 +52,7 @@ def top(request):
         songInsL = songInsL.filter(isjoke = False)
         
     dataD["songInsL"] = list(songInsL)[:-7:-1]
-    lackInsL = list(songInsL.filter(islack))
+    lackInsL = list(songInsL.filter(filter_by_lack))
     if lackInsL :
         lackInsL = random.sample(lackInsL, min(6, len(lackInsL)))
         dataD["lackInsL"] = lackInsL

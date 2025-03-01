@@ -11,7 +11,7 @@ LIB_FILTERS = {
     "imitate": filter_by_imitate,
     "imitated": filter_by_imitated,
     "guesser": filter_by_guesser,
-    "islack": islack,
+    "islack": filter_by_lack,
 }
 
 DEFALT_SIZE = 50
@@ -73,7 +73,7 @@ def song_search(query):
 
         for key, filter_func in LIB_FILTERS.items():
             if (key in query) and (key == "islack"):
-                song_qs = song_qs.filter(islack)
+                song_qs = song_qs.filter(filter_by_lack)
                 continue
             
             if key in query:

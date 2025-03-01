@@ -33,7 +33,7 @@ def filter_by_guesser(guesser):
         Q(channel__contains=guesser)
     )
     
-islack = (
+filter_by_lack = (
     (Q(isdeleted=False) & Q(url="")) |
     (Q(isoriginal=False) & Q(issubeana=True) & Q(imitate="") & ~Q(channel="全てあなたの所為です。")) | 
     (Q(isinst=False) & Q(lyrics=""))
