@@ -1,8 +1,9 @@
 from django.shortcuts import render
 from subekashi.models import *
 from subekashi.lib.filter import islack
+from django.views.decorators.cache import never_cache
 
-
+@never_cache
 def song(request, song_id) :
     try:
         song = Song.objects.get(pk = song_id)
