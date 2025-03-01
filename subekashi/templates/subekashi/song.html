@@ -101,24 +101,20 @@
         }
     });
 
-    {% comment %} TODO トーストにする {% endcomment %}
     function copy(text) {
-        if (Boolean(navigator.clipboard)) {
-            navigator.clipboard.writeText(text);
-        } else {
-            aleat("コピーできませんでした。");
+        if (!Boolean(navigator.clipboard)) {
+            showToast("error", "コピーできませんでした。");
+            return;
         }
+        
+        navigator.clipboard.writeText(text);
+        showToast("ok", "コピーしました。");
     };
-
-    {% comment %} TODO 下のコードにまとめる {% endcomment %}
-    if ("{{ request.GET.toast }}" == "edit") {
-        showToast("ok", "登録しました。")
-    }
     
     {% if request.GET.toast == "edit" %}
-    showToast("ok", "登録しました。")
+        showToast("ok", "登録しました。");
     {% elif request.GET.toast == "delete" %}
-    showToast("ok", "削除申請を送信しました。");
+        showToast("ok", "削除申請を送信しました。");
     {% endif %}
 </script>
 {% endblock %}
