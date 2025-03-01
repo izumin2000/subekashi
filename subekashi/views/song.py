@@ -7,11 +7,9 @@ from subekashi.lib.discord import *
 
 
 def song(request, song_id) :
-    if song_id < 0 or song_id > MAX_ID :
-        return render(request, 'subekashi/404.html', status=404)
-        
-    song_qs = Song.objects.filter(pk = song_id)
-    if not song_qs.exists() :
+    try:
+        song = Song.objects.get(pk = song_id)
+    except:
         return render(request, 'subekashi/404.html', status=404)
     
     songIns = song_qs.first()
