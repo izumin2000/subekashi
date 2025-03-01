@@ -50,14 +50,15 @@ def song_edit(request, song_id) :
         
         # DB保存用に変数を用意
         ip = get_ip(request)
-        cleand_channel = channel.replace("/", "╱")
+        cleand_title = title.replace(" , ", ",").replace(" ,", ",").replace(", ", ",")
+        cleand_channel = channel.replace("/", "╱").replace(" , ", ",").replace(" ,", ",").replace(", ", ",")
         cleand_lyrics = lyrics.replace("\r\n", "\n")
 
         # discordに通知
         content = f'\n\
         編集されました\n\
         {ROOT_URL}/songs/{song_id}\n\
-        タイトル：{title}\n\
+        タイトル：{cleand_title}\n\
         チャンネル : {cleand_channel}\n\
         URL : {cleaned_url}\n\
         ネタ曲 : {"Yes" if is_joke else "No"}\n\
@@ -94,7 +95,7 @@ def song_edit(request, song_id) :
             delete_imitate.save()
 
         # songの更新
-        song.title = title
+        song.title = cleand_title
         song.channel = cleand_channel
         song.url = cleaned_url
         song.lyrics = cleand_lyrics
