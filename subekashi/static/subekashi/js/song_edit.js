@@ -182,6 +182,13 @@ function checkUrlForm() {
             return;
         }
 
+        // URLのフォーマット
+        url = url.replace("https://www.google.com/url?q=", "");
+        url = url.replace("https://www.", "https://");
+        url = url.replace("https://twitter.com", "https://x.com");
+        url = formatYouTubeURL(url);
+        console.log(url);
+
         const existingSong = songJson.find(song => (song.url.includes(url)) && (song.id != song_id));
         // 既に登録されているURLの場合
         if (existingSong) {

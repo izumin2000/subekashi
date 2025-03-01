@@ -276,7 +276,7 @@ function getYouTubeId(url) {
 
 // YouTubeのURLから動画IDを取得
 function formatYouTubeURL(url) {
-    youtube_id = getYouTubeId(url)
+    const youtube_id = getYouTubeId(url)
     if (!youtube_id) {
         return url;
     }
