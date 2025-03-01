@@ -27,7 +27,7 @@ def song_new(request) :
         # YouTube APIから情報取得
         yt_res = {}
         if is_yt_url(url) :
-            yt_id = format_yt_url(url, id=True)
+            yt_id = get_youtube_id(url)
             yt_res = get_youtube_api(yt_id)
             title = yt_res.get("title", "")
             channel = yt_res.get("channel", "")

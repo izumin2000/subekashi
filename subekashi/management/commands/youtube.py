@@ -10,7 +10,7 @@ class Command(BaseCommand):
     
     def get_youtube_links(self, song):
         urls = song.url.split(",")
-        video_ids = [format_yt_url(url, True) for url in urls if is_yt_url(url)]
+        video_ids = [get_youtube_id(url) for url in urls if is_yt_url(url)]
         return video_ids
     
     def get_best_youtube_view(self, songs):
