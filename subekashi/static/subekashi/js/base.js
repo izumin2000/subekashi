@@ -274,6 +274,16 @@ function getYouTubeVideoId(url) {
     return match ? match[1] : null;
 }
 
+// YouTubeのURLから動画IDを取得
+function formatYouTubeURL(url) {
+    youtube_id = getYouTubeVideoId(url)
+    if (!youtube_id) {
+        return url;
+    }
+
+    return `https://youtu.be/${youtube_id}`
+}
+
 // チュートリアルトーストの表示
 const TUTORIALS = {
     "new-form-auto": "YouTubeのリンクからタイトル・チャンネル名を自動で取得して登録するフォームです。既に登録してあるURLは登録できません。",
