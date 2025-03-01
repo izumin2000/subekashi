@@ -29,6 +29,12 @@ def song(request, song_id):
     descriptio_lyrics = song.lyrics.replace("\r\n", "")[:100]
     description += f"歌詞: {descriptio_lyrics}" if descriptio_lyrics else ""
     
+    # タグを持っているかどうかの確認
+    has_tag = False
+    has_tag |= song.channel == "全てあなたの所為です。"
+    has_tag |= is_lack(song) or song.isdraft or song.isoriginal or song.isjoke or song.isinst
+    has_tag |= not(song.issubeana) or song.isdeleted
+    
     # テンプレートに渡す辞書を作成
     dataD = {
         "metatitle": f"{song.title} / {song.channel}",
@@ -38,6 +44,7 @@ def song(request, song_id):
         "urls": song.url.split(",") if song.url else [],
         "imitated_list": imitated_list,
         "imitate_list": imitate_list,
-        "description": description
+        "description": description,
+        "has_tag": has_tag
     }
     return render(request, "subekashi/song.html", dataD)

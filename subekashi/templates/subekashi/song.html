@@ -8,17 +8,19 @@
 <section>
     <div id="sonf-info">
         {% comment %} TODO リファクタリング {% endcomment %}
-        <p class="sansfont"><i class="fas fa-music"></i>{{ song.title }}</p><br>
+        <p class="sansfont"><i class="fas fa-music"></i>{{ song.title }}</p>
         {% for channel in channels %}
-            <p><i class="fas fa-user-circle"></i><a href="{% url 'subekashi:channel' channel %}">{{ channel }}</a></p><br>
+            <p><i class="fas fa-user-circle"></i><a href="{% url 'subekashi:channel' channel %}">{{ channel }}</a></p>
         {% endfor %}
         
         {% for url in urls %}
-            <p><i class="fas fa-link"></i><i class="far fa-copy" onclick="copy('{{ url }}')"></i><a class="songurl" href="{{ url }}" target="_blank">{{ url }}</a></p><br>
+            <p><i class="fas fa-link"></i><i class="far fa-copy" onclick="copy('{{ url }}')"></i><a class="songurl" href="{{ url }}" target="_blank">{{ url }}</a></p>
         {% endfor %}
         
         <div id="tags">
-            <i class="fas fa-tags"></i>
+            {% if has_tag %}
+                <i class="fas fa-tags"></i>
+            {% endif %}
             {% if song.channel == "全てあなたの所為です。" %}
                 <p class="songimitate">オリジナル</p>
             {% endif %}
@@ -46,20 +48,20 @@
         </div>
 
         {% if song.upload_time %}
-            <br><p><i class="far fa-calendar-alt"></i>{{ song.upload_time }}</p>
+            <p><i class="far fa-calendar-alt"></i>{{ song.upload_time }}</p>
         {% endif %}
-        <br><p><i class="fas fa-file-signature"></i>{{ song.post_time }}</p>
+        <p><i class="fas fa-file-signature"></i>{{ song.post_time }}</p>
 
         {% if song.view %}
-            <br><p id="view"><i class="fas fa-play"></i>{{ song.view }}</p>
+            <p id="view"><i class="fas fa-play"></i>{{ song.view }}</p>
         {% endif %}
 
         {% if song.like %}
-            <br><p id="like"><i class="far fa-thumbs-up"></i>{{ song.like }}</p>
+            <p id="like"><i class="far fa-thumbs-up"></i>{{ song.like }}</p>
         {% endif %}
         
         {% if imitate_list %}
-            <br><details>
+            <details>
                 <summary><i class="fas fa-sitemap imitate"></i>{{ imitate_list|length }}曲の模倣曲</summary>
                 {% for imitate in imitate_list %}
                     <a class="songimitate sansfont" href="{% url 'subekashi:song' imitate.id %}">{{ imitate.title }}</a>
@@ -68,7 +70,7 @@
         {% endif %}
             
         {% if imitated_list %}
-            <br><details>
+            <details>
                 <summary><i class="fas fa-sitemap"></i>{{ imitated_list|length }}曲の被模倣曲</summary>
                 {% for imitated in imitated_list %}
                     <a class="songimitate sansfont" href="{% url 'subekashi:song' imitated.id %}">{{ imitated.title }}</a>

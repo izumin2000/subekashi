@@ -1,12 +1,15 @@
-#tags p, #tags a {
-    display: inline-block;
-    font-size: 22px;
-    width: fit-content;
+p {
+    line-height: 50px;
 }
 
 i {
     font-size: 22px;
     margin: 0 10px 0 5px;
+}
+
+#tags p, #tags a {
+    display: inline-block;
+    width: fit-content;
 }
 
 .fa-tags {
@@ -28,6 +31,7 @@ details {
     background-color: #333;
     padding: 5px;
     border-radius: 10px;
+    margin: 20px 0 30px 0;
 }
 
 details[open] {
