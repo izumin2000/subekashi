@@ -54,8 +54,8 @@ def song_new(request) :
             dataD["error"] = "タイトルかチャンネルが空です。"
             return render(request, 'subekashi/song_new.html', dataD)
         
-        cleand_title = title.replace(" , ", ",").replace(" ,", ",").replace(", ", ",")
-        cleand_channel = channel.replace("/", "╱").replace(" , ", ",").replace(" ,", ",").replace(", ", ",")
+        cleand_title = title.replace(" ,", ",").replace(", ", ",")
+        cleand_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
         # TODO cleaned_urlがURL_ICONにあるかのセキュリティチェック
         ip = get_ip(request)
         

@@ -37,7 +37,7 @@ def format_x_url(url):
 
 # URLを短縮しフォーマットする
 def clean_url(urls):
-    urls = urls.replace(" , ", ",").replace(" ,", ",").replace(", ", ",")
+    urls = urls.replace(" ,", ",").replace(", ", ",")
     urls = urls.replace("https://www.google.com/url?q=", "")
     urls = urls.replace("https://www.", "https://")
     urls = urls.replace("https://twitter.com", "https://x.com")

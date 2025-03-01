@@ -50,8 +50,8 @@ def song_edit(request, song_id) :
         
         # DB保存用に変数を用意
         ip = get_ip(request)
-        cleand_title = title.replace(" , ", ",").replace(" ,", ",").replace(", ", ",")
-        cleand_channel = channel.replace("/", "╱").replace(" , ", ",").replace(" ,", ",").replace(", ", ",")
+        cleand_title = title.replace(" ,", ",").replace(", ", ",")
+        cleand_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
         cleand_lyrics = lyrics.replace("\r\n", "\n")
 
         # discordに通知
