@@ -13,15 +13,21 @@ def is_yt_url(url):
     match = re_yt_url(url)
     return not match is None
 
-# TODO idごとに関数を分ける
-def format_yt_url(url, id=False):
-    match = re_yt_url(url)
-    if match is None:
+def get_youtube_id(url):
+    # もしYouTubeの動画IDではなかったら
+    if not is_yt_url(url):
         return url
-    videoID = match.group(1)
-    if id:
-        return videoID
-    return "https://youtu.be/" + videoID
+    
+    match = re_yt_url(url)
+    return match.group(1)
+
+# YouTubeの動画URLを短縮する
+def format_yt_url(url):
+    # もしYouTubeの動画IDではなかったら
+    if not is_yt_url(url):
+        return url
+    
+    return f"https://youtu.be/{get_youtube_id(url)}"
 
 # XのURLのクエリを削除
 def format_x_url(url):
