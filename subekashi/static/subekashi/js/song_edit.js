@@ -115,22 +115,13 @@ function checkTitleChannelForm() {
         return;
     }
 
-    // タイトルにスペースが含まれている場合
-    if (titleEle.value != titleEle.value.trim()) {
-        songEditInfoTitleChannelEle.innerHTML = `<span class="info"><i class='fas fa-info-circle info'></i>タイトルにスペースが含まれています。<br>意図して入力していない場合、削除してください。</span>`;
-    }
-
-    // チャンネル名にスペースが含まれている場合
-    if (channelEle.value != channelEle.value.trim()) {
-        songEditInfoTitleChannelEle.innerHTML = `<span class="info"><i class='fas fa-info-circle info'></i>チャンネル名にスペースが含まれています。<br>意図して入力していない場合、削除してください。</span>`;
-    }
-
     // 読み込み中なら
     if (!songJson) {
         isTitleChannelValid = false;
         return;
     }
 
+    isTitleChannelValid = true;     // 以下の条件はvalid
     const existingSong = songJson.find(song => song.title === titleEle.value && song.channel === channelEle.value);
     const song_id = window.location.pathname.split("/")[2];
     // 既に登録されている曲の場合
@@ -145,13 +136,23 @@ function checkTitleChannelForm() {
         既に登録されている曲と登録しようとしている曲が別の曲に限り、登録することができます。<br>
         この記事を削除したい場合は、<a href="${baseURL()}/songs/${song_id}/delete?reason=song ID：${existingSong.id}と被っています。" target="_blank">こちら</a>をクリックしてください。
         </span>`;
-        isTitleChannelValid = true;
+        return;
+    }
+    
+    // タイトルの前後にスペースが含まれている場合
+    if (titleEle.value != titleEle.value.trim()) {
+        songEditInfoTitleChannelEle.innerHTML = `<span class="info"><i class='fas fa-info-circle info'></i>タイトルにスペースが含まれています。<br>意図して入力していない場合、削除してください。</span>`;
+        return;
+    }
+    
+    // チャンネル名の前後にスペースが含まれている場合
+    if (channelEle.value != channelEle.value.trim()) {
+        songEditInfoTitleChannelEle.innerHTML = `<span class="info"><i class='fas fa-info-circle info'></i>チャンネル名にスペースが含まれています。<br>意図して入力していない場合、削除してください。</span>`;
         return;
     }
 
-    // タイトルとチャンネル名が入力されている場合
+    // タイトル・チャンネル名の前後にスペースが含まれていない場合
     songEditInfoTitleChannelEle.innerHTML = "<span class='ok'><i class='fas fa-check-circle ok'></i>登録可能な状態です</span>";
-    isTitleChannelValid = true;
 }
 channelEle.addEventListener('input', checkTitleChannelForm);
 titleEle.addEventListener('input', checkTitleChannelForm);
@@ -187,7 +188,6 @@ function checkUrlForm() {
         url = url.replace("https://www.", "https://");
         url = url.replace("https://twitter.com", "https://x.com");
         url = formatYouTubeURL(url);
-        console.log(url);
 
         const existingSong = songJson.find(song => (song.url.includes(url)) && (song.id != song_id));
         // 既に登録されているURLの場合
