@@ -27,7 +27,7 @@ def song_new(request) :
         # YouTube APIから情報取得
         yt_res = {}
         if is_yt_url(url) :
-            yt_id = format_yt_url(url, id=True)
+            yt_id = get_youtube_id(url)
             yt_res = get_youtube_api(yt_id)
             title = yt_res.get("title", "")
             channel = yt_res.get("channel", "")
@@ -54,12 +54,13 @@ def song_new(request) :
             dataD["error"] = "タイトルかチャンネルが空です。"
             return render(request, 'subekashi/song_new.html', dataD)
         
-        cleand_channel = channel.replace("/", "╱")
+        cleand_title = title.replace(" ,", ",").replace(", ", ",")
+        cleand_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
         # TODO cleaned_urlがURL_ICONにあるかのセキュリティチェック
         ip = get_ip(request)
         
         song = Song(
-            title = title,
+            title = cleand_title,
             channel = cleand_channel,
             url = cleaned_url,
             post_time = timezone.now(),
@@ -83,9 +84,9 @@ def song_new(request) :
         タイトル：{title}\n\
         チャンネル : {cleand_channel}\n\
         URL : {cleaned_url}\n\
-        ネタ曲 : {"Yes" if is_joke else "False"}\n\
-        すべあな模倣曲 : {"Yes" if is_subeana else "False"}\n\
-        IP : {ip}```'
+        ネタ曲 : {"Yes" if is_joke else "No"}\n\
+        すべあな模倣曲 : {"Yes" if is_subeana else "No"}\n\
+        IP : {ip}'
         is_ok = send_discord(NEW_DISCORD_URL, content)
         if not is_ok:
             song.delete()

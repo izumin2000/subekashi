@@ -7,6 +7,14 @@
     text-align: center;
 }
 
+#imitate-list {
+    margin-top: 30px;
+}
+
+#imitate-list div {
+    margin: 5px 0;
+}
+
 .song-edit-info {
     text-align: center;
     min-height: 32px;

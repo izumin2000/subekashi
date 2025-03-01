@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.views.decorators.cache import never_cache
 from config.settings import *
 from subekashi.models import *
 from subekashi.constants.constants import *
@@ -11,6 +12,7 @@ import markdown
 
 INPUT_TEXTS = ["title", "channel", "lyrics", "url"]
 
+@never_cache
 def top(request):
     dataD = {
         "metatitle" : "トップ",
@@ -50,7 +52,7 @@ def top(request):
         songInsL = songInsL.filter(isjoke = False)
         
     dataD["songInsL"] = list(songInsL)[:-7:-1]
-    lackInsL = list(songInsL.filter(islack))
+    lackInsL = list(songInsL.filter(filter_by_lack))
     if lackInsL :
         lackInsL = random.sample(lackInsL, min(6, len(lackInsL)))
         dataD["lackInsL"] = lackInsL

@@ -9,7 +9,7 @@
     <div class="underline"></div>
     <p><span class="text-label">タイトル</span>{{ song.title }}</p>
     <p><span class="text-label">チャンネル名</span>{{ song.channel }}</p>
-    <form action="{% url 'subekashi:song' song.id %}" method="POST">{% csrf_token %}
+    <form action="{% url 'subekashi:song_delete' song.id %}" method="POST">{% csrf_token %}
         <div class="form-col">
             <label class="required">削除理由</label>
             <textarea id="reason" name="reason" required>{{ request.GET.reason }}</textarea>
@@ -22,4 +22,12 @@
 
 {% block js %}
 <script defer src="{% static 'subekashi/js/song_delete.js' %}?{{ version }}"></script>
+<script>
+    {% if result == "invalid" %}
+        showToast("error", "削除理由を入力してください。");
+    {% elif result == "error" %}
+        showToast("error", "お問い合わせを送信できませんでした。");
+    {% endif %}
+</script>
+</script>
 {% endblock %}

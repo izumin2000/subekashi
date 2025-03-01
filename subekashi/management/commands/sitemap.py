@@ -18,7 +18,7 @@ class Command(BaseCommand):
         self.add_url(urlset, base_url + "/", "1.0")
 
         # 優先度が0.9の固定パス
-        static_paths = ["/ai", "/new", "/make", "/songs", "/setting", "/ad", "/special", "/contact"]
+        static_paths = ["/ai", "/song_new", "/make", "/songs", "/setting", "/ad", "/special", "/contact"]
         for path in static_paths:
             self.add_url(urlset, base_url + path, "0.9")
 

@@ -7,11 +7,11 @@ NUMBER_GT_FORMS = [f"{column}_gt" for column in NUMBER_FORMS]
 NUMBER_LT_FORMS = [f"{column}_lt" for column in NUMBER_FORMS]
 
 LIB_FILTERS = {
-    "keyword": include_keyword,
-    "imitate": include_imitate,
-    "imitated": include_imitated,
-    "guesser": include_guesser,
-    "islack": islack,
+    "keyword": filter_by_keyword,
+    "imitate": filter_by_imitate,
+    "imitated": filter_by_imitated,
+    "guesser": filter_by_guesser,
+    "islack": filter_by_lack,
 }
 
 DEFALT_SIZE = 50
@@ -73,7 +73,7 @@ def song_search(query):
 
         for key, filter_func in LIB_FILTERS.items():
             if (key in query) and (key == "islack"):
-                song_qs = song_qs.filter(islack)
+                song_qs = song_qs.filter(filter_by_lack)
                 continue
             
             if key in query:

@@ -9,7 +9,7 @@
     <div id="sonf-info">
         {% comment %} TODO リファクタリング {% endcomment %}
         <i class="fas fa-music"></i>
-        <p class="sansfont">{{ songIns.title }}</p>
+        <p class="sansfont">{{ song.title }}</p>
         <br><i class="fas fa-user-circle"></i>
         {% for channel in channels %}
             <a href="{% url 'subekashi:channel' channel %}">{{ channel }}</a>
@@ -22,64 +22,64 @@
         {% endfor %}
         
         <br><i class="fas fa-tags"></i>
-        {% for imitateIns in imitateInsL %}
-            <a class="songimitate sansfont" href="{% url 'subekashi:song' imitateIns.id %}">{{ imitateIns.title }}模倣</a>
+        {% for imitate in imitate_list %}
+            <a class="songimitate sansfont" href="{% url 'subekashi:song' imitate.id %}">{{ imitate.title }}模倣</a>
         {% endfor %}
-        {% if songIns.channel == "全てあなたの所為です。" %}
+        {% if song.channel == "全てあなたの所為です。" %}
             <p class="songimitate">オリジナル</p>
         {% endif %}
-        {% if islack %}
+        {% if is_lack %}
             <a class="songimitate" href="{% url 'subekashi:search' %}?islack=True">作成途中</a>
         {% endif %}
-        {% if songIns.isdraft %}
+        {% if song.isdraft %}
             <a class="songimitate" href="{% url 'subekashi:search' %}?isdraft=True">下書き</a>
         {% endif %}
-        {% if songIns.isoriginal %}
+        {% if song.isoriginal %}
             <a class="songimitate" href="{% url 'subekashi:search' %}?isoriginal=True">オリジナル模倣</a>
         {% endif %}
-        {% if songIns.isjoke %}
+        {% if song.isjoke %}
             <a class="songimitate" href="{% url 'subekashi:search' %}?isjoke=only">ネタ曲</a>
         {% endif %}
-        {% if songIns.isinst %}
+        {% if song.isinst %}
             <a class="songimitate" href="{% url 'subekashi:search' %}?isinst=True">インスト曲</a>
         {% endif %}
-        {% if not songIns.issubeana %}
+        {% if not song.issubeana %}
             <a class="songimitate" href="{% url 'subekashi:search' %}?issubeana=xx">すべあな界隈曲以外の界隈曲</a>
         {% endif %}
-        {% if songIns.isdeleted %}
+        {% if song.isdeleted %}
             <a class="songimitate" href="{% url 'subekashi:search' %}?isdeleted=True">非公開/削除済み</a>
         {% endif %}
         
-        {% if imitatedInsL %}
+        {% if imitated_list %}
             <br><i class="fas fa-sitemap"></i>
-            {% for imitatedIns in imitatedInsL %}
-                <a class="songimitate sansfont" href="{% url 'subekashi:song' imitatedIns.id %}">{{ imitatedIns.title }}</a>
+            {% for imitated in imitated_list %}
+                <a class="songimitate sansfont" href="{% url 'subekashi:song' imitated.id %}">{{ imitated.title }}</a>
             {% endfor %}
         {% endif %}
-        {% if songIns.upload_time %}
-            <br><p><i class="far fa-calendar-alt"></i>{{ songIns.upload_time }}</p>
+        {% if song.upload_time %}
+            <br><p><i class="far fa-calendar-alt"></i>{{ song.upload_time }}</p>
         {% endif %}
-        <br><p><i class="fas fa-file-signature"></i>{{ songIns.post_time }}</p>
+        <br><p><i class="fas fa-file-signature"></i>{{ song.post_time }}</p>
         
     </div>
 
-    {% if songIns.view %}
-        <p id="view"><i class="fas fa-play"></i>: {{ songIns.view }}</a>
+    {% if song.view %}
+        <p id="view"><i class="fas fa-play"></i>: {{ song.view }}</a>
     {% endif %}
 
-    {% if songIns.like %}
-        <p id="like"><i class="far fa-thumbs-up"></i>: {{ songIns.like }}</a>
+    {% if song.like %}
+        <p id="like"><i class="far fa-thumbs-up"></i>: {{ song.like }}</a>
     {% endif %}
 
-    {% if songIns.lyrics %}
-        <p id="lyrics">{{ songIns.lyrics }}</p>
+    {% if song.lyrics %}
+        <p id="lyrics">{{ song.lyrics }}</p>
     {% endif %}
 
     <div class="dummybuttons">
-        <a href="{% url 'subekashi:song_edit' songIns.id %}">
+        <a href="{% url 'subekashi:song_edit' song.id %}">
             <div class="dummybutton"><p>編集</p></div>
         </a>
-        <a href="{% url 'subekashi:song_delete' songIns.id %}">
+        <a href="{% url 'subekashi:song_delete' song.id %}">
             <div class="dummybutton"><p>削除申請</p></div>
         </a>
     </div>
@@ -102,16 +102,19 @@
     });
 
     function copy(text) {
-        if (Boolean(navigator.clipboard)) {
-            navigator.clipboard.writeText(text);
-        } else {
-            aleat("コピーできませんでした。");
+        if (!Boolean(navigator.clipboard)) {
+            showToast("error", "コピーできませんでした。");
+            return;
         }
+        
+        navigator.clipboard.writeText(text);
+        showToast("ok", "コピーしました。");
     };
-
-    if ("{{ request.GET.toast }}" == "edit") {
-        showToast("ok", "登録しました。")
-    }
-</script>
+    
+    {% if request.GET.toast == "edit" %}
+        showToast("ok", "登録しました。");
+    {% elif request.GET.toast == "delete" %}
+        showToast("ok", "削除申請を送信しました。");
+    {% endif %}
 </script>
 {% endblock %}

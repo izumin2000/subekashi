@@ -1,4 +1,3 @@
-from django.template.loader import render_to_string
 from django.http import JsonResponse
 from subekashi.templatetags.toast import get_toast
 

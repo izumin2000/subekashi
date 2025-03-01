@@ -1,78 +1,43 @@
 from django.shortcuts import render
 from subekashi.models import *
-from subekashi.lib.filter import islack
-from subekashi.constants.constants import MAX_ID
-from subekashi.lib.ip import *
-from subekashi.lib.discord import *
+from subekashi.lib.filter import is_lack
 
-
-def song(request, song_id) :
-    if song_id < 0 or song_id > MAX_ID :
-        return render(request, 'subekashi/404.html', status=404)
-        
-    song_qs = Song.objects.filter(pk = song_id)
-    if not song_qs.exists() :
+def song(request, song_id):
+    try:
+        song = Song.objects.get(pk = song_id)
+    except:
         return render(request, 'subekashi/404.html', status=404)
     
-    songIns = song_qs.first()
-    dataD = {
-        "islack" : song_qs.filter(islack).exists()
-    }
+    # 模倣songリストを取得
+    imitate_list = Song.objects.none()
+    for imitate_id in song.imitate.split(",") if song.imitate else []:
+        imitate_or_none = Song.objects.filter(id = int(imitate_id))
+        imitate_list |= imitate_or_none
     
-    reason = request.POST.get("reason")
-    if reason :
-        content = f' \
-        ```{songIns.id}``` \n\
-        {ROOT_URL}/songs/{songIns.id} \n\
-        タイトル：{songIns.title}\n\
-        チャンネル名：{songIns.channel}\n\
-        理由：{reason}\n\
-        IP：{get_ip(request)}\
-        '
-        is_ok = send_discord(DELETE_DISCORD_URL, content)
-        if not is_ok:
-            # TODO これもtoastを表示
-            return render(request, 'subekashi/500.html', status=500)
-        
-        dataD["toast_type"] = "ok"
-        dataD["toast_text"] = f"{songIns.title}の削除申請を送信しました。"
+    # 被模倣songリストを取得
+    imitated_list = Song.objects.none()
+    for imitated_id in song.imitated.split(",") if song.imitated else []:
+        imitated_or_none = Song.objects.filter(id = int(imitated_id))
+        imitated_list |= imitated_or_none
 
-    # TODO リファクタリング
-    dataD["metatitle"] = f"{songIns.title} / {songIns.channel}" if songIns else "全て削除の所為です。"
-    dataD["songIns"] = songIns
-    dataD["channels"] = songIns.channel.replace(", ", ",").split(",")
-    dataD["urls"] = songIns.url.replace(", ", ",").split(",") if songIns.url else []
+    # 模倣曲数と被模倣曲数の数をdescriptionに記述
     description = ""
-    jokerange = request.COOKIES.get("jokerange", "off")
-    if songIns.imitate :
-        imitateInsL = []
-        imitates = songIns.imitate.split(",")
-        for imitateId in imitates:
-            imitateInsQ = Song.objects.filter(id = int(imitateId))
-            if imitateInsQ :
-                imitateIns = imitateInsQ.first()
-                if imitateIns.isjoke and (jokerange == "off") :
-                    continue
-                imitateInsL.append(imitateIns)
-
-        dataD["imitateInsL"] = imitateInsL
-        description += f"模倣曲数：{len(imitateInsL)}, "
-
-    if songIns.imitated :
-        imitatedInsL = []
-        imitateds = set(songIns.imitated.split(",")) - set([""])
-        for imitatedId in imitateds :
-            imitatedInsQ = Song.objects.filter(id = int(imitatedId))
-            if imitatedInsQ :
-                imitatedIns = imitatedInsQ.first()
-                if imitatedIns.isjoke and (jokerange == "off") :
-                    continue
-                imitatedInsL.append(imitatedIns)
-
-        dataD["imitatedInsL"] = imitatedInsL
-        description += f"被模倣曲数：{len(imitatedInsL)}, "
-    lyrics = songIns.lyrics[:min(100, len(songIns.lyrics))]
-    lyrics = lyrics.replace("\r\n", "")
-    description += f"歌詞: {lyrics}" if lyrics else ""
-    dataD["description"] = description
+    description += f"模倣曲数：{imitate_list.count()}, " if imitate_list.count() else ""
+    description += f"被模倣曲数：{imitated_list.count()}, " if imitated_list.count() else ""
+    
+    # 歌詞の一部をdescriptionに記述
+    descriptio_lyrics = song.lyrics.replace("\r\n", "")[:100]
+    description += f"歌詞: {descriptio_lyrics}" if descriptio_lyrics else ""
+    
+    # テンプレートに渡す辞書を作成
+    dataD = {
+        "metatitle": f"{song.title} / {song.channel}",
+        "song": song,
+        "channels": song.channel.split(","),
+        "is_lack": is_lack(song),
+        "urls": song.url.split(",") if song.url else [],
+        "imitated_list": imitated_list,
+        "imitate_list": imitate_list,
+        "description": description
+    }
     return render(request, "subekashi/song.html", dataD)
