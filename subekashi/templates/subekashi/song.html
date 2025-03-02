@@ -69,7 +69,7 @@
                     <a class="songimitate sansfont" href="{% url 'subekashi:song' imitate.id %}">{{ imitate.title }}</a>
                 {% endfor %}
                 {% if imitate_list|filter_by_tag:"joke" %}
-                    <details>
+                    <details {% if request.COOKIES.jokerange == "on" %}open{% endif %}>
                         <summary><i class="far fa-meh-rolling-eyes"></i>ネタ曲</summary>
                         {% for imitate in imitate_list|filter_by_tag:"joke" %}
                             <a class="songimitate sansfont" href="{% url 'subekashi:song' imitate.id %}">{{ imitate.title }}</a>
@@ -86,7 +86,7 @@
                     <a class="songimitate sansfont" href="{% url 'subekashi:song' imitated.id %}">{{ imitated.title }}</a>
                 {% endfor %}
                 {% if imitated_list|filter_by_tag:"joke" %}
-                    <details>
+                    <details {% if request.COOKIES.jokerange == "on" %}open{% endif %}>
                         <summary><i class="far fa-meh-rolling-eyes"></i>ネタ曲</summary>
                         {% for imitated in imitated_list|filter_by_tag:"joke" %}
                             <a class="songimitate sansfont" href="{% url 'subekashi:song' imitated.id %}">{{ imitated.title }}</a>
