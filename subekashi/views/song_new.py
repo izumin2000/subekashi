@@ -25,15 +25,15 @@ def song_new(request) :
         is_subeana = bool(request.POST.get("is-subeana-auto", "") + request.POST.get("is-subeana-manual", ""))
         
         # YouTube APIから情報取得
-        yt_res = {}
-        if is_yt_url(url) :
-            yt_id = get_youtube_id(url)
-            yt_res = get_youtube_api(yt_id)
-            title = yt_res.get("title", "")
-            channel = yt_res.get("channel", "")
+        youtube_res = {}
+        if is_youtube_url(url) :
+            youtube_id = get_youtube_id(url)
+            youtube_res = get_youtube_api(youtube_id)
+            title = youtube_res.get("title", "")
+            channel = youtube_res.get("channel", "")
             
         # URLがYouTubeのURLでない場合はエラー
-        if not is_yt_url(url) and url:
+        if not is_youtube_url(url) and url:
             dataD["error"] = "URLがYouTubeのURLではありません。"
             return render(request, 'subekashi/song_new.html', dataD)
         
@@ -69,9 +69,9 @@ def song_new(request) :
             isjoke = is_joke,
             isinst = is_inst,
             issubeana = is_subeana,
-            upload_time = yt_res.get("upload_time", None),
-            view = yt_res.get("view", None),
-            like = yt_res.get("like", None),
+            upload_time = youtube_res.get("upload_time", None),
+            view = youtube_res.get("view", None),
+            like = youtube_res.get("like", None),
             ip = ip
         )
         

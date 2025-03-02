@@ -10,7 +10,7 @@ class Command(BaseCommand):
     
     def get_youtube_links(self, song):
         urls = song.url.split(",")
-        video_ids = [get_youtube_id(url) for url in urls if is_yt_url(url)]
+        video_ids = [get_youtube_id(url) for url in urls if is_youtube_url(url)]
         return video_ids
     
     def get_best_youtube_view(self, songs):
@@ -24,14 +24,14 @@ class Command(BaseCommand):
 
         for video_id in video_ids:
             sleep(2)
-            yt_res = get_youtube_api(video_id)
-            if yt_res == {}:
+            youtube_res = get_youtube_api(video_id)
+            if youtube_res == {}:
                 continue
             
             is_deleted = False
-            view = yt_res.get("view", 0)
-            like = yt_res.get("like", 0)
-            upload_time = yt_res.get("upload_time", None)
+            view = youtube_res.get("view", 0)
+            like = youtube_res.get("like", 0)
+            upload_time = youtube_res.get("upload_time", None)
             if view > best_view:
                 best_view = view
                 best_res["view"] = view

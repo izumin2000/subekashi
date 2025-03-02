@@ -35,7 +35,7 @@ def get_youtube_api(video_id):
         jst_upload_time = utc_zone.localize(upload_time_str).astimezone(jst_zone)
         
         # 返す辞書を作成
-        yt_res = {
+        youtube_res = {
             "view": int(statistics["viewCount"]),
             "like": int(statistics.get("likeCount", statistics.get("favoriteCount", 0))),
             "title": item["snippet"]["title"],
@@ -47,4 +47,4 @@ def get_youtube_api(video_id):
         print(f'\033[31m{e}\033[0m')
         return {}
         
-    return yt_res
+    return youtube_res
