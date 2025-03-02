@@ -134,7 +134,7 @@ function checkTitleChannelForm() {
         song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
         登録されているURL：<a href="${existingSongURL}" target="_blank">${existingSongURL}</a>${isMultipleSongURL ? 'など' : ''}<br>
         既に登録されている曲と登録しようとしている曲が別の曲に限り、登録することができます。<br>
-        この記事を削除したい場合は、<a href="${baseURL()}/songs/${song_id}/delete?reason=song ID：${existingSong.id}と被っています。" target="_blank">こちら</a>をクリックしてください。
+        この記事を削除したい場合は、<a href="${baseURL()}/songs/${song_id}/delete?reason=${existingSong.id} と重複しています。" target="_blank">こちら</a>をクリックしてください。
         </span>`;
         return;
     }
@@ -197,7 +197,7 @@ function checkUrlForm() {
             タイトル：${existingSong.title}<br>
             チャンネル名：${existingSong.channel}<br>
             として<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">既に登録されています</a><br>
-            この記事を削除したい場合は、<a href="${baseURL()}/songs/${song_id}/delete?reason=song ID：${existingSong.id}と被っています。" target="_blank">こちら</a>をクリックしてください。
+            この記事を削除したい場合は、<a href="${baseURL()}/songs/${song_id}/delete?reason=${existingSong.id} と重複しています。" target="_blank">こちら</a>をクリックしてください。
             </span>`;
             isUrlValid = false;
             return;

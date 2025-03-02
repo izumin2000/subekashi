@@ -24,28 +24,28 @@
                 <i class="fas fa-tags"></i>
             {% endif %}
             {% if song.channel == "全てあなたの所為です。" %}
-                <p class="songimitate">オリジナル</p>
+                <p>オリジナル</p>
             {% endif %}
             {% if is_lack %}
-                <a class="songimitate" href="{% url 'subekashi:search' %}?islack=True">作成途中</a>
+                <a href="{% url 'subekashi:search' %}?islack=True">作成途中</a>
             {% endif %}
             {% if song.isdraft %}
-                <a class="songimitate" href="{% url 'subekashi:search' %}?isdraft=True">下書き</a>
+                <a href="{% url 'subekashi:search' %}?isdraft=True">下書き</a>
             {% endif %}
             {% if song.isoriginal %}
-                <a class="songimitate" href="{% url 'subekashi:search' %}?isoriginal=True">オリジナル模倣</a>
+                <a href="{% url 'subekashi:search' %}?isoriginal=True">オリジナル模倣</a>
             {% endif %}
             {% if song.isjoke %}
-                <a class="songimitate" href="{% url 'subekashi:search' %}?isjoke=only">ネタ曲</a>
+                <a href="{% url 'subekashi:search' %}?isjoke=only">ネタ曲</a>
             {% endif %}
             {% if song.isinst %}
-                <a class="songimitate" href="{% url 'subekashi:search' %}?isinst=True">インスト曲</a>
+                <a href="{% url 'subekashi:search' %}?isinst=True">インスト曲</a>
             {% endif %}
             {% if not song.issubeana %}
-                <a class="songimitate" href="{% url 'subekashi:search' %}?issubeana=xx">すべあな界隈曲以外の界隈曲</a>
+                <a href="{% url 'subekashi:search' %}?issubeana=xx">すべあな界隈曲以外の界隈曲</a>
             {% endif %}
             {% if song.isdeleted %}
-                <a class="songimitate" href="{% url 'subekashi:search' %}?isdeleted=True">非公開/削除済み</a>
+                <a href="{% url 'subekashi:search' %}?isdeleted=True">非公開/削除済み</a>
             {% endif %}
         </div>
 

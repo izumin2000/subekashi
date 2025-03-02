@@ -21,7 +21,7 @@ i {
     cursor: pointer;
 }
 
-.songurl, .songchannel, .songimitate {
+.tags p, .tags a {
     display: inline-block;
     overflow-wrap: anywhere;
     margin-right: 15px;
@@ -44,11 +44,11 @@ details[open] {
 }
 
 details:hover {
-    background-color: #555;
+    background-color: #333;
 }
 
 details details:hover {
-    background-color: #777;
+    background-color: #555;
 }
 
 details[open]:hover {
@@ -58,6 +58,28 @@ details[open]:hover {
 details details[open]:hover {
     background-color: #555;
 }
+
+details a {
+    display: inline-block;
+    overflow-wrap: anywhere;
+    background-color: #555;
+    margin: 5px;
+    padding: 5px;
+    border-radius: 5px;
+}
+
+details a:hover {
+    background-color: #777;
+}
+
+details details a {
+    background-color: #777;
+}
+
+details details a:hover {
+    background-color: #999;
+}
+
 
 summary {
     text-align: left;
