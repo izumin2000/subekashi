@@ -535,6 +535,9 @@ input[type=submit], button {
     margin: 20px 0;
     font-family: 'Imitate', 'Noto Sans JP',  'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif, Meiryo;
     border-radius: 10px;
+    color: #000;
+    background-color: #ccc;
+    transition: all 0.25s;
 }
 
 .fa-info-circle {
@@ -589,7 +592,7 @@ input[type=submit], button {
 }
 
 input[type=submit]:hover, button:hover, .dummybutton:hover {
-    background-color: #ccc;
+    background-color: #fff;
 }
 
 input[type=submit]:active, button:active, .dummybutton:active {
@@ -599,9 +602,11 @@ input[type=submit]:active, button:active, .dummybutton:active {
 }
 
 input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
-    background-color: #ccc;
+    color: #333;
+    background-color: #666;
     box-shadow: none;
     cursor: not-allowed;
+    transition: all 0.25s;
 }
 
 input::placeholder {
