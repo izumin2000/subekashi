@@ -63,7 +63,9 @@ def song_edit(request, song_id) :
         URL : {cleaned_url}\n\
         ネタ曲 : {"Yes" if is_joke else "No"}\n\
         すべあな模倣曲 : {"Yes" if is_subeana else "No"}\n\
-        IP : {ip}'
+        IP : {ip}\n\
+        歌詞 : ```{cleand_lyrics}```\n\
+        '
         is_ok = send_discord(NEW_DISCORD_URL, content)
         if not is_ok:
             song.delete()
