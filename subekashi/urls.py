@@ -1,3 +1,4 @@
+from django.views.generic.base import RedirectView
 from django.contrib import admin
 from django.urls import path, include
 from subekashi.views import *
@@ -15,12 +16,13 @@ urlpatterns = [
     path('', top, name='top'),
     path('contact', contact, name='contact'),
     path('songs', search, name='search'),
+    path('search',RedirectView.as_view(url='songs', permanent=True)),
     path('songs/new', song_new, name='song_new'),
+    path('new', RedirectView.as_view(url='/song/new', permanent=True)),
     path('songs/<int:song_id>', song, name='song'),
     path('songs/<int:song_id>/edit', song_edit, name='song_edit'),
     path('songs/<int:song_id>/delete', song_delete, name='song_delete'),
     path('channel/<str:channelName>', channel, name='channel'),
-    path('search', search, name='search_sub'),  #いつか消す
     path('ai', ai, name='ai'),
     path('ai/result', ai_result, name='ai_result'),
     path('setting', setting, name='setting'),
