@@ -7,15 +7,6 @@ def getIns(n) :
     return Song.objects.get(pk = n) if Song.objects.filter(pk = n) else False
 
 
-def commaClean(s) :
-    if s :
-        s = s[1:] if s[0] == "," else s
-        s = s[:-1] if s[-1] == "," else s
-        return s
-    else :
-        return ""
-
-
 def commaSplit(s) :
     return list(map(int, s.split(","))) if s else []
 
@@ -48,7 +39,7 @@ class Command(BaseCommand):
         for songIns in Song.objects.all() :
             # 模倣情報のチェック
             songImitate = songIns.imitate
-            songImitateClean = commaClean(songImitate)
+            songImitateClean = songImitate.strip(",") if songImitate else ""
             if songImitate != songImitateClean :
                 self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})の模倣情報のエラーを修正しました"))
                 songIns.imitate = songImitateClean
@@ -56,7 +47,7 @@ class Command(BaseCommand):
             
             # 被模倣情報のチェック
             songImitated = songIns.imitated
-            songImitatedClean = commaClean(songImitated)
+            songImitatedClean = songImitated.strip(",") if songImitated else ""
             if songImitated != songImitatedClean :
                 self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})の被模倣情報のエラーを修正しました"))
                 songIns.imitated = songImitatedClean
