@@ -11,13 +11,13 @@ def song(request, song_id):
     # 模倣songリストを取得
     imitate_list = Song.objects.none()
     for imitate_id in song.imitate.split(",") if song.imitate else []:
-        imitate_or_none = Song.objects.filter(id = int(imitate_id))
+        imitate_or_none = Song.objects.filter(id = imitate_id)
         imitate_list |= imitate_or_none
     
     # 被模倣songリストを取得
     imitated_list = Song.objects.none()
     for imitated_id in song.imitated.split(",") if song.imitated else []:
-        imitated_or_none = Song.objects.filter(id = int(imitated_id))
+        imitated_or_none = Song.objects.filter(id = imitated_id)
         imitated_list |= imitated_or_none
 
     # 模倣曲数と被模倣曲数の数をdescriptionに記述
