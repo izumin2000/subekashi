@@ -17,7 +17,7 @@ document.querySelectorAll('textarea').forEach((textarea) => {
 
 // DRFのAPIの取得
 async function getJson(path) {
-    res = await fetch(`${baseURL()}/api/${path}`);
+    res = await fetch(`${baseURL()}/api/${path}`, {cache: "reload"});
     return await res.json();
 }
 
