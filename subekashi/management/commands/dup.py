@@ -8,7 +8,7 @@ class Command(BaseCommand) :
         urls = sum([url.split(',') for url in Song.objects.values_list("url", flat=True)], [])       # Songに登録されカンマ区切りされた全URLのリスト
         youtube_id_list = []    # YouTubeの動画リスト
         for url in urls :
-            if is_yt_url(url):      # URLがYouTubeの動画URLなら
+            if is_youtube_url(url):      # URLがYouTubeの動画URLなら
                 youtube_id = get_youtube_id(url)
                 youtube_id_list.append(youtube_id)
         

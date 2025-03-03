@@ -63,7 +63,9 @@ def song_edit(request, song_id) :
         URL : {cleaned_url}\n\
         ネタ曲 : {"Yes" if is_joke else "No"}\n\
         すべあな模倣曲 : {"Yes" if is_subeana else "No"}\n\
-        IP : {ip}'
+        IP : {ip}\n\
+        歌詞 : ```{cleand_lyrics}```\n\
+        '
         is_ok = send_discord(NEW_DISCORD_URL, content)
         if not is_ok:
             song.delete()
@@ -82,16 +84,16 @@ def song_edit(request, song_id) :
             append_imitated_id_set = set(append_imitate.imitated.split(","))        # 模倣先の被模倣
             append_imitated_id_set.add(str(song_id))        # 模倣先の被模倣に編集した曲のsong_idを追加する
             
-            append_imitate.imitated = ",".join(append_imitated_id_set)
+            append_imitate.imitated = ",".join(append_imitated_id_set).strip(",")
             append_imitate.save()
             
         # 編集によって削除された各模倣先の被模倣に編集した曲のsong_idを削除する
         for delete_imitate_id in delete_imitate_id_set :
             delete_imitate = Song.objects.get(pk = delete_imitate_id)
             delete_imitated_id_set = set(delete_imitate.imitated.split(","))        # 模倣先の被模倣
-            delete_imitated_id_set.remove(str(song_id))   #   被模倣に編集した曲のsong_idを削除する
+            delete_imitated_id_set.remove(str(song_id))   # 被模倣に編集した曲のsong_idを削除する
                         
-            delete_imitate.imitated = ",".join(delete_imitated_id_set)
+            delete_imitate.imitated = ",".join(delete_imitated_id_set).strip(",")
             delete_imitate.save()
 
         # songの更新

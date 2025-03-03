@@ -82,7 +82,7 @@
         {% if imitated_list %}
             <details>
                 <summary><i class="fas fa-sitemap"></i>{{ imitated_list|length }}曲の被模倣曲</summary>
-                {% for imitated in imitated_list %}
+                {% for imitated in imitated_list|filter_by_tag:"~joke" %}
                     <a class="songimitate sansfont" href="{% url 'subekashi:song' imitated.id %}">{{ imitated.title }}</a>
                 {% endfor %}
                 {% if imitated_list|filter_by_tag:"joke" %}
