@@ -121,3 +121,21 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 DEFAULT_AUTO_FIELD='django.db.models.AutoField'
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "null": {
+            "level": "DEBUG",
+            "class": "logging.NullHandler",
+        },
+    },
+    "loggers": {
+        "django_ratelimit": {
+            "handlers": ["null"],
+            "level": "ERROR",  # もしくは "CRITICAL" にしてログを抑制
+            "propagate": False,
+        },
+    },
+}
