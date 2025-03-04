@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.template.loader import render_to_string
 from subekashi.lib.discord import *
+from subekashi.constants.constants import URL_ICON
 from urllib.parse import urlparse
 import re
 
@@ -37,24 +38,6 @@ def get_view(song):
         return ""
     
     return mark_safe(f'<i class="fas fa-play"></i>{view}')
-
-
-# TODO 定数化
-DEFALT_ICON = "<i class='fas fa-globe'></i>"
-URL_ICON = {
-    r"(?:^|\.)youtu\.be$": "<i class='fab fa-youtube'></i>",
-    r"(?:^|\.)youtube\.com$": "<i class='fab fa-youtube'></i>",
-    r"(?:^|\.)soundcloud\.com$": "<i class='fab fa-soundcloud'></i>",
-    r"(?:^|\.)x\.com$": "<i class='fab fa-twitter'></i>",
-    r"(?:^|\.)twitter.com$": "<i class='fab fa-twitter'></i>",
-    r"(?:^|\.)bandcamp.com$": "<i class='fab fa-bandcamp'></i>",
-    r"drive\.google\.com": "<i class='fab fa-google-drive'></i>",
-    r"(?:^|\.)nicovideo\.jp$": f"<img src='/static/subekashi/image/niconico.png' alt='ニコニコ動画'></img>",
-    r"(?:^|\.)bilibili\.com$": f"<img src='/static/subekashi/image/bilibili.png' alt='ビリビリ動画'></img>",
-    r"imicomweb\.com": f"<img src='/static/subekashi/image/imicomweb.png' alt='イミコミュ'></img>",
-    r"scratch\.mit\.edu": "<i class='fas fa-cat'></i>",
-    r"linkco\.re": "<i class='fas fa-align-justify'></i>",
-}
 
 @register.simple_tag
 def get_url(song):
