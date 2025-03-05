@@ -1,7 +1,7 @@
 from subekashi.models import Song
 from subekashi.lib.search import song_search
 from ...serializer import SongSerializer
-from rest_framework import viewsets, status
+from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 
@@ -13,22 +13,13 @@ class SongAPI(viewsets.ReadOnlyModelViewSet):
     queryset = Song.objects.all()
     serializer_class = SongSerializer
     throttle_classes = [SongThrottle]
-    cached_data = None
 
     def get_queryset(self):
         if self.action == 'retrieve':
             return super().get_queryset()  # 標準のクエリセットを使用
 
-        if self.cached_data is None:
-            query = dict(self.request.query_params)
-            result = song_search(query)
-
-            # エラーが発生している場合、エラー内容をレスポンスとして返す
-            if isinstance(result, dict) and "error" in result:
-                raise ValueError(result["error"])
-
-            self.cached_data = result
-        return self.cached_data
+        query = dict(self.request.query_params)
+        return song_search(query)
 
     def list(self, request, *args, **kwargs):
         result_qs, statistics = self.get_queryset()
