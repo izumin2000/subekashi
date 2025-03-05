@@ -43,28 +43,28 @@
             {% render_categorys %}
         </div>
         <div class="form-col">
-            <label for="view_gt">再生回数/以上</label>
-            <input type="number" id="view_gt" value="{{ request.GET.view_gt }}">
+            <label for="view_gte">再生回数/以上</label>
+            <input type="number" id="view_gte" value="{{ request.GET.view_gte }}">
         </div>
         <div class="form-col">
-            <label for="view_lt">再生回数/以下</label>
-            <input type="number" id="view_lt" value="{{ request.GET.view_lt }}">
+            <label for="view_lte">再生回数/以下</label>
+            <input type="number" id="view_lte" value="{{ request.GET.view_lte }}">
         </div>
         <div class="form-col">
-            <label for="like_gt">高評価数/以上</label>
-            <input type="number" id="like_gt" value="{{ request.GET.like_gt }}">
+            <label for="like_gte">高評価数/以上</label>
+            <input type="number" id="like_gte" value="{{ request.GET.like_gte }}">
         </div>
         <div class="form-col">
-            <label for="like_lt">高評価数/以下</label>
-            <input type="number" id="like_lt" value="{{ request.GET.like_lt }}">
+            <label for="like_lte">高評価数/以下</label>
+            <input type="number" id="like_lte" value="{{ request.GET.like_lte }}">
         </div>
         <div class="form-col">
-            <label for="upload_time_lt"><i class="fab fa-youtube"></i>投稿日/以前</label>
-            <input type="date" id="upload_time_lt" value="{{ request.GET.upload_time_lt }}">
+            <label for="upload_time_lte"><i class="fab fa-youtube"></i>投稿日/以前</label>
+            <input type="date" id="upload_time_lte" value="{{ request.GET.upload_time_lte }}">
         </div>
         <div class="form-col">
-            <label for="upload_time_gt"><i class="fab fa-youtube"></i>投稿日/以後</label>
-            <input type="date" id="upload_time_gt" value="{{ request.GET.upload_time_gt }}">
+            <label for="upload_time_gte"><i class="fab fa-youtube"></i>投稿日/以後</label>
+            <input type="date" id="upload_time_gte" value="{{ request.GET.upload_time_gte }}">
         </div>
         <div class="form-col">
             <label for="songrange">界隈曲の種類</label>
