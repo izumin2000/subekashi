@@ -22,26 +22,19 @@ SORT_FORMS = ["sort"]
 BOOL_FORMS = ["issubeana", "isjoke", "isdraft", "isoriginal", "isinst", "isdeleted"]
 MULTI_FORMS = list(MULTI_FILTERS.keys())
 INFO_ITEMS = ["page", "size", "count"]
+EXACT_ITEMS = ["title_exact", "channel_exact"]
 
-# URLクエリの文字とfilterのルックアップの違いを示す変数
-# 第1引数はqueryのカラム名
-# 第2引数はURLクエリのカラムから削除する文字
-# 第3引数はURLクエリのカラムの末尾に追加する文字
-URL_QUERY_LOOKUP_DIFF = [
+# 1つの条件を指定しているキー名とfilterのルックアップの違いを示す変数
+# 第1引数は対象となるクエリのキー名のリスト
+# 第2引数はキー名から削除する文字
+# 第3引数はキー名の末尾に追加する文字
+SINGLE_QUERY_LOOKUP_DIFF = [
     (TEXT_FORM, "", "__icontains"),
     (YOUTUBE_GTE_FORMS, "_gte", "__gte"),
     (YOUTUBE_LTE_FORMS , "_lte", "__lte"),
     (BOOL_FORMS, "", ""),
+    (EXACT_ITEMS, "_exact", ""),
 ]
-
-# 全てのフォームを対象にしたURLクエリのキーをキーに、filterのルックアップを値にした辞書の生成
-def get_song_filter():
-    FLITER_DATA = {}
-    for forms, delete_str, add_str in URL_QUERY_LOOKUP_DIFF:
-        for form in forms:
-            FLITER_DATA[form] = form.replace(delete_str, "") + add_str
-    
-    return FLITER_DATA
 
 # クエリの値を整形
 def clean_querys(querys):
@@ -84,29 +77,36 @@ def add_youtube_querys(querys):
     if not(has_youtube_sort or has_youtube_filter):
         return querys
     
-    
     querys["url"] = "youtu"        # urlを"youtu"に上書きする
-    print(querys)
     return querys
+
+# クエリのうち単数条件のクエリを対象にしたクエリのキーをキーに、filterのルックアップを値にした辞書を生成
+def create_single_filter_dict():
+    single_filter_dict = {}
+    for forms, delete_str, add_str in SINGLE_QUERY_LOOKUP_DIFF:
+        for form in forms:
+            single_filter_dict[form] = form.replace(delete_str, "") + add_str
+    return single_filter_dict
     
-# URLクエリからfilterのルックアップに変換
+# クエリのうち単数条件のクエリをfilterのルックアップに変換
 def querys_to_single_filters(querys):
-    filters = {}
-    FORM_TYPE = get_song_filter()
+    single_filters = {}
+    single_filter_dict = create_single_filter_dict()
+    print(single_filter_dict)
     for item, value in querys.items():
         if item in INFO_ITEMS + SORT_FORMS + MULTI_FORMS:
             continue
-            
-        filters[FORM_TYPE[item]] = value
+
+        single_filters[single_filter_dict[item]] = value
         
-    return filters
+    return single_filters
     
-# songの全カラム検索
+# songのフィルタリング・ソート・統計
 def song_search(querys):
     querys = clean_querys(querys)
     statistics = {}
     
-    # 条件が単数である条件を.filter(**
+    # 条件が1つである条件を.filter(**
     querys = add_youtube_querys(querys)
     single_filters = querys_to_single_filters(querys)
     song_qs = Song.objects.filter(**single_filters)
