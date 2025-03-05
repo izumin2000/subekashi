@@ -223,8 +223,8 @@ async function search(signal, page) {
 
         retry = 0;
     } catch (error) {
-        if (retry < 5) {
-            await sleep(0.2 * 2 ** retry);
+        if (retry < 6) {
+            await sleep(0.2 * 2 ** (retry + 1));
             renderSearch();
             retry++;
             return;
