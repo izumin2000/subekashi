@@ -12,10 +12,7 @@ def song_cards(request):
     page = int(query.get("page", ['1'])[0])
     query["count"] = True
     query["page"] = page
-    try:
-        song_qs, statistics = song_search(query)
-    except:
-        return JsonResponse({}, safe=False)
+    song_qs, statistics = song_search(query)
     
     if page == 1:
         result.append(f"<p>{Song.objects.count()}件中{statistics['count']}件ヒットしました</p>")

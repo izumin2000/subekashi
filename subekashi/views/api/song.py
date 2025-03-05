@@ -31,18 +31,14 @@ class SongAPI(viewsets.ReadOnlyModelViewSet):
         return self.cached_data
 
     def list(self, request, *args, **kwargs):
-        try:
-            result_qs, statistics = self.get_queryset()
-            result = self.get_serializer(result_qs, many=True).data
-            if len(statistics) == 0:
-                return Response(result)
-            
-            response_data = statistics
-            response_data["result"] = result
-            return Response(response_data)
-
-        except ValueError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        result_qs, statistics = self.get_queryset()
+        result = self.get_serializer(result_qs, many=True).data
+        if len(statistics) == 0:
+            return Response(result)
+        
+        response_data = statistics
+        response_data["result"] = result
+        return Response(response_data)
 
     def retrieve(self, request, *args, **kwargs):
         # `song_id` に基づいて個別の `Song` を取得
