@@ -84,7 +84,7 @@ async function checkManualForm() {
     
     document.getElementById('new-submit-manual').disabled = false;
 
-    const existingSongs = await getJson(`song/?title=${titleEle.value}&channel=${channelEle.value}`);
+    const existingSongs = await getJson(`song/?title_exact=${titleEle.value}&channel_exact=${channelEle.value}`);
     const existingSong = existingSongs[0];
     // 既に登録されている曲の場合
     if (existingSong) {
