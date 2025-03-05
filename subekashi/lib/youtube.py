@@ -43,8 +43,7 @@ def get_youtube_api(video_id):
             "upload_time": jst_upload_time
         }
         
-    except Exception as e:
-        print(f'\033[31m{e}\033[0m')
+    except Exception:
         return {}
         
     return youtube_res
