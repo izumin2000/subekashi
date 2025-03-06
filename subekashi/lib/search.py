@@ -23,6 +23,7 @@ BOOL_FORMS = ["issubeana", "isjoke", "isdraft", "isoriginal", "isinst", "isdelet
 MULTI_FORMS = list(MULTI_FILTERS.keys())
 INFO_ITEMS = ["page", "size", "count"]
 EXACT_ITEMS = ["title_exact", "channel_exact"]
+ALL_QUERYS = TEXT_FORM + YOUTUBE_GTE_FORMS + YOUTUBE_LTE_FORMS + SORT_FORMS + BOOL_FORMS + MULTI_FORMS + INFO_ITEMS + EXACT_ITEMS
 
 # 1つの条件を指定しているキー名とfilterのルックアップの違いを示す変数
 # 第1引数は対象となるクエリのキー名のリスト
@@ -38,7 +39,12 @@ SINGLE_QUERY_LOOKUP_DIFF = [
 
 # クエリの値を整形
 def clean_querys(querys):
+    cleand_querys = {}
     for item, value in querys.items():
+        # 不必要なクエリを削除
+        if item not in ALL_QUERYS:
+            continue
+        
         # クエリの値がリスト形式ならリストを取る
         if type(value) == list:
             value = value[0]
@@ -51,8 +57,8 @@ def clean_querys(querys):
         if (item in BOOL_FORMS) and (value in ["False", "false", 0]):
             value = False
     
-        querys[item] = value
-    return querys
+        cleand_querys[item] = value
+    return cleand_querys
 
 # 複数の検索条件があるクエリをフィルタリング
 def filter_multi_forms(querys, song_qs):
