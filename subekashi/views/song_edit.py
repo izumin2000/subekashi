@@ -1,11 +1,12 @@
 from django.shortcuts import render, redirect
 from django.utils import timezone
-from config.settings import *
+from django.urls import reverse
 from subekashi.models import *
 from subekashi.lib.url import *
 from subekashi.lib.ip import *
 from subekashi.lib.discord import *
 from subekashi.lib.search import song_search
+from urllib.parse import urlparse
 
 
 def song_edit(request, song_id) :
@@ -36,11 +37,20 @@ def song_edit(request, song_id) :
         
         # 既に登録されているURLの場合はエラー
         cleaned_url = clean_url(url)
-        cleaned_url_list = cleaned_url.split(",")
+        cleaned_url_list = cleaned_url.split(",") if cleaned_url else []
         for cleaned_url_item in cleaned_url_list:
             existing_song, _ = song_search({"url": cleaned_url_item})
             if url and existing_song.exists() and existing_song.first().id != song_id :
                 dataD["error"] = "URLは既に登録されています。"
+                return render(request, 'subekashi/song_edit.html', dataD)
+            
+            domain = urlparse(cleaned_url_item).netloc
+            is_safe = any([bool(re.search(allow_pattern, domain)) for allow_pattern in URL_ICON.keys()])
+            if not is_safe:
+                contact_url = reverse('subekashi:contact')
+                dataD["error"] = f"URL：{cleaned_url_item}は信頼されていないURLと判断されました。<br>\
+                <a href='{contact_url}?&category=提案&detail={cleaned_url_item} を登録できるようにしてください。' target='_blank'>お問い合わせ</a>にて、\
+                該当のURLを登録できるように、ご連絡ください。"
                 return render(request, 'subekashi/song_edit.html', dataD)
 
         # タイトルとチャンネルが空の場合はエラー
