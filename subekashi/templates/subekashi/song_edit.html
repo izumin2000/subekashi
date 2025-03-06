@@ -99,7 +99,7 @@
 <script defer src="{% static 'subekashi/js/song_edit.js' %}?{{ version }}"></script>
 <script defer>
     {% if error %}
-        showToast("error", "{{ error }}");
+        showToast("error", "{{ error|safe }}");
     {% elif request.GET.toast == "auto" %}
         showToast("ok", "登録しました。続けて模倣・歌詞等を登録することができます。");
     {% elif request.GET.toast == "manual" %}
