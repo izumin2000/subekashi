@@ -1,6 +1,7 @@
 from django.views.generic.base import RedirectView
 from django.contrib import admin
 from django.urls import path, include
+from config.settings import ROOT_URL
 from subekashi.views import *
 from rest_framework import routers
 
@@ -15,6 +16,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', top, name='top'),
     path('contact/', contact, name='contact'),
+    path('search/', RedirectView.as_view(url=f"{ROOT_URL}/songs/", permanent=False)),
     path('songs/', search, name='search'),
     path('songs/new/', song_new, name='song_new'),
     path('new/', RedirectView.as_view(url='/song/new/', permanent=False)),
