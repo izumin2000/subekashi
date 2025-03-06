@@ -1,10 +1,8 @@
-var songJson, imitateIdList = [], songGuesserController, song_id;
+var imitateIdList = [], songGuesserController, song_id;
 
 // 初期化
-var songJson;
 const lyricsEle = document.getElementById("lyrics")
 async function init() {
-    songJson = await getJson("song");
     song_id = window.location.pathname.split("/")[2];
     checkTitleChannelForm();
     checkUrlForm();
@@ -37,14 +35,13 @@ function appendImitateList(song) {
 
 // 読み込み時に模倣一覧を描画
 var imitateEle = document.getElementById("imitate");
-function initImitateList() {
+async function initImitateList() {
     if (!imitateEle.value) {
         return;
     }
     
-    imitateIdList = imitateEle.value.split(",");
-    for (const imitateId of imitateIdList) {
-        const imitateSong = songJson.find(song => song.id == imitateId);
+    const imitateSongList = await getJson(`song/?imitate=${song_id}`);
+    for (const imitateSong of imitateSongList) {
         appendImitateList(imitateSong);
     }
 }
@@ -90,13 +87,7 @@ function renderSongGuesser() {
 // すべあな原曲以外からから選択
 async function songGuesserClick(id) {
     imitateTitleEle.value = "";
-    var imitateSong = songJson.find(song => song.id == id);
-
-    // song_editページ読み込み後にidが登録された場合にsongJsonを再取得
-    if (!imitateSong) {
-        imitateSong = await getJson(`song/${id}`)
-    }
-
+    var imitateSong = await getJson(`song/${id}`);
     appendImitate(imitateSong);
     renderSongGuesser();
 };
@@ -105,7 +96,7 @@ async function songGuesserClick(id) {
 const titleEle = document.getElementById('title');
 const channelEle = document.getElementById('channel');
 var isTitleChannelValid = false;
-function checkTitleChannelForm() {
+async function checkTitleChannelForm() {
     const songEditInfoTitleChannelEle = document.getElementById('song-edit-info-title-channel');
 
     // タイトルとチャンネル名が空の場合
@@ -115,17 +106,13 @@ function checkTitleChannelForm() {
         return;
     }
 
-    // 読み込み中なら
-    if (!songJson) {
-        isTitleChannelValid = false;
-        return;
-    }
+    // 以下の条件はvalid
+    isTitleChannelValid = true;
+    const titleChannelResponse = await getJson(`song/?title_exact=${titleEle.value}&channel_exact=${channelEle.value}`);
+    const existingSong = titleChannelResponse.filter(song => song.id != song_id)[0];
 
-    isTitleChannelValid = true;     // 以下の条件はvalid
-    const existingSong = songJson.find(song => song.title === titleEle.value && song.channel === channelEle.value);
-    const song_id = window.location.pathname.split("/")[2];
     // 既に登録されている曲の場合
-    if (existingSong && existingSong.id != song_id) {
+    if (existingSong) {
         const isMultipleSongURL = existingSong.url.includes(',');
         const existingSongURL = isMultipleSongURL ? existingSong.url.split(",")[0] : existingSong.url;
 
@@ -160,7 +147,7 @@ titleEle.addEventListener('input', checkTitleChannelForm);
 // URLの入力チェック
 const urlEle = document.getElementById('url');
 var isUrlValid = true;
-function checkUrlForm() {
+async function checkUrlForm() {
     const songEditInfoUrlEle = document.getElementById('song-edit-info-url');
 
     // URLが空の場合
@@ -177,19 +164,15 @@ function checkUrlForm() {
             return;
         }
 
-        // 読み込み中なら
-        if (!songJson) {
-            isUrlValid = false;
-            return;
-        }
-
         // URLのフォーマット
         url = url.replace("https://www.google.com/url?q=", "");
         url = url.replace("https://www.", "https://");
         url = url.replace("https://twitter.com", "https://x.com");
         url = formatYouTubeURL(url);
 
-        const existingSong = songJson.find(song => (song.url.includes(url)) && (song.id != song_id));
+        const urlResponse = await getJson(`song/?url=${url}`);
+        const existingSong = urlResponse.filter(song => song.id != song_id)[0];
+
         // 既に登録されているURLの場合
         if (existingSong) {
             songEditInfoUrlEle.innerHTML = `<span class='error'><i class='fas fa-ban error'></i>このURLは<br>

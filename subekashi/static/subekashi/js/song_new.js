@@ -1,9 +1,7 @@
 // 初期化
-var songJson;
 const urlEle = document.getElementById('url');
 async function init() {
     urlEle.focus();     // #urlにカーソルをあわせる
-    songJson = await getJson("song");
     checkAutoForm();
     checkManualForm();
 };
@@ -20,7 +18,7 @@ document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
 });
 
 // URL入力フォームの入力チェック
-function checkAutoForm() {
+async function checkAutoForm() {
     const newSubmitAutoEle = document.getElementById('new-submit-auto');
     const newFormAutoInfoEle = document.getElementById('new-form-auto-info');
     const inputUrlEle = urlEle.value;
@@ -47,13 +45,8 @@ function checkAutoForm() {
         return;
     }
 
-    // 読み込み中なら
-    if (!songJson) {
-        isTitleChannelValid = false;
-        return;
-    }
-
-    const existingSong = songJson.find(song => getYouTubeId(song.url) === videoId);
+    const existingSongs = await getJson(`song/?url=${videoId}`);
+    const existingSong = existingSongs[0];
 
     // 既に登録されているURLの場合
     if (existingSong) {
@@ -78,7 +71,7 @@ urlEle.addEventListener('input', checkAutoForm)
 // タイトル・チャンネル名入力フォームの入力チェック
 var channelEle = document.getElementById('channel');
 var titleEle = document.getElementById('title');
-function checkManualForm() {
+async function checkManualForm() {
     const channelEle = document.getElementById('channel');
     const titleEle = document.getElementById('title');
 
@@ -91,7 +84,8 @@ function checkManualForm() {
     
     document.getElementById('new-submit-manual').disabled = false;
 
-    const existingSong = songJson.find(song => song.title === titleEle.value && song.channel === channelEle.value);
+    const existingSongs = await getJson(`song/?title_exact=${titleEle.value}&channel_exact=${channelEle.value}`);
+    const existingSong = existingSongs[0];
     // 既に登録されている曲の場合
     if (existingSong) {
         const isMultipleSongURL = existingSong.url.includes(',');

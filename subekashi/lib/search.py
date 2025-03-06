@@ -2,11 +2,10 @@ from subekashi.models import Song
 from subekashi.lib.filter import *
 import math
 
-NUMBER_FORMS = ["view", "like", "post_time", "upload_time"]
-NUMBER_GT_FORMS = [f"{column}_gt" for column in NUMBER_FORMS]
-NUMBER_LT_FORMS = [f"{column}_lt" for column in NUMBER_FORMS]
+DEFALT_SIZE = 50        # 1度の検索で取得できるsongオブジェクトの数
 
-LIB_FILTERS = {
+# 複数の検索条件があるクエリとそのフィルターの辞書
+MULTI_FILTERS = {
     "keyword": filter_by_keyword,
     "imitate": filter_by_imitate,
     "imitated": filter_by_imitated,
@@ -14,109 +13,131 @@ LIB_FILTERS = {
     "islack": filter_by_lack,
 }
 
-DEFALT_SIZE = 50
+# URLクエリの定数
+TEXT_FORM = ["title", "channel", "lyrics", "url"]
+YOUTUBE_ITEMS = ["view", "like", "upload_time"]
+YOUTUBE_GTE_FORMS = [f"{item}_gte" for item in YOUTUBE_ITEMS]
+YOUTUBE_LTE_FORMS = [f"{item}_lte" for item in YOUTUBE_ITEMS]
+SORT_FORMS = ["sort"]
+BOOL_FORMS = ["issubeana", "isjoke", "isdraft", "isoriginal", "isinst", "isdeleted"]
+MULTI_FORMS = list(MULTI_FILTERS.keys())
+INFO_ITEMS = ["page", "size", "count"]
+EXACT_ITEMS = ["title_exact", "channel_exact"]
+ALL_QUERYS = TEXT_FORM + YOUTUBE_GTE_FORMS + YOUTUBE_LTE_FORMS + SORT_FORMS + BOOL_FORMS + MULTI_FORMS + INFO_ITEMS + EXACT_ITEMS
 
-# タプルの第1引数はqueryのカラム名、第2引数はobject.filterで使うField lookups
-FORM_TYPE = {
-    "text": (["title", "channel", "lyrics", "url"], "__icontains"),
-    "number_gt": (NUMBER_GT_FORMS , "__gte"),
-    "number_lt": (NUMBER_LT_FORMS , "__lte"),
-    "bool": (["issubeana", "isjoke", "isdraft", "isoriginal", "isinst", "isdeleted"], "")
-}
+# 1つの条件を指定しているキー名とfilterのルックアップの違いを示す変数
+# 第1引数は対象となるクエリのキー名のリスト
+# 第2引数はキー名から削除する文字
+# 第3引数はキー名の末尾に追加する文字
+SINGLE_QUERY_LOOKUP_DIFF = [
+    (TEXT_FORM, "", "__icontains"),
+    (YOUTUBE_GTE_FORMS, "_gte", "__gte"),
+    (YOUTUBE_LTE_FORMS , "_lte", "__lte"),
+    (BOOL_FORMS, "", ""),
+    (EXACT_ITEMS, "_exact", ""),
+]
 
-# 各queryのカラムとそれに対応するField lookupsを記した辞書の生成
-def get_song_filter():
-    FLITER_DATA = {}
-    for type, (columns, lookup) in FORM_TYPE.items():
-        for column in columns:
-            filter = column
-            if type in ["number_gt", "number_lt"]:      # number関係は以上・以下を示す_gt・_ltを消す
-                filter = column.replace("_gt", "").replace("_lt", "")
-            FLITER_DATA[column] = filter + lookup
-    
-    return FLITER_DATA
-
-def clean_query(query):
-    for column, value in query.items():
+# クエリの値を整形
+def clean_querys(querys):
+    cleand_querys = {}
+    for item, value in querys.items():
+        # 不必要なクエリを削除
+        if item not in ALL_QUERYS:
+            continue
+        
+        # クエリの値がリスト形式ならリストを取る
         if type(value) == list:
             value = value[0]
         
-        if column.startswith("is") and (value in ["True", "true", 1]):
+        # クエリのキーがbool型で値が真なら、値をTrueにする
+        if (item in BOOL_FORMS) and (value in ["True", "true", 1]):
             value = True
             
-        if column.startswith("is") and (value in ["False", "false", 0]):
+        # クエリのキーがbool型で値が偽なら、値をFalseにする
+        if (item in BOOL_FORMS) and (value in ["False", "false", 0]):
             value = False
     
-        query[column] = value
-    return query
+        cleand_querys[item] = value
+    return cleand_querys
 
-def query_to_filters(query):
-    filters = {}
-    FORM_TYPE = get_song_filter()
-    
-    for column, value in query.items():
-        if not FORM_TYPE.get(column):       # Songカラムに無いqueryは無視
+# 複数の検索条件があるクエリをフィルタリング
+def filter_multi_forms(querys, song_qs):
+    for key, value in querys.items():
+        if key == "islack":
+            song_qs = song_qs.filter(filter_by_lack)
             continue
+            
+        # keyがislack以外の複数の検索条件があるクエリのkeyなら
+        if key in MULTI_FORMS:
+            filter_func = MULTI_FILTERS[key]
+            song_qs = song_qs.filter(filter_func(value))
         
-        filters.update({FORM_TYPE[column]: value})
-        
-    return filters
+    return song_qs
+
+# YouTubeに関するならurlに"youtu"を含ませる
+def add_youtube_querys(querys):
+    YOUTUBE_SORT = ["upload_time", "-upload_time", "view", "-view", "like", "-like"]
+    has_youtube_sort = querys.get("sort") in YOUTUBE_SORT
+    has_youtube_filter = len(set(YOUTUBE_GTE_FORMS + YOUTUBE_LTE_FORMS) & set(querys.keys())) > 0
+    # YouTubeに関するソートではなかったら
+    if not(has_youtube_sort or has_youtube_filter):
+        return querys
     
-# songの全カラム検索
-def song_search(query):
-    query = clean_query(query)
-    filters = query_to_filters(query)
+    querys["url"] = "youtu"        # urlを"youtu"に上書きする
+    return querys
+
+# クエリのうち単数条件のクエリを対象にしたクエリのキーをキーに、filterのルックアップを値にした辞書を生成
+def create_single_filter_dict():
+    single_filter_dict = {}
+    for forms, delete_str, add_str in SINGLE_QUERY_LOOKUP_DIFF:
+        for form in forms:
+            single_filter_dict[form] = form.replace(delete_str, "") + add_str
+    return single_filter_dict
+    
+# クエリのうち単数条件のクエリをfilterのルックアップに変換
+def querys_to_single_filters(querys):
+    single_filters = {}
+    single_filter_dict = create_single_filter_dict()
+    print(single_filter_dict)
+    for item, value in querys.items():
+        if item in INFO_ITEMS + SORT_FORMS + MULTI_FORMS:
+            continue
+
+        single_filters[single_filter_dict[item]] = value
+        
+    return single_filters
+    
+# songのフィルタリング・ソート・統計
+def song_search(querys):
+    querys = clean_querys(querys)
     statistics = {}
     
-    try:
-        song_qs = Song.objects.filter(**filters)
-
-        for key, filter_func in LIB_FILTERS.items():
-            if (key in query) and (key == "islack"):
-                song_qs = song_qs.filter(filter_by_lack)
-                continue
-            
-            if key in query:
-                value = query[key]
-                song_qs = song_qs.filter(filter_func(value))
-        
-        if "sort" in query:
-            sort = query["sort"]
-            if sort in ["upload_time", "-upload_time"]:
-                song_qs = song_qs.filter(upload_time__isnull = False)
-            if sort in ["view", "-view"]:
-                song_qs = song_qs.filter(view__gt = 0)
-            if sort in ["like", "-like"]:
-                song_qs = song_qs.filter(like__gt = 0)
-            if sort == "random":
-                sort = "?"
-            song_qs = song_qs.order_by(sort)
-
-        count = song_qs.count()
-        if "count" in query:
-            statistics["count"] = count
-        
-        if not count:
-            statistics["max_page"] = 1
-            return Song.objects.none(), statistics
-        
-        query_size = int(query.get("size", 0))
-        if "page" not in query and query_size:
-            song_qs = song_qs[:query_size]
-            
-        if "page" in query:
-            page = int(query["page"])
-            size = query_size if query_size else DEFALT_SIZE
-            statistics["page"] = page
-            statistics["size"] = size
-            max_page = math.ceil(count / size)
-            statistics["max_page"] = max_page
-            if page > max_page:
-                raise IndexError(f"最大ページ数{max_page}を超えています")
-            song_qs = song_qs[(page - 1) * size : page * size]
-        
-    except Exception as e:
-        return {"error": str(e)}
+    # 条件が1つである条件を.filter(**
+    querys = add_youtube_querys(querys)
+    single_filters = querys_to_single_filters(querys)
+    song_qs = Song.objects.filter(**single_filters)
     
+    # 複数条件があるクエリを.filter
+    song_qs = filter_multi_forms(querys, song_qs)
+
+    # ソートの指示があればsong_qsを並び替え
+    if querys.get("sort"):
+        sort = querys["sort"]
+        song_qs = song_qs.order_by("?" if sort == "random" else sort)
+
+    # クエリ数をカウントする指示があればstatisticsに"count"を追加
+    count = song_qs.count()
+    if querys.get("count"):
+        statistics["count"] = count
+    
+    # ページ数の指定があったら、そのページの検索結果を表示しその旨の統計を保存する
+    if querys.get("page"):
+        page = int(querys["page"])
+        size = int(querys.get("size", DEFALT_SIZE))
+        statistics["page"] = page
+        statistics["size"] = size
+        max_page = math.ceil(count / size)
+        statistics["max_page"] = max_page
+        song_qs = song_qs[(page - 1) * size : page * size]
+        
     return song_qs, statistics
-    
