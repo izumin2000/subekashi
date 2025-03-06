@@ -130,27 +130,14 @@ def song_search(querys):
     if querys.get("count"):
         statistics["count"] = count
     
-    # 1件もヒットしなかったら
-    if not count:
-        statistics["max_page"] = 1
-        return Song.objects.none(), statistics
-    
-    # 表示個数の指示があったら検索結果を削る
-    query_size = int(querys.get("size", 0))
-    if (not querys.get("page")) and query_size:
-        song_qs = song_qs[:query_size]
-    
     # ページ数の指定があったら、そのページの検索結果を表示しその旨の統計を保存する
     if querys.get("page"):
         page = int(querys["page"])
-        size = query_size if query_size else DEFALT_SIZE
+        size = int(querys.get("size", DEFALT_SIZE))
         statistics["page"] = page
         statistics["size"] = size
         max_page = math.ceil(count / size)
         statistics["max_page"] = max_page
-        if page > max_page:
-            raise IndexError(f"最大ページ数{max_page}を超えています")
         song_qs = song_qs[(page - 1) * size : page * size]
         
     return song_qs, statistics
-    
