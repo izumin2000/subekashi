@@ -4,10 +4,10 @@ var imitateIdList = [], songGuesserController, song_id;
 const lyricsEle = document.getElementById("lyrics")
 async function init() {
     song_id = window.location.pathname.split("/")[2];
-    checkTitleChannelForm();
-    checkUrlForm();
+    await checkTitleChannelForm();
+    await checkUrlForm();
+    await initImitateList();
     checkButton();
-    initImitateList();
 };
 window.addEventListener('load', init);
 
@@ -40,7 +40,11 @@ async function initImitateList() {
         return;
     }
     
-    const imitateSongList = await getJson(`song/?imitate=${song_id}`);
+    const imitateSongList = await exponentialBackoff(`song/?imitate=${song_id}`, "init");
+    if (!imitateSongList) {
+        return;
+    }
+
     for (const imitateSong of imitateSongList) {
         appendImitateList(imitateSong);
     }
@@ -87,7 +91,11 @@ function renderSongGuesser() {
 // すべあな原曲以外からから選択
 async function songGuesserClick(id) {
     imitateTitleEle.value = "";
-    var imitateSong = await getJson(`song/${id}`);
+    var imitateSong = await exponentialBackoff(`song/${id}`, "imitate");
+    if (!imitateSong) {
+        return;
+    }
+
     appendImitate(imitateSong);
     renderSongGuesser();
 };
@@ -108,7 +116,11 @@ async function checkTitleChannelForm() {
 
     // 以下の条件はvalid
     isTitleChannelValid = true;
-    const titleChannelResponse = await getJson(`song/?title_exact=${titleEle.value}&channel_exact=${channelEle.value}`);
+    const titleChannelResponse = await exponentialBackoff(`song/?title_exact=${titleEle.value}&channel_exact=${channelEle.value}`,"tiltechannel");
+    if (!titleChannelResponse) {
+        return;
+    }
+
     const existingSong = titleChannelResponse.filter(song => song.id != song_id)[0];
 
     // 既に登録されている曲の場合
@@ -170,7 +182,11 @@ async function checkUrlForm() {
         url = url.replace("https://twitter.com", "https://x.com");
         url = formatYouTubeURL(url);
 
-        const urlResponse = await getJson(`song/?url=${url}`);
+        const urlResponse = await exponentialBackoff(`song/?url=${url}`, "url");
+        if (!urlResponse) {
+            return;
+        }
+
         const existingSong = urlResponse.filter(song => song.id != song_id)[0];
 
         // 既に登録されているURLの場合

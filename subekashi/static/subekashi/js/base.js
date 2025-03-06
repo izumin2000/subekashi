@@ -17,8 +17,48 @@ document.querySelectorAll('textarea').forEach((textarea) => {
 
 // DRFのAPIの取得
 async function getJson(path) {
-    res = await fetch(`${baseURL()}/api/${path}`, {cache: "reload"});
+    const res = await fetch(`${baseURL()}/api/${path}`, { cache: "reload" });
     return await res.json();
+}
+
+const abortControllers = {};
+async function exponentialBackoff(path, from = "default") {
+    const MAX_RETRY_COUNT = 5;
+
+    // 以前のリクエストがあればキャンセル
+    if (abortControllers[from]) {
+        abortControllers[from].abort();
+    }
+
+    // 新しいAbortControllerを作成
+    const controller = new AbortController();
+    abortControllers[from] = controller;
+
+    for (let retry = 1; retry <= MAX_RETRY_COUNT; retry++) {
+        try {
+            const res = await fetch(`${baseURL()}/api/${path}`, {
+                cache: "reload",
+                signal: controller.signal // キャンセル可能にする
+            });
+
+            if (!res.ok) {
+                throw new Error(`HTTP error! Status: ${res.status}`);
+            }
+
+            return await res.json();
+        } catch (error) {
+            // キャンセルされた場合は終了
+            if (controller.signal.aborted) {
+                return;
+            }
+
+            if (retry < MAX_RETRY_COUNT) {
+                await sleep(0.2 * 2 ** retry);
+            } else {
+                throw error;
+            }
+        }
+    }
 }
 
 // s秒間プログラムを停止 awaitが必須
@@ -73,8 +113,8 @@ async function getSongGuessers(text, to, signal) {
     }
 
     try {
-        songGuessers = await getJson(`html/song_guessers?guesser=${text}`);
-        for (songGuesser of songGuessers) {
+        const songGuessers = await getJson(`html/song_guessers?guesser=${text}`);
+        for (var songGuesser of songGuessers) {
             // キャンセルが要求されているか確認
             if (signal.aborted) {
                 return;

@@ -98,7 +98,6 @@ def create_single_filter_dict():
 def querys_to_single_filters(querys):
     single_filters = {}
     single_filter_dict = create_single_filter_dict()
-    print(single_filter_dict)
     for item, value in querys.items():
         if item in INFO_ITEMS + SORT_FORMS + MULTI_FORMS:
             continue
