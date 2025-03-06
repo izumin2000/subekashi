@@ -199,41 +199,32 @@ async function search(signal, page) {
     loadingEle = stringToHTML(`<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`)
     songCardsEle.appendChild(loadingEle)
 
-    try {
-        query = formToQuery();
-        query["page"] = page;
-        let songCards = await getJson(`html/song_cards${toQueryString(query)}`);
-        document.getElementById("loading").remove();
-        for (let songCard of songCards) {
-            // キャンセルが要求されているか確認
-            if (signal.aborted) {
-                return;
-            };
-
-            let songCardEle = stringToHTML(songCard);
-            songCardsEle.appendChild(songCardEle);
-            await sleep(0.05);
-        }
-
-        // #loadingを監視
-        const loadingElement = document.querySelector('#loading');
-        if (loadingElement) {
-            observer.observe(loadingElement);
-        }
-
-        retry = 0;
-    } catch (error) {
-        if (retry < 6) {
-            await sleep(0.2 * 2 ** (retry + 1));
-            renderSearch();
-            retry++;
-            return;
-        }
-
+    query = formToQuery();
+    query["page"] = page;
+    let songCards = await exponentialBackoff(`html/song_cards${toQueryString(query)}`);
+    if (!songCards) {
         const errorStr = "<p class='warning'><i class='warning fas fa-exclamation-triangle'></i>エラーが発生しました。検索ボタンをもう一度押すか再読み込みしてください。</p>";
         const errorEle = stringToHTML(errorStr);
         songCardsEle.appendChild(errorEle);
-        retry = 0;
+        return;
+    }
+    
+    document.getElementById("loading").remove();
+    for (let songCard of songCards) {
+        // キャンセルが要求されているか確認
+        if (signal.aborted) {
+            return;
+        };
+
+        let songCardEle = stringToHTML(songCard);
+        songCardsEle.appendChild(songCardEle);
+        await sleep(0.05);
+    }
+
+    // #loadingを監視
+    const loadingElement = document.querySelector('#loading');
+    if (loadingElement) {
+        observer.observe(loadingElement);
     }
 }
 
