@@ -62,4 +62,4 @@ URL_ICON = {
     r"linkco\.re": "<i class='fas fa-align-justify'></i>",
 }
 
-SAFE_DOMAINS = URL_ICON.keys()
+SAFE_DOMAINS = list(URL_ICON.keys())
