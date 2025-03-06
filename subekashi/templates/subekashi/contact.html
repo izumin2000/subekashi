@@ -9,8 +9,8 @@
 
     <form action="{% url 'subekashi:contact' %}" method="POST" id="contact-form">{% csrf_token %}
         <div class="form-col">
-            <label for="contact-type">お問い合わせの<br>種類<sup>*</sup></label>
-            <select id="contact-type" name="contact-type" required>
+            <label for="category">お問い合わせの<br>種類<sup>*</sup></label>
+            <select id="category" name="category" required>
                 <option value="" disabled selected>選択してください</option>
                 <option value="不具合の報告">不具合の報告</option>
                 <option value="提案">機能の提案</option>
