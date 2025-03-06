@@ -17,8 +17,21 @@ document.querySelectorAll('textarea').forEach((textarea) => {
 
 // DRFのAPIの取得
 async function getJson(path) {
-    res = await fetch(`${baseURL()}/api/${path}`, {cache: "reload"});
+    const res = await fetch(`${baseURL()}/api/${path}`, { cache: "reload" });
     return await res.json();
+}
+
+async function exponentialBackoff(path) {
+    const MAX_RETRY_COUNT = 5;
+    for (let retry = 1; retry <= MAX_RETRY_COUNT; retry++) {
+        try {
+            let json = await getJson(path);  // await を追加
+            return json;
+        } catch (error) {
+            await sleep(0.2 * 2 ** retry);
+        }
+    }
+    return undefined;
 }
 
 // s秒間プログラムを停止 awaitが必須
