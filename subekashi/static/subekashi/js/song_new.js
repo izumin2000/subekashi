@@ -2,8 +2,8 @@
 const urlEle = document.getElementById('url');
 async function init() {
     urlEle.focus();     // #urlにカーソルをあわせる
-    checkAutoForm();
-    checkManualForm();
+    await checkAutoForm();
+    await checkManualForm();
 };
 window.addEventListener('load', init);
 
@@ -45,7 +45,11 @@ async function checkAutoForm() {
         return;
     }
 
-    const existingSongs = await getJson(`song/?url=${videoId}`);
+    const existingSongs = await exponentialBackoff(`song/?url=${videoId}`, "url");
+    if (!existingSongs) {
+        return;
+    }
+    
     const existingSong = existingSongs[0];
 
     // 既に登録されているURLの場合
@@ -84,7 +88,11 @@ async function checkManualForm() {
     
     document.getElementById('new-submit-manual').disabled = false;
 
-    const existingSongs = await getJson(`song/?title_exact=${titleEle.value}&channel_exact=${channelEle.value}`);
+    const existingSongs = await exponentialBackoff(`song/?title_exact=${titleEle.value}&channel_exact=${channelEle.value}`, "titlechannel");
+    if (!existingSongs) {
+        return;
+    }
+
     const existingSong = existingSongs[0];
     // 既に登録されている曲の場合
     if (existingSong) {
