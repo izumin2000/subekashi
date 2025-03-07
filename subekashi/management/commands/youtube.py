@@ -50,7 +50,7 @@ class Command(BaseCommand):
                 upload_time_list.append(upload_time)
                 
         info["is_deleted"] = is_deleted
-        info["upload_time"] = max(upload_time_list)
+        info["upload_time"] = max(upload_time_list) if upload_time_list else None
         return info
     
     # Songモデルにinfoの内容を保存
