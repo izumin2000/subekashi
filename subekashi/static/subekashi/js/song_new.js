@@ -45,7 +45,7 @@ async function checkAutoForm() {
         return;
     }
 
-    const existingSongs = await exponentialBackoff(`song/?url=${videoId}`, "url");
+    const existingSongs = await exponentialBackoff(`song/?url=${videoId}`, "url", checkAutoForm);
     if (!existingSongs) {
         return;
     }
@@ -88,7 +88,7 @@ async function checkManualForm() {
     
     document.getElementById('new-submit-manual').disabled = false;
 
-    const existingSongs = await exponentialBackoff(`song/?title_exact=${titleEle.value}&channel_exact=${channelEle.value}`, "titlechannel");
+    const existingSongs = await exponentialBackoff(`song/?title_exact=${titleEle.value}&channel_exact=${channelEle.value}`, "titlechannel", checkManualForm);
     if (!existingSongs) {
         return;
     }

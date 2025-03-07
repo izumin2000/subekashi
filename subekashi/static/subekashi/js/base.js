@@ -122,7 +122,7 @@ function appendSongGuesser(songGuesser, toEle) {
 }
 
 var songGuesserController;
-async function getSongGuessers(text, to, signal) {
+async function getSongGuessers(text, to, signal, calling_func = () => {}) {
     var toEle = document.getElementById(to);
     while (toEle.firstChild) {
         toEle.removeChild(toEle.firstChild);
@@ -133,7 +133,7 @@ async function getSongGuessers(text, to, signal) {
     }
 
     try {
-        const songGuessers = await getJson(`html/song_guessers?guesser=${text}`);
+        const songGuessers = await exponentialBackoff(`html/song_guessers?guesser=${text}`, "getSongGuessers", calling_func);
         for (var songGuesser of songGuessers) {
             // キャンセルが要求されているか確認
             if (signal.aborted) {

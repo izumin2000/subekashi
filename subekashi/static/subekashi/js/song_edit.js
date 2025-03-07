@@ -40,7 +40,7 @@ async function initImitateList() {
         return;
     }
     
-    const imitateSongList = await exponentialBackoff(`song/?imitate=${song_id}`, "init");
+    const imitateSongList = await exponentialBackoff(`song/?imitate=${song_id}`, "init", initImitateList);
     if (!imitateSongList) {
         return;
     }
@@ -85,13 +85,13 @@ function renderSongGuesser() {
 
     const imitateTitle = imitateTitleEle.value;
     songGuesserController = new AbortController();
-    getSongGuessers(imitateTitle, "song-guesser", songGuesserController.signal);
+    getSongGuessers(imitateTitle, "song-guesser", songGuesserController.signal, renderSongGuesser);
 }
 
 // すべあな原曲以外からから選択
 async function songGuesserClick(id) {
     imitateTitleEle.value = "";
-    var imitateSong = await exponentialBackoff(`song/${id}`, "imitate");
+    var imitateSong = await exponentialBackoff(`song/${id}`, "imitate", songGuesserClick);
     if (!imitateSong) {
         return;
     }
@@ -116,7 +116,7 @@ async function checkTitleChannelForm() {
 
     // 以下の条件はvalid
     isTitleChannelValid = true;
-    const titleChannelResponse = await exponentialBackoff(`song/?title_exact=${titleEle.value}&channel_exact=${channelEle.value}`,"tiltechannel");
+    const titleChannelResponse = await exponentialBackoff(`song/?title_exact=${titleEle.value}&channel_exact=${channelEle.value}`, "tiltechannel", checkTitleChannelForm);
     if (!titleChannelResponse) {
         return;
     }
@@ -182,7 +182,7 @@ async function checkUrlForm() {
         url = url.replace("https://twitter.com", "https://x.com");
         url = formatYouTubeURL(url);
 
-        const urlResponse = await exponentialBackoff(`song/?url=${url}`, "url");
+        const urlResponse = await exponentialBackoff(`song/?url=${url}`, "url", checkUrlForm);
         if (!urlResponse) {
             return;
         }
