@@ -15,7 +15,7 @@ def song_cards(request):
     song_qs, statistics = song_search(query)
     
     if page == 1:
-        result.append(f"<p>{Song.objects.count()}件中{statistics['count']}件ヒットしました</p>")
+        result.append(f"<p id='counter'>{Song.objects.count()}件中{statistics['count']}件ヒットしました</p>")
     
     for song in song_qs:
         result.append(render_to_string('subekashi/components/song_card.html', {'song': song}))
