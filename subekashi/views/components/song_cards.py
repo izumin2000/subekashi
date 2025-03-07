@@ -9,7 +9,7 @@ from django_ratelimit.decorators import ratelimit
 def song_cards(request):
     result = []
     query = dict(request.GET)
-    page = int(query.get("page", ['1'])[0])
+    page = int(query.get("page")[0]) if query.get("page") and (query.get("page") != ['undefined']) else 1
     query["count"] = True
     query["page"] = page
     song_qs, statistics = song_search(query)
