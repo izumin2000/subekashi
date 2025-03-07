@@ -177,54 +177,56 @@ function toQueryString(query) {
     return params ? `?${params}` : '';
 }
 
-var SearchController, songCardsEle;
+var songCardsEle;
 function renderSearch() {
-    // 以前のリクエストが存在する場合、そのリクエストをキャンセルする
-    if (SearchController) {
-        SearchController.abort();
-    }
-
     page = 1;
     songCardsEle = document.getElementById("song-cards");
+
+    // 既存の検索結果やエラー表示を削除
     while (songCardsEle.firstChild) {
         songCardsEle.removeChild(songCardsEle.firstChild);
     }
 
-    SearchController = new AbortController();
-    search(SearchController.signal, page);
+    search(page);
 }
 
-var retry = 0;
-async function search(signal, page) {
-    loadingEle = stringToHTML(`<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`)
-    songCardsEle.appendChild(loadingEle)
+async function search(page) {
+    const loadingEle = stringToHTML(`<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`);
+    songCardsEle.appendChild(loadingEle);
 
-    query = formToQuery();
+    // 既存のエラー要素を削除
+    document.querySelectorAll(".warning").forEach(el => el.remove());
+
+    const query = formToQuery();
     query["page"] = page;
-    let songCards = await exponentialBackoff(`html/song_cards${toQueryString(query)}`, "search");
-    if (!songCards) {
+
+    try {
+        const songCards = await exponentialBackoff(
+            `html/song_cards${toQueryString(query)}`,
+            "search",
+            () => search(page) // 無視された場合に再実行
+        );
+
+        if (!songCards) {
+            throw new Error("検索結果が取得できませんでした");
+        }
+
+        document.getElementById("loading").remove();
+        for (let songCard of songCards) {
+            let songCardEle = stringToHTML(songCard);
+            songCardsEle.appendChild(songCardEle);
+            await sleep(0.05);
+        }
+
+        // #loadingを監視
+        const loadingElement = document.querySelector('#loading');
+        if (loadingElement) {
+            observer.observe(loadingElement);
+        }
+    } catch (error) {
+        document.getElementById("loading").remove();
         const errorStr = "<p class='warning'><i class='warning fas fa-exclamation-triangle'></i>エラーが発生しました。検索ボタンをもう一度押すか再読み込みしてください。</p>";
-        const errorEle = stringToHTML(errorStr);
-        songCardsEle.appendChild(errorEle);
-        return;
-    }
-    
-    document.getElementById("loading").remove();
-    for (let songCard of songCards) {
-        // キャンセルが要求されているか確認
-        if (signal.aborted) {
-            return;
-        };
-
-        let songCardEle = stringToHTML(songCard);
-        songCardsEle.appendChild(songCardEle);
-        await sleep(0.05);
-    }
-
-    // #loadingを監視
-    const loadingElement = document.querySelector('#loading');
-    if (loadingElement) {
-        observer.observe(loadingElement);
+        songCardsEle.appendChild(stringToHTML(errorStr));
     }
 }
 
