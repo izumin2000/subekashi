@@ -40,7 +40,7 @@ async function initImitateList() {
         return;
     }
     
-    const imitateSongList = await exponentialBackoff(`song/?imitate=${song_id}`, "init");
+    const imitateSongList = await exponentialBackoff(`song/?imitate=${song_id}`, "init", initImitateList);
     if (!imitateSongList) {
         return;
     }
@@ -85,13 +85,13 @@ function renderSongGuesser() {
 
     const imitateTitle = imitateTitleEle.value;
     songGuesserController = new AbortController();
-    getSongGuessers(imitateTitle, "song-guesser", songGuesserController.signal);
+    getSongGuessers(imitateTitle, "song-guesser", songGuesserController.signal, renderSongGuesser);
 }
 
 // すべあな原曲以外からから選択
 async function songGuesserClick(id) {
     imitateTitleEle.value = "";
-    var imitateSong = await exponentialBackoff(`song/${id}`, "imitate");
+    var imitateSong = await exponentialBackoff(`song/${id}`, "imitate", songGuesserClick);
     if (!imitateSong) {
         return;
     }
@@ -107,6 +107,9 @@ var isTitleChannelValid = false;
 async function checkTitleChannelForm() {
     const songEditInfoTitleChannelEle = document.getElementById('song-edit-info-title-channel');
 
+    const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`
+    songEditInfoTitleChannelEle.innerHTML = loadingEle;
+
     // タイトルとチャンネル名が空の場合
     if (titleEle.value === '' || channelEle.value === '') {
         songEditInfoTitleChannelEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>タイトルとチャンネル名を入力してください</span>";
@@ -116,7 +119,7 @@ async function checkTitleChannelForm() {
 
     // 以下の条件はvalid
     isTitleChannelValid = true;
-    const titleChannelResponse = await exponentialBackoff(`song/?title_exact=${titleEle.value}&channel_exact=${channelEle.value}`,"tiltechannel");
+    const titleChannelResponse = await exponentialBackoff(`song/?title_exact=${titleEle.value}&channel_exact=${channelEle.value}`, "tiltechannel", checkTitleChannelForm);
     if (!titleChannelResponse) {
         return;
     }
@@ -160,7 +163,11 @@ titleEle.addEventListener('input', checkTitleChannelForm);
 const urlEle = document.getElementById('url');
 var isUrlValid = true;
 async function checkUrlForm() {
+    isUrlValid = false;
     const songEditInfoUrlEle = document.getElementById('song-edit-info-url');
+
+    const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`
+    songEditInfoUrlEle.innerHTML = loadingEle;
 
     // URLが空の場合
     if (urlEle.value === '') {
@@ -172,7 +179,6 @@ async function checkUrlForm() {
         // urlでない場合
         if (!url.match(/^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/)) {
             songEditInfoUrlEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>入力形式が正しくありません</span>";
-            isUrlValid = false;
             return;
         }
 
@@ -182,7 +188,7 @@ async function checkUrlForm() {
         url = url.replace("https://twitter.com", "https://x.com");
         url = formatYouTubeURL(url);
 
-        const urlResponse = await exponentialBackoff(`song/?url=${url}`, "url");
+        const urlResponse = await exponentialBackoff(`song/?url=${url}`, "url", checkUrlForm);
         if (!urlResponse) {
             return;
         }
@@ -198,7 +204,6 @@ async function checkUrlForm() {
             として<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">既に登録されています</a><br>
             この記事を削除したい場合は、<a href="${baseURL()}/songs/${song_id}/delete?reason=${existingSong.id} と重複しています。" target="_blank">こちら</a>をクリックしてください。
             </span>`;
-            isUrlValid = false;
             return;
         }
     }

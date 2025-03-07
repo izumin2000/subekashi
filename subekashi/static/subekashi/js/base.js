@@ -21,24 +21,44 @@ async function getJson(path) {
     return await res.json();
 }
 
-const abortControllers = {};
-async function exponentialBackoff(path, from = "default") {
+// 指数バックオフ・直近のfetchから0.6秒未満の場合は無視し以前の実行をキャンセル
+const jsonControllers = {};     // fromごとのAbortController
+const lastFetchTimes = {};      // fromごとの最終fetch時間
+const pendingRequests = {};     // 無視されたリクエストを記録
+
+async function exponentialBackoff(path, from = "default", calling_func = () => {}) {
     const MAX_RETRY_COUNT = 5;
+    const MIN_INTERVAL = 600;
+    const now = Date.now();
+
+    // 直近のfetchから0.6秒未満の場合は無視
+    if (lastFetchTimes[from] && now - lastFetchTimes[from] < MIN_INTERVAL) {
+        pendingRequests[from] = calling_func;       // 関数を記録
+        setTimeout(() => {
+            if (pendingRequests[from]) {
+                const func = pendingRequests[from];
+                delete pendingRequests[from];       // 予約を削除
+                func();
+            }
+        }, MIN_INTERVAL - (now - lastFetchTimes[from]));
+        return;
+    }
+    lastFetchTimes[from] = now;
+    delete pendingRequests[from];       // 実行するので予約を削除
 
     // 以前のリクエストがあればキャンセル
-    if (abortControllers[from]) {
-        abortControllers[from].abort();
+    if (jsonControllers[from]) {
+        jsonControllers[from].abort();
     }
 
-    // 新しいAbortControllerを作成
-    const controller = new AbortController();
-    abortControllers[from] = controller;
+    const jsonController = new AbortController();
+    jsonControllers[from] = jsonController;
 
     for (let retry = 1; retry <= MAX_RETRY_COUNT; retry++) {
         try {
             const res = await fetch(`${baseURL()}/api/${path}`, {
                 cache: "reload",
-                signal: controller.signal // キャンセル可能にする
+                signal: jsonController.signal // キャンセル可能にする
             });
 
             if (!res.ok) {
@@ -48,7 +68,7 @@ async function exponentialBackoff(path, from = "default") {
             return await res.json();
         } catch (error) {
             // キャンセルされた場合は終了
-            if (controller.signal.aborted) {
+            if (jsonController.signal.aborted) {
                 return;
             }
 
@@ -102,7 +122,7 @@ function appendSongGuesser(songGuesser, toEle) {
 }
 
 var songGuesserController;
-async function getSongGuessers(text, to, signal) {
+async function getSongGuessers(text, to, signal, calling_func = () => {}) {
     var toEle = document.getElementById(to);
     while (toEle.firstChild) {
         toEle.removeChild(toEle.firstChild);
@@ -113,7 +133,7 @@ async function getSongGuessers(text, to, signal) {
     }
 
     try {
-        const songGuessers = await getJson(`html/song_guessers?guesser=${text}`);
+        const songGuessers = await exponentialBackoff(`html/song_guessers?guesser=${text}`, "getSongGuessers", calling_func);
         for (var songGuesser of songGuessers) {
             // キャンセルが要求されているか確認
             if (signal.aborted) {

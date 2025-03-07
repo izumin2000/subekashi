@@ -23,29 +23,30 @@ async function checkAutoForm() {
     const newFormAutoInfoEle = document.getElementById('new-form-auto-info');
     const inputUrlEle = urlEle.value;
     const videoId = getYouTubeId(inputUrlEle);
+    newSubmitAutoEle.disabled = true;
+
+    const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`
+    newFormAutoInfoEle.innerHTML = loadingEle;
 
     // URLが空の場合
     if (inputUrlEle === '') {
         newFormAutoInfoEle.innerHTML = "";
-        newSubmitAutoEle.disabled = true;
         return;
     }
 
     // URLが複数の場合
     if (inputUrlEle.includes(",")) {
         newFormAutoInfoEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>複数のURLを入力することはできません</span>";
-        newSubmitAutoEle.disabled = true;
         return;
     }
 
     // URLがYouTubeのURLでない場合
     if (videoId === null) {
         newFormAutoInfoEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>YouTubeの動画URLを入力してください</span>";
-        newSubmitAutoEle.disabled = true;
         return;
     }
 
-    const existingSongs = await exponentialBackoff(`song/?url=${videoId}`, "url");
+    const existingSongs = await exponentialBackoff(`song/?url=${videoId}`, "url", checkAutoForm);
     if (!existingSongs) {
         return;
     }
@@ -59,7 +60,6 @@ async function checkAutoForm() {
         タイトル：${existingSong.title}<br>
         チャンネル名：${existingSong.channel}<br>
         として<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">既に登録されています</a></span>`;
-        newSubmitAutoEle.disabled = true;
         return;
     }
 
@@ -78,17 +78,21 @@ var titleEle = document.getElementById('title');
 async function checkManualForm() {
     const channelEle = document.getElementById('channel');
     const titleEle = document.getElementById('title');
+    const newFormAutoManualEle = document.getElementById('new-form-manual-info');
+
+    const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`
+    newFormAutoManualEle.innerHTML = loadingEle;
 
     // どちらかが空の場合
     if (channelEle.value === '' || titleEle.value === '') {
-        document.getElementById('new-form-manual-info').innerHTML = "";
+        newFormAutoManualEle.innerHTML = "";
         document.getElementById('new-submit-manual').disabled = true;
         return;
     }
     
     document.getElementById('new-submit-manual').disabled = false;
 
-    const existingSongs = await exponentialBackoff(`song/?title_exact=${titleEle.value}&channel_exact=${channelEle.value}`, "titlechannel");
+    const existingSongs = await exponentialBackoff(`song/?title_exact=${titleEle.value}&channel_exact=${channelEle.value}`, "titlechannel", checkManualForm);
     if (!existingSongs) {
         return;
     }
@@ -99,7 +103,7 @@ async function checkManualForm() {
         const isMultipleSongURL = existingSong.url.includes(',');
         const existingSongURL = isMultipleSongURL ? existingSong.url.split(",")[0] : existingSong.url;
 
-        document.getElementById('new-form-manual-info').innerHTML = `<span class="warning"><i class="fas fa-exclamation-triangle warning"></i>
+        newFormAutoManualEle.innerHTML = `<span class="warning"><i class="fas fa-exclamation-triangle warning"></i>
         タイトル・チャンネル名ともに一致している曲が<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">見つかりました。</a><br>
         song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
         登録されているURL：<a href="${existingSongURL}" target="_blank">${existingSongURL}</a>${isMultipleSongURL ? 'など' : ''}<br>
@@ -109,18 +113,18 @@ async function checkManualForm() {
     
     // タイトルにスペースが含まれている場合
     if (titleEle.value != titleEle.value.trim()) {
-        document.getElementById('new-form-manual-info').innerHTML = `<span class="info"><i class='fas fa-info-circle info'></i>タイトルにスペースが含まれています。<br>意図して入力していない場合、削除してください。</span>`;
+        newFormAutoManualEle.innerHTML = `<span class="info"><i class='fas fa-info-circle info'></i>タイトルにスペースが含まれています。<br>意図して入力していない場合、削除してください。</span>`;
         return;
     }
 
     // チャンネル名にスペースが含まれている場合
     if (channelEle.value != channelEle.value.trim()) {
-        document.getElementById('new-form-manual-info').innerHTML = `<span class="info"><i class='fas fa-info-circle info'></i>チャンネル名にスペースが含まれています。<br>意図して入力していない場合、削除してください。</span>`;
+        newFormAutoManualEle.innerHTML = `<span class="info"><i class='fas fa-info-circle info'></i>チャンネル名にスペースが含まれています。<br>意図して入力していない場合、削除してください。</span>`;
         return;
     }
 
     // 登録されていない曲の場合
-    document.getElementById('new-form-manual-info').innerHTML = `<span class='ok'><i class='fas fa-check-circle ok'></i>登録可能です</span>`;
+    newFormAutoManualEle.innerHTML = `<span class='ok'><i class='fas fa-check-circle ok'></i>登録可能です</span>`;
 }
 
 channelEle.addEventListener('input', checkManualForm);

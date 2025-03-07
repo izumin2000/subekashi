@@ -201,7 +201,7 @@ async function search(signal, page) {
 
     query = formToQuery();
     query["page"] = page;
-    let songCards = await exponentialBackoff(`html/song_cards${toQueryString(query)}`);
+    let songCards = await exponentialBackoff(`html/song_cards${toQueryString(query)}`, "search", search);
     if (!songCards) {
         const errorStr = "<p class='warning'><i class='warning fas fa-exclamation-triangle'></i>エラーが発生しました。検索ボタンをもう一度押すか再読み込みしてください。</p>";
         const errorEle = stringToHTML(errorStr);
