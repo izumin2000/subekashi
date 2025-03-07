@@ -9,13 +9,13 @@ from django_ratelimit.decorators import ratelimit
 def song_cards(request):
     result = []
     query = dict(request.GET)
-    page = int(query.get("page", ['1'])[0])
+    page = int(query.get("page")[0]) if query.get("page") and (query.get("page") != ['undefined']) else 1
     query["count"] = True
     query["page"] = page
     song_qs, statistics = song_search(query)
     
     if page == 1:
-        result.append(f"<p>{Song.objects.count()}件中{statistics['count']}件ヒットしました</p>")
+        result.append(f"<p id='counter'>{Song.objects.count()}件中{statistics['count']}件ヒットしました</p>")
     
     for song in song_qs:
         result.append(render_to_string('subekashi/components/song_card.html', {'song': song}))
