@@ -230,7 +230,7 @@ async function search(signal, page) {
             return;
         }
 
-        const errorStr = "<p class='warning'><i class='warning fas fa-exclamation-triangle'></i>エラーが発生しました。検索ボタンをもう一度押すか再読み込みしてください。</p>";
+        const errorStr = "<p class='warning search-info'><i class='warning fas fa-exclamation-triangle'></i>エラーが発生しました。検索ボタンをもう一度押すか再読み込みしてください。</p>";
         const errorEle = stringToHTML(errorStr);
         songCardsEle.appendChild(errorEle);
         retry = 0;
