@@ -15,10 +15,8 @@ def song_edit(request, song_id) :
     except :
         return render(request, 'subekashi/404.html', status=404)
     
-    MAX_META_TITLE = 25
-    metatitle = f"{song.title}の編集" if len(song.title) < MAX_META_TITLE else f"{song.title[:MAX_META_TITLE]}...の編集"
     dataD = {
-        "metatitle": metatitle,
+        "metatitle": f"{song.title}の編集",
         "song": song,
     }
 
