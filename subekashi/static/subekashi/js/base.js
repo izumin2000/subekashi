@@ -21,24 +21,23 @@ async function getJson(path) {
     return await res.json();
 }
 
-const abortControllers = {};
+const jsonControllers = {};
 async function exponentialBackoff(path, from = "default") {
     const MAX_RETRY_COUNT = 5;
 
     // 以前のリクエストがあればキャンセル
-    if (abortControllers[from]) {
-        abortControllers[from].abort();
+    if (jsonControllers[from]) {
+        jsonControllers[from].abort();
     }
 
-    // 新しいAbortControllerを作成
-    const controller = new AbortController();
-    abortControllers[from] = controller;
+    const jsonController = new AbortController();
+    jsonControllers[from] = jsonController;
 
     for (let retry = 1; retry <= MAX_RETRY_COUNT; retry++) {
         try {
             const res = await fetch(`${baseURL()}/api/${path}`, {
                 cache: "reload",
-                signal: controller.signal // キャンセル可能にする
+                signal: jsonController.signal // キャンセル可能にする
             });
 
             if (!res.ok) {
@@ -48,7 +47,7 @@ async function exponentialBackoff(path, from = "default") {
             return await res.json();
         } catch (error) {
             // キャンセルされた場合は終了
-            if (controller.signal.aborted) {
+            if (jsonController.signal.aborted) {
                 return;
             }
 
