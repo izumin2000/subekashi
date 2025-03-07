@@ -107,6 +107,9 @@ var isTitleChannelValid = false;
 async function checkTitleChannelForm() {
     const songEditInfoTitleChannelEle = document.getElementById('song-edit-info-title-channel');
 
+    const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`
+    songEditInfoTitleChannelEle.innerHTML = loadingEle;
+
     // タイトルとチャンネル名が空の場合
     if (titleEle.value === '' || channelEle.value === '') {
         songEditInfoTitleChannelEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>タイトルとチャンネル名を入力してください</span>";
@@ -162,6 +165,9 @@ var isUrlValid = true;
 async function checkUrlForm() {
     isUrlValid = false;
     const songEditInfoUrlEle = document.getElementById('song-edit-info-url');
+
+    const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`
+    songEditInfoUrlEle.innerHTML = loadingEle;
 
     // URLが空の場合
     if (urlEle.value === '') {
