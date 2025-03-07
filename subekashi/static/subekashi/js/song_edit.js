@@ -160,6 +160,7 @@ titleEle.addEventListener('input', checkTitleChannelForm);
 const urlEle = document.getElementById('url');
 var isUrlValid = true;
 async function checkUrlForm() {
+    isUrlValid = false;
     const songEditInfoUrlEle = document.getElementById('song-edit-info-url');
 
     // URLが空の場合
@@ -172,7 +173,6 @@ async function checkUrlForm() {
         // urlでない場合
         if (!url.match(/^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/)) {
             songEditInfoUrlEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>入力形式が正しくありません</span>";
-            isUrlValid = false;
             return;
         }
 
@@ -198,7 +198,6 @@ async function checkUrlForm() {
             として<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">既に登録されています</a><br>
             この記事を削除したい場合は、<a href="${baseURL()}/songs/${song_id}/delete?reason=${existingSong.id} と重複しています。" target="_blank">こちら</a>をクリックしてください。
             </span>`;
-            isUrlValid = false;
             return;
         }
     }
