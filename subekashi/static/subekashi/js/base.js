@@ -21,9 +21,30 @@ async function getJson(path) {
     return await res.json();
 }
 
-const jsonControllers = {};
-async function exponentialBackoff(path, from = "default") {
+// 指数バックオフ・直近のfetchから0.6秒未満の場合は無視し以前の実行をキャンセル
+const jsonControllers = {};     // fromごとのAbortController
+const lastFetchTimes = {};      // fromごとの最終fetch時間
+const pendingRequests = {};     // 無視されたリクエストを記録
+
+async function exponentialBackoff(path, from = "default", calling_func = () => {}) {
     const MAX_RETRY_COUNT = 5;
+    const MIN_INTERVAL = 600;
+    const now = Date.now();
+
+    // 直近のfetchから0.6秒未満の場合は無視
+    if (lastFetchTimes[from] && now - lastFetchTimes[from] < MIN_INTERVAL) {
+        pendingRequests[from] = calling_func;       // 関数を記録
+        setTimeout(() => {
+            if (pendingRequests[from]) {
+                const func = pendingRequests[from];
+                delete pendingRequests[from];       // 予約を削除
+                func();
+            }
+        }, MIN_INTERVAL - (now - lastFetchTimes[from]));
+        return;
+    }
+    lastFetchTimes[from] = now;
+    delete pendingRequests[from];       // 実行するので予約を削除
 
     // 以前のリクエストがあればキャンセル
     if (jsonControllers[from]) {
