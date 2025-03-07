@@ -420,10 +420,92 @@ a {
 
 details {
     cursor: pointer;
+    text-align: center;
+    background-color: #333;
+    line-height: 22px;
+    padding: 5px;
+    border-radius: 10px;
+}
+
+details details {
+    background-color: #555;
+    margin-bottom: 0;
+}
+
+details[open] {
+    cursor: default;
+}
+
+details:hover {
+    background-color: #333;
+}
+
+details details:hover {
+    background-color: #555;
+}
+
+details[open]:hover {
+    background-color: #333;
+}
+
+details details[open]:hover {
+    background-color: #555;
+}
+
+details a {
+    display: inline-block;
+    overflow-wrap: anywhere;
+    background-color: #555;
+    margin: 5px;
+    padding: 5px;
+    border-radius: 5px;
+}
+
+details a:hover {
+    background-color: #777;
+}
+
+details details a {
+    background-color: #777;
+}
+
+details details a:hover {
+    background-color: #999;
 }
 
 summary {
-    margin-bottom: 20px;
+    text-align: left;
+    list-style: none;
+    margin-bottom: 0;
+    padding: 5px 0;
+    cursor: pointer;
+    border-radius: 10px;
+    text-align: center;
+}
+
+summary:hover {
+    background-color: #555;
+}
+
+details summary:hover {
+    background-color: #777;
+}
+
+summary::-webkit-details-marker {
+    display: none;
+}
+
+details i {
+    margin: 0 10px 0 0;
+}
+
+details p {
+    margin: 10px 0;
+}
+
+details h3 {
+    margin-top: 45px;
+    font-size: 30px;
 }
 
 #loading {
@@ -445,14 +527,6 @@ label {
     display: inline-block;
     cursor: pointer;
     text-align: center;
-}
-
-details {
-    text-align: center;
-}
-
-details p {
-    margin: 15px 0;
 }
 
 .form-col label {
