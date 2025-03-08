@@ -40,7 +40,7 @@ async function initImitateList() {
         return;
     }
     
-    const imitateSongList = await exponentialBackoff(`song/?imitate=${song_id}`, "init", initImitateList);
+    const imitateSongList = await exponentialBackoff(`song/?imitated=${song_id}`, "init", initImitateList);
     if (!imitateSongList) {
         return;
     }
