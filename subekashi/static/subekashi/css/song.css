@@ -1,3 +1,21 @@
+.dummybutton {
+    background-color: #333;
+    padding: 0;
+}
+
+.dummybutton:hover {
+    background-color: #666;
+}
+
+.dummybutton i {
+    margin-right: 10px;
+}
+
+.dummybutton p {
+    color: #fff;
+    padding-top: 10px;
+}
+
 #song-info {
     margin: 0 auto;
 }
@@ -13,7 +31,7 @@
     margin-right: 0;
 }
 
-#song-info td:nth-child(1) p {
+#song-info td:nth-child(1) p, .dummybuttons p {
     display: inline-block;
     font-size: 12px;
     line-height: 15px;
