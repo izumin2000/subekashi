@@ -30,14 +30,14 @@
                 </td>
             </tr>
         {% endfor %}
-        {% for url in urls %}
+        {% for link in links %}
             <tr>
                 <td>
-                    <i class="far fa-copy" onclick="copy('{{ url }}')"></i>
-                    <i class="fas fa-link"></i><p>URL</p>
+                    <i class="far fa-copy" onclick="copy('{{ link.text }}')"></i>
+                    <i class="fas fa-link"></i><p>リンク</p>
                 </td>
                 <td>
-                    <a class="songurl" href="{{ url }}" target="_blank">{{ url }}</a>
+                    <a class="songurl" href="{{ link.text }}" target="_blank">{{ link.icon|safe }}</a>
                 </td>
             </tr>
         {% endfor %}
