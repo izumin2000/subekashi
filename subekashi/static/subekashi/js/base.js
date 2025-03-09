@@ -368,3 +368,13 @@ function showTutorial(place) {
     const tutorial = TUTORIALS[place];
     showToast("info", tutorial);
 }
+
+// 
+
+function deleteToastUrlQuery() {
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('toast')) {
+        url.searchParams.delete('toast');
+        window.history.replaceState({}, '', url.toString());
+    }
+}

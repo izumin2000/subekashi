@@ -196,5 +196,7 @@
     {% elif request.GET.toast == "delete" %}
         showToast("ok", "削除申請を送信しました。");
     {% endif %}
+
+    deleteToastUrlQuery()
 </script>
 {% endblock %}
