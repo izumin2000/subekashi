@@ -68,7 +68,6 @@ def song_new(request) :
                 dataD["error"] = f"{check_channel}さんの曲は登録することができません。"
                 return render(request, 'subekashi/song_new.html', dataD)
                     
-        # TODO cleaned_urlがURL_ICONにあるかのセキュリティチェック
         ip = get_ip(request)
         
         song = Song(
