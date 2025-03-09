@@ -1,37 +1,42 @@
-table {
+#song-info {
     margin: 0 auto;
 }
 
-p, i, td {
+#song-info p, #song-info i, #song-info td {
     line-height: 50px;
 }
 
-td:nth-child(1) {
+#song-info td:nth-child(1) {
     text-align: right;
     min-width: 75px;
     padding-right: 25px;
     margin-right: 0;
 }
 
-td:nth-child(1) p {
+#song-info td:nth-child(1) p {
     display: inline-block;
     font-size: 12px;
     line-height: 15px;
 }
 
 @media (max-width: 960px) {
-    td:nth-child(1) p {
+    #song-info td:nth-child(1) p {
         display: none;
     }
 }
 
-td:nth-child(2) {
+#song-info td:nth-child(2) {
     word-break: break-all;
     max-width: 550px;
 }
 
-i {
+#song-info i, .fa-align-center {
     margin-right: 10px;
+}
+
+.song-url img {
+    height: 22px;
+    width: auto;
 }
 
 #original-tag, #tags a {

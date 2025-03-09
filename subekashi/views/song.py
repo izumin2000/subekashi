@@ -1,12 +1,28 @@
 from django.shortcuts import render
 from subekashi.models import *
 from subekashi.lib.filter import is_lack
+from subekashi.constants.constants import DEFALT_ICON, URL_ICON
+from urllib.parse import urlparse
+import re
 
 def song(request, song_id):
     try:
         song = Song.objects.get(pk = song_id)
     except:
         return render(request, 'subekashi/404.html', status=404)
+    
+    # URLのリンクを取得
+    links = []
+    for url in song.url.split(",") if song.url else []:
+        domain = urlparse(url).netloc
+        pattern_list = [bool(re.search(allow_pattern, domain)) for allow_pattern in URL_ICON.keys()]
+        icon = list(URL_ICON.values())[pattern_list.index(True)]
+        links.append(
+            {
+                "text": url,
+                "icon": icon
+            }
+        )
     
     # 模倣songリストを取得
     imitate_list = Song.objects.none()
@@ -41,7 +57,7 @@ def song(request, song_id):
         "song": song,
         "channels": song.channel.split(","),
         "is_lack": is_lack(song),
-        "urls": song.url.split(",") if song.url else [],
+        "links": links,
         "imitated_list": imitated_list,
         "imitate_list": imitate_list,
         "description": description,

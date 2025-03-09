@@ -252,6 +252,6 @@ const observer = new IntersectionObserver((entries, observer) => {
 // 2ページ目以降を表示
 function paging() {
     page++;
-    // document.getElementById("next-page-loading").remove();
+    document.getElementById("next-page-loading").remove();
     search(SearchController.signal, page);
 }
