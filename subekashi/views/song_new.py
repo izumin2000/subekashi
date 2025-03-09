@@ -54,8 +54,19 @@ def song_new(request) :
             dataD["error"] = "タイトルかチャンネルが空です。"
             return render(request, 'subekashi/song_new.html', dataD)
         
+        try:
+            from subekashi.constants.dynamic.reject import REJECT_LIST
+        except:
+            REJECT_LIST = []
+        
         cleand_title = title.replace(" ,", ",").replace(", ", ",")
         cleand_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
+        
+        for check_channel in cleand_channel.split(","):
+            if check_channel in REJECT_LIST:
+                dataD["error"] = f"{check_channel}さんの曲は登録することができません。"
+                return render(request, 'subekashi/song_new.html', dataD)
+                    
         # TODO cleaned_urlがURL_ICONにあるかのセキュリティチェック
         ip = get_ip(request)
         
