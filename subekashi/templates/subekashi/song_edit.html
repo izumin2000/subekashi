@@ -105,5 +105,7 @@
     {% elif request.GET.toast == "manual" %}
         showToast("ok", "登録しました。続けてURL・模倣・歌詞等を登録することができます。");
     {% endif %}
+
+    deleteToastUrlQuery()
 </script>
 {% endblock %}
