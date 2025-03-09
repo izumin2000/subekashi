@@ -14,7 +14,7 @@ class Command(BaseCommand):
         video_ids = [get_youtube_id(url) for url in urls if is_youtube_url(url)]
         return video_ids
     
-    # 複数のYouTubeの動画の再生数・高評価数の総和を求める
+    # 複数のYouTubeの動画の再生回数・高評価数の総和を求める
     # アップロード日時は最も新しい日時を取得する
     def get_youtube_info_sum(self, songs):
         is_deleted = True
@@ -40,7 +40,7 @@ class Command(BaseCommand):
             
             is_deleted = False      # 公開していたら
             
-            # 再生数と高評価数を総和に追加
+            # 再生回数と高評価数を総和に追加
             info["view"] += res.get("view", 0)
             info["like"] += res.get("like", 0)
             
