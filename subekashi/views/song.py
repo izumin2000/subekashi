@@ -41,6 +41,15 @@ def song(request, song_id):
     description += f"模倣曲数：{imitate_list.count()}, " if imitate_list.count() else ""
     description += f"被模倣曲数：{imitated_list.count()}, " if imitated_list.count() else ""
     
+    # 歌詞のHTML化
+    br_lyrics = request.COOKIES.get("brlyrics", "normal")
+    if br_lyrics == "normal":
+        html_lyrics = song.lyrics.replace("\n", "<br>")
+    elif br_lyrics == "pack":
+        html_lyrics = re.sub(r"\n+", "<br>", song.lyrics)
+    elif br_lyrics == "brless":
+        html_lyrics = song.lyrics.replace("\n", "")
+    
     # 歌詞の一部をdescriptionに記述
     description_lyrics = song.lyrics.replace("\r\n", "")[:100]
     description += f"歌詞: {description_lyrics}" if description_lyrics else ""
@@ -53,14 +62,15 @@ def song(request, song_id):
     
     # テンプレートに渡す辞書を作成
     dataD = {
+        "description": description,
         "metatitle": f"{song.title} / {song.channel}",
         "song": song,
         "channels": song.channel.split(","),
         "is_lack": is_lack(song),
         "links": links,
-        "imitated_list": imitated_list,
         "imitate_list": imitate_list,
-        "description": description,
-        "has_tag": has_tag
+        "imitated_list": imitated_list,
+        "has_tag": has_tag,
+        "lyrics": html_lyrics
     }
     return render(request, "subekashi/song.html", dataD)

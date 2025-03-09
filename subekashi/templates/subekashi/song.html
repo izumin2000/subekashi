@@ -160,7 +160,7 @@
     {% if song.lyrics %}
         <div id="lyrics-wrapper">
             <p id="lyrics-header"><i class="fas fa-align-center"></i>歌詞<i class="far fa-copy" onclick="copy('{{ song.lyrics|escapejs }}')"></i></p>
-            <p id="lyrics">{{ song.lyrics }}</p>
+            <p id="lyrics">{{ lyrics|safe }}</p>
         </div>
     {% endif %}
 </section>
@@ -168,19 +168,6 @@
 
 {% block js %}
 <script defer>
-    {% comment %} TODO バックエンドで処理 {% endcomment %}
-    window.addEventListener('load', function(){
-        songlyricsEle = document.getElementById("lyrics");
-        if (songlyricsEle) {
-            songlyricsEle.innerHTML = songlyricsEle.innerHTML.replace(/\n/g, "<br>");
-            if (getCookie().brlyrics == "brless") {
-                songlyricsEle.innerHTML = songlyricsEle.innerText.replace("<br>", "");
-            } else if (getCookie().brlyrics == "pack") {
-                songlyricsEle.innerHTML = songlyricsEle.innerHTML.replace(/(<br>\s*)+/g, "<br>");
-            }
-        }
-    });
-
     function copy(text) {
         if (!Boolean(navigator.clipboard)) {
             showToast("error", "コピーできませんでした。");
