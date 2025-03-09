@@ -12,7 +12,8 @@ class Command(BaseCommand):
             'ban.py': 'BAN_LIST = []',
             'gpt.txt': '',
             'news.md': '[テストニュース1](https://example.com/)\n\n**テストニュース2**',
-            'version.py': 'VERSION = "dev"'
+            'version.py': 'VERSION = "dev"',
+            'reject.py': 'REJECT_LIST = []',
         }
         for file_name, text in CONST_INFO.items():
             const_path = os.path.join(BASE_DIR, 'subekashi/constants/dynamic', file_name)

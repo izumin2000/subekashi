@@ -1,6 +1,4 @@
 from django.shortcuts import render
-from django.middleware.cache import CacheMiddleware
-from django.utils.decorators import decorator_from_middleware
 from config.settings import *
 from subekashi.models import *
 from subekashi.constants.constants import *
@@ -14,7 +12,6 @@ import markdown
 INPUT_TEXTS = ["title", "channel", "lyrics", "url"]
 
 
-cache_control_no_cache = decorator_from_middleware(CacheMiddleware)
 def top(request):
     dataD = {
         "metatitle" : "トップ",
