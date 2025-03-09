@@ -19,10 +19,10 @@
         <meta name="description" content="{% get_description description %}">
         <meta name="og:title" content="{{ metatitle }} | 全て歌詞の所為です。">
         <title>{{ metatitle }} | 全て歌詞の所為です。</title>
-        <link rel="stylesheet" type="text/css" href="{% static 'subekashi/css/common.css'%}?{{ version }}">
-        <link rel="stylesheet" type="text/css" href="{% static 'subekashi/css/components/song_card.css'%}?{{ version }}">
-        <link rel="stylesheet" type="text/css" href="{% static 'subekashi/css/components/song_guesser.css'%}?{{ version }}">
-        <link rel="stylesheet" type="text/css" href="{% block css %}{% endblock %}?{{ version }}">
+        <link rel="stylesheet" type="text/css" href="{% static 'subekashi/css/common.css'%}">
+        <link rel="stylesheet" type="text/css" href="{% static 'subekashi/css/components/song_card.css'%}">
+        <link rel="stylesheet" type="text/css" href="{% static 'subekashi/css/components/song_guesser.css'%}">
+        <link rel="stylesheet" type="text/css" href="{% block css %}{% endblock %}">
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" > <!-- font awesome -->
         <link rel="shortcut icon" href="{% static 'subekashi/image/icon.ico' %}">
         <link rel="apple-touch-icon" href="{% static 'subekashi/image/apple-touch-icon.png' %}">
@@ -41,7 +41,7 @@
         {% include './footer.html' %}
     </body>
 
-    <script src="{% static 'subekashi/js/base.js' %}?{{ version }}" rel="stylesheet"></script>
+    <script src="{% static 'subekashi/js/base.js' %}" rel="stylesheet"></script>
     {% block js %}{% endblock %}
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-GJHM3M7SH1"></script>
     <script>

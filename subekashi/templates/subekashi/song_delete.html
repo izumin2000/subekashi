@@ -21,7 +21,7 @@
 {% endblock %}
 
 {% block js %}
-<script defer src="{% static 'subekashi/js/song_delete.js' %}?{{ version }}"></script>
+<script defer src="{% static 'subekashi/js/song_delete.js' %}"></script>
 <script>
     {% if result == "invalid" %}
         showToast("error", "削除理由を入力してください。");

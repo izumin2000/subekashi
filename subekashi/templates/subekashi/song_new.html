@@ -98,7 +98,7 @@
 {% endblock %}
 
 {% block js %}
-<script defer src="{% static 'subekashi/js/song_new.js' %}?{{ version }}"></script>
+<script defer src="{% static 'subekashi/js/song_new.js' %}"></script>
 <script defer>
     if ("{{ error }}") {
         showToast("error", "{{ error }}")
