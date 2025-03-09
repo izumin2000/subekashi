@@ -175,6 +175,7 @@ async function checkUrlForm() {
         return;
     }
 
+    var url_count = 1;
     for (url of urlEle.value.split(',')) {
         // urlでない場合
         if (!url.match(/^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/)) {
@@ -188,7 +189,9 @@ async function checkUrlForm() {
         url = url.replace("https://twitter.com", "https://x.com");
         url = formatYouTubeURL(url);
 
-        const urlResponse = await exponentialBackoff(`song/?url=${url}`, "url", checkUrlForm);
+        const urlResponse = await exponentialBackoff(`song/?url=${url}`, `url${url_count}`, checkUrlForm);
+        url_count += 1;
+        
         if (!urlResponse) {
             return;
         }
