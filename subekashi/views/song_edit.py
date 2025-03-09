@@ -61,6 +61,17 @@ def song_edit(request, song_id) :
         cleand_title = title.replace(" ,", ",").replace(", ", ",")
         cleand_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
         cleand_lyrics = lyrics.replace("\r\n", "\n")
+        
+        # 掲載拒否
+        try:
+            from subekashi.constants.dynamic.reject import REJECT_LIST
+        except:
+            REJECT_LIST = []
+            
+        for check_channel in cleand_channel.split(","):
+            if check_channel in REJECT_LIST:
+                dataD["error"] = f"{check_channel}さんの曲は登録することができません。"
+                return render(request, 'subekashi/song_new.html', dataD)
 
         # discordに通知
         content = f'\n\

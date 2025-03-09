@@ -54,13 +54,14 @@ def song_new(request) :
             dataD["error"] = "タイトルかチャンネルが空です。"
             return render(request, 'subekashi/song_new.html', dataD)
         
+        cleand_title = title.replace(" ,", ",").replace(", ", ",")
+        cleand_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
+        
+        # 掲載拒否
         try:
             from subekashi.constants.dynamic.reject import REJECT_LIST
         except:
             REJECT_LIST = []
-        
-        cleand_title = title.replace(" ,", ",").replace(", ", ",")
-        cleand_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
         
         for check_channel in cleand_channel.split(","):
             if check_channel in REJECT_LIST:
