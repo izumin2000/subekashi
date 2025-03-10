@@ -75,7 +75,7 @@
                         <a href="{% url 'subekashi:search' %}?isinst=True">インスト曲</a>
                     {% endif %}
                     {% if not song.issubeana %}
-                        <a href="{% url 'subekashi:search' %}?issubeana=xx">すべあな界隈曲以外の界隈曲</a>
+                        <a href="{% url 'subekashi:search' %}?issubeana=xx">非すべあな模倣曲</a>
                     {% endif %}
                     {% if song.isdeleted %}
                         <a href="{% url 'subekashi:search' %}?isdeleted=True">非公開/削除済み</a>
