@@ -1,5 +1,4 @@
 from django.views.generic.base import RedirectView
-from django.contrib import admin
 from django.urls import path, include
 from config.settings import ROOT_URL
 from subekashi.views import *
@@ -13,7 +12,6 @@ defaultRouter.register('ai', AiAPI)
 defaultRouter.register('ad', AdAPI)
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
     path('', top, name='top'),
     path('contact/', contact, name='contact'),
     path('search/', RedirectView.as_view(url=f"{ROOT_URL}/songs/", permanent=False)),
