@@ -1,5 +1,5 @@
 from django.urls import resolve
-from subekashi.constants.constants import *
+from subekashi.constants.constants import CONST_ERROR, ASIDE_PAGES
 
 def context_processors(request):
     try:
