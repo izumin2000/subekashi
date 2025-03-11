@@ -830,7 +830,7 @@ footer a {
     margin-left: 0;
 }
 
-#version {
+#pc_version {
     margin: 0 1em;
 }
 
@@ -842,7 +842,7 @@ footer a {
 }
 
 @media(max-width: 960px) {
-    #version {
+    #pc_version {
         display: none;
     }
 
