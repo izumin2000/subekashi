@@ -4,7 +4,7 @@ from .models import *
 class SongSerializer(serializers.ModelSerializer):
     class Meta:
         model = Song
-        exclude = ("ip", )
+        fields = '__all__'
     
     def update(self, instance, validated_data):
         return super().update(instance, validated_data)
