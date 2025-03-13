@@ -736,12 +736,6 @@ input::placeholder {
     font-size: 17px;
 }
 
-#imitate-search {
-    margin: 10px 0;
-    width: 100%;
-    padding: 0;
-}
-
 #imitatelist {
     margin-top: 20px;
 }
@@ -830,7 +824,7 @@ footer a {
     margin-left: 0;
 }
 
-#version {
+#pc_version {
     margin: 0 1em;
 }
 
@@ -842,7 +836,7 @@ footer a {
 }
 
 @media(max-width: 960px) {
-    #version {
+    #pc_version {
         display: none;
     }
 

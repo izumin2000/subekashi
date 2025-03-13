@@ -1,9 +1,10 @@
+from subekashi.lib.security import encrypt
 
-
-def get_ip(request):
+def get_ip(request, is_encrypted=True):
     forwarded_addresses = request.META.get('HTTP_X_FORWARDED_FOR')
-    if forwarded_addresses:
-        ip_address = forwarded_addresses.split(',')[0]
-    else:
-        ip_address = request.META.get('REMOTE_ADDR')
+    ip_address = forwarded_addresses.split(',')[0] if forwarded_addresses else request.META.get('REMOTE_ADDR')
+    
+    if is_encrypted:
+        return encrypt(ip_address)
+    
     return ip_address

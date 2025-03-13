@@ -299,11 +299,6 @@ function getCookie() {
     return cookieDict;
 }
 
-// 読み込み時の実行
-window.onload = function() {
-    getGlobalHeader();
-}
-
 // フォントのキャッシュ
 self.addEventListener('install', (event) => {
     event.waitUntil(
@@ -369,12 +364,50 @@ function showTutorial(place) {
     showToast("info", tutorial);
 }
 
-// 
-
+// 表示用のトーストURLクエリを削除
 function deleteToastUrlQuery() {
     const url = new URL(window.location.href);
     if (url.searchParams.has('toast')) {
         url.searchParams.delete('toast');
         window.history.replaceState({}, '', url.toString());
     }
+}
+
+// バージョンを強制的にアップさせる
+async function versionApp() {
+    const url = new URL(window.location);
+    const cliantVersion = document.getElementById("version").innerText;
+    const versionResponse = await exponentialBackoff("version", "version");
+    const serverVersion = versionResponse["version"]
+    
+    // バージョンアップしたら
+    const versionQuery = new URLSearchParams(window.location.search).get('version')
+    if (versionQuery) {
+        showToast("ok", `バージョンを${versionQuery}から<span class="ok">${serverVersion}</span>にアップデートしました。`);
+
+        url.searchParams.delete('version');
+        window.history.replaceState({}, '', url.toString());
+        return;
+    }
+
+    // バージョンアップ済だったら
+    if (cliantVersion == serverVersion) {
+        return;
+    }
+
+    showToast("info", "バージョンアップを行うため、再読み込みします...");
+
+    url.searchParams.set('version', cliantVersion);
+    window.location.href = url.toString();
+}
+
+
+// 読み込み前の動作
+window.addEventListener('DOMContentLoaded', function () {
+    versionApp();
+});
+
+// 読み込み時の実行
+window.onload = function() {
+    getGlobalHeader();
 }

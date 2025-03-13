@@ -50,7 +50,6 @@
             {% render_categorys %}
             <p id="imitate-sub">もしくは模倣曲から選択</p>
             <input type="text" id="imitate-title" class="sansfont" oninput="renderSongGuesser()" placeholder="タイトルかチャンネル名を入力">
-            <div class="dummybutton" id="imitate-search" onclick="renderSongGuesser()"><p>最新の情報を取得して検索</p></div>
             <div id="song-guesser" class="sansfont"></div>
             <div id="imitate-list"></div>
             <input type="text" id="imitate" name="imitate" value="{{ song.imitate }}" hidden>
