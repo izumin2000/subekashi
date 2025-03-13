@@ -376,13 +376,14 @@ function deleteToastUrlQuery() {
 // バージョンを強制的にアップさせる
 async function versionApp() {
     const url = new URL(window.location);
-    const CliantVersion = document.getElementById("version").innerText;
+    const cliantVersion = document.getElementById("version").innerText;
     const versionResponse = await exponentialBackoff("version", "version");
     const serverVersion = versionResponse["version"]
     
     // バージョンアップしたら
-    if (new URLSearchParams(window.location.search).get('version') === 'new') {
-        showToast("ok", `バージョンを${serverVersion}にアップデートしました。`);
+    const versionQuery = new URLSearchParams(window.location.search).get('version')
+    if (versionQuery) {
+        showToast("ok", `バージョンを${versionQuery}から<span class="ok">${serverVersion}</span>にアップデートしました。`);
 
         url.searchParams.delete('version');
         window.history.replaceState({}, '', url.toString());
@@ -390,13 +391,13 @@ async function versionApp() {
     }
 
     // バージョンアップ済だったら
-    if (CliantVersion == serverVersion) {
+    if (cliantVersion == serverVersion) {
         return;
     }
 
-    showToast("info", "バージョンアップします...");
+    showToast("info", "バージョンアップを行うため、再読み込みします...");
 
-    url.searchParams.set('version', 'new');
+    url.searchParams.set('version', cliantVersion);
     window.location.href = url.toString();
 }
 
