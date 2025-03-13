@@ -736,12 +736,6 @@ input::placeholder {
     font-size: 17px;
 }
 
-#imitate-search {
-    margin: 10px 0;
-    width: 100%;
-    padding: 0;
-}
-
 #imitatelist {
     margin-top: 20px;
 }
