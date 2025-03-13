@@ -7,6 +7,9 @@ def send_discord(url, content):
     if not url:
         return True
     
+    content = content.replace("\n            ", "\n")
+    content = content.replace("\n        ", "\n")
+    
     res = requests.post(url, data={'content': content})
     if (400 <= res.status_code < 600):
         return False
