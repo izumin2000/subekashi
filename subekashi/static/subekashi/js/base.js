@@ -378,7 +378,11 @@ async function versionApp() {
     const url = new URL(window.location);
     const cliantVersion = document.getElementById("version").innerText;
     const versionResponse = await exponentialBackoff("version", "version");
-    const serverVersion = versionResponse["version"]
+    const serverVersion = versionResponse["VERSION"]
+
+    if (!cliantVersion || !versionResponse) {
+        return;
+    }
     
     // バージョンアップしたら
     const versionQuery = new URLSearchParams(window.location.search).get('version')

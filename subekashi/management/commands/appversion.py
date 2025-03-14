@@ -4,6 +4,7 @@ from datetime import date
 from subekashi.constants.constants import *
 import subprocess
 import os
+import json
 
 
 class Command(BaseCommand):
@@ -15,10 +16,10 @@ class Command(BaseCommand):
         commit_count = subprocess.check_output(['git', 'rev-list', '--count', 'main']).strip().decode('utf8')
         sub_version = v if v else commit_count
         version = f"{today}(ver.{sub_version})"
-        version_path = os.path.join(BASE_DIR, 'subekashi/constants/dynamic/version.py')
+        version_path = os.path.join(BASE_DIR, 'subekashi/constants/dynamic/version.json')
         if os.path.exists(version_path):
             file = open(version_path, 'w', encoding='utf-8')
-            file.write(f'VERSION = "{version}"')
+            json.dump({"VERSION": version}, file, indent=4)
             file.close()
             massage = f"バージョン：{version}"
             self.stdout.write(self.style.SUCCESS(massage))
