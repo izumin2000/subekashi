@@ -3,6 +3,7 @@
 
 {% load static %}
 {% load categorys %}
+{% block noindex %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 {% block css %}{% static 'subekashi/css/song_edit.css'%}{% endblock %}
 
 {% block content %}
