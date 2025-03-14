@@ -1,6 +1,7 @@
 {% extends "subekashi/base/base.html" %}
 
 {% load static %}
+{% block noindex %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 {% block css %}{% static 'subekashi/css/song.css'%}{% endblock %}
 
 {% block content %}
