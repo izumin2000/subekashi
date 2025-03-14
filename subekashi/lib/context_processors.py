@@ -1,11 +1,15 @@
-from django.urls import resolve
+from config.settings import BASE_DIR
 from subekashi.constants.constants import CONST_ERROR, ASIDE_PAGES
+import json
+import os
 
 def context_processors(request):
-    try:
-        from subekashi.constants.dynamic.version import VERSION
-        version = VERSION
-    except:
+    version_path = os.path.join(BASE_DIR, 'subekashi/constants/dynamic/version.json')
+    if os.path.exists(version_path):
+        with open(version_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            version = data.get("VERSION", CONST_ERROR)
+    else:
         version = CONST_ERROR
         
     context = {
