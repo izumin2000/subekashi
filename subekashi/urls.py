@@ -33,7 +33,6 @@ urlpatterns = [
     path('favicon.ico', favicon, name='favicon'),
     path('.well-known/traffic-advice', trafficAdvice, name='traffic-advice'),
     path('api/',include(defaultRouter.urls)),
-    path('api/version', version_api),
     path('api/html/song_cards', song_cards, name='song_cards'),
     path('api/html/song_guessers', song_guessers, name='song_guessers'),
     path('api/html/toast', toast, name='toast'),
