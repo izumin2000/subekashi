@@ -373,11 +373,6 @@ function deleteToastUrlQuery() {
     }
 }
 
-// 読み込み前の動作
-window.addEventListener('DOMContentLoaded', function () {
-    versionApp();
-});
-
 // 読み込み時の実行
 window.onload = function() {
     getGlobalHeader();
