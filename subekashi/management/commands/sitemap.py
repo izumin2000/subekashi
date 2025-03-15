@@ -18,7 +18,7 @@ class Command(BaseCommand):
         self.add_url(urlset, base_url + "/", "1.0")
 
         # 優先度が0.9の固定パス
-        static_paths = ["/ai", "/song_new", "/make", "/songs", "/setting", "/ad", "/special", "/contact"]
+        static_paths = ["/ai/", "/song_new/", "/make/", "/songs/", "/setting/", "/ad/", "/special/", "/contact/"]
         for path in static_paths:
             self.add_url(urlset, base_url + path, "0.9")
 
@@ -26,13 +26,13 @@ class Command(BaseCommand):
         songs = Song.objects.all()
         for song in songs:
             # /songs/<int:song_id> のURL
-            self.add_url(urlset, f"{base_url}/songs/{song.id}", "0.8")
+            self.add_url(urlset, f"{base_url}/songs/{song.id}/", "0.8")
 
         # 優先度が0.8の動的パス (一意のchannel)
         channels_raw = songs.values_list("channel", flat=True)
         channels_set = set([channels for channel_raw in channels_raw for channels in channel_raw.split(",")])  # チャンネルの重複を削除
         for channel in channels_set:
-            self.add_url(urlset, f"{base_url}/channel/{channel}", "0.8")
+            self.add_url(urlset, f"{base_url}/channel/{channel}/", "0.8")
 
         # sitemap.xmlファイルの保存
         tree = ElementTree(urlset)
