@@ -105,6 +105,8 @@ const titleEle = document.getElementById('title');
 const channelEle = document.getElementById('channel');
 var isTitleChannelValid = false;
 async function checkTitleChannelForm() {
+    isTitleChannelValid = false;
+    checkButton();
     const songEditInfoTitleChannelEle = document.getElementById('song-edit-info-title-channel');
 
     const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`
@@ -113,12 +115,12 @@ async function checkTitleChannelForm() {
     // タイトルとチャンネル名が空の場合
     if (titleEle.value === '' || channelEle.value === '') {
         songEditInfoTitleChannelEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>タイトルとチャンネル名を入力してください</span>";
-        isTitleChannelValid = false;
         return;
     }
 
     // 以下の条件はvalid
     isTitleChannelValid = true;
+    checkButton();
     const titleChannelResponse = await exponentialBackoff(`song/?title_exact=${titleEle.value}&channel_exact=${channelEle.value}`, "tiltechannel", checkTitleChannelForm);
     if (!titleChannelResponse) {
         return;
@@ -164,6 +166,7 @@ const urlEle = document.getElementById('url');
 var isUrlValid = true;
 async function checkUrlForm() {
     isUrlValid = false;
+    checkButton();
     const songEditInfoUrlEle = document.getElementById('song-edit-info-url');
 
     const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`
@@ -211,6 +214,7 @@ async function checkUrlForm() {
         }
     }
     isUrlValid = true;
+    checkButton();
     songEditInfoUrlEle.innerHTML = "<span class='ok'><i class='fas fa-check-circle ok'></i>登録可能な状態です</span>";
 }
 urlEle.addEventListener('input', checkUrlForm);
@@ -251,7 +255,6 @@ function checkButton() {
     記事を完成させるためには、以下の入力を行ってください。<ul>${message}</ul>
     </span>` : ``;
 }
-document.querySelectorAll('input, textarea').forEach(input => input.addEventListener('input', checkButton));
 
 // 模倣検索フォームにてエンターの入力を防ぐ
 imitateTitleEle.addEventListener("keydown", function (event) {
