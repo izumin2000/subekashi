@@ -255,6 +255,7 @@ function checkButton() {
     記事を完成させるためには、以下の入力を行ってください。<ul>${message}</ul>
     </span>` : ``;
 }
+document.querySelectorAll('textarea').forEach(input => input.addEventListener('input', checkButton));
 
 // 模倣検索フォームにてエンターの入力を防ぐ
 imitateTitleEle.addEventListener("keydown", function (event) {
