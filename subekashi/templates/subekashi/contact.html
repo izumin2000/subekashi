@@ -13,7 +13,7 @@
             <select id="category" name="category" required>
                 <option value="" disabled {% if not request.GET.category %}selected{% endif %}>選択してください</option>
                 <option value="不具合の報告" {% if request.GET.category == "不具合の報告" %}selected{% endif %}>不具合の報告</option>
-                <option value="提案" {% if request.GET.category == "提案" %}selected{% endif %}>機能の提案</option>
+                <option value="提案" {% if request.GET.category == "提案" %}selected{% endif %}>提案</option>
                 <option value="質問" {% if request.GET.category == "質問" %}selected{% endif %}>質問</option>
                 <option value="掲載拒否" {% if request.GET.category == "掲載拒否" %}selected{% endif %}>掲載拒否</option>
                 <option value="その他" {% if request.GET.category == "その他" %}selected{% endif %}>その他</option>
