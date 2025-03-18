@@ -373,6 +373,24 @@ function deleteToastUrlQuery() {
     }
 }
 
+// 曲が未完成かどうか
+function isLack(song) {
+    if (!song.isdeleted && song.url === "") {
+        return true;
+    }
+
+    if (!song.isoriginal && !song.issubeana && song.imitate === "" && song.channel === "全てあなたの所為です。") {
+        return true;
+    }
+
+    if (!song.isinst && song.lyrics === "") {
+        return true;
+    }
+
+    return false;
+}
+
+
 // 読み込み時の実行
 window.onload = function() {
     getGlobalHeader();
