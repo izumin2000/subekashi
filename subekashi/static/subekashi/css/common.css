@@ -289,7 +289,7 @@ aside a:hover p {
     z-index: 999;
 }
 
-@media (min-width: 960px) {
+@media (min-width: 961px) {
     #tab_bar {
         display: none;
     }
