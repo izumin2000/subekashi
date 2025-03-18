@@ -177,7 +177,8 @@ aside tr:hover {
 
 aside tr td:nth-child(1) i {
     display: inline-block;
-    width: 20px;
+    width: 50px;
+    margin: 0.5em auto;
     text-align: center;
 }
 
