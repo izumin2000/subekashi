@@ -6,7 +6,7 @@ register = template.Library()
 @register.simple_tag
 def get_toast(icon, text):
     if not text:
-        return
+        return ""
     
     ICON_DICT = {
         "info": "fas fa-info-circle info",
@@ -21,4 +21,6 @@ def get_toast(icon, text):
         "icon_class": icon_class,
         "text": text
     }
-    return render_to_string('subekashi/components/toast.html', context)
+    
+    rendered = render_to_string('subekashi/components/toast.html', context)
+    return rendered
