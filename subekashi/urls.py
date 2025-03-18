@@ -24,6 +24,7 @@ urlpatterns = [
     path('channel/<str:channelName>/', channel, name='channel'),
     path('ai/', ai, name='ai'),
     path('ai/result/', ai_result, name='ai_result'),
+    path('discord/', discord, name='discord'),
     path('setting/', setting, name='setting'),
     path('ad/', ad, name='ad'),
     path('ad/complete/', ad_complete, name='ad_complete'),
