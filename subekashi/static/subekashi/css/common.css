@@ -389,16 +389,36 @@ a {
     color: #09F;
 }
 
+.info a {
+    color: #09F;
+    text-decoration: underline 2px #09F;
+}
+
 .ok {
     color: #090;
+}
+
+.ok a {
+    color: #090;
+    text-decoration: underline 2px #090;
 }
 
 .warning {
     color: #990;
 }
 
+.warning a {
+    color: #990;
+    text-decoration: underline 2px #990;
+}
+
 .error {
     color: #B60;
+}
+
+.error {
+    color: #B60;
+    text-decoration: underline 2px #B60;
 }
 
 .fa-info-circle, .fa-check-circle, .fa-exclamation-triangle, .fa-ban {
