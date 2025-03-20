@@ -45,21 +45,30 @@ async function checkAutoForm() {
         newFormAutoInfoEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>YouTubeの動画URLを入力してください</span>";
         return;
     }
-
+    
     const existingSongs = await exponentialBackoff(`song/?url=${videoId}`, "url", checkAutoForm);
-    if (!existingSongs) {
+
+    if (existingSongs == undefined) {
         return;
     }
-    
-    const existingSong = existingSongs[0];
 
     // 既に登録されているURLの場合
-    if (existingSong) {
-        newFormAutoInfoEle.innerHTML = `<span class='error'><i class='fas fa-ban error'></i>このURLは<br>
+    if (existingSongs.length) {
+        const existingSong = existingSongs[0];
+        const infoHTML = isLack(existingSong) 
+        ?
+        `<span class="info"><i class="fas fa-info-circle info"></i>このURLは<br>
+        song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
+        タイトル：${existingSong.title}<br>
+        チャンネル名：${existingSong.channel}<br>
+        として<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">既に登録されています</a>がまだ未完成です</span>`
+        :
+        `<span class='error'><i class='fas fa-ban error'></i>このURLは<br>
         song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
         タイトル：${existingSong.title}<br>
         チャンネル名：${existingSong.channel}<br>
         として<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">既に登録されています</a></span>`;
+        newFormAutoInfoEle.innerHTML = infoHTML; 
         return;
     }
 
@@ -93,21 +102,32 @@ async function checkManualForm() {
     document.getElementById('new-submit-manual').disabled = false;
 
     const existingSongs = await exponentialBackoff(`song/?title_exact=${titleEle.value}&channel_exact=${channelEle.value}`, "titlechannel", checkManualForm);
-    if (!existingSongs) {
+
+    if (existingSongs == undefined) {
         return;
     }
 
-    const existingSong = existingSongs[0];
     // 既に登録されている曲の場合
-    if (existingSong) {
+    if (existingSongs.length) {
+        const existingSong = existingSongs[0];
         const isMultipleSongURL = existingSong.url.includes(',');
         const existingSongURL = isMultipleSongURL ? existingSong.url.split(",")[0] : existingSong.url;
-
-        newFormAutoManualEle.innerHTML = `<span class="warning"><i class="fas fa-exclamation-triangle warning"></i>
+        const InnerURL = existingSongURL ? `登録されているURL：<a href="${existingSongURL}" target="_blank">${existingSongURL}</a>${isMultipleSongURL ? 'など' : ''}<br>` : ""
+        const infoHTML = isLack(existingSong)
+        ?
+        `<span class="info"><i class="fas fa-info-circle info"></i>
+        未完成である曲の記事が<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">見つかりました。</a><br>
+        song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
+        ${InnerURL}
+        代わりにこちらの記事を編集してください。`
+        :
+        `<span class="warning"><i class="fas fa-exclamation-triangle warning"></i>
         タイトル・チャンネル名ともに一致している曲が<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">見つかりました。</a><br>
         song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
-        登録されているURL：<a href="${existingSongURL}" target="_blank">${existingSongURL}</a>${isMultipleSongURL ? 'など' : ''}<br>
+        ${InnerURL}
         既に登録されている曲と登録しようとしている曲が別の曲に限り、登録することができます。</span>`;
+
+        newFormAutoManualEle.innerHTML = infoHTML;
         return;
     }
     

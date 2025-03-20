@@ -5,7 +5,7 @@ import re
 
 # YouTubeの動画IDのパターンマッチ
 def re_youtube_url(url):
-    match = re.search(r'(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/.*[?&]v=|youtu\.be\/)([a-zA-Z0-9_-]{11})', url)
+    match = re.search(r'(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/(?:.*[?&]v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})', url)
     return match    
 
 # YouTubeの動画URLかどうか
