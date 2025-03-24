@@ -36,7 +36,6 @@ function appendImitateList(song) {
 // 読み込み時に模倣一覧を描画
 var imitateEle = document.getElementById("imitate");
 async function initImitateList() {
-    imitateIdList = imitateEle.value.split(",");
     if (!imitateEle.value) {
         return;
     }
@@ -46,6 +45,7 @@ async function initImitateList() {
         return;
     }
 
+    imitateIdList = imitateEle.value.split(",");
     for (const imitateSong of imitateSongList) {
         appendImitateList(imitateSong);
     }
