@@ -187,6 +187,7 @@ async function checkUrlForm() {
     // URLが空の場合
     if (urlEle.value === '') {
         songEditInfoUrlEle.innerHTML = "";
+        isUrlValid = true;
         return;
     }
 
@@ -280,6 +281,7 @@ function checkButton() {
     </span>` : ``;
 }
 document.querySelectorAll('input[type="checkbox"]').forEach(input => input.addEventListener('input', checkButton));
+checkButton();
 
 // 模倣検索フォームにてエンターの入力を防ぐ
 imitateTitleEle.addEventListener("keydown", function (event) {
