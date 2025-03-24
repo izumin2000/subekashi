@@ -36,6 +36,8 @@ def song_delete(request, song_id) :
             dataD["result"] = "error"
             return render(request, 'subekashi/song_delete.html', dataD)
         
-        return redirect(f'/songs/{song_id}?toast=delete')
+        response = redirect(f'/songs/{song_id}?toast=delete')
+        response["X-Robots-Tag"] = "noindex, nofollow"
+        return response
         
     return render(request, "subekashi/song_delete.html", dataD)

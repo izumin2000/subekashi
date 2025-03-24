@@ -131,5 +131,7 @@ def song_edit(request, song_id) :
         song.ip = ip
         song.save()
         
-        return redirect(f'/songs/{song_id}?toast=edit')
+        response = redirect(f'/songs/{song_id}?toast=edit')
+        response["X-Robots-Tag"] = "noindex, nofollow"
+        return response
     return render(request, 'subekashi/song_edit.html', dataD)

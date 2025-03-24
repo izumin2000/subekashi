@@ -416,7 +416,7 @@ a {
     color: #B60;
 }
 
-.error {
+.error a {
     color: #B60;
     text-decoration: underline 2px #B60;
 }
