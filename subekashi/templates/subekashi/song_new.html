@@ -92,21 +92,9 @@
         <p id="new-form-manual-info"><img id='loading' src="{% static 'subekashi/image/loading.gif' %}" alt='loading'></p>
     </form>
 
-    <h1>???から登録<i class="fas fa-info-circle" id="hint-target" onclick="showToast('', '<span style=\'color: red;\'>~~~@z@ÆÐäÞÚÊ엂빪풾𐇺</span>');"></i></h1>
+    <h1>???から登録<i class="fas fa-info-circle" onclick="showToast('', '<span style=\'color: red;\'>~~~@z@ÆÐäÞÚÊ엂빪풾𐇺</span>');"></i></h1>
     <div class="underline"></div>
-    <p style='text-align: center;' id="hint">hint:??? → ~~~</p>
 </section>
-
-<style>
-    @keyframes blink {
-        0%, 100% { color: #B60; }
-        50% { color: #FFF; }
-    }
-    .blink {
-        animation: blink 3s infinite;
-    }
-</style>
-
 {% endblock %}
 
 {% block js %}
@@ -115,17 +103,5 @@
     if ("{{ error }}") {
         showToast("error", "{{ error }}")
     }
-</script>
-<script defer>
-window.addEventListener("DOMContentLoaded", async function() {
-    if (location.hash) {
-        await sleep(1);
-        const element = document.getElementById(location.hash.substring(1));
-        if (element) {
-            element.scrollIntoView({ behavior: "auto" });
-            document.getElementById("hint-target").classList.add("blink");
-        }
-    }
-});
 </script>
 {% endblock %}
