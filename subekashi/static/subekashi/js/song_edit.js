@@ -189,6 +189,7 @@ async function checkUrlForm() {
     if (urlEle.value === '') {
         songEditInfoUrlEle.innerHTML = "";
         isUrlValid = true;
+        checkButton();
         return;
     }
 
