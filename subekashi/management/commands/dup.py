@@ -15,7 +15,7 @@ class Command(BaseCommand) :
         is_dup = False
         for id, count in Counter(youtube_id_list).items():
             if count > 1:       # 重複している動画IDがあったら
-                print(f"https://lyrics.imicomweb.com/search?url={id}")
+                print(f"https://lyrics.imicomweb.com/songs/?url={id}/")
                 is_dup = True
                 
         if not is_dup :
