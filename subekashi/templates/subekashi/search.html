@@ -59,12 +59,12 @@
             <input type="number" id="like_lte" value="{{ request.GET.like_lte }}">
         </div>
         <div class="form-col">
-            <label for="upload_time_lte"><i class="fab fa-youtube"></i>投稿日/以前</label>
-            <input type="date" id="upload_time_lte" value="{{ request.GET.upload_time_lte }}">
-        </div>
-        <div class="form-col">
             <label for="upload_time_gte"><i class="fab fa-youtube"></i>投稿日/以後</label>
             <input type="date" id="upload_time_gte" value="{{ request.GET.upload_time_gte }}">
+        </div>
+        <div class="form-col">
+            <label for="upload_time_lte"><i class="fab fa-youtube"></i>投稿日/以前</label>
+            <input type="date" id="upload_time_lte" value="{{ request.GET.upload_time_lte }}">
         </div>
         <div class="form-col">
             <label for="songrange">界隈曲の種類</label>
