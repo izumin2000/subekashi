@@ -17,7 +17,7 @@ urlpatterns = [
     path('search/', RedirectView.as_view(url=f"{ROOT_URL}/songs/", permanent=False)),
     path('songs/', search, name='search'),
     path('songs/new/', song_new, name='song_new'),
-    path('new/', RedirectView.as_view(url='/song/new/', permanent=False)),
+    path('new/', RedirectView.as_view(url='/songs/new/', permanent=False)),
     path('songs/<int:song_id>/', song, name='song'),
     path('songs/<int:song_id>/edit/', song_edit, name='song_edit'),
     path('songs/<int:song_id>/delete/', song_delete, name='song_delete'),
