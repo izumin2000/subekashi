@@ -87,7 +87,6 @@ def song_edit(request, song_id) :
         '
         is_ok = send_discord(NEW_DISCORD_URL, content)
         if not is_ok:
-            song.delete()
             return render(request, 'subekashi/500.html', status=500)
 
         # 新しい模倣の追加
