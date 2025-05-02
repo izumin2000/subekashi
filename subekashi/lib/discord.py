@@ -10,6 +10,9 @@ def send_discord(url, content):
     content = content.replace("\n            ", "\n")
     content = content.replace("\n        ", "\n")
     
+    if len(content) > 2000:
+        content = content[:1997] + "..."
+    
     res = requests.post(url, data={'content': content})
     if (400 <= res.status_code < 600):
         return False
