@@ -69,7 +69,7 @@ def get_url(song):
 
 @register.simple_tag
 def get_lyrics(song):
-    lyrics = song.lyrics
+    lyrics = song.lyrics[:50]
     
     # インスト曲なら
     if not lyrics and song.isinst:

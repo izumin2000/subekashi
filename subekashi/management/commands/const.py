@@ -12,7 +12,6 @@ class Command(BaseCommand):
             'ai.py': 'GENEINFO = {\n\t"WORD_COUNT": 1440480,\n\t"SONG_COUNT": 3000,\n\t"GENE_DATE": "2024年9月9日",\n}',
             'ban.py': 'BAN_LIST = []',
             'gpt.txt': '',
-            'news.md': '[テストニュース1](https://example.com/)\n\n**テストニュース2**',
             'version.json': 'VERSION = "dev"',
             'reject.py': 'REJECT_LIST = []',
         }

@@ -80,6 +80,10 @@
                     {% if song.isdeleted %}
                         <a href="{% url 'subekashi:search' %}?isdeleted=True">非公開/削除済み</a>
                     {% endif %}
+                    {% comment %} TODO スペシャルデザインのDB化 {% endcomment %}
+                    {% if is_special %}
+                        <p id="special-tag">スペシャルデザイン</p>
+                    {% endif %}
                 </td>
             </tr>
         {% endif %}
@@ -186,4 +190,8 @@
 
     deleteToastUrlQuery()
 </script>
+
+{% if is_special %}
+    <script src="{% static 'subekashi/special/' %}{{ song.id }}.js"></script>
+{% endif %}
 {% endblock %}
