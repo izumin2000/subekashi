@@ -1,5 +1,6 @@
 var imitateIdList = [], songGuesserController, song_id;
 
+// TODO 1回のexponentialBackoffで済ませる
 // 初期化
 const lyricsEle = document.getElementById("lyrics")
 async function init() {
