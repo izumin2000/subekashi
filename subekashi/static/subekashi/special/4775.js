@@ -70,16 +70,34 @@ function changeLyricsDesign() {
         潜在空間に、
         見つめられたのか。
 
+
     `
 }
 
-let currentPlayController = null;
 
+let currentPlayController = null;
+var defaultDummybuttonsEle = document.getElementsByClassName("dummybuttons")[0];
 async function play() {
+    window.scrollTo(0, 0);
+
     // 前の処理があれば中止
     if (currentPlayController) {
         currentPlayController.abort();
     }
+
+    // 停止ボタンに変更
+    const stopEle = `
+    <div class="dummybuttons">
+        <a>
+            <div class="dummybutton" onclick="stop()"><i class="fas fa-stop"></i><p>停止</p></div>
+        </a>
+    </div>
+    `;
+    defaultDummybuttonsEle.innerHTML = stringToHTML(stopEle).innerHTML;
+    defaultDummybuttonsEle.style.position = "sticky";
+    defaultDummybuttonsEle.style.top = "15px";
+    defaultDummybuttonsEle.style.zIndex = '9999';
+    defaultDummybuttonsEle.style.opacity = '0.5';
 
     // 新しいAbortControllerを作成
     const controller = new AbortController();
@@ -119,10 +137,29 @@ async function play() {
             showToast("warning", "ーー・ ーー・ ーー・ ・・・ー ーー・ ーー・ ・・・ー");
             await sleepWithAbort(2.625 * BEAT_TIME, signal);
         }
+        await sleepWithAbort(15 * BEAT_TIME, signal);
+        stop();
     } catch (e) {
         if (e.name !== 'AbortError') {
             console.error('play aborted with error:', e);
         }
+    }
+}
+
+function stop() {
+    playEle = `
+        < div class="dummybuttons" >
+            <a>
+                <div class="dummybutton" onclick="play()"><i class="fas fa-play"></i><p>再生</p></div>
+            </a>
+        </ >
+    `
+    defaultDummybuttonsEle.innerHTML = stringToHTML(playEle).innerHTML;
+
+    clearInterval(timer);
+    if (currentPlayController) {
+        currentPlayController.abort();
+        currentPlayController = null;
     }
 }
 
@@ -138,7 +175,6 @@ function sleepWithAbort(seconds, signal) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    const defaultDummybuttonsEle = document.getElementsByClassName("dummybuttons")[0];
     const designedDummybuttonsEle =
     `
     <div class="dummybuttons">
