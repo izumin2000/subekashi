@@ -78,8 +78,6 @@ function changeLyricsDesign() {
 let currentPlayController = null;
 var defaultDummybuttonsEle = document.getElementsByClassName("dummybuttons")[0];
 async function play() {
-    window.scrollTo(0, 0);
-
     // 前の処理があれば中止
     if (currentPlayController) {
         currentPlayController.abort();
@@ -117,6 +115,7 @@ async function play() {
     try {
         await sleepWithAbort(5.5* BEAT_TIME, signal);
         const scrollingContainer = document.getElementsByTagName("html")[0];
+        window.scrollTo(0, 0);
         autoScroll(scrollingContainer, 2, 'down');
 
         await sleepWithAbort(19.5 * BEAT_TIME, signal);
@@ -137,7 +136,7 @@ async function play() {
             showToast("warning", "ーー・ ーー・ ーー・ ・・・ー ーー・ ーー・ ・・・ー");
             await sleepWithAbort(2.625 * BEAT_TIME, signal);
         }
-        await sleepWithAbort(15 * BEAT_TIME, signal);
+        await sleepWithAbort(16 * BEAT_TIME, signal);
         stop();
     } catch (e) {
         if (e.name !== 'AbortError') {
