@@ -17,6 +17,7 @@
 #error img {
     margin: 0 auto;
     height: 64px;
+    border-radius: 32px;
 }
 
 #error .logomoji {
@@ -25,4 +26,5 @@
     font-size: 37.5px;
     vertical-align: middle;
     display: table-cell;
+    text-decoration: none;
 }
