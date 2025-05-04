@@ -63,3 +63,6 @@ URL_ICON = {
 }
 
 SAFE_DOMAINS = list(URL_ICON.keys())
+
+SPECIAL_DESIGN = [4775]
+# 3587

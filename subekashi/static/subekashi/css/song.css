@@ -57,7 +57,7 @@
     width: auto;
 }
 
-#original-tag, #tags a {
+#original-tag, #special-tag, #tags a {
     display: inline-block;
     margin-right: 15px;
 }
