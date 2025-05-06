@@ -66,3 +66,5 @@ SAFE_DOMAINS = list(URL_ICON.keys())
 
 SPECIAL_DESIGN = [4775]
 # 3587
+
+STATIC_SONG = list(range(1, 12)) + [13, 14, 16, 18, 4038, 4775, 387, 2592]

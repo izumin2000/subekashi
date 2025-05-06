@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from subekashi.models import *
 from subekashi.lib.filter import is_lack
-from subekashi.constants.constants import URL_ICON, SPECIAL_DESIGN
+from subekashi.constants.constants import URL_ICON, SPECIAL_DESIGN, STATIC_SONG
 from urllib.parse import urlparse
 import re
 
@@ -68,6 +68,7 @@ def song(request, song_id):
         "description": description,
         "metatitle": f"{song.title} / {song.channel}",
         "song": song,
+        "is_static": song_id in STATIC_SONG,
         "channels": song.channel.split(","),
         "is_lack": is_lack(song),
         "is_special": is_special,
