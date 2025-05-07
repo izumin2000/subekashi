@@ -7,8 +7,8 @@ class Song(models.Model) :
     channel = models.CharField(default = "", max_length = 500)
     url = models.CharField(default = "", max_length = 500)
     lyrics = models.TextField(default = "", max_length = 10000)      
-    imitate = models.CharField(default = "", max_length = 1000)
-    imitated = models.CharField(default = "", max_length = 1000)
+    imitate = models.CharField(default = "", max_length = 10000)
+    imitated = models.CharField(default = "", max_length = 10000)
     post_time = models.DateTimeField()
     upload_time = models.DateTimeField(blank = True, null = True)
     isoriginal = models.BooleanField(default = False)
@@ -17,6 +17,10 @@ class Song(models.Model) :
     isdraft = models.BooleanField(default = False)
     isinst = models.BooleanField(default = False)
     issubeana = models.BooleanField(default = True)
+    isarrange = models.BooleanField(default = False)
+    isotomad = models.BooleanField(default = False)
+    isnotice = models.BooleanField(default = False)
+    isdec = models.BooleanField(default = False)
     ip = models.CharField(default = "", max_length = 100)
     view = models.IntegerField(blank = True, null = True)
     like = models.IntegerField(blank = True, null = True)
@@ -74,3 +78,17 @@ class Ad(models.Model) :
     
     def __str__(self):
         return self.url
+    
+class Article(models.Model) :
+    tags = (
+        ('news', 'ニュース'),
+        ('release', 'リリースノート'),
+        ('howto', '使い方'),
+        ('blog', 'ブログ'),
+    )
+    title = models.CharField(default = "", max_length = 500)
+    tag = models.CharField(default = "", choices=tags, max_length=10)
+    text = models.CharField(default = "", max_length = 500)
+    post_time = models.DateTimeField(blank = True, null = True)
+    is_open = models.BooleanField(default = True)
+    is_md = models.BooleanField(default = True)
