@@ -195,6 +195,7 @@
     deleteToastUrlQuery()
 </script>
 
+<script defer src="{% static 'subekashi/special/util.js' %}" rel="stylesheet"></script>
 {% if is_special %}
     <script src="{% static 'subekashi/special/' %}{{ song.id }}.js"></script>
 {% endif %}
