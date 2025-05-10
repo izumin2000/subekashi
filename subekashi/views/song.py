@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from subekashi.models import *
 from subekashi.lib.filter import is_lack
-from subekashi.constants.constants import URL_ICON, SPECIAL_DESIGN, STATIC_SONG
+from subekashi.constants.constants import URL_ICON
 from urllib.parse import urlparse
 import re
 
@@ -50,9 +50,6 @@ def song(request, song_id):
     elif br_lyrics == "brless":
         html_lyrics = song.lyrics.replace("\n", "")
         
-    # スペシャルデザイン
-    is_special = song_id in SPECIAL_DESIGN
-    
     # 歌詞の一部をdescriptionに記述
     description_lyrics = song.lyrics.replace("\r\n", "")[:100]
     description += f"歌詞: {description_lyrics}" if description_lyrics else ""
@@ -68,10 +65,8 @@ def song(request, song_id):
         "description": description,
         "metatitle": f"{song.title} / {song.channel}",
         "song": song,
-        "is_static": song_id in STATIC_SONG,
         "channels": song.channel.split(","),
         "is_lack": is_lack(song),
-        "is_special": is_special,
         "links": links,
         "imitate_list": imitate_list,
         "imitated_list": imitated_list,

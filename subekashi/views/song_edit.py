@@ -6,7 +6,6 @@ from subekashi.lib.url import *
 from subekashi.lib.ip import *
 from subekashi.lib.discord import *
 from subekashi.lib.search import song_search
-from subekashi.constants.constants import STATIC_SONG
 from urllib.parse import urlparse
 
 
@@ -16,8 +15,8 @@ def song_edit(request, song_id) :
     except :
         return render(request, 'subekashi/404.html', status=404)
     
-    if song_id in STATIC_SONG:
-        return redirect(f'/songs/{song_id}?toast=static')
+    if song.islock:
+        return redirect(f'/songs/{song_id}?toast=lock')
     
     
     dataD = {

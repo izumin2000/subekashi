@@ -9,7 +9,7 @@
 {% block content %}
 <section>
     <div class="dummybuttons">
-        {% if not is_static %}
+        {% if not song.islock %}
             <a href="{% url 'subekashi:song_edit' song.id %}">
                 <div class="dummybutton"><i class="fas fa-pen"></i><p>編集</p></div>
             </a>
@@ -82,8 +82,7 @@
                     {% if song.isdeleted %}
                         <a href="{% url 'subekashi:search' %}?isdeleted=True">非公開/削除済み</a>
                     {% endif %}
-                    {% comment %} TODO スペシャルデザインのDB化 {% endcomment %}
-                    {% if is_special %}
+                    {% if song.isspecial %}
                         <p id="special-tag">スペシャルデザイン</p>
                     {% endif %}
                 </td>
@@ -188,7 +187,7 @@
         showToast("ok", "登録しました。");
     {% elif request.GET.toast == "delete" %}
         showToast("ok", "削除申請を送信しました。");
-    {% elif request.GET.toast == "static" %}
+    {% elif request.GET.toast == "lock" %}
         showToast("warning", "この曲は編集できません。");
     {% endif %}
 
@@ -196,7 +195,7 @@
 </script>
 
 <script defer src="{% static 'subekashi/special/util.js' %}" rel="stylesheet"></script>
-{% if is_special %}
+{% if song.isspecial %}
     <script src="{% static 'subekashi/special/' %}{{ song.id }}.js"></script>
 {% endif %}
 {% endblock %}
