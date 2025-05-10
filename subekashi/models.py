@@ -22,6 +22,7 @@ class Song(models.Model) :
     isnotice = models.BooleanField(default = False)
     isdec = models.BooleanField(default = False)
     isspetial = models.BooleanField(default = False)
+    islock = models.BooleanField(default = False)
     ip = models.CharField(default = "", max_length = 100)
     view = models.IntegerField(blank = True, null = True)
     like = models.IntegerField(blank = True, null = True)
