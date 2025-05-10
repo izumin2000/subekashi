@@ -9,6 +9,7 @@ defaultRouter = routers.DefaultRouter()
 defaultRouter.register('song', SongAPI)
 defaultRouter.register('ai', AiAPI)
 defaultRouter.register('ad', AdAPI)
+defaultRouter.register('article', ArticleAPI)
 
 urlpatterns = [
     path('', top, name='top'),
@@ -26,6 +27,8 @@ urlpatterns = [
     path('ad/', ad, name='ad'),
     path('ad/complete/', ad_complete, name='ad_complete'),
     path('special/', special, name='special'),
+    path('articles/', articles, name='articles'),
+    path('articles/<int:article_id>', article, name='article'),
     path('robots.txt', robots, name='robots'),
     path('sitemap.xml', sitemap, name='sitemap'),
     path('favicon.ico', favicon, name='favicon'),
