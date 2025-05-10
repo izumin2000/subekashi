@@ -8,9 +8,9 @@ def song_delete(request, song_id) :
         song = Song.objects.get(pk = song_id)
     except:
         return render(request, 'subekashi/404.html', status=404)
-    
+
     if song.islock:
-        return redirect(f'/songs/{song_id}?toast=static')
+        return redirect(f'/songs/{song_id}?toast=lock')
     
     dataD = {
         "metatitle" : f"{song.title}の削除申請",
