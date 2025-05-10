@@ -9,7 +9,6 @@ from subekashi.views.articles import articles
 from subekashi.views.api.article import ArticleAPI
 from subekashi.views.channel import channel
 from subekashi.views.contact import contact
-from subekashi.views.discord import discord
 from subekashi.views.errors import *
 from subekashi.views.file import *
 from subekashi.views.songs import songs
