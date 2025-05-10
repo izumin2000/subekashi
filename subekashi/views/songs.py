@@ -9,7 +9,7 @@ QUERY_OR_COOKIE_FORMS = [
 
 FILER_FORMS = ["issubeana", "isjoke", "islack", "isdraft", "isoriginal", "isinst", "isdeleted"]
 
-def search(request) :
+def songs(request) :
     dataD = {
         "metatitle" : "一覧と検索",
     }
@@ -22,4 +22,4 @@ def search(request) :
     for filter in FILER_FORMS:
         dataD[filter] = bool(GET.get(filter))
 
-    return render(request, "subekashi/search.html", dataD)
+    return render(request, "subekashi/songs.html", dataD)

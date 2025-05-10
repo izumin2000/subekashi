@@ -14,7 +14,7 @@ ASIDE_PAGES = [
         "icon": "fa fa-plus"
     },
     {
-        "url": "subekashi:search",
+        "url": "subekashi:songs",
         "name": "検索",
         "icon": "fas fa-search"
     },

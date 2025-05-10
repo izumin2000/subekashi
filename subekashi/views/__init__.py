@@ -9,7 +9,7 @@ from subekashi.views.contact import contact
 from subekashi.views.discord import discord
 from subekashi.views.errors import *
 from subekashi.views.file import *
-from subekashi.views.search import search
+from subekashi.views.songs import songs
 from subekashi.views.setting import setting
 from subekashi.views.song import song
 from subekashi.views.song_delete import song_delete
