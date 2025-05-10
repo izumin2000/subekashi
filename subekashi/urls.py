@@ -1,6 +1,5 @@
 from django.views.generic.base import RedirectView
 from django.urls import path, include
-from config.settings import ROOT_URL
 from subekashi.views import *
 from rest_framework import routers
 
@@ -14,10 +13,8 @@ defaultRouter.register('ad', AdAPI)
 urlpatterns = [
     path('', top, name='top'),
     path('contact/', contact, name='contact'),
-    path('search/', RedirectView.as_view(url=f"{ROOT_URL}/songs/", permanent=False)),
     path('songs/', songs, name='songs'),
     path('songs/new/', song_new, name='song_new'),
-    path('new/', RedirectView.as_view(url='/songs/new/', permanent=False)),
     path('songs/<int:song_id>/', song, name='song'),
     path('songs/<int:song_id>/edit/', song_edit, name='song_edit'),
     path('songs/<int:song_id>/delete/', song_delete, name='song_delete'),
@@ -37,4 +34,6 @@ urlpatterns = [
     path('api/html/song_cards', song_cards, name='song_cards'),
     path('api/html/song_guessers', song_guessers, name='song_guessers'),
     path('api/html/toast', toast, name='toast'),
+    path('search/', RedirectView.as_view(url=f"/songs/", permanent=False)),
+    path('new/', RedirectView.as_view(url='/songs/new/', permanent=False)),
 ]
