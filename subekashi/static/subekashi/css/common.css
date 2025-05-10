@@ -650,13 +650,8 @@ input[type=submit], button {
     align-items: center;
 }
 
-@media (max-width: 450px) {
-    .dummybuttons {
-        display: block;
-    }
-}
-
 .dummybuttons a {
+    padding: 10px 0;
     text-decoration: none;
 }
 
@@ -666,17 +661,11 @@ input[type=submit], button {
     align-items: center;
     background-color: #eee;
     height: 50px;
-    width: 100px;
-    padding: 0 40px;
+    width: fit-content;
+    padding: 0 10px;
     margin: 20px 10px;
     cursor: pointer;
     border-radius: 10px;
-}
-
-@media (max-width: 450px) {
-    .dummybutton {
-        margin: 20px auto;
-    }
 }
 
 .dummybutton p {

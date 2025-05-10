@@ -2,16 +2,15 @@ from django.shortcuts import render, redirect
 from subekashi.models import Song
 from subekashi.lib.ip import *
 from subekashi.lib.discord import *
-from subekashi.constants.constants import STATIC_SONG
 
 def song_delete(request, song_id) :
     try:
         song = Song.objects.get(pk = song_id)
     except:
         return render(request, 'subekashi/404.html', status=404)
-    
-    if song_id in STATIC_SONG:
-        return redirect(f'/songs/{song_id}?toast=static')
+
+    if song.islock:
+        return redirect(f'/songs/{song_id}?toast=lock')
     
     dataD = {
         "metatitle" : f"{song.title}の削除申請",
