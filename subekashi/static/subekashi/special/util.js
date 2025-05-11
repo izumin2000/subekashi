@@ -15,17 +15,8 @@ function add_special_button() {
 
 // 歌詞をドットフォントに変更 
 function dot_lyrics() {
-    // ドットフォントの読み込み
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=DotGothic16&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-
-    // フォントの変更
-    link.onload = () => {
-        const lyricsEle = document.getElementById('lyrics');
-        lyricsEle.style.fontFamily = "'DotGothic16', sans-serif, Meiryo";
-    };
+    const lyricsEle = document.getElementById('lyrics');
+    lyricsEle.style.fontFamily = "'k8x12s', sans-serif, Meiryo";
 }
 
 
