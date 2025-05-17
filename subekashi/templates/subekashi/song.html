@@ -62,25 +62,25 @@
                         <p id="original-tag">オリジナル</p>
                     {% endif %}
                     {% if is_lack %}
-                        <a href="{% url 'subekashi:search' %}?islack=True">作成途中</a>
+                        <a href="{% url 'subekashi:songs' %}?islack=True">作成途中</a>
                     {% endif %}
                     {% if song.isdraft %}
-                        <a href="{% url 'subekashi:search' %}?isdraft=True">下書き</a>
+                        <a href="{% url 'subekashi:songs' %}?isdraft=True">下書き</a>
                     {% endif %}
                     {% if song.isoriginal %}
-                        <a href="{% url 'subekashi:search' %}?isoriginal=True">オリジナル模倣</a>
+                        <a href="{% url 'subekashi:songs' %}?isoriginal=True">オリジナル模倣</a>
                     {% endif %}
                     {% if song.isjoke %}
-                        <a href="{% url 'subekashi:search' %}?isjoke=only">ネタ曲</a>
+                        <a href="{% url 'subekashi:songs' %}?isjoke=only">ネタ曲</a>
                     {% endif %}
                     {% if song.isinst %}
-                        <a href="{% url 'subekashi:search' %}?isinst=True">インスト曲</a>
+                        <a href="{% url 'subekashi:songs' %}?isinst=True">インスト曲</a>
                     {% endif %}
                     {% if not song.issubeana %}
-                        <a href="{% url 'subekashi:search' %}?issubeana=xx">非すべあな模倣曲</a>
+                        <a href="{% url 'subekashi:songs' %}?issubeana=xx">非すべあな模倣曲</a>
                     {% endif %}
                     {% if song.isdeleted %}
-                        <a href="{% url 'subekashi:search' %}?isdeleted=True">非公開/削除済み</a>
+                        <a href="{% url 'subekashi:songs' %}?isdeleted=True">非公開/削除済み</a>
                     {% endif %}
                     {% if song.isspecial %}
                         <p id="special-tag">スペシャルデザイン</p>

@@ -24,3 +24,11 @@ class AdSerializer(serializers.ModelSerializer):
     
     def update(self, instance, validated_data):
         return super().update(instance, validated_data)
+
+class ArticleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Article
+        fields = '__all__'
+    
+    def update(self, instance, validated_data):
+        return super().update(instance, validated_data)

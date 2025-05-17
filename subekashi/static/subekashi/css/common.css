@@ -10,6 +10,12 @@
     font-display: swap;
 }
 
+@font-face {
+    font-family: "k8x12s";
+    src: url("../k8x12S.woff2") format("woff2");
+    font-display: swap;
+}
+
 * {
     margin: 0px;
     padding: 0px;

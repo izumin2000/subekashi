@@ -10,8 +10,9 @@
     <div class="underline"></div>
     <form action="{% url 'subekashi:ai_result' %}" method="POST">{% csrf_token %}
         <input type="submit" value="生成">
-        <p class="sansfont">総学習量: {{ WORD_COUNT }}文字({{ SONG_COUNT }}曲)</p>
-        <p class="sansfont">最終更新: {{ GENE_DATE }}</p>
+        <p>総学習量: {{ WORD_COUNT }}文字({{ SONG_COUNT }}曲)</p>
+        <p>最終更新: {{ GENE_DATE }}</p>
+        <p>対象: 全すべあな界隈曲</p>
     </form>
 
     {% comment %} TODO underlineをh1にマージ {% endcomment %}

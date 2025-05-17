@@ -14,7 +14,7 @@
     </div>
     <h1>検索</h1>
     <div class="underline"></div>
-    <form action="{% url 'subekashi:search' %}" method="GET" id="search-form">
+    <form action="{% url 'subekashi:songs' %}" method="GET" id="search-form">
         <div class="form-col">
             <label for="keyword">キーワード</label>
             <input type="text" id="keyword" name="keyword" placeholder="タイトル・チャンネル名・歌詞・URL">
@@ -28,7 +28,7 @@
         {% render_song_card songIns %}
     {% endfor %}
     <div class="dummybuttons">
-        <a href="{% url 'subekashi:search' %}"><div class="dummybutton"><p>もっと見る</p></div></a>
+        <a href="{% url 'subekashi:songs' %}"><div class="dummybutton"><p>もっと見る</p></div></a>
         <a href="{% url 'subekashi:song_new' %}"><div class="dummybutton"><p>曲を登録する</p></div></a>
     </div>
     
@@ -62,7 +62,7 @@
             {% render_song_card songIns %}
         {% endfor %}
             <div class="dummybuttons">
-                <a href="{% url 'subekashi:search' %}?islack=True"><div class="dummybutton"><p>もっと見る</p></div></a>
+                <a href="{% url 'subekashi:songs' %}?islack=True"><div class="dummybutton"><p>もっと見る</p></div></a>
                 <a href="{% url 'subekashi:song_new' %}"><div class="dummybutton"><p>曲を登録する</p></div></a>
             </div>
     {% endif %}
