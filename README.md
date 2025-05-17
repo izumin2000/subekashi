@@ -1,3 +1,10 @@
+# 注意事項 / Warning
+このリポジトリは[izumin2000/subekashi](https://github.com/izumin2000/subekashi)のフォークリポジトリです。
+有益な情報を得たい場合はそちらをご覧ください。
+This repogitory is fork of [izumin2000/subekashi](https://github.com/izumin2000/subekashi).
+If you need infomation, Then see original repogitory.
+
+
 # 全て歌詞の所為です。とは  
 『全て歌詞の所為です。』とは「[界隈曲](https://dic.nicovideo.jp/a/%E7%95%8C%E9%9A%88%E6%9B%B2)」と呼ばれる音楽ジャンルに焦点を当てた界隈曲情報掲載サイトです。  
 以下のような機能があります。
