@@ -390,6 +390,22 @@ function isLack(song) {
     return false;
 }
 
+// 自動スクロール
+function autoScroll(deley) {
+    const htmlEle = document.documentElement || document.body;
+
+    let scrollTop = htmlEle.scrollTop;
+
+    const timer = setInterval(() => {
+        scrollTop += 1;
+        htmlEle.scrollTop = scrollTop;
+
+        // スクロールが末尾に到達したら停止
+        if (htmlEle.scrollTop + window.innerHeight >= htmlEle.scrollHeight) {
+            clearInterval(timer);
+        }
+    }, deley);
+}
 
 // 読み込み時の実行
 window.onload = function() {
