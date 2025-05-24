@@ -20,3 +20,6 @@ static/
 sessions/*
 !sessions/
 !sessions/.gitkeep
+.vscode
+.prettierrc
+subekashi/static/subekashi/special/*.mp3

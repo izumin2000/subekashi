@@ -43,13 +43,15 @@ def song(request, song_id):
     
     # 歌詞のHTML化
     br_lyrics = request.COOKIES.get("brlyrics", "normal")
+    # html特殊文字をエスケープ
+    html_lyrics = song.lyrics.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
     if br_lyrics == "normal":
-        html_lyrics = song.lyrics.replace("\n", "<br>")
+        html_lyrics = html_lyrics.replace("\n", "<br>")
     elif br_lyrics == "pack":
-        html_lyrics = re.sub(r"\n+", "<br>", song.lyrics)
+        html_lyrics = re.sub(r"\n+", "<br>", html_lyrics)
     elif br_lyrics == "brless":
-        html_lyrics = song.lyrics.replace("\n", "")
-        
+        html_lyrics = html_lyrics.replace("\n", "")
+    
     # 歌詞の一部をdescriptionに記述
     description_lyrics = song.lyrics.replace("\r\n", "")[:100]
     description += f"歌詞: {description_lyrics}" if description_lyrics else ""

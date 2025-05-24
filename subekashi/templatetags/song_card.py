@@ -18,6 +18,8 @@ def get_channel(song):
         return mark_safe('<i class="fas fa-user-friends"></i>合作')
     # 単作なら
     channel = channels[0]
+    # html特殊文字をエスケープ(一応)
+    channel = channel.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
     channel_url = reverse('subekashi:channel', args=[channel])
     return mark_safe(f'<object><a href="{channel_url}"><i class="fas fa-user-circle"></i>{channel}</a></object>')
 
@@ -70,7 +72,8 @@ def get_url(song):
 @register.simple_tag
 def get_lyrics(song):
     lyrics = song.lyrics[:50]
-    
+    # html特殊文字をエスケープ
+    lyrics=lyrics.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
     # インスト曲なら
     if not lyrics and song.isinst:
         return mark_safe('<i class="fas fa-align-center"></i>インスト曲')
