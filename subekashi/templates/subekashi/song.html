@@ -165,7 +165,7 @@
     {% if song.lyrics %}
         <div id="lyrics-wrapper">
             <p id="lyrics-header"><i class="fas fa-align-center"></i>歌詞<i class="far fa-copy" onclick="copy('{{ song.lyrics|escapejs }}')"></i></p>
-            <p id="lyrics">{{ lyrics|safe }}</p>
+            <p id="lyrics">{{ song.lyrics | linebreaksbr }}</p>
         </div>
     {% endif %}
 </section>

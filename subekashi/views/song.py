@@ -40,15 +40,6 @@ def song(request, song_id):
     description = ""
     description += f"模倣曲数：{imitate_list.count()}, " if imitate_list.count() else ""
     description += f"被模倣曲数：{imitated_list.count()}, " if imitated_list.count() else ""
-    
-    # 歌詞のHTML化
-    br_lyrics = request.COOKIES.get("brlyrics", "normal")
-    if br_lyrics == "normal":
-        html_lyrics = song.lyrics.replace("\n", "<br>")
-    elif br_lyrics == "pack":
-        html_lyrics = re.sub(r"\n+", "<br>", song.lyrics)
-    elif br_lyrics == "brless":
-        html_lyrics = song.lyrics.replace("\n", "")
         
     # 歌詞の一部をdescriptionに記述
     description_lyrics = song.lyrics.replace("\r\n", "")[:100]
@@ -70,7 +61,6 @@ def song(request, song_id):
         "links": links,
         "imitate_list": imitate_list,
         "imitated_list": imitated_list,
-        "has_tag": has_tag,
-        "lyrics": html_lyrics
+        "has_tag": has_tag
     }
     return render(request, "subekashi/song.html", dataD)
