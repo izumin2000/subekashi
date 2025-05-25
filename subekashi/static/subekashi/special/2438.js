@@ -1,5 +1,6 @@
 function special() {
     window.location.href = `${baseURL()}/songs/2438/#lyrics`;
+    document.getElementsByClassName("dummybuttons")[0].remove();
     
     const lyricsEle = document.getElementById("lyrics");
     lyricsEle.style.whiteSpace = "pre-wrap";
@@ -15,8 +16,8 @@ function special() {
         用済みの洗濯板と付箋三枚、
         サプライ海岸線の泣き声は
 
-        <b><i><span style="text-shadow:1px 1px 0 #EFBC0A, -1px -1px 0 #EFBC0A, -1px 1px 0 #EFBC0A, 1px -1px 0 #EFBC0A, 0px 1px 0 #EFBC0A,  0px -1px 0 #EFBC0A, -1px 0px 0 #EFBC0A, 1px 0px 0 #EFBC0A;"><font face="游ゴシック", color="#DF0001", size="+2">ゴツゴツの⠀</font></span>
-        <span style="text-shadow:1px 1px 0 #1A2134, -1px -1px 0 #1A2134, -1px 1px 0 #1A2134, 1px -1px 0 #1A2134, 0px 1px 0 #1A2134,  0px -1px 0 #1A2134, -1px 0px 0 #1A2134, 1px 0px 0 #1A2134;"><font face="游明朝", color="#A1BEC6", size="+2">　アハン！</font></span></b></i>
+        <b><i><span style="text-shadow:1px 1px 0 #EFBC0A, -1px -1px 0 #EFBC0A, -1px 1px 0 #EFBC0A, 1px -1px 0 #EFBC0A, 0px 1px 0 #EFBC0A,  0px -1px 0 #EFBC0A, -1px 0px 0 #EFBC0A, 1px 0px 0 #EFBC0A"><font face="游ゴシック", color="#DF0001", size="+10">ゴツゴツの⠀</font></span>
+        <span style="text-shadow:1px 1px 0 #1A2134, -1px -1px 0 #1A2134, -1px 1px 0 #1A2134, 1px -1px 0 #1A2134, 0px 1px 0 #1A2134,  0px -1px 0 #1A2134, -1px 0px 0 #1A2134, 1px 0px 0 #1A2134;"><font face="游明朝", color="#A1BEC6", size="+10">　アハン！</font></span></b></i>
 
         塩味の没入感って、
         顔芸行きの豚箱と似た口調だから、
@@ -28,7 +29,7 @@ function special() {
         謳う五千兆言絶句。
 
         街道を編む甘酢参謀、
-        寝た振りの前で<ruby>バン<rt><font face="游ゴシック">BANG</font></rt>・<rt></rt>サラ<rt><font face="游ゴシック">SALA</font></rt>・<rt></rt>サイ<rt><font face="游ゴシック">SIGH</font></ruby>、
+        寝た振りの前で<ruby>バン<rt style="margin-top:10px"><font face="游ゴシック">BANG</font></rt>・<rt></rt>サラ<rt><font face="游ゴシック">SALA</font></rt>・<rt></rt>サイ<rt><font face="游ゴシック">SIGH</font></ruby>、
         仮名絵師・ルーラの農耕地は、
         長野を殴るタイプの免許だった。
         足し算に揺れるSAYジュース、
@@ -36,8 +37,8 @@ function special() {
         大監査気取りの八百長が、
         胃に滴るでしょう、
 
-        <b><i><span style="text-shadow:1px 1px 0 #EFBC0A, -1px -1px 0 #EFBC0A, -1px 1px 0 #EFBC0A, 1px -1px 0 #EFBC0A, 0px 1px 0 #EFBC0A,  0px -1px 0 #EFBC0A, -1px 0px 0 #EFBC0A, 1px 0px 0 #EFBC0A;"><font face="游ゴシック", color="#DF0001", size="+3">全て所為の⠀</font></span>
-        <span style="text-shadow:1px 1px 0 #1A2134, -1px -1px 0 #1A2134, -1px 1px 0 #1A2134, 1px -1px 0 #1A2134, 0px 1px 0 #1A2134,  0px -1px 0 #1A2134, -1px 0px 0 #1A2134, 1px 0px 0 #1A2134;"><font face="游明朝", color="#A1BEC6", size="+3">　　所為です。</font></span></b></i>
+        <b><i><span style="text-shadow:1px 1px 0 #EFBC0A, -1px -1px 0 #EFBC0A, -1px 1px 0 #EFBC0A, 1px -1px 0 #EFBC0A, 0px 1px 0 #EFBC0A,  0px -1px 0 #EFBC0A, -1px 0px 0 #EFBC0A, 1px 0px 0 #EFBC0A; font-size: 100px; line-height: 100px;"><font face="游ゴシック", color="#DF0001">全て所為の⠀</font></span>
+        <span style="text-shadow:1px 1px 0 #1A2134, -1px -1px 0 #1A2134, -1px 1px 0 #1A2134, 1px -1px 0 #1A2134, 0px 1px 0 #1A2134,  0px -1px 0 #1A2134, -1px 0px 0 #1A2134, 1px 0px 0 #1A2134; font-size: 100px; line-height: 100px;"><font face="游明朝", color="#A1BEC6">　　所為です。</font></span></b></i>
 
 
         ※こんにちは、突然ですか？
@@ -60,7 +61,7 @@ function special() {
         騙る五千兆言絶句。
 
         号哭牡蠣の七名様、
-        痴話喧嘩投げて<ruby>バン<rt><font face="游ゴシック">BANG</font></rt>・<rt></rt>サラ<rt><font face="游ゴシック">SALA</font></rt>・<rt></rt>サイ<rt><font face="游ゴシック">SIGH</font></ruby>、
+        痴話喧嘩投げて<ruby>バン<rt style="margin-top:10px"><font face="游ゴシック">BANG</font></rt>・<rt></rt>サラ<rt><font face="游ゴシック">SALA</font></rt>・<rt></rt>サイ<rt><font face="游ゴシック">SIGH</font></ruby>、
         蕎麦のデプロイは雁字搦め、
         怨む演説を置き去りにしちゃった！
         砂鉄に延びる虹色倨傲、
@@ -68,8 +69,8 @@ function special() {
         廻る生首が全ロスした、
         身の程を知れ、
 
-        <b><i><span style="text-shadow:1px 1px 0 #EFBC0A, -1px -1px 0 #EFBC0A, -1px 1px 0 #EFBC0A, 1px -1px 0 #EFBC0A, 0px 1px 0 #EFBC0A,  0px -1px 0 #EFBC0A, -1px 0px 0 #EFBC0A, 1px 0px 0 #EFBC0A;"><font face="游ゴシック", color="#DF0001", size="+3">全てせせせの⠀</font></span>
-        <span style="text-shadow:1px 1px 0 #1A2134, -1px -1px 0 #1A2134, -1px 1px 0 #1A2134, 1px -1px 0 #1A2134, 0px 1px 0 #1A2134,  0px -1px 0 #1A2134, -1px 0px 0 #1A2134, 1px 0px 0 #1A2134;"><font face="游明朝", color="#A1BEC6", size="+3">　　所為です。</font></span></b></i>
+        <b><i><span style="text-shadow:1px 1px 0 #EFBC0A, -1px -1px 0 #EFBC0A, -1px 1px 0 #EFBC0A, 1px -1px 0 #EFBC0A, 0px 1px 0 #EFBC0A,  0px -1px 0 #EFBC0A, -1px 0px 0 #EFBC0A, 1px 0px 0 #EFBC0A; font-size: 100px; line-height: 100px;"><font face="游ゴシック", color="#DF0001">全てせせせの⠀</font></span>
+        <span style="text-shadow:1px 1px 0 #1A2134, -1px -1px 0 #1A2134, -1px 1px 0 #1A2134, 1px -1px 0 #1A2134, 0px 1px 0 #1A2134,  0px -1px 0 #1A2134, -1px 0px 0 #1A2134, 1px 0px 0 #1A2134; font-size: 100px; line-height: 100px;"><font face="游明朝", color="#A1BEC6">　　所為です。</font></span></b></i>
     `
 }
 
