@@ -1,25 +1,3 @@
-var timer;
-function autoScroll(element, speed, direction) {
-    let scrollTop = element.scrollTop;
-    const interval = 6;
-    const scrollDirection = direction === 'up' ? -1 : 1;
-
-    timer = setInterval(() => {
-        scrollTop += scrollDirection;
-        element.scrollTop = scrollTop;
-
-        // 上方向：scrollTopが0以下で停止
-        if (scrollDirection === -1 && element.scrollTop <= 0) {
-            clearInterval(timer);
-        }
-        // 下方向：スクロールが末尾に到達したら停止
-        if (scrollDirection === 1 && element.scrollTop + element.clientHeight >= element.scrollHeight) {
-            clearInterval(timer);
-        }
-    }, speed * interval);
-}
-
-
 function changeLyricsDesign() {
     const lyricsEle = document.getElementById("lyrics");
     lyricsEle.style.lineHeight = '300px';
@@ -114,9 +92,8 @@ async function play() {
 
     try {
         await sleepWithAbort(5.5* BEAT_TIME, signal);
-        const scrollingContainer = document.getElementsByTagName("html")[0];
         window.scrollTo(0, 0);
-        autoScroll(scrollingContainer, 2, 'down');
+        autoScroll(12);
 
         await sleepWithAbort(19.5 * BEAT_TIME, signal);
         showToast("ok", "ーー・ ".repeat(16));

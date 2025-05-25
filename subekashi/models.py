@@ -88,6 +88,7 @@ class Article(models.Model) :
         ('howto', '使い方'),
         ('blog', 'ブログ'),
     )
+    article_id = models.CharField(default = "", max_length = 100, primary_key=True)
     title = models.CharField(default = "", max_length = 500)
     tag = models.CharField(default = "", choices=tags, max_length=10)
     text = models.CharField(default = "", blank = True, null = True, max_length = 500)
