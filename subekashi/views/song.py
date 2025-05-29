@@ -24,6 +24,15 @@ def song(request, song_id):
             }
         )
     
+    # 改行の設定
+    br_lyrics = request.COOKIES.get("brlyrics", "normal")
+    if br_lyrics == "normal":
+        br_cleaned_lyrics = song.lyrics
+    elif br_lyrics == "pack":
+        br_cleaned_lyrics = re.sub(r"\n+", "\n", song.lyrics)
+    elif br_lyrics == "brless":
+        br_cleaned_lyrics = song.lyrics.replace("\n", "")
+        
     # 模倣songリストを取得
     imitate_list = Song.objects.none()
     for imitate_id in song.imitate.split(",") if song.imitate else []:
@@ -56,6 +65,7 @@ def song(request, song_id):
         "description": description,
         "metatitle": f"{song.title} / {song.channel}",
         "song": song,
+        "br_cleaned_lyrics": br_cleaned_lyrics,
         "channels": song.channel.split(","),
         "is_lack": is_lack(song),
         "links": links,
