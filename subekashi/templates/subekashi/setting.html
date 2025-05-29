@@ -24,6 +24,14 @@
         </select>
     </div>
     <div class="form-col">
+        <label>歌詞の改行</label>
+        <select id="brlyrics" onchange="setting(true)">
+            <option value="normal" selected>全ての改行を表示</option>
+            <option value="pack">連続した改行を非表示</option>
+            <option value="brless">全ての改行を非表示</option>
+        </select>
+    </div>
+    <div class="form-col">
         <label>宣伝の表示</label>
         <select id="adrange" onchange="setting(true)">
             <option value="on" selected>表示</option>
@@ -36,7 +44,7 @@
 {% block js %}
 <script defer>
     var selectEles = document.getElementsByTagName("select");
-    var settingMap = ["songrange", "jokerange", "adrange"];
+    var settingMap = ["songrange", "jokerange", "brlyrics", "adrange"];
 
     function setting(isUpdate) {
         var i = 0;
