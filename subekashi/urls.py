@@ -1,6 +1,7 @@
 from django.views.generic.base import RedirectView
 from django.urls import path, include
 from subekashi.views import *
+from article.views import *
 from rest_framework import routers
 
 app_name='subekashi'
@@ -9,7 +10,7 @@ defaultRouter = routers.DefaultRouter()
 defaultRouter.register('song', SongAPI)
 defaultRouter.register('ai', AiAPI)
 defaultRouter.register('ad', AdAPI)
-defaultRouter.register('article', ArticleAPI)
+defaultRouter.register('article', ArticleAPI, basename='article')
 
 urlpatterns = [
     path('', top, name='top'),
@@ -26,8 +27,6 @@ urlpatterns = [
     path('ad/', ad, name='ad'),
     path('ad/complete/', ad_complete, name='ad_complete'),
     path('special/', special, name='special'),
-    path('articles/', articles, name='articles'),
-    path('articles/<int:article_id>', article, name='article'),
     path('robots.txt', robots, name='robots'),
     path('sitemap.xml', sitemap, name='sitemap'),
     path('favicon.ico', favicon, name='favicon'),
