@@ -26,7 +26,6 @@ urlpatterns = [
     path('setting/', setting, name='setting'),
     path('ad/', ad, name='ad'),
     path('ad/complete/', ad_complete, name='ad_complete'),
-    path('special/', special, name='special'),
     path('robots.txt', robots, name='robots'),
     path('sitemap.xml', sitemap, name='sitemap'),
     path('favicon.ico', favicon, name='favicon'),

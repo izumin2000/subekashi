@@ -29,9 +29,9 @@ ASIDE_PAGES = [
         "icon": "fas fa-bullhorn"
     },
     {
-        "url": "subekashi:special",
-        "name": "スペシャル",
-        "icon": "far fa-star"
+        "url": "article:articles",
+        "name": "記事",
+        "icon": "fas fa-book"
     },
     {
         "url": "subekashi:contact",

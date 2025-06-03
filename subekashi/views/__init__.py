@@ -15,7 +15,6 @@ from subekashi.views.song_delete import song_delete
 from subekashi.views.song_edit import song_edit
 from subekashi.views.song_new import song_new
 from subekashi.views.api.song import SongAPI
-from subekashi.views.special import special
 from subekashi.views.top import top
 from subekashi.views.components.song_cards import song_cards
 from subekashi.views.components.song_guessers import song_guessers
