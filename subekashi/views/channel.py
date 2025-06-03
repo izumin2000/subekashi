@@ -1,7 +1,9 @@
 from django.shortcuts import render
+from django.views.decorators.cache import never_cache
 from subekashi.models import *
 
 
+@never_cache
 def channel(request, channelName) :
     dataD = {
         "metatitle" : channelName,

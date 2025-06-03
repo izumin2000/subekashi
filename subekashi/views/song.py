@@ -1,10 +1,13 @@
 from django.shortcuts import render
+from django.views.decorators.cache import never_cache
 from subekashi.models import *
 from subekashi.lib.filter import is_lack
 from subekashi.constants.constants import URL_ICON
 from urllib.parse import urlparse
 import re
 
+
+@never_cache
 def song(request, song_id):
     try:
         song = Song.objects.get(pk = song_id)

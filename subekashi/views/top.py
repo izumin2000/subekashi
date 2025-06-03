@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.views.decorators.cache import never_cache
 from config.settings import *
 from subekashi.models import *
 from subekashi.constants.constants import *
@@ -12,6 +13,7 @@ import markdown
 INPUT_TEXTS = ["title", "channel", "lyrics", "url"]
 
 
+@never_cache
 def top(request):
     dataD = {
         "metatitle" : "トップ",
