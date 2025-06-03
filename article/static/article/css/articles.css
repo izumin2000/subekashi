@@ -1,0 +1,27 @@
+.article-wrapper {
+    padding: 10px;
+    margin-bottom: 20px;
+    background-color: #333;
+}
+
+.article-wrapper a {
+    text-decoration: none;
+    text-align: center;
+}
+
+.article-wrapper p {
+    text-align: center;
+}
+
+.article-wrapper:hover {
+    background-color: #666;
+}
+
+.artile-info, .artile-info i {
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.fa-file-signature {
+    margin-left: 20px;
+}

@@ -8,5 +8,18 @@
 <section>
     <h1>記事一覧</h1>
     <div class="underline"></div>
+    {% for article in articles  %}
+        <div class="article-wrapper">
+            <a href="{% url 'article:default_article' article.article_id %}">
+                <p class="artile-info">
+                    <i class="fas fa-tags"></i>
+                    {{ article.get_tag_display }}
+                    <i class="fas fa-file-signature"></i>
+                    {{ article.post_time }}
+                </p>
+                <p class="article-title">{{ article.title|safe }}</p>
+            </a>
+        </div>
+    {% endfor %}
 </section>
 {% endblock %}
