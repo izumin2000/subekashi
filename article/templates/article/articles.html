@@ -12,6 +12,8 @@
         <div class="article-wrapper">
             <a href="{% url 'article:default_article' article.article_id %}">
                 <p class="artile-info">
+                    <i class="fas fa-user"></i>
+                    {{ article.author }}
                     <i class="fas fa-tags"></i>
                     {{ article.get_tag_display }}
                     <i class="fas fa-file-signature"></i>

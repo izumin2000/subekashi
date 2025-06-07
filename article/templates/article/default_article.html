@@ -9,6 +9,8 @@
     <h1>{{ article.title|safe }}</h1>
     <div class="underline"></div>
     <p class="artile-info">
+        <i class="fas fa-user"></i>
+        {{ article.author }}
         <i class="fas fa-tags"></i>
         {{ article.get_tag_display }}
         <i class="fas fa-file-signature"></i>
