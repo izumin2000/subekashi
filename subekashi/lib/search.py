@@ -10,6 +10,7 @@ MULTI_FILTERS = {
     "imitate": filter_by_imitate,
     "imitated": filter_by_imitated,
     "guesser": filter_by_guesser,
+    "mediatypes": filter_by_mediatypes,
     "islack": filter_by_lack,
 }
 
