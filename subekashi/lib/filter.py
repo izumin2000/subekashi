@@ -1,5 +1,4 @@
 from django.db.models import Q
-import logging
 
 # topやsearchにあるキーワード検索のフィルター
 def filter_by_keyword(keyword):
