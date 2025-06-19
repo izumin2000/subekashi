@@ -100,43 +100,7 @@
         </div>
         <label for="mediatype">メディア</label>
         <div id="mediatype-div" style="margin-bottom: 20px;">
-            <div class="checkbox-col">
-                <input type="checkbox" value="media-youtube" id="media-youtube" name="media-youtube" 
-                {% if not 'youtube' in mediatypes %}checked{% endif %}>
-                <label for="media-youtube"><i class="fab fa-youtube"></i>Youtube</label>
-            </div> 
-            <div class="checkbox-col">
-                <input type="checkbox" value="media-niconico" id="media-niconico" name="media-niconico" 
-                {% if not 'niconico' in mediatypes %}checked{% endif %}>
-                <label for="media-niconico"><img src="/static/subekashi/image/niconico.png">ニコニコ動画</label>
-            </div> 
-            <div class="checkbox-col">
-                <input type="checkbox" value="media-bilibili" id="media-bilibili" name="media-bilibili" 
-                {% if not 'bilibili' in mediatypes %}checked{% endif %}>
-                <label for="media-bilibili"><img src="/static/subekashi/image/bilibili.png">bilibili</label>
-            </div> 
-            <div class="checkbox-col">
-                <input type="checkbox" value="media-soundcloud" id="media-soundcloud" name="media-soundcloud" 
-                {% if not 'soundcloud' in mediatypes %}checked{% endif %}>
-                <label for="media-soundcloud"><i class="fab fa-soundcloud"></i>Soundcloud</label>
-            </div> 
-            <div class="checkbox-col">
-                <input type="checkbox" value="media-scratch" id="media-scratch" name="media-scratch" 
-                {% if not 'scratch' in mediatypes %}checked{% endif %}>
-                <label for="media-scratch"><i class="fas fa-cat"></i>Scratch</label>
-            </div> 
-            <div class="checkbox-col">
-                <input type="checkbox" value="media-twitter" id="media-twitter" name="media-twitter" 
-                {% if not 'twitter' in mediatypes %}checked{% endif %}>
-                <label for="media-twitter"><i class="fab fa-twitter"></i>X / Twitter</label>
-            </div> 
-            <div class="checkbox-col">
-                <input type="checkbox" value="media-other" id="media-other" name="media-other" 
-                {% if not 'other' in mediatypes %}checked{% endif %}>
-                <label for="media-other">その他</label>
-            </div> 
-            
-            
+            {{ medias|safe }}
         </div>
         <div class="checkbox-col">
             <input type="checkbox" value="islack" id="islack" {% if islack %}checked{% endif %}>

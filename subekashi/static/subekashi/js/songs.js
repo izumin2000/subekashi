@@ -126,9 +126,9 @@ function formToQuery() {
             /**@type {string} */
             const media = formId.split("-")[1]
             const checked = document.getElementById(formId).checked;
-                query.mediatypes ??= "unselected";
+            query.mediatypes??="";
             if(checked){
-                query.mediatypes += "_"+ media;
+                query.mediatypes += (query.mediatypes.length===0?"":"^")+ media;
             }
             continue;
         }

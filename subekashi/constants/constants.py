@@ -62,4 +62,18 @@ URL_ICON = {
     r"linkco\.re": "<i class='fas fa-align-justify'></i>",
 }
 
+# サービス名に対応するURL,アイコン,名前
+URLS = {
+    "youtube":([r"youtube\.com",r"youtu\.be"],"<i class='fab fa-youtube'></i>","Youtube"),
+    "soundcloud":([r"soundcloud\.com"],"<i class='fab fa-soundcloud'></i>","SoundCloud"),
+    "twitter":([r"x\.com",r"twitter.com"],"<i class='fab fa-twitter'></i>","Twitter"),
+    "bandcamp":([r"bandcamp.com"],"<i class='fab fa-bandcamp'></i>","BandCamp"),
+    "googledrive":([r"drive\.google\.com"],"<i class='fab fa-google-drive'></i>","Google Drive"),
+    "niconico":([r"nicovideo\.jp"],f"<img src='/static/subekashi/image/niconico.png' alt='ニコニコ動画'></img>","ニコニコ動画"),
+    "bilibili":([r"bilibili\.com"],f"<img src='/static/subekashi/image/bilibili.png' alt='ビリビリ動画'></img>","BiliBili"),
+    "imicomweb":([r"imicomweb\.com"], f"<img src='/static/subekashi/image/imicomweb.png' alt='イミコミュ'></img>","イミコミュ"),
+    "scratch":([r"scratch\.mit\.edu"],"<i class='fas fa-cat'></i>","Scratch"),
+    "linkcore":([r"linkco\.re"],"<i class='fas fa-align-justify'></i>","Linkcore")
+}
+
 SAFE_DOMAINS = list(URL_ICON.keys())
