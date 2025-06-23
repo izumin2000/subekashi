@@ -98,6 +98,10 @@
                 <option value="random" {% if sort == 'random' %}selected{% endif %}>ランダム</option>
             </select>
         </div>
+        <label for="mediatype">メディア</label>
+        <div id="mediatype-div" style="margin-bottom: 20px;">
+            {{ medias|safe }}
+        </div>
         <div class="checkbox-col">
             <input type="checkbox" value="islack" id="islack" {% if islack %}checked{% endif %}>
             <label for="islack">作成途中</label>

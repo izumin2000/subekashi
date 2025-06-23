@@ -1,4 +1,5 @@
 from django.db.models import Q
+from subekashi.constants.constants import URLS
 
 # topやsearchにあるキーワード検索のフィルター
 def filter_by_keyword(keyword):
@@ -35,6 +36,25 @@ def filter_by_guesser(guesser):
         Q(title__contains = guesser) |
         Q(channel__contains = guesser)
     )
+
+# メディアの検索に利用するフィルター
+def filter_by_mediatypes(mediatypes):
+    
+    mediatypes_arr = mediatypes.split("^")
+    medias = {
+        **URLS,
+        "nourl":(["^$"],"","URL未登録")
+    }
+    # mediatypeに当てはまる正規表現を抜き出す
+    media_regex_list = []
+    for m_regexs in mediatypes_arr:
+        for m_regex in medias[m_regexs][0]:
+            media_regex_list.append(f"({m_regex})")
+    media_regex= "|".join(media_regex_list)
+    return (
+        Q(url__regex = media_regex)
+    )
+
 
 # 未完成フィルター
 filter_by_lack = (

@@ -22,3 +22,12 @@
 #song-cards {
     min-height: 50vh;
 }
+
+#mediatype-div {
+    background-color: #555;
+}
+
+#mediatype-div img {
+    height: 24px;
+    margin-right: 5px;
+}
