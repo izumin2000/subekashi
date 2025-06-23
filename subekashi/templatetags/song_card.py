@@ -2,6 +2,8 @@ from django import template
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.template.loader import render_to_string
+from config.local_settings import ERROR_DISCORD_URL
+from config.settings import ROOT_URL
 from subekashi.lib.discord import *
 from subekashi.constants.constants import URL_ICON
 from urllib.parse import urlparse
