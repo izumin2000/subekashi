@@ -5,9 +5,7 @@ from django.template.loader import render_to_string
 from config.local_settings import ERROR_DISCORD_URL
 from config.settings import ROOT_URL
 from subekashi.lib.discord import *
-from subekashi.constants.constants import URL_ICON
-from urllib.parse import urlparse
-import re
+from subekashi.lib.url import get_allow_media
 
 
 register = template.Library()
@@ -59,13 +57,14 @@ def get_url(song):
     
     # URLを登録しているのなら
     for url in urls:
-        domain = urlparse(url).netloc
-        pattern_list = [bool(re.search(allow_pattern, domain)) for allow_pattern in URL_ICON.keys()]
-        if any(pattern_list):
-            icon = list(URL_ICON.values())[pattern_list.index(True)]
+        allow_url = get_allow_media(url)
+        
+        if allow_url:
+            icon = allow_url["icon"]
         else :
             send_discord(ERROR_DISCORD_URL, f"{ROOT_URL}/songs/{song.id}\n想定外のURLが添付されました：{url}")
             icon = "<i class='fas fa-exclamation-circle'></i>"
+        
         i_tags += f'<a href="{url}" target="_blank">{icon}</a>'
         
     return mark_safe(f'<object>{i_tags}</object>')

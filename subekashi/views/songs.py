@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from subekashi.constants.constants import   URLS
+from subekashi.constants.constants import ALL_MEDIAS
 
 
 QUERY_OR_COOKIE_FORMS = [
@@ -27,12 +27,8 @@ def songs(request) :
     # メディアリスト
     media_checks = []
     # URLSに未登録時の挙動を追加する
-    medias = {
-        **URLS,
-        "nourl":(["^$"],"","URL未登録")
-    }
-    for name,tuple in medias.items():
-        url,icon,display_name = tuple
+    for media in ALL_MEDIAS:
+        name, icon, display_name = media["name"], media["icon"], media["name"]
         media_checks.append(f"""<div class="checkbox-col"><input type="checkbox" value="media-{name}" id="media-{name}" name="media-{name}" checked><label for="media-{name}">{icon}{display_name}</label></div>""")
     dataD["medias"] = "\n".join(media_checks)
 

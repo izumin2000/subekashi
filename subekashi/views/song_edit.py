@@ -1,12 +1,13 @@
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.urls import reverse
+from config.local_settings import NEW_DISCORD_URL
+from config.settings import ROOT_URL
 from subekashi.models import *
 from subekashi.lib.url import *
 from subekashi.lib.ip import *
 from subekashi.lib.discord import *
 from subekashi.lib.search import song_search
-from urllib.parse import urlparse
 
 
 def song_edit(request, song_id) :
@@ -46,9 +47,7 @@ def song_edit(request, song_id) :
                 dataD["error"] = "URLは既に登録されています。"
                 return render(request, 'subekashi/song_edit.html', dataD)
             
-            domain = urlparse(cleaned_url_item).netloc
-            is_safe = any([bool(re.search(allow_pattern, domain)) for allow_pattern in URL_ICON.keys()])
-            if not is_safe:
+            if not get_allow_media(cleaned_url_item):
                 contact_url = reverse('subekashi:contact')
                 dataD["error"] = f"URL：{cleaned_url_item}は信頼されていないURLと判断されました。<br>\
                 <a href='{contact_url}?&category=提案&detail={cleaned_url_item} を登録できるようにしてください。' target='_blank'>お問い合わせ</a>にて、\
