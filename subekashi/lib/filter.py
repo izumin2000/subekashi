@@ -41,7 +41,7 @@ def filter_by_guesser(guesser):
 def filter_by_mediatypes(mediatypes):
     # mediatypeに当てはまる正規表現を抜き出す
     media_regex_list = []
-    for mediatype in mediatypes.split("^"):
+    for mediatype in mediatypes.split(","):
         for i, media in enumerate(ALL_MEDIAS):
             if mediatype == media["name"]:
                 media_regex_list.append(f"({ALL_MEDIAS[i]['regex']})")
