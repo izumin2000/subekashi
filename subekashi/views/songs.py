@@ -14,6 +14,7 @@ FILER_FORMS = ["issubeana", "isjoke", "islack", "isdraft", "isoriginal", "isinst
 def songs(request) :
     dataD = {
         "metatitle" : "一覧と検索",
+        "ALL_MEDIAS": ALL_MEDIAS
     }
     
     GET = request.GET
@@ -24,12 +25,4 @@ def songs(request) :
     for filter in FILER_FORMS:
         dataD[filter] = bool(GET.get(filter))
     
-    # メディアリスト
-    media_checks = []
-    # URLSに未登録時の挙動を追加する
-    for media in ALL_MEDIAS:
-        name, icon, display_name = media["name"], media["icon"], media["name"]
-        media_checks.append(f"""<div class="checkbox-col"><input type="checkbox" value="media-{name}" id="media-{name}" name="media-{name}" checked><label for="media-{name}">{icon}{display_name}</label></div>""")
-    dataD["medias"] = "\n".join(media_checks)
-
     return render(request, "subekashi/songs.html", dataD)

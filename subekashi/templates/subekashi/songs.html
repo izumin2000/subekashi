@@ -98,9 +98,14 @@
                 <option value="random" {% if sort == 'random' %}selected{% endif %}>ランダム</option>
             </select>
         </div>
-        <label for="mediatype">メディア</label>
-        <div id="mediatype-div" style="margin-bottom: 20px;">
-            {{ medias|safe }}
+        <label>メディア</label>
+        <div id="mediatype-wrapper">
+            {% for media in ALL_MEDIAS %}
+                <div class="checkbox-col">
+                    <input type="checkbox" value="media-{{ media.name }}" id="media-{{ media.name }}" checked>
+                    <label for="media-{{ media.name }}">{{ media.icon|safe }}{{ media.name }}</label>
+                </div>
+            {% endfor %}
         </div>
         <div class="checkbox-col">
             <input type="checkbox" value="islack" id="islack" {% if islack %}checked{% endif %}>

@@ -28,7 +28,7 @@
     padding-right: 10px;
 }
 
-.song-card i {
+.song-card i, .song-card img {
     margin-right: 5px;
 }
 
