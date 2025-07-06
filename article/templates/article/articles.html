@@ -8,7 +8,23 @@
 <section>
     <h1>記事一覧</h1>
     <div class="underline"></div>
-    {% for article in articles  %}
+    <form method="get" action=".">
+        <div class="form-col">
+            <label for="tag">タグ</label>
+            <select name="tag" id="tag">
+                <option value="all" {% if selected_tag == "all" or not selected_tag %}selected{% endif %}>全て</option>
+                {% for value, label in tags %}
+                    <option value="{{ value }}" {% if selected_tag == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-col">
+            <label for="keyword">キーワード</label>
+            <input type="text" name="keyword" id="keyword" value="{{ keyword }}" placeholder="タイトル・作者・本文">
+        </div>
+        <input type="submit" value="検索"></input>
+    </form>
+    {% for article in articles %}
         <div class="article-wrapper">
             <a href="{% url 'article:default_article' article.article_id %}">
                 <p class="artile-info">
