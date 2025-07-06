@@ -1,10 +1,8 @@
 from django.shortcuts import render
-from django.views.decorators.cache import never_cache
 from article.models import Article
 import markdown
 
 
-@never_cache
 def default_article(request, id):
     try:
         article = Article.objects.get(pk = id)
