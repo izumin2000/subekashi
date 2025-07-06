@@ -49,51 +49,61 @@ DEFALT_ICON = "<i class='fas fa-globe'></i>"
 
 ALLOW_MEDIAS = [
     {
+        "id": "youtube",
         "name": "YouTube",
         "regex": r"(^|.)youtu.be",
         "icon": "<i class='fab fa-youtube'></i>",
     },
     {
-        "name": "SoundCloud",
-        "regex": r"(^|.)soundcloud.com",
-        "icon": "<i class='fab fa-soundcloud'></i>",
-    },
-    {
+        "id": "x",
         "name": "X",
         "regex": r"(^|.)x.com",
         "icon": "<i class='fab fa-twitter'></i>",
     },
     {
-        "name": "Bandcamp",
-        "regex": r"(^|.)bandcamp.com",
-        "icon": "<i class='fab fa-bandcamp'></i>",
+        "id": "soundcloud",
+        "name": "SoundCloud",
+        "regex": r"(^|.)soundcloud.com",
+        "icon": "<i class='fab fa-soundcloud'></i>",
     },
     {
-        "name": "Google Drive",
-        "regex": r"drive.google.com",
-        "icon": "<i class='fab fa-google-drive'></i>",
-    },
-    {
-        "name": "ニコニコ動画",
-        "regex": r"(^|.)nicovideo.jp",
-        "icon": "<img src='/static/subekashi/image/niconico.png' alt='ニコニコ動画'></img>",
-    },
-    {
-        "name": "ビリビリ動画",
-        "regex": r"(^|.)bilibili.com",
-        "icon": "<img src='/static/subekashi/image/bilibili.png' alt='ビリビリ動画'></img>",
-    },
-    {
-        "name": "イミコミュ",
-        "regex": r"imicomweb.com",
-        "icon": "<img src='/static/subekashi/image/imicomweb.png' alt='イミコミュ'></img>",
-    },
-    {
+        "id": "scratch",
         "name": "Scratch",
         "regex": r"scratch.mit.edu",
         "icon": "<i class='fas fa-cat'></i>",
     },
     {
+        "id": "bandcamp",
+        "name": "Bandcamp",
+        "regex": r"(^|.)bandcamp.com",
+        "icon": "<i class='fab fa-bandcamp'></i>",
+    },
+    {
+        "id": "drive",
+        "name": "Google Drive",
+        "regex": r"drive.google.com",
+        "icon": "<i class='fab fa-google-drive'></i>",
+    },
+    {
+        "id": "nicovideo",
+        "name": "ニコニコ動画",
+        "regex": r"(^|.)nicovideo.jp",
+        "icon": "<img src='/static/subekashi/image/niconico.png' alt='ニコニコ動画'></img>",
+    },
+    {
+        "id": "bilibili",
+        "name": "ビリビリ動画",
+        "regex": r"(^|.)bilibili.com",
+        "icon": "<img src='/static/subekashi/image/bilibili.png' alt='ビリビリ動画'></img>",
+    },
+    {
+        "id": "imicom",
+        "name": "イミコミュ",
+        "regex": r"imicomweb.com",
+        "icon": "<img src='/static/subekashi/image/imicomweb.png' alt='イミコミュ'></img>",
+    },
+    {
+        "id": "linkcore",
         "name": "LinkCore",
         "regex": r"linkco.re",
         "icon": "<i class='fas fa-align-justify'></i>",
@@ -101,6 +111,7 @@ ALLOW_MEDIAS = [
 ]
 
 ALL_MEDIAS = ALLOW_MEDIAS + [{
+    "id": "other", 
     "name": "URL未登録",
     "regex": r"^$",
     "icon": "<i class='fas fa-unlink'></i>"

@@ -43,7 +43,7 @@ def filter_by_mediatypes(mediatypes):
     media_regex_list = []
     for mediatype in mediatypes.split(","):
         for i, media in enumerate(ALL_MEDIAS):
-            if mediatype == media["name"]:
+            if mediatype == media["id"]:
                 media_regex_list.append(f"({ALL_MEDIAS[i]['regex']})")
                 continue
     media_regex = "|".join(media_regex_list)
