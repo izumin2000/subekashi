@@ -61,6 +61,12 @@ ALLOW_MEDIAS = [
         "icon": "<i class='fab fa-twitter'></i>",
     },
     {
+        "id": "nicovideo",
+        "name": "ニコニコ動画",
+        "regex": r"(^|.)nicovideo.jp",
+        "icon": "<img src='/static/subekashi/image/niconico.png' alt='ニコニコ動画'></img>",
+    },
+    {
         "id": "soundcloud",
         "name": "SoundCloud",
         "regex": r"(^|.)soundcloud.com",
@@ -83,12 +89,6 @@ ALLOW_MEDIAS = [
         "name": "Google Drive",
         "regex": r"drive.google.com",
         "icon": "<i class='fab fa-google-drive'></i>",
-    },
-    {
-        "id": "nicovideo",
-        "name": "ニコニコ動画",
-        "regex": r"(^|.)nicovideo.jp",
-        "icon": "<img src='/static/subekashi/image/niconico.png' alt='ニコニコ動画'></img>",
     },
     {
         "id": "bilibili",
