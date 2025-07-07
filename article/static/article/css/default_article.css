@@ -1,4 +1,13 @@
-.artile-info, .artile-info i {
+#artile-title > * {
+    color: #fff;
+}
+
+#artile-info {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#artile-info, #artile-info i {
     margin-bottom: 10px;
     font-size: 16px;
 }
@@ -7,7 +16,6 @@
     margin-left: 20px;
 }
 
-.artile-info {
-    text-align: center;
-    margin-bottom: 20px;
+#artile-text img {
+    margin: 20px 0;
 }
