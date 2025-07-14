@@ -24,6 +24,14 @@
     font-size: 18px;
 }
 
+#news-display h1, #news-display h2 {
+    margin: 0 10px;
+}
+
+#news-display * {
+    display: inline-block;
+}
+
 h1:nth-child(2) {
     margin-top: 30px;
 }
