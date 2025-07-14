@@ -25,8 +25,8 @@
         <input type="submit" value="検索"></input>
     </form>
     {% for article in articles %}
-        <div class="article-wrapper">
-            <a href="{% url 'article:default_article' article.article_id %}">
+        {% if article.tag == 'news' %}
+            <div class="news-wrapper">
                 <p class="artile-info">
                     <i class="fas fa-user"></i>
                     {{ article.author }}
@@ -35,8 +35,22 @@
                     <i class="fas fa-file-signature"></i>
                     {{ article.post_time }}
                 </p>
-                <div class="article-title-wrapper">{{ article.title|safe }}</div>
-            </a>
+                <span class="article-title-wrapper">{{ article.title|safe }}</span>
+            </div>
+        {% else %}
+            <div class="article-wrapper">
+                <a href="{% url 'article:default_article' article.article_id %}">
+                    <p class="artile-info">
+                        <i class="fas fa-user"></i>
+                        {{ article.author }}
+                        <i class="fas fa-tags"></i>
+                        {{ article.get_tag_display }}
+                        <i class="fas fa-file-signature"></i>
+                        {{ article.post_time }}
+                    </p>
+                    <span class="article-title-wrapper">{{ article.title|safe }}</span>
+                </a>
+            {% endif %}
         </div>
     {% endfor %}
 </section>

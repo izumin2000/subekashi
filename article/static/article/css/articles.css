@@ -1,15 +1,22 @@
-.article-wrapper {
+.article-wrapper, .news-wrapper {
     padding: 10px;
     margin-bottom: 20px;
+}
+
+.article-wrapper {
     background-color: #333;
 }
 
-.article-wrapper a {
+.news-wrapper {
+    border: solid 5px #333;
+}
+
+.article-wrapper a, .news-wrapper a {
     text-decoration: none;
     text-align: center;
 }
 
-.article-wrapper p {
+.article-wrapper p, .news-wrapper p {
     text-align: center;
 }
 
@@ -20,6 +27,12 @@
 .artile-info, .artile-info i {
     margin-bottom: 10px;
     font-size: 16px;
+}
+
+.article-title-wrapper {
+    display: block;
+    color: #fff;
+    text-align: center;
 }
 
 .article-title-wrapper h1, .article-title-wrapper h2 {
