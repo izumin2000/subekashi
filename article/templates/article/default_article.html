@@ -6,9 +6,9 @@
 
 {% block content %}
 <section>
-    <h1 id="artile-title">{{ article.title|safe }}</h1>
+    <h1 id="article-title">{{ article.title|safe }}</h1>
     <div class="underline"></div>
-    <p id="artile-info">
+    <p id="article-info">
         <i class="fas fa-user"></i>
         {{ article.author }}
         <i class="fas fa-tags"></i>
@@ -16,6 +16,6 @@
         <i class="fas fa-file-signature"></i>
         {{ article.post_time }}
     </p>
-    <div id="artile-text">{{ text|safe }}</div>
+    <div id="article-text">{{ text|safe }}</div>
 </section>
 {% endblock %}

@@ -1,13 +1,14 @@
-#artile-title > * {
+#article-title * {
+    display: inline-block;
     color: #fff;
 }
 
-#artile-info {
+#article-info {
     text-align: center;
     margin-bottom: 20px;
 }
 
-#artile-info, #artile-info i {
+#article-info, #article-info i {
     margin-bottom: 10px;
     font-size: 16px;
 }
@@ -16,6 +17,6 @@
     margin-left: 20px;
 }
 
-#artile-text img {
+#article-text img {
     margin: 20px 0;
 }

@@ -27,7 +27,7 @@
     {% for article in articles %}
         {% if article.tag == 'news' %}
             <div class="news-wrapper">
-                <p class="artile-info">
+                <p class="article-info">
                     <i class="fas fa-user"></i>
                     {{ article.author }}
                     <i class="fas fa-tags"></i>
@@ -40,7 +40,7 @@
         {% else %}
             <div class="article-wrapper">
                 <a href="{% url 'article:default_article' article.article_id %}">
-                    <p class="artile-info">
+                    <p class="article-info">
                         <i class="fas fa-user"></i>
                         {{ article.author }}
                         <i class="fas fa-tags"></i>
