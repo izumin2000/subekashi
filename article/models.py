@@ -13,7 +13,7 @@ class Article(models.Model) :
     title = models.CharField(default = "", max_length = 500)
     author = models.CharField(default = "", max_length = 50)
     tag = models.CharField(default = "", choices=TAGS, max_length=10)
-    text = models.TextField(default = "", blank = True, null = True, max_length = 500)
+    text = models.TextField(default = "", blank = True, null = True, max_length = 1000000)
     post_time = models.DateTimeField(blank = True, null = True)
     is_open = models.BooleanField(default = True)
     is_md = models.BooleanField(default = True)
