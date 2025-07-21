@@ -14,7 +14,6 @@ class Command(BaseCommand):
             'gpt.txt': '',
             'version.json': '{"VERSION":"dev"}',
             'reject.py': 'REJECT_LIST = []',
-            'news.md':'subekashi/constants/dynamic/news.mdにニュースを追加してください'
         }
         for file_name, text in CONST_INFO.items():
             const_path = os.path.join(BASE_DIR, 'subekashi/constants/dynamic', file_name)

@@ -131,9 +131,6 @@ python manage.py runserver
 
 [https://lyrics.imicomweb.com/api/ai](https://lyrics.imicomweb.com/api/ai)：正常に狂うのです。が生成した歌詞の情報です。GET, HEAD, OPTIONSとPUTのうちカラムscoreの変更のみ受け付けています。
 
-[https://lyrics.imicomweb.com/api/article](https://lyrics.imicomweb.com/api/article)：全て歌詞の所為です。に登録されている記事の情報。GET, HEAD, OPTIONSのみ受け付けています。
-
-
 ## コントリビューション
 全て歌詞の所為です。ではプルリクエストを積極的に受け入れています。  
 主に以下のことを行ってくれると助かります。  

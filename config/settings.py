@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_hosts',
     'subekashi',
+    'article',
     'corsheaders',
 ]
 

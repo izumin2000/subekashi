@@ -1,8 +1,10 @@
 from subekashi.constants.constants import *
 from urllib.parse import urlparse, urlunparse
 import re
+from subekashi.constants.constants import ALLOW_MEDIAS
 
 
+# TODO リファクタリング
 # YouTubeの動画IDのパターンマッチ
 def re_youtube_url(url):
     match = re.search(r'(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com\/(?:.*[?&]v=|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})', url)
@@ -45,3 +47,14 @@ def clean_url(urls):
     url_list = list(map(format_youtube_url, url_list))
     url_list = list(map(format_x_url, url_list))
     return ",".join(url_list)
+
+# urlが許可されているドメインならその情報を返す
+# 許可されていないならFalseを返す
+def get_allow_media(url):
+    domain = urlparse(url).netloc
+    
+    for i, media in enumerate(ALLOW_MEDIAS):
+        if bool(re.search(media["regex"], domain)):
+            return ALLOW_MEDIAS[i]
+    
+    return False

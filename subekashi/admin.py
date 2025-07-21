@@ -12,8 +12,3 @@ class ContentAdmin(admin.ModelAdmin):
     fields = ["detail", "post_time", "answer"]
     
 admin.site.register(Contact, ContentAdmin)
-
-class ArticleAdmin(admin.ModelAdmin):
-    fields = [field.name for field in Article._meta.get_fields() if field.name != "id"]
-    
-admin.site.register(Article, ArticleAdmin)

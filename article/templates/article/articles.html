@@ -1,0 +1,57 @@
+{% extends "subekashi/base/base.html" %}
+
+
+{% load static %}
+{% block css %}{% static 'article/css/articles.css'%}{% endblock %}
+
+{% block content %}
+<section>
+    <h1>記事一覧</h1>
+    <div class="underline"></div>
+    <form method="get" action=".">
+        <div class="form-col">
+            <label for="tag">タグ</label>
+            <select name="tag" id="tag">
+                <option value="all" {% if selected_tag == "all" or not selected_tag %}selected{% endif %}>全て</option>
+                {% for value, label in tags %}
+                    <option value="{{ value }}" {% if selected_tag == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-col">
+            <label for="keyword">キーワード</label>
+            <input type="text" name="keyword" id="keyword" value="{{ keyword }}" placeholder="タイトル・作者・本文">
+        </div>
+        <input type="submit" value="検索"></input>
+    </form>
+    {% for article in articles %}
+        {% if article.tag == 'news' %}
+            <div class="news-wrapper">
+                <p class="article-info">
+                    <i class="fas fa-user"></i>
+                    {{ article.author }}
+                    <i class="fas fa-tags"></i>
+                    {{ article.get_tag_display }}
+                    <i class="fas fa-file-signature"></i>
+                    {{ article.post_time }}
+                </p>
+                <span class="article-title-wrapper news-underline">{{ article.title|safe }}</span>
+            </div>
+        {% else %}
+            <div class="article-wrapper">
+                <a href="{% url 'article:default_article' article.article_id %}">
+                    <p class="article-info">
+                        <i class="fas fa-user"></i>
+                        {{ article.author }}
+                        <i class="fas fa-tags"></i>
+                        {{ article.get_tag_display }}
+                        <i class="fas fa-file-signature"></i>
+                        {{ article.post_time }}
+                    </p>
+                    <span class="article-title-wrapper">{{ article.title|safe }}</span>
+                </a>
+            {% endif %}
+        </div>
+    {% endfor %}
+</section>
+{% endblock %}

@@ -1,13 +1,12 @@
 from django.shortcuts import render
 from config.settings import *
 from subekashi.models import *
+from article.models import Article
 from subekashi.constants.constants import *
 from subekashi.lib.filter import *
 from subekashi.lib.ip import *
 from subekashi.lib.discord import *
-from bs4 import BeautifulSoup
 import random
-import markdown
 
 INPUT_TEXTS = ["title", "channel", "lyrics", "url"]
 
@@ -17,26 +16,11 @@ def top(request):
         "metatitle" : "トップ",
     }
     
-    # TODO from subekashi.lib.fileの利用
-    news_path = os.path.join(BASE_DIR, 'subekashi/constants/dynamic/news.md')
-    if os.path.exists(news_path):
-        file = open(news_path, 'r', encoding='utf-8')
-        news_md = file.read()
-        file.close()
-        news_html = markdown.markdown(news_md)
-        news_soup = BeautifulSoup(news_html, 'html.parser')
-        
-        strong_tags = news_soup.find_all('strong')
-        for strong_tag in strong_tags:
-            strong_tag['style'] = 'font-size: 24px; margin: 0 4px'
-    
-        for a in news_soup.find_all('a'):
-            a['target'] = '_blank'
-
-        news = str(news_soup)
-        dataD["news"] = news
-    else :
-        dataD["news"] = CONST_ERROR
+    article_qs = Article.objects.filter(is_open=True, tag="news").order_by("-post_time")[:3]
+    news_html = ""
+    for article in article_qs:
+        news_html += f"<span>{article.title}</span>"
+    dataD["news_html"] = news_html
     
     songrange = request.COOKIES.get("songrange", "subeana")
     jokerange = request.COOKIES.get("jokerange", "off")
