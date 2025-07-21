@@ -13,6 +13,7 @@ def default_article(request, id):
     text = markdown.markdown(article.text) if article.is_md else article.text
     
     dataD = {
+        "metatitle": article.title,
         "article": article,
         "text": text
     }

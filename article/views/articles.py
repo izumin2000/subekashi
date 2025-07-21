@@ -20,11 +20,10 @@ def articles(request):
 
     articles = articles.order_by("-post_time")
 
-    response = render(request, 'article/articles.html', {
+    return render(request, 'article/articles.html', {
+        "metatitle": "記事一覧",
         "articles": articles,
         "selected_tag": tag_filter,
         "keyword": keyword,
         "tags": Article.TAGS
     })
-
-    return response
