@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from subekashi.lib.discord import *
+from config.local_settings import ERROR_DISCORD_URL
 import traceback
 
 
