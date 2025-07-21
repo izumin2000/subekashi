@@ -17,6 +17,16 @@
     margin-left: 20px;
 }
 
+#article-text p {
+    line-height: 45px;
+}
+
+#article-text h2 {
+    margin: 75px 0 25px 0;
+}
+
 #article-text img {
     margin: 20px 0;
+    max-width: 800px;
+    width: 80vw;
 }
