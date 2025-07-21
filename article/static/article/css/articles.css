@@ -1,3 +1,7 @@
+form {
+    margin-bottom: 40px;
+}
+
 .article-wrapper, .news-wrapper {
     padding: 10px;
     margin-bottom: 20px;
@@ -14,6 +18,10 @@
 .article-wrapper a, .news-wrapper a {
     text-decoration: none;
     text-align: center;
+}
+
+.news-underline a {
+    text-decoration: underline 2px #fff;
 }
 
 .article-wrapper p, .news-wrapper p {
@@ -33,6 +41,7 @@
     display: block;
     color: #fff;
     text-align: center;
+    font-size: 24px;
 }
 
 .article-title-wrapper h1, .article-title-wrapper h2 {
