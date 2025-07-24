@@ -120,7 +120,17 @@ function formToQuery() {
         if (formId == "songrange") {
             query = { ...query, ...songrangeToQuery(value) };
             continue;
-
+        }
+        if (formId.startsWith("media-"))
+        {
+            /**@type {string} */
+            const media = formId.split("-")[1]
+            const checked = document.getElementById(formId).checked;
+            query.mediatypes ??= "";
+            if(checked){
+                query.mediatypes += (query.mediatypes.length===0 ? "" : ",") + media;
+            }
+            continue;
         }
         if (formId == "jokerange") {
             query = { ...query, ...isjokeToQuery(value) };

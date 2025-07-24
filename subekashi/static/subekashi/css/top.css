@@ -10,7 +10,8 @@
     overflow-y: hidden;
 }
 
-#news-display > * {
+#news-display span {
+    color: #fff;
     display: block;
     text-align: center;
     font-size: 18px;
@@ -21,6 +22,14 @@
 
 #news-display a {
     font-size: 18px;
+}
+
+#news-display h1, #news-display h2 {
+    margin: 0 10px;
+}
+
+#news-display * {
+    display: inline-block;
 }
 
 h1:nth-child(2) {

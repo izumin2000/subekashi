@@ -80,21 +80,3 @@ class Ad(models.Model) :
     
     def __str__(self):
         return self.url
-    
-class Article(models.Model) :
-    tags = (
-        ('news', 'ニュース'),
-        ('release', 'リリースノート'),
-        ('howto', '使い方'),
-        ('blog', 'ブログ'),
-    )
-    article_id = models.CharField(default = "", max_length = 100, primary_key=True)
-    title = models.CharField(default = "", max_length = 500)
-    tag = models.CharField(default = "", choices=tags, max_length=10)
-    text = models.CharField(default = "", blank = True, null = True, max_length = 500)
-    post_time = models.DateTimeField(blank = True, null = True)
-    is_open = models.BooleanField(default = True)
-    is_md = models.BooleanField(default = True)
-
-    def __str__(self):
-        return self.title

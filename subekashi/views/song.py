@@ -1,9 +1,9 @@
 from django.shortcuts import render
 from subekashi.models import *
 from subekashi.lib.filter import is_lack
-from subekashi.constants.constants import URL_ICON
-from urllib.parse import urlparse
+from subekashi.lib.url import get_allow_media
 import re
+
 
 def song(request, song_id):
     try:
@@ -14,9 +14,7 @@ def song(request, song_id):
     # URLのリンクを取得
     links = []
     for url in song.url.split(",") if song.url else []:
-        domain = urlparse(url).netloc
-        pattern_list = [bool(re.search(allow_pattern, domain)) for allow_pattern in URL_ICON.keys()]
-        icon = list(URL_ICON.values())[pattern_list.index(True)]
+        icon = get_allow_media(url)["icon"]
         links.append(
             {
                 "text": url,

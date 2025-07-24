@@ -10,6 +10,15 @@
     margin-bottom: 0;
 }
 
+details {
+    margin: 0;
+    padding: 0;
+}
+
+summary {
+    list-style: revert;
+}
+
 #search-button {
     margin-bottom: 20px;
     width: 100%;
@@ -21,4 +30,15 @@
 
 #song-cards {
     min-height: 50vh;
+}
+
+#mediatype-wrapper {
+    background-color: #555;
+    margin-bottom: 5px;
+    padding: 5px 0;
+}
+
+#mediatype-wrapper img {
+    height: 24px;
+    margin-right: 5px;
 }

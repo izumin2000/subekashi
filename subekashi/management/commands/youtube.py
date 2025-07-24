@@ -75,7 +75,7 @@ class Command(BaseCommand):
             return
         
         # 全てのsongが対象なら
-        for song in Song.objects.all():
+        for song in Song.objects.exclude(url = ""):
             info = self.get_youtube_info_sum(song)
             if not info:
                 continue

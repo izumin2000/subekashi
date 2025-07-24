@@ -184,7 +184,7 @@ aside tr:hover {
 aside tr td:nth-child(1) i {
     display: inline-block;
     width: 50px;
-    margin: 0.5em auto;
+    margin: 0 auto;
     text-align: center;
 }
 
@@ -192,6 +192,7 @@ aside a {
     display: block;
     white-space: nowrap;
     text-decoration: none;
+    padding: 0.3em 0;
 }
 
 aside i {
@@ -215,7 +216,7 @@ aside:hover p {
     opacity: 1;
 }
 
-aside a:hover p {
+aside tr:hover p {
     text-decoration: underline 2px #fff;
 }
 

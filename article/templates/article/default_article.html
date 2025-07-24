@@ -1,0 +1,21 @@
+{% extends "subekashi/base/base.html" %}
+
+
+{% load static %}
+{% block css %}{% static 'article/css/default_article.css'%}{% endblock %}
+
+{% block content %}
+<section>
+    <h1 id="article-title">{{ article.title|safe }}</h1>
+    <div class="underline"></div>
+    <p id="article-info">
+        <i class="fas fa-user"></i>
+        {{ article.author }}
+        <i class="fas fa-tags"></i>
+        {{ article.get_tag_display }}
+        <i class="fas fa-file-signature"></i>
+        {{ article.post_time }}
+    </p>
+    <div id="article-text">{{ text|safe }}</div>
+</section>
+{% endblock %}
