@@ -100,7 +100,7 @@
         </div>
         <label>メディア</label>
         <div id="mediatype-wrapper">
-            {% for media in ALL_MEDIAS %}
+            {% for media in ALL_MEDIAS|slice:":-1" %}
                 {% if forloop.counter0 == 5 %}
                     <details>
                     <summary>もっと見る</summary>
