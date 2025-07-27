@@ -116,7 +116,7 @@ ALLOW_MEDIAS = [
     },
     {
         "id": "newgrounds",
-        "name": "Newgrounds",
+        "name": "ニューグラウンズ",
         "regex": r"newgrounds.com",
         "icon": "<i class='fas fa-gamepad'></i>",
     },
