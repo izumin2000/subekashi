@@ -17,7 +17,7 @@
     </div>
     {% comment %} isdetail -> request.COOKIES.isdetail {% endcomment %}
     <details id="isdetail" onclick="setSearchCookie(event)" {% if isdetail == "True" %}open{% endif %}>
-        <summary><i class="fas fa-bars"></i>高度な検索</summary>
+        <summary>高度な検索</summary>
         <div id="under-sumary" class="form-col">
             <label for="title">タイトル</label>
             <input type="text" id="title" value="{{ request.GET.title }}">
