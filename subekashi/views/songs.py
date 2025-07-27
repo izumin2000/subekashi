@@ -10,13 +10,13 @@ QUERY_OR_COOKIE_FORMS = [
 ]
 
 FILER_FORMS = ["issubeana", "isjoke", "islack", "isdraft", "isoriginal", "isinst", "isdeleted"]
-DISPLAY_MEDIA_INDEX = 6
+DISPLAY_MEDIA_INDEX = 5
 
 def songs(request) :
     dataD = {
         "metatitle" : "一覧と検索",
         "ALL_MEDIAS": ALL_MEDIAS[:-1],     # 最後の許可されていないURLのドメイン情報は不要
-        "hidden_media_index": len(ALL_MEDIAS) - DISPLAY_MEDIA_INDEX - 1
+        "display_media_index": DISPLAY_MEDIA_INDEX
     }
     
     GET = request.GET
