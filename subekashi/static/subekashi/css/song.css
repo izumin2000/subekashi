@@ -51,9 +51,8 @@
     margin-right: 10px;
 }
 
-.song-url img {
-    height: 22px;
-    width: auto;
+.song-name {
+    font-size: 12px;
 }
 
 #original-tag, #special-tag, #tags a {
