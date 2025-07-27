@@ -110,9 +110,17 @@ ALLOW_MEDIAS = [
     },
 ]
 
-ALL_MEDIAS = ALLOW_MEDIAS + [{
-    "id": "other", 
-    "name": "URL未登録",
-    "regex": r"^$",
-    "icon": "<i class='fas fa-unlink'></i>"
-}]
+ALL_MEDIAS = ALLOW_MEDIAS + [
+    {
+        "id": "other", 
+        "name": "URL未登録",
+        "regex": r"^$",
+        "icon": "<i class='fas fa-unlink'></i>"
+    },
+    {
+        "id": "disallow", 
+        "name": "許可されていないURL",
+        "regex": r".*",
+        "icon": "<i class='fas fa-exclamation-triangle'></i>"
+    }
+]

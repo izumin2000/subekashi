@@ -1,7 +1,8 @@
-from subekashi.constants.constants import *
+from subekashi.constants.constants import ALLOW_MEDIAS, ALL_MEDIAS
+from config.local_settings import ERROR_DISCORD_URL
+from subekashi.lib.discord import send_discord
 from urllib.parse import urlparse, urlunparse
 import re
-from subekashi.constants.constants import ALLOW_MEDIAS
 
 
 # TODO リファクタリング
@@ -57,4 +58,25 @@ def get_allow_media(url):
         if bool(re.search(media["regex"], domain)):
             return ALLOW_MEDIAS[i]
     
+    return False
+
+# 全urlのドメインの情報を返す
+# Falseを返すことはない
+def get_all_media(url):
+    domain = urlparse(url).netloc
+    allow_medias_size = len(ALL_MEDIAS)
+    
+    for i, media in enumerate(ALL_MEDIAS):
+        re_allow = re.search(media["regex"], domain)
+        
+        # URLが許可されているのならそのドメイン情報を返す
+        if bool(re_allow) and ((i + 1) != allow_medias_size):
+            return ALL_MEDIAS[i]
+        
+        # URLが許可されていないのならdiscrodに通知してそのドメイン情報を返す
+        if bool(re_allow) and ((i + 1) == allow_medias_size):
+            send_discord(ERROR_DISCORD_URL, f"想定外のURLが添付されました：{url}")
+            return ALL_MEDIAS[i]
+    
+    send_discord(ERROR_DISCORD_URL, f"get_all_mediaにエラーが発生しました")
     return False
