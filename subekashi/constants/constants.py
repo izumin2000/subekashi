@@ -108,6 +108,18 @@ ALLOW_MEDIAS = [
         "regex": r"linkco.re",
         "icon": "<i class='fas fa-align-justify'></i>",
     },
+    {
+        "id": "bandlab",
+        "name": "Bandlab",
+        "regex": r"bandlab.com",
+        "icon": "<i class='fas fa-flask'></i>",
+    },
+    {
+        "id": "newgrounds",
+        "name": "Newgrounds",
+        "regex": r"newgrounds.com",
+        "icon": "<i class='fas fa-gamepad'></i>",
+    },
 ]
 
 ALL_MEDIAS = ALLOW_MEDIAS + [
