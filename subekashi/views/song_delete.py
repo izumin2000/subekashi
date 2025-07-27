@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from subekashi.models import Song
 from subekashi.lib.ip import *
 from subekashi.lib.discord import *
+from config.settings import *
 
 def song_delete(request, song_id) :
     try:
