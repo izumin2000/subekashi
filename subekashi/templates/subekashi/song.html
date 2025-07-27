@@ -48,7 +48,7 @@
                     <i class="fas fa-link"></i><p>リンク</p>
                 </td>
                 <td>
-                    <a class="song-url" href="{{ link.text }}" target="_blank">{{ link.icon|safe }}</a>
+                    <a class="song-url" href="{{ link.text }}" target="_blank">{{ link.icon|safe }}<span class="song-name">{{ link.name }}</span></a>
                 </td>
             </tr>
         {% endfor %}

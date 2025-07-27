@@ -17,7 +17,7 @@
     </div>
     {% comment %} isdetail -> request.COOKIES.isdetail {% endcomment %}
     <details id="isdetail" onclick="setSearchCookie(event)" {% if isdetail == "True" %}open{% endif %}>
-        <summary><i class="fas fa-bars"></i>高度な検索</summary>
+        <summary>高度な検索</summary>
         <div id="under-sumary" class="form-col">
             <label for="title">タイトル</label>
             <input type="text" id="title" value="{{ request.GET.title }}">
@@ -101,12 +101,12 @@
         <label>メディア</label>
         <div id="mediatype-wrapper">
             {% for media in ALL_MEDIAS %}
-                {% if forloop.counter0 == 5 %}
+                {% if forloop.counter0 == display_media_index %}
                     <details>
                     <summary>もっと見る</summary>
                 {% endif %}
             
-                {% if forloop.counter0 >= 5 and forloop.counter0 < forloop.revcounter0|add:"-1" %}
+                {% if forloop.counter0 >= display_media_index and forloop.counter0 < forloop.revcounter0|add:"-1" %}
                     <div class="checkbox-col">
                         <input type="checkbox" value="media-{{ media.id }}" id="media-{{ media.id }}">
                         <label for="media-{{ media.id }}">{{ media.icon|safe }}{{ media.name }}</label>

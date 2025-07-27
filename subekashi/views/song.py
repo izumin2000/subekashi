@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from subekashi.models import *
 from subekashi.lib.filter import is_lack
-from subekashi.lib.url import get_allow_media
+from subekashi.lib.url import get_all_media
 import re
 
 
@@ -14,11 +14,12 @@ def song(request, song_id):
     # URLのリンクを取得
     links = []
     for url in song.url.split(",") if song.url else []:
-        icon = get_allow_media(url)["icon"]
+        media = get_all_media(url)
         links.append(
             {
                 "text": url,
-                "icon": icon
+                "icon": media["icon"],
+                "name": media["name"]
             }
         )
     
