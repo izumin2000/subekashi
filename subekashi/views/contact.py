@@ -2,6 +2,7 @@ from django.shortcuts import render
 from subekashi.lib.discord import *
 from subekashi.lib.ip import get_ip
 from subekashi.models import Contact
+from config.local_settings import CONTACT_DISCORD_URL
 
 
 def contact(request):

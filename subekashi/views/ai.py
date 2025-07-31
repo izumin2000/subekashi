@@ -2,6 +2,7 @@ from django.shortcuts import render
 from subekashi.models import *
 from subekashi.lib.url import *
 from subekashi.lib.discord import *
+from subekashi.constants.constants import CONST_ERROR
 
 
 def ai(request) :

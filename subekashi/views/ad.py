@@ -3,6 +3,7 @@ from subekashi.models import *
 from subekashi.lib.url import *
 from subekashi.lib.security import *
 from subekashi.lib.discord import *
+from config.settings import DSP_DISCORD_URL
 
 
 def ad(request) :
