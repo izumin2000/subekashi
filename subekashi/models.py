@@ -1,8 +1,15 @@
 from django.db import models
 
 
-# TODO DBの見直し
-class Song(models.Model) :
+# SongやChannelを編集したユーザーのIPアドレスの情報
+# 画面上では"全て{song_id}の所為です。"と表示される
+class Editor(models.Model):
+    ip = models.CharField(default = "", unique=True, max_length = 100)
+    
+    def __str__(self):
+        return f"全て{self.id}の所為です。"
+
+
     title = models.CharField(default = "", max_length = 500)
     channel = models.CharField(default = "", max_length = 500)
     url = models.CharField(blank = True, null = True, default = "", max_length = 500)
