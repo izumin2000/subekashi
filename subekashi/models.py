@@ -10,10 +10,28 @@ class Editor(models.Model):
         return f"全て{self.id}の所為です。"
 
 
+# 楽曲のメイン情報
+# editor以外の外部キーはまだ無いので後ほどカスタムコマンドで対応を行う
+class Song(models.Model):
+    CHOICES = (
+        ("song", "曲"),
+        ("arrange", "アレンジ"),
+        ("otomad", "音MAD"),
+        ("medley", "メドレー"),
+        ("omnibus", "総集編"),
+        ("notice", "告知"),
+        ("dec", "解読"),
+        ("offv", "オフボ"),
+        ("cover", "カバー"),
+        ("joke", "ネタ動画"),
+        ("other", "その他"),
+    )
+    
     title = models.CharField(default = "", max_length = 500)
-    channel = models.CharField(default = "", max_length = 500)
-    url = models.CharField(blank = True, null = True, default = "", max_length = 500)
-    lyrics = models.TextField(blank = True, null = True, default = "", max_length = 10000)      
+    channel = models.CharField(default = "", max_length = 500)      # TODO Channelテーブルの利用
+    url = models.CharField(blank = True, null = True, default = "", max_length = 500)       # TODO URLテーブルの利用
+    lyrics = models.TextField(blank = True, null = True, default = "", max_length = 10000)
+    # imitates = models.ManyToManyField("self", symmetrical=False, related_name="imitateds", blank=True)     # TODO 自己参照
     imitate = models.CharField(blank = True, null = True, default = "", max_length = 10000)
     imitated = models.CharField(blank = True, null = True, default = "", max_length = 10000)
     post_time = models.DateTimeField()
@@ -24,25 +42,36 @@ class Editor(models.Model):
     isdraft = models.BooleanField(default = False)
     isinst = models.BooleanField(default = False)
     issubeana = models.BooleanField(default = True)
-    isarrange = models.BooleanField(default = False)
-    isotomad = models.BooleanField(default = False)
-    isnotice = models.BooleanField(default = False)
-    isdec = models.BooleanField(default = False)
     isspecial = models.BooleanField(default = False)
     islock = models.BooleanField(default = False)
     ip = models.CharField(default = "", max_length = 100)
     view = models.IntegerField(blank = True, null = True)
     like = models.IntegerField(blank = True, null = True)
+    category = models.CharField(default = "song", choices=CHOICES, max_length=10)
+    editor = models.ForeignKey(Editor, on_delete = models.CASCADE, related_name="songs")
 
-    def __str__(self) :
+    def __str__(self):
         return self.title
+    
+    # TODO save処理のオーバーライドメソッド
+    # def save(self, *args, **kwargs):
+        # super().save(*args, **kwargs)
+    
+    # def channels(self):
+        # return
+    
+    # def urls(self):
+        # return
+    
+    # def imitates(self):
+        # return
 
+# 曲のURLの情報
+# urlは許可したメディア(YouTube, niconico等)のurlしか受け付けないことを想定
+class SongLink(models.Model):
+    url = models.CharField(default = "", max_length = 100)        # TODO 全削除申請対応後uniqueにする
+    song = models.ForeignKey(Song, on_delete = models.CASCADE, related_name="links")
 
-class Channel(models.Model) :
-    name = models.CharField(default = "", max_length = 100)
-    ismain = models.BooleanField(default = True)
-    isnickname = models.BooleanField(default = True)
-    subs = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='main')
 
     def __str__(self) :
         return self.name
