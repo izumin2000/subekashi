@@ -48,7 +48,7 @@ class Song(models.Model):
     view = models.IntegerField(blank = True, null = True)
     like = models.IntegerField(blank = True, null = True)
     category = models.CharField(default = "song", choices=CHOICES, max_length=10)
-    editor = models.ForeignKey(Editor, on_delete = models.CASCADE, related_name="songs")
+    editor = models.ForeignKey(Editor, on_delete = models.CASCADE, null=True, related_name="songs")
 
     def __str__(self):
         return self.title
@@ -87,7 +87,7 @@ class Channel(models.Model):
 # 曲の作者のwebページの情報
 class ChannelLink(models.Model):
     url = models.CharField(max_length = 100)
-    channel = models.ForeignKey(Channel, on_delete = models.CASCADE, related_name="links")
+    channel = models.ForeignKey(Channel, on_delete = models.CASCADE, null=True, related_name="links")
 
 
 # 曲の作者の別の呼び方の情報
@@ -114,14 +114,28 @@ class ChannelAlias(models.Model):
         # super().save(*args, **kwargs)
 
 
+# ユーザーによる曲や作者の編集を記録した情報
+# changeは編集内容をマークダウンで記録する
+class History(models.Model):
+    song = models.ForeignKey(Song, blank = True, null = True, on_delete = models.SET_NULL, related_name="histories")
+    channel = models.ForeignKey(Channel, blank = True, null = True, on_delete = models.SET_NULL, related_name="histories")
+    changes = models.CharField(default = "", max_length = 20000)
+    edited_time = models.DateTimeField(blank = True, null = True)
+    editor = models.ForeignKey(Editor, on_delete = models.CASCADE, related_name="histories")
+
+
+# すべかしへの問い合わせとその回答の情報
+class Contact(models.Model):
     detail = models.TextField(max_length = 10000)
     post_time = models.DateField()
     answer = models.TextField(blank = True, null = True, max_length = 10000)
     
-    def __str__(self) :
+    def __str__(self):
         return self.detail[:30]
-    
-class Ai(models.Model) :
+
+
+# 正常に狂うのです。が生成した歌詞の情報
+class Ai(models.Model):
     lyrics = models.CharField(default = "", max_length = 100)
     score = models.IntegerField(default = 0)
     genetype = models.CharField(default = "", max_length = 100)
@@ -130,17 +144,18 @@ class Ai(models.Model) :
         return self.lyrics
 
 
-class Ad(models.Model) :
-    choices = (
-        ('still', '未審査'),
-        ('pass', '公開中'),
-        ('fail', '未通過'),
+# すべかしDSPに登録された曲の情報
+class Ad(models.Model):
+    CHOICES = (
+        ("still", "未審査"),
+        ("pass", "公開中"),
+        ("fail", "未通過"),
     )
     url = models.CharField(default = "", max_length = 100)
     view = models.IntegerField(default = 0)
     click = models.IntegerField(default = 0)
     dup = models.IntegerField(default = 0)
-    status = models.CharField(default = "still", choices=choices, max_length=10)
+    status = models.CharField(default = "still", choices=CHOICES, max_length=10)
     
     def __str__(self):
         return self.url
