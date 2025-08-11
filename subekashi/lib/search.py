@@ -75,7 +75,7 @@ def filter_multi_forms(querys, song_qs):
         
     return song_qs
 
-# YouTubeに関するならurlに"youtu"を含ませる
+# YouTubeに関するかつメディア指定が空ならYoutubeをメディア指定する
 def add_youtube_querys(querys):
     YOUTUBE_SORT = ["upload_time", "-upload_time", "view", "-view", "like", "-like"]
     has_youtube_sort = querys.get("sort") in YOUTUBE_SORT
@@ -84,7 +84,11 @@ def add_youtube_querys(querys):
     if not(has_youtube_sort or has_youtube_filter):
         return querys
     
-    querys["url"] = "youtu"        # urlを"youtu"に上書きする
+    # メディア指定されているなら
+    if querys.get("mediatypes") is not None:
+        return querys
+    
+    querys["mediatypes"] = "youtube" # youtubeをメディア指定する
     return querys
 
 # クエリのうち単数条件のクエリを対象にしたクエリのキーをキーに、filterのルックアップを値にした辞書を生成
