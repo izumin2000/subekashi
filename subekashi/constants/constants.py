@@ -108,11 +108,31 @@ ALLOW_MEDIAS = [
         "regex": r"linkco.re",
         "icon": "<i class='fas fa-align-justify'></i>",
     },
+    {
+        "id": "bandlab",
+        "name": "Bandlab",
+        "regex": r"bandlab.com",
+        "icon": "<i class='fas fa-flask'></i>",
+    },
+    {
+        "id": "newgrounds",
+        "name": "ニューグラウンズ",
+        "regex": r"newgrounds.com",
+        "icon": "<i class='fas fa-gamepad'></i>",
+    },
 ]
 
-ALL_MEDIAS = ALLOW_MEDIAS + [{
-    "id": "other", 
-    "name": "URL未登録",
-    "regex": r"^$",
-    "icon": "<i class='fas fa-unlink'></i>"
-}]
+ALL_MEDIAS = ALLOW_MEDIAS + [
+    {
+        "id": "other", 
+        "name": "URL未登録",
+        "regex": r"^$",
+        "icon": "<i class='fas fa-unlink'></i>"
+    },
+    {
+        "id": "disallow", 
+        "name": "許可されていないURL",
+        "regex": r".*",
+        "icon": "<i class='fas fa-exclamation-triangle'></i>"
+    }
+]

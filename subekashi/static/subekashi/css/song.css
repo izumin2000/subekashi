@@ -47,13 +47,25 @@
     max-width: 550px;
 }
 
-#song-info i, .fa-align-center {
-    margin-right: 10px;
+.song-url {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    width: fit-content;
+}
+
+.song-name {
+    font-size: 12px;
+    text-decoration: underline 2px #fff;
 }
 
 .song-url img {
     height: 22px;
     width: auto;
+}
+
+#song-info i, #song-info img, .fa-align-center {
+    margin-right: 10px;
 }
 
 #original-tag, #special-tag, #tags a {
