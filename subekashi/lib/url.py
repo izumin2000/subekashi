@@ -34,16 +34,16 @@ def format_youtube_url(url):
 
 # XのURLのクエリを削除
 def format_x_url(url):
+    url = url.replace("https://twitter.com", "https://x.com")
     parsed_url = urlparse(url)
-    clean_url = urlunparse(parsed_url._replace(query='', fragment=''))
-    return clean_url
+    cleaned_url = urlunparse(parsed_url._replace(query='', fragment=''))
+    return cleaned_url
 
 # URLを短縮しフォーマットする
 def clean_url(urls):
     urls = urls.replace(" ,", ",").replace(", ", ",")
+    urls = urls.replace("//www.", "//")
     urls = urls.replace("https://www.google.com/url?q=", "")
-    urls = urls.replace("https://www.", "https://")
-    urls = urls.replace("https://twitter.com", "https://x.com")
     url_list = urls.split(",")
     url_list = list(map(format_youtube_url, url_list))
     url_list = list(map(format_x_url, url_list))
