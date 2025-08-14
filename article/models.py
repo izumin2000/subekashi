@@ -7,6 +7,7 @@ class Article(models.Model) :
         ("howto", "使い方"),
         ("blog", "ブログ"),
         ("tool", "ツール"),
+        ("tech", "技術"),
         ("other", "その他"),
     )
     article_id = models.CharField(default = "", max_length = 100, primary_key=True)
