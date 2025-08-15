@@ -8,7 +8,6 @@ from subekashi.lib.discord import *
 from subekashi.lib.youtube import *
 from subekashi.lib.search import song_search
 
-# TODO cleand -> cleaned
 def song_new(request):
     dataD = {
         "metatitle": "曲の登録",
@@ -55,8 +54,8 @@ def song_new(request):
             return render(request, 'subekashi/song_new.html', dataD)
         
         # titleとchannelのclean
-        cleand_title = title.replace(" ,", ",").replace(", ", ",")
-        cleand_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
+        cleaned_title = title.replace(" ,", ",").replace(", ", ",")
+        cleaned_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
         
         # フォームに書かれた各チャンネルの掲載拒否
         try:
@@ -64,7 +63,7 @@ def song_new(request):
         except:
             REJECT_LIST = []
         
-        for check_channel in cleand_channel.split(","):
+        for check_channel in cleaned_channel.split(","):
             if check_channel in REJECT_LIST:
                 dataD["error"] = f"{check_channel}さんの曲は登録することができません。"
                 return render(request, 'subekashi/song_new.html', dataD)
@@ -72,8 +71,8 @@ def song_new(request):
         # Songの登録
         ip = get_ip(request)
         song = Song(
-            title = cleand_title,
-            channel = cleand_channel,
+            title = cleaned_title,
+            channel = cleaned_channel,
             url = cleaned_url,
             post_time = timezone.now(),
             isoriginal = is_original,
@@ -94,11 +93,11 @@ def song_new(request):
         BASIC_COLUMNS = [
             {
                 "label": "タイトル",
-                "value": cleand_title
+                "value": cleaned_title
             },
             {
                 "label": "チャンネル名",
-                "value": cleand_channel
+                "value": cleaned_channel
             },
             {
                 "label": "URL",
@@ -150,7 +149,7 @@ def song_new(request):
         新規作成されました\n\
         {ROOT_URL}/songs/{song_id}\n\
         タイトル：{title}\n\
-        チャンネル : {cleand_channel}\n\
+        チャンネル : {cleaned_channel}\n\
         URL : {cleaned_url}\n\
         ネタ曲 : {"Yes" if is_joke else "No"}\n\
         すべあな模倣曲 : {"Yes" if is_subeana else "No"}\n\

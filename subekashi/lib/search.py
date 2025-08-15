@@ -40,7 +40,7 @@ SINGLE_QUERY_LOOKUP_DIFF = [
 
 # クエリの値を整形
 def clean_querys(querys):
-    cleand_querys = {}
+    cleaned_querys = {}
     for item, value in querys.items():
         # 不必要なクエリを削除
         if item not in ALL_QUERYS:
@@ -58,8 +58,8 @@ def clean_querys(querys):
         if (item in BOOL_FORMS) and (value in ["False", "false", 0]):
             value = False
     
-        cleand_querys[item] = value
-    return cleand_querys
+        cleaned_querys[item] = value
+    return cleaned_querys
 
 # 複数の検索条件があるクエリをフィルタリング
 def filter_multi_forms(querys, song_qs):
