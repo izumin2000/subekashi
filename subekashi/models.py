@@ -37,7 +37,7 @@ class Song(models.Model):
     imitated = models.CharField(blank = True, null = True, default = "", max_length = 10000)
     post_time = models.DateTimeField(default = timezone.now)
     upload_time = models.DateTimeField(blank = True, null = True)
-    isoriginal = models.BooleanField(default = False)
+    isoriginal = models.BooleanField(default = False)       # TODO is_
     isjoke = models.BooleanField(default = False)
     isdeleted = models.BooleanField(default = False)
     isdraft = models.BooleanField(default = False)
@@ -75,6 +75,7 @@ class SongLink(models.Model):
 
 
 # 曲の作者の情報
+# TODO Channel -> Author, チャンネル名 -> 作者
 class Channel(models.Model):
     name = models.CharField(unique=True, max_length = 500)
 
