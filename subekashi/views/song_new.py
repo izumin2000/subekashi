@@ -8,8 +8,8 @@ from subekashi.lib.discord import *
 from subekashi.lib.youtube import *
 from subekashi.lib.search import song_search
 
-
-def song_new(request) :
+# TODO cleand -> cleaned
+def song_new(request):
     dataD = {
         "metatitle": "曲の登録",
     }
@@ -54,10 +54,11 @@ def song_new(request) :
             dataD["error"] = "タイトルかチャンネルが空です。"
             return render(request, 'subekashi/song_new.html', dataD)
         
+        # titleとchannelのclean
         cleand_title = title.replace(" ,", ",").replace(", ", ",")
         cleand_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
         
-        # 掲載拒否
+        # フォームに書かれた各チャンネルの掲載拒否
         try:
             from subekashi.constants.dynamic.reject import REJECT_LIST
         except:
@@ -67,9 +68,9 @@ def song_new(request) :
             if check_channel in REJECT_LIST:
                 dataD["error"] = f"{check_channel}さんの曲は登録することができません。"
                 return render(request, 'subekashi/song_new.html', dataD)
-                    
-        ip = get_ip(request)
         
+        # Songの登録
+        ip = get_ip(request)
         song = Song(
             title = cleand_title,
             channel = cleand_channel,
@@ -89,6 +90,62 @@ def song_new(request) :
         song.save()
         song_id = song.id
         
+        # 変更内容のマークダウンの作成
+        BASIC_COLUMNS = [
+            {
+                "label": "タイトル",
+                "value": cleand_title
+            },
+            {
+                "label": "チャンネル名",
+                "value": cleand_channel
+            },
+            {
+                "label": "URL",
+                "value": cleaned_url
+            },
+            {
+                "label": "オリジナル",
+                "value": "はい" if is_original else "いいえ"
+            },
+            {
+                "label": "削除済み",
+                "value": "はい" if is_deleted else "いいえ"
+            },
+            {
+                "label": "ネタ曲",
+                "value": "はい" if is_joke else "いいえ"
+            },
+            {
+                "label": "インスト曲",
+                "value": "はい" if is_inst else "いいえ"
+            },
+            {
+                "label": "すべあな模倣曲",
+                "value": "はい" if is_subeana else "いいえ"
+            }
+        ]
+        changes = "# 新規作成されました。\n|種類|値|\n|---:|:---|\n"
+        for basic_column in BASIC_COLUMNS:
+            if basic_column["value"] == "":
+                continue
+            
+            changes += f"| {basic_column['label']} | {basic_column['value']} |\n"
+
+        # 編集履歴を保存
+        editor, _ = Editor.objects.get_or_create(ip = ip)
+        
+        history = History(
+            song = song,
+            title = f"{song.title}が新規作成される",
+            edit_type = "new",
+            edited_time = timezone.now(),
+            changes = changes,
+            editor = editor
+        )
+        history.save()
+        
+        # Dicordに送信
         content = f'\n\
         新規作成されました\n\
         {ROOT_URL}/songs/{song_id}\n\
@@ -99,9 +156,12 @@ def song_new(request) :
         すべあな模倣曲 : {"Yes" if is_subeana else "No"}\n\
         IP : {ip}'
         is_ok = send_discord(NEW_DISCORD_URL, content)
+        
+        # 送信できなければ削除
         if not is_ok:
             song.delete()
             return render(request, 'subekashi/500.html', status=500)
         
+        # 登録できましたトーストを表示する
         return redirect(f'/songs/{song_id}/edit?toast={request.GET.get("toast")}')
     return render(request, 'subekashi/song_new.html', dataD)
