@@ -125,15 +125,16 @@ def song_new(request):
             }
         ]
         changes = f"# {title}が新規作成されました\n|種類|値|\n|---:|:---|\n"
+        discord_text = f"新規作成されました\n{ROOT_URL}/songs/{song_id}\n\n"
         for basic_column in BASIC_COLUMNS:
             if basic_column["value"] == "":
                 continue
             
             changes += f"| {basic_column['label']} | {basic_column['value']} |\n"
+            discord_text += f"**{basic_column['label']}**：{basic_column['value']}\n"
 
         # 編集履歴を保存
         editor, _ = Editor.objects.get_or_create(ip = ip)
-        
         history = History(
             song = song,
             title = f"{song.title}を新規作成",
@@ -144,19 +145,9 @@ def song_new(request):
         )
         history.save()
         
-        # Dicordに送信
-        content = f'\n\
-        新規作成されました\n\
-        {ROOT_URL}/songs/{song_id}\n\
-        タイトル：{title}\n\
-        チャンネル : {cleaned_channel}\n\
-        URL : {cleaned_url}\n\
-        ネタ曲 : {"Yes" if is_joke else "No"}\n\
-        すべあな模倣曲 : {"Yes" if is_subeana else "No"}\n\
-        IP : {ip}'
-        is_ok = send_discord(NEW_DISCORD_URL, content)
-        
-        # 送信できなければ削除
+        discord_text += f"編集者：{editor}"
+        # Discordに送信し、送信できなければ削除し500ページに遷移
+        is_ok = send_discord(NEW_DISCORD_URL, discord_text)
         if not is_ok:
             song.delete()
             return render(request, 'subekashi/500.html', status=500)
