@@ -69,7 +69,7 @@ def song_new(request):
                 return render(request, 'subekashi/song_new.html', dataD)
         
         # Songの登録
-        ip = get_ip(request)
+        ip = get_ip(request, is_encrypted=False)
         song = Song(
             title = cleaned_title,
             channel = cleaned_channel,
@@ -124,7 +124,7 @@ def song_new(request):
                 "value": "はい" if is_subeana else "いいえ"
             }
         ]
-        changes = "# 新規作成されました。\n|種類|値|\n|---:|:---|\n"
+        changes = f"# {title}が新規作成されました\n|種類|値|\n|---:|:---|\n"
         for basic_column in BASIC_COLUMNS:
             if basic_column["value"] == "":
                 continue
@@ -136,7 +136,7 @@ def song_new(request):
         
         history = History(
             song = song,
-            title = f"{song.title}が新規作成される",
+            title = f"{song.title}を新規作成",
             edit_type = "new",
             edited_time = timezone.now(),
             changes = changes,

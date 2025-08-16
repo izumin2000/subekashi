@@ -36,10 +36,10 @@ def song_delete(request, song_id):
         
         history = History(
             song = song,
-            title = f"{song.title}が削除申請される",
+            title = f"{song.title}を削除申請",
             edit_type = "delete",
             edited_time = timezone.now(),
-            changes = f"# {editor}が削除申請されました。",
+            changes = f"# {song.title}が削除申請されました\n**理由**: {reason}",
             editor = editor
         )
         history.save()
@@ -51,7 +51,7 @@ def song_delete(request, song_id):
         タイトル：{song.title}\n\
         チャンネル名：{song.channel}\n\
         理由：{reason}\n\
-        IP：{get_ip(request)}\
+        編集者：{editor}\
         '
         is_ok = send_discord(DELETE_DISCORD_URL, content)
         if not is_ok:
