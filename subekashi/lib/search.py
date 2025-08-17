@@ -40,7 +40,7 @@ SINGLE_QUERY_LOOKUP_DIFF = [
 
 # クエリの値を整形
 def clean_querys(querys):
-    cleand_querys = {}
+    cleaned_querys = {}
     for item, value in querys.items():
         # 不必要なクエリを削除
         if item not in ALL_QUERYS:
@@ -58,8 +58,8 @@ def clean_querys(querys):
         if (item in BOOL_FORMS) and (value in ["False", "false", 0]):
             value = False
     
-        cleand_querys[item] = value
-    return cleand_querys
+        cleaned_querys[item] = value
+    return cleaned_querys
 
 # 複数の検索条件があるクエリをフィルタリング
 def filter_multi_forms(querys, song_qs):
@@ -75,7 +75,7 @@ def filter_multi_forms(querys, song_qs):
         
     return song_qs
 
-# YouTubeに関するならurlに"youtu"を含ませる
+# YouTubeに関するかつメディア指定が空ならYoutubeをメディア指定する
 def add_youtube_querys(querys):
     YOUTUBE_SORT = ["upload_time", "-upload_time", "view", "-view", "like", "-like"]
     has_youtube_sort = querys.get("sort") in YOUTUBE_SORT
@@ -84,7 +84,11 @@ def add_youtube_querys(querys):
     if not(has_youtube_sort or has_youtube_filter):
         return querys
     
-    querys["url"] = "youtu"        # urlを"youtu"に上書きする
+    # メディア指定されているなら
+    if querys.get("mediatypes") is not None:
+        return querys
+    
+    querys["mediatypes"] = "youtube" # youtubeをメディア指定する
     return querys
 
 # クエリのうち単数条件のクエリを対象にしたクエリのキーをキーに、filterのルックアップを値にした辞書を生成
