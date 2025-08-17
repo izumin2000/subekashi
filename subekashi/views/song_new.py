@@ -53,8 +53,9 @@ def song_new(request):
             dataD["error"] = "タイトルかチャンネルが空です。"
             return render(request, 'subekashi/song_new.html', dataD)
         
-        # titleとchannelのclean
-        cleaned_title = title.replace(" ,", ",").replace(", ", ",")
+        # DBに保存する値たち
+        # TODO Channelテーブルを利用する
+        # WARNING channelはそのままURLになるので/は別の文字╱に変換しないといけない
         cleaned_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
         
         # フォームに書かれた各チャンネルの掲載拒否
@@ -71,7 +72,7 @@ def song_new(request):
         # Songの登録
         ip = get_ip(request, is_encrypted=False)
         song = Song(
-            title = cleaned_title,
+            title = title,
             channel = cleaned_channel,
             url = cleaned_url,
             post_time = timezone.now(),
@@ -89,49 +90,27 @@ def song_new(request):
         song.save()
         song_id = song.id
         
-        # 変更内容のマークダウンの作成
-        BASIC_COLUMNS = [
-            {
-                "label": "タイトル",
-                "value": cleaned_title
-            },
-            {
-                "label": "チャンネル名",
-                "value": cleaned_channel
-            },
-            {
-                "label": "URL",
-                "value": cleaned_url
-            },
-            {
-                "label": "オリジナル",
-                "value": "はい" if is_original else "いいえ"
-            },
-            {
-                "label": "削除済み",
-                "value": "はい" if is_deleted else "いいえ"
-            },
-            {
-                "label": "ネタ曲",
-                "value": "はい" if is_joke else "いいえ"
-            },
-            {
-                "label": "インスト曲",
-                "value": "はい" if is_inst else "いいえ"
-            },
-            {
-                "label": "すべあな模倣曲",
-                "value": "はい" if is_subeana else "いいえ"
-            }
+        # 変更内容のマークダウンと送信するDiscordの文言の作成
+        def yes_no(value):
+            return "はい" if value else "いいえ"
+        
+        COLUMNS = [
+            {"label": "タイトル", "value": title},
+            {"label": "チャンネル名", "value": cleaned_channel},
+            {"label": "URL", "value": cleaned_url},
+            {"label": "オリジナル", "value": yes_no(is_original)},
+            {"label": "削除済み", "value": yes_no(is_deleted)},
+            {"label": "ネタ曲", "value": yes_no(is_joke)},
+            {"label": "インスト曲", "value": yes_no(is_inst)},
+            {"label": "すべあな模倣曲", "value": yes_no(is_subeana)},
         ]
+        
         changes = f"# {title}が新規作成されました\n|種類|値|\n|---:|:---|\n"
         discord_text = f"新規作成されました\n{ROOT_URL}/songs/{song_id}\n\n"
-        for basic_column in BASIC_COLUMNS:
-            if basic_column["value"] == "":
-                continue
-            
-            changes += f"| {basic_column['label']} | {basic_column['value']} |\n"
-            discord_text += f"**{basic_column['label']}**：{basic_column['value']}\n"
+        for column in COLUMNS:
+            if column["value"]:     # 通常、manual送信時にlabel=URLだけがFalseになる
+                changes += f"| {column['label']} | {column['value']} |\n"
+                discord_text += f"**{column['label']}**：`{column['value']}`\n"
 
         # 編集履歴を保存
         editor, _ = Editor.objects.get_or_create(ip = ip)
@@ -145,7 +124,7 @@ def song_new(request):
         )
         history.save()
         
-        discord_text += f"編集者：{editor}"
+        discord_text += f"編集者：`{editor}`"
         # Discordに送信し、送信できなければ削除し500ページに遷移
         is_ok = send_discord(NEW_DISCORD_URL, discord_text)
         if not is_ok:
