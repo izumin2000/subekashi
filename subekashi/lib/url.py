@@ -73,7 +73,7 @@ def get_all_media(url):
         if bool(re_allow) and ((i + 1) != allow_medias_size):
             return ALL_MEDIAS[i]
         
-        # URLが許可されていないのならdiscrodに通知してそのドメイン情報を返す
+        # URLが許可されていないのならdiscordに通知してそのドメイン情報を返す
         if bool(re_allow) and ((i + 1) == allow_medias_size):
             send_discord(ERROR_DISCORD_URL, f"想定外のURLが添付されました：{url}")
             return ALL_MEDIAS[i]
