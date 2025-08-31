@@ -86,7 +86,7 @@ class Command(BaseCommand):
                                 enc_ip = encrypt(ip)
                                 editor, _ = Editor.objects.get_or_create(ip=enc_ip)
                             else:
-                                editor, _ = Editor.objects.get_or_create(ip=encrypt("128.0.0.1"))
+                                editor, _ = Editor.objects.get_or_create(ip=encrypt("127.0.0.1"))
                         except Exception as e:
                             raise ValueError(f"editor: {e}")
 
