@@ -70,7 +70,7 @@ def song_new(request):
                 return render(request, 'subekashi/song_new.html', dataD)
         
         # Songの登録
-        ip = get_ip(request, is_encrypted=False)
+        ip = get_ip(request)
         song = Song(
             title = title,
             channel = cleaned_channel,

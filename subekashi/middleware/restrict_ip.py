@@ -13,7 +13,7 @@ class RestrictIPMiddleware:
             self.BAN_LIST = BAN_LIST
 
     def __call__(self, request):
-        ip = get_ip(request, False)
+        ip = get_ip(request)
         if ip in self.BAN_LIST:
             return render(request, 'subekashi/500.html', status=500)
 

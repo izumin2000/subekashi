@@ -31,7 +31,7 @@ def song_delete(request, song_id):
             return render(request, "subekashi/song_delete.html", dataD)
         
         # 編集履歴を保存
-        ip = get_ip(request, is_encrypted=False)
+        ip = get_ip(request)
         editor, _ = Editor.objects.get_or_create(ip = ip)
         
         history = History(

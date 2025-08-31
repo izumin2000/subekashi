@@ -66,7 +66,7 @@ def song_edit(request, song_id):
         # DBに保存する値たち
         # TODO Channelテーブルを利用する
         # WARNING channelはそのままURLになるので/は別の文字╱に変換しないといけない
-        ip = get_ip(request, is_encrypted=False)
+        ip = get_ip(request)
         cleaned_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
         cleaned_lyrics = lyrics.replace("\r\n", "\n")
         imitates = ",".join(list(set(imitates.split(",")))) if imitates else []        # 重複防止
