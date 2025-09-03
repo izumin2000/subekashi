@@ -69,7 +69,7 @@ def song_edit(request, song_id):
         ip = get_ip(request)
         cleaned_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
         cleaned_lyrics = lyrics.replace("\r\n", "\n")
-        imitates = ",".join(list(set(imitates.split(",")))) if imitates else []        # 重複防止
+        imitates = ",".join(list(set(imitates.split(",")))) if imitates else ""        # 重複防止
         
         # 掲載拒否リストの読み込み
         try:
