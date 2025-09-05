@@ -15,14 +15,18 @@ def send_discord(url, content):
     CHUNC_SIZE = 2000
     chunks = [content[i:i + CHUNC_SIZE] for i in range(0, len(content), CHUNC_SIZE)]
 
-    for i, chunk in enumerate(chunks):
-        # 送信
-        res = requests.post(url, data={'content': chunk})
-        if 400 <= res.status_code < 600:
-            return False
+    try:
+        for i, chunk in enumerate(chunks):
+            # 送信
+            res = requests.post(url, data={'content': chunk})
+            if 400 <= res.status_code < 600:
+                return False
 
-        # 最後のチャンク以外は1秒待つ
-        if i < len(chunks) - 1:
-            sleep(1)
+            # 最後のチャンク以外は1秒待つ
+            if i < len(chunks) - 1:
+                sleep(1)
 
-    return True
+        return True
+    
+    except:
+        return False
