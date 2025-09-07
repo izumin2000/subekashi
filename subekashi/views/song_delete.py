@@ -27,8 +27,8 @@ def song_delete(request, song_id):
         
         # もし削除理由を入力していないのならやり直し
         if not reason:
-            dataD["result"] = "invalid"
-            return render(request, "subekashi/song_delete.html", dataD)
+            dataD["error"] = "削除理由を入力してください。"
+            return render(request, "subekashi/song_edit.html", dataD)
         
         # 編集履歴を保存
         ip = get_ip(request)
@@ -55,10 +55,10 @@ def song_delete(request, song_id):
         '
         is_ok = send_discord(DELETE_DISCORD_URL, content)
         if not is_ok:
-            dataD["result"] = "error"
-            return render(request, 'subekashi/song_delete.html', dataD)
+            dataD["error"] = "お問い合わせを送信できませんでした。"
+            return render(request, 'subekashi/song_edit.html', dataD)
         
         # レンダリング
         return redirect(f'/songs/{song_id}?toast=delete')
         
-    return render(request, "subekashi/song_delete.html", dataD)
+    return render(request, "subekashi/song_edit.html", dataD)

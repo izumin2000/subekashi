@@ -9,8 +9,19 @@ async function init() {
     await checkUrlForm();
     await initImitateList();
     checkButton();
+    checkDeleteForm();
 };
 window.addEventListener('load', init);
+
+// TODO checkValidityを利用
+// TODO 改行でもvalidになる不具合の修正
+function checkDeleteForm() {
+    const reasonValue = document.getElementById("reason").value;
+    const deleteEle = document.getElementById("delete-submit");
+    deleteEle.disabled = reasonValue == "";
+}
+
+document.getElementById('reason').addEventListener('input', checkDeleteForm)
 
 // 模倣リストの末尾にsongを追加
 function appendImitateList(song) {

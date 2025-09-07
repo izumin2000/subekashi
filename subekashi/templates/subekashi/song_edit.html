@@ -20,9 +20,20 @@
     {% endif %}
     
     <details>
-        <summary><i class="fas fa-bars"></i>曲の編集にあたっての注意</summary>
+        <summary><i class="fas fa-exclamation-triangle"></i>曲の編集にあたっての注意</summary>
         <p>登録時にエラーが発生した場合は<a href="{% url 'subekashi:contact' %}">こちら</a>からご連絡ください。</p>
         <p>荒らしに対しては削除・BAN・法的措置といった対処をする場合があります。</p>
+    </details>
+    
+    <details id="delete-summary">
+        <summary><i class="far fa-trash-alt"></i>削除申請</summary>
+        <form action="{% url 'subekashi:song_delete' song.id %}" method="POST">{% csrf_token %}
+            <div class="form-col">
+                <label>削除理由</label>
+                <textarea id="reason" name="reason" required>{{ request.GET.reason }}</textarea>
+            </div>
+            <input type="submit" value="送信" id="delete-submit" disabled>
+        </form>
     </details>
 
     <h1><span id="h1-title">{{ song.title }}</span>の編集</h1>
