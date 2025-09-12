@@ -22,3 +22,9 @@ class AiAPI(viewsets.ModelViewSet):
     
     def destroy(self, request, *args, **kwargs):
         raise serializers.ValidationError("メソッドDELETEは受け付けていません")
+    
+    @property
+    def default_response_headers(self):
+        headers = viewsets.ModelViewSet.default_response_headers.fget(self)
+        headers["Access-Control-Allow-Origin"] = "*"
+        return headers
