@@ -99,8 +99,8 @@ function stringToHTML(string, multi=false) {
     return htmls[0];
 }
 
-// トーストを動的に表示する関数
-async function showToast(icon, text) {
+// トーストをAPI経由で動的に表示する関数(旧)
+async function showToastServer(icon, text) {
     try {
         const response = await fetch(`/api/html/toast?icon=${encodeURIComponent(icon)}&text=${encodeURIComponent(text)}`);
         if (!response.ok) throw new Error('Failed to fetch toast');
@@ -113,6 +113,35 @@ async function showToast(icon, text) {
     } catch (error) {
         console.error('Error showing toast:', error);
     }
+}
+
+/**
+ * トーストをクライアントで動的に生成・表示する関数
+ * @param {"info"|"ok"|"warning"|"error"} icon 
+ * @param {string} text 
+ */
+async function showToast(icon, text) {
+    const icons = {
+        "info": "fas fa-info-circle info",
+        "ok": "fas fa-check-circle ok",
+        "warning": "fas fa-exclamation-triangle warning",
+        "error": "fas fa-ban error"
+    };
+    const toastDiv = document.createElement("div");
+    const contentP = document.createElement("p");
+    const iconI = document.createElement("i");
+    toastDiv.classList.add("toast")
+    // 50文字越えの場合はlong用に
+    if(text.length > 50) toastDiv.classList.add("long-time");
+    iconI.className = icons[icon] ?? "";
+    //組み立て
+    contentP.appendChild(iconI);
+    contentP.innerHTML += text;
+    toastDiv.appendChild(contentP);
+
+    const toastContainerEle = document.getElementById('toast-container');
+    if(!toastContainerEle) console.error("#toast-container not found")
+    toastContainerEle.appendChild(toastDiv);
 }
 
 // song guesserの表示
