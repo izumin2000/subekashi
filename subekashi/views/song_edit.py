@@ -8,6 +8,7 @@ from subekashi.lib.url import *
 from subekashi.lib.ip import *
 from subekashi.lib.discord import *
 from subekashi.lib.search import song_search
+import markdown
 
 
 def song_edit(request, song_id):
@@ -154,6 +155,7 @@ def song_edit(request, song_id):
         song.ip = ip
         song.save()
         
+        # TODO が編集されました -> ～～と～～が編集されました
         changes = f"# {title}が編集されました\n|種類|編集前|編集後|\n|---:|----|----|\n"
         discord_text = f"編集されました\n{ROOT_URL}/songs/{song_id}\n\n"
         for column in COLUMNS:
@@ -178,7 +180,7 @@ def song_edit(request, song_id):
             title = f"{song.title}を編集",
             edit_type = "new",
             edited_time = timezone.now(),
-            changes = changes,
+            changes = markdown.markdown(changes, extensions=['tables']),
             editor = editor
         )
         history.save()
