@@ -1,10 +1,14 @@
 import requests
 from time import sleep
+from config.settings import DEBUG
 
 
 def send_discord(url, content):
     # urlが設定されていなかったら何もしない
     if not url:
+        return True
+    
+    if DEBUG:
         return True
 
     # 余分なインデントの削除
