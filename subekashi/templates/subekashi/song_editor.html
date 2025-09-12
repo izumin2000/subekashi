@@ -10,5 +10,12 @@
 <section>
     <h1><span id="h1-title">{{ song.title }}</span>の編集履歴</h1>
     <div class="underline"></div>
+    {% for history in historys %}
+        <details id="history_details">
+            <summary><p>{{ history.edited_time }}</p><p>{{ history.title }}</p></summary>
+            <p>{{ history.changes|safe }}</p>
+            <p>編集者: {{ history.editor }}</p>
+        </details>
+    {% endfor %}
 </section>
 {% endblock %}

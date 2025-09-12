@@ -11,6 +11,7 @@ def song_editor(request, song_id):
     dataD = {
         "metatitle": f"{song.title}の編集履歴",
         "song": song,
+        "historys": History.objects.filter(song = song).order_by("-edited_time")
     }
     
     return render(request, 'subekashi/song_editor.html', dataD)
