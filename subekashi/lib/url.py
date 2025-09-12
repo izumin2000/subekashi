@@ -34,16 +34,16 @@ def format_youtube_url(url):
 
 # XのURLのクエリを削除
 def format_x_url(url):
+    url = url.replace("https://twitter.com", "https://x.com")
     parsed_url = urlparse(url)
-    clean_url = urlunparse(parsed_url._replace(query='', fragment=''))
-    return clean_url
+    cleaned_url = urlunparse(parsed_url._replace(query='', fragment=''))
+    return cleaned_url
 
 # URLを短縮しフォーマットする
 def clean_url(urls):
     urls = urls.replace(" ,", ",").replace(", ", ",")
+    urls = urls.replace("//www.", "//")
     urls = urls.replace("https://www.google.com/url?q=", "")
-    urls = urls.replace("https://www.", "https://")
-    urls = urls.replace("https://twitter.com", "https://x.com")
     url_list = urls.split(",")
     url_list = list(map(format_youtube_url, url_list))
     url_list = list(map(format_x_url, url_list))
@@ -73,7 +73,7 @@ def get_all_media(url):
         if bool(re_allow) and ((i + 1) != allow_medias_size):
             return ALL_MEDIAS[i]
         
-        # URLが許可されていないのならdiscrodに通知してそのドメイン情報を返す
+        # URLが許可されていないのならdiscordに通知してそのドメイン情報を返す
         if bool(re_allow) and ((i + 1) == allow_medias_size):
             send_discord(ERROR_DISCORD_URL, f"想定外のURLが添付されました：{url}")
             return ALL_MEDIAS[i]
