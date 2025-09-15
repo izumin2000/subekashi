@@ -156,7 +156,7 @@ def song_edit(request, song_id):
         song.save()
         
         # 表のヘッダー -> 表のボディー -> h2の順にchangesを追加
-        changes = f"が編集されました\n|種類|編集前|編集後|\n|---:|----|----|\n"
+        changes = f"が編集されました\n|種類|編集前|編集後|\n|----|----|----|\n"
         changed_labels = []
         discord_text = f"編集されました\n{ROOT_URL}/songs/{song_id}\n\n"
         for column in COLUMNS:

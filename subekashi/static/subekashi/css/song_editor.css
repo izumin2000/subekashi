@@ -1,0 +1,24 @@
+details {
+    margin: 15px 0;
+}
+
+details h1, details h2 {
+    margin: 20px 0 40px 0;
+    font-size: 36px
+}
+
+table {
+    border-collapse: separate;
+    border-spacing: 0px;
+    margin: 0 auto;
+}
+
+thead {
+    background-color: #666;
+}
+
+th, td {
+    border: solid 2px #999;
+    padding: 10px;
+    font-weight: normal;
+}
