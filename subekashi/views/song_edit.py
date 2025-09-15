@@ -155,15 +155,17 @@ def song_edit(request, song_id):
         song.ip = ip
         song.save()
         
-        # TODO が編集されました -> ～～と～～が編集されました
-        changes = f"# {title}が編集されました\n|種類|編集前|編集後|\n|---:|----|----|\n"
+        # 表のヘッダー -> 表のボディー -> h1の順にchangesを追加
+        changes = f"が編集されました\n|種類|編集前|編集後|\n|---:|----|----|\n"
+        changed_labels = []
         discord_text = f"編集されました\n{ROOT_URL}/songs/{song_id}\n\n"
         for column in COLUMNS:
             if column["before"] != column["after"]:     # ユーザーが編集時に変更した場合
                 label = column["label"]
+                changed_labels.append(label)
                 before = column["before"] if column["before"] else "なし"
                 after = column["after"] if column["after"] else "なし"
-                if label in ["模倣", "歌詞"]:       # 模倣や歌詞は長いのでhistory/discordそれぞれ対応する
+                if label in ["模倣", "歌詞"]:
                     before_br = before.replace("\n", "<br>")
                     after_br = after.replace("\n", "<br>")
                     changes += f"| {label} | {before_br} | {after_br} |\n"
@@ -172,6 +174,8 @@ def song_edit(request, song_id):
                     
                 changes += f"| {label} | {before} | {after} |\n"
                 discord_text += f"**{label}**：`{before}` :arrow_right: `{after}`\n"
+                
+        changes = f"# {title}の{'と'.join(changed_labels)}{changes}"
 
         # 編集履歴を保存
         editor, _ = Editor.objects.get_or_create(ip = ip)
