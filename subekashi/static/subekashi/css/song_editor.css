@@ -1,3 +1,23 @@
+/* TODO 共通化 */
+.dummybutton {
+    background-color: #333;
+    min-width: 150px;
+}
+
+.dummybutton:hover {
+    background-color: #666;
+}
+
+.dummybutton i {
+    margin-right: 10px;
+    font-size: 1.0em;
+}
+
+.dummybutton p {
+    color: #fff;
+    padding-bottom: 5px;
+}
+
 details {
     margin: 15px 0;
 }
@@ -7,17 +27,17 @@ details h1, details h2 {
     font-size: 36px
 }
 
-table {
+.history_details table {
     border-collapse: separate;
     border-spacing: 0px;
     margin: 0 auto;
 }
 
-thead {
+.history_details thead {
     background-color: #666;
 }
 
-th, td {
+.history_details th, .history_details td {
     border: solid 2px #999;
     padding: 10px;
     font-weight: normal;

@@ -10,6 +10,14 @@
 <section>
     <h1><span id="h1-title">{{ song.title }}</span>の編集履歴</h1>
     <div class="underline"></div>
+    <div class="dummybuttons">
+        <a href="{% url 'subekashi:song_editor' song.id %}">
+            <div class="dummybutton"><i class="fas fa-redo"></i><p>再読み込み</p></div>
+        </a>
+        <a onclick="openAll();">
+            <div class="dummybutton"><i class="fas fa-arrows-alt-v"></i><p>全て開く/閉じる</p></div>
+        </a>
+    </div>
     {% for history in historys %}
         <details id="history_details">
             <summary><p>{{ history.edited_time }}</p><p>{{ history.title }}</p></summary>
@@ -18,4 +26,16 @@
         </details>
     {% endfor %}
 </section>
+{% endblock %}
+
+{% block js %}
+    <script defer>
+        var is_open = true;
+        function openAll() {
+            document.querySelectorAll("details").forEach(d => {
+                d.open = is_open;
+            });
+            is_open = !is_open;
+        }
+    </script>
 {% endblock %}
