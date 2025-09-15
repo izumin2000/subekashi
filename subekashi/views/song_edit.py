@@ -116,13 +116,13 @@ def song_edit(request, song_id):
         def yes_no(value):
             return "はい" if value else "いいえ"
 
-        # song.imitateの形式を"(ID) チャンネル名 / タイトル"の改行リストにする
+        # song.imitateの形式をリンク付きタイトルの改行リストにする
         def Ids2Info(ids):
             song_id_list = ids.split(",") if ids else []
             info = ""
             for song_id in song_id_list:
                 song = Song.objects.get(id = song_id)
-                info += f"({song.id}) {song.channel} / {song.title}\n"
+                info += f"[{song.title}]({ROOT_URL}/songs/{song.id})\n"
             return info[:-1]        # 最後の改行は不要
 
         # songを更新する前にhistoryのために更新前後のsongの情報を記録しておく
@@ -155,7 +155,7 @@ def song_edit(request, song_id):
         song.ip = ip
         song.save()
         
-        # 表のヘッダー -> 表のボディー -> h1の順にchangesを追加
+        # 表のヘッダー -> 表のボディー -> h2の順にchangesを追加
         changes = f"が編集されました\n|種類|編集前|編集後|\n|---:|----|----|\n"
         changed_labels = []
         discord_text = f"編集されました\n{ROOT_URL}/songs/{song_id}\n\n"
