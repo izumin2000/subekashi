@@ -175,7 +175,7 @@ def song_edit(request, song_id):
                 changes += f"| {label} | {before} | {after} |\n"
                 discord_text += f"**{label}**：`{before}` :arrow_right: `{after}`\n"
                 
-        changes = f"# {title}の{'と'.join(changed_labels)}{changes}"
+        changes = f"## {title}の{'と'.join(changed_labels)}{changes}"
 
         # 編集履歴を保存
         editor, _ = Editor.objects.get_or_create(ip = ip)
