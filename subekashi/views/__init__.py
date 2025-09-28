@@ -6,6 +6,7 @@ from subekashi.views.ai_result import ai_result
 from subekashi.views.api.ai import AiAPI
 from subekashi.views.channel import channel
 from subekashi.views.contact import contact
+from subekashi.views.editor import editor
 from subekashi.views.errors import *
 from subekashi.views.file import *
 from subekashi.views.songs import songs

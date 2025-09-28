@@ -20,6 +20,7 @@ urlpatterns = [
     path('songs/<int:song_id>/editor/', song_editor, name='song_editor'),
     path('songs/<int:song_id>/delete/', song_delete, name='song_delete'),
     path('channel/<str:channelName>/', channel, name='channel'),
+    path('editor/<int:editor_id>/', editor, name='editor'),
     path('ai/', ai, name='ai'),
     path('ai/result/', ai_result, name='ai_result'),
     path('setting/', setting, name='setting'),

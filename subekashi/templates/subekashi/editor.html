@@ -1,0 +1,13 @@
+{% extends "subekashi/base/base.html" %}
+
+
+{% load static %}
+{% block noindex %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block css %}{% static 'subekashi/css/editor.css'%}{% endblock %}
+
+{% block content %}
+<section>
+    <h1><span id="h1-title">{{ editor }}</span></h1>
+    <div class="underline"></div>
+</section>
+{% endblock %}
