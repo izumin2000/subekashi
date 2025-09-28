@@ -177,24 +177,25 @@ def song_edit(request, song_id):
                 
         changes = f"## {title}の{'と'.join(changed_labels)}{changes}"
 
-        # 編集履歴を保存
-        editor, _ = Editor.objects.get_or_create(ip = ip)
-        history = History(
-            song = song,
-            title = f"{song.title}を編集",
-            edit_type = "new",
-            edited_time = timezone.now(),
-            changes = markdown.markdown(changes, extensions=['tables']),
-            editor = editor
-        )
-        history.save()
-        
-        discord_text += f"編集者：`{editor}`"
-        
-        # Discordに送信し、送信できなければ削除し500ページに遷移
-        is_ok = send_discord(NEW_DISCORD_URL, discord_text)
-        if not is_ok:
-            return render(request, 'subekashi/500.html', status=500)
+        if len(changed_labels) >= 1:
+            # 編集履歴を保存
+            editor, _ = Editor.objects.get_or_create(ip = ip)
+            history = History(
+                song = song,
+                title = f"{song.title}を編集",
+                edit_type = "new",
+                edited_time = timezone.now(),
+                changes = markdown.markdown(changes, extensions=['tables']),
+                editor = editor
+            )
+            history.save()
+            
+            discord_text += f"編集者：`{editor}`"
+            
+            # Discordに送信し、送信できなければ削除し500ページに遷移
+            is_ok = send_discord(NEW_DISCORD_URL, discord_text)
+            if not is_ok:
+                return render(request, 'subekashi/500.html', status=500)
         
         response = redirect(f'/songs/{song_id}?toast=edit')
         response["X-Robots-Tag"] = "noindex, nofollow"
