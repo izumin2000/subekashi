@@ -156,8 +156,8 @@ def song_edit(request, song_id):
         song.ip = ip
         song.save()
         
-        # 表のヘッダー -> 表のボディー -> h2の順にchangesを追加
-        changes = f"が編集されました\n|種類|編集前|編集後|\n|----|----|----|\n"
+        # History DBの変更内容とDisocrdの#新規作成・変更チャンネルに送る文の用意
+        changes = "|種類|編集前|編集後|\n|----|----|----|\n"
         changed_labels = []
         discord_text = f"編集されました\n{ROOT_URL}/songs/{song_id}\n\n"
         for column in COLUMNS:
@@ -176,14 +176,14 @@ def song_edit(request, song_id):
                 changes += f"| {label} | {before} | {after} |\n"
                 discord_text += f"**{label}**：`{before}` :arrow_right: `{after}`\n"
                 
-        changes = f"## {title}の{'と'.join(changed_labels)}{changes}"
-
+        title = f"{title}の{'と'.join(changed_labels)}を編集"
+        
         if len(changed_labels) >= 1:
             # 編集履歴を保存
             editor, _ = Editor.objects.get_or_create(ip = ip)
             history = History(
                 song = song,
-                title = f"{song.title}を編集",
+                title = title,
                 edit_type = "new",
                 edited_time = timezone.now(),
                 changes = markdown.markdown(changes, extensions=['tables']),
