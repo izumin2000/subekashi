@@ -82,7 +82,18 @@ SESSION_FILE_PATH = 'sessions'
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
 DATABASES = {
-    'default': {
+    'default': 
+    {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": "izuminapp$default",
+        "USER": "izuminapp",
+        "PASSWORD": MYSQL_PASSWORD,
+        "HOST": "izuminapp.mysql.pythonanywhere-services.com",
+        "OPTIONS": {"charset": "utf8mb4"},
+    } 
+} if USE_MYSQL else {
+    'default':
+    {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
