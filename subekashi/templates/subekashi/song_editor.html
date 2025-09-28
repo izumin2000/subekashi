@@ -11,7 +11,7 @@
     <h1><span id="h1-title">{{ song.title }}</span>の編集履歴</h1>
     <div class="underline"></div>
     <div class="dummybuttons">
-        <a href="{% url 'subekashi:song_editor' song.id %}">
+        <a href="{% url 'subekashi:song_editor' song.id %}?reload={{ now|date:'U' }}">
             <div class="dummybutton"><i class="fas fa-redo"></i><p>再読み込み</p></div>
         </a>
         <a onclick="openAll();">
