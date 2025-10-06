@@ -22,7 +22,7 @@
         <details class="history_details">
             <summary><p>{{ history.edited_time }}</p><p>{{ history.title }}</p></summary>
             <p>{{ history.changes|safe }}</p>
-            <p>編集者: {{ history.editor }}</p>
+            <p>編集者: <a href="{% url 'subekashi:editor' history.editor.id %}">{{ history.editor }}</a></p>
         </details>
     {% endfor %}
 </section>
