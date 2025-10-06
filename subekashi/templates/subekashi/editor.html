@@ -9,5 +9,13 @@
 <section>
     <h1><span id="h1-title">{{ editor }}</span></h1>
     <div class="underline"></div>
+    <p id="history-count">{{ historys.count }}件の編集履歴</p>
+    {% for history in historys %}
+        <details class="history_details">
+            <summary><p>{{ history.edited_time }}</p><p>{{ history.title }}</p></summary>
+            <p>{{ history.changes|safe }}</p>
+            <a href="{% url 'subekashi:song' history.song.id %}">{{ history.song.title }}</a>
+        </details>
+    {% endfor %}
 </section>
 {% endblock %}
