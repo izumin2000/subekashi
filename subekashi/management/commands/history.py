@@ -1,8 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from subekashi.models import Editor, History, Song 
-from subekashi.lib.security import encrypt
-from subekashi.lib._security import decrypt
+from subekashi.lib.security import encrypt, decrypt
 import json
 import re
 from datetime import datetime
