@@ -1,0 +1,54 @@
+.dummybutton {
+    background-color: #333;
+    min-width: 150px;
+}
+
+.dummybutton:hover {
+    background-color: #666;
+}
+
+.dummybutton i {
+    margin-right: 10px;
+    font-size: 1.0em;
+}
+
+.dummybutton p {
+    color: #fff;
+    padding-bottom: 5px;
+}
+
+#history-count {
+    text-align: center;
+}
+
+details {
+    margin: 15px 0;
+}
+
+details h1, details h2 {
+    margin: 20px 0 40px 0;
+    font-size: 36px
+}
+
+
+.history_details table {
+    border-spacing: 0px;
+    margin: 0 auto;
+    max-width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+
+.history_details thead {
+    background-color: #666;
+}
+
+.history_details th, .history_details td {
+    border: solid 2px #999;
+    padding: 10px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-weight: normal;
+}
+
