@@ -29,24 +29,5 @@
 {% endblock %}
 
 {% block js %}
-    <script defer>
-        window.addEventListener("DOMContentLoaded", () => {
-            const firstDetail = document.querySelector("details");
-            firstDetail.open = true;
-        });
-
-        function reloadPage() {
-            const newUrl = location.pathname + '?reload=' + Date.now();
-            history.replaceState(null, '', newUrl); // 履歴を増やさずURLだけ更新
-            location.reload();
-        }
-
-        var is_open = true;
-        function openAll() {
-            document.querySelectorAll("details").forEach(d => {
-                d.open = is_open;
-            });
-            is_open = !is_open;
-        }
-    </script>
+    <script src="{% static 'subekashi/js/editor.js' %}" defer></script>
 {% endblock %}
