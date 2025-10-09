@@ -7,8 +7,8 @@ from subekashi.models import *
 from subekashi.lib.url import *
 from subekashi.lib.ip import *
 from subekashi.lib.discord import *
+from subekashi.lib.changes import md2changes
 from subekashi.lib.search import song_search
-import markdown
 
 
 def song_edit(request, song_id):
@@ -186,7 +186,7 @@ def song_edit(request, song_id):
                 title = title,
                 edit_type = "new",
                 edited_time = timezone.now(),
-                changes = markdown.markdown(changes, extensions=['tables']),
+                changes = md2changes(changes),
                 editor = editor
             )
             history.save()

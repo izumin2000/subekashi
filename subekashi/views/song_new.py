@@ -7,7 +7,7 @@ from subekashi.lib.ip import *
 from subekashi.lib.discord import *
 from subekashi.lib.youtube import *
 from subekashi.lib.search import song_search
-import markdown
+from subekashi.lib.changes import md2changes
 
 
 def song_new(request):
@@ -121,7 +121,7 @@ def song_new(request):
             title = f"{song.title}を新規作成",
             edit_type = "new",
             edited_time = timezone.now(),
-            changes = markdown.markdown(changes, extensions=['tables']),
+            changes = md2changes(changes),
             editor = editor
         )
         history.save()
