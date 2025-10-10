@@ -7,9 +7,17 @@
 
 {% block content %}
 <section>
-    <h1><span id="h1-title">{{ editor }}</span></h1>
+    <h1><span id="h1-title">{{ editor }}の編集履歴</span></h1>
     <div class="underline"></div>
-    <p id="history-count">{{ historys.count }}件の編集履歴</p>
+    <div class="dummybuttons">
+        <a onclick="reloadPage()">
+            <div class="dummybutton"><i class="fas fa-redo"></i><p>再読み込み</p></div>
+        </a>
+        <a onclick="openAll()">
+            <div class="dummybutton"><i class="fas fa-arrows-alt-v"></i><p>全て開く/閉じる</p></div>
+        </a>
+    </div>
+    <p id="history-count">{{ historys.count }}件</p>
     {% for history in historys %}
         <details class="history_details">
             <summary><p>{{ history.edited_time }}</p><p>{{ history.title }}</p></summary>
