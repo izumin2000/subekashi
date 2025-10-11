@@ -47,13 +47,14 @@ details h1, details h2 {
     table-layout: fixed;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 800px) {
     .change_table_wrapper {
         overflow-x: auto;
     }
 
     .history_details table {
-        width: 560px;
+        width: auto;
+        min-width: max-content;
         max-width: none;
         table-layout: auto;
     }
