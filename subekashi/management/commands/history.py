@@ -1,7 +1,9 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from subekashi.models import Editor, History, Song 
-from subekashi.lib.security import encrypt, decrypt
+from subekashi.lib.old_security import decrypt as old_dec
+from subekashi.lib.security import encrypt as new_enc
+from subekashi.lib.changes import md2changes
 import json
 import re
 from datetime import datetime
@@ -12,12 +14,36 @@ class Command(BaseCommand):
     help = "Import history data from new.json"
 
     def handle(self, *args, **options):
+        old_editor_id = Editor.objects.all().count()
+        historys = History.objects.all()
+        for history in historys:
+            changes = history.changes
+            if changes:
+                changes = "\n".join(changes.split("\n")[1:])
+                changes = changes.replace("---:", "----").replace(":---", "----")
+                history.changes = md2changes(changes)
+            
+            editor = history.editor
+            new_ip = new_enc(old_dec(editor.ip))
+            editor, is_created = Editor.objects.get_or_create(ip = new_ip)
+            if is_created:
+                editor.save()
+            
+            history.editor = editor
+            history.save()
+        
+        Editor.objects.filter(id__lte=old_editor_id).delete()
+
+
         try:
             with open("./.json", "r", encoding="utf-8") as f:
                 data = json.load(f)
 
             for msg in data.get("messages", []):
                 content = msg.get("content", "")
+                
+                if ":arrow_down:" in content:
+                    break
 
                 try:
                     with transaction.atomic():
@@ -81,11 +107,11 @@ class Command(BaseCommand):
                         try:
                             if "IP :" in content:
                                 ip_enc = re.search(r'IP : (.*)"?\n?', content).group(1).replace("```", "")
-                                ip = decrypt(ip_enc)
-                                enc_ip = encrypt(ip)
+                                ip = old_dec(ip_enc)
+                                enc_ip = new_enc(ip)
                                 editor, _ = Editor.objects.get_or_create(ip=enc_ip)
                             else:
-                                editor, _ = Editor.objects.get_or_create(ip=encrypt("127.0.0.1"))
+                                editor, _ = Editor.objects.get_or_create(ip=new_enc("127.0.0.1"))
                         except Exception as e:
                             raise ValueError(f"editor: {e}")
 
