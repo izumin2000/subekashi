@@ -43,5 +43,3 @@ def decrypt(ciphertext):
     cipher = AES.new(key_bytes, AES.MODE_CBC, iv)
     formatted_ip = unpad(cipher.decrypt(ciphertext), AES.block_size).decode()
     return formatted_ip
-
-print(decrypt("▘◘（ᛜ◘¹▘ንᛜ¹・∴▼（・∴¹.（◆ᛜ¹#・▼ᛜ◘◆#¹▼（.（∮¹#¹◆¹▼∴◆ｷ∮᠂.ን◘ን᠂᠂▼᠂∴##♭ᛜ∮▘∮.・"))
