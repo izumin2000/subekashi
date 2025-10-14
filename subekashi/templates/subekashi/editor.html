@@ -22,7 +22,11 @@
         <details class="history_details">
             <summary><p>{{ history.edited_time }}</p><p>{{ history.title }}</p></summary>
             <p>{{ history.changes|safe }}</p>
-            <a href="{% url 'subekashi:song' history.song.id %}">{{ history.song.title }}</a>
+            {% if history.song %}
+                <a href="{% url 'subekashi:song' history.song.id %}">{{ history.song.title }}</a>
+            {% else %}
+                <p>この曲は削除されました</p>
+            {% endif %}
         </details>
     {% endfor %}
 </section>
