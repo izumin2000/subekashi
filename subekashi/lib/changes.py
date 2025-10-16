@@ -1,5 +1,20 @@
 from markdown import markdown
 from bs4 import BeautifulSoup
+import re
+
+
+# Markdownで特別な意味を持つ記号をバックスラッシュでエスケープする。
+def escape_markdown(text):
+    # Markdownの特殊文字一覧
+    special_chars = [
+        '\\', '`', '*', '_', '{', '}', '[', ']', '(', ')',
+        '#', '+', '-', '.', '!', '|', '>', '<'
+    ]
+
+    # 正規表現で特殊文字を置換
+    pattern = re.compile(r'([{}])'.format(re.escape(''.join(special_chars))))
+    escaped = pattern.sub(r'\\\1', text)
+    return escaped
 
 
 # マークダウンをtableをdiv要素のwrapperで囲んだHTMLとしての文字列に変換する
