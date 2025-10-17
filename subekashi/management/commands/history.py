@@ -93,11 +93,11 @@ class Command(BaseCommand):
                                 raise ValueError(f"none")
 
                             if history_type == "new":
-                                title_type = "新規追加しました"
+                                title_type = "新規追加"
                             elif history_type == "edit":
-                                title_type = "編集しました"
+                                title_type = "編集"
                             else:
-                                title_type = "新規追加か編集しました"
+                                title_type = "新規追加か編集"
                                 
                             title = f"{title}を{title_type}"
                         except Exception as e:
