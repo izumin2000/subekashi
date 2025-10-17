@@ -187,8 +187,8 @@ def song_edit(request, song_id):
             history = History(
                 song = song,
                 title = title,
-                edit_type = "new",
-                edited_time = timezone.now(),
+                history_type = "new",
+                create_time = timezone.now(),
                 changes = md2changes(changes),
                 editor = editor
             )

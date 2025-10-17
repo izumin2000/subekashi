@@ -11,7 +11,7 @@ def editor(request, editor_id):
     
     detaD = {
         "editor": editor,
-        "historys": History.objects.filter(editor = editor).order_by("-edited_time")
+        "historys": History.objects.filter(editor = editor).order_by("-create_time")
     }
 
     return render(request, 'subekashi/editor.html', detaD)

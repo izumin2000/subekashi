@@ -119,8 +119,8 @@ def song_new(request):
         history = History(
             song = song,
             title = f"{song.title}を新規作成",
-            edit_type = "new",
-            edited_time = timezone.now(),
+            history_type = "new",
+            create_time = timezone.now(),
             changes = md2changes(changes),
             editor = editor
         )

@@ -50,17 +50,17 @@ class Command(BaseCommand):
                         if ("localhost:8000" in content) or ("izuminapp" in content):
                             continue
 
-                        # ===== edited_time =====
+                        # ===== create_time =====
                         try:
                             if "==============================" in content:
-                                edited_time_str = re.search(r'==============================(.*?)==============================', content).group(1)
-                                dt = datetime.strptime(edited_time_str, "%Y年%m月%d日%H時%M分%S秒")
+                                create_time_str = re.search(r'==============================(.*?)==============================', content).group(1)
+                                dt = datetime.strptime(create_time_str, "%Y年%m月%d日%H時%M分%S秒")
                             else:
-                                edited_time_str = msg['timestamp'][:19]
-                                dt = datetime.strptime(edited_time_str, "%Y-%m-%dT%H:%M:%S")
-                            edited_time = timezone.make_aware(dt, timezone.get_current_timezone())
+                                create_time_str = msg['timestamp'][:19]
+                                dt = datetime.strptime(create_time_str, "%Y-%m-%dT%H:%M:%S")
+                            create_time = timezone.make_aware(dt, timezone.get_current_timezone())
                         except Exception as e:
-                            raise ValueError(f"edited_time: {e}")
+                            raise ValueError(f"create_time: {e}")
 
                         # ===== song =====
                         try:
@@ -75,13 +75,13 @@ class Command(BaseCommand):
                         except Exception as e:
                             raise ValueError(f"song: {e}")
 
-                        # ===== edit_type =====
+                        # ===== history_type =====
                         if "新規作成されました" in content:
-                            edit_type = "new"
+                            history_type = "new"
                         elif "編集されました" in content:
-                            edit_type = "edit"
+                            history_type = "edit"
                         else:
-                            edit_type = ""
+                            history_type = ""
 
                         # ===== title =====
                         try:
@@ -92,9 +92,9 @@ class Command(BaseCommand):
                             else:
                                 raise ValueError(f"none")
 
-                            if edit_type == "new":
+                            if history_type == "new":
                                 title_type = "新規追加しました"
-                            elif edit_type == "edit":
+                            elif history_type == "edit":
                                 title_type = "編集しました"
                             else:
                                 title_type = "新規追加か編集しました"
@@ -117,9 +117,9 @@ class Command(BaseCommand):
 
                         # ===== 保存 =====
                         History.objects.create(
-                            edited_time=edited_time,
+                            create_time=create_time,
                             song=song,
-                            edit_type=edit_type,
+                            history_type=history_type,
                             title=title,
                             editor=editor
                         )
@@ -129,3 +129,5 @@ class Command(BaseCommand):
 
         except Exception as e:
             print(f"全体処理エラー: {e}")
+            
+        History.objects.filter(history_type="edit", changes="").delete()

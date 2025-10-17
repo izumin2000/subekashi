@@ -20,7 +20,7 @@
     <p id="history-count">{{ historys.count }}件</p>
     {% for history in historys %}
         <details class="history_details">
-            <summary><p>{{ history.edited_time }}</p><p>{{ history.title }}</p></summary>
+            <summary><p>{{ history.create_time }}</p><p>{{ history.title }}</p></summary>
             <p>{{ history.changes|safe }}</p>
             {% if history.song %}
                 <a href="{% url 'subekashi:song' history.song.id %}">{{ history.song.title }}</a>
