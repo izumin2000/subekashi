@@ -170,7 +170,10 @@ def song_edit(request, song_id):
                     before_br = before.replace("\n", "<br>")
                     after_br = after.replace("\n", "<br>")
                     changes += f"| {label} | {before_br} | {after_br} |\n"
-                    discord_text += f"**{label}**：```{before}``` :arrow_down: ```{after}```\n"
+                    if (label == "模倣") or (before == "なし"):
+                        discord_text += f"**{label}**：```{before}``` :arrow_down: ```{after}```\n"
+                    else:
+                        discord_text += f"**{label}**：```{after}```\n"
                     continue
                     
                 changes += f"| {label} | {before} | {after} |\n"
