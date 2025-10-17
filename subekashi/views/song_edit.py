@@ -159,7 +159,7 @@ def song_edit(request, song_id):
         # History DBの変更内容とDisocrdの#新規作成・変更チャンネルに送る文の用意
         changes = "|種類|編集前|編集後|\n|----|----|----|\n"
         changed_labels = []
-        discord_text = f"編集されました\n{ROOT_URL}/songs/{song_id}/editor\n\n"
+        discord_text = f"編集されました\n{ROOT_URL}/songs/{song_id}/history\n\n"
         for column in COLUMNS:
             if column["before"] != column["after"]:     # ユーザーが編集時に変更した場合
                 label = column["label"]

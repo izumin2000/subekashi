@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from subekashi.models import *
 
-def song_editor(request, song_id):
+def song_history(request, song_id):
     # Songがなければ404
     try :
         song = Song.objects.get(pk = song_id)
@@ -14,4 +14,4 @@ def song_editor(request, song_id):
         "historys": History.objects.filter(song = song).order_by("-edited_time")
     }
     
-    return render(request, 'subekashi/song_editor.html', dataD)
+    return render(request, 'subekashi/song_history.html', dataD)
