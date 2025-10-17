@@ -16,5 +16,7 @@ YOUTUBE_API_KEY = ''
 
 DEBUG = True
 
+SEND_DISCORD = False
+
 USE_MYSQL = False
 MYSQL_PASSWORD = ""

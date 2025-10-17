@@ -1,6 +1,7 @@
 import requests
 from time import sleep
 from config.settings import DEBUG
+from config.local_settings import SEND_DISCORD
 
 
 def send_discord(url, content):
@@ -8,7 +9,7 @@ def send_discord(url, content):
     if not url:
         return True
     
-    if DEBUG:
+    if DEBUG and not SEND_DISCORD:
         return True
 
     # 余分なインデントの削除
