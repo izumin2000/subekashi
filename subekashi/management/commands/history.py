@@ -1,18 +1,47 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+from django.db import transaction
 from subekashi.models import Editor, History, Song 
 from subekashi.lib.old_security import decrypt as old_dec
 from subekashi.lib.security import encrypt as new_enc
 from subekashi.lib.changes import md2changes
+from config.settings import ROOT_URL
 import json
 import re
 from datetime import datetime
-from django.db import transaction
+from bs4 import BeautifulSoup
 
 
 class Command(BaseCommand):
     help = "Import history data from new.json"
+    
+    def replace_imiate_links(self, html):
+        soup = BeautifulSoup(html, "html.parser")
 
+        # パターン: (数字) チャンネル名 / タイトル
+        pattern = re.compile(r"\((\d+)\)\s*[^/]+/\s*(.+?)($|\n|<|、|,|。)")
+
+        for tr in soup.find_all("tr"):
+            tds = tr.find_all("td")
+            if not tds:
+                continue
+
+            # 1列目が「模倣」の行を対象
+            if tds[0].get_text(strip=True) == "模倣":
+                for td in tds[1:3]:  # 2列目と3列目を対象
+                    if td:
+                        original_text = str(td)
+                        replaced_text = pattern.sub(
+                            lambda m: f"<a href='{ROOT_URL}/songs/{m.group(1)}' target='_blank'>{m.group(2).strip()}</a>{m.group(3)}",
+                            original_text
+                        )
+                        # BeautifulSoupに再パースして置き換え
+                        new_td = BeautifulSoup(replaced_text, "html.parser")
+                        for br in new_td.find_all("br"):
+                            br.decompose()
+                        td.replace_with(new_td)
+
+        return str(soup)
     def handle(self, *args, **options):
         old_editor_id = Editor.objects.all().count()
         historys = History.objects.all()
@@ -21,7 +50,7 @@ class Command(BaseCommand):
             if changes:
                 changes = "\n".join(changes.split("\n")[1:])
                 changes = changes.replace("---:", "----").replace(":---", "----")
-                history.changes = md2changes(changes)
+                history.changes = self.replace_imiate_links(md2changes(changes))
             
             editor = history.editor
             new_ip = new_enc(old_dec(editor.ip))
