@@ -158,5 +158,16 @@ class Command(BaseCommand):
 
         except Exception as e:
             print(f"全体処理エラー: {e}")
-            
+        
+        
         History.objects.filter(history_type="edit", changes="").delete()
+        
+        
+        changed_ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 692, 20, 19, 85, 126, 129, 165, 167, 176, 30, 184, 66, 221, 237, 226, 56, 227, 243, 284, 225, 293, 1112, 298, 45, 300, 142, 319, 1008, 334, 810, 390, 3166, 661, 2228, 434, 1126, 443, 1540, 465, 2767, 466, 430, 663, 1000, 469, 358, 470, 138, 529, 308, 542, 117, 603, 79, 604, 127, 605, 202, 606, 3108, 627, 505, 636, 33, 640, 160, 643, 444, 651, 124, 658, 323, 659, 2273, 40, 707, 433, 199, 468, 647]
+        for changed_id in changed_ids:
+            historys = History.objects.filter(song = changed_id, title__contains = "新規追加か編集")
+            for history in historys:
+                song_title = Song.objects.get(pk = changed_id)
+                # print(changed_id, song_title)
+                history.title = f"{song_title}を新規追加か編集"
+                history.save()
