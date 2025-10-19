@@ -171,3 +171,9 @@ class Command(BaseCommand):
                 # print(changed_id, song_title)
                 history.title = f"{song_title}を新規追加か編集"
                 history.save()
+                
+
+        for history in History.objects.filter(history_type = "new"):
+            changes = history.changes.replace("<th>値</th>", "<th>内容</th>")
+            history.changes = changes
+            history.save()
