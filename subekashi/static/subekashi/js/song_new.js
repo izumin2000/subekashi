@@ -119,7 +119,7 @@ async function checkManualForm() {
         未完成である曲の記事が<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">見つかりました。</a><br>
         song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
         ${InnerURL}
-        代わりにこちらの記事を編集してください。`
+        同じ曲の場合、代わりにこちらの記事を編集してください。`
         :
         `<span class="warning"><i class="fas fa-exclamation-triangle warning"></i>
         タイトル・チャンネル名ともに一致している曲が<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">見つかりました。</a><br>

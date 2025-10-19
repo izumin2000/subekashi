@@ -157,6 +157,9 @@ document.addEventListener("DOMContentLoaded", () => {
         <a>
             <div class="dummybutton" onclick="play()"><i class="fas fa-play"></i><p>再生</p></div>
         </a>
+        <a href="/songs/4775/history/">
+            <div class="dummybutton"><i class="fas fa-history"></i><p>編集履歴</p></div>
+        </a>
     </div>
     `
     defaultDummybuttonsEle.innerHTML = stringToHTML(designedDummybuttonsEle).innerHTML;

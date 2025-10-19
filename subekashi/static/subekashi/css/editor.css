@@ -1,0 +1,86 @@
+.dummybutton {
+    background-color: #333;
+    min-width: 150px;
+}
+
+.dummybutton:hover {
+    background-color: #666;
+}
+
+.dummybutton i {
+    margin-right: 10px;
+    font-size: 1.0em;
+}
+
+.dummybutton p {
+    color: #fff;
+    padding-bottom: 5px;
+}
+
+#history-count {
+    text-align: center;
+}
+
+details {
+    margin: 15px 0;
+}
+
+details h1, details h2 {
+    margin: 20px 0 40px 0;
+    font-size: 36px
+}
+
+.history_details {
+    overflow: hidden;
+}
+
+.change_table_wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.history_details table {
+    border-spacing: 0px;
+    margin: 0 auto;
+    max-width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+@media (max-width: 800px) {
+    .change_table_wrapper {
+        overflow-x: auto;
+    }
+
+    .history_details table {
+        width: auto;
+        min-width: max-content;
+        max-width: none;
+        table-layout: auto;
+    }
+}
+
+.history_details thead {
+    background-color: #666;
+}
+
+.history_details td {
+    cursor: pointer;
+}
+
+.history_details td:hover {
+    background-color: #666;
+    transition: all 0.25s;
+}
+
+.history_details th, .history_details td {
+    border: solid 2px #999;
+    padding: 10px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-weight: normal;
+}
+
+.history_details th:first-child, .history_details td:first-child {
+    width: 100px;
+}

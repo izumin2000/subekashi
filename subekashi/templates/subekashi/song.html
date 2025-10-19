@@ -11,12 +11,12 @@
     <div class="dummybuttons">
         {% if not song.islock %}
             <a href="{% url 'subekashi:song_edit' song.id %}">
-                <div class="dummybutton"><i class="fas fa-pen"></i><p>編集</p></div>
-            </a>
-            <a href="{% url 'subekashi:song_delete' song.id %}">
-                <div class="dummybutton"><i class="far fa-trash-alt"></i><p>削除申請</p></div>
+                <div class="dummybutton"><i class="fas fa-pen"></i><p>編集/削除申請</p></div>
             </a>
         {% endif %}
+        <a href="{% url 'subekashi:song_history' song.id %}">
+            <div class="dummybutton"><i class="fas fa-history"></i><p>編集履歴</p></div>
+        </a>
     </div>
 
     <table id="song-info">
@@ -186,7 +186,7 @@
     {% if request.GET.toast == "edit" %}
         showToast("ok", "登録しました。");
     {% elif request.GET.toast == "delete" %}
-        showToast("ok", "削除申請を送信しました。");
+        showToast("ok", "削除申請を送信しました。1~2週間を目処に対応します。");
     {% elif request.GET.toast == "lock" %}
         showToast("warning", "この曲は編集できません。");
     {% endif %}

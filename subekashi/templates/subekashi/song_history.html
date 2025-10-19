@@ -1,0 +1,33 @@
+{% extends "subekashi/base/base.html" %}
+
+
+{% load static %}
+{% load filter_by_tag %}
+
+{% block css %}{% static 'subekashi/css/editor.css'%}{% endblock %}
+
+{% block content %}
+<section>
+    <h1><span id="h1-title">{{ song.title }}</span>の編集履歴</h1>
+    <div class="underline"></div>
+    <div class="dummybuttons">
+        <a onclick="reloadPage()">
+            <div class="dummybutton"><i class="fas fa-redo"></i><p>再読み込み</p></div>
+        </a>
+        <a onclick="openAll()">
+            <div class="dummybutton"><i class="fas fa-arrows-alt-v"></i><p>全て開く/閉じる</p></div>
+        </a>
+    </div>
+    {% for history in historys %}
+        <details class="history_details">
+            <summary><p>{{ history.create_time }}</p><p>{{ history.title }}</p></summary>
+            <p>{{ history.changes|safe }}</p>
+            <p>編集者: <a href="{% url 'subekashi:editor' history.editor.id %}">{{ history.editor }}</a></p>
+        </details>
+    {% endfor %}
+</section>
+{% endblock %}
+
+{% block js %}
+    <script src="{% static 'subekashi/js/editor.js' %}" defer></script>
+{% endblock %}

@@ -27,19 +27,19 @@ def song_delete(request, song_id):
         
         # もし削除理由を入力していないのならやり直し
         if not reason:
-            dataD["result"] = "invalid"
-            return render(request, "subekashi/song_delete.html", dataD)
+            dataD["error"] = "削除理由を入力してください。"
+            return render(request, "subekashi/song_edit.html", dataD)
         
         # 編集履歴を保存
-        ip = get_ip(request, is_encrypted=False)
+        ip = get_ip(request)
         editor, _ = Editor.objects.get_or_create(ip = ip)
         
         history = History(
             song = song,
             title = f"{song.title}を削除申請",
-            edit_type = "delete",
-            edited_time = timezone.now(),
-            changes = f"# {song.title}が削除申請されました\n**理由**: {reason}",
+            history_type = "delete",
+            create_time = timezone.now(),
+            changes = f"<h2>{song.title}が削除申請されました</h2><b>理由</b>: {reason}",
             editor = editor
         )
         history.save()
@@ -55,10 +55,10 @@ def song_delete(request, song_id):
         '
         is_ok = send_discord(DELETE_DISCORD_URL, content)
         if not is_ok:
-            dataD["result"] = "error"
-            return render(request, 'subekashi/song_delete.html', dataD)
+            dataD["error"] = "お問い合わせを送信できませんでした。"
+            return render(request, 'subekashi/song_edit.html', dataD)
         
         # レンダリング
         return redirect(f'/songs/{song_id}?toast=delete')
         
-    return render(request, "subekashi/song_delete.html", dataD)
+    return render(request, "subekashi/song_edit.html", dataD)

@@ -476,8 +476,16 @@ details[open]:hover {
     background-color: #333;
 }
 
+details[open] summary {
+    background-color: #555;
+}
+
 details details[open]:hover {
     background-color: #555;
+}
+
+details details[open] summary {
+    background-color: #777;
 }
 
 details a {

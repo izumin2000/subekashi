@@ -9,8 +9,19 @@ async function init() {
     await checkUrlForm();
     await initImitateList();
     checkButton();
+    checkDeleteForm();
 };
 window.addEventListener('load', init);
+
+// TODO checkValidityを利用
+// TODO 改行でもvalidになる不具合の修正
+function checkDeleteForm() {
+    const reasonValue = document.getElementById("reason").value;
+    const deleteEle = document.getElementById("delete-submit");
+    deleteEle.disabled = reasonValue == "";
+}
+
+document.getElementById('reason').addEventListener('input', checkDeleteForm)
 
 // 模倣リストの末尾にsongを追加
 function appendImitateList(song) {
@@ -294,7 +305,7 @@ imitateTitleEle.addEventListener("keydown", function (event) {
 
 // フォームに変更があったかを検知
 var isFormDirty = false;
-document.querySelectorAll('input, textarea').forEach((input) => {
+document.querySelectorAll('input:not([type="submit"]), textarea').forEach((input) => {
     input.addEventListener('change', () => {
         isFormDirty = true;
     });
@@ -307,7 +318,9 @@ window.addEventListener('beforeunload', (event) => {
     }
 });
 
-// フォームが送信される際にisFormDirtyをリセット
-document.querySelector('form').addEventListener('submit', (event) => {
-    isFormDirty = false;
+// 送信ボタンは戻る処理の対象外なのでisFormDirtyをfalseにする
+document.querySelectorAll('form').forEach((form) => {
+    form.addEventListener('submit', (event) => {
+        isFormDirty = false;
+    });
 });
