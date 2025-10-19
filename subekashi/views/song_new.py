@@ -107,7 +107,7 @@ def song_new(request):
             {"label": "すべあな模倣曲", "value": yes_no(is_subeana)},
         ]
         
-        changes = f"\n|種類|値|\n|----|----|\n"
+        changes = f"\n|種類|内容|\n|----|----|\n"
         discord_text = f"新規作成されました\n{ROOT_URL}/songs/{song_id}\n\n"
         for column in COLUMNS:
             if column["value"]:     # 通常、manual送信時にlabel=URLだけがFalseになる
