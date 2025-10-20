@@ -164,20 +164,24 @@ def song_edit(request, song_id):
             if column["before"] != column["after"]:     # ユーザーが編集時に変更した場合
                 label = column["label"]
                 changed_labels.append(label)
-                before = column["before"] if column["before"] else "なし"
-                after = column["after"] if column["after"] else "なし"
-                if label in ["模倣", "歌詞"]:
-                    before_br = before.replace("\n", "<br>")
-                    after_br = after.replace("\n", "<br>")
-                    changes += f"| {label} | {before_br} | {after_br} |\n"
-                    if (label == "模倣") or (before == "なし"):
-                        discord_text += f"**{label}**：```{before}``` :arrow_down: ```{after}```\n"
-                    else:
-                        discord_text += f"**{label}**：```{after}```\n"
-                    continue
-                    
-                changes += f"| {label} | {before} | {after} |\n"
-                discord_text += f"**{label}**：`{before}` :arrow_right: `{after}`\n"
+
+                before = column.get("before", "なし")
+                after = column.get("after", "なし")
+
+                # 改行を<br>に置換（「模倣」「歌詞」の場合のみHTML表用に使用）
+                before_br = before.replace("\n", "<br>") if label in ["模倣", "歌詞"] else before
+                after_br = after.replace("\n", "<br>") if label in ["模倣", "歌詞"] else after
+
+                # 共通：Markdownテーブル
+                changes += f"| {label} | {before_br} | {after_br} |\n"
+
+                # Discord用テキスト
+                if label == "歌詞":
+                    discord_text += f"**{label}**：```{after}```\n"
+                elif label == "模倣":
+                    discord_text += f"**{label}**：\n{before} \n:arrow_down: \n{after}\n"
+                else:
+                    discord_text += f"**{label}**：`{before}` :arrow_right: `{after}`\n"
                 
         title = f"{title}の{'と'.join(changed_labels)}を編集"
         
