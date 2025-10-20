@@ -69,8 +69,11 @@ def song_edit(request, song_id):
         # WARNING channelはそのままURLになるので/は別の文字╱に変換しないといけない
         ip = get_ip(request)
         cleaned_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
-        cleaned_lyrics = lyrics.replace("\r\n", "\n")
-        imitates = ",".join(list(set(imitates.split(",")))) if imitates else ""        # 重複防止
+        
+        # 自分自身や重複している曲は模倣曲として登録できない
+        imitates_list = set(imitates.split(","))
+        imitates_list.discard(str(song_id))
+        imitates = ",".join(list(imitates_list)) if imitates else ""
         
         # 掲載拒否リストの読み込み
         try:
@@ -107,8 +110,9 @@ def song_edit(request, song_id):
         for delete_imitate_id in delete_imitate_id_set :
             delete_imitate = Song.objects.get(pk = delete_imitate_id)
             delete_imitated_id_set = set(delete_imitate.imitated.split(","))        # 模倣先の被模倣
-            delete_imitated_id_set.remove(str(song_id))   # 被模倣に編集した曲のsong_idを削除する
-                        
+            if (delete_imitate_id != str(song_id)):
+                delete_imitated_id_set.remove(str(song_id))   # 被模倣に編集した曲のsong_idを削除する
+            
             delete_imitate.imitated = ",".join(delete_imitated_id_set).strip(",")
             delete_imitate.save()
         

@@ -661,12 +661,14 @@ input[type=submit], button {
 
 .dummybuttons {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     align-items: center;
+    margin: 50px 0;
+    gap: 10px;
 }
 
 .dummybuttons a {
-    padding: 10px 0;
     text-decoration: none;
 }
 
@@ -679,7 +681,6 @@ input[type=submit], button {
     width: fit-content;
     min-width: 120px;
     padding: 0 10px;
-    margin: 20px 10px;
     cursor: pointer;
     border-radius: 10px;
 }

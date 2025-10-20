@@ -104,6 +104,12 @@ function renderSongGuesser() {
 // すべあな原曲以外からから選択
 async function songGuesserClick(id) {
     imitateTitleEle.value = "";
+
+    if (id == song_id) {
+        showToast("error", "編集する曲の模倣曲に、その曲自身を登録することはできません。");
+        renderSongGuesser();
+        return;
+    }
     var imitateSong = await exponentialBackoff(`song/${id}`, "imitate", songGuesserClick);
     if (!imitateSong) {
         return;
