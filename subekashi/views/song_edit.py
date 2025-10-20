@@ -137,14 +137,14 @@ def song_edit(request, song_id):
             {"label": "すべあな模倣曲", "before": yes_no(song.issubeana) ,"after": yes_no(is_subeana)},
             {"label": "下書き", "before": yes_no(song.isdraft) ,"after": yes_no(is_draft)},
             {"label": "模倣", "before": Ids2Info(song.imitate), "after": Ids2Info(imitates)},
-            {"label": "歌詞", "before": song.lyrics, "after": cleaned_lyrics},
+            {"label": "歌詞", "before": song.lyrics, "after": lyrics},
         ]
 
         # songの更新
         song.title = title
         song.channel = cleaned_channel
         song.url = cleaned_url
-        song.lyrics = cleaned_lyrics
+        song.lyrics = lyrics
         song.imitate = imitates
         song.isoriginal = is_original
         song.isdeleted = is_deleted
