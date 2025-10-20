@@ -104,6 +104,12 @@ function renderSongGuesser() {
 // すべあな原曲以外からから選択
 async function songGuesserClick(id) {
     imitateTitleEle.value = "";
+
+    if (id == song_id) {
+        showToast("error", "編集する曲の模倣曲に、その曲自身を登録することはできません。");
+        renderSongGuesser();
+        return;
+    }
     var imitateSong = await exponentialBackoff(`song/${id}`, "imitate", songGuesserClick);
     if (!imitateSong) {
         return;
@@ -149,7 +155,7 @@ async function checkTitleChannelForm() {
         const infoHTML = isLack(existingSong)
         ?
         `<span class="info"><i class="fas fa-info-circle info"></i>
-        未完成である曲の記事が<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">見つかりました。</a><br>
+        未完成である曲が<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">見つかりました。</a><br>
         song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
         登録されているURL：<a href="${existingSongURL}" target="_blank">${existingSongURL}</a>${isMultipleSongURL ? 'など' : ''}<br>
         この記事を削除したい場合は、<a href="${baseURL()}/songs/${song_id}/delete?reason=${baseURL()}/songs/${existingSong.id} と重複しています。" target="_blank">こちら</a>をクリックしてください。

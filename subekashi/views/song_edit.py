@@ -69,8 +69,11 @@ def song_edit(request, song_id):
         # WARNING channelはそのままURLになるので/は別の文字╱に変換しないといけない
         ip = get_ip(request)
         cleaned_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
-        cleaned_lyrics = lyrics.replace("\r\n", "\n")
-        imitates = ",".join(list(set(imitates.split(",")))) if imitates else ""        # 重複防止
+        
+        # 自分自身や重複している曲は模倣曲として登録できない
+        imitates_list = set(imitates.split(","))
+        imitates_list.discard(str(song_id))
+        imitates = ",".join(list(imitates_list)) if imitates else ""
         
         # 掲載拒否リストの読み込み
         try:
@@ -107,8 +110,9 @@ def song_edit(request, song_id):
         for delete_imitate_id in delete_imitate_id_set :
             delete_imitate = Song.objects.get(pk = delete_imitate_id)
             delete_imitated_id_set = set(delete_imitate.imitated.split(","))        # 模倣先の被模倣
-            delete_imitated_id_set.remove(str(song_id))   # 被模倣に編集した曲のsong_idを削除する
-                        
+            if (delete_imitate_id != str(song_id)):
+                delete_imitated_id_set.remove(str(song_id))   # 被模倣に編集した曲のsong_idを削除する
+            
             delete_imitate.imitated = ",".join(delete_imitated_id_set).strip(",")
             delete_imitate.save()
         
@@ -137,14 +141,14 @@ def song_edit(request, song_id):
             {"label": "すべあな模倣曲", "before": yes_no(song.issubeana) ,"after": yes_no(is_subeana)},
             {"label": "下書き", "before": yes_no(song.isdraft) ,"after": yes_no(is_draft)},
             {"label": "模倣", "before": Ids2Info(song.imitate), "after": Ids2Info(imitates)},
-            {"label": "歌詞", "before": song.lyrics, "after": cleaned_lyrics},
+            {"label": "歌詞", "before": song.lyrics, "after": lyrics},
         ]
 
         # songの更新
         song.title = title
         song.channel = cleaned_channel
         song.url = cleaned_url
-        song.lyrics = cleaned_lyrics
+        song.lyrics = lyrics
         song.imitate = imitates
         song.isoriginal = is_original
         song.isdeleted = is_deleted
@@ -164,20 +168,24 @@ def song_edit(request, song_id):
             if column["before"] != column["after"]:     # ユーザーが編集時に変更した場合
                 label = column["label"]
                 changed_labels.append(label)
-                before = column["before"] if column["before"] else "なし"
-                after = column["after"] if column["after"] else "なし"
-                if label in ["模倣", "歌詞"]:
-                    before_br = before.replace("\n", "<br>")
-                    after_br = after.replace("\n", "<br>")
-                    changes += f"| {label} | {before_br} | {after_br} |\n"
-                    if (label == "模倣") or (before == "なし"):
-                        discord_text += f"**{label}**：```{before}``` :arrow_down: ```{after}```\n"
-                    else:
-                        discord_text += f"**{label}**：```{after}```\n"
-                    continue
-                    
-                changes += f"| {label} | {before} | {after} |\n"
-                discord_text += f"**{label}**：`{before}` :arrow_right: `{after}`\n"
+
+                before = column.get("before", "なし")
+                after = column.get("after", "なし")
+
+                # 改行を<br>に置換（「模倣」「歌詞」の場合のみHTML表用に使用）
+                before_br = before.replace("\n", "<br>") if label in ["模倣", "歌詞"] else before
+                after_br = after.replace("\n", "<br>") if label in ["模倣", "歌詞"] else after
+
+                # 共通：Markdownテーブル
+                changes += f"| {label} | {before_br} | {after_br} |\n"
+
+                # Discord用テキスト
+                if label == "歌詞":
+                    discord_text += f"**{label}**：```{after}```\n"
+                elif label == "模倣":
+                    discord_text += f"**{label}**：\n{before} \n:arrow_down: \n{after}\n"
+                else:
+                    discord_text += f"**{label}**：`{before}` :arrow_right: `{after}`\n"
                 
         title = f"{title}の{'と'.join(changed_labels)}を編集"
         

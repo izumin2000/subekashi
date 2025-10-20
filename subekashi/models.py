@@ -54,9 +54,11 @@ class Song(models.Model):
     def __str__(self):
         return self.title
     
-    # TODO save処理のオーバーライドメソッド
-    # def save(self, *args, **kwargs):
-        # super().save(*args, **kwargs)
+    def save(self, *args, **kwargs):
+        if self.lyrics:
+            self.lyrics = self.lyrics.replace("\r\n", "\n")
+            # TODO channel等もcleanする
+        super().save(*args, **kwargs)
     
     # def channels(self):
         # return

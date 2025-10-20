@@ -50,7 +50,7 @@ def song(request, song_id):
     description += f"被模倣曲数：{imitated_list.count()}, " if imitated_list.count() else ""
 
     # 歌詞の一部をdescriptionに記述
-    description_lyrics = song.lyrics.replace("\r\n", "")[:100]
+    description_lyrics = song.lyrics[:100]
     description += f"歌詞: {description_lyrics}" if description_lyrics else ""
     
     # タグを持っているかどうかの確認
