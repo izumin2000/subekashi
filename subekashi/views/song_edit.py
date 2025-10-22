@@ -174,7 +174,7 @@ def song_edit(request, song_id):
 
                 # 改行を<br>に置換（「模倣」「歌詞」の場合のみHTML表用に使用）
                 before_br = before.replace("\n", "<br>") if label in ["模倣", "歌詞"] else before
-                after_br = after.replace("\n", "<br>") if label in ["模倣", "歌詞"] else after
+                after_br = after.replace("\r\n", "<br>") if label in ["模倣", "歌詞"] else after
 
                 # 共通：Markdownテーブル
                 changes += f"| {label} | {before_br} | {after_br} |\n"
