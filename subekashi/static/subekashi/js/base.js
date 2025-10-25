@@ -99,22 +99,6 @@ function stringToHTML(string, multi=false) {
     return htmls[0];
 }
 
-// トーストをAPI経由で動的に表示する関数(旧)
-async function showToastServer(icon, text) {
-    try {
-        const response = await fetch(`/api/html/toast?icon=${encodeURIComponent(icon)}&text=${encodeURIComponent(text)}`);
-        if (!response.ok) throw new Error('Failed to fetch toast');
-
-        const data = await response.json();
-        const toastHTML = stringToHTML(data.toast);
-
-        const toastContainerEle = document.getElementById('toast-container');
-        toastContainerEle.appendChild(toastHTML);
-    } catch (error) {
-        console.error('Error showing toast:', error);
-    }
-}
-
 /**
  * トーストをクライアントで動的に生成・表示する関数
  * @param {"info"|"ok"|"warning"|"error"} icon 
