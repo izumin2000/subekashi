@@ -120,6 +120,12 @@ ALLOW_MEDIAS = [
         "regex": r"newgrounds.com",
         "icon": "<i class='fas fa-gamepad'></i>",
     },
+    {
+        "id": "note",
+        "name": "note",
+        "regex": r"note.com",
+        "icon": "<i class='fas fa-book'></i>",
+    },
 ]
 
 ALL_MEDIAS = ALLOW_MEDIAS + [
