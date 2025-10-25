@@ -141,7 +141,7 @@ def song_edit(request, song_id):
             {"label": "すべあな模倣曲", "before": yes_no(song.issubeana) ,"after": yes_no(is_subeana)},
             {"label": "下書き", "before": yes_no(song.isdraft) ,"after": yes_no(is_draft)},
             {"label": "模倣", "before": Ids2Info(song.imitate), "after": Ids2Info(imitates)},
-            {"label": "歌詞", "before": song.lyrics, "after": lyrics},
+            {"label": "歌詞", "before": song.lyrics, "after": lyrics.replace("\r\n", "\n")},
         ]
 
         # songの更新
