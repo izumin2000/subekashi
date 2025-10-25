@@ -49,7 +49,6 @@ class Song(models.Model):
     view = models.IntegerField(blank = True, null = True)
     like = models.IntegerField(blank = True, null = True)
     category = models.CharField(default = "song", choices=CHOICES, max_length=10)
-    editor = models.ForeignKey(Editor, on_delete = models.CASCADE, null=True, related_name="songs")
 
     def __str__(self):
         return self.title
