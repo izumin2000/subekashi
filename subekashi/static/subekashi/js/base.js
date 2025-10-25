@@ -140,7 +140,10 @@ async function showToast(icon, text) {
     toastDiv.appendChild(contentP);
 
     const toastContainerEle = document.getElementById('toast-container');
-    if(!toastContainerEle) console.error("#toast-container not found")
+    if(!toastContainerEle) {
+        console.error("#toast-container not found");
+        return;
+    }
     toastContainerEle.appendChild(toastDiv);
 }
 
