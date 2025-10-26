@@ -12,7 +12,7 @@ class Editor(models.Model):
 
 
 # 楽曲のメイン情報
-# editor以外の外部キーはまだ無いので後ほどカスタムコマンドで対応を行う
+# 外部キーはまだ無いので後ほどカスタムコマンドで対応を行う
 class Song(models.Model):
     CHOICES = (
         ("song", "曲"),
