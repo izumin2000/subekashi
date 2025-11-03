@@ -6,69 +6,62 @@ from bs4 import BeautifulSoup
 class Command(BaseCommand):
     def fix_lyrics_row(self, html):
         COLUMNS = ["タイトル", "チャンネル名", "URL", "オリジナル", "削除済み", "ネタ曲", "インスト曲", "すべあな模倣曲", "下書き", "模倣", "歌詞"]
-        
+
         soup = BeautifulSoup(html, "html.parser")
         table = soup.find("table")
-        if table is None:
-            return html
-
         rows = table.find_all("tr")
-        # find index of the row whose first cell text == "歌詞"
-        karaoke_idx = None
-        for idx, row in enumerate(rows):
-            first_cell = row.find(['td', 'th'])
-            if first_cell and first_cell.get_text(strip=True) == "歌詞":
-                karaoke_idx = idx
-                break
-        if karaoke_idx is None:
-            return str(soup)  # "歌詞" row not found, return unchanged
 
-        # determine range: from next row until (but not including) a row whose first cell text equals any element of COLUMNS
-        start = karaoke_idx + 1
-        end = start
-        while end < len(rows):
-            first = rows[end].find(['td', 'th'])
-            first_text = first.get_text(strip=True) if first else ""
-            if first_text in COLUMNS:
-                break
-            end += 1
+        # 後ろの<p>を処理
+        p_texts = []
+        for p in soup.find_all("p"):
+            txt = p.get_text().replace("\n", "<br>").rstrip("|")
+            p_texts.append(txt)
+        p_joined = "<br>".join(p_texts)
 
-        # concatenate inner HTML (preserve <br> etc.) of first column cells in [start, end)
-        parts = []
-        for i in range(start, end):
-            first = rows[i].find(['td', 'th'])
-            if first:
-                parts.append(first.decode_contents())  # preserves tags like <br>
+        # "歌詞"行とCOLUMNSに基づく処理
+        new_rows = []
+        collecting = False
+        lyrics_texts = []
+        lyrics_target = None
 
-        concat_html = "".join(parts)
+        for i, tr in enumerate(rows):
+            tds = tr.find_all("td")
+            if not tds:
+                continue
+            first = tds[0].get_text(strip=True)
+            if first == "歌詞":
+                collecting = True
+                lyrics_target = tds[2]
+                new_rows.append(tr)
+                continue
+            if collecting:
+                if first in COLUMNS and first != "歌詞":
+                    collecting = False
+                else:
+                    # 歌詞の次から対象範囲の文字を収集
+                    lyrics_texts.append(tds[0].decode_contents())
+                    continue
+            # COLUMNSに含まれる行のみ残す
+            if first in COLUMNS:
+                new_rows.append(tr)
 
-        # append to the end of the 3rd cell of the "歌詞" row (create cells if needed)
-        lyric_row = rows[karaoke_idx]
-        cells = lyric_row.find_all(['td', 'th'])
-        # ensure there are at least 3 cells
-        while len(cells) < 3:
-            new_td = soup.new_tag("td")
-            lyric_row.append(new_td)
-            cells = lyric_row.find_all(['td', 'th'])
+        # 収集した文字と<p>の文字を結合
+        if lyrics_target:
+            add_text = "<br>".join(lyrics_texts + [p_joined])
+            lyrics_target.append(BeautifulSoup(add_text, "html.parser"))
 
-        third_cell = cells[2]
-        if concat_html:
-            # parse the concat_html fragment and append its contents into the third cell
-            frag = BeautifulSoup(concat_html, "html.parser")
-            for node in frag.contents:
-                third_cell.append(node)
-
-        # remove rows whose first-column text is NOT in COLUMNS (keep rows where first-col is in COLUMNS)
-        # (this will keep the "歌詞" row if "歌詞" is in COLUMNS as per requirement)
-        for row in table.find_all("tr"):
-            first = row.find(['td', 'th'])
-            first_text = first.get_text(strip=True) if first else ""
-            if first_text not in COLUMNS:
-                row.decompose()
+        # テーブルのtbodyを置き換え
+        tbody = table.find("tbody")
+        tbody.clear()
+        for r in new_rows:
+            tbody.append(r)
+            
+        for tag in soup.find_all('div'):
+            for element in list(tag.next_siblings):
+                element.extract()
 
         return str(soup)
 
-    
     def handle(self, *args, **options):
         histories = []
         for history in History.objects.iterator():
