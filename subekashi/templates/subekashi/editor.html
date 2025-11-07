@@ -2,6 +2,7 @@
 
 
 {% load static %}
+{% load changes %}
 {% block noindex %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 {% block css %}{% static 'subekashi/css/editor.css'%}{% endblock %}
 
@@ -21,28 +22,7 @@
     {% for history in historys %}
         <details class="history_details">
             <summary><p>{{ history.create_time }}</p><p>{{ history.title }}</p></summary>
-            {% if history.temp_changes %}
-                <div class="change_table_wrapper">
-                    <table>
-                        <thead>
-                            <tr>
-                                {% for cell in history.temp_changes.0 %}
-                                    <th>{{ cell }}</th>
-                                {% endfor %}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for change in history.temp_changes|slice:"1:" %}
-                            <tr>
-                                {% for cell in change %}
-                                    <td>{{ cell }}</td>
-                                {% endfor %}
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% endif %}
+            {% render_changes history %}
             {% if history.song %}
                 <a href="{% url 'subekashi:song' history.song.id %}">{{ history.song.title }}</a>
             {% else %}

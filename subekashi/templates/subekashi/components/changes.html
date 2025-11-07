@@ -1,0 +1,22 @@
+{% if changes %}
+    <div class="change_table_wrapper">
+        <table>
+            <thead>
+                <tr>
+                    {% for cell in changes.0 %}
+                        <th>{{ cell }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for change in changes|slice:"1:" %}
+                <tr>
+                    {% for cell in change %}
+                        <td>{{ cell }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
