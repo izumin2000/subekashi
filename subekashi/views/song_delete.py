@@ -39,7 +39,7 @@ def song_delete(request, song_id):
             title = f"{song.title}を削除申請",
             history_type = "delete",
             create_time = timezone.now(),
-            changes = f"<h2>{song.title}が削除申請されました</h2><b>理由</b>: {reason}",
+            temp_changes = ["理由", reason],
             editor = editor
         )
         history.save()

@@ -12,7 +12,7 @@
                 {% for change in changes|slice:"1:" %}
                 <tr>
                     {% for cell in change %}
-                        <td>{{ cell }}</td>
+                        <td>{{ cell|linebreaksbr }}</td>
                     {% endfor %}
                 </tr>
                 {% endfor %}
