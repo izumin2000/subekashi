@@ -21,7 +21,7 @@ class Command(BaseCommand):
         for p in soup.find_all("p"):
             txt = p.get_text().replace("\n", "<br>").rstrip("|")
             p_texts.append(txt)
-        p_joined = "<br>".join(p_texts)
+        p_joined = "".join(p_texts)
 
         # "歌詞"行とCOLUMNSに基づく処理
         new_rows = []
@@ -52,7 +52,7 @@ class Command(BaseCommand):
 
         # 収集した文字と<p>の文字を結合
         if lyrics_target:
-            add_text = "<br>".join(lyrics_texts + [p_joined])
+            add_text = "".join(lyrics_texts + [p_joined])
             lyrics_target.append(BeautifulSoup(add_text, "html.parser"))
 
         # テーブルのtbodyを置き換え
@@ -69,114 +69,36 @@ class Command(BaseCommand):
     
     
     def parse_table_html_to_2dlist(self, html_text):
-        """
-        html_text 内の最初の <table> を見つけて 2次元リストに変換して返す。
-        <thead> の見出しを最初の行に、続けて tbody の各行を配列として返す。
-        table が見つからなければ None を返す。
-
-        修正点:
-        - <br> を改行に変換してセル内改行を保持する
-        - HTML エンティティ (&amp;, &#x1234; など) をデコードする
-        - もし入力が JSON 文字列で中に "\\uXXXX" のようなエスケープが残っている場合は
-        可能な限りデコードして元のユニコード文字列に戻す
-        - 出力は Python の文字列（Unicode）として返す。JSON にシリアライズする際は
-        json.dumps(rows, ensure_ascii=False) を使ってください（外部での扱いについての注意）
-        """
-        if not html_text or not isinstance(html_text, str):
-            return None
-
-        # JSONっぽければ試す（内部に \\uXXXX の生文字列がある場合は後でデコードする）
-        html_text_stripped = html_text.strip()
-        if html_text_stripped.startswith('[') or html_text_stripped.startswith('{'):
-            try:
-                parsed = json.loads(html_text_stripped)
-                if isinstance(parsed, list):
-                    # parsed 内の文字列に生のエスケープシーケンスがあればデコードして返す
-                    def _decode_possible_escapes(obj):
-                        if isinstance(obj, str):
-                            s = obj
-                            # HTML エンティティをデコード
-                            s = html.unescape(s)
-                            # 生の "\uXXXX" 等を含む場合は unicode_escape でデコードを試みる
-                            if re.search(r'\\u[0-9a-fA-F]{4}', s) or re.search(r'\\x[0-9a-fA-F]{2}', s):
-                                try:
-                                    s = s.encode('utf-8').decode('unicode_escape')
-                                except Exception:
-                                    # 失敗しても元の文字列を使う
-                                    pass
-                            return s
-                        if isinstance(obj, list):
-                            return [_decode_possible_escapes(v) for v in obj]
-                        if isinstance(obj, dict):
-                            return {k: _decode_possible_escapes(v) for k, v in obj.items()}
-                        return obj
-                    return _decode_possible_escapes(parsed)
-            except Exception:
-                pass
-
+        html_text = html_text.replace("<br>", "\n").replace("<br/>", "\n")
         soup = BeautifulSoup(html_text, "html.parser")
-
-        # 優先: div.change_table_wrapper 内の table を探す
-        wrapper = soup.find("div", class_="change_table_wrapper")
-        table = None
-        if wrapper:
-            table = wrapper.find("table")
-        if not table:
-            # とりあえずページ内の最初の table を使う
-            table = soup.find("table")
-        if not table:
+        
+        table = soup.find("table")
+        if table is None:
             return None
-
-        rows = []
-
-        # helper: セル内のテキストをきれいに取得する
-        def _clean_cell_text(cell):
-            # <br> を改行文字に置き換える（BeautifulSoup の get_text では <br> が無視されることがあるため）
-            for br in cell.find_all("br"):
-                br.replace_with("\n")
-            text = cell.get_text(separator="\n")
-            # HTML エンティティをデコード
-            text = html.unescape(text)
-            # 標準的な改行を統一
-            text = text.replace("\r\n", "\n").replace("\r", "\n").strip()
-            # もし生の "\uXXXX" のようなシーケンスが残っていたら試しにデコード
-            if re.search(r'\\u[0-9a-fA-F]{4}', text) or re.search(r'\\x[0-9a-fA-F]{2}', text):
-                try:
-                    text = text.encode('utf-8').decode('unicode_escape')
-                except Exception:
-                    pass
-            return text
-
-        # thead の見出し
+        
+        result = []
+        
+        # thead
         thead = table.find("thead")
         if thead:
-            ths = thead.find_all("th")
-            if ths:
-                header = [_clean_cell_text(th) for th in ths]
-                rows.append(header)
-
-        # tbody 行
+            header_row = []
+            for th in thead.find_all("th"):
+                text = th.get_text(strip=True)
+                header_row.append(text)
+            result.append(header_row)
+        
+        # tbody
         tbody = table.find("tbody")
         if tbody:
-            tr_list = tbody.find_all("tr")
-        else:
-            # tbody 無くても tr を拾う
-            tr_list = table.find_all("tr")
-            # もし thead でヘッダー取れているなら、thead行は重複しないように除外する
-            if thead:
-                tr_list = [tr for tr in tr_list if not tr.find_parent("thead")]
+            for tr in tbody.find_all("tr"):
+                row = []
+                for td in tr.find_all("td"):
+                    text = td.get_text(strip=True)
+                    row.append(text)
+                result.append(row)
+        
+        return result
 
-        for tr in tr_list:
-            tds = tr.find_all(["td", "th"])
-            if not tds:
-                continue
-            row = [_clean_cell_text(td) for td in tds]
-            rows.append(row)
-
-        if not rows:
-            return None
-
-        return rows
 
     
     def parse_changes(self, html_text):
@@ -203,7 +125,7 @@ class Command(BaseCommand):
         return None
 
 
-    def handle(self, *args, **options):
+    def handle(self, *args, **options): 
         histories = []
         for history in History.objects.exclude(history_type = "delete").exclude(changes = "").iterator():
             fixed_changes = self.fix_lyrics_row(history.changes)
@@ -211,6 +133,7 @@ class Command(BaseCommand):
                 history.changes = fixed_changes
                 histories.append(history)
                 
+        History.objects.bulk_update(histories, ["changes"])
         
         batch = 5000
 
