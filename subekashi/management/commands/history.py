@@ -52,7 +52,8 @@ class Command(BaseCommand):
 
         # 収集した文字と<p>の文字を結合
         if lyrics_target:
-            add_text = "".join(lyrics_texts + [p_joined])
+            lyrics_texts_br = "<br>".join(lyrics_texts)
+            add_text = f"<br>{lyrics_texts_br}<br>{p_joined}"
             lyrics_target.append(BeautifulSoup(add_text, "html.parser"))
 
         # テーブルのtbodyを置き換え
@@ -125,7 +126,7 @@ class Command(BaseCommand):
         return None
 
 
-    def handle(self, *args, **options): 
+    def handle(self, *args, **options):
         histories = []
         for history in History.objects.exclude(history_type = "delete").exclude(changes = "").iterator():
             fixed_changes = self.fix_lyrics_row(history.changes)
