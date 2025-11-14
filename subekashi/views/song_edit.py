@@ -179,12 +179,16 @@ def song_edit(request, song_id):
                 changes.append([label, before_br, after_br])
 
                 # Discord用テキスト
+                discord_text += f"**{label}**："
                 if label == "歌詞":
-                    discord_text += f"**{label}**：```{after}```\n"
+                    discord_text += f"```{after}```\n"
                 elif label == "模倣":
-                    discord_text += f"**{label}**：\n{before} \n:arrow_down: \n{after}\n"
+                    discord_text += f"\n{before} \n:arrow_down: \n{after}\n"
                 else:
-                    discord_text += f"**{label}**：`{before}` :arrow_right: `{after}`\n"
+                    # beforeが存在する場合追記する
+                    if len(before) != 0:
+                        discord_text += f"`{before}` :arrow_right: "
+                    discord_text += f"`{after}`\n"
                 
         title = f"{title}の{'と'.join(changed_labels)}を編集"
         
