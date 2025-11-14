@@ -10,26 +10,33 @@
 <section>
     <h1><span id="h1-title">{{ editor }}の編集履歴</span></h1>
     <div class="underline"></div>
-    <div class="dummybuttons">
-        <a onclick="reloadPage()">
-            <div class="dummybutton"><i class="fas fa-redo"></i><p>再読み込み</p></div>
-        </a>
-        <a onclick="openAll()">
-            <div class="dummybutton"><i class="fas fa-arrows-alt-v"></i><p>全て開く/閉じる</p></div>
-        </a>
-    </div>
-    <p id="history-count">{{ historys.count }}件</p>
-    {% for history in historys %}
-        <details class="history_details">
-            <summary><p>{{ history.create_time }}</p><p>{{ history.title }}</p></summary>
-            {% render_changes history %}
-            {% if history.song %}
-                <a href="{% url 'subekashi:song' history.song.id %}">{{ history.song.title }}</a>
-            {% else %}
-                <p>この曲は削除されました</p>
-            {% endif %}
-        </details>
-    {% endfor %}
+    {% if editor.is_open or editor.is_forced_open or is_me %}
+        {% if not editor.is_open and not editor.is_forced_open %}
+            <p id="private_info">この情報はあなただけに表示されています。</p>
+        {% endif %}
+        <div class="dummybuttons">
+            <a onclick="reloadPage()">
+                <div class="dummybutton"><i class="fas fa-redo"></i><p>再読み込み</p></div>
+            </a>
+            <a onclick="openAll()">
+                <div class="dummybutton"><i class="fas fa-arrows-alt-v"></i><p>全て開く/閉じる</p></div>
+            </a>
+        </div>
+        <p id="history-count">{{ historys.count }}件</p>
+        {% for history in historys %}
+            <details class="history_details">
+                <summary><p>{{ history.create_time }}</p><p>{{ history.title }}</p></summary>
+                {% render_changes history %}
+                {% if history.song %}
+                    <a href="{% url 'subekashi:song' history.song.id %}">{{ history.song.title }}</a>
+                {% else %}
+                    <p>この曲は削除されました</p>
+                {% endif %}
+            </details>
+        {% endfor %}
+    {% else %}
+        <p id="secret-info">この編集者の情報は非公開です。</p>
+    {% endif %}
 </section>
 {% endblock %}
 
