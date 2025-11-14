@@ -4,7 +4,7 @@ window.addEventListener("DOMContentLoaded", () => {
     firstDetail.open = true;
 
     // セルの値をコピー
-	document.querySelectorAll("td").forEach(cell => {
+	document.querySelectorAll(".change_table_wrapper td").forEach(cell => {
 		cell.addEventListener("click", async () => {
 			const text = cell.innerText.trim();
 			try {
