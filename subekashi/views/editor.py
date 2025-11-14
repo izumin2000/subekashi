@@ -1,7 +1,6 @@
 from django.shortcuts import render
 from subekashi.models import Editor, History
 from subekashi.lib.ip import get_ip
-from subekashi.lib.security import decrypt
 
 
 def editor(request, editor_id):
