@@ -171,12 +171,8 @@ def song_edit(request, song_id):
                 before = column.get("before", "なし")
                 after = column.get("after", "なし")
 
-                # 改行を<br>に置換（「模倣」「歌詞」の場合のみHTML表用に使用）
-                before_br = before.replace("\n", "<br>") if label in ["模倣", "歌詞"] else before
-                after_br = after.replace("\r\n", "<br>") if label in ["模倣", "歌詞"] else after
-
                 # 共通：Markdownテーブル
-                changes.append([label, before_br, after_br])
+                changes.append([label, before, after])
 
                 # Discord用テキスト
                 discord_text += f"**{label}**："
