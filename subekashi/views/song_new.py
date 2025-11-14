@@ -7,7 +7,6 @@ from subekashi.lib.ip import *
 from subekashi.lib.discord import *
 from subekashi.lib.youtube import *
 from subekashi.lib.search import song_search
-from subekashi.lib.changes import md2changes
 
 
 def song_new(request):
@@ -107,11 +106,11 @@ def song_new(request):
             {"label": "すべあな模倣曲", "value": yes_no(is_subeana)},
         ]
         
-        changes = f"\n|種類|内容|\n|----|----|\n"
+        changes = [["種類", "内容"]]
         discord_text = f"新規作成されました\n{ROOT_URL}/songs/{song_id}\n\n"
         for column in COLUMNS:
             if column["value"]:     # 通常、manual送信時にlabel=URLだけがFalseになる
-                changes += f"| {column['label']} | {column['value']} |\n"
+                changes.append([column['label'], column['value']])
                 discord_text += f"**{column['label']}**：`{column['value']}`\n"
 
         # 編集履歴を保存
@@ -121,7 +120,7 @@ def song_new(request):
             title = f"{song.title}を新規作成",
             history_type = "new",
             create_time = timezone.now(),
-            changes = md2changes(changes),
+            temp_changes = changes,
             editor = editor
         )
         history.save()

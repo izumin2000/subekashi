@@ -2,7 +2,7 @@
 
 
 {% load static %}
-{% load filter_by_tag %}
+{% load changes %}
 
 {% block css %}{% static 'subekashi/css/editor.css'%}{% endblock %}
 
@@ -24,7 +24,7 @@
     {% for history in historys %}
         <details class="history_details">
             <summary><p>{{ history.create_time }}</p><p>{{ history.title }}</p></summary>
-            <p>{{ history.changes|safe }}</p>
+            {% render_changes history %}
             <p>編集者: <a href="{% url 'subekashi:editor' history.editor.id %}">{{ history.editor }}</a></p>
         </details>
     {% endfor %}

@@ -37,6 +37,7 @@ details h1, details h2 {
 .change_table_wrapper {
     width: 100%;
     overflow-x: auto;
+    margin: 10px 0 5px 0;
 }
 
 .history_details table {

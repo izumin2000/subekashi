@@ -7,7 +7,6 @@ from subekashi.models import *
 from subekashi.lib.url import *
 from subekashi.lib.ip import *
 from subekashi.lib.discord import *
-from subekashi.lib.changes import md2changes
 from subekashi.lib.search import song_search
 
 
@@ -161,7 +160,7 @@ def song_edit(request, song_id):
         song.save()
         
         # History DBの変更内容とDisocrdの#新規作成・変更チャンネルに送る文の用意
-        changes = "|種類|編集前|編集後|\n|----|----|----|\n"
+        changes = [["種類", "編集前", "編集後"]]
         changed_labels = []
         discord_text = f"編集されました\n{ROOT_URL}/songs/{song_id}/history\n\n"
         for column in COLUMNS:
@@ -177,8 +176,8 @@ def song_edit(request, song_id):
                 after_br = after.replace("\r\n", "<br>") if label in ["模倣", "歌詞"] else after
 
                 # 共通：Markdownテーブル
-                changes += f"| {label} | {before_br} | {after_br} |\n"
-                
+                changes.append([label, before_br, after_br])
+
                 # Discord用テキスト
                 discord_text += f"**{label}**："
                 if label == "歌詞":
@@ -201,7 +200,7 @@ def song_edit(request, song_id):
                 title = title,
                 history_type = "new",
                 create_time = timezone.now(),
-                changes = md2changes(changes),
+                temp_changes = changes,
                 editor = editor
             )
             history.save()

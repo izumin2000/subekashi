@@ -2,6 +2,7 @@
 
 
 {% load static %}
+{% load changes %}
 {% block noindex %}<meta name="robots" content="noindex, nofollow">{% endblock %}
 {% block css %}{% static 'subekashi/css/editor.css'%}{% endblock %}
 
@@ -21,7 +22,7 @@
     {% for history in historys %}
         <details class="history_details">
             <summary><p>{{ history.create_time }}</p><p>{{ history.title }}</p></summary>
-            <p>{{ history.changes|safe }}</p>
+            {% render_changes history %}
             {% if history.song %}
                 <a href="{% url 'subekashi:song' history.song.id %}">{{ history.song.title }}</a>
             {% else %}

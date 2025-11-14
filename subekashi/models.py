@@ -131,6 +131,7 @@ class History(models.Model):
     history_type = models.CharField(default = "new", choices=CHOICES, max_length = 10)
     create_time = models.DateTimeField(default = timezone.now)
     changes = models.TextField(default = "", max_length = 20000)
+    temp_changes = models.JSONField(null=True, blank=True, default=None)
     editor = models.ForeignKey(Editor, on_delete = models.CASCADE, related_name="histories")
 
 
