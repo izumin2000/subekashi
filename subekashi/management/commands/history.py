@@ -125,6 +125,22 @@ class Command(BaseCommand):
 
         return None
 
+    
+    def extract_urls(self, data):
+        result = []
+        for row in data:
+            # 1列目が "URL" の行を処理
+            if row[0] == "URL":
+                new_row = ["URL"]
+                for cell in row[1:]:
+                    m = re.match(r'\[([^\]]*)\]', cell)
+                    new_row.append(m.group(1) if m else cell)
+                result.append(new_row)
+            else:
+                # それ以外の行はそのまま
+                result.append(row)
+        return result
+
 
     def handle(self, *args, **options):
         histories = []
@@ -175,5 +191,14 @@ class Command(BaseCommand):
             if parsed:
                 history.temp_changes = parsed
                 history.save(update_fields=['temp_changes'])
+        
+        histories = []
+        for history in History.objects.all():
+            fixed_changes = self.extract_urls(history.temp_changes)
+            if fixed_changes != history.temp_changes:
+                history.temp_changes = fixed_changes
+                histories.append(history)
+                
+        History.objects.bulk_update(histories, ["temp_changes"])
                 
         self.stdout.write("Done.")

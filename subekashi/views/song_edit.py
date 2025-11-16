@@ -125,7 +125,7 @@ def song_edit(request, song_id):
             info = ""
             for song_id in song_id_list:
                 song = Song.objects.get(id = song_id)
-                info += f"[{song.title}]({ROOT_URL}/songs/{song.id})\n"
+                info += f"{song.title}\n"
             return info[:-1]        # 最後の改行は不要
 
         # songを更新する前にhistoryのために更新前後のsongの情報を記録しておく
