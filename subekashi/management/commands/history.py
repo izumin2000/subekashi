@@ -126,12 +126,11 @@ class Command(BaseCommand):
         return None
 
     
-    def extract_urls(self, data):
+    def extract_imitates(self, data):
         result = []
         for row in data:
-            # 1列目が "URL" の行を処理
-            if row[0] == "URL":
-                new_row = ["URL"]
+            if row[0] == "模倣":
+                new_row = ["模倣"]
                 for cell in row[1:]:
                     m = re.match(r'\[([^\]]*)\]', cell)
                     new_row.append(m.group(1) if m else cell)
@@ -194,7 +193,7 @@ class Command(BaseCommand):
         
         histories = []
         for history in History.objects.exclude(temp_changes = None):
-            fixed_changes = self.extract_urls(history.temp_changes)
+            fixed_changes = self.extract_imitates(history.temp_changes)
             if fixed_changes != history.temp_changes:
                 history.temp_changes = fixed_changes
                 histories.append(history)
