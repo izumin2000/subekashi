@@ -6,7 +6,7 @@ from subekashi.models import History
 register = template.Library()
 @register.simple_tag
 def render_changes(history):
-    changes = History.objects.get(pk = history.id).temp_changes
+    changes = History.objects.get(pk = history.id).changes
     context = {
         "changes" : changes
     }

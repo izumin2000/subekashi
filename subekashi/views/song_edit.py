@@ -196,7 +196,7 @@ def song_edit(request, song_id):
                 title = title,
                 history_type = "new",
                 create_time = timezone.now(),
-                temp_changes = changes,
+                changes = changes,
                 editor = editor
             )
             history.save()
