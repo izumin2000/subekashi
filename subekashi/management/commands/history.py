@@ -193,7 +193,7 @@ class Command(BaseCommand):
                 history.save(update_fields=['temp_changes'])
         
         histories = []
-        for history in History.objects.all():
+        for history in History.objects.exclude(temp_changes = None):
             fixed_changes = self.extract_urls(history.temp_changes)
             if fixed_changes != history.temp_changes:
                 history.temp_changes = fixed_changes
