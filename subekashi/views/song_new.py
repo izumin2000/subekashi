@@ -120,7 +120,7 @@ def song_new(request):
             title = f"{song.title}を新規作成",
             history_type = "new",
             create_time = timezone.now(),
-            temp_changes = changes,
+            changes = changes,
             editor = editor
         )
         history.save()
