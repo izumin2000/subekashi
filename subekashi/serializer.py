@@ -17,3 +17,8 @@ class AdSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ad
         fields = '__all__'
+
+
+class IsOpenSerializer(serializers.Serializer):
+    ip = serializers.CharField()
+    is_open = serializers.BooleanField(required=False)
