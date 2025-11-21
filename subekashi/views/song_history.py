@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from subekashi.models import *
+from subekashi.lib.ip import get_ip
+
 
 def song_history(request, song_id):
     # Songがなければ404
@@ -11,7 +13,8 @@ def song_history(request, song_id):
     dataD = {
         "metatitle": f"{song.title}の編集履歴",
         "song": song,
-        "historys": History.objects.filter(song = song).order_by("-create_time")
+        "historys": History.objects.filter(song = song).order_by("-create_time"),
+        "ip": get_ip(request)
     }
     
     return render(request, 'subekashi/song_history.html', dataD)

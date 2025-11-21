@@ -8,7 +8,7 @@
 
 {% block content %}
 <section>
-    <h1><span id="h1-title">{{ editor }}の編集履歴</span></h1>
+    <h1><span id="h1-title">{{ editor }}{% if is_me %}(あなた){% endif %}の編集履歴</span></h1>
     <div class="underline"></div>
     {% if editor.is_open or editor.is_forced_open or is_me %}
         {% if not editor.is_open and not editor.is_forced_open %}
