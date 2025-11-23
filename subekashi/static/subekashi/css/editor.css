@@ -85,3 +85,8 @@ details h1, details h2 {
 .history_details th:first-child, .history_details td:first-child {
     width: 100px;
 }
+
+#private_info, #secret-info {
+    margin-top: 30px;
+    text-align: center;
+}

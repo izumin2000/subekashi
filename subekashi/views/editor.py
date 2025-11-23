@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from subekashi.models import Editor, History
+from subekashi.lib.ip import get_ip
 
 
 def editor(request, editor_id):
@@ -11,6 +12,7 @@ def editor(request, editor_id):
     
     detaD = {
         "editor": editor,
+        "is_me": get_ip(request) == editor.ip,
         "historys": History.objects.filter(editor = editor).order_by("-create_time")
     }
 

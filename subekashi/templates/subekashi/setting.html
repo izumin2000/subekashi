@@ -38,13 +38,20 @@
             <option value="off">非表示</option>
         </select>
     </div>
+    <div class="form-col">
+        <label>編集の公開</label>
+        <select id="is_open" onchange="change_is_open()">
+            <option value="on" {% if editor.is_open %}selected{% endif %}>公開</option>
+            <option value="off" {% if not editor.is_open %}selected{% endif %}>非公開</option>
+        </select>
+    </div>
 </section>
 {% endblock %}
 
 {% block js %}
 <script defer>
     var selectEles = document.getElementsByTagName("select");
-    var settingMap = ["songrange", "jokerange", "brlyrics", "adrange"];
+    var settingMap = ["songrange", "jokerange", "brlyrics", "adrange"];     // TODO ここを動的にする
 
     function setting(isUpdate) {
         var i = 0;
@@ -57,6 +64,33 @@
             }
             i++;
         }
+    }
+
+
+    async function change_is_open() {
+        try {
+            const csrf = await getCSRF();
+            const is_open_value = document.getElementById("is_open").value;
+            const res = await fetch(
+            baseURL() + "/api/editor/is_open",
+            {
+                method: "PUT",
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrf
+                },
+                body: JSON.stringify(
+                    {
+                        "ip": "{{ editor.ip }}",
+                        "is_open": is_open_value == "on",
+                    }
+                )
+            }
+        )
+        } catch (error) {
+            console.error(error)
+        }
+        
     }
 
     window.addEventListener('load', function(){
