@@ -135,13 +135,13 @@ def song_search(querys):
         statistics["count"] = count
     
     # ページ数の指定があったら、そのページの検索結果を表示しその旨の統計を保存する
-    if querys.get("page"):
-        page = int(querys["page"])
-        size = int(querys.get("size", DEFALT_SIZE))
-        statistics["page"] = page
-        statistics["size"] = size
-        max_page = math.ceil(count / size)
-        statistics["max_page"] = max_page
-        song_qs = song_qs[(page - 1) * size : page * size]
+    # なければ1ページ目を指定する
+    page = int(querys.get("page", 1))
+    size = int(querys.get("size", DEFALT_SIZE))
+    statistics["page"] = page
+    statistics["size"] = size
+    max_page = math.ceil(count / size)
+    statistics["max_page"] = max_page
+    song_qs = song_qs[(page - 1) * size : page * size]
         
     return song_qs, statistics
