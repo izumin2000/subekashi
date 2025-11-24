@@ -6,8 +6,9 @@ from subekashi.models import History
 register = template.Library()
 @register.simple_tag
 def render_changes(history):
-    changes = History.objects.get(pk = history.id).changes
+    history = History.objects.get(pk = history.id)
     context = {
-        "changes" : changes
+        "is_delete": history.history_type == "delete",
+        "changes": history.changes
     }
     return render_to_string('subekashi/components/changes.html', context)

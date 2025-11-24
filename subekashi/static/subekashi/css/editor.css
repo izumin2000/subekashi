@@ -61,6 +61,10 @@ details h1, details h2 {
     }
 }
 
+.delete-table {
+    width: 100% !important;
+}
+
 .history_details thead {
     background-color: #666;
 }

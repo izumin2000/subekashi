@@ -1,22 +1,36 @@
 {% if changes %}
     <div class="change_table_wrapper">
-        <table>
-            <thead>
-                <tr>
-                    {% for cell in changes.0 %}
-                        <th>{{ cell }}</th>
+        {% if is_delete %}
+            <table class="delete-table">
+                <thead>
+                    <tr>
+                        <th>理由</th>
+                    </tr>
+                <tbody>
+                    <tr>
+                        <td>{{ changes.1 }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        {% else %}
+            <table>
+                <thead>
+                    <tr>
+                        {% for cell in changes.0 %}
+                            <th>{{ cell }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for change in changes|slice:"1:" %}
+                    <tr>
+                        {% for cell in change %}
+                            <td>{{ cell|linebreaksbr|escapejs }}</td>
+                        {% endfor %}
+                    </tr>
                     {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for change in changes|slice:"1:" %}
-                <tr>
-                    {% for cell in change %}
-                        <td>{{ cell|linebreaksbr }}</td>
-                    {% endfor %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        {% endif %}
     </div>
 {% endif %}
