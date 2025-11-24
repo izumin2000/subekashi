@@ -22,7 +22,7 @@
     <table id="song-info">
         <tr>
             <td>
-                <i class="far fa-copy" onclick="copy('{{ song.title }}')"></i>
+                <i class="far fa-copy" data-copy="{{ song.title|escapejs }}"></i>
                 <i class="fas fa-music"></i><p>曲名</p>
 
             </td>
@@ -33,7 +33,7 @@
         {% for channel in channels %}
             <tr>
                 <td>
-                    <i class="far fa-copy" onclick="copy('{{ channel }}')"></i>
+                    <i class="far fa-copy" data-copy="{{ channel|escapejs }}"></i>
                     <i class="fas fa-user-circle"></i><p>チャンネル名</p>
                 </td>
                 <td>
@@ -44,7 +44,7 @@
         {% for link in links %}
             <tr>
                 <td>
-                    <i class="far fa-copy" onclick="copy('{{ link.text }}')"></i>
+                    <i class="far fa-copy" data-copy="{{ link.text|escapejs }}"></i>
                     <i class="fas fa-link"></i><p>リンク</p>
                 </td>
                 <td>
@@ -164,8 +164,8 @@
 
     {% if song.lyrics %}
         <div id="lyrics-wrapper">
-            <p id="lyrics-header"><i class="fas fa-align-center"></i>歌詞<i class="far fa-copy" onclick="copy('{{ song.lyrics|escapejs }}')"></i></p>
-            <p id="lyrics">{{ br_cleaned_lyrics | linebreaksbr }}</p>
+            <p id="lyrics-header"><i class="fas fa-align-center"></i>歌詞<i class="far fa-copy" data-copy="{{ song.lyrics|escapejs }}"></i></p>
+            <p id="lyrics">{{ br_cleaned_lyrics|linebreaksbr }}</p>
         </div>
     {% endif %}
 </section>
@@ -173,15 +173,14 @@
 
 {% block js %}
 <script defer>
-    function copy(text) {
-        if (!Boolean(navigator.clipboard)) {
-            showToast("error", "コピーできませんでした。");
-            return;
-        }
-        
-        navigator.clipboard.writeText(text);
-        showToast("ok", "コピーしました。");
-    };
+    document.querySelectorAll('.far.fa-copy').forEach(el => {
+        el.addEventListener('click', () => {
+            const text = el.dataset.copy;
+            navigator.clipboard.writeText(text)
+                .then(() => showToast("ok", "コピーしました。"))
+                .catch(() => showToast("error", "コピーできませんでした。"));
+        });
+    });
     
     {% if request.GET.toast == "edit" %}
         showToast("ok", "登録しました。");
@@ -194,8 +193,8 @@
     deleteToastUrlQuery()
 </script>
 
-<script defer src="{% static 'subekashi/special/util.js' %}" rel="stylesheet"></script>
 {% if song.isspecial %}
+    <script defer src="{% static 'subekashi/special/util.js' %}" rel="stylesheet"></script>
     <script src="{% static 'subekashi/special/' %}{{ song.id }}.js"></script>
 {% endif %}
 {% endblock %}
