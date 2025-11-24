@@ -150,6 +150,8 @@ async function getSongGuessers(text, to, signal, calling_func = () => {}) {
 
     try {
         const songGuessers = await exponentialBackoff(`html/song_guessers?guesser=${text}`, "getSongGuessers", calling_func);
+        if (!songGuessers) return;
+        
         for (var songGuesser of songGuessers) {
             // キャンセルが要求されているか確認
             if (signal.aborted) {

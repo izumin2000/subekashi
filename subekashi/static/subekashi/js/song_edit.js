@@ -49,10 +49,12 @@ async function initImitateList() {
         return;
     }
     
-    const imitateSongList = await exponentialBackoff(`song/?imitated=${song_id}`, "init", initImitateList);
-    if (!imitateSongList) {
+    const imitateSongListRes = await exponentialBackoff(`song/?imitated=${song_id}`, "init", initImitateList);
+    
+    if (!imitateSongListRes) {
         return;
     }
+    const imitateSongList = imitateSongListRes.result;
 
     imitateIdList = imitateEle.value.split(",");
     for (const imitateSong of imitateSongList) {
@@ -137,11 +139,12 @@ async function checkTitleChannelForm() {
     // 以下の条件はvalid
     isTitleChannelValid = true;
     checkButton();
-    const existingSongs = await exponentialBackoff(`song/?title_exact=${titleEle.value}&channel_exact=${channelEle.value}`, "tiltechannel", checkTitleChannelForm);
-
-    if (existingSongs == undefined) {
+    const existingSongsRes = await exponentialBackoff(`song/?title_exact=${titleEle.value}&channel_exact=${channelEle.value}`, "tiltechannel", checkTitleChannelForm);
+    
+    if (existingSongsRes == undefined) {
         return;
     }
+    const existingSongs = existingSongsRes.result;
 
     const existingSong = existingSongs?.filter(song => song.id != song_id)[0];
 
@@ -221,12 +224,14 @@ async function checkUrlForm() {
         url = url.replace("https://twitter.com", "https://x.com");
         url = formatYouTubeURL(url);
 
-        const existingSongs = await exponentialBackoff(`song/?url=${url}`, `url${url_count}`, checkUrlForm);
+        const existingSongsRes = await exponentialBackoff(`song/?url=${url}`, `url${url_count}`, checkUrlForm);
+        
         url_count += 1;
-
-        if (existingSongs == undefined) {
+        
+        if (existingSongsRes == undefined) {
             return;
         }
+        const existingSongs = existingSongsRes.result;
 
         const existingSong = existingSongs.filter(song => song.id != song_id)[0];
 
