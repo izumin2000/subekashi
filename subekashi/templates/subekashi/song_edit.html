@@ -63,6 +63,21 @@
             <p id="imitate-sub">もしくは模倣曲から選択</p>
             <input type="text" id="imitate-title" class="sansfont" oninput="renderSongGuesser()" placeholder="タイトルかチャンネル名を入力">
             <div id="song-guesser" class="sansfont"></div>
+            <template id="imitate-item-template">
+                <div class="imitate-item">
+                    <p>
+                        <span class="channel">
+                            <i class="fas fa-user-circle"></i>
+                            <span class="channel-name"></span>
+                        </span>
+                        <i class="fas fa-music"></i>
+                        <span class="title"></span>
+                        <span role="button" class="delete-btn">
+                            <i class="far fa-trash-alt"></i>
+                        </span>
+                    </p>
+                </div>
+            </template>
             <div id="imitate-list"></div>
             <input type="text" id="imitate" name="imitate" value="{{ song.imitate }}" hidden>
         </div>
