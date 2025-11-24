@@ -25,24 +25,21 @@ document.getElementById('reason').addEventListener('input', checkDeleteForm)
 
 // 模倣リストの末尾にsongを追加
 function appendImitateList(song) {
-    const imitateStr = `
-    <div id="imitate-${song.id}">
-        <p>
-            <span class='channel'>
-                <i class='fas fa-user-circle'></i>
-                ${song.channel}
-            </span>
-            <i class='fas fa-music'></i>
-            ${song.title}
-            <span onclick="deleteImitate(${song.id})">
-                <i class='far fa-trash-alt'></i>
-            </span>
-        </p>
-    </div>
-    `;
+    const tmpl = document.getElementById("imitate-item-template");
+    const clone = tmpl.content.cloneNode(true);
 
-    var imitateListEle = document.getElementById('imitate-list');
-    imitateListEle.appendChild(stringToHTML(imitateStr));
+    clone.querySelector(".imitate-item").id = `imitate-${song.id}`;
+    clone.querySelector(".channel-name").textContent = song.channel;
+    clone.querySelector(".title").textContent = song.title;
+
+    const deleteBtn = clone.querySelector(".delete-btn");
+    deleteBtn.dataset.id = song.id;
+
+    deleteBtn.addEventListener("click", () => {
+        deleteImitate(song.id);
+    });
+
+    document.getElementById("imitate-list").appendChild(clone);
 }
 
 // 読み込み時に模倣一覧を描画
