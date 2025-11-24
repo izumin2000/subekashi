@@ -25,7 +25,7 @@
                     {% for change in changes|slice:"1:" %}
                     <tr>
                         {% for cell in change %}
-                            <td>{{ cell|linebreaksbr|escapejs }}</td>
+                            <td>{{ cell|linebreaksbr }}</td>
                         {% endfor %}
                     </tr>
                     {% endfor %}
