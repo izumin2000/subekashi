@@ -86,6 +86,10 @@ details h1, details h2 {
     font-weight: normal;
 }
 
+.history_details td:nth-child(n+2) {
+    vertical-align: top;
+}
+
 .history_details th:first-child, .history_details td:first-child {
     width: 100px;
 }
