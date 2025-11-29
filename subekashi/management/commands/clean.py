@@ -37,46 +37,46 @@ class Command(BaseCommand):
                     songIns.delete()
 
         for songIns in Song.objects.all() :
-            # 模倣情報のチェック
+            # 模倣元情報のチェック
             songImitate = songIns.imitate
             songImitateClean = songImitate.strip(",") if songImitate else ""
             if songImitate != songImitateClean :
-                self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})の模倣情報のエラーを修正しました"))
+                self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})の模倣元情報のエラーを修正しました"))
                 songIns.imitate = songImitateClean
                 songIns.save()
             
-            # 被模倣情報のチェック
+            # 模倣情報のチェック
             songImitated = songIns.imitated
             songImitatedClean = songImitated.strip(",") if songImitated else ""
             if songImitated != songImitatedClean :
-                self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})の被模倣情報のエラーを修正しました"))
+                self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})の模倣情報のエラーを修正しました"))
                 songIns.imitated = songImitatedClean
                 songIns.save()
         
         for songIns in Song.objects.all() :
-            # 模倣情報から被模倣情報のチェック
+            # 模倣元情報から模倣情報のチェック
             for imitateId in commaSplit(songIns.imitate) :
                 imitateIns = getIns(imitateId)
                 if imitateIns :
                     if songIns.id not in commaSplit(imitateIns.imitated) :
-                        self.stdout.write(self.style.SUCCESS(f"{imitateIns.id}({imitateIns})の被模倣情報に{songIns.id}({songIns})を追加しました"))
+                        self.stdout.write(self.style.SUCCESS(f"{imitateIns.id}({imitateIns})の模倣元情報に{songIns.id}({songIns})を追加しました"))
                         imitateIns.imitated = addId(imitateIns.imitated, songIns.id)
                         imitateIns.save()
                 else :
-                    self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})の被模倣情報から削除された曲{imitateId}を削除しました"))
+                    self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})の模倣情報から削除された曲{imitateId}を削除しました"))
                     songIns.imitate = deleteId(songIns.imitate, imitateId)
                     songIns.save()
 
-            # 模倣情報から被模倣情報のチェック  
+            # 模倣元情報から模倣情報のチェック  
             for imitatedId in commaSplit(songIns.imitated) :
                 imitatedIns = getIns(imitatedId)
                 if imitatedIns :
                     if songIns.id not in commaSplit(imitatedIns.imitate) :
-                        self.stdout.write(self.style.SUCCESS(f"{imitatedIns.id}({imitatedIns})の模倣情報に{songIns.id}({songIns})を追加しました"))
+                        self.stdout.write(self.style.SUCCESS(f"{imitatedIns.id}({imitatedIns})の模倣元情報に{songIns.id}({songIns})を追加しました"))
                         imitatedIns.imitate = addId(imitatedIns.imitate, songIns.id)
                         imitatedIns.save()
                 else :
-                    self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})の被模倣情報から削除された曲{imitatedId}を削除しました"))
+                    self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})の模倣情報から削除された曲{imitatedId}を削除しました"))
                     songIns.imitated = deleteId(songIns.imitated, imitatedId)
                     songIns.save()
 
