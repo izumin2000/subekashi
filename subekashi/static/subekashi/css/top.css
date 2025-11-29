@@ -95,6 +95,15 @@ h1:nth-child(2) {
     }
 }
 
+#subekashi-links {
+    margin-top: 35px;
+    text-align: center;
+}
+
+#subekashi-links i {
+    font-size: 35px;
+    margin: 0 15px;
+}
 
 #credit {
     margin-bottom: 30px;
