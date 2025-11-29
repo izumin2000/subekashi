@@ -9,6 +9,9 @@ def default_article(request, id):
     except:
         return render(request, 'subekashi/404.html', status=404)
     
+    if not article.is_open:
+        return render(request, 'subekashi/404.html', status=404)
+    
     # 記事本文がマークダウンかどうかによってMD -> HTMLにする
     text = markdown.markdown(article.text) if article.is_md else article.text
     
