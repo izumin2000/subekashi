@@ -126,6 +126,12 @@ ALLOW_MEDIAS = [
         "regex": r"note.com",
         "icon": "<i class='fas fa-book'></i>",
     },
+    {
+        "id": "TikTok",
+        "name": "tiktok",
+        "regex": r"tiktok.com",
+        "icon": "<i class='fab fa-tiktok'></i>",
+    },
 ]
 
 ALL_MEDIAS = ALLOW_MEDIAS + [
