@@ -70,7 +70,7 @@ def song_edit(request, song_id):
         ip = get_ip(request)
         cleaned_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
         
-        # 自分自身や重複している曲は模倣曲として登録できない
+        # 自分自身や重複している曲は模倣元として登録できない
         imitates_list = set(imitates.split(","))
         imitates_list.discard(str(song_id))
         imitates = ",".join(list(imitates_list)) if imitates else ""
@@ -89,29 +89,29 @@ def song_edit(request, song_id):
             dataD["error"] = f"{check_channel}さんの曲は登録することができません。"
             return render(request, 'subekashi/song_new.html', dataD)
 
-        # 新しい模倣の追加
+        # 模倣の編集
         # TODO imitateテーブルを利用する
-        old_imitate_id_set = set(song.imitate.split(",")) - set([""])       # 元々の各模倣のID
-        new_imitate_id_set = set(imitates.split(",")) - set([""])       # ユーザーが入力した各模倣のID
+        old_imitate_id_set = set(song.imitate.split(",")) - set([""])       # 元々の各模倣元のID
+        new_imitate_id_set = set(imitates.split(",")) - set([""])       # ユーザーが入力した各模倣元のID
 
-        append_imitate_id_set = new_imitate_id_set - old_imitate_id_set     # 編集によって新しく追加された各模倣のID
-        delete_imitate_id_set = old_imitate_id_set - new_imitate_id_set     # 編集によって削除された各模倣のID
+        append_imitate_id_set = new_imitate_id_set - old_imitate_id_set     # 編集によって新しく追加された各模倣元のID
+        delete_imitate_id_set = old_imitate_id_set - new_imitate_id_set     # 編集によって削除された各模倣元のID
 
-        # 編集によって新しく追加された各模倣先の被模倣に編集した曲のsong_idを追加する
+        # 編集によって新しく追加された各模倣元先の模倣曲に編集した曲のsong_idを追加する
         for append_imitate_id in append_imitate_id_set :
             append_imitate = Song.objects.get(pk = append_imitate_id)
-            append_imitated_id_set = set(append_imitate.imitated.split(","))        # 模倣先の被模倣
-            append_imitated_id_set.add(str(song_id))        # 模倣先の被模倣に編集した曲のsong_idを追加する
+            append_imitated_id_set = set(append_imitate.imitated.split(","))        # 模倣元先の模倣曲
+            append_imitated_id_set.add(str(song_id))        # 模倣元先の模倣曲に編集した曲のsong_idを追加する
             
             append_imitate.imitated = ",".join(append_imitated_id_set).strip(",")
             append_imitate.save()
             
-        # 編集によって削除された各模倣先の被模倣に編集した曲のsong_idを削除する
+        # 編集によって削除された各模倣元先の模倣曲に編集した曲のsong_idを削除する
         for delete_imitate_id in delete_imitate_id_set :
             delete_imitate = Song.objects.get(pk = delete_imitate_id)
-            delete_imitated_id_set = set(delete_imitate.imitated.split(","))        # 模倣先の被模倣
+            delete_imitated_id_set = set(delete_imitate.imitated.split(","))        # 模倣元先の模倣曲
             if (delete_imitate_id != str(song_id)):
-                delete_imitated_id_set.remove(str(song_id))   # 被模倣に編集した曲のsong_idを削除する
+                delete_imitated_id_set.remove(str(song_id))   # 模倣元先の模倣曲に編集した曲のsong_idを削除する
             
             delete_imitate.imitated = ",".join(delete_imitated_id_set).strip(",")
             delete_imitate.save()

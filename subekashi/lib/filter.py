@@ -10,7 +10,7 @@ def filter_by_keyword(keyword):
         Q(url__contains = keyword)
     )
 
-# 模倣のフィルター
+# 模倣元のフィルター
 def filter_by_imitate(imitate):
     imitate = str(imitate)
     return (
@@ -20,7 +20,7 @@ def filter_by_imitate(imitate):
         Q(imitate__contains = ',' + imitate + ',')
     )
 
-# 被模倣のフィルター
+# 模倣のフィルター
 def filter_by_imitated(imitated):
     imitated = str(imitated)
     return (
@@ -30,7 +30,7 @@ def filter_by_imitated(imitated):
         Q(imitated__contains = ',' + imitated + ',')
     )
 
-# 模倣曲の検索に利用するフィルター
+# 模倣元の検索に利用するフィルター
 def filter_by_guesser(guesser):
     return (
         Q(title__contains = guesser) |
