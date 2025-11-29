@@ -156,7 +156,6 @@ def song_edit(request, song_id):
         song.issubeana = is_subeana
         song.isdraft = is_draft
         song.post_time = timezone.now()
-        song.ip = ip
         song.save()
         
         # History DBの変更内容とDisocrdの#新規作成・変更チャンネルに送る文の用意

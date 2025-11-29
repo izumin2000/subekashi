@@ -85,7 +85,6 @@ def song_new(request):
             upload_time = youtube_res.get("upload_time", None),
             view = youtube_res.get("view", None),
             like = youtube_res.get("like", None),
-            ip = ip
         )
         
         song.save()
