@@ -88,23 +88,13 @@ h1:nth-child(2) {
     margin-top: 50px;
     font-size: 44px;
 }
+
 @media (max-width: 640px) {
     .subeana h1 {
         font-size: 30px;
     }
 }
 
-.twitter-timeline-wrapper {
-    padding: 20px 0;
-}
-
-.twitter-timeline {
-    display: block;
-    width: 60vw;
-    height: 100vw;
-    margin: 0 auto;
-    overflow: scroll;
-}
 
 #credit {
     margin-bottom: 30px;
