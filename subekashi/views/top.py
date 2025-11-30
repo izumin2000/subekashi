@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.db.models import Q
 from config.settings import *
 from subekashi.models import *
 from article.models import Article
@@ -16,11 +17,18 @@ def top(request):
         "metatitle" : "トップ",
     }
     
-    article_qs = Article.objects.filter(is_open=True, tag="news").order_by("-post_time")[:3]
-    news_html = ""
+    article_qs = Article.objects.filter(
+        is_open=True
+    ).filter(
+        Q(tag="news") | Q(tag="release")
+    ).order_by("-post_time")[:3]
+    
+    news_htmls = ""
     for article in article_qs:
-        news_html += f"<span>{article.title}</span>"
-    dataD["news_html"] = news_html
+        is_news = article.tag == "news"
+        news_html = article.title if is_news else f"<a href='/articles/{article.article_id}'>{article.title}</a>"
+        news_htmls += f"<span>{news_html}</span>"
+    dataD["news_htmls"] = news_htmls
     
     songrange = request.COOKIES.get("songrange", "subeana")
     jokerange = request.COOKIES.get("jokerange", "off")
