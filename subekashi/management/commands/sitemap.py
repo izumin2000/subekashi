@@ -2,10 +2,13 @@ from config.settings import DEBUG
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from subekashi.models import Song
+from article.models import Article
 import os
 from xml.etree.ElementTree import Element, SubElement, ElementTree
 from django.core import management
 
+
+# TODO django.contrib.sites, django.contrib.sitemapsの使用
 class Command(BaseCommand):
     help = "subekashi/static/subekashi/にsitemap.xmlを生成する"
 
@@ -18,7 +21,7 @@ class Command(BaseCommand):
         self.add_url(urlset, base_url + "/", "1.0")
 
         # 優先度が0.9の固定パス
-        static_paths = ["/ai/", "/song_new/", "/make/", "/songs/", "/setting/", "/ad/", "/special/", "/contact/"]
+        static_paths = ["/ai/", "/songs/", "/songs/new/", "/ai/", "/ai/result/", "/ad/", "/contact/", "/articles/"]
         for path in static_paths:
             self.add_url(urlset, base_url + path, "0.9")
 
@@ -33,6 +36,12 @@ class Command(BaseCommand):
         channels_set = set([channels for channel_raw in channels_raw for channels in channel_raw.split(",")])  # チャンネルの重複を削除
         for channel in channels_set:
             self.add_url(urlset, f"{base_url}/channel/{channel}/", "0.8")
+
+        # 優先度が0.8の動的パス (article_id)
+        articles = Article.objects.filter(is_open = True).exclude(tag = "news")
+        for article in articles:
+            # /articles/<int:article_id> のURL
+            self.add_url(urlset, f"{base_url}/articles/{article.article_id}/", "0.8")
 
         # sitemap.xmlファイルの保存
         tree = ElementTree(urlset)
