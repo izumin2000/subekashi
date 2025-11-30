@@ -28,7 +28,7 @@ function checkButton() {
     }
     
     // 選択肢か詳細が空なら
-    if ((categoryEle.value == "") || (detailtEle.value == "")) {
+    if ((categoryEle.value == "") || (detailtEle.value.trim() == "")) {
         contentSubmitEle.disabled = true;
         contentInfoEle.innerHTML = `<span class="error">選択肢と詳細を入力してください。</span>`
         return;
