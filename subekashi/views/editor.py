@@ -11,6 +11,7 @@ def editor(request, editor_id):
         return render(request, 'subekashi/404.html', status=404)
     
     detaD = {
+        "metatitle" : editor,
         "editor": editor,
         "is_me": get_ip(request) == editor.ip,
         "historys": History.objects.filter(editor = editor).order_by("-create_time")
