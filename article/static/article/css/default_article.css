@@ -3,31 +3,42 @@
     color: #fff;
 }
 
-#article-info {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
 #article-info, #article-info i {
     margin-bottom: 10px;
     font-size: 16px;
+}
+
+#article-info {
+    text-align: center;
+    margin-bottom: 30px;
 }
 
 .fa-tags, .fa-file-signature {
     margin-left: 20px;
 }
 
-#article-text p {
+#article-text {
+    margin: 0 30px;
+}
+
+#article-text p, #article-text a, #article-text h2 {
     line-height: 45px;
+}
+
+#article-text li {
+    margin: 5px 0;
 }
 
 #article-text h2 {
     margin: 75px 0 25px 0;
-    line-height: 45px;
 }
 
 #article-text img {
     margin: 20px 0;
     max-width: 800px;
     width: 80vw;
+}
+
+#article-text ul {
+    margin-left: 20px;
 }
