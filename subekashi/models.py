@@ -30,7 +30,6 @@ class Song(models.Model):
         ("other", "その他"),
     )
     
-    id = models.AutoField(primary_key=True)
     title = models.CharField(default = "", max_length = 500)
     channel = models.CharField(default = "", max_length = 500)      # TODO Channelテーブルの利用
     url = models.CharField(blank = True, null = True, default = "", max_length = 500)       # TODO URLテーブルの利用

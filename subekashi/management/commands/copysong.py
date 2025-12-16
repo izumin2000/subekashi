@@ -19,8 +19,11 @@ class Command(BaseCommand):
             body = json.load(res)
         result = body['result']
         self.stdout.write(self.style.SUCCESS(f"{len(result)}曲を取得しました。"))
-        for song in result:
-            self.register_song(song)
+        songs = []
+        for songjson in result:
+            song = self.json_to_song(songjson)
+            if(song is not None): songs.append(song)
+        Song.objects.bulk_create(songs)
         self.stdout.write(self.style.SUCCESS(f"処理が完了しました。"))
 
     def request_song(self,id):
@@ -30,37 +33,16 @@ class Command(BaseCommand):
         with urllib.request.urlopen(req) as res:
             result = json.load(res)
         self.stdout.write(self.style.SUCCESS(f"{result['title']}を取得しました。"))
-        self.register_song(result)
+        self.json_to_song(result).save()
             
 
-    def register_song(self,songjson:Dict):
+    def json_to_song(self,songjson:Dict):
         if(Song.objects.filter(pk=songjson["id"]).exists()):
             self.stdout.write(self.style.ERROR(f"ID {songjson['id']}はすでに存在しています。"))
             return
         
-        song = Song(
-            id = songjson["id"],
-            title = songjson["title"],
-            channel = songjson["channel"],
-            url = songjson["url"],
-            lyrics = songjson["lyrics"],
-            imitate = songjson["imitate"],
-            imitated = songjson["imitated"],
-            post_time = songjson["post_time"],
-            upload_time = songjson["upload_time"],
-            isoriginal = songjson["isoriginal"],
-            isjoke = songjson["isjoke"],
-            isdeleted = songjson["isdeleted"],
-            isdraft = songjson["isdraft"],
-            isinst = songjson["isinst"],
-            issubeana = songjson["issubeana"],
-            isspecial = songjson["isspecial"],
-            islock = songjson["islock"],
-            view = songjson["view"],
-            like = songjson["like"],
-            category = songjson["category"],
-        )
-        song.save()
+        song = Song(**songjson)
+        return song
 
     def handle(self, *args, **options):
         
