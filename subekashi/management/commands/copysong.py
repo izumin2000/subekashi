@@ -15,8 +15,12 @@ class Command(BaseCommand):
         allsongs_url = self.original_song_api + "?size=2147483647"
         self.stdout.write("データを取得中です...(これには時間がかかります)")
         req = urllib.request.Request(allsongs_url)
-        with urllib.request.urlopen(req) as res:
-            body = json.load(res)
+        try:
+            with urllib.request.urlopen(req) as res:
+                body = json.load(res)
+        except urllib.error.HTTPError as e:
+            self.stdout.write(self.style.ERROR(f"リクエスト中にエラーが発生しました。\n{e.code} {e.reason}"))
+            return
         result = body['result']
         self.stdout.write(self.style.SUCCESS(f"{len(result)}曲を取得しました。"))
         songs = []
@@ -30,8 +34,15 @@ class Command(BaseCommand):
         req_url = self.original_song_api + str(id)
         self.stdout.write("データを取得中です...")
         req = urllib.request.Request(req_url)
-        with urllib.request.urlopen(req) as res:
-            result = json.load(res)
+        try:
+            with urllib.request.urlopen(req) as res:
+                result = json.load(res)
+        except urllib.error.HTTPError as e:
+            if(e.code == 404):
+                self.stdout.write(self.style.ERROR(f"ID {id}は登録されていない曲です。"))
+            else:
+                self.stdout.write(self.style.ERROR(f"リクエスト中にエラーが発生しました。\n{e.code} {e.reason}"))
+            return 
         self.stdout.write(self.style.SUCCESS(f"{result['title']}を取得しました。"))
         song = self.json_to_song(result)
         if(song is not None): song.save()
