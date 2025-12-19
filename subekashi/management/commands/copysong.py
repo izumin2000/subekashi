@@ -33,7 +33,8 @@ class Command(BaseCommand):
         with urllib.request.urlopen(req) as res:
             result = json.load(res)
         self.stdout.write(self.style.SUCCESS(f"{result['title']}を取得しました。"))
-        self.json_to_song(result).save()
+        song = self.json_to_song(result)
+        if(song is not None): song.save()
             
 
     def json_to_song(self,songjson:Dict):
