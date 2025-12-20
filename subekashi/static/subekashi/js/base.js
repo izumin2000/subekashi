@@ -99,6 +99,17 @@ function stringToHTML(string, multi=false) {
     return htmls[0];
 }
 
+// HTMLのエスケープ
+function escapeHtml(str = "") {
+    return str.replace(/[&<>"']/g, s => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+    })[s]);
+}
+
 /**
  * トーストをクライアントで動的に生成・表示する関数
  * @param {"info"|"ok"|"warning"|"error"} icon 

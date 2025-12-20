@@ -50,7 +50,7 @@ async function initImitateList() {
     }
     
     const imitateSongListRes = await exponentialBackoff(`song/?imitated=${song_id}`, "init", initImitateList);
-    
+
     if (!imitateSongListRes) {
         return;
     }
@@ -149,6 +149,7 @@ async function checkTitleChannelForm() {
     const existingSong = existingSongs?.filter(song => song.id != song_id)[0];
 
     // 既に登録されている曲の場合
+    // TODO checkUrlFormを参考にリファクタリングする
     if (existingSong) {
         const isMultipleSongURL = existingSong.url.includes(',');
         const existingSongURL = isMultipleSongURL ? existingSong.url.split(",")[0] : existingSong.url;
@@ -210,7 +211,6 @@ async function checkUrlForm() {
         return;
     }
 
-    var url_count = 1;
     for (url of urlEle.value.split(',')) {
         // urlでない場合
         if (!url.match(/^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/)) {
@@ -224,44 +224,54 @@ async function checkUrlForm() {
         url = url.replace("https://twitter.com", "https://x.com");
         url = formatYouTubeURL(url);
 
-        const existingSongsRes = await exponentialBackoff(`song/?url=${url}`, `url${url_count}`, checkUrlForm);
-        
-        url_count += 1;
-        
-        if (existingSongsRes == undefined) {
-            return;
-        }
+        const existingSongsRes = await exponentialBackoff(
+            `song/?url=${encodeURIComponent(url)}`,
+            'url',
+            checkUrlForm
+        );
+        if (!existingSongsRes) return;
+
         const existingSongs = existingSongsRes.result;
-
-        const existingSong = existingSongs.filter(song => song.id != song_id)[0];
-
-        // 既に登録されているURLの場合
-        if (existingSong) {
-            const infoHTML = isLack(existingSong)
-            ?
-            `<span class="info"><i class="fas fa-info-circle info"></i>このURLは<br>
-            song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
-            タイトル：${existingSong.title}<br>
-            チャンネル名：${existingSong.channel}<br>
-            として<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">既に登録されています</a>がまだ未完成です。<br>
-            この記事を削除したい場合は、<a href="${baseURL()}/songs/${song_id}/delete?reason=${baseURL()}/songs/${existingSong.id} と重複しています。" target="_blank">こちら</a>をクリックしてください。
-            </span>`
-            :
-            `<span class='error'><i class='fas fa-ban error'></i>このURLは<br>
-            song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
-            タイトル：${existingSong.title}<br>
-            チャンネル名：${existingSong.channel}<br>
-            として<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">既に登録されています。</a><br>
-            この記事を削除したい場合は、<a href="${baseURL()}/songs/${song_id}/delete?reason=${baseURL()}/songs/${existingSong.id} と重複しています。" target="_blank">こちら</a>をクリックしてください。
-            </span>`;
-            
-            songEditInfoUrlEle.innerHTML = infoHTML;
+        const existingSong = existingSongs.find(song => song.id != song_id);
+        
+        // 自身以外のurlが重複していなかったら
+        if (!existingSong) {
+            isUrlValid = true;
+            checkButton();
+            songEditInfoUrlEle.innerHTML = "<span class='ok'><i class='fas fa-check-circle ok'></i>登録可能な状態です</span>";
             return;
         }
+
+        // 曲のurlが重複していたら
+        const base = baseURL();
+        const songId = existingSong.id;
+        const title = escapeHtml(existingSong.title);
+        const channel = escapeHtml(existingSong.channel);
+
+        const songLink = `${base}/songs/${songId}`;
+        const deleteReason = encodeURIComponent(`${songLink} と重複しています。`);
+        const deleteLink = `${base}/songs/${song_id}/delete?reason=${deleteReason}`;
+
+        const isIncomplete = isLack(existingSong);
+        const infoHTML = `
+        <span class="error">
+            <i class="fas fa-ban error"></i>
+            このURLは<br>
+            song ID：<a href="${songLink}" target="_blank">${songId}</a><br>
+            タイトル：${title}<br>
+            チャンネル名：${channel}<br>
+            として
+            <a href="${songLink}" target="_blank">既に登録されています</a>
+            ${isIncomplete ? "がまだ未完成です。" : "。"}<br>
+            この記事を削除したい場合、<br>
+            <a href="${deleteLink}" target="_blank"><i class="error far fa-trash-alt"></i>削除申請</a>
+            を行ってくださいください。
+        </span>
+        `;
+
+        songEditInfoUrlEle.innerHTML = infoHTML;
+        return;
     }
-    isUrlValid = true;
-    checkButton();
-    songEditInfoUrlEle.innerHTML = "<span class='ok'><i class='fas fa-check-circle ok'></i>登録可能な状態です</span>";
 }
 urlEle.addEventListener('input', checkUrlForm);
 
