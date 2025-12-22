@@ -4,6 +4,7 @@ var imitateIdList = [], songGuesserController, song_id;
 // 初期化
 const lyricsEle = document.getElementById("lyrics")
 async function init() {
+    openDeleteDetails();
     song_id = window.location.pathname.split("/")[2];
     await checkTitleChannelForm();
     await checkUrlForm();
@@ -12,6 +13,18 @@ async function init() {
     checkDeleteForm();
 };
 window.addEventListener('load', init);
+
+
+function openDeleteDetails() {
+  const params = new URLSearchParams(window.location.search);
+
+  if (params.has('reason')) {
+    const details = document.getElementById('delete-details');
+    if (details) {
+      details.open = true;
+    }
+  }
+}
 
 // TODO checkValidityを利用
 // TODO 改行でもvalidになる不具合の修正
