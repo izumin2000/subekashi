@@ -397,12 +397,13 @@ function isLack(song) {
 }
 
 // 自動スクロール
+const timer = null;
 function autoScroll(deley) {
     const htmlEle = document.documentElement || document.body;
 
     let scrollTop = htmlEle.scrollTop;
 
-    const timer = setInterval(() => {
+    timer = setInterval(() => {
         scrollTop += 1;
         htmlEle.scrollTop = scrollTop;
 

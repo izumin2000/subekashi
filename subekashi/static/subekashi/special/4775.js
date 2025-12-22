@@ -123,7 +123,7 @@ async function play() {
 }
 
 function stop() {
-    playEle = `
+    const playEle = `
         < div class="dummybuttons" >
             <a>
                 <div class="dummybutton" onclick="play()"><i class="fas fa-play"></i><p>再生</p></div>
