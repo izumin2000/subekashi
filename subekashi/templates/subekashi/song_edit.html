@@ -25,7 +25,7 @@
         <p>荒らしに対しては削除・BAN・法的措置といった対処をする場合があります。</p>
     </details>
     
-    <details id="delete-summary">
+    <details id="delete-details">
         <summary><i class="far fa-trash-alt"></i>削除申請</summary>
         <form action="{% url 'subekashi:song_delete' song.id %}" method="POST">{% csrf_token %}
             <div class="form-col">
