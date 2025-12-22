@@ -7,6 +7,9 @@ function add_special_button() {
         <a>
             <div class="dummybutton" onclick="special()"><i class="fas fa-magic"></i><p>スペシャルデザイン</p></div>
         </a>
+        <a href="./history/">
+            <div class="dummybutton"><i class="fas fa-history"></i><p>編集履歴</p></div>
+        </a>
     </div>
     `
     defaultDummybuttonsEle.innerHTML = stringToHTML(designedDummybuttonsEle).innerHTML;

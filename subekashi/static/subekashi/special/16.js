@@ -1,5 +1,5 @@
 
-var defaultDummybuttonsEle = document.getElementsByClassName("dummybuttons")[0];
+const defaultDummybuttonsEle = document.getElementsByClassName("dummybuttons")[0];
 
 function special() {
     defaultDummybuttonsEle.remove();
