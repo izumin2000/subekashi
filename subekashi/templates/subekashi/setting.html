@@ -8,36 +8,89 @@
 <section>
     <h1>設定</h1>
     <div class="underline"></div>
+    <h2>トップ画面</h2>
     <div class="form-col">
-    <label>界隈曲の表示</label>
-        <select id="songrange" onchange="setting(true)">
+        <label>界隈曲の表示</label>
+        <select id="songrange" onchange="setting()">
             <option value="all">全て表示</option>
             <option value="subeana" selected>すべあな界隈曲のみを表示</option>
             <option value="xx">すべあな界隈曲以外を表示</option>
         </select>
     </div>
     <div class="form-col">
-        <label>ネタ曲</label>
-        <select id="jokerange" onchange="setting(true)">
+        <label>ネタ曲の表示</label>
+        <select id="jokerange" onchange="setting()">
             <option value="on">表示</option>
             <option value="off" selected>非表示</option>
         </select>
     </div>
     <div class="form-col">
+        <label>ニュースの表示</label>
+        <select id="is-shown-news" onchange="setting()">
+            <option value="on" selected>表示</option>
+            <option value="off">非表示</option>
+        </select>
+    </div>
+    <div class="form-col">
+        <label>検索の表示</label>
+        <select id="is-shown-search" onchange="setting()">
+            <option value="on" selected>表示</option>
+            <option value="off">非表示</option>
+        </select>
+    </div>
+    <div class="form-col">
+        <label>新着の表示</label>
+        <select id="is-shown-new" onchange="setting()">
+            <option value="on" selected>表示</option>
+            <option value="off">非表示</option>
+        </select>
+    </div>
+    <div class="form-col">
+        <label>宣伝の表示</label>
+        <select id="is-shown-ad" onchange="setting()">
+            <option value="on" selected>表示</option>
+            <option value="off">非表示</option>
+        </select>
+    </div>
+    <div class="form-col">
+        <label>生成された歌詞の表示</label>
+        <select id="is-shown-ad" onchange="setting()">
+            <option value="on" selected>表示</option>
+            <option value="off">非表示</option>
+        </select>
+    </div>
+    <div class="form-col">
+        <label>宣伝の表示</label>
+        <select id="is-shown-ai" onchange="setting()">
+            <option value="on" selected>表示</option>
+            <option value="off">非表示</option>
+        </select>
+    </div>
+    <div class="form-col">
+        <label>未完成の表示</label>
+        <select id="is-shown-lack" onchange="setting()">
+            <option value="on" selected>表示</option>
+            <option value="off">非表示</option>
+        </select>
+    </div>
+    <h2>検索画面</h2>
+    <div class="form-col">
+        <label>検索の保存<i class="fas fa-info-circle" onclick="showTutorial('');"></i></label>
+        <select id="is-saved-search" onchange="setting()">
+            <option value="on" selected>状態を保存</option>
+            <option value="off">状態保存なし</option>
+        </select>
+    </div>
+    <h2>曲画面</h2>
+    <div class="form-col">
         <label>歌詞の改行</label>
-        <select id="brlyrics" onchange="setting(true)">
+        <select id="brlyrics" onchange="setting()">
             <option value="normal" selected>全ての改行を表示</option>
             <option value="pack">連続した改行を非表示</option>
             <option value="brless">全ての改行を非表示</option>
         </select>
     </div>
-    <div class="form-col">
-        <label>宣伝の表示</label>
-        <select id="adrange" onchange="setting(true)">
-            <option value="on" selected>表示</option>
-            <option value="off">非表示</option>
-        </select>
-    </div>
+    <h2>新規作成/編集画面</h2>
     <div class="form-col">
         <label>編集の公開</label>
         <select id="is_open" onchange="change_is_open()">
@@ -51,14 +104,14 @@
 {% block js %}
 <script defer>
     var selectEles = document.getElementsByTagName("select");
-    var settingMap = ["songrange", "jokerange", "brlyrics", "adrange"];     // TODO ここを動的にする
 
-    function setting(isUpdate) {
+    function setting(isUpdate = true) {
         var i = 0;
         for (selectEle of selectEles) {
-            value = getCookie()[settingMap[i]];
+            const selectId = selectEle.getAttribute('id');
+            value = getCookie()[selectId];
             if ((value === undefined) || isUpdate) {
-                setCookie(settingMap[i], selectEle.value);
+                setCookie(selectId, selectEle.value);
             } else {
                 selectEle.value = value;
             }

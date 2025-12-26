@@ -52,7 +52,7 @@ def top(request):
     if aiInsL :
         dataD["aiInsL"] = aiInsL[min(10, len(aiInsL))::-1]
         
-    isAdDisplay = request.COOKIES.get("adrange", "off") == "on"
+    isAdDisplay = request.COOKIES.get("is-shown-ad", "off") == "on"
     dataD["isAdDisplay"] = isAdDisplay
     adInsL = Ad.objects.filter(status = "pass") if isAdDisplay else ""
     if adInsL :
