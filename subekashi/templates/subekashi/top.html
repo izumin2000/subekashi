@@ -5,13 +5,21 @@
 
 {% block content %}
 <section>
-    <h1>ニュース</h1>
-    <div class="underline"></div>
-    <div id="news-wrapper">
-        <div id="news-display">
-            {{ news_htmls|safe }}
-        </div>
-    </div>
+    {% if request.COOKIES.news_type != "off" %}
+        <h1>ニュース</h1>
+        <div class="underline"></div>
+        {% if request.COOKIES.news_type == "single" %}
+            <div id="single-news-wrapper">
+                <div id="single-news-display">
+                    {{ news_htmls|safe }}
+                </div>
+            </div>
+        {% elif request.COOKIES.news_type == "all" %}
+            <div id="all-news-display">
+                {{ news_htmls|safe }}
+            </div>
+        {% endif %}
+    {% endif %}
     <h1>検索</h1>
     <div class="underline"></div>
     <form action="{% url 'subekashi:songs' %}" method="GET" id="search-form">
@@ -101,7 +109,7 @@
     document.getElementById("keyword").focus();
     document.getElementById("keyword").click();
 
-    const newsDisplayEle = document.getElementById('news-display');
+    const newsDisplayEle = document.getElementById('single-news-display');
     const newsArreyEle = document.createElement("div");
     newsArreyEle.innerHTML = newsDisplayEle.innerHTML;
     const newsEles = newsArreyEle.children;
