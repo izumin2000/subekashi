@@ -20,27 +20,31 @@
             </div>
         {% endif %}
     {% endif %}
-    <h1>検索</h1>
-    <div class="underline"></div>
-    <form action="{% url 'subekashi:songs' %}" method="GET" id="search-form">
-        <div class="form-col">
-            <label for="keyword">キーワード</label>
-            <input type="text" id="keyword" name="keyword" placeholder="タイトル・チャンネル名・歌詞・URL">
-        </div>
-        <input type="submit" value="検索" id="searchsubmit">
-    </form>
+    {% if request.COOKIES.is_shown_search != "off" %}
+        <h1>検索</h1>
+        <div class="underline"></div>
+        <form action="{% url 'subekashi:songs' %}" method="GET" id="search-form">
+            <div class="form-col">
+                <label for="keyword">キーワード</label>
+                <input type="text" id="keyword" name="keyword" placeholder="タイトル・チャンネル名・歌詞・URL">
+            </div>
+            <input type="submit" value="検索" id="searchsubmit">
+        </form>
+    {% endif %}
 
-    <h1>新着</h1>
-    <div class="underline"></div>
-    {% for songIns in songInsL %}
-        {% render_song_card songIns %}
-    {% endfor %}
-    <div class="dummybuttons">
-        <a href="{% url 'subekashi:songs' %}"><div class="dummybutton"><p>もっと見る</p></div></a>
-        <a href="{% url 'subekashi:song_new' %}"><div class="dummybutton"><p>曲を登録する</p></div></a>
-    </div>
+    {% if songInsL %}
+        <h1>新着</h1>
+        <div class="underline"></div>
+        {% for songIns in songInsL %}
+            {% render_song_card songIns %}
+        {% endfor %}
+        <div class="dummybuttons">
+            <a href="{% url 'subekashi:songs' %}"><div class="dummybutton"><p>もっと見る</p></div></a>
+            <a href="{% url 'subekashi:song_new' %}"><div class="dummybutton"><p>曲を登録する</p></div></a>
+        </div>
+    {% endif %}
     
-    {% if isAdDisplay %}
+    {% if is_shown_ad %}
         <h1>宣伝</h1>
         <div class="underline"></div>
         <div class="youtube" id="ad">
@@ -48,11 +52,11 @@
         </div>
         <div class="dummybuttons">
             <a href="{% url 'subekashi:ad' %}"><div class="dummybutton"><p>宣伝する</p></div></a>
-            <a href="{% url 'subekashi:setting' %}#is-shown-ad"><div class="dummybutton"><p>非表示にする</p></div></a>
+            <a href="{% url 'subekashi:setting' %}#is_shown_ad"><div class="dummybutton"><p>非表示にする</p></div></a>
         </div>
     {% endif %}
 
-    {% if aiInsL %}
+    {% if aiInsL and request.COOKIES.is_shown_ai != "off" %}
         <h1>生成された歌詞</h1>
         <div class="underline"></div>
         {% for aiIns in aiInsL %}
@@ -106,47 +110,52 @@
 {% block js %}
 {% comment %} TODO top.jsに移動 {% endcomment %}
 <script defer>
-    document.getElementById("keyword").focus();
-    document.getElementById("keyword").click();
+    const keywordElement = document.getElementById("keyword");
+    if (keywordElement) {
+        keywordElement.focus();
+        keywordElement.click();
+    }
 
     const newsDisplayEle = document.getElementById('single-news-display');
-    const newsArreyEle = document.createElement("div");
-    newsArreyEle.innerHTML = newsDisplayEle.innerHTML;
-    const newsEles = newsArreyEle.children;
-    let currentIndex = 0;
+    if (newsDisplayEle) {
+        const newsArreyEle = document.createElement("div");
+        newsArreyEle.innerHTML = newsDisplayEle.innerHTML;
+        const newsEles = newsArreyEle.children;
+        let currentIndex = 0;
 
-    function showNews(newsEle_) {
-        newsEle = newsEle_.cloneNode(true)
-        newsDisplayEle.innerHTML = '';
-        newsDisplayEle.appendChild(newsEle);
-        const height = newsEle.clientHeight;
-        newsDisplayEle.style.height = `${height}px`;
-        
-        setTimeout(() => {
-            newsEle.style.opacity = '1';
-            newsEle.style.transform = 'translateY(0px)'; 
-        }, 1000);
-        
-        setTimeout(() => {
-            newsEle.style.opacity = '0';
-            newsEle.style.transform = 'translateY(-50px)'; 
-        }, 10000);
-        
-        setTimeout(() => {
-            newsEle.style.transform = 'translateY(50px)'; 
-        }, 11000);
+        function showNews(newsEle_) {
+            newsEle = newsEle_.cloneNode(true)
+            newsDisplayEle.innerHTML = '';
+            newsDisplayEle.appendChild(newsEle);
+            const height = newsEle.clientHeight;
+            newsDisplayEle.style.height = `${height}px`;
+
+            setTimeout(() => {
+                newsEle.style.opacity = '1';
+                newsEle.style.transform = 'translateY(0px)';
+            }, 1000);
+
+            setTimeout(() => {
+                newsEle.style.opacity = '0';
+                newsEle.style.transform = 'translateY(-50px)';
+            }, 10000);
+
+            setTimeout(() => {
+                newsEle.style.transform = 'translateY(50px)';
+            }, 11000);
+        }
+
+        function showNextNews() {
+            showNews(newsEles[currentIndex % newsEles.length])
+            currentIndex++;
+        }
+
+        showNextNews();
+        setInterval(showNextNews, 11000);
     }
 
-    function showNextNews() {
-        showNews(newsEles[currentIndex % newsEles.length])
-        currentIndex++;
-    }
 
-    showNextNews();
-    setInterval(showNextNews, 11000);
-
-
-    if ('{{ isAdDisplay }}' === "True") {
+    if ('{{ is_shown_ad }}' === "True") {
         let onceView = false;
         var adView = Number('{{ adIns.view }}')
         var adClick = Number('{{ adIns.click }}')

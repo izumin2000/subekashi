@@ -37,7 +37,7 @@ def setting(request):
             },
             {
                 'label': '検索の表示',
-                'id': 'is-shown-search',
+                'id': 'is_shown_search',
                 'options': [
                     {'value': 'on', 'text': '表示', 'selected': True},
                     {'value': 'off', 'text': '非表示', 'selected': False},
@@ -45,15 +45,17 @@ def setting(request):
             },
             {
                 'label': '新着の表示',
-                'id': 'is-shown-new',
+                'id': 'is_shown_new',
                 'options': [
-                    {'value': 'on', 'text': '表示', 'selected': True},
-                    {'value': 'off', 'text': '非表示', 'selected': False},
+                    {'value': 15, 'text': '15曲表示', 'selected': False},
+                    {'value': 10, 'text': '10曲表示', 'selected': False},
+                    {'value': 5, 'text': '5曲表示', 'selected': True},
+                    {'value': 0, 'text': '非表示', 'selected': False},
                 ]
             },
             {
                 'label': '宣伝の表示',
-                'id': 'is-shown-ad',
+                'id': 'is_shown_ad',
                 'options': [
                     {'value': 'on', 'text': '表示', 'selected': True},
                     {'value': 'off', 'text': '非表示', 'selected': False},
@@ -61,7 +63,7 @@ def setting(request):
             },
             {
                 'label': '生成された歌詞の表示',
-                'id': 'is-shown-ai',
+                'id': 'is_shown_ai',
                 'options': [
                     {'value': 'on', 'text': '表示', 'selected': True},
                     {'value': 'off', 'text': '非表示', 'selected': False},
@@ -69,17 +71,19 @@ def setting(request):
             },
             {
                 'label': '未完成の表示',
-                'id': 'is-shown-lack',
+                'id': 'is_shown_lack',
                 'options': [
-                    {'value': 'on', 'text': '表示', 'selected': True},
-                    {'value': 'off', 'text': '非表示', 'selected': False},
+                    {'value': 15, 'text': '15曲表示', 'selected': False},
+                    {'value': 10, 'text': '10曲表示', 'selected': False},
+                    {'value': 5, 'text': '5曲表示', 'selected': True},
+                    {'value': 0, 'text': '非表示', 'selected': False},
                 ]
             },
         ],
         'search': [
             {
                 'label': '検索の選択肢の保存',
-                'id': 'is-saved-select',
+                'id': 'is_saved_select',
                 'options': [
                     {'value': 'on', 'text': '保存', 'selected': True},
                     {'value': 'off', 'text': '未保存', 'selected': False},
