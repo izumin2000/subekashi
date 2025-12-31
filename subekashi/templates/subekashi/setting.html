@@ -25,7 +25,7 @@
     <h2>検索画面</h2>
     {% for setting in search_settings %}
         <div class="form-col">
-            <label>{{ setting.label }}</label>
+            <label>{{ setting.label }}<i class="fas fa-info-circle" onclick="showTutorial('select');"></i></label>
             <select id="{{ setting.id }}" onchange="setting()">
                 {% for option in setting.options %}
                 <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{ option.text }}</option>
