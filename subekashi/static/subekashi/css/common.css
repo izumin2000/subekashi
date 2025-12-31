@@ -563,6 +563,7 @@ label {
     display: inline-block;
     cursor: pointer;
     text-align: center;
+    margin-right: 5px;
 }
 
 .form-col label {
