@@ -9,8 +9,6 @@ from subekashi.lib.ip import *
 from subekashi.lib.discord import *
 import random
 
-INPUT_TEXTS = ["title", "channel", "lyrics", "url"]
-
 
 def top(request):
     dataD = {
@@ -32,7 +30,7 @@ def top(request):
     
     songrange = request.COOKIES.get("songrange", "subeana")
     jokerange = request.COOKIES.get("jokerange", "off")
-    
+
     if songrange == "all" :
         songInsL = Song.objects.all()
     elif songrange == "subeana" :
@@ -41,24 +39,36 @@ def top(request):
         songInsL = Song.objects.filter(issubeana = False)
     if jokerange == "off" :
         songInsL = songInsL.filter(isjoke = False)
-        
-    dataD["songInsL"] = list(songInsL)[:-7:-1]
-    lackInsL = list(songInsL.filter(filter_by_lack))
-    if lackInsL :
-        lackInsL = random.sample(lackInsL, min(6, len(lackInsL)))
-        dataD["lackInsL"] = lackInsL
-    aiInsL = Ai.objects.filter(score = 5)[::-1]
-    
-    if aiInsL :
-        dataD["aiInsL"] = aiInsL[min(10, len(aiInsL))::-1]
-        
-    isAdDisplay = request.COOKIES.get("adrange", "off") == "on"
-    dataD["isAdDisplay"] = isAdDisplay
-    adInsL = Ad.objects.filter(status = "pass") if isAdDisplay else ""
-    if adInsL :
-        adInsL = random.sample(list(adInsL), min(len(adInsL), 10))
-        adInsL = [adIns for adIns in adInsL for _ in range(adIns.dup)]
-        adIns = random.choice(adInsL) if adInsL else []
-        dataD["adIns"] = adIns
+
+    # 新着の表示設定
+    new_count = int(request.COOKIES.get("is_shown_new", "5"))
+    if new_count > 0:
+        dataD["songInsL"] = list(songInsL)[:-(new_count + 1):-1]
+
+    # 未完成の表示設定
+    lack_count = int(request.COOKIES.get("is_shown_lack", "5"))
+    if lack_count > 0:
+        lackInsL = list(songInsL.filter(filter_by_lack))
+        if lackInsL:
+            lackInsL = random.sample(lackInsL, min(lack_count, len(lackInsL)))
+            dataD["lackInsL"] = lackInsL
+
+    # 生成された歌詞の表示設定
+    is_ai_shown = request.COOKIES.get("is-show-ai", "on") == "on"
+    if is_ai_shown:
+        aiInsL = Ai.objects.filter(score = 5)[::-1]
+        if aiInsL:
+            dataD["aiInsL"] = aiInsL[min(10, len(aiInsL))::-1]
+
+    # 宣伝の表示設定
+    is_shown_ad = request.COOKIES.get("is_shown_ad", "on") == "on"
+    dataD["is_shown_ad"] = is_shown_ad
+    if is_shown_ad:
+        adInsL = Ad.objects.filter(status = "pass")
+        if adInsL:
+            adInsL = random.sample(list(adInsL), min(len(adInsL), 10))
+            adInsL = [adIns for adIns in adInsL for _ in range(adIns.dup)]
+            adIns = random.choice(adInsL) if adInsL else []
+            dataD["adIns"] = adIns
     
     return render(request, 'subekashi/top.html', dataD)

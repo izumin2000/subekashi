@@ -2,7 +2,7 @@ form {
     margin-bottom: 40px;
 }
 
-.article-wrapper, .news-wrapper {
+.article-wrapper, .single-news-wrapper {
     padding: 10px;
     margin-bottom: 20px;
 }
@@ -11,11 +11,11 @@ form {
     background-color: #333;
 }
 
-.news-wrapper {
+.single-news-wrapper {
     border: solid 5px #333;
 }
 
-.article-wrapper a, .news-wrapper a {
+.article-wrapper a, .single-news-wrapper a {
     text-decoration: none;
     text-align: center;
 }
@@ -24,7 +24,7 @@ form {
     text-decoration: underline 2px #fff;
 }
 
-.article-wrapper p, .news-wrapper p {
+.article-wrapper p, .single-news-wrapper p {
     text-align: center;
 }
 
