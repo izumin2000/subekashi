@@ -28,12 +28,6 @@ def song_search(querys, is_paging=False):
         if isinstance(value, list) and len(value) > 0:
             value = value[0]
 
-        # 真偽値文字列を実際の真偽値に変換
-        if value in ["True", "true", "1", 1]:
-            value = True
-        elif value in ["False", "false", "0", 0]:
-            value = False
-
         cleaned_querys[key] = value
 
     # django-filterを適用
