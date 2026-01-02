@@ -1,6 +1,5 @@
 """
-Django-filter based search implementation.
-Replaces the custom search.py implementation.
+Django-filterベースの検索実装
 """
 import math
 from subekashi.filters import SongFilter
@@ -11,25 +10,25 @@ DEFALT_SIZE = 50  # 1度の検索で取得できるsongオブジェクトの数
 
 def song_search(querys, is_paging=False):
     """
-    Filter and search songs using django-filter.
+    django-filterを使用して楽曲をフィルタリング・検索する
 
     Args:
-        querys: Dictionary of query parameters
-        is_paging: Boolean indicating if pagination should be applied
+        querys: クエリパラメータの辞書
+        is_paging: ページネーションを適用するかどうかの真偽値
 
     Returns:
-        Tuple of (queryset, statistics_dict)
+        (queryset, statistics_dict)のタプル
     """
     statistics = {}
 
-    # Clean query parameters - handle list values
+    # クエリパラメータをクリーンアップ - リスト値を処理
     cleaned_querys = {}
     for key, value in querys.items():
-        # If value is a list, take the first element
+        # 値がリストの場合、最初の要素を取得
         if isinstance(value, list) and len(value) > 0:
             value = value[0]
 
-        # Convert boolean string values to actual booleans
+        # 真偽値文字列を実際の真偽値に変換
         if value in ["True", "true", "1", 1]:
             value = True
         elif value in ["False", "false", "0", 0]:
@@ -37,21 +36,21 @@ def song_search(querys, is_paging=False):
 
         cleaned_querys[key] = value
 
-    # Apply django-filter
+    # django-filterを適用
     filterset = SongFilter(cleaned_querys, queryset=Song.objects.all())
     song_qs = filterset.qs
 
-    # Handle sorting (already handled in FilterSet, but keep for compatibility)
-    # The FilterSet handles random sort internally
+    # ソート処理（FilterSetで既に処理済みだが、互換性のため保持）
+    # FilterSetがランダムソートを内部で処理
 
-    # Count results
+    # 結果をカウント
     count = song_qs.count()
 
-    # Add count to statistics if requested
+    # リクエストされている場合、統計情報にカウントを追加
     if cleaned_querys.get("count"):
         statistics["count"] = count
 
-    # Handle pagination
+    # ページネーション処理
     if is_paging:
         try:
             page = int(cleaned_querys.get("page", 1))
@@ -68,7 +67,7 @@ def song_search(querys, is_paging=False):
         max_page = math.ceil(count / size) if size > 0 else 1
         statistics["max_page"] = max_page
 
-        # Apply pagination slice
+        # ページネーションのスライスを適用
         start = (page - 1) * size
         end = page * size
         song_qs = song_qs[start:end]
