@@ -1,5 +1,5 @@
 from subekashi.models import Song
-from subekashi.lib.search import song_search
+from subekashi.lib.search_filter import song_search
 from ...serializer import SongSerializer
 from rest_framework import viewsets
 from rest_framework.response import Response

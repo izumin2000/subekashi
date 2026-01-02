@@ -1,6 +1,6 @@
 from django.template.loader import render_to_string
 from django.http import JsonResponse
-from subekashi.lib.search import song_search
+from subekashi.lib.search_filter import song_search
 from django_ratelimit.decorators import ratelimit
 
 

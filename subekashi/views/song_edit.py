@@ -7,7 +7,7 @@ from subekashi.models import *
 from subekashi.lib.url import *
 from subekashi.lib.ip import *
 from subekashi.lib.discord import *
-from subekashi.lib.search import song_search
+from subekashi.lib.search_filter import song_search
 
 
 def song_edit(request, song_id):
