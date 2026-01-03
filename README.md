@@ -53,6 +53,7 @@ pip install -r requirements.txt
 ```bash
 cp config/local_settings_sample.py config/local_settings.py
 ```
+※ cpコマンドを利用できない場合は、別のファイルをコピーするコマンドかエクスプローラーを利用してください。
   
 8\. シェルの起動  
 
@@ -141,8 +142,9 @@ python manage.py runserver
   - 具体的な内容については、コメントしてくれたら回答します。
   - assigneeが私のissueでも、相談していただけたら、担当することができるかもです。
 
-その他、issueの起票だけでも助かります。
-マージの場所はmainでお願いします。
+その他、issueの起票だけでも助かります。  
+マージの場所はmainでお願いします。  
+PRにはClaude Code Actionsを使用しております。  
 
 ## リンク集
 
