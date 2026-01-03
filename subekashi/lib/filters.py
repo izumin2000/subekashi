@@ -1,4 +1,5 @@
 import django_filters
+from django.core.exceptions import ValidationError
 from subekashi.models import Song
 from subekashi.lib.filter import (
     filter_by_keyword,
@@ -13,7 +14,6 @@ from subekashi.lib.filter import (
 def validate_positive_integer(value):
     """正の整数であることを検証"""
     if value is not None and value < 0:
-        from django.core.exceptions import ValidationError
         raise ValidationError(f'値は0以上である必要があります: {value}')
     return value
 
@@ -22,7 +22,6 @@ def validate_max_length(max_length):
     """最大文字列長を検証するバリデータを返す"""
     def validator(value):
         if value and len(value) > max_length:
-            from django.core.exceptions import ValidationError
             raise ValidationError(
                 f'文字列長は{max_length}文字以下である必要があります（現在: {len(value)}文字）'
             )
