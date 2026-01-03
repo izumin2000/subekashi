@@ -38,16 +38,24 @@ def song_filter(querys):
     statistics["count"] = count
 
     # ページネーション処理
+    # 実用的な上限として2^31-1を使用
+    MAX_QUERY_SIZE = 2147483647
+
     try:
         page = int(cleaned_querys.get("page", 1))
+        if page < 1 or page > MAX_QUERY_SIZE:
+            page = 1
     except (ValueError, TypeError):
         page = 1
 
     try:
         size = int(cleaned_querys.get("size", DEFALT_SIZE))
+        if size < 1 or size > MAX_QUERY_SIZE:
+            size = DEFALT_SIZE
     except (ValueError, TypeError):
         size = DEFALT_SIZE
 
+    # 統計情報をレスポンスに追加
     statistics["page"] = page
     statistics["size"] = size
     max_page = math.ceil(count / size) if size > 0 else 1
