@@ -1,4 +1,5 @@
 import django_filters
+from django.core.exceptions import ValidationError
 from subekashi.models import Song
 from subekashi.lib.filter import (
     filter_by_keyword,
@@ -10,26 +11,82 @@ from subekashi.lib.filter import (
 )
 
 
+def validate_positive_integer(value):
+    """正の整数であることを検証"""
+    if value is not None and value < 0:
+        raise ValidationError(f'値は0以上である必要があります: {value}')
+    return value
+
+
+def validate_max_length(max_length):
+    """最大文字列長を検証するバリデータを返す"""
+    def validator(value):
+        if value and len(value) > max_length:
+            raise ValidationError(
+                f'文字列長は{max_length}文字以下である必要があります（現在: {len(value)}文字）'
+            )
+        return value
+    return validator
+
+
 class SongFilter(django_filters.FilterSet):
     """
     SongモデルのためのDjango-filter FilterSet
     """
 
     # 大文字小文字を区別しない部分一致テキストフィールド
-    title = django_filters.CharFilter(lookup_expr='icontains')
-    channel = django_filters.CharFilter(lookup_expr='icontains')
-    lyrics = django_filters.CharFilter(lookup_expr='icontains')
-    url = django_filters.CharFilter(lookup_expr='icontains')
+    # models.pyの max_length に準拠したバリデーション
+    title = django_filters.CharFilter(
+        lookup_expr='icontains',
+        validators=[validate_max_length(500)]
+    )
+    channel = django_filters.CharFilter(
+        lookup_expr='icontains',
+        validators=[validate_max_length(500)]
+    )
+    lyrics = django_filters.CharFilter(
+        lookup_expr='icontains',
+        validators=[validate_max_length(10000)]
+    )
+    url = django_filters.CharFilter(
+        lookup_expr='icontains',
+        validators=[validate_max_length(500)]
+    )
 
     # 完全一致フィルタ（後方互換性のため_exactサフィックスを使用）
-    title_exact = django_filters.CharFilter(field_name='title', lookup_expr='exact')
-    channel_exact = django_filters.CharFilter(field_name='channel', lookup_expr='exact')
+    title_exact = django_filters.CharFilter(
+        field_name='title',
+        lookup_expr='exact',
+        validators=[validate_max_length(500)]
+    )
+    channel_exact = django_filters.CharFilter(
+        field_name='channel',
+        lookup_expr='exact',
+        validators=[validate_max_length(500)]
+    )
 
     # YouTubeデータのgte/lteフィルタ
-    view_gte = django_filters.NumberFilter(field_name='view', lookup_expr='gte')
-    view_lte = django_filters.NumberFilter(field_name='view', lookup_expr='lte')
-    like_gte = django_filters.NumberFilter(field_name='like', lookup_expr='gte')
-    like_lte = django_filters.NumberFilter(field_name='like', lookup_expr='lte')
+    # 負の値を許可しない
+    view_gte = django_filters.NumberFilter(
+        field_name='view',
+        lookup_expr='gte',
+        validators=[validate_positive_integer]
+    )
+    view_lte = django_filters.NumberFilter(
+        field_name='view',
+        lookup_expr='lte',
+        validators=[validate_positive_integer]
+    )
+    like_gte = django_filters.NumberFilter(
+        field_name='like',
+        lookup_expr='gte',
+        validators=[validate_positive_integer]
+    )
+    like_lte = django_filters.NumberFilter(
+        field_name='like',
+        lookup_expr='lte',
+        validators=[validate_positive_integer]
+    )
     upload_time_gte = django_filters.DateTimeFilter(field_name='upload_time', lookup_expr='gte')
     upload_time_lte = django_filters.DateTimeFilter(field_name='upload_time', lookup_expr='lte')
 
@@ -42,11 +99,26 @@ class SongFilter(django_filters.FilterSet):
     isdeleted = django_filters.BooleanFilter()
 
     # カスタムフィルタ
-    keyword = django_filters.CharFilter(method='filter_keyword')
-    imitate = django_filters.CharFilter(method='filter_imitate')
-    imitated = django_filters.CharFilter(method='filter_imitated')
-    guesser = django_filters.CharFilter(method='filter_guesser')
-    mediatypes = django_filters.CharFilter(method='filter_mediatypes')
+    keyword = django_filters.CharFilter(
+        method='filter_keyword',
+        validators=[validate_max_length(500)]
+    )
+    imitate = django_filters.CharFilter(
+        method='filter_imitate',
+        validators=[validate_max_length(10000)]
+    )
+    imitated = django_filters.CharFilter(
+        method='filter_imitated',
+        validators=[validate_max_length(10000)]
+    )
+    guesser = django_filters.CharFilter(
+        method='filter_guesser',
+        validators=[validate_max_length(500)]
+    )
+    mediatypes = django_filters.CharFilter(
+        method='filter_mediatypes',
+        validators=[validate_max_length(100)]
+    )
     islack = django_filters.BooleanFilter(method='filter_islack')
 
     # ソート

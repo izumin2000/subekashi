@@ -12,7 +12,7 @@ def song_cards(request):
     page = int(query.get("page")[0]) if query.get("page") and (query.get("page") != ['undefined']) else 1
     query["count"] = True
     query["page"] = page
-    song_qs, statistics = song_filter(query, is_paging=True)
+    song_qs, statistics = song_filter(query)
     
     if page == 1:
         result.append(f"<p id='search-info'>{Song.objects.count()}件中{statistics['count']}件ヒットしました</p>")
