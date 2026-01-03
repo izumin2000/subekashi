@@ -35,10 +35,7 @@ def song_filter(querys):
 
     # 結果をカウント
     count = song_qs.count()
-
-    # リクエストされている場合、統計情報にカウントを追加
-    if cleaned_querys.get("count"):
-        statistics["count"] = count
+    statistics["count"] = count
 
     # ページネーション処理
     try:
