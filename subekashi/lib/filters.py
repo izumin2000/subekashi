@@ -22,7 +22,6 @@ class SongFilter(django_filters.FilterSet):
     url = django_filters.CharFilter(lookup_expr='icontains')
 
     # 完全一致フィルタ（後方互換性のため_exactサフィックスを使用）
-    # 注意: _exactという名前にもかかわらず、これらは完全一致を実行します（部分一致ではありません）
     title_exact = django_filters.CharFilter(field_name='title', lookup_expr='exact')
     channel_exact = django_filters.CharFilter(field_name='channel', lookup_expr='exact')
 
@@ -42,7 +41,7 @@ class SongFilter(django_filters.FilterSet):
     isinst = django_filters.BooleanFilter()
     isdeleted = django_filters.BooleanFilter()
 
-    # 複雑なカスタムフィルタ
+    # カスタムフィルタ
     keyword = django_filters.CharFilter(method='filter_keyword')
     imitate = django_filters.CharFilter(method='filter_imitate')
     imitated = django_filters.CharFilter(method='filter_imitated')
@@ -65,7 +64,7 @@ class SongFilter(django_filters.FilterSet):
 
     class Meta:
         model = Song
-        fields = []  # すべてのフィールドを上記で明示的に定義します
+        fields = []  # すべてのフィールドを上記で明示的に定義
 
     def filter_keyword(self, queryset, name, value):
         """複数フィールドにわたるキーワード検索"""
@@ -119,7 +118,7 @@ class SongFilter(django_filters.FilterSet):
         YOUTUBE_SORT = ['upload_time', '-upload_time', 'view', '-view', 'like', '-like']
 
         youtube_filters = [f'{item}_gte' for item in YOUTUBE_ITEMS] + \
-                         [f'{item}_lte' for item in YOUTUBE_ITEMS]
+                          [f'{item}_lte' for item in YOUTUBE_ITEMS]
 
         has_youtube_sort = self.data.get('sort') in YOUTUBE_SORT
         has_youtube_filter = any(key in self.data for key in youtube_filters)
