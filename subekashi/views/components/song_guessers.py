@@ -1,6 +1,6 @@
 from django.template.loader import render_to_string
 from django.http import JsonResponse
-from subekashi.lib.search_filter import song_search
+from subekashi.lib.song_filter import song_filter
 from django_ratelimit.decorators import ratelimit
 
 
@@ -11,7 +11,7 @@ def song_guessers(request):
     query = dict(request.GET)
     query["size"] = SIZE
     query["count"] = True
-    song_qs, statistics = song_search(query)
+    song_qs, statistics = song_filter(query)
     for song in song_qs:
         result.append(render_to_string('subekashi/components/song_guesser.html', {'song': song}))
     

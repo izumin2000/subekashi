@@ -2,13 +2,13 @@
 Django-filterベースの検索実装
 """
 import math
-from subekashi.filters import SongFilter
+from subekashi.lib.filters import SongFilter
 from subekashi.models import Song
 
 DEFALT_SIZE = 50  # 1度の検索で取得できるsongオブジェクトの数
 
 
-def song_search(querys, is_paging=False):
+def song_filter(querys, is_paging=False):
     """
     django-filterを使用して楽曲をフィルタリング・検索する
 
