@@ -4,6 +4,7 @@ Django-filterベースの検索実装
 import math
 from subekashi.lib.filters import SongFilter
 from subekashi.models import Song
+from rest_framework.exceptions import ValidationError
 
 DEFALT_SIZE = 50  # 1度の検索で取得できるsongオブジェクトの数
 
@@ -17,6 +18,9 @@ def song_filter(querys):
 
     Returns:
         (queryset, statistics_dict)のタプル
+
+    Raises:
+        ValidationError: バリデーションエラーが発生した場合
     """
     statistics = {}
 
@@ -30,8 +34,25 @@ def song_filter(querys):
         cleaned_querys[key] = value
 
     # django-filterを適用
-    filterset = SongFilter(cleaned_querys, queryset=Song.objects.all())
-    song_qs = filterset.qs
+    try:
+        filterset = SongFilter(cleaned_querys, queryset=Song.objects.all())
+
+        # フィルタのバリデーションエラーをチェック
+        if not filterset.is_valid():
+            # エラーメッセージを収集
+            error_messages = []
+            for field, errors in filterset.errors.items():
+                for error in errors:
+                    error_messages.append(f"{field}: {error}")
+
+            raise ValidationError({"error": ", ".join(error_messages)})
+
+        song_qs = filterset.qs
+    except Exception as e:
+        # django_filters.exceptions.FieldErrorやその他の例外をキャッチ
+        if isinstance(e, ValidationError):
+            raise
+        raise ValidationError({"error": str(e)})
 
     # 結果をカウント
     count = song_qs.count()
