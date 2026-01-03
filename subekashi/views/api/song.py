@@ -19,7 +19,7 @@ class SongAPI(viewsets.ReadOnlyModelViewSet):
             return super().get_queryset()
 
         query = dict(self.request.query_params)
-        return song_filter(query, is_paging=True)
+        return song_filter(query)
 
     def list(self, request, *args, **kwargs):
         result_qs, statistics = self.get_queryset()
