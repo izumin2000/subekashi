@@ -124,6 +124,7 @@ class SongFilter(django_filters.FilterSet):
     # ソート
     sort = django_filters.OrderingFilter(
         fields=(
+            ('id', 'id'),
             ('title', 'title'),
             ('channel', 'channel'),
             ('upload_time', 'upload_time'),
