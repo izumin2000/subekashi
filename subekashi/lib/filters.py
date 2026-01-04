@@ -9,6 +9,7 @@ from subekashi.lib.filter import (
     filter_by_mediatypes,
     filter_by_lack,
 )
+from subekashi.lib.url import clean_url
 
 
 def validate_positive_integer(value):
@@ -49,7 +50,7 @@ class SongFilter(django_filters.FilterSet):
         validators=[validate_max_length(10000)]
     )
     url = django_filters.CharFilter(
-        lookup_expr='icontains',
+        method='filter_url',
         validators=[validate_max_length(500)]
     )
 
@@ -141,7 +142,13 @@ class SongFilter(django_filters.FilterSet):
 
     def filter_keyword(self, queryset, name, value):
         """複数フィールドにわたるキーワード検索"""
+        value = clean_url(value)
         return queryset.filter(filter_by_keyword(value))
+
+    def filter_url(self, queryset, name, value):
+        """URLフィールドによるフィルタ（clean_urlを適用）"""
+        value = clean_url(value)
+        return queryset.filter(url__icontains=value)
 
     def filter_imitate(self, queryset, name, value):
         """imitateフィールドによるフィルタ（カンマ区切りリストをサポート）"""
