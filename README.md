@@ -123,14 +123,128 @@ python manage.py runserver
 [http://subekashi.localhost:8000/](http://subekashi.localhost:8000/) にアクセスとアプリの画面が表示されます。  
 エラーが発生した場合はissueで報告してください。  
   
-## 全て歌詞の所為です。APIについて  
-全て歌詞の所為です。上で登録された情報はRESTfulなAPIで提供しています。  
+## 全て歌詞の所為です。APIについて
+全て歌詞の所為です。上で登録された情報はRESTfulなAPIで提供しています。
 
-[https://lyrics.imicomweb.com/api/song](https://lyrics.imicomweb.com/api/song)：全て歌詞の所為です。に登録された曲の情報です。GET, HEAD, OPTIONSのみ受け付けています。
+### Song API
+**エンドポイント**: [https://lyrics.imicomweb.com/api/song](https://lyrics.imicomweb.com/api/song)
+**メソッド**: GET, HEAD, OPTIONS
+**レート制限**: 2リクエスト/秒
 
-[https://lyrics.imicomweb.com/api/ad](https://lyrics.imicomweb.com/api/ad)：全て歌詞の所為です。に登録された宣伝の情報です。GET, HEAD, OPTIONSとPUTのうちカラムviewとカラムclickの値の変更のみ受け付けています。
+全て歌詞の所為です。に登録された曲の情報を取得できます。
 
-[https://lyrics.imicomweb.com/api/ai](https://lyrics.imicomweb.com/api/ai)：正常に狂うのです。が生成した歌詞の情報です。GET, HEAD, OPTIONSとPUTのうちカラムscoreの変更のみ受け付けています。
+#### クエリパラメータ
+
+**テキスト検索（部分一致、大文字小文字を区別しない）**
+- `title`: 曲名で検索（最大500文字）
+- `channel`: チャンネル名で検索（最大500文字）
+- `lyrics`: 歌詞で検索（最大10000文字）
+- `url`: URLで検索（最大500文字）
+  - 自動的にURLが正規化されます（YouTubeの短縮、クエリパラメータの削除など）
+- `keyword`: タイトル、チャンネル、歌詞、URLを横断検索（最大500文字）
+  - 自動的にURLが正規化されます
+
+**完全一致検索**
+- `title_exact`: 曲名で完全一致検索（最大500文字）
+- `channel_exact`: チャンネル名で完全一致検索（最大500文字）
+
+**数値範囲フィルタ（0以上の値のみ）**
+- `view_gte`: 視聴回数の下限
+- `view_lte`: 視聴回数の上限
+- `like_gte`: いいね数の下限
+- `like_lte`: いいね数の上限
+
+**日時範囲フィルタ**
+- `upload_time_gte`: アップロード日時の下限（ISO 8601形式）
+- `upload_time_lte`: アップロード日時の上限（ISO 8601形式）
+
+**真偽値フィルタ**
+- `issubeana`: すべあな曲かどうか
+- `isjoke`: ネタ曲かどうか
+- `isdraft`: 下書きかどうか
+- `isoriginal`: オリジナル曲かどうか
+- `isinst`: インスト曲かどうか
+- `isdeleted`: 削除済みかどうか
+- `islack`: 不完全な曲（情報が欠けている曲）
+
+**特殊フィルタ**
+- `imitate`: 模倣元（カンマ区切りで複数指定可、最大10000文字）
+- `imitated`: 被模倣（カンマ区切りで複数指定可、最大10000文字）
+- `guesser`: 候補（タイトルとチャンネルを検索、最大500文字）
+- `mediatypes`: メディアタイプ（正規表現対応、最大100文字）
+
+**ページネーション**
+- `page`: ページ番号（デフォルト: 1、最小: 1）
+- `size`: 1ページあたりの件数（デフォルト: 50、最小: 1）
+
+**ソート**
+- `sort`: ソート順を指定
+  - 利用可能な値: `id`, `-id`, `title`, `-title`, `channel`, `-channel`, `upload_time`, `-upload_time`, `view`, `-view`, `like`, `-like`, `post_time`, `-post_time`, `random`
+  - `-`を付けると降順、付けないと昇順
+  - `id`は登録日時順（登録が古い順）、`-id`は登録が新しい順
+  - `random`を指定するとランダムソート
+
+**注意事項**
+- YouTube関連のフィルタ（view, like, upload_time）やソートを使用する場合、`mediatypes`を指定しない限り、自動的にYouTube動画のみに絞り込まれます
+- バリデーションエラーが発生した場合、400 Bad Requestと共にエラーメッセージが返されます
+
+#### レスポンス形式
+
+**一覧取得時**
+```json
+{
+  "count": 100,
+  "page": 1,
+  "size": 50,
+  "max_page": 2,
+  "result": [
+    {
+      "song_id": 1,
+      "title": "曲名",
+      "channel": "チャンネル名",
+      ...
+    }
+  ]
+}
+```
+
+- `count`: 検索条件に一致する曲の総数
+- `page`: 現在のページ番号
+- `size`: 1ページあたりの件数
+- `max_page`: 最大ページ数
+- `result`: 曲のリスト
+
+**個別取得時（/api/song/{song_id}）**
+```json
+{
+  "song_id": 1,
+  "title": "曲名",
+  "channel": "チャンネル名",
+  ...
+}
+```
+
+### Ad API
+**エンドポイント**: [https://lyrics.imicomweb.com/api/ad](https://lyrics.imicomweb.com/api/ad)
+**メソッド**: GET, HEAD, OPTIONS, PUT, PATCH
+
+全て歌詞の所為です。に登録された宣伝の情報を取得・更新できます。
+
+- **GET**: 宣伝情報の取得
+- **PUT/PATCH**: `view`（閲覧数）と`click`（クリック数）フィールドのみ更新可能
+  - これら以外のフィールドを更新しようとするとバリデーションエラーが返されます
+- **POST/DELETE**: 使用不可
+
+### AI API
+**エンドポイント**: [https://lyrics.imicomweb.com/api/ai](https://lyrics.imicomweb.com/api/ai)
+**メソッド**: GET, HEAD, OPTIONS, PUT, PATCH
+
+正常に狂うのです。が生成した歌詞の情報を取得・更新できます。
+
+- **GET**: AI生成歌詞の取得
+- **PUT/PATCH**: `score`（評価スコア）フィールドのみ更新可能
+  - このフィールド以外を更新しようとするとバリデーションエラーが返されます
+- **POST/DELETE**: 使用不可
 
 ## コントリビューション
 全て歌詞の所為です。ではプルリクエストを積極的に受け入れています。  
