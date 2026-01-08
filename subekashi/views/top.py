@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.db.models import Q
+from django.views.decorators.cache import never_cache
 from config.settings import *
 from subekashi.models import *
 from article.models import Article
@@ -10,6 +11,7 @@ from subekashi.lib.discord import *
 import random
 
 
+@never_cache
 def top(request):
     dataD = {
         "metatitle" : "トップ",
@@ -54,7 +56,7 @@ def top(request):
             dataD["lackInsL"] = lackInsL
 
     # 生成された歌詞の表示設定
-    is_ai_shown = request.COOKIES.get("is-show-ai", "on") == "on"
+    is_ai_shown = request.COOKIES.get("is_shown_ai", "on") == "on"
     if is_ai_shown:
         aiInsL = Ai.objects.filter(score = 5)[::-1]
         if aiInsL:

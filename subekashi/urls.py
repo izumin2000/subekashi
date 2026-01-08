@@ -24,6 +24,7 @@ urlpatterns = [
     path('ai/', ai, name='ai'),
     path('ai/result/', ai_result, name='ai_result'),
     path('setting/', setting, name='setting'),
+    path('api/setting/save/', save_settings, name='save_settings'),
     path('ad/', ad, name='ad'),
     path('ad/complete/', ad_complete, name='ad_complete'),
     path('robots.txt', robots, name='robots'),

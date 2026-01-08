@@ -11,7 +11,7 @@ from subekashi.views.api.editor import EditorIsOpenView
 from subekashi.views.errors import *
 from subekashi.views.file import *
 from subekashi.views.songs import songs
-from subekashi.views.setting import setting
+from subekashi.views.setting import setting, save_settings
 from subekashi.views.song import song
 from subekashi.views.song_delete import song_delete
 from subekashi.views.song_edit import song_edit

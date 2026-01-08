@@ -148,3 +148,9 @@ ALL_MEDIAS = ALLOW_MEDIAS + [
         "icon": "<i class='fas fa-exclamation-triangle'></i>"
     }
 ]
+
+# cookieとキャッシュの保存期間
+# SHORT_TERM: 30分（一般ページのキャッシュ用）
+# LONG_TERM: 365日（静的ファイルのキャッシュ、ユーザー設定のcookie用）
+SHORT_TERM_COOKIE_AGE = 30 * 60
+LONG_TERM_COOKIE_AGE = 365 * 24 * 60 * 60

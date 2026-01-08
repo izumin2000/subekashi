@@ -2,16 +2,20 @@ from datetime import datetime, timedelta, timezone
 from django.utils.deprecation import MiddlewareMixin
 from django.utils.http import http_date
 from django.conf import settings
+from subekashi.constants.constants import SHORT_TERM_COOKIE_AGE, LONG_TERM_COOKIE_AGE
 
 class CacheControlMiddleware(MiddlewareMixin):
     def process_response(self, request, response):
+        # すでにCache-Controlが設定されている場合はスキップ
+        if response.get('Cache-Control'):
+            return response
+
         path = request.path
 
-        # 静的ファイルの場合は30日でそれ以外は30分
         if path.startswith(settings.STATIC_URL):
-            max_age = 30 * 24 * 60 * 60
+            max_age = LONG_TERM_COOKIE_AGE
         else:
-            max_age = 1800
+            max_age = SHORT_TERM_COOKIE_AGE
 
         expires_at = datetime.now(timezone.utc) + timedelta(seconds=max_age)
 
