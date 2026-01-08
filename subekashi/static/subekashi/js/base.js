@@ -15,6 +15,13 @@ document.querySelectorAll('textarea').forEach((textarea) => {
     };
 });
 
+// <input type="number">上でスクロールしても値が変わらないようにする
+document.addEventListener('wheel', function(event) {
+    if (event.target.type === 'number') {
+        event.preventDefault();
+    }
+}, { passive: false });
+
 // DRFのAPIの取得
 async function getJson(path) {
     const res = await fetch(`${baseURL()}/api/${path}`, { cache: "reload" });
