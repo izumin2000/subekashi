@@ -7,7 +7,7 @@ from subekashi.constants.constants import SHORT_TERM_COOKIE_AGE, LONG_TERM_COOKI
 class CacheControlMiddleware(MiddlewareMixin):
     def process_response(self, request, response):
         # すでにCache-Controlが設定されている場合はスキップ
-        if 'Cache-Control' in response:
+        if response.get('Cache-Control'):
             return response
 
         path = request.path
