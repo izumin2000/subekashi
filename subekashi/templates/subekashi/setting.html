@@ -14,7 +14,7 @@
     {% for setting in top_settings %}
         <div class="form-col">
             <label>{{ setting.label }}</label>
-            <select id="{{ setting.id }}" onchange="setting()">
+            <select id="{{ setting.id }}" class="setting-input">
                 {% for option in setting.options %}
                 <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{ option.text }}</option>
                 {% endfor %}
@@ -26,7 +26,7 @@
     {% for setting in search_settings %}
         <div class="form-col">
             <label>{{ setting.label }}<i class="fas fa-info-circle" onclick="showTutorial('select');"></i></label>
-            <select id="{{ setting.id }}" onchange="setting()">
+            <select id="{{ setting.id }}" class="setting-input">
                 {% for option in setting.options %}
                 <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{ option.text }}</option>
                 {% endfor %}
@@ -38,7 +38,7 @@
     {% for setting in song_settings %}
         <div class="form-col">
             <label>{{ setting.label }}</label>
-            <select id="{{ setting.id }}" onchange="setting()">
+            <select id="{{ setting.id }}" class="setting-input">
                 {% for option in setting.options %}
                 <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{ option.text }}</option>
                 {% endfor %}
@@ -50,7 +50,7 @@
     {% for setting in edit_settings %}
         <div class="form-col">
             <label>{{ setting.label }}</label>
-            <select id="{{ setting.id }}" onchange="change_is_open()">
+            <select id="{{ setting.id }}" class="setting-input edit-setting">
                 {% for option in setting.options %}
                 <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{ option.text }}</option>
                 {% endfor %}
@@ -63,51 +63,76 @@
 
 {% block js %}
 <script defer>
-    var selectEles = document.getElementsByTagName("select");
+    window.addEventListener('load', function(){
+        // 全てのsetting-inputに変更イベントリスナーを追加
+        const settingInputs = document.querySelectorAll('.setting-input');
+        settingInputs.forEach(input => {
+            input.addEventListener('change', handleInputChange);
+        });
+    });
 
-    function setting(isUpdate = true) {
-        var i = 0;
-        for (selectEle of selectEles) {
-            const selectId = selectEle.getAttribute('id');
-            value = getCookie()[selectId];
-            if ((value === undefined) || isUpdate) {
-                setCookie(selectId, selectEle.value);
-            } else {
-                selectEle.value = value;
-            }
-            i++;
+    async function handleInputChange(e) {
+        const input = e.target;
+
+        // edit-settingクラスの場合は別処理
+        if (input.classList.contains('edit-setting')) {
+            change_is_open();
+            return;
         }
+
+        // 変更された設定を即座に保存
+        await saveSingleSetting(input.id, input.value);
     }
 
+    async function saveSingleSetting(key, value) {
+        try {
+            const csrf = await getCSRF();
+
+            const res = await fetch(
+                baseURL() + "/api/setting/save/",
+                {
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrf
+                    },
+                    body: JSON.stringify({ cookies: { [key]: value } })
+                }
+            );
+
+            const data = await res.json();
+
+            if (data.status !== 'success') {
+                console.error('保存に失敗しました:', data.message);
+            }
+        } catch (error) {
+            console.error('エラーが発生しました:', error);
+        }
+    }
 
     async function change_is_open() {
         try {
             const csrf = await getCSRF();
             const is_open_value = document.getElementById("is_open").value;
             const res = await fetch(
-            baseURL() + "/api/editor/is_open",
-            {
-                method: "PUT",
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrf
-                },
-                body: JSON.stringify(
-                    {
-                        "ip": "{{ editor.ip }}",
-                        "is_open": is_open_value == "on",
-                    }
-                )
-            }
-        )
+                baseURL() + "/api/editor/is_open",
+                {
+                    method: "PUT",
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrf
+                    },
+                    body: JSON.stringify(
+                        {
+                            "ip": "{{ editor.ip }}",
+                            "is_open": is_open_value == "on",
+                        }
+                    )
+                }
+            )
         } catch (error) {
             console.error(error)
         }
-        
     }
-
-    window.addEventListener('load', function(){
-        setting(false);
-    });
 </script>
 {% endblock %}
