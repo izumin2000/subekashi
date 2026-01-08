@@ -3,8 +3,29 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from subekashi.lib.ip import get_ip
 from subekashi.models import Editor
-from subekashi.constants.constants import LONG_TERM_COKKIE_AGE
+from subekashi.constants.constants import LONG_TERM_COOKIE_AGE
 import json
+
+# 設定可能なcookieキーのホワイトリスト
+ALLOWED_SETTING_KEYS = {
+    'songrange', 'jokerange', 'news_type', 'is_shown_search',
+    'is_shown_new', 'is_shown_ad', 'is_shown_ai', 'is_shown_lack',
+    'is_saved_select', 'brlyrics'
+}
+
+# 各設定の許可される値
+ALLOWED_SETTING_VALUES = {
+    'songrange': {'all', 'subeana', 'xx'},
+    'jokerange': {'on', 'off'},
+    'news_type': {'single', 'all', 'off'},
+    'is_shown_search': {'on', 'off'},
+    'is_shown_new': {'0', '5', '10', '15'},
+    'is_shown_ad': {'on', 'off'},
+    'is_shown_ai': {'on', 'off'},
+    'is_shown_lack': {'0', '5', '10', '15'},
+    'is_saved_select': {'on', 'off'},
+    'brlyrics': {'normal', 'pack', 'brless'}
+}
 
 
 def setting(request):
@@ -151,6 +172,14 @@ def save_settings(request):
 
         # 各cookieを設定 (365日間有効)
         for key, value in cookies.items():
+            # キーのバリデーション
+            if key not in ALLOWED_SETTING_KEYS:
+                continue
+
+            # 値のバリデーション
+            if value not in ALLOWED_SETTING_VALUES.get(key, set()):
+                continue
+
             response.set_cookie(
                 key=key,
                 value=str(value),
