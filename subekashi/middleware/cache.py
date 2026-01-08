@@ -6,6 +6,10 @@ from subekashi.constants.constants import SHORT_TERM_COKKIE_AGE, LONG_TERM_COKKI
 
 class CacheControlMiddleware(MiddlewareMixin):
     def process_response(self, request, response):
+        # すでにCache-Controlが設定されている場合はスキップ
+        if 'Cache-Control' in response:
+            return response
+
         path = request.path
 
         if path.startswith(settings.STATIC_URL):
