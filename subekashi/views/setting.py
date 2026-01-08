@@ -154,7 +154,7 @@ def save_settings(request):
             response.set_cookie(
                 key=key,
                 value=str(value),
-                max_age=LONG_TERM_COKKIE_AGE,
+                max_age=LONG_TERM_COOKIE_AGE,
                 path='/',
                 samesite='Lax'
             )

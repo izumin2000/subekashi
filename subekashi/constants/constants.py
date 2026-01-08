@@ -149,7 +149,8 @@ ALL_MEDIAS = ALLOW_MEDIAS + [
     }
 ]
 
-# cookieの保存期間
-# 静的ファイルの場合は365日でそれ以外は30分
-SHORT_TERM_COKKIE_AGE = 30 * 60
-LONG_TERM_COKKIE_AGE = 365 * 24 * 60 * 60
+# cookieとキャッシュの保存期間
+# SHORT_TERM: 30分（一般ページのキャッシュ用）
+# LONG_TERM: 365日（静的ファイルのキャッシュ、ユーザー設定のcookie用）
+SHORT_TERM_COOKIE_AGE = 30 * 60
+LONG_TERM_COOKIE_AGE = 365 * 24 * 60 * 60
