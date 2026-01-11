@@ -44,19 +44,19 @@
         </div>
         <div class="form-col">
             <label for="view_gte">再生回数/以上</label>
-            <input type="number" id="view_gte" value="{{ request.GET.view_gte }}">
+            <input type="number" id="view_gte" value="{{ request.GET.view_gte }}" min="1">
         </div>
         <div class="form-col">
             <label for="view_lte">再生回数/以下</label>
-            <input type="number" id="view_lte" value="{{ request.GET.view_lte }}">
+            <input type="number" id="view_lte" value="{{ request.GET.view_lte }}" min="1">
         </div>
         <div class="form-col">
             <label for="like_gte">高評価数/以上</label>
-            <input type="number" id="like_gte" value="{{ request.GET.like_gte }}">
+            <input type="number" id="like_gte" value="{{ request.GET.like_gte }}" min="1">
         </div>
         <div class="form-col">
             <label for="like_lte">高評価数/以下</label>
-            <input type="number" id="like_lte" value="{{ request.GET.like_lte }}">
+            <input type="number" id="like_lte" value="{{ request.GET.like_lte }}" min="1">
         </div>
         <div class="form-col">
             <label for="upload_time_gte"><i class="fab fa-youtube"></i>投稿日/以後</label>
