@@ -13,9 +13,9 @@ from subekashi.lib.url import clean_url
 
 
 def validate_positive_integer(value):
-    """正の整数であることを検証"""
-    if value is not None and value < 0:
-        raise ValidationError(f'値は0以上である必要があります: {value}')
+    """正の整数であることを検証（1以上）"""
+    if value is not None and value < 1:
+        raise ValidationError(f'値は1以上である必要があります: {value}')
     return value
 
 
@@ -207,16 +207,16 @@ class SongFilter(django_filters.FilterSet):
         if (has_youtube_sort or has_youtube_filter) and 'mediatypes' not in self.data:
             queryset = queryset.filter(filter_by_mediatypes('youtube'))
 
-        # view関連のフィルタまたはソートがある場合、view != null を適用
+        # view関連のフィルタまたはソートがある場合、view >= 1 を適用
         has_view_filter = 'view_gte' in self.data or 'view_lte' in self.data
         has_view_sort = self.data.get('sort') in ['view', '-view']
         if has_view_filter or has_view_sort:
-            queryset = queryset.exclude(view__isnull=True)
+            queryset = queryset.filter(view__gte=1)
 
-        # like関連のフィルタまたはソートがある場合、like != null を適用
+        # like関連のフィルタまたはソートがある場合、like >= 1 を適用
         has_like_filter = 'like_gte' in self.data or 'like_lte' in self.data
         has_like_sort = self.data.get('sort') in ['like', '-like']
         if has_like_filter or has_like_sort:
-            queryset = queryset.exclude(like__isnull=True)
+            queryset = queryset.filter(like__gte=1)
 
         return queryset
