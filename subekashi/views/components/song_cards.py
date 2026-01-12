@@ -13,14 +13,33 @@ def song_cards(request):
     query["count"] = True
     query["page"] = page
     song_qs, statistics = song_filter(query)
-    
+
     if page == 1:
-        result.append(f"<p id='search-info'>{Song.objects.count()}件中{statistics['count']}件ヒットしました</p>")
-    
+        # Check for view-related filters or sort
+        has_view_filter = 'view_gte' in query or 'view_lte' in query
+        sort_value = query.get('sort')
+        if isinstance(sort_value, list) and len(sort_value) > 0:
+            sort_value = sort_value[0]
+        has_view_sort = sort_value in ['view', '-view']
+
+        # Check for like-related filters or sort
+        has_like_filter = 'like_gte' in query or 'like_lte' in query
+        has_like_sort = sort_value in ['like', '-like']
+
+        # Add informational message for view filter
+        if has_view_filter or has_view_sort:
+            result.append("<p class='search-info'>再生数が1回以上の曲を表示しています</p>")
+
+        # Add informational message for like filter
+        if has_like_filter or has_like_sort:
+            result.append("<p class='search-info'>高評価数が1以上の曲を表示しています</p>")
+
+        result.append(f"<p class='search-info'>{Song.objects.count()}件中{statistics['count']}件ヒットしました</p>")
+
     for song in song_qs:
         result.append(render_to_string('subekashi/components/song_card.html', {'song': song}))
-    
+
     if (page != statistics["max_page"]) and statistics["count"]:
         result.append(f"<img id='next-page-loading' src='/static/subekashi/image/loading.gif' alt='loading'></img>")
-        
+
     return JsonResponse(result, safe=False)
