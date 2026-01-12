@@ -15,25 +15,22 @@ def song_cards(request):
     song_qs, statistics = song_filter(query)
 
     if page == 1:
-        # Check for view-related filters or sort
-        has_view_filter = 'view_gte' in query or 'view_lte' in query
-        sort_value = query.get('sort')
-        if isinstance(sort_value, list) and len(sort_value) > 0:
-            sort_value = sort_value[0]
+        # YouTube関連のフィルター/ソートを見つける
+        sort_value = query.get('sort')[0]
         has_view_sort = sort_value in ['view', '-view']
-
-        # Check for like-related filters or sort
-        has_like_filter = 'like_gte' in query or 'like_lte' in query
         has_like_sort = sort_value in ['like', '-like']
+        has_view_filter = 'view_gte' in query or 'view_lte' in query
+        has_like_filter = 'like_gte' in query or 'like_lte' in query
 
-        # Add informational message for view filter
+        # 再生数のフィルター/ソートなら.search-infoを追加
         if has_view_filter or has_view_sort:
             result.append("<p class='search-info'>再生数が1回以上の曲を表示しています</p>")
 
-        # Add informational message for like filter
+        # 高評価数のフィルター/ソートなら.search-infoを追加
         if has_like_filter or has_like_sort:
             result.append("<p class='search-info'>高評価数が1以上の曲を表示しています</p>")
 
+        # ヒット数を追加
         result.append(f"<p class='search-info'>{Song.objects.count()}件中{statistics['count']}件ヒットしました</p>")
 
     for song in song_qs:
