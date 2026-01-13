@@ -16,7 +16,9 @@ def song_cards(request):
 
     if page == 1:
         # YouTube関連のフィルター/ソートを見つける
-        sort_value = query.get('sort')[0]
+        sort_value = query.get('sort')
+        if isinstance(sort_value, list) and len(sort_value) > 0:
+            sort_value = sort_value[0]
         has_view_sort = sort_value in ['view', '-view']
         has_like_sort = sort_value in ['like', '-like']
         has_view_filter = 'view_gte' in query or 'view_lte' in query
