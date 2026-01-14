@@ -9,27 +9,34 @@ from django_ratelimit.decorators import ratelimit
 def song_cards(request):
     result = []
     query = dict(request.GET)
-    page = int(query.get("page")[0]) if query.get("page") and (query.get("page") != ['undefined']) else 1
-    query["count"] = True
-    query["page"] = page
-    song_qs, statistics = song_filter(query)
+
+    # クエリパラメータをクリーンアップ
+    cleaned_query = {}
+    for key, value in query.items():
+        if isinstance(value, list) and len(value) > 0:
+            value = value[0]
+        cleaned_query[key] = value
+
+    page_value = cleaned_query.get("page")
+    page = int(page_value) if page_value and (page_value != 'undefined') else 1
+    cleaned_query["count"] = True
+    cleaned_query["page"] = page
+    song_qs, statistics = song_filter(cleaned_query)
 
     if page == 1:
         # YouTube関連のフィルター/ソートを見つける
-        sort_value = query.get('sort')
-        if isinstance(sort_value, list) and len(sort_value) > 0:
-            sort_value = sort_value[0]
+        sort_value = cleaned_query.get('sort')
         has_view_sort = sort_value in ['view', '-view']
         has_like_sort = sort_value in ['like', '-like']
-        has_view_filter = 'view_gte' in query or 'view_lte' in query
-        has_like_filter = 'like_gte' in query or 'like_lte' in query
+        has_view_lte_filter = 'view_lte' in cleaned_query
+        has_like_lte_filter = 'like_lte' in cleaned_query
 
         # 再生数のフィルター/ソートなら.search-infoを追加
-        if has_view_filter or has_view_sort:
+        if has_view_sort or has_view_lte_filter:
             result.append("<p class='search-info'>再生数が1回以上の曲を表示しています</p>")
 
         # 高評価数のフィルター/ソートなら.search-infoを追加
-        if has_like_filter or has_like_sort:
+        if has_like_sort or has_like_lte_filter:
             result.append("<p class='search-info'>高評価数が1以上の曲を表示しています</p>")
 
         # ヒット数を追加
