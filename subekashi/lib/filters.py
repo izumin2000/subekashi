@@ -122,18 +122,10 @@ class SongFilter(django_filters.FilterSet):
     )
     islack = django_filters.BooleanFilter(method='filter_islack')
 
-    # ソート
-    sort = django_filters.OrderingFilter(
-        fields=(
-            ('id', 'id'),
-            ('title', 'title'),
-            ('channel', 'channel'),
-            ('upload_time', 'upload_time'),
-            ('view', 'view'),
-            ('like', 'like'),
-            ('post_time', 'post_time'),
-        ),
+    # ソート (randomをサポートするためCharFilterを使用)
+    sort = django_filters.CharFilter(
         method='filter_sort',
+        validators=[validate_max_length(100)]
     )
 
     class Meta:
@@ -178,12 +170,25 @@ class SongFilter(django_filters.FilterSet):
             return queryset
 
         # 特別な'random'ソートを処理
-        sort_value = self.data.get('sort', '')
-        if sort_value == 'random':
+        if value == 'random':
             return queryset.order_by('?')
 
-        # その他のケースはデフォルトのOrderingFilterに処理させる
-        return queryset.order_by(*value) if value else queryset
+        # 許可されたソートフィールド
+        allowed_fields = {
+            'id', '-id',
+            'title', '-title',
+            'channel', '-channel',
+            'upload_time', '-upload_time',
+            'view', '-view',
+            'like', '-like',
+            'post_time', '-post_time',
+        }
+
+        # バリデーション
+        if value not in allowed_fields:
+            raise ValidationError(f'許可されていないソートフィールドです: {value}')
+
+        return queryset.order_by(value)
 
     @property
     def qs(self):
