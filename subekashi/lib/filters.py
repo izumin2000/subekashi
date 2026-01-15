@@ -12,6 +12,36 @@ from subekashi.lib.filter import (
 from subekashi.lib.url import clean_url
 
 
+def has_view_filter_or_sort(query_data):
+    """
+    view関連のフィルタまたはソートが存在するかチェック
+
+    Args:
+        query_data: クエリパラメータの辞書
+
+    Returns:
+        bool: view関連のフィルタまたはソートが存在する場合True
+    """
+    has_view_lte_filter = 'view_lte' in query_data
+    has_view_sort = query_data.get('sort') in ['view', '-view']
+    return has_view_lte_filter or has_view_sort
+
+
+def has_like_filter_or_sort(query_data):
+    """
+    like関連のフィルタまたはソートが存在するかチェック
+
+    Args:
+        query_data: クエリパラメータの辞書
+
+    Returns:
+        bool: like関連のフィルタまたはソートが存在する場合True
+    """
+    has_like_lte_filter = 'like_lte' in query_data
+    has_like_sort = query_data.get('sort') in ['like', '-like']
+    return has_like_lte_filter or has_like_sort
+
+
 def validate_positive_integer(value):
     """正の整数であることを検証（1以上）"""
     if value is not None and value < 1:
@@ -213,15 +243,11 @@ class SongFilter(django_filters.FilterSet):
             queryset = queryset.filter(filter_by_mediatypes('youtube'))
 
         # view関連のフィルタまたはソートがある場合、view >= 1 を適用
-        has_view_filter = 'view_gte' in self.data or 'view_lte' in self.data
-        has_view_sort = self.data.get('sort') in ['view', '-view']
-        if has_view_filter or has_view_sort:
+        if has_view_filter_or_sort(self.data):
             queryset = queryset.filter(view__gte=1)
 
         # like関連のフィルタまたはソートがある場合、like >= 1 を適用
-        has_like_filter = 'like_gte' in self.data or 'like_lte' in self.data
-        has_like_sort = self.data.get('sort') in ['like', '-like']
-        if has_like_filter or has_like_sort:
+        if has_like_filter_or_sort(self.data):
             queryset = queryset.filter(like__gte=1)
 
         return queryset

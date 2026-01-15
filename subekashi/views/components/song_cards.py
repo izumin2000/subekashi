@@ -2,6 +2,7 @@ from django.template.loader import render_to_string
 from django.http import JsonResponse
 from subekashi.models import Song
 from subekashi.lib.song_filter import song_filter
+from subekashi.lib.filters import has_view_filter_or_sort, has_like_filter_or_sort
 from django_ratelimit.decorators import ratelimit
 
 
@@ -24,19 +25,12 @@ def song_cards(request):
     song_qs, statistics = song_filter(cleaned_query)
 
     if page == 1:
-        # YouTube関連のフィルター/ソートを見つける
-        sort_value = cleaned_query.get('sort')
-        has_view_sort = sort_value in ['view', '-view']
-        has_like_sort = sort_value in ['like', '-like']
-        has_view_lte_filter = 'view_lte' in cleaned_query
-        has_like_lte_filter = 'like_lte' in cleaned_query
-
         # 再生数のフィルター/ソートなら.search-infoを追加
-        if has_view_sort or has_view_lte_filter:
+        if has_view_filter_or_sort(cleaned_query):
             result.append("<p class='search-info'>再生数が1回以上の曲を表示しています</p>")
 
         # 高評価数のフィルター/ソートなら.search-infoを追加
-        if has_like_sort or has_like_lte_filter:
+        if has_like_filter_or_sort(cleaned_query):
             result.append("<p class='search-info'>高評価数が1以上の曲を表示しています</p>")
 
         # ヒット数を追加
