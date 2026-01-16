@@ -2,7 +2,11 @@ from django.template.loader import render_to_string
 from django.http import JsonResponse
 from subekashi.models import Song
 from subekashi.lib.song_filter import song_filter
-from subekashi.lib.filters import has_view_filter_or_sort, has_like_filter_or_sort
+from subekashi.lib.query_utils import (
+    clean_query_params,
+    has_view_filter_or_sort,
+    has_like_filter_or_sort,
+)
 from django_ratelimit.decorators import ratelimit
 
 
@@ -12,11 +16,7 @@ def song_cards(request):
     query = dict(request.GET)
 
     # クエリパラメータをクリーンアップ
-    cleaned_query = {}
-    for key, value in query.items():
-        if isinstance(value, list) and len(value) > 0:
-            value = value[0]
-        cleaned_query[key] = value
+    cleaned_query = clean_query_params(query)
 
     page_value = cleaned_query.get("page")
     page = int(page_value) if page_value and (page_value != 'undefined') else 1

@@ -3,6 +3,7 @@ Django-filterベースの検索実装
 """
 import math
 from subekashi.lib.filters import SongFilter
+from subekashi.lib.query_utils import clean_query_params
 from subekashi.models import Song
 from rest_framework.exceptions import ValidationError
 
@@ -25,13 +26,7 @@ def song_filter(querys):
     statistics = {}
 
     # クエリパラメータをクリーンアップ - リスト値を処理
-    cleaned_querys = {}
-    for key, value in querys.items():
-        # 値がリストの場合、最初の要素を取得
-        if isinstance(value, list) and len(value) > 0:
-            value = value[0]
-
-        cleaned_querys[key] = value
+    cleaned_querys = clean_query_params(querys)
 
     # django-filterを適用
     try:

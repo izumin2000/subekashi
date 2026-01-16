@@ -10,36 +10,7 @@ from subekashi.lib.filter import (
     filter_by_lack,
 )
 from subekashi.lib.url import clean_url
-
-
-def has_view_filter_or_sort(query_data):
-    """
-    view関連のフィルタまたはソートが存在するかチェック
-
-    Args:
-        query_data: クエリパラメータの辞書
-
-    Returns:
-        bool: view関連のフィルタまたはソートが存在する場合True
-    """
-    has_view_lte_filter = 'view_lte' in query_data
-    has_view_sort = query_data.get('sort') in ['view', '-view']
-    return has_view_lte_filter or has_view_sort
-
-
-def has_like_filter_or_sort(query_data):
-    """
-    like関連のフィルタまたはソートが存在するかチェック
-
-    Args:
-        query_data: クエリパラメータの辞書
-
-    Returns:
-        bool: like関連のフィルタまたはソートが存在する場合True
-    """
-    has_like_lte_filter = 'like_lte' in query_data
-    has_like_sort = query_data.get('sort') in ['like', '-like']
-    return has_like_lte_filter or has_like_sort
+from subekashi.lib.query_utils import has_view_filter_or_sort, has_like_filter_or_sort
 
 
 def validate_positive_integer(value):
