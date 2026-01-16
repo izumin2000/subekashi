@@ -10,6 +10,7 @@ from subekashi.lib.filter import (
     filter_by_lack,
 )
 from subekashi.lib.url import clean_url
+from subekashi.lib.query_utils import has_view_filter_or_sort, has_like_filter_or_sort
 
 
 def validate_positive_integer(value):
@@ -122,18 +123,10 @@ class SongFilter(django_filters.FilterSet):
     )
     islack = django_filters.BooleanFilter(method='filter_islack')
 
-    # ソート
-    sort = django_filters.OrderingFilter(
-        fields=(
-            ('id', 'id'),
-            ('title', 'title'),
-            ('channel', 'channel'),
-            ('upload_time', 'upload_time'),
-            ('view', 'view'),
-            ('like', 'like'),
-            ('post_time', 'post_time'),
-        ),
+    # ソート (randomをサポートするためCharFilterを使用)
+    sort = django_filters.CharFilter(
         method='filter_sort',
+        validators=[validate_max_length(100)]
     )
 
     class Meta:
@@ -178,12 +171,25 @@ class SongFilter(django_filters.FilterSet):
             return queryset
 
         # 特別な'random'ソートを処理
-        sort_value = self.data.get('sort', '')
-        if sort_value == 'random':
+        if value == 'random':
             return queryset.order_by('?')
 
-        # その他のケースはデフォルトのOrderingFilterに処理させる
-        return queryset.order_by(*value) if value else queryset
+        # 許可されたソートフィールド
+        allowed_fields = {
+            'id', '-id',
+            'title', '-title',
+            'channel', '-channel',
+            'upload_time', '-upload_time',
+            'view', '-view',
+            'like', '-like',
+            'post_time', '-post_time',
+        }
+
+        # バリデーション
+        if value not in allowed_fields:
+            raise ValidationError(f'許可されていないソートフィールドです: {value}')
+
+        return queryset.order_by(value)
 
     @property
     def qs(self):
@@ -208,15 +214,11 @@ class SongFilter(django_filters.FilterSet):
             queryset = queryset.filter(filter_by_mediatypes('youtube'))
 
         # view関連のフィルタまたはソートがある場合、view >= 1 を適用
-        has_view_filter = 'view_gte' in self.data or 'view_lte' in self.data
-        has_view_sort = self.data.get('sort') in ['view', '-view']
-        if has_view_filter or has_view_sort:
+        if has_view_filter_or_sort(self.data):
             queryset = queryset.filter(view__gte=1)
 
         # like関連のフィルタまたはソートがある場合、like >= 1 を適用
-        has_like_filter = 'like_gte' in self.data or 'like_lte' in self.data
-        has_like_sort = self.data.get('sort') in ['like', '-like']
-        if has_like_filter or has_like_sort:
+        if has_like_filter_or_sort(self.data):
             queryset = queryset.filter(like__gte=1)
 
         return queryset

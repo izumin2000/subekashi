@@ -28,8 +28,9 @@ summary {
     width: 100%;
 }
 
-#search-info {
+.search-info {
     text-align: center;
+    line-height: 40px;
 }
 
 #song-cards {
