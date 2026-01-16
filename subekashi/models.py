@@ -77,8 +77,7 @@ class SongLink(models.Model):
 
 
 # 曲の作者の情報
-# TODO Channel -> Author, チャンネル名 -> 作者
-class Channel(models.Model):
+class Author(models.Model):
     name = models.CharField(unique=True, max_length = 500)
 
     def __str__(self):
@@ -89,14 +88,14 @@ class Channel(models.Model):
 
 
 # 曲の作者のwebページの情報
-class ChannelLink(models.Model):
+class AuthorLink(models.Model):
     url = models.CharField(max_length = 100)
-    channel = models.ForeignKey(Channel, on_delete = models.CASCADE, null=True, related_name="links")
+    author = models.ForeignKey(Author, on_delete = models.CASCADE, null=True, related_name="links")
 
 
 # 曲の作者の別の呼び方の情報
-# 曲の登録時や編集時に正式な呼び方(channel.name)に変更するために使用される
-class ChannelAlias(models.Model):
+# 曲の登録時や編集時に正式な呼び方(author.name)に変更するために使用される
+class AuthorAlias(models.Model):
     CHOICES = (
         ("id", "ID"),
         ("abbr", "略称"),
@@ -106,10 +105,10 @@ class ChannelAlias(models.Model):
         ("spell", "表記揺れ"),
         ("other", "別名義"),
     )
-    
+
     name = models.CharField(unique=True, max_length = 500)
     alias_type = models.CharField(default = "other", choices=CHOICES, max_length=10)
-    channel = models.ForeignKey(Channel, on_delete = models.CASCADE, related_name="aliases")
+    author = models.ForeignKey(Author, on_delete = models.CASCADE, related_name="aliases")
 
     def __str__(self):
         return self.name
