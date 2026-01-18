@@ -8,7 +8,7 @@
     {% if request.COOKIES.news_type != "off" %}
         <h1>ニュース</h1>
         <div class="underline"></div>
-        {% if request.COOKIES.news_type == "single" %}
+        {% if request.COOKIES.news_type == "single" or not request.COOKIES.news_type %}
             <div id="single-news-wrapper">
                 <div id="single-news-display">
                     {{ news_htmls|safe }}
