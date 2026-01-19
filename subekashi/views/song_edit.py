@@ -46,7 +46,8 @@ def song_edit(request, song_id):
             # 既に登録されているURLの場合は(ユニークでなければ)エラー
             # TODO URLテーブルで実装したい
             existing_song, _ = song_filter({"url": cleaned_url_item})
-            if url and existing_song.exists() and existing_song.first().id != song_id :
+            first_existing_song = existing_song.first()
+            if url and first_existing_song and first_existing_song.id != song_id :
                 dataD["error"] = "URLは既に登録されています。"
                 return render(request, 'subekashi/song_edit.html', dataD)
             
