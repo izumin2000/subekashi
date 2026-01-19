@@ -16,7 +16,7 @@
         <input type="text" id="keyword" placeholder="タイトル・チャンネル名・歌詞・URL" value="{{ request.GET.keyword }}">
     </div>
     {% comment %} isdetail -> request.COOKIES.isdetail {% endcomment %}
-    <details id="isdetail" onclick="setSearchCookie(event)" {% if isdetail == "True" %}open{% endif %}>
+    <details id="isdetail" {% if isdetail == "True" %}open{% endif %}>
         <summary>高度な検索</summary>
         <div id="under-sumary" class="form-col">
             <label for="title">タイトル</label>

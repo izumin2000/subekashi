@@ -18,13 +18,24 @@ def songs(request) :
         "ALL_MEDIAS": ALL_MEDIAS[:-1],     # 最後の許可されていないURLのドメイン情報は不要
         "display_media_index": DISPLAY_MEDIA_INDEX
     }
-    
+
     GET = request.GET
     COOKIES = request.COOKIES
+    cookies_to_set = {}
+
     for form, flag, defalut in QUERY_OR_COOKIE_FORMS:
-        dataD[form] = GET[flag] if GET.get(flag) else COOKIES.get(f"search_{form}", defalut)
-    
+        if GET.get(flag):
+            dataD[form] = GET[flag]
+            cookies_to_set[f"search_{form}"] = GET[flag]
+        else:
+            dataD[form] = COOKIES.get(f"search_{form}", defalut)
+
     for filter in FILER_FORMS:
         dataD[filter] = bool(GET.get(filter))
-    
-    return render(request, "subekashi/songs.html", dataD)
+
+    response = render(request, "subekashi/songs.html", dataD)
+
+    for cookie_name, cookie_value in cookies_to_set.items():
+        response.set_cookie(cookie_name, cookie_value, max_age=31104000, path='/')
+
+    return response

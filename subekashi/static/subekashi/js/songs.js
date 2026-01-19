@@ -1,7 +1,7 @@
 var page = 1, songGuesserController;
 const FORMQUERYS = 'input:not(#search-button), select'
+const COOKIE_FORMS = ["songrange", "jokerange", "sort"];
 
-COOKIE_FORMS = ["songrange", "jokerange", "sort"];
 window.addEventListener('load', async function () {
     document.getElementById("keyword").focus();
     document.getElementById("keyword").click();
@@ -10,35 +10,34 @@ window.addEventListener('load', async function () {
 
     document.querySelectorAll(FORMQUERYS).forEach((formEle) => {
         formEle.addEventListener('change', () => {
+            if (COOKIE_FORMS.includes(formEle.id)) {
+                saveCookieToBackend(formEle.id, formEle.value);
+            }
             renderSearch();
         });
     });
 
-    for (cookieForm of COOKIE_FORMS) {
-        cookieFormEle = document.getElementById(cookieForm);
-        cookieFormEle.addEventListener('change', (event) => {
-            setSearchCookie(event);
+    const detailsEle = document.getElementById("isdetail");
+    if (detailsEle) {
+        detailsEle.addEventListener('toggle', (event) => {
+            const value = event.target.open ? "True" : "False";
+            saveCookieToBackend("isdetail", value);
         });
-    };
+    }
 })
 
-function getInputIds() {
-    const inputs = document.querySelectorAll(FORMQUERYS);
-    ids = Array.from(inputs).map(input => input.id);
-    return ids;
-}
-
-function setSearchCookie(e) {
-    DETAILS_ID = "isdetail"
-    id = e.target.id ? e.target.id : DETAILS_ID;
-    if (id == DETAILS_ID) {
-        const cookieFormEle = document.getElementById(DETAILS_ID);
-        value = cookieFormEle.open ? "False" : "True";
-    } else {
-        const cookieFormEle = document.getElementById(id);
-        value = cookieFormEle.value;
+function saveCookieToBackend(name, value) {
+    const paramMap = {
+        "isdetail": "isdetail",
+        "songrange": "issubeana",
+        "jokerange": "isjoke",
+        "sort": "sort"
+    };
+    const param = paramMap[name];
+    if (param) {
+        fetch(`${baseURL()}/songs?${param}=${encodeURIComponent(value)}`)
+            .catch(() => {}); // Ignore errors, cookie setting is not critical
     }
-    setCookie(`search_${id}`, value);
 }
 
 function getInputIds() {
