@@ -46,12 +46,10 @@ def song_edit(request, song_id):
             # 既に登録されているURLの場合は(ユニークでなければ)エラー
             # TODO URLテーブルで実装したい
             existing_song, _ = song_filter({"url": cleaned_url_item})
-            if url and existing_song.count() > 0:       # existsやfirstはエラーになるので使えない
-                # スライス済みクエリセットから直接取得
-                existing_song_obj = list(existing_song)[0] if existing_song else None
-                if existing_song_obj and existing_song_obj.id != song_id:
-                    dataD["error"] = "URLは既に登録されています。"
-                    return render(request, 'subekashi/song_edit.html', dataD)
+            existing_song = list(existing_song)       # existsやfirstはエラーになるので使えない
+            if url and existing_song and existing_song[0].id != song_id:
+                dataD["error"] = "URLは既に登録されています。"
+                return render(request, 'subekashi/song_edit.html', dataD)
             
             # 許可されていないメディアのURLならばエラー
             if not get_allow_media(cleaned_url_item):
