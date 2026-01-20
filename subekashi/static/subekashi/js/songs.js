@@ -1,5 +1,5 @@
 var page = 1, songGuesserController;
-const FORMQUERYS = 'input:not(#search-button), select'
+const FORM_QUERIES = 'input:not(#search-button), select'
 const COOKIE_FORMS = ["songrange", "jokerange", "sort"];
 
 window.addEventListener('load', async function () {
@@ -9,7 +9,7 @@ window.addEventListener('load', async function () {
     restoreFormValuesFromCookies();
     renderSearch();
 
-    document.querySelectorAll(FORMQUERYS).forEach((formEle) => {
+    document.querySelectorAll(FORM_QUERIES).forEach((formEle) => {
         formEle.addEventListener('change', async () => {
             if (COOKIE_FORMS.includes(formEle.id)) {
                 await saveCookieToBackend(formEle.id, formEle.value);
@@ -68,9 +68,17 @@ async function saveCookieToBackend(name, value) {
     };
     const param = paramMap[name];
     if (param) {
-        const url = `${baseURL()}/songs/?${param}=${encodeURIComponent(value)}`;
+        const url = `${baseURL()}/songs/`;
+        const csrfToken = await getCSRF();
+        const formData = new FormData();
+        formData.append(param, value);
+
         await fetch(url, {
-            method: 'GET',
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            body: formData,
             cache: 'no-cache',
             credentials: 'same-origin'
         }).catch(() => {});
@@ -78,7 +86,7 @@ async function saveCookieToBackend(name, value) {
 }
 
 function getInputIds() {
-    const inputs = document.querySelectorAll(FORMQUERYS);
+    const inputs = document.querySelectorAll(FORM_QUERIES);
     ids = Array.from(inputs).map(input => input.id);
     return ids;
 }

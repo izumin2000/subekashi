@@ -39,7 +39,8 @@ def songs(request):
         "display_media_index": DISPLAY_MEDIA_INDEX
     }
 
-    GET = request.GET
+    # POSTリクエストの場合はGET、それ以外はGET
+    REQUEST_DATA = request.POST if request.method == 'POST' else request.GET
     COOKIES = request.COOKIES
     cookies_to_set = {}
 
@@ -48,8 +49,8 @@ def songs(request):
         default_value = form_config['default']
         allowed_values = form_config['values']
 
-        if GET.get(query_name):
-            value = GET[query_name]
+        if REQUEST_DATA.get(query_name):
+            value = REQUEST_DATA[query_name]
             # 許可された値に対してバリデーションを実行
             if value not in allowed_values:
                 dataD[form_name] = default_value  # 不正な値の場合はデフォルト値を使用
@@ -62,7 +63,7 @@ def songs(request):
 
     # チェックボックスのURLクエリ対応
     for filter in BOOL_FORMS:
-        dataD[filter] = bool(GET.get(filter))
+        dataD[filter] = bool(REQUEST_DATA.get(filter))
 
     response = render(request, "subekashi/songs.html", dataD)
 
