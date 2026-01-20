@@ -1,48 +1,92 @@
 var page = 1, songGuesserController;
-const FORMQUERYS = 'input:not(#search-button), select'
+const FORM_QUERIES = 'input:not(#search-button), select'
+const COOKIE_FORMS = ["songrange", "jokerange", "sort"];
 
-COOKIE_FORMS = ["songrange", "jokerange", "sort"];
 window.addEventListener('load', async function () {
     document.getElementById("keyword").focus();
     document.getElementById("keyword").click();
 
+    restoreFormValuesFromCookies();
     renderSearch();
 
-    document.querySelectorAll(FORMQUERYS).forEach((formEle) => {
-        formEle.addEventListener('change', () => {
+    document.querySelectorAll(FORM_QUERIES).forEach((formEle) => {
+        formEle.addEventListener('change', async () => {
+            if (COOKIE_FORMS.includes(formEle.id)) {
+                await saveCookieToBackend(formEle.id, formEle.value);
+            }
             renderSearch();
         });
     });
 
-    for (cookieForm of COOKIE_FORMS) {
-        cookieFormEle = document.getElementById(cookieForm);
-        cookieFormEle.addEventListener('change', (event) => {
-            setSearchCookie(event);
+    const detailsEle = document.getElementById("isdetail");
+    if (detailsEle) {
+        detailsEle.addEventListener('toggle', async (event) => {
+            const value = event.target.open ? "True" : "False";
+            await saveCookieToBackend("isdetail", value);
         });
-    };
-})
-
-function getInputIds() {
-    const inputs = document.querySelectorAll(FORMQUERYS);
-    ids = Array.from(inputs).map(input => input.id);
-    return ids;
-}
-
-function setSearchCookie(e) {
-    DETAILS_ID = "isdetail"
-    id = e.target.id ? e.target.id : DETAILS_ID;
-    if (id == DETAILS_ID) {
-        const cookieFormEle = document.getElementById(DETAILS_ID);
-        value = cookieFormEle.open ? "False" : "True";
-    } else {
-        const cookieFormEle = document.getElementById(id);
-        value = cookieFormEle.value;
     }
-    setCookie(`search_${id}`, value);
+});
+
+window.addEventListener('pageshow', function (event) {
+    if (event.persisted) {
+        restoreFormValuesFromCookies();
+    }
+});
+
+// 他のページからブラウザバックしたとき、cookie formの内容をcookieの値に反映する
+function restoreFormValuesFromCookies() {
+    const cookies = getCookie();
+    const cookieFormMappings = [
+        { cookieName: 'search_isdetail', elementId: 'isdetail', isDetailsElement: true },
+        { cookieName: 'search_songrange', elementId: 'songrange' },
+        { cookieName: 'search_jokerange', elementId: 'jokerange' },
+        { cookieName: 'search_sort', elementId: 'sort' }
+    ];
+
+    cookieFormMappings.forEach(({ cookieName, elementId, isDetailsElement }) => {
+        const cookieValue = cookies[cookieName];
+        if (cookieValue) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                if (isDetailsElement) {
+                    element.open = (cookieValue === 'True');
+                } else if (element.value !== cookieValue) {
+                    element.value = cookieValue;
+                }
+            }
+        }
+    });
+}
+
+// cookie formの内容をバックエンドに伝える
+async function saveCookieToBackend(name, value) {
+    const paramMap = {
+        "isdetail": "isdetail",
+        "songrange": "issubeana",
+        "jokerange": "isjoke",
+        "sort": "sort"
+    };
+    const param = paramMap[name];
+    if (param) {
+        const url = `${baseURL()}/songs/`;
+        const csrfToken = await getCSRF();
+        const formData = new FormData();
+        formData.append(param, value);
+
+        await fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            body: formData,
+            cache: 'no-cache',
+            credentials: 'same-origin'
+        }).catch(() => {});
+    }
 }
 
 function getInputIds() {
-    const inputs = document.querySelectorAll(FORMQUERYS);
+    const inputs = document.querySelectorAll(FORM_QUERIES);
     ids = Array.from(inputs).map(input => input.id);
     return ids;
 }
@@ -152,7 +196,6 @@ function toQueryString(query) {
 
 var SearchController, songCardsEle;
 function renderSearch() {
-    // 以前のリクエストが存在する場合、そのリクエストをキャンセルする
     if (SearchController) {
         SearchController.abort();
     }
@@ -180,7 +223,6 @@ async function getsongCards(query) {
 }
 
 async function search(signal, page) {
-
     query = formToQuery();
     query["page"] = page;
 
@@ -196,7 +238,6 @@ async function search(signal, page) {
         return;
     }
 
-    // 検索結果を正しく描画するループを復元
     for (let songCard of songCards) {
         if (signal.aborted) {
             return;
@@ -207,7 +248,6 @@ async function search(signal, page) {
         await sleep(0.05);
     }
 
-    // #next-page-loadingを監視
     const loadingElement = document.getElementById('next-page-loading');
     if (loadingElement) {
         observer.observe(loadingElement);
