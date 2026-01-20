@@ -12,7 +12,12 @@ window.addEventListener('load', async function () {
     document.querySelectorAll(FORM_QUERIES).forEach((formEle) => {
         formEle.addEventListener('change', async () => {
             if (COOKIE_FORMS.includes(formEle.id)) {
-                await saveCookieToBackend(formEle.id, formEle.value);
+                // is_saved_selectがonの場合のみcookieに保存
+                const cookies = getCookie();
+                const isSavedSelect = cookies['is_saved_select'] || 'on';
+                if (isSavedSelect === 'on') {
+                    await saveCookieToBackend(formEle.id, formEle.value);
+                }
             }
             renderSearch();
         });
@@ -36,6 +41,13 @@ window.addEventListener('pageshow', function (event) {
 // 他のページからブラウザバックしたとき、cookie formの内容をcookieの値に反映する
 function restoreFormValuesFromCookies() {
     const cookies = getCookie();
+    const isSavedSelect = cookies['is_saved_select'] || 'on';
+
+    // is_saved_selectがoffの場合はcookieから復元しない
+    if (isSavedSelect === 'off') {
+        return;
+    }
+
     const cookieFormMappings = [
         { cookieName: 'search_isdetail', elementId: 'isdetail', isDetailsElement: true },
         { cookieName: 'search_songrange', elementId: 'songrange' },
