@@ -12,12 +12,12 @@ COOKIE_FORMS = {
     'songrange': {
         'query_name': 'issubeana',
         'values': {'all', 'subeana', 'xx'},
-        'default': 'subeana'
+        'default': 'all'
     },
     'jokerange': {
         'query_name': 'isjoke',
         'values': {'on', 'off', 'only'},
-        'default': 'off'
+        'default': 'on'
     },
     'sort': {
         'query_name': 'sort',
