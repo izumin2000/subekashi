@@ -22,7 +22,7 @@
         </div>
     {% endfor %}
 
-    {% comment %} <h2>検索画面</h2>
+    <h2>検索画面</h2>
     {% for setting in search_settings %}
         <div class="form-col">
             <label>{{ setting.label }}<i class="fas fa-info-circle" onclick="showTutorial('select');"></i></label>
@@ -32,7 +32,7 @@
                 {% endfor %}
             </select>
         </div>
-    {% endfor %} {% endcomment %}
+    {% endfor %}
 
     <h2>曲画面</h2>
     {% for setting in song_settings %}
