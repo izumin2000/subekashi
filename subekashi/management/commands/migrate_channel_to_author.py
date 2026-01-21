@@ -49,10 +49,25 @@ class Command(BaseCommand):
 
         if not dry_run:
             with transaction.atomic():
+                # 特別なAuthor名（最初に作成する必要がある）
+                SPECIAL_AUTHOR = "全てあなたの所為です。"
+
                 # Authorレコードを作成
                 created_count = 0
                 existing_count = 0
 
+                # 最初に「全てあなたの所為です。」を作成してID=1を確保
+                if SPECIAL_AUTHOR in channel_names:
+                    author, created = Author.objects.get_or_create(name=SPECIAL_AUTHOR)
+                    if created:
+                        created_count += 1
+                        self.stdout.write(f'特別なAuthorを作成: "{SPECIAL_AUTHOR}" (ID={author.id})')
+                    else:
+                        existing_count += 1
+                    # このAuthorは後で処理しないようにリストから削除
+                    channel_names = channel_names - {SPECIAL_AUTHOR}
+
+                # 残りのAuthorを作成
                 for channel_name in channel_names:
                     author, created = Author.objects.get_or_create(name=channel_name)
                     if created:
