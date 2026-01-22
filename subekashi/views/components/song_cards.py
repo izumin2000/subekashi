@@ -40,13 +40,7 @@ def get_active_filters(query):
     active = []
     for param, label in filter_labels.items():
         if param in query and query[param]:
-            # 空文字列や空リストでないことを確認
-            value = query[param]
-            if isinstance(value, list):
-                if value and value[0]:
-                    active.append(label)
-            elif value:
-                active.append(label)
+            active.append(label)
 
     return '・'.join(active) if active else ''
 
