@@ -8,6 +8,7 @@ from subekashi.lib.query_utils import (
     has_like_filter_or_sort,
 )
 from django_ratelimit.decorators import ratelimit
+from rest_framework.exceptions import ValidationError
 
 
 def get_active_filters(query):
@@ -57,7 +58,18 @@ def song_cards(request):
     page = int(page_value) if page_value and (page_value != 'undefined') else 1
     cleaned_query["count"] = True
     cleaned_query["page"] = page
-    song_qs, statistics = song_filter(cleaned_query)
+
+    try:
+        song_qs, statistics = song_filter(cleaned_query)
+    except ValidationError as e:
+        # バリデーションエラーをHTMLとして返す
+        error_detail = e.detail
+        if isinstance(error_detail, dict) and "error" in error_detail:
+            error_message = error_detail["error"]
+        else:
+            error_message = str(error_detail)
+        result.append(f"<p class='error'>エラー: {error_message}</p>")
+        return JsonResponse(result, safe=False)
 
     if page == 1:
         # アクティブなフィルターを表示
