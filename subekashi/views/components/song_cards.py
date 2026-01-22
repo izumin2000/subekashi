@@ -10,6 +10,47 @@ from subekashi.lib.query_utils import (
 from django_ratelimit.decorators import ratelimit
 
 
+def get_active_filters(query):
+    """
+    クエリパラメータから有効なフィルターのラベルを取得
+    keywordとsortは除外
+    """
+    filter_labels = {
+        'title': 'タイトル',
+        'channel': 'チャンネル名',
+        'lyrics': '歌詞',
+        'url': 'URL',
+        'imitate': '模倣',
+        'view_gte': '再生回数/以上',
+        'view_lte': '再生回数/以下',
+        'like_gte': '高評価数/以上',
+        'like_lte': '高評価数/以下',
+        'upload_time_gte': '投稿日/以降',
+        'upload_time_lte': '投稿日/以前',
+        'issubeana': '界隈曲の種類',
+        'isjoke': 'ネタ曲',
+        'mediatypes': 'メディア',
+        'islack': '作成途中',
+        'isdraft': '下書き',
+        'isoriginal': 'オリジナル模倣曲',
+        'isinst': 'インスト曲',
+        'isdeleted': '非公開/削除済み',
+    }
+
+    active = []
+    for param, label in filter_labels.items():
+        if param in query and query[param]:
+            # 空文字列や空リストでないことを確認
+            value = query[param]
+            if isinstance(value, list):
+                if value and value[0]:
+                    active.append(label)
+            elif value:
+                active.append(label)
+
+    return '・'.join(active) if active else ''
+
+
 @ratelimit(key='ip', rate='2/second', method=['GET', 'POST'], block=True)
 def song_cards(request):
     result = []
@@ -25,6 +66,11 @@ def song_cards(request):
     song_qs, statistics = song_filter(cleaned_query)
 
     if page == 1:
+        # アクティブなフィルターを表示
+        active_filters = get_active_filters(cleaned_query)
+        if active_filters:
+            result.append(f"<p class='search-info'>{active_filters}が有効です。</p>")
+
         # 再生数のフィルター/ソートなら.search-infoを追加
         if has_view_filter_or_sort(cleaned_query):
             result.append("<p class='search-info'>再生数が1回以上の曲を表示しています</p>")
