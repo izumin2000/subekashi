@@ -28,9 +28,17 @@ summary {
     width: 100%;
 }
 
-.search-info {
+.search-info, .search-count {
     text-align: center;
-    line-height: 40px;
+    line-height: 30px;
+}
+
+.search-info {
+    font-size: 15px;
+}
+
+hr {
+    margin: 10px 15%;
 }
 
 #song-cards {

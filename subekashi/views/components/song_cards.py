@@ -69,7 +69,7 @@ def song_cards(request):
         # アクティブなフィルターを表示
         active_filters = get_active_filters(cleaned_query)
         if active_filters:
-            result.append(f"<p class='search-info'>{active_filters}が有効です。</p>")
+            result.append(f"<p class='search-info'>{active_filters}が有効です</p>")
 
         # 再生数のフィルター/ソートなら.search-infoを追加
         if has_view_filter_or_sort(cleaned_query):
@@ -78,9 +78,13 @@ def song_cards(request):
         # 高評価数のフィルター/ソートなら.search-infoを追加
         if has_like_filter_or_sort(cleaned_query):
             result.append("<p class='search-info'>高評価数が1以上の曲を表示しています</p>")
+        
+        # ヒット数以外の何かしらの検索情報があれば水平線を画面に表示する
+        if result:
+            result.append("<hr>")
 
         # ヒット数を追加
-        result.append(f"<p class='search-info'>{Song.objects.count()}件中{statistics['count']}件ヒットしました</p>")
+        result.append(f"<p class='search-count'>{Song.objects.count()}件中{statistics['count']}件ヒットしました</p>")
 
     for song in song_qs:
         result.append(render_to_string('subekashi/components/song_card.html', {'song': song}))
