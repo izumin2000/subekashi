@@ -31,7 +31,8 @@ class Song(models.Model):
     )
     
     title = models.CharField(default = "", max_length = 500)
-    channel = models.CharField(default = "", max_length = 500)      # TODO Channelテーブルの利用
+    channel = models.CharField(default = "", max_length = 500)      # TODO Phase 5で削除予定
+    authors = models.ManyToManyField('Author', related_name='songs', blank=True)
     url = models.CharField(blank = True, null = True, default = "", max_length = 500)       # TODO URLテーブルの利用
     lyrics = models.TextField(blank = True, null = True, default = "", max_length = 10000)
     # imitates = models.ManyToManyField("self", symmetrical=False, related_name="imitateds", blank=True)     # TODO 自己参照
