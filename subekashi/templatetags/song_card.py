@@ -9,17 +9,16 @@ register = template.Library()
 
 @register.simple_tag
 def get_channel(song):
-    # authorsフィールドから作者を取得（authorsが空の場合はchannelフィールドを使用）
+    # authorsフィールドから作者を取得
     authors = list(song.authors.all())
-    if not authors:
-        channels = song.channel.split(',')
-    else:
-        channels = [author.name for author in authors]
+    channels = [author.name for author in authors]
 
     # 合作なら
     if len(channels) >= 2:
         return mark_safe('<i class="fas fa-user-friends"></i>合作')
     # 単作なら
+    if not channels:
+        return mark_safe('<i class="fas fa-user-circle"></i>作者不明')
     channel = channels[0]
     # html特殊文字をエスケープ(一応)
     channel = channel.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")

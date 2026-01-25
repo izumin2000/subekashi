@@ -55,26 +55,34 @@ def song_new(request):
             return render(request, 'subekashi/song_new.html', dataD)
         
         # DBに保存する値たち
-        # TODO Channelテーブルを利用する
         # WARNING channelはそのままURLになるので/は別の文字╱に変換しないといけない
         cleaned_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
-        
-        # フォームに書かれた各チャンネルの掲載拒否
+
+        # authorsフィールドの処理: カンマ区切りの作者名をAuthorオブジェクトに変換
+        channel_names = [name for name in cleaned_channel.split(',') if name]
+        author_objects = []
+
+        for channel_name in channel_names:
+            # Author.nameで検索、存在しなければ新規作成
+            author, _ = Author.objects.get_or_create(name=channel_name)
+            author_objects.append(author)
+
+        # 掲載拒否リストの読み込み
         try:
             from subekashi.constants.dynamic.reject import REJECT_LIST
         except:
             REJECT_LIST = []
-        
-        for check_channel in cleaned_channel.split(","):
-            if check_channel in REJECT_LIST:
-                dataD["error"] = f"{check_channel}さんの曲は登録することができません。"
+
+        # 掲載拒否チャンネルか判断する (authors対応)
+        for author in author_objects:
+            if author.name in REJECT_LIST:
+                dataD["error"] = f"{author.name}さんの曲は登録することができません。"
                 return render(request, 'subekashi/song_new.html', dataD)
-        
+
         # Songの登録
         ip = get_ip(request)
         song = Song(
             title = title,
-            channel = cleaned_channel,
             url = cleaned_url,
             post_time = timezone.now(),
             isoriginal = is_original,
@@ -86,8 +94,12 @@ def song_new(request):
             view = youtube_res.get("view", None),
             like = youtube_res.get("like", None),
         )
-        
+
         song.save()
+
+        # authorsフィールドの更新
+        song.authors.set(author_objects)
+
         song_id = song.id
         
         # 変更内容のマークダウンと送信するDiscordの文言の作成
@@ -96,7 +108,7 @@ def song_new(request):
         
         COLUMNS = [
             {"label": "タイトル", "value": title},
-            {"label": "チャンネル名", "value": cleaned_channel},
+            {"label": "作者", "value": ", ".join([a.name for a in author_objects])},
             {"label": "URL", "value": cleaned_url},
             {"label": "オリジナル", "value": yes_no(is_original)},
             {"label": "削除済み", "value": yes_no(is_deleted)},

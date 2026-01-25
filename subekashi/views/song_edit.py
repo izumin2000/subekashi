@@ -65,8 +65,6 @@ def song_edit(request, song_id):
             return render(request, 'subekashi/song_edit.html', dataD)
         
         # DBに保存する値たち
-        # TODO Channelテーブルを利用する
-        # WARNING channelはそのままURLになるので/は別の文字╱に変換しないといけない
         ip = get_ip(request)
         cleaned_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
 
@@ -139,7 +137,6 @@ def song_edit(request, song_id):
         # songを更新する前にhistoryのために更新前後のsongの情報を記録しておく
         COLUMNS = [
             {"label": "タイトル", "before": song.title ,"after": title},
-            {"label": "チャンネル名", "before": song.channel ,"after": cleaned_channel},
             {"label": "作者", "before": song.authors_str(), "after": ", ".join([a.name for a in author_objects])},
             {"label": "URL", "before": song.url ,"after": cleaned_url},
             {"label": "オリジナル", "before": yes_no(song.isoriginal) ,"after": yes_no(is_original)},
@@ -154,7 +151,6 @@ def song_edit(request, song_id):
 
         # songの更新
         song.title = title
-        song.channel = cleaned_channel
         song.url = cleaned_url
         song.lyrics = lyrics
         song.imitate = imitates
