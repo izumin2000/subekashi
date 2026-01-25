@@ -9,7 +9,13 @@ register = template.Library()
 
 @register.simple_tag
 def get_channel(song):
-    channels = song.channel.split(',')
+    # authorsフィールドから作者を取得（authorsが空の場合はchannelフィールドを使用）
+    authors = list(song.authors.all())
+    if not authors:
+        channels = song.channel.split(',')
+    else:
+        channels = [author.name for author in authors]
+
     # 合作なら
     if len(channels) >= 2:
         return mark_safe('<i class="fas fa-user-friends"></i>合作')
