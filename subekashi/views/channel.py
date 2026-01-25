@@ -7,10 +7,10 @@ def channel(request, channelName) :
         "metatitle" : channelName,
     }
     dataD["channel"] = channelName
-    songInsL = []
-    for songIns in Song.objects.all() :
-        if channelName in songIns.channel.split(",") :
-            songInsL.append(songIns)
+
+    # authorsフィールドでフィルタ
+    songInsL = Song.objects.filter(authors__name=channelName).distinct()
+
     dataD["songInsL"] = songInsL
     titles = ", ".join([songIns.title for songIns in songInsL[::-1]])
     if len(titles) >= 80:
