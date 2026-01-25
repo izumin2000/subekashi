@@ -56,17 +56,17 @@ def song(request, song_id):
     
     # タグを持っているかどうかの確認
     has_tag = False
-    has_tag |= song.channel == "全てあなたの所為です。"
+    has_tag |= song.authors.filter(id=1).exists()
     has_tag |= is_lack(song) or song.isdraft or song.isoriginal or song.isjoke or song.isinst
     has_tag |= not(song.issubeana) or song.isdeleted
     
     # テンプレートに渡す辞書を作成
     dataD = {
         "description": description,
-        "metatitle": f"{song.title} / {song.channel}",
+        "metatitle": f"{song.title} / {song.authors_str()}",
         "song": song,
         "br_cleaned_lyrics": br_cleaned_lyrics,
-        "channels": song.channel.split(","),
+        "channels": [author.name for author in song.authors.all()] or song.channel.split(","),
         "is_lack": is_lack(song),
         "links": links,
         "imitate_list": imitate_list,

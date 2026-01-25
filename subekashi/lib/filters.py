@@ -43,8 +43,10 @@ class SongFilter(django_filters.FilterSet):
         validators=[validate_max_length(500)]
     )
     channel = django_filters.CharFilter(
+        field_name='authors__name',
         lookup_expr='icontains',
-        validators=[validate_max_length(500)]
+        validators=[validate_max_length(500)],
+        distinct=True
     )
     lyrics = django_filters.CharFilter(
         lookup_expr='icontains',
@@ -62,9 +64,10 @@ class SongFilter(django_filters.FilterSet):
         validators=[validate_max_length(500)]
     )
     channel_exact = django_filters.CharFilter(
-        field_name='channel',
+        field_name='authors__name',
         lookup_expr='exact',
-        validators=[validate_max_length(500)]
+        validators=[validate_max_length(500)],
+        distinct=True
     )
 
     # YouTubeデータのgte/lteフィルタ
@@ -179,11 +182,18 @@ class SongFilter(django_filters.FilterSet):
             'id', '-id',
             'title', '-title',
             'channel', '-channel',
+            'authors__name', '-authors__name',
             'upload_time', '-upload_time',
             'view', '-view',
             'like', '-like',
             'post_time', '-post_time',
         }
+
+        # channelソートをauthors__nameに変換（後方互換性のため）
+        if value == 'channel':
+            value = 'authors__name'
+        elif value == '-channel':
+            value = '-authors__name'
 
         # バリデーション
         if value not in allowed_fields:

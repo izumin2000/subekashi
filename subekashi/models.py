@@ -54,7 +54,12 @@ class Song(models.Model):
 
     def __str__(self):
         return self.title
-    
+
+    def authors_str(self, separator=", "):
+        """作者名をカンマ区切りの文字列で返す。authorsが空の場合はchannelフィールドを返す"""
+        author_names = [author.name for author in self.authors.all()]
+        return separator.join(author_names) if author_names else self.channel
+
     def save(self, *args, **kwargs):
         if self.lyrics:
             self.lyrics = self.lyrics.replace("\r\n", "\n")

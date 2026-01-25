@@ -136,16 +136,11 @@ def song_edit(request, song_id):
                 info += f"{song.title}\n"
             return info[:-1]        # 最後の改行は不要
 
-        # authorsを改行区切りの文字列に変換
-        def authors2Info(authors):
-            author_names = [author.name for author in authors.all()]
-            return ", ".join(author_names) if author_names else ""
-
         # songを更新する前にhistoryのために更新前後のsongの情報を記録しておく
         COLUMNS = [
             {"label": "タイトル", "before": song.title ,"after": title},
             {"label": "チャンネル名", "before": song.channel ,"after": cleaned_channel},
-            {"label": "作者", "before": authors2Info(song.authors), "after": "\n".join([a.name for a in author_objects])},
+            {"label": "作者", "before": song.authors_str(), "after": ", ".join([a.name for a in author_objects])},
             {"label": "URL", "before": song.url ,"after": cleaned_url},
             {"label": "オリジナル", "before": yes_no(song.isoriginal) ,"after": yes_no(is_original)},
             {"label": "削除済み", "before": yes_no(song.isdeleted) ,"after": yes_no(is_deleted)},
