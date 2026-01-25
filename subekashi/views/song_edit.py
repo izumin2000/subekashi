@@ -69,6 +69,15 @@ def song_edit(request, song_id):
         # WARNING channelはそのままURLになるので/は別の文字╱に変換しないといけない
         ip = get_ip(request)
         cleaned_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
+
+        # authorsフィールドの処理: カンマ区切りの作者名をAuthorオブジェクトに変換
+        channel_names = [name for name in cleaned_channel.split(',') if name]
+        author_objects = []
+
+        for channel_name in channel_names:
+            # Author.nameで検索、存在しなければ新規作成
+            author, _ = Author.objects.get_or_create(name=channel_name)
+            author_objects.append(author)
         
         # 自分自身や重複している曲は模倣元として登録できない
         imitates_list = set(imitates.split(","))
@@ -81,13 +90,11 @@ def song_edit(request, song_id):
         except:
             REJECT_LIST = []
         
-        # 掲載拒否チャンネルか判断する
-        for check_channel in cleaned_channel.split(","):
-            if not check_channel in REJECT_LIST:
-                continue
-            
-            dataD["error"] = f"{check_channel}さんの曲は登録することができません。"
-            return render(request, 'subekashi/song_new.html', dataD)
+        # 掲載拒否チャンネルか判断する (authors対応)
+        for author in author_objects:
+            if author.name in REJECT_LIST:
+                dataD["error"] = f"{author.name}さんの曲は登録することができません。"
+                return render(request, 'subekashi/song_edit.html', dataD)
 
         # 模倣の編集
         # TODO imitateテーブルを利用する
@@ -129,10 +136,16 @@ def song_edit(request, song_id):
                 info += f"{song.title}\n"
             return info[:-1]        # 最後の改行は不要
 
+        # authorsを改行区切りの文字列に変換
+        def authors2Info(authors):
+            author_names = [author.name for author in authors.all()]
+            return ", ".join(author_names) if author_names else ""
+
         # songを更新する前にhistoryのために更新前後のsongの情報を記録しておく
         COLUMNS = [
             {"label": "タイトル", "before": song.title ,"after": title},
             {"label": "チャンネル名", "before": song.channel ,"after": cleaned_channel},
+            {"label": "作者", "before": authors2Info(song.authors), "after": "\n".join([a.name for a in author_objects])},
             {"label": "URL", "before": song.url ,"after": cleaned_url},
             {"label": "オリジナル", "before": yes_no(song.isoriginal) ,"after": yes_no(is_original)},
             {"label": "削除済み", "before": yes_no(song.isdeleted) ,"after": yes_no(is_deleted)},
@@ -158,6 +171,9 @@ def song_edit(request, song_id):
         song.isdraft = is_draft
         song.post_time = timezone.now()
         song.save()
+
+        # authorsフィールドの更新
+        song.authors.set(author_objects)
         
         # History DBの変更内容とDisocrdの#新規作成・変更チャンネルに送る文の用意
         changes = [["種類", "編集前", "編集後"]]
