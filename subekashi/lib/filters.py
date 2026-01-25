@@ -45,8 +45,7 @@ class SongFilter(django_filters.FilterSet):
     channel = django_filters.CharFilter(
         field_name='authors__name',
         lookup_expr='icontains',
-        validators=[validate_max_length(500)],
-        distinct=True
+        validators=[validate_max_length(500)]
     )
     lyrics = django_filters.CharFilter(
         lookup_expr='icontains',
@@ -66,8 +65,7 @@ class SongFilter(django_filters.FilterSet):
     channel_exact = django_filters.CharFilter(
         field_name='authors__name',
         lookup_expr='exact',
-        validators=[validate_max_length(500)],
-        distinct=True
+        validators=[validate_max_length(500)]
     )
 
     # YouTubeデータのgte/lteフィルタ
@@ -230,5 +228,9 @@ class SongFilter(django_filters.FilterSet):
         # like関連のフィルタまたはソートがある場合、like >= 1 を適用
         if has_like_filter_or_sort(self.data):
             queryset = queryset.filter(like__gte=1)
+
+        # channelフィルタ（authors__name）使用時にのみdistinct()を適用
+        if 'channel' in self.data or 'channel_exact' in self.data:
+            queryset = queryset.distinct()
 
         return queryset

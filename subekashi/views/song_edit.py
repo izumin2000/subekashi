@@ -8,6 +8,7 @@ from subekashi.lib.url import *
 from subekashi.lib.ip import *
 from subekashi.lib.discord import *
 from subekashi.lib.song_filter import song_filter
+from subekashi.lib.author_helpers import get_or_create_authors
 
 
 def song_edit(request, song_id):
@@ -69,13 +70,8 @@ def song_edit(request, song_id):
         cleaned_channel = channel.replace(" ,", ",").replace(", ", ",")
 
         # authorsフィールドの処理: カンマ区切りの作者名をAuthorオブジェクトに変換
-        channel_names = [name for name in cleaned_channel.split(',') if name]
-        author_objects = []
-
-        for channel_name in channel_names:
-            # Author.nameで検索、存在しなければ新規作成
-            author, _ = Author.objects.get_or_create(name=channel_name)
-            author_objects.append(author)
+        channel_names = cleaned_channel.split(',')
+        author_objects = get_or_create_authors(channel_names)
         
         # 自分自身や重複している曲は模倣元として登録できない
         imitates_list = set(imitates.split(","))
