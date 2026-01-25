@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from subekashi.models import *
 
 
@@ -10,4 +10,4 @@ def channel(request, channel_name):
     except Author.DoesNotExist:
         # 存在しない場合は404
         # get_object_or_404を使って404を返す
-        get_object_or_404(Author, name=channel_name)
+        return render(request, 'subekashi/404.html', status=404)
