@@ -66,7 +66,7 @@ def song_edit(request, song_id):
         
         # DBに保存する値たち
         ip = get_ip(request)
-        cleaned_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
+        cleaned_channel = channel.replace(" ,", ",").replace(", ", ",")
 
         # authorsフィールドの処理: カンマ区切りの作者名をAuthorオブジェクトに変換
         channel_names = [name for name in cleaned_channel.split(',') if name]

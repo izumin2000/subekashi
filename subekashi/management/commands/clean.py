@@ -85,12 +85,6 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})のpost_timeを更新しました。"))
                 songIns.post_time = timezone.now()
                 songIns.save()
-            
-            # スラッシュの置換
-            if "/" in songIns.channel :
-                self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})のスラッシュをリプレイスしました"))
-                songIns.channel = songIns.channel.replace("/", "╱")
-                songIns.save()
 
     def add_arguments(self, parser):
         parser.add_argument('-d', required=False, nargs='*')

@@ -54,9 +54,7 @@ def song_new(request):
             dataD["error"] = "タイトルかチャンネルが空です。"
             return render(request, 'subekashi/song_new.html', dataD)
         
-        # DBに保存する値たち
-        # WARNING channelはそのままURLになるので/は別の文字╱に変換しないといけない
-        cleaned_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
+        cleaned_channel = channel.replace(" ,", ",").replace(", ", ",")
 
         # authorsフィールドの処理: カンマ区切りの作者名をAuthorオブジェクトに変換
         channel_names = [name for name in cleaned_channel.split(',') if name]
