@@ -42,7 +42,7 @@ function appendImitateList(song) {
     const clone = tmpl.content.cloneNode(true);
 
     clone.querySelector(".imitate-item").id = `imitate-${song.id}`;
-    clone.querySelector(".channel-name").textContent = song.channel;
+    clone.querySelector(".channel-name").textContent = getChannelText(song);
     clone.querySelector(".title").textContent = song.title;
 
     const deleteBtn = clone.querySelector(".delete-btn");
@@ -259,7 +259,7 @@ async function checkUrlForm() {
         const base = baseURL();
         const songId = existingSong.id;
         const title = escapeHtml(existingSong.title);
-        const channel = escapeHtml(existingSong.channel);
+        const channel = escapeHtml(getChannelText(existingSong));
 
         const songLink = `${base}/songs/${songId}`;
         const deleteReason = encodeURIComponent(`${songLink} と重複しています。`);

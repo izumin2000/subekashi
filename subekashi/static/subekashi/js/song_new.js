@@ -56,20 +56,21 @@ async function checkAutoForm() {
     // 既に登録されているURLの場合
     if (existingSongs.length) {
         const existingSong = existingSongs[0];
-        const infoHTML = isLack(existingSong) 
+        const channelText = getChannelText(existingSong);
+        const infoHTML = isLack(existingSong)
         ?
         `<span class="info"><i class="fas fa-info-circle info"></i>このURLは<br>
         song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
         タイトル：${existingSong.title}<br>
-        チャンネル名：${existingSong.channel}<br>
+        チャンネル名：${channelText}<br>
         として<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">既に登録されています</a>がまだ未完成です</span>`
         :
         `<span class='error'><i class='fas fa-ban error'></i>このURLは<br>
         song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
         タイトル：${existingSong.title}<br>
-        チャンネル名：${existingSong.channel}<br>
+        チャンネル名：${channelText}<br>
         として<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">既に登録されています</a></span>`;
-        newFormAutoInfoEle.innerHTML = infoHTML; 
+        newFormAutoInfoEle.innerHTML = infoHTML;
         return;
     }
 
