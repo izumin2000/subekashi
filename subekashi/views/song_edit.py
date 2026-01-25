@@ -139,7 +139,7 @@ def song_edit(request, song_id):
         # authorsを改行区切りの文字列に変換
         def authors2Info(authors):
             author_names = [author.name for author in authors.all()]
-            return "\n".join(author_names) if author_names else ""
+            return ", ".join(author_names) if author_names else ""
 
         # songを更新する前にhistoryのために更新前後のsongの情報を記録しておく
         COLUMNS = [
@@ -194,7 +194,6 @@ def song_edit(request, song_id):
                 discord_text += f"**{label}**："
                 if label == "歌詞":
                     discord_text += f"```{after}```\n"
-                # elif label == "模倣" or label == "作者":
                 elif label == "模倣":
                     discord_text += f"\n{before} \n:arrow_down: \n{after}\n"
                 else:
