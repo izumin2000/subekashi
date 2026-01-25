@@ -39,7 +39,7 @@ def get_youtube_api(video_id):
             "view": int(statistics["viewCount"]),
             "like": int(statistics.get("likeCount", statistics.get("favoriteCount", 0))),
             "title": item["snippet"]["title"],
-            "channel": item["snippet"]["channelTitle"],
+            "author": item["snippet"]["channelTitle"],
             "upload_time": jst_upload_time
         }
         

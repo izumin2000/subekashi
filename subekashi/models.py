@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone
 
 
-# SongやChannelを編集したユーザーのIPアドレスの情報
+# SongやAuthorを編集したユーザーのIPアドレスの情報
 # 画面上では"全て{song_id}の所為です。"と表示される
 class Editor(models.Model):
     ip = models.CharField(default = "", unique=True, max_length = 100)
@@ -63,9 +63,6 @@ class Song(models.Model):
         if self.lyrics:
             self.lyrics = self.lyrics.replace("\r\n", "\n")
         super().save(*args, **kwargs)
-    
-    # def channels(self):
-        # return
     
     # def urls(self):
         # return
