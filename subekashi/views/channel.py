@@ -1,19 +1,13 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from subekashi.models import *
 
 
-def channel(request, channelName) :
-    dataD = {
-        "metatitle" : channelName,
-    }
-    dataD["channel"] = channelName
-
-    # authorsフィールドでフィルタ
-    songInsL = Song.objects.filter(authors__name=channelName).distinct()
-
-    dataD["songInsL"] = songInsL
-    titles = ", ".join([songIns.title for songIns in songInsL[::-1]])
-    if len(titles) >= 80:
-        titles = titles[:80] + "...など"
-    dataD["description"] = f"{channelName}の曲一覧：{titles}"
-    return render(request, "subekashi/channel.html", dataD)
+def channel(request, channel_name):
+    # Author.nameで検索し、存在すれば /author/<author_id>/ にリダイレクト
+    try:
+        author_obj = Author.objects.get(name=channel_name)
+        return redirect('subekashi:author', author_id=author_obj.id)
+    except Author.DoesNotExist:
+        # 存在しない場合は404
+        # get_object_or_404を使って404を返す
+        return render(request, 'subekashi/404.html', status=404)
