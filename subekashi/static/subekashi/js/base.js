@@ -387,11 +387,11 @@ function deleteToastUrlQuery() {
     }
 }
 
-// authorsフィールドまたはchannelフィールドから作者名文字列を取得
+// authorsフィールドから作者名文字列を取得
 function getChannelText(song) {
     return song.authors && song.authors.length > 0
         ? song.authors.map(author => author.name).join(',')
-        : song.channel;
+        : '';
 }
 
 // 曲が未完成かどうか
@@ -400,10 +400,10 @@ function isLack(song) {
         return true;
     }
 
-    // authorsがある場合はauthors、ない場合はchannelを確認
+    // authorsで特殊作者を確認
     const hasSpecialAuthor = song.authors
         ? song.authors.some(author => author.id === 1)
-        : song.channel === "全てあなたの所為です。";
+        : false;
 
     if (!song.isoriginal && !song.issubeana && song.imitate === "" && hasSpecialAuthor) {
         return true;

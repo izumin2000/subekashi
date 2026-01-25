@@ -31,7 +31,6 @@ class Song(models.Model):
     )
     
     title = models.CharField(default = "", max_length = 500)
-    channel = models.CharField(default = "", max_length = 500)      # TODO Phase 5で削除予定
     authors = models.ManyToManyField('Author', related_name='songs', blank=True)
     url = models.CharField(blank = True, null = True, default = "", max_length = 500)       # TODO URLテーブルの利用
     lyrics = models.TextField(blank = True, null = True, default = "", max_length = 10000)
@@ -56,14 +55,13 @@ class Song(models.Model):
         return self.title
 
     def authors_str(self, separator=", "):
-        """作者名をカンマ区切りの文字列で返す。authorsが空の場合はchannelフィールドを返す"""
+        """作者名をカンマ区切りの文字列で返す"""
         author_names = [author.name for author in self.authors.all()]
-        return separator.join(author_names) if author_names else self.channel
+        return separator.join(author_names)
 
     def save(self, *args, **kwargs):
         if self.lyrics:
             self.lyrics = self.lyrics.replace("\r\n", "\n")
-            # TODO channel等もcleanする
         super().save(*args, **kwargs)
     
     # def channels(self):
