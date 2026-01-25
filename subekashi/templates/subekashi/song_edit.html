@@ -47,7 +47,7 @@
         {% comment %} TODO チャンネルを複数入力形式に {% endcomment %}
         <div class="form-col">
             <label for="channel">チャンネル名<i class="fas fa-info-circle" onclick="showTutorial('channel')"></i></label>
-            <input type="text" id="channel" name="channel" class="sansfont" value="{{ song.channel }}" required>
+            <input type="text" id="channel" name="channel" class="sansfont" value="{% if song.authors.all %}{{ song.authors.all|join:',' }}{% else %}{{ song.channel }}{% endif %}" required>
         </div>
         <p class="song-edit-info" id="song-edit-info-title-channel"><img id='loading' src="{% static 'subekashi/image/loading.gif' %}" alt='loading'></img></p>
         {% comment %} TODO URLを複数入力形式に {% endcomment %}

@@ -162,7 +162,7 @@ python manage.py runserver
 - `issubeana`: すべあな曲かどうか
 - `isjoke`: ネタ曲かどうか
 - `isdraft`: 下書きかどうか
-- `isoriginal`: オリジナル曲かどうか
+- `isoriginal`: オリジナル模倣曲かどうか
 - `isinst`: インスト曲かどうか
 - `isdeleted`: 削除済みかどうか
 - `islack`: 不完全な曲（情報が欠けている曲）
