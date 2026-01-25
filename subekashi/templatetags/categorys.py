@@ -6,7 +6,7 @@ from subekashi.models import Song
 register = template.Library()
 @register.simple_tag
 def render_categorys():
-    song_qs = Song.objects.filter(id__lte = 30, channel = "全てあなたの所為です。") 
+    song_qs = Song.objects.filter(id__lte = 30, authors__id=1)
     context = {
         "song_qs" : song_qs
     }
