@@ -29,7 +29,7 @@ def song_edit(request, song_id):
 
     if request.method == "POST":
         title = request.POST.get("title", "")
-        channel = request.POST.get("channel", "")
+        authors_input = request.POST.get("authors", "")
         url = request.POST.get("url", "")
         imitates = request.POST.get("imitate", "")
         lyrics = request.POST.get("lyrics", "")
@@ -60,18 +60,18 @@ def song_edit(request, song_id):
                 該当のURLを登録できるように、ご連絡ください。"
                 return render(request, 'subekashi/song_edit.html', dataD)
 
-        # タイトルとチャンネルが空の場合はエラー
-        if ("" in [title, channel]) :
-            dataD["error"] = "タイトルかチャンネルが空です。"
+        # タイトルと作者が空の場合はエラー
+        if ("" in [title, authors_input]) :
+            dataD["error"] = "タイトルか作者が空です。"
             return render(request, 'subekashi/song_edit.html', dataD)
-        
+
         # DBに保存する値たち
         ip = get_ip(request)
-        cleaned_channel = channel.replace(" ,", ",").replace(", ", ",")
+        cleaned_authors = authors_input.replace(" ,", ",").replace(", ", ",")
 
         # authorsフィールドの処理: カンマ区切りの作者名をAuthorオブジェクトに変換
-        channel_names = cleaned_channel.split(',')
-        author_objects = get_or_create_authors(channel_names)
+        author_names = cleaned_authors.split(',')
+        author_objects = get_or_create_authors(author_names)
         
         # 自分自身や重複している曲は模倣元として登録できない
         imitates_list = set(imitates.split(","))
@@ -84,7 +84,7 @@ def song_edit(request, song_id):
         except:
             REJECT_LIST = []
         
-        # 掲載拒否チャンネルか判断する (authors対応)
+        # 掲載拒否作者か判断する
         for author in author_objects:
             if author.name in REJECT_LIST:
                 dataD["error"] = f"{author.name}さんの曲は登録することができません。"
