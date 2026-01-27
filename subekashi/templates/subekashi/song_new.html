@@ -52,7 +52,7 @@
         <p id="new-form-auto-info"><img id='loading' src="{% static 'subekashi/image/loading.gif' %}" alt='loading'></p>
     </form>
     
-    <h1>曲名とチャンネル名から登録<i class="fas fa-info-circle" onclick="showTutorial('new-form-manual')"></i></h1>
+    <h1>曲名と作者から登録<i class="fas fa-info-circle" onclick="showTutorial('new-form-manual')"></i></h1>
     <div class="underline"></div>
     <form action="{% url 'subekashi:song_new' %}?toast=manual" method="POST" id="new-form-manual">{% csrf_token %}
         <div class="form-col">
@@ -60,8 +60,8 @@
             <input type="text" id="title" name="title" class="sansfont" value="{{ request.GET.title }}" required>
         </div>
         <div class="form-col">
-            <label for="channel">チャンネル名<i class="fas fa-info-circle" onclick="showTutorial('channel')"></i></label>
-            <input type="text" id="channel" name="channel" class="sansfont" value="{{ request.GET.channel }}" required>
+            <label for="authors">作者<i class="fas fa-info-circle" onclick="showTutorial('authors')"></i></label>
+            <input type="text" id="authors" name="authors" class="sansfont" value="{{ request.GET.authors }}" required>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-original-manual" name="is-original-manual" data-sync="original">

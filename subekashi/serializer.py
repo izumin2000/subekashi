@@ -1,7 +1,14 @@
 from rest_framework import serializers
 from .models import *
 
+class AuthorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Author
+        fields = ['id', 'name']
+
 class SongSerializer(serializers.ModelSerializer):
+    authors = AuthorSerializer(many=True, read_only=True)
+
     class Meta:
         model = Song
         fields = '__all__'

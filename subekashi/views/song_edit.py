@@ -69,7 +69,7 @@ def song_edit(request, song_id):
         ip = get_ip(request)
         cleaned_authors = authors_input.replace(" ,", ",").replace(", ", ",")
 
-        # authorsフィールドの処理: カンマ区切りの作者名をAuthorオブジェクトに変換
+        # authorsフィールドの処理: カンマ区切りの作者をAuthorオブジェクトに変換
         author_names = cleaned_authors.split(',')
         author_objects = get_or_create_authors(author_names)
         

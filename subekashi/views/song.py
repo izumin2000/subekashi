@@ -66,7 +66,7 @@ def song(request, song_id):
         "metatitle": f"{song.title} / {song.authors_str()}",
         "song": song,
         "br_cleaned_lyrics": br_cleaned_lyrics,
-        "authors": [author.name for author in song.authors.all()],
+        "authors": song.authors.all(),
         "is_lack": is_lack(song),
         "links": links,
         "imitate_list": imitate_list,

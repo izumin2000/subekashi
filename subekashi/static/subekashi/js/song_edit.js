@@ -6,7 +6,7 @@ const lyricsEle = document.getElementById("lyrics")
 async function init() {
     openDeleteDetails();
     song_id = window.location.pathname.split("/")[2];
-    await checkTitleChannelForm();
+    await checkTitleAuthorForm();
     await checkUrlForm();
     await initImitateList();
     checkButton();
@@ -42,7 +42,7 @@ function appendImitateList(song) {
     const clone = tmpl.content.cloneNode(true);
 
     clone.querySelector(".imitate-item").id = `imitate-${song.id}`;
-    clone.querySelector(".channel-name").textContent = getChannelText(song);
+    clone.querySelector(".author-name").textContent = getAuthorText(song);
     clone.querySelector(".title").textContent = song.title;
 
     const deleteBtn = clone.querySelector(".delete-btn");
@@ -122,37 +122,37 @@ async function songGuesserClick(id) {
         renderSongGuesser();
         return;
     }
-    var imitateSong = await exponentialBackoff(`song/${id}`, "imitate", songGuesserClick);
-    if (!imitateSong) {
+    var imitateSongRes = await exponentialBackoff(`song/${id}`, "imitate", songGuesserClick);
+    if (!imitateSongRes) {
         return;
     }
 
-    appendImitate(imitateSong);
+    appendImitate(imitateSongRes);
     renderSongGuesser();
 };
 
-// タイトルとチャンネルの入力チェック
+// タイトルと作者の入力チェック
 const titleEle = document.getElementById('title');
-const channelEle = document.getElementById('channel');
-var isTitleChannelValid = false;
-async function checkTitleChannelForm() {
-    isTitleChannelValid = false;
+const authorsEle = document.getElementById('authors');
+var isTitleAuthorValid = false;
+async function checkTitleAuthorForm() {
+    isTitleAuthorValid = false;
     checkButton();
-    const songEditInfoTitleChannelEle = document.getElementById('song-edit-info-title-channel');
+    const songEditInfoTitleAuthorsEle = document.getElementById('song-edit-info-title-authors');
 
     const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`
-    songEditInfoTitleChannelEle.innerHTML = loadingEle;
+    songEditInfoTitleAuthorsEle.innerHTML = loadingEle;
 
-    // タイトルとチャンネル名が空の場合
-    if (titleEle.value === '' || channelEle.value === '') {
-        songEditInfoTitleChannelEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>タイトルとチャンネル名を入力してください</span>";
+    // タイトルと作者が空の場合
+    if (titleEle.value === '' || authorsEle.value === '') {
+        songEditInfoTitleAuthorsEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>タイトルと作者を入力してください</span>";
         return;
     }
 
     // 以下の条件はvalid
-    isTitleChannelValid = true;
+    isTitleAuthorValid = true;
     checkButton();
-    const existingSongsRes = await exponentialBackoff(`song/?title_exact=${titleEle.value}&channel_exact=${channelEle.value}`, "tiltechannel", checkTitleChannelForm);
+    const existingSongsRes = await exponentialBackoff(`song/?title_exact=${titleEle.value}&author_exact=${authorsEle.value}`, "titleauthor", checkTitleAuthorForm);
     
     if (existingSongsRes == undefined) {
         return;
@@ -176,34 +176,34 @@ async function checkTitleChannelForm() {
         </span>`
         :
         `<span class="warning"><i class="fas fa-exclamation-triangle warning"></i>
-        タイトル・チャンネル名ともに一致している曲が<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">見つかりました。</a><br>
+        タイトル・作者ともに一致している曲が<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">見つかりました。</a><br>
         song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
         登録されているURL：<a href="${existingSongURL}" target="_blank">${existingSongURL}</a>${isMultipleSongURL ? 'など' : ''}<br>
         既に登録されている曲と登録しようとしている曲が別の曲に限り、登録することができます。<br>
         この記事を削除したい場合は、<a href="${baseURL()}/songs/${song_id}/delete?reason=${baseURL()}/songs/${existingSong.id} と重複しています。" target="_blank">こちら</a>をクリックしてください。
         </span>`;
 
-        songEditInfoTitleChannelEle.innerHTML = infoHTML;
-        return;
-    }
-    
-    // タイトルの前後にスペースが含まれている場合
-    if (titleEle.value != titleEle.value.trim()) {
-        songEditInfoTitleChannelEle.innerHTML = `<span class="info"><i class='fas fa-info-circle info'></i>タイトルにスペースが含まれています。<br>意図して入力していない場合、削除してください。</span>`;
-        return;
-    }
-    
-    // チャンネル名の前後にスペースが含まれている場合
-    if (channelEle.value != channelEle.value.trim()) {
-        songEditInfoTitleChannelEle.innerHTML = `<span class="info"><i class='fas fa-info-circle info'></i>チャンネル名にスペースが含まれています。<br>意図して入力していない場合、削除してください。</span>`;
+        songEditInfoTitleAuthorsEle.innerHTML = infoHTML;
         return;
     }
 
-    // タイトル・チャンネル名の前後にスペースが含まれていない場合
-    songEditInfoTitleChannelEle.innerHTML = "<span class='ok'><i class='fas fa-check-circle ok'></i>登録可能な状態です</span>";
+    // タイトルの前後にスペースが含まれている場合
+    if (titleEle.value != titleEle.value.trim()) {
+        songEditInfoTitleAuthorsEle.innerHTML = `<span class="info"><i class='fas fa-info-circle info'></i>タイトルにスペースが含まれています。<br>意図して入力していない場合、削除してください。</span>`;
+        return;
+    }
+
+    // 作者の前後にスペースが含まれている場合
+    if (authorsEle.value != authorsEle.value.trim()) {
+        songEditInfoTitleAuthorsEle.innerHTML = `<span class="info"><i class='fas fa-info-circle info'></i>作者にスペースが含まれています。<br>意図して入力していない場合、削除してください。</span>`;
+        return;
+    }
+
+    // タイトル・作者の前後にスペースが含まれていない場合
+    songEditInfoTitleAuthorsEle.innerHTML = "<span class='ok'><i class='fas fa-check-circle ok'></i>登録可能な状態です</span>";
 }
-channelEle.addEventListener('input', checkTitleChannelForm);
-titleEle.addEventListener('input', checkTitleChannelForm);
+authorsEle.addEventListener('input', checkTitleAuthorForm);
+titleEle.addEventListener('input', checkTitleAuthorForm);
 
 // URLの入力チェック
 const urlEle = document.getElementById('url');
@@ -259,7 +259,7 @@ async function checkUrlForm() {
         const base = baseURL();
         const songId = existingSong.id;
         const title = escapeHtml(existingSong.title);
-        const channel = escapeHtml(getChannelText(existingSong));
+        const author = escapeHtml(getAuthorText(existingSong));
 
         const songLink = `${base}/songs/${songId}`;
         const deleteReason = encodeURIComponent(`${songLink} と重複しています。`);
@@ -272,7 +272,7 @@ async function checkUrlForm() {
             このURLは<br>
             song ID：<a href="${songLink}" target="_blank">${songId}</a><br>
             タイトル：${title}<br>
-            チャンネル名：${channel}<br>
+            作者：${author}<br>
             として
             <a href="${songLink}" target="_blank">既に登録されています</a>
             ${isIncomplete ? "がまだ未完成です。" : "。"}<br>
@@ -292,7 +292,7 @@ urlEle.addEventListener('input', checkUrlForm);
 function checkButton() {
     // ボタンのdisabledの変更
     const songEditSubmitEle = document.getElementById('song-edit-submit');
-    songEditSubmitEle.disabled = !(isTitleChannelValid && isUrlValid)
+    songEditSubmitEle.disabled = !(isTitleAuthorValid && isUrlValid)
 
     // 未完成に関する変数の定義
     var message = "";
@@ -307,7 +307,7 @@ function checkButton() {
     // 模倣の未完成
     const is_original = document.getElementById("is-original").checked;
     const is_subeana = document.getElementById("is-subeana").checked;
-    if (!is_original && is_subeana && (imitateEle.value == "") && (channelEle.value != "全てあなたの所為です。")) {
+    if (!is_original && is_subeana && (imitateEle.value == "") && (authorsEle.value != "全てあなたの所為です。")) {
         message += "<li>「オリジナル模倣」にチェックをつけるか、模倣曲を1曲以上登録してください。</li>"
         is_lack = true;
     }
