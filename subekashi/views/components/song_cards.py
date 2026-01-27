@@ -18,7 +18,7 @@ def get_active_filters(query):
     """
     filter_labels = {
         'title': 'タイトル',
-        'author': '作者名',
+        'author': '作者',
         'lyrics': '歌詞',
         'url': 'URL',
         'imitate': '模倣',

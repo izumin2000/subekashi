@@ -8,16 +8,19 @@ from subekashi.lib.url import get_all_media
 register = template.Library()
 
 @register.simple_tag
-def get_channel(song):
+def get_author(song):
     # authorsフィールドから作者を取得
     authors_list = list(song.authors.all())
 
     # 合作なら
     if len(authors_list) >= 2:
         return mark_safe('<i class="fas fa-user-friends"></i>合作')
-    # 単作なら
+    
+    # 作者不明なら
     if not authors_list:
+        # TODO ここはありえないのでdiscordの通知を追加する
         return mark_safe('<i class="fas fa-user-circle"></i>作者不明')
+    
     author = authors_list[0]
     # html特殊文字をエスケープ(一応)
     author_name = author.name.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")

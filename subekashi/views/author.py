@@ -9,8 +9,8 @@ def author(request, author_id):
 
     dataD = {
         "metatitle": author_name,
+        "author": author_name,
     }
-    dataD["channel"] = author_name
 
     # authorsフィールドでフィルタ
     songInsL = Song.objects.filter(authors__id=author_id).prefetch_related('authors').distinct()

@@ -55,7 +55,7 @@ class Song(models.Model):
         return self.title
 
     def authors_str(self, separator=", "):
-        """作者名をカンマ区切りの文字列で返す"""
+        """作者をカンマ区切りの文字列で返す"""
         author_names = [author.name for author in self.authors.all()]
         return separator.join(author_names)
 
