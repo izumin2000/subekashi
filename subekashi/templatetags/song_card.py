@@ -10,20 +10,20 @@ register = template.Library()
 @register.simple_tag
 def get_channel(song):
     # authorsフィールドから作者を取得
-    authors = list(song.authors.all())
-    channels = [author.name for author in authors]
+    authors_list = list(song.authors.all())
+    author_names = [author.name for author in authors_list]
 
     # 合作なら
-    if len(channels) >= 2:
+    if len(author_names) >= 2:
         return mark_safe('<i class="fas fa-user-friends"></i>合作')
     # 単作なら
-    if not channels:
+    if not author_names:
         return mark_safe('<i class="fas fa-user-circle"></i>作者不明')
-    channel = channels[0]
+    author_name = author_names[0]
     # html特殊文字をエスケープ(一応)
-    channel = channel.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
-    channel_url = reverse('subekashi:channel', args=[channel])
-    return mark_safe(f'<object><a href="{channel_url}"><i class="fas fa-user-circle"></i>{channel}</a></object>')
+    author_name = author_name.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+    author_url = reverse('subekashi:channel', args=[author_name])
+    return mark_safe(f'<object><a href="{author_url}"><i class="fas fa-user-circle"></i>{author_name}</a></object>')
 
 
 @register.simple_tag

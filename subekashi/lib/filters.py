@@ -42,7 +42,7 @@ class SongFilter(django_filters.FilterSet):
         lookup_expr='icontains',
         validators=[validate_max_length(500)]
     )
-    channel = django_filters.CharFilter(
+    author = django_filters.CharFilter(
         field_name='authors__name',
         lookup_expr='icontains',
         validators=[validate_max_length(500)]
@@ -62,7 +62,7 @@ class SongFilter(django_filters.FilterSet):
         lookup_expr='exact',
         validators=[validate_max_length(500)]
     )
-    channel_exact = django_filters.CharFilter(
+    author_exact = django_filters.CharFilter(
         field_name='authors__name',
         lookup_expr='exact',
         validators=[validate_max_length(500)]
@@ -179,7 +179,7 @@ class SongFilter(django_filters.FilterSet):
         allowed_fields = {
             'id', '-id',
             'title', '-title',
-            'channel', '-channel',
+            'author', '-author',
             'authors__name', '-authors__name',
             'upload_time', '-upload_time',
             'view', '-view',
@@ -187,10 +187,10 @@ class SongFilter(django_filters.FilterSet):
             'post_time', '-post_time',
         }
 
-        # channelソートをauthors__nameに変換（後方互換性のため）
-        if value == 'channel':
+        # authorソートをauthors__nameに変換
+        if value == 'author':
             value = 'authors__name'
-        elif value == '-channel':
+        elif value == '-author':
             value = '-authors__name'
 
         # バリデーション
@@ -229,8 +229,8 @@ class SongFilter(django_filters.FilterSet):
         if has_like_filter_or_sort(self.data):
             queryset = queryset.filter(like__gte=1)
 
-        # channelフィルタ（authors__name）使用時にのみdistinct()を適用
-        if 'channel' in self.data or 'channel_exact' in self.data:
+        # authorフィルタ（authors__name）使用時にのみdistinct()を適用
+        if 'author' in self.data or 'author_exact' in self.data:
             queryset = queryset.distinct()
 
         return queryset

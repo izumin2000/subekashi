@@ -17,7 +17,7 @@ def song_new(request):
 
     if request.method == "POST":
         title = request.POST.get("title", "")
-        channel = request.POST.get("channel", "")
+        authors_input = request.POST.get("authors", "")
         url = request.POST.get("url", "")
         is_original = bool(request.POST.get("is-original-auto", "") + request.POST.get("is-original-manual", ""))
         is_deleted = bool(request.POST.get("is-deleted-auto", "") + request.POST.get("is-deleted-manual", ""))
@@ -31,7 +31,7 @@ def song_new(request):
             youtube_id = get_youtube_id(url)
             youtube_res = get_youtube_api(youtube_id)
             title = youtube_res.get("title", "")
-            channel = youtube_res.get("channel", "")
+            authors_input = youtube_res.get("author", "")       # 現状、YouTube Data APIの仕様上,1チャンネルしか取得できない。
             
         # URLがYouTubeのURLでない場合はエラー
         if not is_youtube_url(url) and url:
@@ -50,16 +50,16 @@ def song_new(request):
             dataD["error"] = "URLは既に登録されています。"
             return render(request, 'subekashi/song_new.html', dataD)
         
-        # タイトルかチャンネルが空の場合はエラー
-        if ("" in [title, channel]) :
-            dataD["error"] = "タイトルかチャンネルが空です。"
+        # タイトルか作者が空の場合はエラー
+        if ("" in [title, authors_input]) :
+            dataD["error"] = "タイトルか作者が空です。"
             return render(request, 'subekashi/song_new.html', dataD)
-        
-        cleaned_channel = channel.replace(" ,", ",").replace(", ", ",")
+
+        cleaned_authors = authors_input.replace(" ,", ",").replace(", ", ",")
 
         # authorsフィールドの処理: カンマ区切りの作者名をAuthorオブジェクトに変換
-        channel_names = cleaned_channel.split(',')
-        author_objects = get_or_create_authors(channel_names)
+        author_names = cleaned_authors.split(',')
+        authors = get_or_create_authors(author_names)
 
         # 掲載拒否リストの読み込み
         try:
@@ -67,8 +67,8 @@ def song_new(request):
         except:
             REJECT_LIST = []
 
-        # 掲載拒否チャンネルか判断する (authors対応)
-        for author in author_objects:
+        # 掲載拒否作者か判断する
+        for author in authors:
             if author.name in REJECT_LIST:
                 dataD["error"] = f"{author.name}さんの曲は登録することができません。"
                 return render(request, 'subekashi/song_new.html', dataD)
@@ -92,7 +92,7 @@ def song_new(request):
         song.save()
 
         # authorsフィールドの更新
-        song.authors.set(author_objects)
+        song.authors.set(authors)
 
         song_id = song.id
         
@@ -102,7 +102,7 @@ def song_new(request):
         
         COLUMNS = [
             {"label": "タイトル", "value": title},
-            {"label": "作者", "value": ", ".join([a.name for a in author_objects])},
+            {"label": "作者", "value": ", ".join([a.name for a in authors])},
             {"label": "URL", "value": cleaned_url},
             {"label": "オリジナル", "value": yes_no(is_original)},
             {"label": "削除済み", "value": yes_no(is_deleted)},
