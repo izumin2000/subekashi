@@ -137,16 +137,16 @@ python manage.py runserver
 
 **テキスト検索（部分一致、大文字小文字を区別しない）**
 - `title`: 曲名で検索（最大500文字）
-- `channel`: チャンネル名で検索（最大500文字）
+- `author`: 作者名で検索（最大500文字）
 - `lyrics`: 歌詞で検索（最大10000文字）
 - `url`: URLで検索（最大500文字）
   - 自動的にURLが正規化されます（YouTubeの短縮、クエリパラメータの削除など）
-- `keyword`: タイトル、チャンネル、歌詞、URLを横断検索（最大500文字）
+- `keyword`: タイトル、作者、歌詞、URLを横断検索（最大500文字）
   - 自動的にURLが正規化されます
 
 **完全一致検索**
 - `title_exact`: 曲名で完全一致検索（最大500文字）
-- `channel_exact`: チャンネル名で完全一致検索（最大500文字）
+- `author_exact`: 作者名で完全一致検索（最大500文字）
 
 **数値範囲フィルタ（1以上の値のみ）**
 - `view_gte`: 視聴回数の下限（1以上の整数）
@@ -179,7 +179,7 @@ python manage.py runserver
 
 **ソート**
 - `sort`: ソート順を指定
-  - 利用可能な値: `id`, `-id`, `title`, `-title`, `channel`, `-channel`, `upload_time`, `-upload_time`, `view`, `-view`, `like`, `-like`, `post_time`, `-post_time`, `random`
+  - 利用可能な値: `id`, `-id`, `title`, `-title`, `author`, `-author`, `upload_time`, `-upload_time`, `view`, `-view`, `like`, `-like`, `post_time`, `-post_time`, `random`
   - `-`を付けると降順、付けないと昇順
   - `id`は登録日時順（登録が古い順）、`-id`は登録が新しい順
   - `random`を指定するとランダムソート
@@ -202,9 +202,15 @@ python manage.py runserver
   "max_page": 2,
   "result": [
     {
-      "song_id": 1,
+      "id": 1,
       "title": "曲名",
-      "channel": "チャンネル名",
+      "authors": [
+        {
+          "id": 1,
+          "name": "作者"
+        },
+        ...
+      ],
       ...
     }
   ]
@@ -222,7 +228,13 @@ python manage.py runserver
 {
   "song_id": 1,
   "title": "曲名",
-  "channel": "チャンネル名",
+  "authors": [
+    {
+      "id": 1,
+      "name": "作者"
+    },
+    ...
+  ],
   ...
 }
 ```
