@@ -11,18 +11,17 @@ register = template.Library()
 def get_channel(song):
     # authorsフィールドから作者を取得
     authors_list = list(song.authors.all())
-    author_names = [author.name for author in authors_list]
 
     # 合作なら
-    if len(author_names) >= 2:
+    if len(authors_list) >= 2:
         return mark_safe('<i class="fas fa-user-friends"></i>合作')
     # 単作なら
-    if not author_names:
+    if not authors_list:
         return mark_safe('<i class="fas fa-user-circle"></i>作者不明')
-    author_name = author_names[0]
+    author = authors_list[0]
     # html特殊文字をエスケープ(一応)
-    author_name = author_name.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
-    author_url = reverse('subekashi:channel', args=[author_name])
+    author_name = author.name.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+    author_url = reverse('subekashi:author', kwargs={'author_id': author.id})
     return mark_safe(f'<object><a href="{author_url}"><i class="fas fa-user-circle"></i>{author_name}</a></object>')
 
 
