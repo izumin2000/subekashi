@@ -45,8 +45,8 @@ class Command(BaseCommand):
         if not dry_run:
             with transaction.atomic():
                 for song in songs_with_channel:
-                    # カンマで分割（空文字列は除外するが、空白文字のみの場合は保持）
-                    channel_names = [name for name in song.channel.split(',') if name]
+                    # カンマで分割して前後の空白を削除（空文字列は除外）
+                    channel_names = [name.strip() for name in song.channel.split(',') if name.strip()]
 
                     # 各作者名に対応するAuthorオブジェクトを取得
                     authors_to_add = []
@@ -89,8 +89,8 @@ class Command(BaseCommand):
             # ドライランモード
             sample_count = 0
             for song in songs_with_channel[:10]:
-                # カンマで分割（空文字列は除外するが、空白文字のみの場合は保持）
-                channel_names = [name for name in song.channel.split(',') if name]
+                # カンマで分割して前後の空白を削除（空文字列は除外）
+                channel_names = [name.strip() for name in song.channel.split(',') if name.strip()]
                 self.stdout.write(f'\nSong ID {song.id}: "{song.title}"')
                 self.stdout.write(f'  チャンネル: {song.channel}')
                 self.stdout.write(f'  作者数: {len(channel_names)}')
