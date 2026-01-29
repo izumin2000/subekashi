@@ -93,9 +93,16 @@ async function checkManualForm() {
     const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`
     newFormAutoManualEle.innerHTML = loadingEle;
 
-    // どちらかが空の場合
-    if (channelEle.value === '' || titleEle.value === '') {
-        newFormAutoManualEle.innerHTML = "";
+    // 作者が空白の場合
+    if (channelEle.value === '' || channelEle.value.trim() === '') {
+        newFormAutoManualEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>作者は空白にできません</span>";
+        document.getElementById('new-submit-manual').disabled = true;
+        return;
+    }
+
+    // タイトルが空の場合
+    if (titleEle.value === '' || titleEle.value.trim() === '') {
+        newFormAutoManualEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>タイトルは空白にできません</span>";
         document.getElementById('new-submit-manual').disabled = true;
         return;
     }

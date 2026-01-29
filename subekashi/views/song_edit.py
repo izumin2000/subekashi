@@ -63,6 +63,11 @@ def song_edit(request, song_id):
         if ("" in [title, channel]) :
             dataD["error"] = "タイトルかチャンネルが空です。"
             return render(request, 'subekashi/song_edit.html', dataD)
+
+        # チャンネル(作者)が空白のみの場合はエラー
+        if title.strip() == "" or channel.strip() == "":
+            dataD["error"] = "作者は空白にできません。"
+            return render(request, 'subekashi/song_edit.html', dataD)
         
         # DBに保存する値たち
         # TODO Channelテーブルを利用する
