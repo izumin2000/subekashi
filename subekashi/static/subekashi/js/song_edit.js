@@ -134,6 +134,9 @@ async function songGuesserClick(id) {
 // タイトルと作者の入力チェック
 const titleEle = document.getElementById('title');
 const authorsEle = document.getElementById('authors');
+var isTitleAuthorFormTouched = false;  // ユーザーが入力したかどうかのフラグ
+authorsEle.addEventListener('input', () => { isTitleAuthorFormTouched = true; checkTitleAuthorForm(); });
+titleEle.addEventListener('input', () => { isTitleAuthorFormTouched = true; checkTitleAuthorForm(); });
 var isTitleAuthorValid = false;
 async function checkTitleAuthorForm() {
     isTitleAuthorValid = false;
@@ -143,9 +146,23 @@ async function checkTitleAuthorForm() {
     const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`
     songEditInfoTitleAuthorsEle.innerHTML = loadingEle;
 
-    // タイトルと作者が空の場合
-    if (titleEle.value === '' || authorsEle.value === '') {
-        songEditInfoTitleAuthorsEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>タイトルと作者を入力してください</span>";
+    // 作者が空の場合（ユーザーが入力した後のみエラー表示）
+    if (authorsEle.value.trim() === '') {
+        if (isTitleAuthorFormTouched) {
+            songEditInfoTitleAuthorsEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>作者は空白にできません</span>";
+        } else {
+            songEditInfoTitleAuthorsEle.innerHTML = "";
+        }
+        return;
+    }
+
+    // タイトルが空の場合
+    if (titleEle.value === '') {
+        if (isTitleAuthorFormTouched) {
+            songEditInfoTitleAuthorsEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>タイトルを入力してください</span>";
+        } else {
+            songEditInfoTitleAuthorsEle.innerHTML = "";
+        }
         return;
     }
 
