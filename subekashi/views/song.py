@@ -45,10 +45,11 @@ def song(request, song_id):
         imitated_list |= imitated_or_none
 
     # 模倣元曲数と模倣曲数の数をdescriptionに記述
-    # TODO countじゃなくてexist
     description = ""
-    description += f"模倣元の数：{imitate_list.count()}, " if imitate_list.count() else ""
-    description += f"模倣曲の数：{imitated_list.count()}, " if imitated_list.count() else ""
+    imitate_count = imitate_list.count()
+    imitated_count = imitated_list.count()
+    description += f"模倣元の数：{imitate_count}, " if imitate_count else ""
+    description += f"模倣曲の数：{imitated_count}, " if imitated_count else ""
 
     # 歌詞の一部をdescriptionに記述
     description_lyrics = song.lyrics[:50]
