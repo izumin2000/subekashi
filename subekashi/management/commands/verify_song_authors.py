@@ -18,6 +18,17 @@ class Command(BaseCommand):
         self.stdout.write(f'channelフィールドが設定されている曲数: {songs_with_channel.count()}')
         self.stdout.write(f'authorsフィールドが設定されている曲数: {songs_with_authors.count()}')
 
+        # authorを持たないsongを検出
+        songs_without_authors = Song.objects.filter(authors__isnull=True)
+        if songs_without_authors.exists():
+            self.stdout.write(self.style.WARNING(f'\n[WARNING] authorを持たないsong: {songs_without_authors.count()}件'))
+            self.stdout.write('\n一覧:')
+            for song in songs_without_authors:
+                channel_info = f' - Channel: "{song.channel}"' if song.channel else ' - Channel: (空)'
+                self.stdout.write(f'  Song ID {song.id}: "{song.title}"{channel_info}')
+        else:
+            self.stdout.write(self.style.SUCCESS('\n[OK] すべてのsongがauthorを持っています'))
+
         # channelがあるがauthorsがない曲を検出
         songs_with_channel_no_authors = songs_with_channel.filter(authors__isnull=True)
         if songs_with_channel_no_authors.exists():
