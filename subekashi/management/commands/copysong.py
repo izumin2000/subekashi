@@ -4,7 +4,7 @@ from typing import Dict
 import urllib.request
 import json
 
-# TODO Song API 
+# TODO 本番環境にAuthorを適用後copysongカスタムコマンドの動作確認
 class Command(BaseCommand):
     help = "公開環境のすべかしから指定した曲またはすべての曲をコピーする。すでにあるファイルは上書きしない。"
     original_song_api = "https://lyrics.imicomweb.com/api/song/"
