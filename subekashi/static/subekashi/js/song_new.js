@@ -86,6 +86,9 @@ urlEle.addEventListener('input', checkAutoForm)
 // タイトル・作者入力フォームの入力チェック
 var authorsEle = document.getElementById('authors');
 var titleEle = document.getElementById('title');
+var isManualFormTouched = false;  // ユーザーが入力したかどうかのフラグ
+authorsEle.addEventListener('input', () => { isManualFormTouched = true; checkManualForm(); });
+titleEle.addEventListener('input', () => { isManualFormTouched = true; checkManualForm(); });
 async function checkManualForm() {
     const authorsEle = document.getElementById('authors');
     const titleEle = document.getElementById('title');
@@ -94,8 +97,19 @@ async function checkManualForm() {
     const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`
     newFormAutoManualEle.innerHTML = loadingEle;
 
-    // どちらかが空の場合
-    if (authorsEle.value === '' || titleEle.value === '') {
+    // 作者が空の場合（ユーザーが入力した後のみエラー表示）
+    if (authorsEle.value.trim() === '') {
+        if (isManualFormTouched) {
+            newFormAutoManualEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>作者は空白にできません</span>";
+        } else {
+            newFormAutoManualEle.innerHTML = "";
+        }
+        document.getElementById('new-submit-manual').disabled = true;
+        return;
+    }
+
+    // タイトルが空の場合
+    if (titleEle.value === '') {
         newFormAutoManualEle.innerHTML = "";
         document.getElementById('new-submit-manual').disabled = true;
         return;

@@ -50,9 +50,14 @@ def song_new(request):
             dataD["error"] = "URLは既に登録されています。"
             return render(request, 'subekashi/song_new.html', dataD)
         
-        # タイトルか作者が空の場合はエラー
-        if ("" in [title, authors_input]) :
-            dataD["error"] = "タイトルか作者が空です。"
+        # 作者が空または空白のみの場合はエラー
+        if not authors_input.strip():
+            dataD["error"] = "作者は空白にできません。"
+            return render(request, 'subekashi/song_new.html', dataD)
+
+        # タイトルが空の場合はエラー
+        if not title:
+            dataD["error"] = "タイトルが未入力です。"
             return render(request, 'subekashi/song_new.html', dataD)
 
         cleaned_authors = authors_input.replace(" ,", ",").replace(", ", ",")
