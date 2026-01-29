@@ -24,16 +24,49 @@ class Command(BaseCommand):
             return
         result = body['result']
         self.stdout.write(self.style.SUCCESS(f"{len(result)}曲を取得しました。"))
+
         songs = []
+        all_authors_data = []
         for songjson in result:
             song = self.json_to_song(songjson)
             if song is not None:
                 songs.append(song)
+                if hasattr(song, '_authors_data'):
+                    all_authors_data.extend(song._authors_data)
+
+        # Songを一括作成
         Song.objects.bulk_create(songs)
-        # authorsを一括設定
-        self.stdout.write("Authorsを設定中です...")
+        self.stdout.write(self.style.SUCCESS(f"{len(songs)}曲を作成しました。"))
+
+        # Authorを一括作成
+        self.stdout.write("Authorsを作成中です...")
+        unique_authors = {(a['id'], a['name']) for a in all_authors_data}
+        authors_to_create = []
+        for author_id, name in unique_authors:
+            if not Author.objects.filter(id=author_id).exists():
+                authors_to_create.append(Author(id=author_id, name=name))
+
+        if authors_to_create:
+            Author.objects.bulk_create(authors_to_create, ignore_conflicts=True)
+            self.stdout.write(f"  {len(authors_to_create)}件のAuthorを作成しました。")
+
+        # Song-Author関係を一括作成
+        self.stdout.write("Song-Author関係を設定中です...")
+        song_authors = []
         for song in songs:
-            self._set_song_authors(song)
+            if hasattr(song, '_authors_data'):
+                for author_data in song._authors_data:
+                    song_authors.append(
+                        Song.authors.through(
+                            song_id=song.id,
+                            author_id=author_data['id']
+                        )
+                    )
+
+        if song_authors:
+            Song.authors.through.objects.bulk_create(song_authors, ignore_conflicts=True)
+            self.stdout.write(f"  {len(song_authors)}件の関係を作成しました。")
+
         self.stdout.write(self.style.SUCCESS(f"処理が完了しました。"))
 
     def request_song(self, id):
@@ -59,6 +92,8 @@ class Command(BaseCommand):
 
     def _set_song_authors(self, song):
         """Songにauthorsを設定する"""
+        if song is None:
+            return
         if not hasattr(song, '_authors_data'):
             return
 
