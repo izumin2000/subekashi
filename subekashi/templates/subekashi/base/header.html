@@ -12,9 +12,16 @@
     </div>
     
     <div id="subekashi-header">
-        <a href="{% url 'subekashi:top' %}">
-            <img name="thumbnail" src="{% static 'subekashi/image/icon.png' %}" alt="全て歌詞の所為です。のロゴ" height="45" width="45" loading="lazy">
-        </a>
+        {% now "Y-m-d" as today %}
+        {% if today == "2026-02-05" %}
+            <a href="{% url 'article:default_article' 'dekoko202602' %}">
+                <img name="thumbnail" src="{% static 'subekashi/image/defoko20260205.gif' %}" alt="デフォ子誕生祭2026年2月5日" style="height:60px" loading="lazy">
+            </a>
+        {% else %}
+            <a href="{% url 'subekashi:top' %}">
+                <img name="thumbnail" src="{% static 'subekashi/image/icon.png' %}" alt="全て歌詞の所為です。のロゴ" height="45" width="45" loading="lazy">
+            </a>
+        {% endif %}
         <a href="{% url 'subekashi:top' %}">全て歌詞の所為です。</a>
     </div>
 </header>
