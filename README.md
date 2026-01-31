@@ -261,7 +261,6 @@ python manage.py runserver
 
 その他、issueの起票だけでも助かります。  
 マージの場所はmainでお願いします。  
-PRにはClaude Code Actionsを使用しております。  
 
 ## リンク集
 
