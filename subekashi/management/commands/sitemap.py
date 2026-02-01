@@ -1,7 +1,7 @@
 from config.settings import DEBUG
 from django.core.management.base import BaseCommand
 from django.conf import settings
-from subekashi.models import Song
+from subekashi.models import Song, Author
 from article.models import Article
 import os
 from xml.etree.ElementTree import Element, SubElement, ElementTree
@@ -31,11 +31,13 @@ class Command(BaseCommand):
             # /songs/<int:song_id> のURL
             self.add_url(urlset, f"{base_url}/songs/{song.id}/", "0.8")
 
-        # 優先度が0.8の動的パス (一意のchannel)
-        channels_raw = songs.values_list("channel", flat=True)
-        channels_set = set([channels for channel_raw in channels_raw for channels in channel_raw.split(",")])  # チャンネルの重複を削除
-        for channel in channels_set:
-            self.add_url(urlset, f"{base_url}/channel/{channel}/", "0.8")
+        # 優先度が0.8の動的パス (作者)
+        authors = Author.objects.all()
+        for author in authors:
+            # /author/<int:author_id> のURL（新形式）
+            self.add_url(urlset, f"{base_url}/author/{author.id}/", "0.8")
+            # /channel/<str:author_name> のURL（旧形式、リダイレクトのため維持）
+            self.add_url(urlset, f"{base_url}/channel/{author.name}/", "0.7")
 
         # 優先度が0.8の動的パス (article_id)
         articles = Article.objects.filter(is_open = True).exclude(tag = "news")

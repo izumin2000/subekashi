@@ -7,6 +7,7 @@ from subekashi.lib.ip import *
 from subekashi.lib.discord import *
 from subekashi.lib.youtube import *
 from subekashi.lib.song_filter import song_filter
+from subekashi.lib.author_helpers import get_or_create_authors
 
 
 def song_new(request):
@@ -16,7 +17,7 @@ def song_new(request):
 
     if request.method == "POST":
         title = request.POST.get("title", "")
-        channel = request.POST.get("channel", "")
+        authors_input = request.POST.get("authors", "")
         url = request.POST.get("url", "")
         is_original = bool(request.POST.get("is-original-auto", "") + request.POST.get("is-original-manual", ""))
         is_deleted = bool(request.POST.get("is-deleted-auto", "") + request.POST.get("is-deleted-manual", ""))
@@ -30,7 +31,7 @@ def song_new(request):
             youtube_id = get_youtube_id(url)
             youtube_res = get_youtube_api(youtube_id)
             title = youtube_res.get("title", "")
-            channel = youtube_res.get("channel", "")
+            authors_input = youtube_res.get("author", "")       # 現状、YouTube Data APIの仕様上,1チャンネルしか取得できない。
             
         # URLがYouTubeのURLでない場合はエラー
         if not is_youtube_url(url) and url:
@@ -49,32 +50,38 @@ def song_new(request):
             dataD["error"] = "URLは既に登録されています。"
             return render(request, 'subekashi/song_new.html', dataD)
         
-        # タイトルかチャンネルが空の場合はエラー
-        if ("" in [title, channel]) :
-            dataD["error"] = "タイトルかチャンネルが空です。"
+        # 作者が空または空白のみの場合はエラー
+        if not authors_input.strip():
+            dataD["error"] = "作者は空白にできません。"
             return render(request, 'subekashi/song_new.html', dataD)
-        
-        # DBに保存する値たち
-        # TODO Channelテーブルを利用する
-        # WARNING channelはそのままURLになるので/は別の文字╱に変換しないといけない
-        cleaned_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
-        
-        # フォームに書かれた各チャンネルの掲載拒否
+
+        # タイトルが空の場合はエラー
+        if not title:
+            dataD["error"] = "タイトルが未入力です。"
+            return render(request, 'subekashi/song_new.html', dataD)
+
+        cleaned_authors = authors_input.replace(" ,", ",").replace(", ", ",")
+
+        # authorsフィールドの処理: カンマ区切りの作者名をAuthorオブジェクトに変換
+        author_names = cleaned_authors.split(',')
+        authors = get_or_create_authors(author_names)
+
+        # 掲載拒否リストの読み込み
         try:
             from subekashi.constants.dynamic.reject import REJECT_LIST
         except:
             REJECT_LIST = []
-        
-        for check_channel in cleaned_channel.split(","):
-            if check_channel in REJECT_LIST:
-                dataD["error"] = f"{check_channel}さんの曲は登録することができません。"
+
+        # 掲載拒否作者か判断する
+        for author in authors:
+            if author.name in REJECT_LIST:
+                dataD["error"] = f"{author.name}さんの曲は登録することができません。"
                 return render(request, 'subekashi/song_new.html', dataD)
-        
+
         # Songの登録
         ip = get_ip(request)
         song = Song(
             title = title,
-            channel = cleaned_channel,
             url = cleaned_url,
             post_time = timezone.now(),
             isoriginal = is_original,
@@ -86,8 +93,12 @@ def song_new(request):
             view = youtube_res.get("view", None),
             like = youtube_res.get("like", None),
         )
-        
+
         song.save()
+
+        # authorsフィールドの更新
+        song.authors.set(authors)
+
         song_id = song.id
         
         # 変更内容のマークダウンと送信するDiscordの文言の作成
@@ -96,7 +107,7 @@ def song_new(request):
         
         COLUMNS = [
             {"label": "タイトル", "value": title},
-            {"label": "チャンネル名", "value": cleaned_channel},
+            {"label": "作者", "value": ", ".join([a.name for a in authors])},
             {"label": "URL", "value": cleaned_url},
             {"label": "オリジナル", "value": yes_no(is_original)},
             {"label": "削除済み", "value": yes_no(is_deleted)},

@@ -6,8 +6,8 @@
 {% block css %}{% static 'subekashi/css/channel.css'%}{% endblock %}
 
 {% block content %}
-<section id="channelsettion">
-    <h1>{{ channel }}</h1>
+<section>
+    <h1>{{ author }}</h1>
     <div class="underline"></div>
     {% for songIns in songInsL %}
         {% render_song_card songIns %}
@@ -15,7 +15,7 @@
         <p id="songnotfound">曲が見つかりませんでした</p>
     {% endfor %}
     <div class="dummybuttons">
-        <a href="{% url 'subekashi:song_new' %}?channel={{ channel }}">
+        <a href="{% url 'subekashi:song_new' %}?authors={{ author }}">
             <div class="dummybutton"><p>曲を登録する</p></div>
         </a>
     </div>
