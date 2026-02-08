@@ -261,6 +261,7 @@ python manage.py runserver
 
 その他、issueの起票だけでも助かります。  
 マージの場所はmainでお願いします。  
+※ このリポジトリには[Amazon Q](https://aws.amazon.com/jp/q/)がインストールされています。(特に別途対応は不要です)  
 
 ## リンク集
 
