@@ -10,9 +10,6 @@ def default_article(request, id):
     except:
         return render(request, 'subekashi/404.html', status=404)
     
-    if not article.is_open:
-        return render(request, 'subekashi/404.html', status=404)
-    
     if article.post_time >= timezone.now():
         return render(request, 'subekashi/404.html', status=404)
     
