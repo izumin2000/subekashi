@@ -405,7 +405,7 @@ function isLack(song) {
 }
 
 // 自動スクロール
-const timer = null;
+let timer = null;
 function autoScroll(deley) {
     const htmlEle = document.documentElement || document.body;
 
