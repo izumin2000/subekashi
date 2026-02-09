@@ -143,9 +143,15 @@ async function checkTitleChannelForm() {
     const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`
     songEditInfoTitleChannelEle.innerHTML = loadingEle;
 
-    // タイトルとチャンネル名が空の場合
-    if (titleEle.value === '' || channelEle.value === '') {
-        songEditInfoTitleChannelEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>タイトルとチャンネル名を入力してください</span>";
+    // タイトルが空白の場合
+    if (titleEle.value === '') {
+        songEditInfoTitleChannelEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>タイトルを入力してください</span>";
+        return;
+    }
+
+    // 作者が空白の場合
+    if (channelEle.value === '') {
+        songEditInfoTitleChannelEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>チャンネル名を入力してください</span>";
         return;
     }
 

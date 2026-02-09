@@ -90,15 +90,15 @@ async function checkManualForm() {
     const titleEle = document.getElementById('title');
     const newFormAutoManualEle = document.getElementById('new-form-manual-info');
 
-    const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`
-    newFormAutoManualEle.innerHTML = loadingEle;
-
     // どちらかが空の場合
     if (channelEle.value === '' || titleEle.value === '') {
         newFormAutoManualEle.innerHTML = "";
         document.getElementById('new-submit-manual').disabled = true;
         return;
     }
+
+    const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`
+    newFormAutoManualEle.innerHTML = loadingEle;
     
     document.getElementById('new-submit-manual').disabled = false;
 
