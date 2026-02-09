@@ -88,7 +88,7 @@ var authorsEle = document.getElementById('authors');
 var titleEle = document.getElementById('title');
 var isManualFormTouched = false;  // ユーザーが入力したかどうかのフラグ
 authorsEle.addEventListener('input', () => { isManualFormTouched = true; checkManualForm(); });
-titleEle.addEventListener('input', () => { isManualFormTouched = true; checkManualForm(); });
+titleEle.addEventListener('input', checkManualForm());
 async function checkManualForm() {
     const authorsEle = document.getElementById('authors');
     const titleEle = document.getElementById('title');

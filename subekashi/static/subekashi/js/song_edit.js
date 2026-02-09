@@ -146,20 +146,20 @@ async function checkTitleAuthorForm() {
     const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`
     songEditInfoTitleAuthorsEle.innerHTML = loadingEle;
 
-    // 作者が空の場合（ユーザーが入力した後のみエラー表示）
-    if (authorsEle.value.trim() === '') {
+    // タイトルが空の場合
+    if (titleEle.value === '') {
         if (isTitleAuthorFormTouched) {
-            songEditInfoTitleAuthorsEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>作者は空白にできません</span>";
+            songEditInfoTitleAuthorsEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>タイトルを入力してください</span>";
         } else {
             songEditInfoTitleAuthorsEle.innerHTML = "";
         }
         return;
     }
 
-    // タイトルが空の場合
-    if (titleEle.value === '') {
+    // 作者が空白の場合（ユーザーが入力した後のみエラー表示）
+    if (authorsEle.value.trim() === '') {
         if (isTitleAuthorFormTouched) {
-            songEditInfoTitleAuthorsEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>タイトルを入力してください</span>";
+            songEditInfoTitleAuthorsEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>作者は空白にできません</span>";
         } else {
             songEditInfoTitleAuthorsEle.innerHTML = "";
         }
