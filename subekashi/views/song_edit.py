@@ -8,6 +8,7 @@ from subekashi.lib.url import *
 from subekashi.lib.ip import *
 from subekashi.lib.discord import *
 from subekashi.lib.song_filter import song_filter
+from subekashi.lib.author_helpers import get_or_create_authors
 
 
 def song_edit(request, song_id):
@@ -28,7 +29,7 @@ def song_edit(request, song_id):
 
     if request.method == "POST":
         title = request.POST.get("title", "")
-        channel = request.POST.get("channel", "")
+        authors_input = request.POST.get("authors", "")
         url = request.POST.get("url", "")
         imitates = request.POST.get("imitate", "")
         lyrics = request.POST.get("lyrics", "")
@@ -59,16 +60,23 @@ def song_edit(request, song_id):
                 該当のURLを登録できるように、ご連絡ください。"
                 return render(request, 'subekashi/song_edit.html', dataD)
 
-        # タイトルとチャンネルが空の場合はエラー
-        if ("" in [title, channel]) :
-            dataD["error"] = "タイトルかチャンネルが空です。"
+        # 作者が空または空白のみの場合はエラー
+        if not authors_input.strip():
+            dataD["error"] = "作者は空白にできません。"
             return render(request, 'subekashi/song_edit.html', dataD)
-        
+
+        # タイトルが空の場合はエラー
+        if not title:
+            dataD["error"] = "タイトルが未入力です。"
+            return render(request, 'subekashi/song_edit.html', dataD)
+
         # DBに保存する値たち
-        # TODO Channelテーブルを利用する
-        # WARNING channelはそのままURLになるので/は別の文字╱に変換しないといけない
         ip = get_ip(request)
-        cleaned_channel = channel.replace("/", "╱").replace(" ,", ",").replace(", ", ",")
+        cleaned_authors = authors_input.replace(" ,", ",").replace(", ", ",")
+
+        # authorsフィールドの処理: カンマ区切りの作者をAuthorオブジェクトに変換
+        author_names = cleaned_authors.split(',')
+        author_objects = get_or_create_authors(author_names)
         
         # 自分自身や重複している曲は模倣元として登録できない
         imitates_list = set(imitates.split(","))
@@ -81,13 +89,11 @@ def song_edit(request, song_id):
         except:
             REJECT_LIST = []
         
-        # 掲載拒否チャンネルか判断する
-        for check_channel in cleaned_channel.split(","):
-            if not check_channel in REJECT_LIST:
-                continue
-            
-            dataD["error"] = f"{check_channel}さんの曲は登録することができません。"
-            return render(request, 'subekashi/song_new.html', dataD)
+        # 掲載拒否作者か判断する
+        for author in author_objects:
+            if author.name in REJECT_LIST:
+                dataD["error"] = f"{author.name}さんの曲は登録することができません。"
+                return render(request, 'subekashi/song_edit.html', dataD)
 
         # 模倣の編集
         # TODO imitateテーブルを利用する
@@ -132,7 +138,7 @@ def song_edit(request, song_id):
         # songを更新する前にhistoryのために更新前後のsongの情報を記録しておく
         COLUMNS = [
             {"label": "タイトル", "before": song.title ,"after": title},
-            {"label": "チャンネル名", "before": song.channel ,"after": cleaned_channel},
+            {"label": "作者", "before": song.authors_str(), "after": ", ".join([a.name for a in author_objects])},
             {"label": "URL", "before": song.url ,"after": cleaned_url},
             {"label": "オリジナル", "before": yes_no(song.isoriginal) ,"after": yes_no(is_original)},
             {"label": "削除済み", "before": yes_no(song.isdeleted) ,"after": yes_no(is_deleted)},
@@ -146,7 +152,6 @@ def song_edit(request, song_id):
 
         # songの更新
         song.title = title
-        song.channel = cleaned_channel
         song.url = cleaned_url
         song.lyrics = lyrics
         song.imitate = imitates
@@ -158,6 +163,9 @@ def song_edit(request, song_id):
         song.isdraft = is_draft
         song.post_time = timezone.now()
         song.save()
+
+        # authorsフィールドの更新
+        song.authors.set(author_objects)
         
         # History DBの変更内容とDisocrdの#新規作成・変更チャンネルに送る文の用意
         changes = [["種類", "編集前", "編集後"]]

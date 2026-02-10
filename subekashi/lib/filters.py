@@ -42,7 +42,8 @@ class SongFilter(django_filters.FilterSet):
         lookup_expr='icontains',
         validators=[validate_max_length(500)]
     )
-    channel = django_filters.CharFilter(
+    author = django_filters.CharFilter(
+        field_name='authors__name',
         lookup_expr='icontains',
         validators=[validate_max_length(500)]
     )
@@ -61,8 +62,8 @@ class SongFilter(django_filters.FilterSet):
         lookup_expr='exact',
         validators=[validate_max_length(500)]
     )
-    channel_exact = django_filters.CharFilter(
-        field_name='channel',
+    author_exact = django_filters.CharFilter(
+        field_name='authors__name',
         lookup_expr='exact',
         validators=[validate_max_length(500)]
     )
@@ -178,12 +179,19 @@ class SongFilter(django_filters.FilterSet):
         allowed_fields = {
             'id', '-id',
             'title', '-title',
-            'channel', '-channel',
+            'author', '-author',
+            'authors__name', '-authors__name',
             'upload_time', '-upload_time',
             'view', '-view',
             'like', '-like',
             'post_time', '-post_time',
         }
+
+        # authorソートをauthors__nameに変換
+        if value == 'author':
+            value = 'authors__name'
+        elif value == '-author':
+            value = '-authors__name'
 
         # バリデーション
         if value not in allowed_fields:
@@ -220,5 +228,9 @@ class SongFilter(django_filters.FilterSet):
         # like関連のフィルタまたはソートがある場合、like >= 1 を適用
         if has_like_filter_or_sort(self.data):
             queryset = queryset.filter(like__gte=1)
+
+        # authorフィルタ（authors__name）使用時にのみdistinct()を適用
+        if 'author' in self.data or 'author_exact' in self.data:
+            queryset = queryset.distinct()
 
         return queryset

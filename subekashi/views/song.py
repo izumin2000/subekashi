@@ -45,10 +45,11 @@ def song(request, song_id):
         imitated_list |= imitated_or_none
 
     # 模倣元曲数と模倣曲数の数をdescriptionに記述
-    # TODO countじゃなくてexist
     description = ""
-    description += f"模倣元の数：{imitate_list.count()}, " if imitate_list.count() else ""
-    description += f"模倣曲の数：{imitated_list.count()}, " if imitated_list.count() else ""
+    imitate_count = imitate_list.count()
+    imitated_count = imitated_list.count()
+    description += f"模倣元の数：{imitate_count}, " if imitate_count else ""
+    description += f"模倣曲の数：{imitated_count}, " if imitated_count else ""
 
     # 歌詞の一部をdescriptionに記述
     description_lyrics = song.lyrics[:50]
@@ -56,17 +57,17 @@ def song(request, song_id):
     
     # タグを持っているかどうかの確認
     has_tag = False
-    has_tag |= song.channel == "全てあなたの所為です。"
+    has_tag |= song.authors.filter(id=1).exists()
     has_tag |= is_lack(song) or song.isdraft or song.isoriginal or song.isjoke or song.isinst
     has_tag |= not(song.issubeana) or song.isdeleted
     
     # テンプレートに渡す辞書を作成
     dataD = {
         "description": description,
-        "metatitle": f"{song.title} / {song.channel}",
+        "metatitle": f"{song.title} / {song.authors_str()}",
         "song": song,
         "br_cleaned_lyrics": br_cleaned_lyrics,
-        "channels": song.channel.split(","),
+        "authors": song.authors.all(),
         "is_lack": is_lack(song),
         "links": links,
         "imitate_list": imitate_list,

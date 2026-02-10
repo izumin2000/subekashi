@@ -56,20 +56,21 @@ async function checkAutoForm() {
     // 既に登録されているURLの場合
     if (existingSongs.length) {
         const existingSong = existingSongs[0];
-        const infoHTML = isLack(existingSong) 
+        const authorText = getAuthorText(existingSong);
+        const infoHTML = isLack(existingSong)
         ?
         `<span class="info"><i class="fas fa-info-circle info"></i>このURLは<br>
         song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
         タイトル：${existingSong.title}<br>
-        チャンネル名：${existingSong.channel}<br>
+        作者：${authorText}<br>
         として<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">既に登録されています</a>がまだ未完成です</span>`
         :
         `<span class='error'><i class='fas fa-ban error'></i>このURLは<br>
         song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
         タイトル：${existingSong.title}<br>
-        チャンネル名：${existingSong.channel}<br>
+        作者：${authorText}<br>
         として<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">既に登録されています</a></span>`;
-        newFormAutoInfoEle.innerHTML = infoHTML; 
+        newFormAutoInfoEle.innerHTML = infoHTML;
         return;
     }
 
@@ -82,27 +83,41 @@ async function checkAutoForm() {
 
 urlEle.addEventListener('input', checkAutoForm)
 
-// タイトル・チャンネル名入力フォームの入力チェック
-var channelEle = document.getElementById('channel');
+// タイトル・作者入力フォームの入力チェック
+var authorsEle = document.getElementById('authors');
 var titleEle = document.getElementById('title');
+var isManualFormTouched = false;  // ユーザーが入力したかどうかのフラグ
+authorsEle.addEventListener('input', () => { isManualFormTouched = true; checkManualForm(); });
+titleEle.addEventListener('input', checkManualForm());
 async function checkManualForm() {
-    const channelEle = document.getElementById('channel');
+    const authorsEle = document.getElementById('authors');
     const titleEle = document.getElementById('title');
     const newFormAutoManualEle = document.getElementById('new-form-manual-info');
 
     const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`
     newFormAutoManualEle.innerHTML = loadingEle;
 
-    // どちらかが空の場合
-    if (channelEle.value === '' || titleEle.value === '') {
+    // 作者が空の場合（ユーザーが入力した後のみエラー表示）
+    if (authorsEle.value.trim() === '') {
+        if (isManualFormTouched) {
+            newFormAutoManualEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>作者は空白にできません</span>";
+        } else {
+            newFormAutoManualEle.innerHTML = "";
+        }
+        document.getElementById('new-submit-manual').disabled = true;
+        return;
+    }
+
+    // タイトルが空の場合
+    if (titleEle.value === '') {
         newFormAutoManualEle.innerHTML = "";
         document.getElementById('new-submit-manual').disabled = true;
         return;
     }
-    
+
     document.getElementById('new-submit-manual').disabled = false;
 
-    const existingSongsRes = await exponentialBackoff(`song/?title_exact=${titleEle.value}&channel_exact=${channelEle.value}`, "titlechannel", checkManualForm);
+    const existingSongsRes = await exponentialBackoff(`song/?title_exact=${titleEle.value}&author_exact=${authorsEle.value}`, "titleauthor", checkManualForm);
     
     if (existingSongsRes == undefined) {
         return;
@@ -124,7 +139,7 @@ async function checkManualForm() {
         同じ曲の場合、代わりにこちらの記事を編集してください。`
         :
         `<span class="warning"><i class="fas fa-exclamation-triangle warning"></i>
-        タイトル・チャンネル名ともに一致している曲が<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">見つかりました。</a><br>
+        タイトル・作者ともに一致している曲が<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">見つかりました。</a><br>
         song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
         ${InnerURL}
         既に登録されている曲と登録しようとしている曲が別の曲に限り、登録することができます。</span>`;
@@ -139,9 +154,9 @@ async function checkManualForm() {
         return;
     }
 
-    // チャンネル名にスペースが含まれている場合
-    if (channelEle.value != channelEle.value.trim()) {
-        newFormAutoManualEle.innerHTML = `<span class="info"><i class='fas fa-info-circle info'></i>チャンネル名にスペースが含まれています。<br>意図して入力していない場合、削除してください。</span>`;
+    // 作者にスペースが含まれている場合
+    if (authorsEle.value != authorsEle.value.trim()) {
+        newFormAutoManualEle.innerHTML = `<span class="info"><i class='fas fa-info-circle info'></i>作者にスペースが含まれています。<br>意図して入力していない場合、削除してください。</span>`;
         return;
     }
 
@@ -149,7 +164,7 @@ async function checkManualForm() {
     newFormAutoManualEle.innerHTML = `<span class='ok'><i class='fas fa-check-circle ok'></i>登録可能です</span>`;
 }
 
-channelEle.addEventListener('input', checkManualForm);
+authorsEle.addEventListener('input', checkManualForm);
 titleEle.addEventListener('input', checkManualForm);
 
 // ページから戻ってきたときの処理

@@ -30,14 +30,14 @@
                 {{ song.title }}
             </td>
         </tr>
-        {% for channel in channels %}
+        {% for author in authors %}
             <tr>
                 <td>
-                    <i class="far fa-copy" data-copy="{{ channel|escape }}"></i>
-                    <i class="fas fa-user-circle"></i><p>チャンネル名</p>
+                    <i class="far fa-copy" data-copy="{{ author.name|escape }}"></i>
+                    <i class="fas fa-user-circle"></i><p>作者</p>
                 </td>
                 <td>
-                    <a href="{% url 'subekashi:channel' channel %}">{{ channel }}</a>
+                    <a href="{% url 'subekashi:author' author.id %}">{{ author.name }}</a>
                 </td>
             </tr>
         {% endfor %}
@@ -58,9 +58,6 @@
                     <i class="fas fa-tags"></i><p>タグ</p>
                 </td>
                 <td>
-                    {% if song.channel == "全てあなたの所為です。" %}
-                        <p id="original-tag">オリジナル</p>
-                    {% endif %}
                     {% if is_lack %}
                         <a href="{% url 'subekashi:songs' %}?islack=True">作成途中</a>
                     {% endif %}

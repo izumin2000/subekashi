@@ -1,4 +1,4 @@
 <div class="song-guesser" onclick=songGuesserClick({{ song.id }})>
-    <p><span class="channel"><i class="fas fa-user-circle"></i> {{ song.channel|escapejs }}</span> 
-    <i class="fas fa-music"></i> {{ song.title|escapejs }}</p> 
+    <p><span class="author"><i class="fas fa-user-circle"></i> {{ song.authors.all|join:','|escapejs }}</span>
+    <i class="fas fa-music"></i> {{ song.title|escapejs }}</p>
 </div>

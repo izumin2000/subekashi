@@ -6,7 +6,7 @@
             onclick="categoryClick({
                 id: '{{ song.id }}',
                 title: '{{ song.title }}',
-                channel: '全てあなたの所為です。'
+                authors: [{ name: '全てあなたの所為です。' }]
             })">
             {% clean_title song.title %}<span>模倣</span>
         </button>
