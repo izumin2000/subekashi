@@ -20,4 +20,4 @@ def author(request, author_id):
     if len(titles) >= 80:
         titles = titles[:80] + "...など"
     dataD["description"] = f"{author_name}の曲一覧：{titles}"
-    return render(request, "subekashi/channel.html", dataD)
+    return render(request, "subekashi/author.html", dataD)
