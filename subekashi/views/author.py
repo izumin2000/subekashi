@@ -13,10 +13,15 @@ def author(request, author_id):
     }
 
     # authorsフィールドでフィルタ
-    songInsL = Song.objects.filter(authors__id=author_id).prefetch_related('authors').distinct()
+    songInsL = (
+    Song.objects
+    .filter(authors__id=author_id)
+    .distinct()
+    .order_by('-id')
+)
 
     dataD["songInsL"] = songInsL
-    titles = ", ".join([songIns.title for songIns in songInsL[::-1]])
+    titles = ", ".join(song.title for song in songInsL)
     if len(titles) >= 80:
         titles = titles[:80] + "...など"
     dataD["description"] = f"{author_name}の曲一覧：{titles}"
