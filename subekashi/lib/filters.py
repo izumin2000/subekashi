@@ -180,7 +180,6 @@ class SongFilter(django_filters.FilterSet):
             'id', '-id',
             'title', '-title',
             'author', '-author',
-            'authors__name', '-authors__name',
             'upload_time', '-upload_time',
             'view', '-view',
             'like', '-like',
