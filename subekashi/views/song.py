@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from subekashi.models import *
-from subekashi.lib.filter import is_lack
+from subekashi.lib.filter import filter_by_lack
 from subekashi.lib.url import get_all_media
 import re
 
@@ -55,10 +55,13 @@ def song(request, song_id):
     description_lyrics = song.lyrics[:50]
     description += f"歌詞: {description_lyrics}" if description_lyrics else ""
     
+    # 未完成かどうか
+    is_lack = Song.objects.filter(pk=song_id).filter(filter_by_lack).exists()
+    
     # タグを持っているかどうかの確認
     has_tag = False
     has_tag |= song.authors.filter(id=1).exists()
-    has_tag |= is_lack(song) or song.isdraft or song.isoriginal or song.isjoke or song.isinst
+    has_tag |= is_lack or song.isdraft or song.isoriginal or song.isjoke or song.isinst
     has_tag |= not(song.issubeana) or song.isdeleted
     
     # テンプレートに渡す辞書を作成
@@ -68,7 +71,7 @@ def song(request, song_id):
         "song": song,
         "br_cleaned_lyrics": br_cleaned_lyrics,
         "authors": song.authors.all(),
-        "is_lack": is_lack(song),
+        "is_lack": is_lack,
         "links": links,
         "imitate_list": imitate_list,
         "imitated_list": imitated_list,
