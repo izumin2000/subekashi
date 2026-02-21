@@ -53,22 +53,7 @@ def filter_by_mediatypes(mediatypes):
 
 # 未完成フィルター
 filter_by_lack = (
-    (Q(isdeleted = False) & Q(url = "")) |
-    (Q(isoriginal = False) & Q(issubeana = True) & Q(imitate = "") & ~Q(authors__id=1)) |
-    (Q(isinst = False) & Q(lyrics = ""))
+    Q(isdeleted=False, url="") |
+    Q(isoriginal=False, issubeana=True, imitate="") & ~Q(authors__id=1) |
+    Q(isinst=False, lyrics="")
 )
-
-# TODO filter_by_lackに共通化
-# 未完成かどうか
-def is_lack(song):
-    if (song.isdeleted == False) and (song.url == ""):
-        return True
-
-    if (song.isoriginal == False) and (song.issubeana == False) and (song.imitate == "") and not song.authors.filter(id=1).exists():
-        return True
-
-    if (song.isinst == False) and (song.lyrics == ""):
-        return True
-
-    return False   
-        
