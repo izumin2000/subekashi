@@ -1,5 +1,4 @@
 from django.shortcuts import render
-from django.utils import timezone
 from article.models import Article
 import markdown
 
@@ -10,7 +9,7 @@ def default_article(request, id):
     except:
         return render(request, 'subekashi/404.html', status=404)
     
-    if article.post_time >= timezone.now():
+    if not article.is_open:
         return render(request, 'subekashi/404.html', status=404)
     
     # 記事本文がマークダウンかどうかによってMD -> HTMLにする
