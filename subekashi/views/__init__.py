@@ -4,6 +4,7 @@ from subekashi.views.ad_complete import ad_complete
 from subekashi.views.ai import ai
 from subekashi.views.ai_result import ai_result
 from subekashi.views.api.ai import AiAPI
+from subekashi.views.author import author
 from subekashi.views.channel import channel
 from subekashi.views.contact import contact
 from subekashi.views.editor import editor

@@ -19,7 +19,7 @@ urlpatterns = [
     path('songs/<int:song_id>/edit/', song_edit, name='song_edit'),
     path('songs/<int:song_id>/history/', song_history, name='song_history'),
     path('songs/<int:song_id>/delete/', song_delete, name='song_delete'),
-    path('channel/<str:channelName>/', channel, name='channel'),
+    path('authors/<int:author_id>/', author, name='author'),
     path('editor/<int:editor_id>/', editor, name='editor'),
     path('ai/', ai, name='ai'),
     path('ai/result/', ai_result, name='ai_result'),
@@ -38,4 +38,5 @@ urlpatterns = [
     path('api/html/toast', toast, name='toast'),
     path('search/', RedirectView.as_view(url=f"/songs/", permanent=False)),
     path('new/', RedirectView.as_view(url='/songs/new/', permanent=False)),
+    path('channel/<str:channel_name>/', channel, name='channel'),
 ]

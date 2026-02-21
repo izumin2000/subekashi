@@ -49,7 +49,7 @@ def song_delete(request, song_id):
         ```{song.id}``` \n\
         {ROOT_URL}/songs/{song.id} \n\
         タイトル：{song.title}\n\
-        チャンネル名：{song.channel}\n\
+        チャンネル名：{song.authors_str()}\n\
         理由：{reason}\n\
         編集者：{editor}\
         '

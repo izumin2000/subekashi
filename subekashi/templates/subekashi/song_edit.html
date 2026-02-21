@@ -44,12 +44,11 @@
             <label for="title">曲名<i class="fas fa-info-circle" onclick="showTutorial('title')"></i></label>
             <input type="text" id="title" name="title" class="sansfont" value="{{ song.title }}" required>
         </div>
-        {% comment %} TODO チャンネルを複数入力形式に {% endcomment %}
         <div class="form-col">
-            <label for="channel">チャンネル名<i class="fas fa-info-circle" onclick="showTutorial('channel')"></i></label>
-            <input type="text" id="channel" name="channel" class="sansfont" value="{{ song.channel }}" required>
+            <label for="authors">作者<i class="fas fa-info-circle" onclick="showTutorial('authors')"></i></label>
+            <input type="text" id="authors" name="authors" class="sansfont" value="{{ song.authors.all|join:',' }}" required>
         </div>
-        <p class="song-edit-info" id="song-edit-info-title-channel"><img id='loading' src="{% static 'subekashi/image/loading.gif' %}" alt='loading'></img></p>
+        <p class="song-edit-info" id="song-edit-info-title-authors"><img id='loading' src="{% static 'subekashi/image/loading.gif' %}" alt='loading'></img></p>
         {% comment %} TODO URLを複数入力形式に {% endcomment %}
         <div class="form-col">
             <label for="url">URL<br>(複数可)<i class="fas fa-info-circle" onclick="showTutorial('url')"></i></label>
@@ -61,14 +60,14 @@
             <p>原曲から選択</p>
             {% render_categorys %}
             <p id="imitate-sub">もしくは模倣曲から選択</p>
-            <input type="text" id="imitate-title" class="sansfont" oninput="renderSongGuesser()" placeholder="タイトルかチャンネル名を入力">
+            <input type="text" id="imitate-title" class="sansfont" oninput="renderSongGuesser()" placeholder="タイトルか作者を入力">
             <div id="song-guesser" class="sansfont"></div>
             <template id="imitate-item-template">
                 <div class="imitate-item">
                     <p>
-                        <span class="channel">
+                        <span class="author">
                             <i class="fas fa-user-circle"></i>
-                            <span class="channel-name"></span>
+                            <span class="author-name"></span>
                         </span>
                         <i class="fas fa-music"></i>
                         <span class="title"></span>

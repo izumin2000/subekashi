@@ -5,7 +5,7 @@ from subekashi.constants.constants import ALL_MEDIAS
 def filter_by_keyword(keyword):
     return (
         Q(title__contains = keyword) |
-        Q(channel__contains = keyword) |
+        Q(authors__name__contains = keyword) |
         Q(lyrics__contains = keyword) |
         Q(url__contains = keyword)
     )
@@ -34,7 +34,7 @@ def filter_by_imitated(imitated):
 def filter_by_guesser(guesser):
     return (
         Q(title__contains = guesser) |
-        Q(channel__contains = guesser)
+        Q(authors__name__contains = guesser)
     )
 
 # メディアの検索に利用するフィルター
@@ -54,20 +54,21 @@ def filter_by_mediatypes(mediatypes):
 # 未完成フィルター
 filter_by_lack = (
     (Q(isdeleted = False) & Q(url = "")) |
-    (Q(isoriginal = False) & Q(issubeana = True) & Q(imitate = "") & ~Q(channel = "全てあなたの所為です。")) | 
+    (Q(isoriginal = False) & Q(issubeana = True) & Q(imitate = "") & ~Q(authors__id=1)) |
     (Q(isinst = False) & Q(lyrics = ""))
 )
 
+# TODO filter_by_lackに共通化
 # 未完成かどうか
 def is_lack(song):
     if (song.isdeleted == False) and (song.url == ""):
         return True
-    
-    if (song.isoriginal == False) and (song.issubeana == False) and (song.imitate == "") and (song.channel == "全てあなたの所為です。"):
+
+    if (song.isoriginal == False) and (song.issubeana == False) and (song.imitate == "") and not song.authors.filter(id=1).exists():
         return True
-    
+
     if (song.isinst == False) and (song.lyrics == ""):
         return True
-    
+
     return False   
         

@@ -13,7 +13,7 @@
 
     <div class="form-col">
         <label for="keyword">キーワード</label>
-        <input type="text" id="keyword" placeholder="タイトル・チャンネル名・歌詞・URL" value="{{ request.GET.keyword }}">
+        <input type="text" id="keyword" placeholder="タイトル・作者・歌詞・URL" value="{{ request.GET.keyword }}">
     </div>
     {% comment %} isdetail -> request.COOKIES.isdetail {% endcomment %}
     <details id="isdetail" {% if isdetail == "True" %}open{% endif %}>
@@ -23,8 +23,8 @@
             <input type="text" id="title" value="{{ request.GET.title }}">
         </div>
         <div class="form-col">
-            <label for="channel">チャンネル名</label>
-            <input type="text" id="channel" value="{{ request.GET.channel }}">
+            <label for="author">作者</label>
+            <input type="text" id="author" value="{{ request.GET.author }}">
         </div>
         <div class="form-col">
             <label for="lyrics">歌詞</label>
@@ -37,7 +37,7 @@
         <label for="imitate">模倣</label>
         <div id="imitate-div">
             <p>曲ID</p>
-            <input type="text" id="imitate" value="{{ request.GET.imitate }}" oninput="renderSongGuesser()" placeholder="タイトル・チャンネル名から入力">
+            <input type="text" id="imitate" value="{{ request.GET.imitate }}" oninput="renderSongGuesser()" placeholder="タイトル・作者から入力">
             <div id="song-guesser" class="sansfont"></div>
             <p id="imitate-sub">もしくは原曲から入力</p>
             {% render_categorys %}

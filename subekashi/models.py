@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone
 
 
-# SongやChannelを編集したユーザーのIPアドレスの情報
+# SongやAuthorを編集したユーザーのIPアドレスの情報
 # 画面上では"全て{song_id}の所為です。"と表示される
 class Editor(models.Model):
     ip = models.CharField(default = "", unique=True, max_length = 100)
@@ -31,7 +31,7 @@ class Song(models.Model):
     )
     
     title = models.CharField(default = "", max_length = 500)
-    channel = models.CharField(default = "", max_length = 500)      # TODO Channelテーブルの利用
+    authors = models.ManyToManyField('Author', related_name='songs', blank=True)
     url = models.CharField(blank = True, null = True, default = "", max_length = 500)       # TODO URLテーブルの利用
     lyrics = models.TextField(blank = True, null = True, default = "", max_length = 10000)
     # imitates = models.ManyToManyField("self", symmetrical=False, related_name="imitateds", blank=True)     # TODO 自己参照
@@ -53,15 +53,16 @@ class Song(models.Model):
 
     def __str__(self):
         return self.title
-    
+
+    def authors_str(self, separator=", "):
+        """作者をカンマ区切りの文字列で返す"""
+        author_names = [author.name for author in self.authors.all()]
+        return separator.join(author_names)
+
     def save(self, *args, **kwargs):
         if self.lyrics:
             self.lyrics = self.lyrics.replace("\r\n", "\n")
-            # TODO channel等もcleanする
         super().save(*args, **kwargs)
-    
-    # def channels(self):
-        # return
     
     # def urls(self):
         # return
@@ -77,8 +78,7 @@ class SongLink(models.Model):
 
 
 # 曲の作者の情報
-# TODO Channel -> Author, チャンネル名 -> 作者
-class Channel(models.Model):
+class Author(models.Model):
     name = models.CharField(unique=True, max_length = 500)
 
     def __str__(self):
@@ -89,14 +89,14 @@ class Channel(models.Model):
 
 
 # 曲の作者のwebページの情報
-class ChannelLink(models.Model):
+class AuthorLink(models.Model):
     url = models.CharField(max_length = 100)
-    channel = models.ForeignKey(Channel, on_delete = models.CASCADE, null=True, related_name="links")
+    author = models.ForeignKey(Author, on_delete = models.CASCADE, null=True, related_name="links")
 
 
 # 曲の作者の別の呼び方の情報
-# 曲の登録時や編集時に正式な呼び方(channel.name)に変更するために使用される
-class ChannelAlias(models.Model):
+# 曲の登録時や編集時に正式な呼び方(author.name)に変更するために使用される
+class AuthorAlias(models.Model):
     CHOICES = (
         ("id", "ID"),
         ("abbr", "略称"),
@@ -106,10 +106,10 @@ class ChannelAlias(models.Model):
         ("spell", "表記揺れ"),
         ("other", "別名義"),
     )
-    
+
     name = models.CharField(unique=True, max_length = 500)
     alias_type = models.CharField(default = "other", choices=CHOICES, max_length=10)
-    channel = models.ForeignKey(Channel, on_delete = models.CASCADE, related_name="aliases")
+    author = models.ForeignKey(Author, on_delete = models.CASCADE, related_name="aliases")
 
     def __str__(self):
         return self.name

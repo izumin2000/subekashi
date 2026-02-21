@@ -8,17 +8,24 @@ from subekashi.lib.url import get_all_media
 register = template.Library()
 
 @register.simple_tag
-def get_channel(song):
-    channels = song.channel.split(',')
+def get_author(song):
+    # authorsフィールドから作者を取得
+    authors_list = list(song.authors.all())
+
     # 合作なら
-    if len(channels) >= 2:
+    if len(authors_list) >= 2:
         return mark_safe('<i class="fas fa-user-friends"></i>合作')
-    # 単作なら
-    channel = channels[0]
+    
+    # 作者不明なら
+    if not authors_list:
+        # TODO ここはありえないのでdiscordの通知を追加する
+        return mark_safe('<i class="fas fa-user-circle"></i>作者不明')
+    
+    author = authors_list[0]
     # html特殊文字をエスケープ(一応)
-    channel = channel.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
-    channel_url = reverse('subekashi:channel', args=[channel])
-    return mark_safe(f'<object><a href="{channel_url}"><i class="fas fa-user-circle"></i>{channel}</a></object>')
+    author_name = author.name.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+    author_url = reverse('subekashi:author', kwargs={'author_id': author.id})
+    return mark_safe(f'<object><a href="{author_url}"><i class="fas fa-user-circle"></i>{author_name}</a></object>')
 
 
 @register.simple_tag
