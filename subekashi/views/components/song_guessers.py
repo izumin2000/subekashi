@@ -1,6 +1,6 @@
 from django.template.loader import render_to_string
 from django.http import JsonResponse
-from subekashi.lib.song_filter import song_filter
+from subekashi.lib.song_search import song_search
 from django_ratelimit.decorators import ratelimit
 from rest_framework.exceptions import ValidationError
 
@@ -14,7 +14,7 @@ def song_guessers(request):
     query["count"] = True
 
     try:
-        song_qs, statistics = song_filter(query)
+        song_qs, statistics = song_search(query)
     except ValidationError as e:
         # バリデーションエラーをHTMLとして返す
         error_detail = e.detail

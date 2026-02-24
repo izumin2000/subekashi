@@ -1,7 +1,7 @@
 from django.template.loader import render_to_string
 from django.http import JsonResponse
 from subekashi.models import Song
-from subekashi.lib.song_filter import song_filter
+from subekashi.lib.song_search import song_search
 from subekashi.lib.query_utils import (
     clean_query_params,
     has_view_filter_or_sort,
@@ -60,7 +60,7 @@ def song_cards(request):
     cleaned_query["page"] = page
 
     try:
-        song_qs, statistics = song_filter(cleaned_query)
+        song_qs, statistics = song_search(cleaned_query)
     except ValidationError as e:
         # バリデーションエラーをHTMLとして返す
         error_detail = e.detail

@@ -5,7 +5,7 @@ from config.settings import *
 from subekashi.models import *
 from article.models import Article
 from subekashi.constants.constants import *
-from subekashi.lib.filter import *
+from subekashi.lib.query_filters import *
 from subekashi.lib.ip import *
 from subekashi.lib.discord import *
 import random

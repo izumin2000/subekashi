@@ -6,7 +6,7 @@ from subekashi.lib.url import *
 from subekashi.lib.ip import *
 from subekashi.lib.discord import *
 from subekashi.lib.youtube import *
-from subekashi.lib.song_filter import song_filter
+from subekashi.lib.song_search import song_search
 from subekashi.lib.author_helpers import get_or_create_authors
 
 
@@ -45,7 +45,7 @@ def song_new(request):
         
         # 既に登録されているURLの場合はエラー
         cleaned_url = clean_url(url)
-        song_qs, _ = song_filter({"url": cleaned_url})
+        song_qs, _ = song_search({"url": cleaned_url})
         if song_qs.exists() and url:
             dataD["error"] = "URLは既に登録されています。"
             return render(request, 'subekashi/song_new.html', dataD)

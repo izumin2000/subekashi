@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from subekashi.models import *
-from subekashi.lib.filter import filter_by_lack
+from subekashi.lib.query_filters import filter_by_lack
 from subekashi.lib.url import get_all_media
 import re
 

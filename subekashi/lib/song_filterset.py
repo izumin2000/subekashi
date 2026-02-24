@@ -1,7 +1,7 @@
 import django_filters
 from django.core.exceptions import ValidationError
 from subekashi.models import Song
-from subekashi.lib.filter import (
+from subekashi.lib.query_filters import (
     filter_by_keyword,
     filter_by_imitate,
     filter_by_imitated,
