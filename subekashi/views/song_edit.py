@@ -7,7 +7,7 @@ from subekashi.models import *
 from subekashi.lib.url import *
 from subekashi.lib.ip import *
 from subekashi.lib.discord import *
-from subekashi.lib.song_filter import song_filter
+from subekashi.lib.song_search import song_search
 from subekashi.lib.author_helpers import get_or_create_authors
 
 
@@ -46,7 +46,7 @@ def song_edit(request, song_id):
         for cleaned_url_item in cleaned_url_list:
             # 既に登録されているURLの場合は(ユニークでなければ)エラー
             # TODO URLテーブルで実装したい
-            existing_song, _ = song_filter({"url": cleaned_url_item})
+            existing_song, _ = song_search({"url": cleaned_url_item})
             existing_song = list(existing_song)       # existsやfirstはエラーになるので使えない
             if url and existing_song and existing_song[0].id != song_id:
                 dataD["error"] = "URLは既に登録されています。"

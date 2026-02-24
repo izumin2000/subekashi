@@ -1,5 +1,5 @@
 from subekashi.models import Song
-from subekashi.lib.song_filter import song_filter
+from subekashi.lib.song_search import song_search
 from ...serializer import SongSerializer
 from rest_framework import viewsets, status
 from rest_framework.response import Response
@@ -20,7 +20,7 @@ class SongAPI(viewsets.ReadOnlyModelViewSet):
             return super().get_queryset()
 
         query = dict(self.request.query_params)
-        return song_filter(query)
+        return song_search(query)
 
     def list(self, request, *args, **kwargs):
         try:
