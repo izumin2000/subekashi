@@ -228,8 +228,8 @@ class SongFilter(django_filters.FilterSet):
         if has_like_filter_or_sort(self.data):
             queryset = queryset.filter(like__gte=1)
 
-        # authorフィルタ（authors__name）使用時にのみdistinct()を適用
-        if 'author' in self.data or 'author_exact' in self.data:
+        # authors__nameを検索するフィルタ使用時にdistinct()を適用
+        if any(key in self.data for key in ['author', 'author_exact', 'keyword', 'guesser']):
             queryset = queryset.distinct()
 
         return queryset
