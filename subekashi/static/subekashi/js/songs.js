@@ -227,6 +227,7 @@ function renderSearch() {
 
 async function getsongCards(query) {
     try {
+        query["islimited"] = "False";
         const songCards = await exponentialBackoff(`html/song_cards${toQueryString(query)}`, "search", renderSearch);
         return songCards;
     } catch(error) {

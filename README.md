@@ -165,6 +165,7 @@ python manage.py runserver
 - `isoriginal`: オリジナル模倣曲かどうか
 - `isinst`: インスト曲かどうか
 - `isdeleted`: 削除済みかどうか
+- `islimited`: すべかし内で限定公開かどうか
 - `islack`: 不完全な曲（情報が欠けている曲）
 
 **特殊フィルタ**
