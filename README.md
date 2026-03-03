@@ -15,6 +15,7 @@
 
 1\. 前提条件
 gitコマンドとpythonコマンドが使えることが前提です。  
+`python`コマンドが未定義の場合、`python3`等のコマンドを用いてください。  
   
 2\. クローン
 
@@ -38,8 +39,13 @@ python -m venv .env
   
 5\. 仮想環境の起動（必要に応じて）  
 
-```bash
+```bat
+@REM Windows用
 .env/Scripts/activate.ps1;
+```
+```bash
+# Linux用
+source .env/bin/activate
 ```
   
 6\. ライブラリのインストール  
@@ -50,7 +56,12 @@ pip install -r requirements.txt
   
 7\. local_setting.pyの作成  
 
+```bat
+@REM Windows用
+copy config/local_settings_sample.py config/local_settings.py
+```
 ```bash
+# Linux用
 cp config/local_settings_sample.py config/local_settings.py
 ```
 ※ cpコマンドを利用できない場合は、別のファイルをコピーするコマンドかエクスプローラーを利用してください。
@@ -109,8 +120,13 @@ python manage.py const
 1\. 仮想環境の起動（venvを利用している場合）  
 仮想環境`.env`を起動します。  
 
-```bash
+```bat
+@REM Windows用
 .env/Scripts/activate.ps1;
+```
+```bash
+# Linux用
+source .env/bin/activate
 ```
   
 2\. サーバー起動  
