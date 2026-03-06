@@ -15,7 +15,6 @@
                 <option value="不具合の報告" {% if request.GET.category == "不具合の報告" %}selected{% endif %}>不具合の報告</option>
                 <option value="提案" {% if request.GET.category == "提案" %}selected{% endif %}>提案</option>
                 <option value="質問" {% if request.GET.category == "質問" %}selected{% endif %}>質問</option>
-                <option value="掲載拒否" {% if request.GET.category == "掲載拒否" %}selected{% endif %}>掲載拒否</option>
                 <option value="その他" {% if request.GET.category == "その他" %}selected{% endif %}>その他</option>
             </select>
         </div>
@@ -23,13 +22,14 @@
             <label for="detail">詳細<sup>*</sup></label>
             <textarea id="detail" name="detail" required>{{ request.GET.detail }}</textarea>
         </div>
-        <div class="form-col">
-            <label for="reply" id="reply-label">連絡先<i class="fas fa-info-circle" onclick="showTutorial('reply')"></i></label>
-            <input type="text" id="reply" name="reply" placeholder="X・Discord・メール" required>
-        </div>
         <input type="submit" id="content-submit" name="content-submit" value="送信">
         <p id="contact-info"></p>
         <p><sup>*</sup>は入力必須です。</p>
+        <p>
+            掲載してほしくない名義や限定公開にしてほしい曲がある場合、<br>
+            <a href="https://x.com/subekashi" target="_blank">X</a>か
+            DiscordのDMで@subekashi宛にお問い合わせください。
+        </p>
     </form>
     <h1>返信一覧</h1>
     <div class="underline"></div>

@@ -100,6 +100,7 @@ class SongFilter(django_filters.FilterSet):
     isoriginal = django_filters.BooleanFilter()
     isinst = django_filters.BooleanFilter()
     isdeleted = django_filters.BooleanFilter()
+    islimited = django_filters.BooleanFilter()
 
     # カスタムフィルタ
     keyword = django_filters.CharFilter(

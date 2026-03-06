@@ -16,12 +16,6 @@ def contact(request):
     if request.method == "POST" :
         category = request.POST.get("category")
         detail = request.POST.get("detail")
-        reply = request.POST.get("reply")
-        
-        # 選択肢が掲載拒否の場合、連絡先が空かどうか
-        if (category == "掲載拒否") and (not reply):
-            dataD["result"] = "本人のアカウントかどうかの確認のため、連絡先の項目が必須になります。"
-            return render(request, 'subekashi/contact.html', dataD)
         
         # 選択肢か詳細が空なら
         if (not category) or (not detail):
@@ -31,7 +25,6 @@ def contact(request):
         # discordに送信
         contact = f"種類：{category}\n\
             詳細：{detail}\n\
-            {('連絡先: ' + reply) if reply else ''}\n\
             IP：{get_ip(request)}\n\
         "
         is_ok = send_discord(CONTACT_DISCORD_URL, contact)

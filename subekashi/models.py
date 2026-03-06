@@ -47,6 +47,7 @@ class Song(models.Model):
     issubeana = models.BooleanField(default = True)
     isspecial = models.BooleanField(default = False)
     islock = models.BooleanField(default = False)
+    islimited = models.BooleanField(default = False)
     view = models.IntegerField(blank = True, null = True)
     like = models.IntegerField(blank = True, null = True)
     category = models.CharField(default = "song", choices=CHOICES, max_length=10)
