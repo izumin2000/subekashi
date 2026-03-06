@@ -82,6 +82,9 @@
                     {% if song.isspecial %}
                         <p id="special-tag">スペシャルデザイン</p>
                     {% endif %}
+                    {% if song.islimited %}
+                        <p id="special-tag">限定公開<i class="fas fa-info-circle" onclick="showTutorial('islimited')"></i></p>
+                    {% endif %}
                 </td>
             </tr>
         {% endif %}

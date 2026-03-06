@@ -59,10 +59,11 @@ def song(request, song_id):
     is_lack = Song.objects.filter(pk=song_id).filter(filter_by_lack).exists()
     
     # タグを持っているかどうかの確認
-    has_tag = False
-    has_tag |= song.authors.filter(id=1).exists()
-    has_tag |= is_lack or song.isdraft or song.isoriginal or song.isjoke or song.isinst
-    has_tag |= not(song.issubeana) or song.isdeleted
+    has_tag = any([
+        song.authors.filter(id=1).exists(),
+        is_lack, song.isdraft, song.isoriginal, song.isjoke, song.isinst, song.isdeleted, song.islimited,
+        not song.issubeana
+    ])
     
     # テンプレートに渡す辞書を作成
     dataD = {
