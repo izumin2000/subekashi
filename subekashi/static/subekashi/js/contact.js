@@ -2,6 +2,7 @@
 function checkButton() {
     const contentSubmitEle = document.getElementById("content-submit");
     const contentInfoEle = document.getElementById("contact-info");
+    const categoryEle = document.getElementById("category");
     const detailtEle = document.getElementById("detail");
     
     // 選択肢か詳細が空なら
