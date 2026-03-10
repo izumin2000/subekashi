@@ -1,5 +1,6 @@
 import django_filters
 from django.core.exceptions import ValidationError
+from django.db.models import Subquery
 from subekashi.models import Song
 from subekashi.lib.query_filters import (
     filter_by_keyword,
@@ -229,8 +230,11 @@ class SongFilter(django_filters.FilterSet):
         if has_like_filter_or_sort(self.data):
             queryset = queryset.filter(like__gte=1)
 
-        # authors__nameを検索するフィルタ使用時にdistinct()を適用
-        if any(key in self.data for key in ['author', 'author_exact', 'keyword', 'guesser']):
-            queryset = queryset.distinct()
+        # authors__nameを検索するフィルタ使用時、またはrandom/authorソート時にdistinct()を適用
+        NEED_DISTINCT_KEY_LIST = ['author', 'author_exact', 'keyword', 'guesser', 'islack']
+        NEED_DISTINCT_SORT_LIST = ['random', 'author', '-author']
+        if any(key in self.data for key in NEED_DISTINCT_KEY_LIST) or (self.data.get('sort') in NEED_DISTINCT_SORT_LIST):
+            ids = queryset.values('id').distinct()
+            queryset = Song.objects.filter(id__in=Subquery(ids))
 
         return queryset
