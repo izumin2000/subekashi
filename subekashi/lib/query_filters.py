@@ -1,14 +1,19 @@
 from django.db.models import Q
 from subekashi.constants.constants import ALL_MEDIAS
+from subekashi.lib.url import clean_url
 
 # topやsearchにあるキーワード検索のフィルター
 def filter_by_keyword(keyword):
-    return (
+    q = (
         Q(title__contains = keyword) |
         Q(authors__name__contains = keyword) |
-        Q(lyrics__contains = keyword) |
-        Q(url__contains = keyword)
+        Q(lyrics__contains = keyword)
     )
+    # URLっぽいキーワード（://を含む）の場合のみURLフィールドも検索
+    url_keyword = clean_url(keyword)
+    if '://' in url_keyword:
+        q |= Q(url__contains = url_keyword)
+    return q
 
 # 模倣元のフィルター
 def filter_by_imitate(imitate):

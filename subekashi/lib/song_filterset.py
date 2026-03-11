@@ -138,7 +138,6 @@ class SongFilter(django_filters.FilterSet):
 
     def filter_keyword(self, queryset, name, value):
         """複数フィールドにわたるキーワード検索"""
-        value = clean_url(value)
         return queryset.filter(filter_by_keyword(value))
 
     def filter_url(self, queryset, name, value):
