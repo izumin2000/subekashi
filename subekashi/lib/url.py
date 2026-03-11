@@ -38,9 +38,8 @@ def format_x_url(url):
     domain = parsed_url.netloc
     
     # X/TwitterのURLのみ処理
-    if domain in ['twitter.com', 'x.com', 'www.twitter.com', 'www.x.com']:
+    if domain in ['twitter.com', 'x.com']:
         url = url.replace("https://twitter.com", "https://x.com")
-        url = url.replace("https://www.twitter.com", "https://x.com")
         parsed_url = urlparse(url)
         cleaned_url = urlunparse(parsed_url._replace(query='', fragment=''))
         return cleaned_url
