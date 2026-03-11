@@ -169,7 +169,7 @@ async function checkTitleAuthorForm() {
     // 以下の条件はvalid
     isTitleAuthorValid = true;
     checkButton();
-    const existingSongsRes = await exponentialBackoff(`song/?title_exact=${titleEle.value}&author_exact=${authorsEle.value}`, "titleauthor", checkTitleAuthorForm);
+    const existingSongsRes = await exponentialBackoff(`song/?title_exact=${encodeURIComponent(titleEle.value)}&author_exact=${encodeURIComponent(authorsEle.value)}`, "titleauthor", checkTitleAuthorForm);
     
     if (existingSongsRes == undefined) {
         return;
