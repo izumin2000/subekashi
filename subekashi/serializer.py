@@ -8,6 +8,12 @@ class AuthorSerializer(serializers.ModelSerializer):
 
 class SongSerializer(serializers.ModelSerializer):
     authors = AuthorSerializer(many=True, read_only=True)
+    # Song.urlフィールドの代わりにSongLinkテーブルから取得したURLリストを返す
+    # レスポンス形式: "url": ["https://youtu.be/...", ...]
+    url = serializers.SerializerMethodField()
+
+    def get_url(self, obj):
+        return list(obj.links.filter(is_removed=False).values_list('url', flat=True))
 
     class Meta:
         model = Song

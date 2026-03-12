@@ -141,9 +141,9 @@ class SongFilter(django_filters.FilterSet):
         return queryset.filter(filter_by_keyword(value))
 
     def filter_url(self, queryset, name, value):
-        """URLフィールドによるフィルタ（clean_urlを適用）"""
+        """SongLinkテーブルのURLによるフィルタ（clean_urlを適用し完全一致）"""
         value = clean_url(value)
-        return queryset.filter(url__icontains=value)
+        return queryset.filter(links__url=value)
 
     def filter_imitate(self, queryset, name, value):
         """imitateフィールドによるフィルタ（カンマ区切りリストをサポート）"""
