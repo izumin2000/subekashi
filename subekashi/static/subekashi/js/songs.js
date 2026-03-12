@@ -292,7 +292,7 @@ function paging() {
     let isIntersecting = false;
 
     function updateButtonVisibility() {
-        container.style.display = (detailsEle.open && isIntersecting) ? '' : 'none';
+        container.classList.toggle('visible', detailsEle.open && isIntersecting);
     }
 
     const intersectionObserver = new IntersectionObserver((entries) => {
@@ -306,6 +306,6 @@ function paging() {
     detailsEle.addEventListener('toggle', updateButtonVisibility);
 
     document.getElementById("scroll-to-results-btn").addEventListener('click', () => {
-        document.getElementById("song-cards").scrollIntoView({ behavior: 'smooth' });
+        document.getElementById("song-cards").scrollIntoView({ behavior: 'auto' });
     });
 })();
