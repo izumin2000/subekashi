@@ -55,3 +55,44 @@ hr {
     height: 24px;
     margin-right: 5px;
 }
+
+#scroll-to-results-container {
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+#scroll-to-results-container.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+#scroll-to-results-container .dummybuttons {
+    margin: 0;
+    pointer-events: none;
+}
+
+#scroll-to-results-container .dummybutton {
+    background-color: #333;
+    color: #fff;
+    border: 2px solid;
+    pointer-events: auto;
+    gap: 5px;
+    align-items: center;
+}
+
+#scroll-to-results-container .dummybutton:hover {
+    background-color: #555;
+}
+
+@media (max-width: 960px) {
+    #scroll-to-results-container {
+        bottom: 60px;
+    }
+}

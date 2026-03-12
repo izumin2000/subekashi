@@ -282,3 +282,30 @@ function paging() {
     document.getElementById("next-page-loading").remove();
     search(SearchController.signal, page);
 }
+
+// 「結果を表示」ボタンの表示/非表示制御
+(function() {
+    const detailsEle = document.getElementById("isdetail");
+    const container = document.getElementById("scroll-to-results-container");
+    if (!detailsEle || !container) return;
+
+    let isIntersecting = false;
+
+    function updateButtonVisibility() {
+        container.classList.toggle('visible', detailsEle.open && isIntersecting);
+    }
+
+    const intersectionObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            isIntersecting = entry.isIntersecting;
+            updateButtonVisibility();
+        });
+    });
+    intersectionObserver.observe(detailsEle);
+
+    detailsEle.addEventListener('toggle', updateButtonVisibility);
+
+    document.getElementById("scroll-to-results-btn").addEventListener('click', () => {
+        document.getElementById("song-cards").scrollIntoView({ behavior: 'auto' });
+    });
+})();
