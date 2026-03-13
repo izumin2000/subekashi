@@ -1,6 +1,7 @@
-from django.db.models import BooleanField, Case, Exists, OuterRef, Prefetch, Q, Value, When
-from subekashi.models import Author, Song, SongLink
+from django.db.models import Prefetch
+from subekashi.models import Song, SongLink
 from subekashi.lib.url import clean_url
+from subekashi.lib.query_filters import make_is_lack_annotation
 from ...serializer import SongLinkSerializer
 from rest_framework import viewsets
 from rest_framework.response import Response
@@ -13,16 +14,8 @@ class SongLinkThrottle(UserRateThrottle):
 
 def _make_song_queryset():
     """is_lackアノテーション付きのSongクエリセットを返す（N+1を回避）"""
-    any_links = SongLink.objects.filter(songs=OuterRef('pk'))
-    has_author_1 = Author.objects.filter(id=1, songs__id=OuterRef('pk'))
     return Song.objects.annotate(
-        is_lack=Case(
-            When(Q(isdeleted=False) & ~Exists(any_links), then=Value(True)),
-            When(Q(isoriginal=False, issubeana=True, imitate='') & ~Exists(has_author_1), then=Value(True)),
-            When(Q(isinst=False, lyrics=''), then=Value(True)),
-            default=Value(False),
-            output_field=BooleanField(),
-        )
+        is_lack=make_is_lack_annotation()
     ).prefetch_related('authors')
 
 

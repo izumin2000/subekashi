@@ -391,7 +391,7 @@ function deleteToastUrlQuery() {
 function makeSongInfoRowsHTML(songs) {
     return songs.map(song => {
         const songUrl = `${baseURL()}/songs/${song.id}`;
-        return `song ID：<a href="${songUrl}" target="_blank">${song.id}</a><br>タイトル：${song.title}<br>作者：${getAuthorText(song)}`;
+        return `song ID：<a href="${songUrl}" target="_blank">${song.id}</a><br>タイトル：${escapeHtml(song.title)}<br>作者：${escapeHtml(getAuthorText(song))}`;
     }).join('<br><br>');
 }
 
