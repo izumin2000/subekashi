@@ -135,7 +135,7 @@ def song_edit(request, song_id):
             return info[:-1]        # 最後の改行は不要
 
         # URL変更前後の値を取得（SongLinkベース）
-        before_urls = ",".join(song.links.values_list('url', flat=True))
+        before_urls = ",".join(song.links.order_by('id').values_list('url', flat=True))
 
         # songを更新する前にhistoryのために更新前後のsongの情報を記録しておく
         COLUMNS = [
