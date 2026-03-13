@@ -55,7 +55,6 @@ async function checkAutoForm() {
 
     // allow_dup=Falseかつsongが存在するリンクのみを重複エラーとして扱う
     const duplicateLinks = existingLinks.filter(link => link.songs.length > 0 && !link.allow_dup);
-    console.log(existingLinksRes, videoId);
 
     // 既に登録されているURLの場合（allow_dup=False）
     if (duplicateLinks.length) {
