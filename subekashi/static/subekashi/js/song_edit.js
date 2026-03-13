@@ -181,8 +181,8 @@ async function checkTitleAuthorForm() {
     // 既に登録されている曲の場合
     // TODO checkUrlFormを参考にリファクタリングする
     if (existingSong) {
-        const isMultipleSongURL = existingSong.url.includes(',');
-        const existingSongURL = isMultipleSongURL ? existingSong.url.split(",")[0] : existingSong.url;
+        const isMultipleSongURL = existingSong.url.length > 1;
+        const existingSongURL = existingSong.url[0] ?? "";
         const infoHTML = isLack(existingSong)
         ?
         `<span class="info"><i class="fas fa-info-circle info"></i>

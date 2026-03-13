@@ -127,8 +127,8 @@ async function checkManualForm() {
     // 既に登録されている曲の場合
     if (existingSongs.length) {
         const existingSong = existingSongs[0];
-        const isMultipleSongURL = existingSong.url.includes(',');
-        const existingSongURL = isMultipleSongURL ? existingSong.url.split(",")[0] : existingSong.url;
+        const isMultipleSongURL = existingSong.url.length > 1;
+        const existingSongURL = existingSong.url[0] ?? "";
         const InnerURL = existingSongURL ? `登録されているURL：<a href="${existingSongURL}" target="_blank">${existingSongURL}</a>${isMultipleSongURL ? 'など' : ''}<br>` : ""
         const infoHTML = isLack(existingSong)
         ?
