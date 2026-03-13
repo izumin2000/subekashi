@@ -82,7 +82,6 @@ def song_new(request):
         ip = get_ip(request)
         song = Song(
             title = title,
-            url = cleaned_url,
             post_time = timezone.now(),
             isoriginal = is_original,
             isdeleted = is_deleted,
@@ -98,6 +97,10 @@ def song_new(request):
 
         # authorsフィールドの更新
         song.authors.set(authors)
+
+        # SongLinkの作成
+        for url_str in cleaned_url.split(",") if cleaned_url else []:
+            SongLink.objects.create(song=song, url=url_str)
 
         song_id = song.id
         

@@ -45,7 +45,6 @@ def song_edit(request, song_id):
         cleaned_url_list = cleaned_url.split(",") if cleaned_url else []
         for cleaned_url_item in cleaned_url_list:
             # 既に登録されているURLの場合は(ユニークでなければ)エラー
-            # TODO URLテーブルで実装したい
             existing_song, _ = song_search({"url": cleaned_url_item})
             existing_song = list(existing_song)       # existsやfirstはエラーになるので使えない
             if url and existing_song and existing_song[0].id != song_id:
@@ -135,11 +134,14 @@ def song_edit(request, song_id):
                 info += f"{song.title}\n"
             return info[:-1]        # 最後の改行は不要
 
+        # URL変更前後の値を取得（SongLinkベース）
+        before_urls = ",".join(song.links.values_list('url', flat=True))
+
         # songを更新する前にhistoryのために更新前後のsongの情報を記録しておく
         COLUMNS = [
             {"label": "タイトル", "before": song.title ,"after": title},
             {"label": "作者", "before": song.authors_str(), "after": ", ".join([a.name for a in author_objects])},
-            {"label": "URL", "before": song.url ,"after": cleaned_url},
+            {"label": "URL", "before": before_urls ,"after": cleaned_url},
             {"label": "オリジナル", "before": yes_no(song.isoriginal) ,"after": yes_no(is_original)},
             {"label": "削除済み", "before": yes_no(song.isdeleted) ,"after": yes_no(is_deleted)},
             {"label": "ネタ曲", "before": yes_no(song.isjoke) ,"after": yes_no(is_joke)},
@@ -152,7 +154,6 @@ def song_edit(request, song_id):
 
         # songの更新
         song.title = title
-        song.url = cleaned_url
         song.lyrics = lyrics
         song.imitate = imitates
         song.isoriginal = is_original
@@ -166,7 +167,19 @@ def song_edit(request, song_id):
 
         # authorsフィールドの更新
         song.authors.set(author_objects)
-        
+
+        # SongLinkの更新（差分）
+        existing_links = {link.url: link for link in song.links.all()}
+        new_url_set = set(cleaned_url_list)
+        # 削除されたURLのSongLinkを削除
+        for url_str, link in existing_links.items():
+            if url_str not in new_url_set:
+                link.delete()
+        # 新規追加されたURLはSongLinkを作成
+        for url_str in new_url_set:
+            if url_str not in existing_links:
+                SongLink.objects.create(song=song, url=url_str)
+
         # History DBの変更内容とDisocrdの#新規作成・変更チャンネルに送る文の用意
         changes = [["種類", "編集前", "編集後"]]
         changed_labels = []

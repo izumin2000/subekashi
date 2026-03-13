@@ -8,9 +8,9 @@ from time import sleep
 class Command(BaseCommand):
     help = "YouTube API関連。idオプションを加えることでそのidのみのsongレコードを更新する"
     
-    # song.urlから(複数の)YouTube動画IDを取得しリストにする
+    # SongLinkからYouTube動画IDを取得しリストにする
     def get_youtube_ids(self, song):
-        urls = song.url.split(",")
+        urls = song.links.values_list('url', flat=True)
         video_ids = [get_youtube_id(url) for url in urls if is_youtube_url(url)]
         return video_ids
     
@@ -24,8 +24,8 @@ class Command(BaseCommand):
             "view": 0,
             "like": 0
         }
-        
-        # song.urlに1つもYouTubeの動画が無かったら
+
+        # SongLinkに1つもYouTubeの動画が無かったら
         if not video_ids :
             return {}
 
@@ -73,9 +73,9 @@ class Command(BaseCommand):
             
             self.save_song(song, info)
             return
-        
-        # 全てのsongが対象なら
-        for song in Song.objects.exclude(url = ""):
+
+        # 全てのsongが対象なら（SongLinkが存在するSongのみ）
+        for song in Song.objects.filter(links__isnull=False).distinct():
             info = self.get_youtube_info_sum(song)
             if not info:
                 continue

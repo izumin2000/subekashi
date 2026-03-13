@@ -13,11 +13,11 @@ def song(request, song_id):
     
     # URLのリンクを取得
     links = []
-    for url in song.url.split(",") if song.url else []:
-        media = get_all_media(url)
+    for link in song.links.all():
+        media = get_all_media(link.url)
         links.append(
             {
-                "text": url,
+                "text": link.url,
                 "icon": media["icon"],
                 "name": media["name"]
             }
@@ -56,7 +56,7 @@ def song(request, song_id):
     description += f"歌詞: {description_lyrics}" if description_lyrics else ""
     
     # 未完成かどうか
-    is_lack = Song.objects.filter(pk=song_id).filter(filter_by_lack).exists()
+    is_lack = Song.objects.filter(pk=song_id).filter(filter_by_lack()).exists()
     
     # タグを持っているかどうかの確認
     has_tag = any([

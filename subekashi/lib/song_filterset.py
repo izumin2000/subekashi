@@ -164,7 +164,7 @@ class SongFilter(django_filters.FilterSet):
     def filter_islack(self, queryset, name, value):
         """不完全な曲をフィルタ"""
         if value:
-            return queryset.filter(filter_by_lack)
+            return queryset.filter(filter_by_lack())
         return queryset
 
     def filter_sort(self, queryset, name, value):
@@ -230,7 +230,7 @@ class SongFilter(django_filters.FilterSet):
             queryset = queryset.filter(like__gte=1)
 
         # フィルタ使用時、またはrandom/authorソート時にdistinct()を適用
-        NEED_DISTINCT_KEY_LIST = ['author', 'author_exact', 'keyword', 'guesser', 'islack', 'url']
+        NEED_DISTINCT_KEY_LIST = ['author', 'author_exact', 'keyword', 'guesser', 'islack', 'url', 'mediatypes']
         NEED_DISTINCT_SORT_LIST = ['random', 'author', '-author']
         if any(key in self.data for key in NEED_DISTINCT_KEY_LIST) or (self.data.get('sort') in NEED_DISTINCT_SORT_LIST):
             ids = queryset.values('id').distinct()

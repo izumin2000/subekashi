@@ -47,7 +47,7 @@ def get_view(song):
 
 @register.simple_tag
 def get_url(song):
-    urls = song.url.split(',') if song.url else ""
+    active_links = song.links.all()
     i_tags = ""
     
     # 非公開なら
@@ -55,14 +55,14 @@ def get_url(song):
         i_tags += "<i class='far fa-eye-slash'></i>"
     
     # 未登録なら
-    elif not urls:
+    elif not active_links.exists():
         edit_url = reverse('subekashi:song_edit', args=[song.id])
         return mark_safe(f'<object><a href="{edit_url}">URL未登録</a></object>')
     
     # URLを登録しているのなら
-    for url in urls:
-        icon = get_all_media(url)["icon"]
-        i_tags += f'<a href="{url}" target="_blank">{icon}</a>'
+    for link in active_links:
+        icon = get_all_media(link.url)["icon"]
+        i_tags += f'<a href="{link.url}" target="_blank">{icon}</a>'
         
     return mark_safe(f'<object>{i_tags}</object>')
         
