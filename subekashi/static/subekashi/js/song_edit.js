@@ -241,6 +241,7 @@ async function checkUrlForm() {
     }
 
     const urlList = urlEle.value.split(',');
+    const allowDupSongsAll = [];  // allow_dup=Trueの曲を収集
     for (let i = 0; i < urlList.length; i++) {
         let url = urlList[i];
 
@@ -264,40 +265,41 @@ async function checkUrlForm() {
         );
         if (!existingLinksRes) return;
 
-        // 自身以外かつallow_dup=FalseのURLが重複していたら
+        // 自身以外かつallow_dup=FalseのURLが重複していたらエラー
         const existingLink = existingLinksRes.result.find(
             link => !link.allow_dup && link.songs.some(s => s.id != song_id)
         );
         if (existingLink) {
             const song = existingLink.songs.find(s => s.id != song_id);
-            const base = baseURL();
-            const songId = song.id;
-            const title = escapeHtml(song.title);
-            const author = escapeHtml(getAuthorText(song));
-
-            const songLink = `${base}/songs/${songId}`;
+            const songLink = `${baseURL()}/songs/${song.id}`;
             const deleteReason = encodeURIComponent(`${songLink} と重複しています。`);
-            const deleteLink = `${base}/songs/${song_id}/delete?reason=${deleteReason}`;
-
-            const infoHTML = `
+            const deleteLink = `${baseURL()}/songs/${song_id}/delete?reason=${deleteReason}`;
+            songEditInfoUrlEle.innerHTML = `
             <span class="error">
                 <i class="fas fa-ban error"></i>
                 このURLは<br>
-                song ID：<a href="${songLink}" target="_blank">${songId}</a><br>
-                タイトル：${title}<br>
-                作者：${author}<br>
-                として
-                <a href="${songLink}" target="_blank">既に登録されています</a>
-                ${song.is_lack ? "がまだ未完成です。" : "。"}<br>
+                ${makeSongInfoRowsHTML([song])}<br>
+                として<a href="${songLink}" target="_blank">既に登録されています</a>${song.is_lack ? "がまだ未完成です。" : "。"}<br>
                 この記事を削除したい場合、<br>
-                <a href="${deleteLink}" target="_blank"><i class="error far fa-trash-alt"></i>削除申請</a>
-                を行ってください。
-            </span>
-            `;
-
-            songEditInfoUrlEle.innerHTML = infoHTML;
+                <a href="${deleteLink}" target="_blank"><i class="error far fa-trash-alt"></i>削除申請</a>を行ってください。
+            </span>`;
             return;
         }
+
+        // allow_dup=Trueの曲を収集（自身以外）
+        existingLinksRes.result
+            .filter(link => link.allow_dup)
+            .flatMap(link => link.songs.filter(s => s.id != song_id))
+            .forEach(s => allowDupSongsAll.push(s));
+    }
+
+    // allow_dup=Trueの重複がある場合は情報表示（登録は可能）
+    const uniqueAllowDupSongs = [...new Map(allowDupSongsAll.map(s => [s.id, s])).values()];
+    if (uniqueAllowDupSongs.length) {
+        isUrlValid = true;
+        checkButton();
+        songEditInfoUrlEle.innerHTML = `<span class='info'><i class='fas fa-info-circle info'></i>このURLは以下の曲と重複していますが登録できます。<br>${makeSongInfoRowsHTML(uniqueAllowDupSongs)}</span>`;
+        return;
     }
 
     // 全てのURLが重複していない場合

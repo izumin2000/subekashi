@@ -387,6 +387,14 @@ function deleteToastUrlQuery() {
     }
 }
 
+// 重複曲情報のHTMLを生成（song_new/song_edit共通）
+function makeSongInfoRowsHTML(songs) {
+    return songs.map(song => {
+        const songUrl = `${baseURL()}/songs/${song.id}`;
+        return `song ID：<a href="${songUrl}" target="_blank">${song.id}</a><br>タイトル：${song.title}<br>作者：${getAuthorText(song)}`;
+    }).join('<br><br>');
+}
+
 // authorsフィールドから作者文字列を取得
 function getAuthorText(song) {
     return song.authors && song.authors.length > 0
