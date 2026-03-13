@@ -46,31 +46,34 @@ async function checkAutoForm() {
         return;
     }
     
-    const existingSongsRes = await exponentialBackoff(`song/?url=${videoId}`, "url", checkAutoForm);
-    
-    if (existingSongsRes == undefined) {
+    const existingLinksRes = await exponentialBackoff(`songlink/?url=${encodeURIComponent(formatYouTubeURL(inputUrlEle))}`, "url", checkAutoForm);
+
+    if (existingLinksRes == undefined) {
         return;
     }
-    const existingSongs = existingSongsRes.result;
+    const existingLinks = existingLinksRes.result;
 
-    // 既に登録されているURLの場合
-    if (existingSongs.length) {
-        const existingSong = existingSongs[0];
-        const authorText = getAuthorText(existingSong);
-        const infoHTML = isLack(existingSong)
-        ?
-        `<span class="info"><i class="fas fa-info-circle info"></i>このURLは<br>
-        song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
-        タイトル：${existingSong.title}<br>
-        作者：${authorText}<br>
-        として<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">既に登録されています</a>がまだ未完成です</span>`
-        :
-        `<span class='error'><i class='fas fa-ban error'></i>このURLは<br>
-        song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
-        タイトル：${existingSong.title}<br>
-        作者：${authorText}<br>
-        として<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">既に登録されています</a></span>`;
-        newFormAutoInfoEle.innerHTML = infoHTML;
+    // allow_dup=Falseかつsongが存在するリンクのみを重複エラーとして扱う
+    const duplicateLinks = existingLinks.filter(link => link.songs.length > 0 && !link.allow_dup);
+
+    // 既に登録されているURLの場合（allow_dup=False）
+    if (duplicateLinks.length) {
+        const s = duplicateLinks[0].songs[0];
+        const songUrl = `${baseURL()}/songs/${s.id}`;
+        const suffix = s.is_lack
+            ? `として<a href="${songUrl}" target="_blank">既に登録されています</a>がまだ未完成です`
+            : `として<a href="${songUrl}" target="_blank">既に登録されています</a>`;
+        newFormAutoInfoEle.innerHTML = `<span class='error'><i class='fas fa-ban error'></i>このURLは<br>${makeSongInfoRowsHTML([s])}<br>${suffix}</span>`;
+        return;
+    }
+
+    // allow_dup=Trueのリンクに紐づく曲が存在する場合（重複しているが登録可能）
+    const allowDupSongs = existingLinks
+        .filter(link => link.songs.length > 0 && link.allow_dup)
+        .flatMap(link => link.songs);
+    if (allowDupSongs.length) {
+        newFormAutoInfoEle.innerHTML = `<span class='info'><i class='fas fa-info-circle info'></i>このURLは以下の曲と重複していますが登録できます。<br>${makeSongInfoRowsHTML(allowDupSongs)}</span>`;
+        newSubmitAutoEle.disabled = urlEle.value == '';
         return;
     }
 

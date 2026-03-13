@@ -50,8 +50,8 @@ admin.site.register(AuthorLink, AuthorLinkAdmin)
 
 
 class SongLinkAdmin(admin.ModelAdmin):
-    list_display = ('id', 'song', 'url', 'is_removed', 'allow_dup')
-    search_fields = ('url', 'song__title')
-    list_filter = ('is_removed', 'allow_dup', ('song', admin.EmptyFieldListFilter))  # 孤立レコードのフィルター追加
+    list_display = ('id', 'url', 'is_removed', 'allow_dup')
+    search_fields = ('url', 'songs__title')
+    list_filter = ('is_removed', 'allow_dup')
 
 admin.site.register(SongLink, SongLinkAdmin)

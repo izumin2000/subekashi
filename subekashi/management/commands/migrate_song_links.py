@@ -45,7 +45,7 @@ class Command(BaseCommand):
         total_urls = 0
 
         for song in songs:
-            if SongLink.objects.filter(song=song).exists():
+            if song.links.exists():
                 already_migrated += 1
                 continue
             urls = [u.strip() for u in song.url.split(',') if u.strip()]
@@ -56,7 +56,7 @@ class Command(BaseCommand):
 
         sample = []
         for song in songs:
-            if not SongLink.objects.filter(song=song).exists():
+            if not song.links.exists():
                 sample.append(song)
             if len(sample) >= SAMPLE_SIZE:
                 break
@@ -67,15 +67,18 @@ class Command(BaseCommand):
                 urls = [u.strip() for u in song.url.split(',') if u.strip()]
                 self.stdout.write(f'  Song ID {song.id}: {len(urls)}件のURL')
                 for url in urls:
-                    self.stdout.write(f'    - {url}')
+                    existing = SongLink.objects.filter(url=url).first()
+                    dup_note = ' [重複→allow_dup=True]' if existing and existing.songs.exclude(pk=song.pk).exists() else ''
+                    self.stdout.write(f'    - {url}{dup_note}')
 
     def _migrate(self, songs):
         total_created = 0
         total_skipped = 0
+        total_allow_dup = 0
 
         with transaction.atomic():
             for song in songs:
-                if SongLink.objects.filter(song=song).exists():
+                if song.links.exists():
                     total_skipped += 1
                     continue
 
@@ -85,7 +88,13 @@ class Command(BaseCommand):
                     continue
 
                 for url in urls:
-                    SongLink.objects.create(song=song, url=url)
+                    link, created = SongLink.objects.get_or_create(url=url)
+                    if not created and link.songs.exclude(pk=song.pk).exists():
+                        # 別の曲が既にこのURLを使用している → 重複
+                        link.allow_dup = True
+                        link.save()
+                        total_allow_dup += 1
+                    link.songs.add(song)
                 total_created += len(urls)
 
                 processed = total_created + total_skipped
@@ -95,3 +104,4 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('\n[OK] 処理完了'))
         self.stdout.write(f'作成したSongLink数: {total_created}')
         self.stdout.write(f'スキップした曲数: {total_skipped}')
+        self.stdout.write(f'allow_dup=Trueに設定したSongLink数: {total_allow_dup}')

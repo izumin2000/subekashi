@@ -73,8 +73,8 @@ class Song(models.Model):
 
 # 曲のURLの情報
 class SongLink(models.Model):
-    url = models.URLField(max_length=500)
-    song = models.ForeignKey('Song', on_delete=models.SET_NULL, null=True, blank=True, related_name='links')
+    url = models.URLField(max_length=500, unique=True)
+    songs = models.ManyToManyField('Song', blank=True, related_name='links')
     is_removed = models.BooleanField(default=False)
     allow_dup = models.BooleanField(default=False)
 

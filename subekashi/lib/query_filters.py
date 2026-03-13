@@ -1,7 +1,7 @@
-from django.db.models import Q, Exists, OuterRef
+from django.db.models import BooleanField, Case, Exists, OuterRef, Q, Value, When
 from subekashi.constants.constants import ALL_MEDIAS
 from subekashi.lib.url import clean_url
-from subekashi.models import SongLink
+from subekashi.models import Author, SongLink
 
 # topやsearchにあるキーワード検索のフィルター
 def filter_by_keyword(keyword):
@@ -59,9 +59,23 @@ def filter_by_mediatypes(mediatypes):
 
 # 未完成フィルター
 def filter_by_lack():
-    any_links = SongLink.objects.filter(song=OuterRef('pk'))
+    any_links = SongLink.objects.filter(songs=OuterRef('pk'))
+    has_author_1 = Author.objects.filter(id=1, songs__id=OuterRef('pk'))
     return (
         Q(isdeleted=False) & ~Exists(any_links) |
-        Q(isoriginal=False, issubeana=True, imitate="") & ~Q(authors__id=1) |
+        Q(isoriginal=False, issubeana=True, imitate="") & ~Exists(has_author_1) |
         Q(isinst=False, lyrics="")
+    )
+
+
+# is_lackアノテーション用のCase式を返す（Prefetch + annotateでN+1を回避する用途）
+def make_is_lack_annotation():
+    any_links = SongLink.objects.filter(songs=OuterRef('pk'))
+    has_author_1 = Author.objects.filter(id=1, songs__id=OuterRef('pk'))
+    return Case(
+        When(Q(isdeleted=False) & ~Exists(any_links), then=Value(True)),
+        When(Q(isoriginal=False, issubeana=True, imitate='') & ~Exists(has_author_1), then=Value(True)),
+        When(Q(isinst=False, lyrics=''), then=Value(True)),
+        default=Value(False),
+        output_field=BooleanField(),
     )
