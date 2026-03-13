@@ -46,18 +46,18 @@ async function checkAutoForm() {
         return;
     }
     
-    const existingSongsRes = await exponentialBackoff(`song/?url=${videoId}`, "url", checkAutoForm);
-    
-    if (existingSongsRes == undefined) {
+    const existingLinksRes = await exponentialBackoff(`songlink/?url=${encodeURIComponent(videoId)}`, "url", checkAutoForm);
+
+    if (existingLinksRes == undefined) {
         return;
     }
-    const existingSongs = existingSongsRes.result;
+    const existingLinks = existingLinksRes.result;
 
     // 既に登録されているURLの場合
-    if (existingSongs.length) {
-        const existingSong = existingSongs[0];
+    if (existingLinks.length) {
+        const existingSong = existingLinks[0].song;
         const authorText = getAuthorText(existingSong);
-        const infoHTML = isLack(existingSong)
+        const infoHTML = existingSong.is_lack
         ?
         `<span class="info"><i class="fas fa-info-circle info"></i>このURLは<br>
         song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>

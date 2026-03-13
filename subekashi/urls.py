@@ -7,6 +7,7 @@ app_name='subekashi'
 
 defaultRouter = routers.DefaultRouter()
 defaultRouter.register('song', SongAPI)
+defaultRouter.register('songlink', SongLinkAPI, basename='songlink')
 defaultRouter.register('ai', AiAPI)
 defaultRouter.register('ad', AdAPI)
 

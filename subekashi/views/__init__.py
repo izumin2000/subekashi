@@ -19,6 +19,7 @@ from subekashi.views.song_edit import song_edit
 from subekashi.views.song_history import song_history
 from subekashi.views.song_new import song_new
 from subekashi.views.api.song import SongAPI
+from subekashi.views.api.songlink import SongLinkAPI
 from subekashi.views.top import top
 from subekashi.views.components.song_cards import song_cards
 from subekashi.views.components.song_guessers import song_guessers

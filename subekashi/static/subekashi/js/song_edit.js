@@ -241,7 +241,10 @@ async function checkUrlForm() {
         return;
     }
 
-    for (url of urlEle.value.split(',')) {
+    const urlList = urlEle.value.split(',');
+    for (let i = 0; i < urlList.length; i++) {
+        let url = urlList[i];
+
         // urlでない場合
         if (!url.match(/^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/)) {
             songEditInfoUrlEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>入力形式が正しくありません</span>";
@@ -254,54 +257,52 @@ async function checkUrlForm() {
         url = url.replace("https://twitter.com", "https://x.com");
         url = formatYouTubeURL(url);
 
-        const existingSongsRes = await exponentialBackoff(
-            `song/?url=${encodeURIComponent(url)}`,
-            'url',
+        // イテレーションごとに固有のfromキーを使い、ループ間のスロットル干渉を防ぐ
+        const existingLinksRes = await exponentialBackoff(
+            `songlink/?url=${encodeURIComponent(url)}`,
+            `url_${i}`,
             checkUrlForm
         );
-        if (!existingSongsRes) return;
+        if (!existingLinksRes) return;
 
-        const existingSongs = existingSongsRes.result;
-        const existingSong = existingSongs.find(song => song.id != song_id);
-        
-        // 自身以外のurlが重複していなかったら
-        if (!existingSong) {
-            isUrlValid = true;
-            checkButton();
-            songEditInfoUrlEle.innerHTML = "<span class='ok'><i class='fas fa-check-circle ok'></i>登録可能な状態です</span>";
+        // 自身以外のurlが重複していたら
+        const existingLink = existingLinksRes.result.find(link => link.song?.id != song_id);
+        if (existingLink) {
+            const song = existingLink.song;
+            const base = baseURL();
+            const songId = song.id;
+            const title = escapeHtml(song.title);
+            const author = escapeHtml(getAuthorText(song));
+
+            const songLink = `${base}/songs/${songId}`;
+            const deleteReason = encodeURIComponent(`${songLink} と重複しています。`);
+            const deleteLink = `${base}/songs/${song_id}/delete?reason=${deleteReason}`;
+
+            const infoHTML = `
+            <span class="error">
+                <i class="fas fa-ban error"></i>
+                このURLは<br>
+                song ID：<a href="${songLink}" target="_blank">${songId}</a><br>
+                タイトル：${title}<br>
+                作者：${author}<br>
+                として
+                <a href="${songLink}" target="_blank">既に登録されています</a>
+                ${song.is_lack ? "がまだ未完成です。" : "。"}<br>
+                この記事を削除したい場合、<br>
+                <a href="${deleteLink}" target="_blank"><i class="error far fa-trash-alt"></i>削除申請</a>
+                を行ってくださいください。
+            </span>
+            `;
+
+            songEditInfoUrlEle.innerHTML = infoHTML;
             return;
         }
-
-        // 曲のurlが重複していたら
-        const base = baseURL();
-        const songId = existingSong.id;
-        const title = escapeHtml(existingSong.title);
-        const author = escapeHtml(getAuthorText(existingSong));
-
-        const songLink = `${base}/songs/${songId}`;
-        const deleteReason = encodeURIComponent(`${songLink} と重複しています。`);
-        const deleteLink = `${base}/songs/${song_id}/delete?reason=${deleteReason}`;
-
-        const isIncomplete = isLack(existingSong);
-        const infoHTML = `
-        <span class="error">
-            <i class="fas fa-ban error"></i>
-            このURLは<br>
-            song ID：<a href="${songLink}" target="_blank">${songId}</a><br>
-            タイトル：${title}<br>
-            作者：${author}<br>
-            として
-            <a href="${songLink}" target="_blank">既に登録されています</a>
-            ${isIncomplete ? "がまだ未完成です。" : "。"}<br>
-            この記事を削除したい場合、<br>
-            <a href="${deleteLink}" target="_blank"><i class="error far fa-trash-alt"></i>削除申請</a>
-            を行ってくださいください。
-        </span>
-        `;
-
-        songEditInfoUrlEle.innerHTML = infoHTML;
-        return;
     }
+
+    // 全てのURLが重複していない場合
+    isUrlValid = true;
+    checkButton();
+    songEditInfoUrlEle.innerHTML = "<span class='ok'><i class='fas fa-check-circle ok'></i>登録可能な状態です</span>";
 }
 urlEle.addEventListener('input', checkUrlForm);
 
