@@ -37,11 +37,11 @@ class SongLinkSongSerializer(serializers.ModelSerializer):
 
 
 class SongLinkSerializer(serializers.ModelSerializer):
-    song = SongLinkSongSerializer(read_only=True)
+    songs = SongLinkSongSerializer(many=True, read_only=True)
 
     class Meta:
         model = SongLink
-        fields = ['id', 'url', 'allow_dup', 'song']
+        fields = ['id', 'url', 'allow_dup', 'songs']
 
 
 class AiSerializer(serializers.ModelSerializer):

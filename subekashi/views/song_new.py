@@ -45,7 +45,7 @@ def song_new(request):
         
         # 既に登録されているURLの場合はエラー（allow_dup=Falseのみ）
         cleaned_url = clean_url(url)
-        if cleaned_url and url and SongLink.objects.filter(url__iexact=cleaned_url, allow_dup=False).exists():
+        if cleaned_url and url and SongLink.objects.filter(url__iexact=cleaned_url, allow_dup=False, songs__isnull=False).exists():
             dataD["error"] = "URLは既に登録されています。"
             return render(request, 'subekashi/song_new.html', dataD)
         
@@ -97,9 +97,10 @@ def song_new(request):
         # authorsフィールドの更新
         song.authors.set(authors)
 
-        # SongLinkの作成
+        # SongLinkを取得または作成してこの曲を追加
         for url_str in cleaned_url.split(",") if cleaned_url else []:
-            SongLink.objects.create(song=song, url=url_str)
+            link, _ = SongLink.objects.get_or_create(url=url_str)
+            link.songs.add(song)
 
         song_id = song.id
         

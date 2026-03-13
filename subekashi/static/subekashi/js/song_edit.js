@@ -265,9 +265,11 @@ async function checkUrlForm() {
         if (!existingLinksRes) return;
 
         // 自身以外かつallow_dup=FalseのURLが重複していたら
-        const existingLink = existingLinksRes.result.find(link => !link.allow_dup && link.song?.id != song_id);
+        const existingLink = existingLinksRes.result.find(
+            link => !link.allow_dup && link.songs.some(s => s.id != song_id)
+        );
         if (existingLink) {
-            const song = existingLink.song;
+            const song = existingLink.songs.find(s => s.id != song_id);
             const base = baseURL();
             const songId = song.id;
             const title = escapeHtml(song.title);

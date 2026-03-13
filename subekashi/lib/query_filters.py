@@ -59,7 +59,7 @@ def filter_by_mediatypes(mediatypes):
 
 # 未完成フィルター
 def filter_by_lack():
-    any_links = SongLink.objects.filter(song=OuterRef('pk'))
+    any_links = SongLink.objects.filter(songs=OuterRef('pk'))
     return (
         Q(isdeleted=False) & ~Exists(any_links) |
         Q(isoriginal=False, issubeana=True, imitate="") & ~Q(authors__id=1) |

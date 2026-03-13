@@ -45,7 +45,7 @@ def song_edit(request, song_id):
         cleaned_url_list = cleaned_url.split(",") if cleaned_url else []
         for cleaned_url_item in cleaned_url_list:
             # allow_dup=Falseかつ自身以外の曲に紐づくURLが既に存在する場合はエラー
-            if SongLink.objects.filter(url__iexact=cleaned_url_item, allow_dup=False).exclude(song_id=song_id).exists():
+            if SongLink.objects.filter(url__iexact=cleaned_url_item, allow_dup=False).exclude(songs__id=song_id).filter(songs__isnull=False).exists():
                 dataD["error"] = "URLは既に登録されています。"
                 return render(request, 'subekashi/song_edit.html', dataD)
             
@@ -169,14 +169,17 @@ def song_edit(request, song_id):
         # SongLinkの更新（差分）
         existing_links = {link.url: link for link in song.links.all()}
         new_url_set = set(cleaned_url_list)
-        # 削除されたURLのSongLinkを削除
+        # 削除されたURLのSongLinkからこの曲を外す（他の曲が参照していなければ削除）
         for url_str, link in existing_links.items():
             if url_str not in new_url_set:
-                link.delete()
-        # 新規追加されたURLはSongLinkを作成
+                link.songs.remove(song)
+                if not link.songs.exists():
+                    link.delete()
+        # 新規追加されたURLはSongLinkを取得または作成してこの曲を追加
         for url_str in new_url_set:
             if url_str not in existing_links:
-                SongLink.objects.create(song=song, url=url_str)
+                link, _ = SongLink.objects.get_or_create(url=url_str)
+                link.songs.add(song)
 
         # History DBの変更内容とDisocrdの#新規作成・変更チャンネルに送る文の用意
         changes = [["種類", "編集前", "編集後"]]

@@ -54,11 +54,11 @@ async function checkAutoForm() {
     const existingLinks = existingLinksRes.result;
 
     // allow_dup=Falseかつsongが存在するリンクのみを重複エラーとして扱う
-    const duplicateLinks = existingLinks.filter(link => link.song && !link.allow_dup);
+    const duplicateLinks = existingLinks.filter(link => link.songs.length > 0 && !link.allow_dup);
 
     // 既に登録されているURLの場合
     if (duplicateLinks.length) {
-        const existingSong = duplicateLinks[0].song;
+        const existingSong = duplicateLinks[0].songs[0];
         const authorText = getAuthorText(existingSong);
         const infoHTML = existingSong.is_lack
         ?

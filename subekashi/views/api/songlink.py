@@ -13,7 +13,7 @@ class SongLinkThrottle(UserRateThrottle):
 
 def _make_song_queryset():
     """is_lackアノテーション付きのSongクエリセットを返す（N+1を回避）"""
-    any_links = SongLink.objects.filter(song=OuterRef('pk'))
+    any_links = SongLink.objects.filter(songs=OuterRef('pk'))
     has_author_1 = Author.objects.filter(id=1, songs__id=OuterRef('pk'))
     return Song.objects.annotate(
         is_lack=Case(
@@ -32,7 +32,7 @@ class SongLinkAPI(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         qs = SongLink.objects.prefetch_related(
-            Prefetch('song', queryset=_make_song_queryset()),
+            Prefetch('songs', queryset=_make_song_queryset()),
         )
         url = self.request.query_params.get('url', '')
         if url:
