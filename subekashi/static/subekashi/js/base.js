@@ -396,7 +396,7 @@ function getAuthorText(song) {
 
 // 曲が未完成かどうか
 function isLack(song) {
-    if (!song.isdeleted && song.url === "") {
+    if (!song.isdeleted && (!song.url || song.url.length === 0)) {
         return true;
     }
 
