@@ -228,6 +228,10 @@ python manage.py runserver
         },
         ...
       ],
+      "url": [
+        "https://youtu.be/VIDEO-00000",
+        "https://youtu.be/VIDEO-00001"
+      ],
       ...
     }
   ]
@@ -243,7 +247,7 @@ python manage.py runserver
 **個別取得時（/api/song/{song_id}）**
 ```json
 {
-  "song_id": 1,
+  "id": 1,
   "title": "曲名",
   "authors": [
     {
@@ -252,9 +256,16 @@ python manage.py runserver
     },
     ...
   ],
+  "url": [
+    "https://youtu.be/VIDEO-00000",
+    "https://youtu.be/VIDEO-00001"
+  ],
   ...
 }
 ```
+
+**`url`フィールドについて**
+`url`は登録されたURLの配列です。複数のURLが登録されている場合はすべて含まれます。URLが未登録の場合は空配列`[]`が返されます。
 
 ### Ad API
 **エンドポイント**: [https://lyrics.imicomweb.com/api/ad](https://lyrics.imicomweb.com/api/ad)
