@@ -53,13 +53,16 @@ async function checkAutoForm() {
     }
     const existingLinks = existingLinksRes.result;
 
+    // allow_dup=Falseかつsongが存在するリンクのみを重複エラーとして扱う
+    const duplicateLinks = existingLinks.filter(link => link.song && !link.allow_dup);
+
     // 既に登録されているURLの場合
-    if (existingLinks.length) {
-        const existingSong = existingLinks[0].song;
+    if (duplicateLinks.length) {
+        const existingSong = duplicateLinks[0].song;
         const authorText = getAuthorText(existingSong);
         const infoHTML = existingSong.is_lack
         ?
-        `<span class="info"><i class="fas fa-info-circle info"></i>このURLは<br>
+        `<span class='error'><i class='fas fa-ban error'></i>このURLは<br>
         song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
         タイトル：${existingSong.title}<br>
         作者：${authorText}<br>

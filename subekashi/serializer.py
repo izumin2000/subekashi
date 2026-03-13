@@ -25,6 +25,9 @@ class SongLinkSongSerializer(serializers.ModelSerializer):
     is_lack = serializers.SerializerMethodField()
 
     def get_is_lack(self, obj):
+        # SongLinkAPIのクエリセットでannotateされたis_lackを優先使用（N+1回避）
+        if hasattr(obj, 'is_lack'):
+            return obj.is_lack
         from subekashi.lib.query_filters import filter_by_lack
         return Song.objects.filter(pk=obj.pk).filter(filter_by_lack()).exists()
 
@@ -38,7 +41,7 @@ class SongLinkSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SongLink
-        fields = ['id', 'url', 'song']
+        fields = ['id', 'url', 'allow_dup', 'song']
 
 
 class AiSerializer(serializers.ModelSerializer):

@@ -43,10 +43,9 @@ def song_new(request):
             dataD["error"] = "URLは複数入力できません。"
             return render(request, 'subekashi/song_new.html', dataD)
         
-        # 既に登録されているURLの場合はエラー
+        # 既に登録されているURLの場合はエラー（allow_dup=Falseのみ）
         cleaned_url = clean_url(url)
-        song_qs, _ = song_search({"url": cleaned_url})
-        if song_qs.exists() and url:
+        if cleaned_url and url and SongLink.objects.filter(url__iexact=cleaned_url, allow_dup=False).exists():
             dataD["error"] = "URLは既に登録されています。"
             return render(request, 'subekashi/song_new.html', dataD)
         

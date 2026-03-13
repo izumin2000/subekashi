@@ -44,10 +44,8 @@ def song_edit(request, song_id):
         cleaned_url = clean_url(url)
         cleaned_url_list = cleaned_url.split(",") if cleaned_url else []
         for cleaned_url_item in cleaned_url_list:
-            # 既に登録されているURLの場合は(ユニークでなければ)エラー
-            existing_song, _ = song_search({"url": cleaned_url_item})
-            existing_song = list(existing_song)       # existsやfirstはエラーになるので使えない
-            if url and existing_song and existing_song[0].id != song_id:
+            # allow_dup=Falseかつ自身以外の曲に紐づくURLが既に存在する場合はエラー
+            if SongLink.objects.filter(url__iexact=cleaned_url_item, allow_dup=False).exclude(song_id=song_id).exists():
                 dataD["error"] = "URLは既に登録されています。"
                 return render(request, 'subekashi/song_edit.html', dataD)
             

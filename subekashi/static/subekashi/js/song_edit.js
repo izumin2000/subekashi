@@ -179,13 +179,12 @@ async function checkTitleAuthorForm() {
     const existingSong = existingSongs?.filter(song => song.id != song_id)[0];
 
     // 既に登録されている曲の場合
-    // TODO checkUrlFormを参考にリファクタリングする
     if (existingSong) {
         const isMultipleSongURL = existingSong.url.length > 1;
         const existingSongURL = existingSong.url[0] ?? "";
         const infoHTML = isLack(existingSong)
         ?
-        `<span class="info"><i class="fas fa-info-circle info"></i>
+        `<span class="warning"><i class="fas fa-exclamation-triangle warning"></i>
         未完成である曲が<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">見つかりました。</a><br>
         song ID：<a href="${baseURL()}/songs/${existingSong.id}" target="_blank">${existingSong.id}</a><br>
         登録されているURL：<a href="${existingSongURL}" target="_blank">${existingSongURL}</a>${isMultipleSongURL ? 'など' : ''}<br>
@@ -265,8 +264,8 @@ async function checkUrlForm() {
         );
         if (!existingLinksRes) return;
 
-        // 自身以外のurlが重複していたら
-        const existingLink = existingLinksRes.result.find(link => link.song?.id != song_id);
+        // 自身以外かつallow_dup=FalseのURLが重複していたら
+        const existingLink = existingLinksRes.result.find(link => !link.allow_dup && link.song?.id != song_id);
         if (existingLink) {
             const song = existingLink.song;
             const base = baseURL();
@@ -290,7 +289,7 @@ async function checkUrlForm() {
                 ${song.is_lack ? "がまだ未完成です。" : "。"}<br>
                 この記事を削除したい場合、<br>
                 <a href="${deleteLink}" target="_blank"><i class="error far fa-trash-alt"></i>削除申請</a>
-                を行ってくださいください。
+                を行ってください。
             </span>
             `;
 
