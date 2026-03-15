@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.urls import reverse
-from config.local_settings import NEW_DISCORD_URL
+from config.local_settings import NEW_DISCORD_URL, CONTACT_DISCORD_URL
 from config.settings import ROOT_URL
 from subekashi.models import *
 from subekashi.lib.url import *
@@ -233,4 +233,12 @@ def song_edit(request, song_id):
         response = redirect(f'/songs/{song_id}?toast=edit')
         response["X-Robots-Tag"] = "noindex, nofollow"
         return response
+    allow_dup_url = request.GET.get('allow_dup_url', '')
+    if allow_dup_url:
+        cleaned = clean_url(allow_dup_url) or allow_dup_url
+        link = SongLink.objects.filter(url__iexact=cleaned).first()
+        if link:
+            link.allow_dup = True
+            link.save()
+            send_discord(CONTACT_DISCORD_URL, f"重複許可したURL：{allow_dup_url}")
     return render(request, 'subekashi/song_edit.html', dataD)

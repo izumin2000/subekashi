@@ -1,6 +1,8 @@
 // 初期化
 const urlEle = document.getElementById('url');
 async function init() {
+    const allowDupUrl = new URLSearchParams(window.location.search).get('allow_dup_url');
+    if (allowDupUrl) urlEle.value = allowDupUrl;
     urlEle.focus();     // #urlにカーソルをあわせる
     await checkAutoForm();
     await checkManualForm();
@@ -67,7 +69,8 @@ async function checkAutoForm() {
     if (duplicateLinks.length) {
         const s = duplicateLinks[0].songs[0];
         const songUrl = `${baseURL()}/songs/${s.id}`;
-        newFormAutoInfoEle.innerHTML = `<span class='error'><i class='fas fa-ban error'></i>このURLは<br>${makeSongInfoRowsHTML([s])}<br>として<a href="${songUrl}" target="_blank">既に登録されています</a>${s.is_lack ? "がまだ未完成です" : ""}</span>`;
+        const allowDupLink = `?allow_dup_url=${encodeURIComponent(inputUrlEle)}`;
+        newFormAutoInfoEle.innerHTML = `<span class='error'><i class='fas fa-ban error'></i>このURLは<br>${makeSongInfoRowsHTML([s])}<br>として<a href="${songUrl}" target="_blank">既に登録されています</a>${s.is_lack ? "がまだ未完成です" : ""}<br>複数の曲があるURLとして登録したい場合、<br><a href="${allowDupLink}">こちら</a>をクリックしてください。</span>`;
         return;
     }
 
