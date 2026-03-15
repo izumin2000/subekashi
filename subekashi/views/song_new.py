@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from config.settings import *
+from config.local_settings import CONTACT_DISCORD_URL
 from subekashi.models import *
 from subekashi.lib.url import *
 from subekashi.lib.ip import *
@@ -147,4 +148,12 @@ def song_new(request):
         
         # 登録できましたトーストを表示する
         return redirect(f'/songs/{song_id}/edit?toast={request.GET.get("toast")}')
+    allow_dup_url = request.GET.get('allow_dup_url', '')
+    if allow_dup_url:
+        cleaned = clean_url(allow_dup_url) or allow_dup_url
+        link = SongLink.objects.filter(url__iexact=cleaned).first()
+        if link:
+            link.allow_dup = True
+            link.save()
+            send_discord(CONTACT_DISCORD_URL, f"重複許可したURL：{allow_dup_url}")
     return render(request, 'subekashi/song_new.html', dataD)

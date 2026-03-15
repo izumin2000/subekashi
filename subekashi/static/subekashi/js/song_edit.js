@@ -6,6 +6,8 @@ const lyricsEle = document.getElementById("lyrics")
 async function init() {
     openDeleteDetails();
     song_id = window.location.pathname.split("/")[2];
+    const allowDupUrl = new URLSearchParams(window.location.search).get('allow_dup_url');
+    if (allowDupUrl) document.getElementById('url').value = allowDupUrl;
     await checkTitleAuthorForm();
     await checkUrlForm();
     await initImitateList();
@@ -282,6 +284,7 @@ async function checkUrlForm() {
             const songLink = `${baseURL()}/songs/${song.id}`;
             const deleteReason = encodeURIComponent(`${songLink} と重複しています。`);
             const deleteLink = `${baseURL()}/songs/${song_id}/delete?reason=${deleteReason}`;
+            const allowDupLink = `?allow_dup_url=${encodeURIComponent(url)}`;
             songEditInfoUrlEle.innerHTML = `
             <span class="error">
                 <i class="fas fa-ban error"></i>
@@ -289,7 +292,8 @@ async function checkUrlForm() {
                 ${makeSongInfoRowsHTML([song])}<br>
                 として<a href="${songLink}" target="_blank">既に登録されています</a>${song.is_lack ? "がまだ未完成です。" : "。"}<br>
                 この記事を削除したい場合、<br>
-                <a href="${deleteLink}" target="_blank"><i class="error far fa-trash-alt"></i>削除申請</a>を行ってください。
+                <a href="${deleteLink}" target="_blank"><i class="error far fa-trash-alt"></i>削除申請</a>を行ってください。<br>
+                複数の曲があるURLとして登録したい場合、<br><a href="${allowDupLink}">こちら</a>をクリックしてください。
             </span>`;
             return;
         }
