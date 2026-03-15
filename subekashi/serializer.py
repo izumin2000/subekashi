@@ -13,7 +13,7 @@ class SongSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
 
     def get_url(self, obj):
-        return list(obj.links.filter(is_removed=False).values_list('url', flat=True))
+        return list(obj.links.values_list('url', flat=True))
 
     class Meta:
         model = Song
