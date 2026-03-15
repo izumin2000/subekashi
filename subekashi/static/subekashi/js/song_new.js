@@ -67,10 +67,7 @@ async function checkAutoForm() {
     if (duplicateLinks.length) {
         const s = duplicateLinks[0].songs[0];
         const songUrl = `${baseURL()}/songs/${s.id}`;
-        const suffix = s.is_lack
-            ? `として<a href="${songUrl}" target="_blank">既に登録されています</a>がまだ未完成です`
-            : `として<a href="${songUrl}" target="_blank">既に登録されています</a>`;
-        newFormAutoInfoEle.innerHTML = `<span class='error'><i class='fas fa-ban error'></i>このURLは<br>${makeSongInfoRowsHTML([s])}<br>${suffix}</span>`;
+        newFormAutoInfoEle.innerHTML = `<span class='error'><i class='fas fa-ban error'></i>このURLは<br>${makeSongInfoRowsHTML([s])}<br>として<a href="${songUrl}" target="_blank">既に登録されています</a>${s.is_lack ? "がまだ未完成です" : ""}</span>`;
         return;
     }
 
