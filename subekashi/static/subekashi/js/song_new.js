@@ -53,6 +53,13 @@ async function checkAutoForm() {
     }
     const existingLinks = existingLinksRes.result;
 
+    // is_removed=Trueのリンクがある場合（URLの曲が削除済み）
+    if (existingLinks.some(link => link.is_removed)) {
+        newFormAutoInfoEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>このURLの曲は削除されました</span>";
+        newSubmitAutoEle.disabled = urlEle.value == '';
+        return;
+    }
+
     // allow_dup=Falseかつsongが存在するリンクのみを重複エラーとして扱う
     const duplicateLinks = existingLinks.filter(link => link.songs.length > 0 && !link.allow_dup);
 

@@ -265,6 +265,14 @@ async function checkUrlForm() {
         );
         if (!existingLinksRes) return;
 
+        // is_removed=Trueのリンクがある場合（URLの曲が削除済み）
+        if (existingLinksRes.result.some(link => link.is_removed)) {
+            isUrlValid = true;
+            checkButton();
+            songEditInfoUrlEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>このURLの曲は削除されました</span>";
+            return;
+        }
+
         // 自身以外かつallow_dup=FalseのURLが重複していたらエラー
         const existingLink = existingLinksRes.result.find(
             link => !link.allow_dup && link.songs.some(s => s.id != song_id)
@@ -372,7 +380,7 @@ window.addEventListener('beforeunload', (event) => {
 
 // 送信ボタンは戻る処理の対象外なのでisFormDirtyをfalseにする
 document.querySelectorAll('form').forEach((form) => {
-    form.addEventListener('submit', (event) => {
+    form.addEventListener('submit', () => {
         isFormDirty = false;
     });
 });
