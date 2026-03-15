@@ -23,21 +23,21 @@ document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
 async function checkAutoForm() {
     const newSubmitAutoEle = document.getElementById('new-submit-auto');
     const newFormAutoInfoEle = document.getElementById('new-form-auto-info');
-    const inputUrlEle = urlEle.value;
-    const videoId = getYouTubeId(inputUrlEle);
+    const inputUrl = urlEle.value;
+    const videoId = getYouTubeId(inputUrl);
     newSubmitAutoEle.disabled = true;
 
     const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`
     newFormAutoInfoEle.innerHTML = loadingEle;
 
     // URLが空の場合
-    if (inputUrlEle === '') {
+    if (inputUrl === '') {
         newFormAutoInfoEle.innerHTML = "";
         return;
     }
 
     // URLが複数の場合
-    if (inputUrlEle.includes(",")) {
+    if (inputUrl.includes(",")) {
         newFormAutoInfoEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>複数のURLを入力することはできません</span>";
         return;
     }
@@ -48,7 +48,7 @@ async function checkAutoForm() {
         return;
     }
     
-    const existingLinksRes = await exponentialBackoff(`songlink/?url=${encodeURIComponent(formatYouTubeURL(inputUrlEle))}`, "url", checkAutoForm);
+    const existingLinksRes = await exponentialBackoff(`songlink/?url=${encodeURIComponent(formatYouTubeURL(inputUrl))}`, "url", checkAutoForm);
 
     if (existingLinksRes == undefined) {
         return;
@@ -69,7 +69,7 @@ async function checkAutoForm() {
     if (duplicateLinks.length) {
         const s = duplicateLinks[0].songs[0];
         const songUrl = `${baseURL()}/songs/${s.id}`;
-        const allowDupLink = `?allow_dup_url=${encodeURIComponent(inputUrlEle)}`;
+        const allowDupLink = `?allow_dup_url=${encodeURIComponent(inputUrl)}`;
         newFormAutoInfoEle.innerHTML = `<span class='error'><i class='fas fa-ban error'></i>このURLは<br>${makeSongInfoRowsHTML([s])}<br>として<a href="${songUrl}" target="_blank">既に登録されています</a>${s.is_lack ? "がまだ未完成です" : ""}<br>複数の曲があるURLとして登録したい場合、<br><a href="${allowDupLink}">こちら</a>をクリックしてください。</span>`;
         return;
     }
