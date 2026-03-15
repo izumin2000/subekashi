@@ -33,6 +33,9 @@ class Command(BaseCommand):
             for songId in options['d'] :
                 songIns = getIns(songId)
                 if songIns :
+                    for link in songIns.links.all():
+                        link.is_removed = True
+                        link.save()
                     self.stdout.write(self.style.SUCCESS(f"{songIns.id}({songIns})を削除しました"))
                     songIns.delete()
 

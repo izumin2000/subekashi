@@ -53,6 +53,13 @@ async function checkAutoForm() {
     }
     const existingLinks = existingLinksRes.result;
 
+    // is_removed=Trueのリンクがある場合（URLの曲が削除済み）
+    if (existingLinks.some(link => link.is_removed)) {
+        newFormAutoInfoEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>このURLの曲は削除されました</span>";
+        newSubmitAutoEle.disabled = urlEle.value == '';
+        return;
+    }
+
     // allow_dup=Falseかつsongが存在するリンクのみを重複エラーとして扱う
     const duplicateLinks = existingLinks.filter(link => link.songs.length > 0 && !link.allow_dup);
 
@@ -60,10 +67,7 @@ async function checkAutoForm() {
     if (duplicateLinks.length) {
         const s = duplicateLinks[0].songs[0];
         const songUrl = `${baseURL()}/songs/${s.id}`;
-        const suffix = s.is_lack
-            ? `として<a href="${songUrl}" target="_blank">既に登録されています</a>がまだ未完成です`
-            : `として<a href="${songUrl}" target="_blank">既に登録されています</a>`;
-        newFormAutoInfoEle.innerHTML = `<span class='error'><i class='fas fa-ban error'></i>このURLは<br>${makeSongInfoRowsHTML([s])}<br>${suffix}</span>`;
+        newFormAutoInfoEle.innerHTML = `<span class='error'><i class='fas fa-ban error'></i>このURLは<br>${makeSongInfoRowsHTML([s])}<br>として<a href="${songUrl}" target="_blank">既に登録されています</a>${s.is_lack ? "がまだ未完成です" : ""}</span>`;
         return;
     }
 

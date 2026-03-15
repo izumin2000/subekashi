@@ -13,7 +13,7 @@ class SongSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
 
     def get_url(self, obj):
-        return list(obj.links.filter(is_removed=False).values_list('url', flat=True))
+        return list(obj.links.values_list('url', flat=True))
 
     class Meta:
         model = Song
@@ -41,7 +41,7 @@ class SongLinkSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SongLink
-        fields = ['id', 'url', 'allow_dup', 'songs']
+        fields = ['id', 'url', 'is_removed', 'allow_dup', 'songs']
 
 
 class AiSerializer(serializers.ModelSerializer):
