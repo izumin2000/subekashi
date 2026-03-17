@@ -269,7 +269,6 @@ async function checkUrlForm() {
 
         // is_removed=Trueのリンクがある場合（URLの曲が削除済み）
         if (existingLinksRes.result.some(link => link.is_removed)) {
-            isUrlValid = true;
             checkButton();
             songEditInfoUrlEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>このURLの曲は削除されました</span>";
             return;

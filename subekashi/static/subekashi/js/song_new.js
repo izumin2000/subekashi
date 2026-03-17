@@ -58,7 +58,6 @@ async function checkAutoForm() {
     // is_removed=Trueのリンクがある場合（URLの曲が削除済み）
     if (existingLinks.some(link => link.is_removed)) {
         newFormAutoInfoEle.innerHTML = "<span class='error'><i class='fas fa-ban error'></i>このURLの曲は削除されました</span>";
-        newSubmitAutoEle.disabled = urlEle.value == '';
         return;
     }
 
@@ -80,15 +79,13 @@ async function checkAutoForm() {
         .flatMap(link => link.songs);
     if (allowDupSongs.length) {
         newFormAutoInfoEle.innerHTML = `<span class='info'><i class='fas fa-info-circle info'></i>このURLは以下の曲と重複していますが登録できます。<br>${makeSongInfoRowsHTML(allowDupSongs)}</span>`;
-        newSubmitAutoEle.disabled = urlEle.value == '';
+        newSubmitAutoEle.disabled = false;
         return;
     }
 
     // 登録されていないURLの場合
     newFormAutoInfoEle.innerHTML = "<span class='ok'><i class='fas fa-check-circle ok'></i>登録可能です</span>";
     newSubmitAutoEle.disabled = false;
-
-    newSubmitAutoEle.disabled = urlEle.value == '';
 };
 
 urlEle.addEventListener('input', checkAutoForm)

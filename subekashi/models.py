@@ -63,9 +63,6 @@ class Song(models.Model):
         if self.lyrics:
             self.lyrics = self.lyrics.replace("\r\n", "\n")
         super().save(*args, **kwargs)
-    
-    # def urls(self):
-        # return
 
     # def imitates(self):
         # return
