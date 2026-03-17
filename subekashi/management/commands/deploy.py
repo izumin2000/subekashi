@@ -5,15 +5,22 @@ import requests
 
 
 class Command(BaseCommand) :
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '-m', '--no-migrate',
+            action='store_true',
+            help='マイグレーションをスキップする',
+        )
+
     def handle(self, *args, **options):
         COMMANDS = [
-            "git pull origin main", 
-            "pip install -r requirements.txt", 
-            "python manage.py makemigrations", 
-            "python manage.py migrate", 
-            "python manage.py collectstatic --noinput", 
+            "git pull origin main",
+            "pip install -r requirements.txt",
+            "python manage.py collectstatic --noinput",
             "python manage.py appversion"
         ]
+        if not options['no_migrate']:
+            COMMANDS.insert(2, "python manage.py migrate")
         
         try:
             # エラーハンドリング
