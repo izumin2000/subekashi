@@ -34,9 +34,11 @@
 }
 
 #article-text img {
-    margin: 20px 0;
+    display: block;
+    margin: 20px auto;
     max-width: 800px;
-    width: 80vw;
+    width: 100%;
+    border: solid 2px #999;;
 }
 
 #article-text ul {
