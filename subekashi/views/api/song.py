@@ -11,7 +11,7 @@ class SongThrottle(UserRateThrottle):
 
 
 class SongAPI(viewsets.ReadOnlyModelViewSet):
-    queryset = Song.objects.all()
+    queryset = Song.objects.prefetch_related('links')
     serializer_class = SongSerializer
     throttle_classes = [SongThrottle]
 

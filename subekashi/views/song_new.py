@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from config.settings import *
+from config.local_settings import CONTACT_DISCORD_URL
 from subekashi.models import *
 from subekashi.lib.url import *
 from subekashi.lib.ip import *
@@ -43,10 +44,9 @@ def song_new(request):
             dataD["error"] = "URLは複数入力できません。"
             return render(request, 'subekashi/song_new.html', dataD)
         
-        # 既に登録されているURLの場合はエラー
+        # 既に登録されているURLの場合はエラー（allow_dup=Falseのみ）
         cleaned_url = clean_url(url)
-        song_qs, _ = song_search({"url": cleaned_url})
-        if song_qs.exists() and url:
+        if cleaned_url and SongLink.objects.filter(url__iexact=cleaned_url, allow_dup=False, songs__isnull=False).exists():
             dataD["error"] = "URLは既に登録されています。"
             return render(request, 'subekashi/song_new.html', dataD)
         
@@ -82,7 +82,6 @@ def song_new(request):
         ip = get_ip(request)
         song = Song(
             title = title,
-            url = cleaned_url,
             post_time = timezone.now(),
             isoriginal = is_original,
             isdeleted = is_deleted,
@@ -98,6 +97,11 @@ def song_new(request):
 
         # authorsフィールドの更新
         song.authors.set(authors)
+
+        # SongLinkを取得または作成してこの曲を追加
+        for url_str in cleaned_url.split(",") if cleaned_url else []:
+            link, _ = SongLink.objects.get_or_create(url=url_str)
+            link.songs.add(song)
 
         song_id = song.id
         
@@ -144,4 +148,12 @@ def song_new(request):
         
         # 登録できましたトーストを表示する
         return redirect(f'/songs/{song_id}/edit?toast={request.GET.get("toast")}')
+    allow_dup_url = request.GET.get('allow_dup_url', '')
+    if allow_dup_url:
+        cleaned = clean_url(allow_dup_url) or allow_dup_url
+        link = SongLink.objects.filter(url__iexact=cleaned).first()
+        if link:
+            link.allow_dup = True
+            link.save()
+            send_discord(CONTACT_DISCORD_URL, f"重複許可したURL：{allow_dup_url}")
     return render(request, 'subekashi/song_new.html', dataD)

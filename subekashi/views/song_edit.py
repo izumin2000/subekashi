@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.urls import reverse
-from config.local_settings import NEW_DISCORD_URL
+from config.local_settings import NEW_DISCORD_URL, CONTACT_DISCORD_URL
 from config.settings import ROOT_URL
 from subekashi.models import *
 from subekashi.lib.url import *
@@ -44,11 +44,8 @@ def song_edit(request, song_id):
         cleaned_url = clean_url(url)
         cleaned_url_list = cleaned_url.split(",") if cleaned_url else []
         for cleaned_url_item in cleaned_url_list:
-            # 既に登録されているURLの場合は(ユニークでなければ)エラー
-            # TODO URLテーブルで実装したい
-            existing_song, _ = song_search({"url": cleaned_url_item})
-            existing_song = list(existing_song)       # existsやfirstはエラーになるので使えない
-            if url and existing_song and existing_song[0].id != song_id:
+            # allow_dup=Falseかつ自身以外の曲に紐づくURLが既に存在する場合はエラー
+            if SongLink.objects.filter(url__iexact=cleaned_url_item, allow_dup=False).exclude(songs__id=song_id).filter(songs__isnull=False).exists():
                 dataD["error"] = "URLは既に登録されています。"
                 return render(request, 'subekashi/song_edit.html', dataD)
             
@@ -135,11 +132,14 @@ def song_edit(request, song_id):
                 info += f"{song.title}\n"
             return info[:-1]        # 最後の改行は不要
 
+        # URL変更前後の値を取得（SongLinkベース）
+        before_urls = ",".join(song.links.order_by('id').values_list('url', flat=True))
+
         # songを更新する前にhistoryのために更新前後のsongの情報を記録しておく
         COLUMNS = [
             {"label": "タイトル", "before": song.title ,"after": title},
             {"label": "作者", "before": song.authors_str(), "after": ", ".join([a.name for a in author_objects])},
-            {"label": "URL", "before": song.url ,"after": cleaned_url},
+            {"label": "URL", "before": before_urls ,"after": cleaned_url},
             {"label": "オリジナル", "before": yes_no(song.isoriginal) ,"after": yes_no(is_original)},
             {"label": "削除済み", "before": yes_no(song.isdeleted) ,"after": yes_no(is_deleted)},
             {"label": "ネタ曲", "before": yes_no(song.isjoke) ,"after": yes_no(is_joke)},
@@ -152,7 +152,6 @@ def song_edit(request, song_id):
 
         # songの更新
         song.title = title
-        song.url = cleaned_url
         song.lyrics = lyrics
         song.imitate = imitates
         song.isoriginal = is_original
@@ -166,7 +165,22 @@ def song_edit(request, song_id):
 
         # authorsフィールドの更新
         song.authors.set(author_objects)
-        
+
+        # SongLinkの更新（差分）
+        existing_links = {link.url: link for link in song.links.all()}
+        new_url_set = set(cleaned_url_list)
+        # 削除されたURLのSongLinkからこの曲を外す（他の曲が参照していなければ削除）
+        for url_str, link in existing_links.items():
+            if url_str not in new_url_set:
+                link.songs.remove(song)
+                if not link.songs.exists():
+                    link.delete()
+        # 新規追加されたURLはSongLinkを取得または作成してこの曲を追加
+        for url_str in new_url_set:
+            if url_str not in existing_links:
+                link, _ = SongLink.objects.get_or_create(url=url_str)
+                link.songs.add(song)
+
         # History DBの変更内容とDisocrdの#新規作成・変更チャンネルに送る文の用意
         changes = [["種類", "編集前", "編集後"]]
         changed_labels = []
@@ -219,4 +233,12 @@ def song_edit(request, song_id):
         response = redirect(f'/songs/{song_id}?toast=edit')
         response["X-Robots-Tag"] = "noindex, nofollow"
         return response
+    allow_dup_url = request.GET.get('allow_dup_url', '')
+    if allow_dup_url:
+        cleaned = clean_url(allow_dup_url) or allow_dup_url
+        link = SongLink.objects.filter(url__iexact=cleaned).first()
+        if link:
+            link.allow_dup = True
+            link.save()
+            send_discord(CONTACT_DISCORD_URL, f"重複許可したURL：{allow_dup_url}")
     return render(request, 'subekashi/song_edit.html', dataD)

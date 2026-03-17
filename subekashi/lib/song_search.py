@@ -30,7 +30,7 @@ def song_search(querys):
 
     # django-filterを適用
     try:
-        filterset = SongFilter(cleaned_querys, queryset=Song.objects.all())
+        filterset = SongFilter(cleaned_querys, queryset=Song.objects.prefetch_related('links'))
 
         # フィルタのバリデーションエラーをチェック
         if not filterset.is_valid():

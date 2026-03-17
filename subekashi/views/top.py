@@ -50,7 +50,7 @@ def top(request):
     # 未完成の表示設定
     lack_count = int(request.COOKIES.get("is_shown_lack", "5"))
     if lack_count > 0:
-        lackInsL = list(songInsL.filter(filter_by_lack))
+        lackInsL = list(songInsL.filter(filter_by_lack()))
         if lackInsL:
             lackInsL = random.sample(lackInsL, min(lack_count, len(lackInsL)))
             dataD["lackInsL"] = lackInsL

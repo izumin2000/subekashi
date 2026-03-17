@@ -141,9 +141,9 @@ class SongFilter(django_filters.FilterSet):
         return queryset.filter(filter_by_keyword(value))
 
     def filter_url(self, queryset, name, value):
-        """URLフィールドによるフィルタ（clean_urlを適用）"""
+        """SongLinkテーブルのURLによるフィルタ（clean_urlを適用し部分一致）"""
         value = clean_url(value)
-        return queryset.filter(url__icontains=value)
+        return queryset.filter(links__url__icontains=value)
 
     def filter_imitate(self, queryset, name, value):
         """imitateフィールドによるフィルタ（カンマ区切りリストをサポート）"""
@@ -164,7 +164,7 @@ class SongFilter(django_filters.FilterSet):
     def filter_islack(self, queryset, name, value):
         """不完全な曲をフィルタ"""
         if value:
-            return queryset.filter(filter_by_lack)
+            return queryset.filter(filter_by_lack())
         return queryset
 
     def filter_sort(self, queryset, name, value):
@@ -229,8 +229,8 @@ class SongFilter(django_filters.FilterSet):
         if has_like_filter_or_sort(self.data):
             queryset = queryset.filter(like__gte=1)
 
-        # authors__nameを検索するフィルタ使用時、またはrandom/authorソート時にdistinct()を適用
-        NEED_DISTINCT_KEY_LIST = ['author', 'author_exact', 'keyword', 'guesser', 'islack']
+        # フィルタ使用時、またはrandom/authorソート時にdistinct()を適用
+        NEED_DISTINCT_KEY_LIST = ['author', 'author_exact', 'keyword', 'guesser', 'islack', 'url', 'mediatypes']
         NEED_DISTINCT_SORT_LIST = ['random', 'author', '-author']
         if any(key in self.data for key in NEED_DISTINCT_KEY_LIST) or (self.data.get('sort') in NEED_DISTINCT_SORT_LIST):
             ids = queryset.values('id').distinct()

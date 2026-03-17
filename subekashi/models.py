@@ -32,7 +32,6 @@ class Song(models.Model):
     
     title = models.CharField(default = "", max_length = 500)
     authors = models.ManyToManyField('Author', related_name='songs', blank=True)
-    url = models.CharField(blank = True, null = True, default = "", max_length = 500)       # TODO URLテーブルの利用
     lyrics = models.TextField(blank = True, null = True, default = "", max_length = 10000)
     # imitates = models.ManyToManyField("self", symmetrical=False, related_name="imitateds", blank=True)     # TODO 自己参照
     imitate = models.CharField(blank = True, null = True, default = "", max_length = 10000)
@@ -64,18 +63,19 @@ class Song(models.Model):
         if self.lyrics:
             self.lyrics = self.lyrics.replace("\r\n", "\n")
         super().save(*args, **kwargs)
-    
-    # def urls(self):
-        # return
-    
+
     # def imitates(self):
         # return
 
 # 曲のURLの情報
-# urlは許可したメディア(YouTube, niconico等)のurlしか受け付けないことを想定
 class SongLink(models.Model):
-    url = models.CharField(default = "", max_length = 100)        # TODO 全削除申請対応後uniqueにする
-    song = models.ForeignKey(Song, on_delete = models.CASCADE, related_name="links")
+    url = models.URLField(max_length=500, unique=True)
+    songs = models.ManyToManyField('Song', blank=True, related_name='links')
+    is_removed = models.BooleanField(default=False)
+    allow_dup = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.url
 
 
 # 曲の作者の情報
