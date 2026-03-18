@@ -11,6 +11,7 @@ async function init() {
     await checkTitleAuthorForm();
     await checkUrlForm();
     await initImitateList();
+    document.getElementById("song-guesser").innerHTML = "";
     checkButton();
     checkDeleteForm();
 };

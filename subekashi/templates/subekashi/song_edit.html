@@ -61,7 +61,7 @@
             {% render_categorys %}
             <p id="imitate-sub">もしくは模倣曲から選択</p>
             <input type="text" id="imitate-title" class="sansfont" oninput="renderSongGuesser()" placeholder="タイトルか作者を入力">
-            <div id="song-guesser" class="sansfont"></div>
+            <div id="song-guesser" class="sansfont"><img id='loading' src="{% static 'subekashi/image/loading.gif' %}" alt='loading'></div>
             <template id="imitate-item-template">
                 <div class="imitate-item">
                     <p>
