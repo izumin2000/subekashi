@@ -544,7 +544,7 @@ details h3 {
     font-size: 30px;
 }
 
-#loading, #next-page-loading {
+.loading, #next-page-loading {
     display: block;
     width: 120px;
     margin: 0 auto;

@@ -166,19 +166,27 @@ async function getSongGuessers(text, to, signal, calling_func = () => {}) {
         return;
     }
 
+    const loadingEle = document.createElement("img");
+    loadingEle.classList.add("loading");
+    loadingEle.src = `${baseURL()}/static/subekashi/image/loading.gif`;
+    loadingEle.alt = "loading";
+    toEle.appendChild(loadingEle);
+
     try {
         const songGuessers = await exponentialBackoff(`html/song_guessers?guesser=${text}`, "getSongGuessers", calling_func);
         if (!songGuessers) return;
-        
+
         for (var songGuesser of songGuessers) {
             // キャンセルが要求されているか確認
             if (signal.aborted) {
                 return;
             }
-            
+
             appendSongGuesser(songGuesser, toEle);
+            toEle.appendChild(loadingEle);   // 常に末尾へ移動
             await sleep(0.05);
         }
+        loadingEle.remove();
     } catch (error) {
         console.error(error)
     }

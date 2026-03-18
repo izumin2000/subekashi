@@ -11,6 +11,7 @@ async function init() {
     await checkTitleAuthorForm();
     await checkUrlForm();
     await initImitateList();
+    document.getElementById("song-guesser").innerHTML = "";
     checkButton();
     checkDeleteForm();
 };
@@ -145,7 +146,7 @@ async function checkTitleAuthorForm() {
     checkButton();
     const songEditInfoTitleAuthorsEle = document.getElementById('song-edit-info-title-authors');
 
-    const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`
+    const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" class="loading" alt="loading">`
     songEditInfoTitleAuthorsEle.innerHTML = loadingEle;
 
     // タイトルが空の場合
@@ -231,7 +232,7 @@ async function checkUrlForm() {
     checkButton();
     const songEditInfoUrlEle = document.getElementById('song-edit-info-url');
 
-    const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`
+    const loadingEle = `<img src="${baseURL()}/static/subekashi/image/loading.gif" class="loading" alt="loading">`
     songEditInfoUrlEle.innerHTML = loadingEle;
 
     // URLが空の場合

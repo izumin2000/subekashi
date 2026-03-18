@@ -218,7 +218,7 @@ function renderSearch() {
         songCardsEle.removeChild(songCardsEle.firstChild);
     }
 
-    loadingEle = stringToHTML(`<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`);
+    loadingEle = stringToHTML(`<img src="${baseURL()}/static/subekashi/image/loading.gif" class="loading" alt="loading">`);
     songCardsEle.appendChild(loadingEle);
 
     SearchController = new AbortController();
@@ -242,11 +242,11 @@ async function search(signal, page) {
     const songCards = await getsongCards(query);
 
     if (page == 1) {
-        document.getElementById("loading").remove();
+        loadingEle.remove();
     }
 
     if (!songCards) {
-        loadingEle = stringToHTML(`<img src="${baseURL()}/static/subekashi/image/loading.gif" id="loading" alt='loading'></img>`);
+        loadingEle = stringToHTML(`<img src="${baseURL()}/static/subekashi/image/loading.gif" class="loading" alt="loading">`);
         songCardsEle.appendChild(loadingEle);
         return;
     }
