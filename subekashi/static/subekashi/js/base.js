@@ -167,7 +167,7 @@ async function getSongGuessers(text, to, signal, calling_func = () => {}) {
     }
 
     const loadingEle = document.createElement("img");
-    loadingEle.id = "loading";
+    loadingEle.classList.add("loading");
     loadingEle.src = `${baseURL()}/static/subekashi/image/loading.gif`;
     loadingEle.alt = "loading";
     toEle.appendChild(loadingEle);
