@@ -48,13 +48,13 @@
             <label for="authors">作者<i class="fas fa-info-circle" onclick="showTutorial('authors')"></i></label>
             <input type="text" id="authors" name="authors" class="sansfont" value="{{ song.authors.all|join:',' }}" required>
         </div>
-        <p class="song-edit-info" id="song-edit-info-title-authors"><img id='loading' src="{% static 'subekashi/image/loading.gif' %}" alt='loading'></img></p>
+        <p class="song-edit-info" id="song-edit-info-title-authors"><span id='loading'></span></p>
         {% comment %} TODO URLを複数入力形式に {% endcomment %}
         <div class="form-col">
             <label for="url">URL<br>(複数可)<i class="fas fa-info-circle" onclick="showTutorial('url')"></i></label>
             <input type="text" id="url" name="url" value="{{ song.links.all|join:',' }}">
         </div>
-        <p class="song-edit-info" id="song-edit-info-url"><img id='loading' src="{% static 'subekashi/image/loading.gif' %}" alt='loading'></img></p>
+        <p class="song-edit-info" id="song-edit-info-url"><span id='loading'></span></p>
         <label id="imitate-label">模倣<i class="fas fa-info-circle" onclick="showTutorial('imitate')"></i></label>
         <div id="imitate-div">
             <p>原曲から選択</p>
@@ -115,7 +115,7 @@
             <i class="fas fa-info-circle" onclick="showTutorial('is-draft')"></i>
         </div>
         <input type="submit" value="登録" id="song-edit-submit" disabled>
-        <p id="song-edit-info-submit" class="song-edit-info"><img id='loading' src="{% static 'subekashi/image/loading.gif' %}" alt='loading'></img></p>
+        <p id="song-edit-info-submit" class="song-edit-info"><span id='loading'></span></p>
     </form>
 </section>
 {% endblock %}
