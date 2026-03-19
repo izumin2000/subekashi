@@ -178,3 +178,13 @@ titleEle.addEventListener('input', checkManualForm);
 window.addEventListener("pageshow", function () {
     init();
 });
+
+// 登録ボタンクリック時の処理
+['new-form-auto', 'new-form-manual'].forEach(formId => {
+    document.getElementById(formId).addEventListener('submit', function () {
+        const submitBtn = this.querySelector('input[type="submit"]');
+        const infoEle = document.getElementById(formId + '-info');
+        submitBtn.disabled = true;
+        infoEle.innerHTML = `<span class="loading"></span>`;
+    });
+});
