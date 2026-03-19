@@ -218,7 +218,7 @@ function renderSearch() {
         songCardsEle.removeChild(songCardsEle.firstChild);
     }
 
-    loadingEle = stringToHTML(`<span id="loading"></span>`);
+    loadingEle = stringToHTML(`<span class="loading"></span>`);
     songCardsEle.appendChild(loadingEle);
 
     SearchController = new AbortController();
@@ -242,11 +242,11 @@ async function search(signal, page) {
     const songCards = await getsongCards(query);
 
     if (page == 1) {
-        document.getElementById("loading").remove();
+        loadingEle.remove();
     }
 
     if (!songCards) {
-        loadingEle = stringToHTML(`<span id="loading"></span>`);
+        loadingEle = stringToHTML(`<span class="loading"></span>`);
         songCardsEle.appendChild(loadingEle);
         return;
     }

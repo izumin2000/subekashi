@@ -568,7 +568,7 @@ details h3 {
     100% { background-position: 106px center; }
 }
 
-#loading, #next-page-loading {
+.loading, #next-page-loading {
     display: block;
     position: relative;
     width: 120px;
@@ -582,8 +582,8 @@ details h3 {
         loading-bg-move 1.2s linear -0.8s infinite;
 }
 
-#loading::before,
-#loading::after,
+.loading::before,
+.loading::after,
 #next-page-loading::before,
 #next-page-loading::after {
     content: '';
@@ -597,13 +597,13 @@ details h3 {
     opacity: 0;
 }
 
-#loading::before, #next-page-loading::before {
+.loading::before, #next-page-loading::before {
     animation:
         loading-dot-fade 1.2s linear -0.4s infinite,
         loading-dot-move 1.2s linear -0.4s infinite;
 }
 
-#loading::after, #next-page-loading::after {
+.loading::after, #next-page-loading::after {
     animation:
         loading-dot-fade 1.2s linear 0s infinite,
         loading-dot-move 1.2s linear 0s infinite;

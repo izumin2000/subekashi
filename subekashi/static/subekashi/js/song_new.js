@@ -27,7 +27,7 @@ async function checkAutoForm() {
     const videoId = getYouTubeId(inputUrl);
     newSubmitAutoEle.disabled = true;
 
-    const loadingEle = `<span id="loading"></span>`
+    const loadingEle = `<span class="loading"></span>`
     newFormAutoInfoEle.innerHTML = loadingEle;
 
     // URLが空の場合
@@ -101,7 +101,7 @@ async function checkManualForm() {
     const titleEle = document.getElementById('title');
     const newFormAutoManualEle = document.getElementById('new-form-manual-info');
 
-    const loadingEle = `<span id="loading"></span>`
+    const loadingEle = `<span class="loading"></span>`
     newFormAutoManualEle.innerHTML = loadingEle;
 
     // 作者が空の場合（ユーザーが入力した後のみエラー表示）
