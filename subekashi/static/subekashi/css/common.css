@@ -545,8 +545,10 @@ details h3 {
 }
 
 @keyframes loading-dot-fade {
-    0%   { opacity: 0; animation-timing-function: ease-in; }
-    50%  { opacity: 1; animation-timing-function: ease-out; }
+    0%   { opacity: 0; }
+    30%  { opacity: 1; }
+    60%  { opacity: 1; }
+    80%  { opacity: 0; }
     100% { opacity: 0; }
 }
 
@@ -557,8 +559,10 @@ details h3 {
 }
 
 @keyframes loading-bg-fade {
-    0%   { color: rgba(255,255,255,0); animation-timing-function: ease-in; }
-    50%  { color: rgba(255,255,255,1); animation-timing-function: ease-out; }
+    0%   { color: rgba(255,255,255,0); }
+    30%  { color: rgba(255,255,255,1); }
+    60%  { color: rgba(255,255,255,1); }
+    80%  { color: rgba(255,255,255,0); }
     100% { color: rgba(255,255,255,0); }
 }
 
