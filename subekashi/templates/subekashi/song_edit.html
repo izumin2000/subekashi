@@ -48,20 +48,20 @@
             <label for="authors">作者<i class="fas fa-info-circle" onclick="showTutorial('authors')"></i></label>
             <input type="text" id="authors" name="authors" class="sansfont" value="{{ song.authors.all|join:',' }}" required>
         </div>
-        <p class="song-edit-info" id="song-edit-info-title-authors"><img class="loading" src="{% static 'subekashi/image/loading.gif' %}" alt="loading"></p>
+        <p class="song-edit-info" id="song-edit-info-title-authors"><span class='loading'></span></p>
         {% comment %} TODO URLを複数入力形式に {% endcomment %}
         <div class="form-col">
             <label for="url">URL<br>(複数可)<i class="fas fa-info-circle" onclick="showTutorial('url')"></i></label>
             <input type="text" id="url" name="url" value="{{ song.links.all|join:',' }}">
         </div>
-        <p class="song-edit-info" id="song-edit-info-url"><img class="loading" src="{% static 'subekashi/image/loading.gif' %}" alt="loading"></p>
+        <p class="song-edit-info" id="song-edit-info-url"><span class='loading'></span></p>
         <label id="imitate-label">模倣<i class="fas fa-info-circle" onclick="showTutorial('imitate')"></i></label>
         <div id="imitate-div">
             <p>原曲から選択</p>
             {% render_categorys %}
             <p id="imitate-sub">もしくは模倣曲から選択</p>
             <input type="text" id="imitate-title" class="sansfont" oninput="renderSongGuesser()" placeholder="タイトルか作者を入力">
-            <div id="song-guesser" class="sansfont"><img class="loading" src="{% static 'subekashi/image/loading.gif' %}" alt="loading"></div>
+            <div id="song-guesser" class="sansfont"><span class="loading"></span></div>
             <template id="imitate-item-template">
                 <div class="imitate-item">
                     <p>
@@ -115,7 +115,7 @@
             <i class="fas fa-info-circle" onclick="showTutorial('is-draft')"></i>
         </div>
         <input type="submit" value="登録" id="song-edit-submit" disabled>
-        <p id="song-edit-info-submit" class="song-edit-info"><img id='loading' src="{% static 'subekashi/image/loading.gif' %}" alt='loading'></img></p>
+        <p id="song-edit-info-submit" class="song-edit-info"><span class='loading'></span></p>
     </form>
 </section>
 {% endblock %}

@@ -218,7 +218,7 @@ function renderSearch() {
         songCardsEle.removeChild(songCardsEle.firstChild);
     }
 
-    loadingEle = stringToHTML(`<img src="${baseURL()}/static/subekashi/image/loading.gif" class="loading" alt="loading">`);
+    loadingEle = stringToHTML(`<span class="loading"></span>`);
     songCardsEle.appendChild(loadingEle);
 
     SearchController = new AbortController();
@@ -246,7 +246,7 @@ async function search(signal, page) {
     }
 
     if (!songCards) {
-        loadingEle = stringToHTML(`<img src="${baseURL()}/static/subekashi/image/loading.gif" class="loading" alt="loading">`);
+        loadingEle = stringToHTML(`<span class="loading"></span>`);
         songCardsEle.appendChild(loadingEle);
         return;
     }
