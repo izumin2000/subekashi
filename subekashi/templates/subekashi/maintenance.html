@@ -1,0 +1,16 @@
+{% extends 'subekashi/base/base.html' %}
+{% load static %}
+
+{% block css %}{% static 'subekashi/css/maintenance.css' %}{% endblock %}
+
+{% block content %}
+<div class="maintenance-content">
+    {{ maintenance_massage|safe }}<span class="loading"></span>
+    <div class="dummybuttons">
+        <a onclick="location.reload()">
+            <div class="dummybutton"><i class="fas fa-redo"></i><p>再読み込み</p></div>
+        </a>
+    </div>
+</div>
+
+{% endblock %}

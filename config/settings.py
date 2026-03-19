@@ -46,6 +46,7 @@ MIDDLEWARE = [
     'subekashi.middleware.cache.CacheControlMiddleware',
     'subekashi.middleware.rate_limit.RatelimitMiddleware',
     'subekashi.middleware.normalize_post_middleware.NormalizePostDataMiddleware',
+    'subekashi.middleware.maintenance.MaintenanceMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
