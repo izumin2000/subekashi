@@ -30,11 +30,10 @@ function openDeleteDetails() {
 }
 
 // TODO checkValidityを利用
-// TODO 改行でもvalidになる不具合の修正
 function checkDeleteForm() {
     const reasonValue = document.getElementById("reason").value;
     const deleteEle = document.getElementById("delete-submit");
-    deleteEle.disabled = reasonValue == "";
+    deleteEle.disabled = reasonValue.trim() == "";
 }
 
 document.getElementById('reason').addEventListener('input', checkDeleteForm)
