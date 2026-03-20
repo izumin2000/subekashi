@@ -5,7 +5,7 @@ from urllib.parse import urlparse, urlunparse
 import re
 
 _YOUTUBE_RE = re.compile(
-    r'(?:https?://)?(?:www\.|m\.)?(?:youtube\.com/(?:.*[?&]v=|shorts/)|youtu\.be/)([a-zA-Z0-9_-]{11})'
+    r'https?://(?:www\.|m\.)?(?:youtube\.com/(?:.*[?&]v=|shorts/)|youtu\.be/)([a-zA-Z0-9_-]{11})'
 )
 
 
@@ -35,9 +35,7 @@ def format_x_url(url):
     if parsed_url.netloc not in ('twitter.com', 'x.com'):
         return url
 
-    url = url.replace("https://twitter.com", "https://x.com")
-    parsed_url = urlparse(url)
-    return urlunparse(parsed_url._replace(query='', fragment=''))
+    return urlunparse(parsed_url._replace(scheme='https', netloc='x.com', query='', fragment=''))
 
 
 # URLを短縮しフォーマットする
@@ -51,6 +49,7 @@ def clean_url(urls):
     return ",".join(url_list)
 
 
+# TODO: ALLOW_MEDIAS / ALL_MEDIAS の regex をモジュールロード時にコンパイルしてホットパスの re.search コストを削減する
 # urlが許可されているドメインならその情報を返す
 # 許可されていないならFalseを返す
 def get_allow_media(url):
