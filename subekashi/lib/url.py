@@ -8,6 +8,9 @@ _YOUTUBE_RE = re.compile(
     r'https?://(?:www\.|m\.)?(?:youtube\.com/(?:.*[?&]v=|shorts/)|youtu\.be/)([a-zA-Z0-9_-]{11})'
 )
 
+_ALLOW_MEDIA_RES = [(re.compile(m["regex"]), m) for m in ALLOW_MEDIAS]
+_ALL_MEDIA_RES = [(re.compile(m["regex"]), m) for m in ALL_MEDIAS]
+
 
 # YouTubeの動画URLかどうか
 def is_youtube_url(url):
@@ -49,14 +52,13 @@ def clean_url(urls):
     return ",".join(url_list)
 
 
-# TODO: ALLOW_MEDIAS / ALL_MEDIAS の regex をモジュールロード時にコンパイルしてホットパスの re.search コストを削減する
 # urlが許可されているドメインならその情報を返す
 # 許可されていないならFalseを返す
 def get_allow_media(url):
     domain = urlparse(url).netloc
 
-    for media in ALLOW_MEDIAS:
-        if re.search(media["regex"], domain):
+    for pattern, media in _ALLOW_MEDIA_RES:
+        if pattern.search(domain):
             return media
 
     return False
@@ -66,10 +68,10 @@ def get_allow_media(url):
 # Falseを返すことはない
 def get_all_media(url):
     domain = urlparse(url).netloc
-    last_index = len(ALL_MEDIAS) - 1
+    last_index = len(_ALL_MEDIA_RES) - 1
 
-    for i, media in enumerate(ALL_MEDIAS):
-        if not re.search(media["regex"], domain):
+    for i, (pattern, media) in enumerate(_ALL_MEDIA_RES):
+        if not pattern.search(domain):
             continue
 
         # 最後のエントリは想定外URLのフォールバック
