@@ -277,28 +277,6 @@ document.body.addEventListener('click', (event) => {
     isSpMenuOpen = false;
 });
 
-// tab_barをページ一番下までスクロールしたら非表示
-document.addEventListener("DOMContentLoaded", () => {
-    const tabBarEle = document.getElementById("tab_bar");
-
-    const isScrollable = document.documentElement.scrollHeight > window.innerHeight;
-    if (!isScrollable) {
-        tabBarEle.setAttribute("class", "tab_bar_suspend");
-    }
-
-    // スクロール時のイベントを設定
-    window.addEventListener("scroll", () => {
-        const scrollPosition = window.scrollY + window.innerHeight;
-        const bottomPosition = document.documentElement.scrollHeight;
-
-        // 一番下までスクロールされた場合は非表示、そうでない場合は表示
-        if ((scrollPosition >= bottomPosition - 1) && !isSpMenuOpen) {
-            tabBarEle.setAttribute("class", "tab_bar_suspend");
-        } else {
-            tabBarEle.removeAttribute("class", "tab_bar_suspend");
-        }
-    });
-});
 
 // CSRFの取得
 async function getCSRF() {

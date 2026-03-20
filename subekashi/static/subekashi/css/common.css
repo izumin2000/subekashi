@@ -255,7 +255,7 @@ aside tr:hover p {
     bottom: 0;
     background-color: #111111aa;
     border-top: solid #ffffffaa 2px;
-    padding: 1em 0;
+    padding: 1em 0 50px;
     overflow-y: scroll;
     z-index: 999;
     transition: display 0.3s ease;
@@ -302,14 +302,26 @@ aside tr:hover p {
     }
 }
 
-.tab_bar_suspend {
-    bottom: 32px !important;
-}
-
 #tab_bar i {
     font-size: 30px;
     margin: 0 5vw;
     cursor: pointer;
+}
+
+#sp_menu_footer {
+    width: 100%;
+    height: 32px;
+    background-color: #2f3a44;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#sp_menu_footer p, #sp_menu_footer a, #sp_menu_footer i {
+    text-align: center;
+    font-size: 15px;
+    line-height: 15px;
+    margin: 5px 5px;
 }
 
 #sp-global-header {
@@ -934,5 +946,4 @@ footer a {
     footer a {
         margin-left: 1em;
     }
-
 }

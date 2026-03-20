@@ -8,7 +8,6 @@ from xml.etree.ElementTree import Element, SubElement, ElementTree
 from django.core import management
 
 
-# TODO django.contrib.sites, django.contrib.sitemapsの使用
 class Command(BaseCommand):
     help = "subekashi/static/subekashi/にsitemap.xmlを生成する"
 
