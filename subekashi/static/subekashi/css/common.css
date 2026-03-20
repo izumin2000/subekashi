@@ -309,7 +309,6 @@ aside tr:hover p {
 }
 
 #sp_menu_footer {
-    position: static;
     width: 100%;
     height: 32px;
     background-color: #2f3a44;
