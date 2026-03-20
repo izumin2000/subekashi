@@ -5,16 +5,13 @@ from subekashi.models import Author, SongLink
 
 # topやsearchにあるキーワード検索のフィルター
 def filter_by_keyword(keyword):
-    q = (
-        Q(title__contains = keyword) |
-        Q(authors__name__contains = keyword) |
-        Q(lyrics__contains = keyword)
-    )
-    # URLっぽいキーワード（://を含む）の場合のみSongLinkも検索
     url_keyword = clean_url(keyword)
-    if '://' in url_keyword:
-        q |= Q(links__url__icontains=url_keyword)
-    return q
+    return (
+        Q(title__contains=keyword) |
+        Q(authors__name__contains=keyword) |
+        Q(lyrics__contains=keyword) |
+        Q(links__url__icontains=url_keyword)
+    )
 
 # 模倣元のフィルター
 def filter_by_imitate(imitate):
