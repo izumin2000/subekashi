@@ -34,6 +34,7 @@ urlpatterns = [
     path('.well-known/traffic-advice', trafficAdvice, name='traffic-advice'),
     path('api/',include(defaultRouter.urls)),
     path('api/editor/is_open', EditorIsOpenView.as_view(), name='editor-is-open'),
+    path('api/song_edit_init/', SongEditInitView.as_view(), name='song-edit-init'),
     path('api/html/song_cards', song_cards, name='song_cards'),
     path('api/html/song_guessers', song_guessers, name='song_guessers'),
     path('api/html/toast', toast, name='toast'),
