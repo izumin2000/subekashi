@@ -13,6 +13,11 @@ from subekashi.lib.query_filters import (
 from subekashi.lib.url import clean_url
 from subekashi.lib.query_utils import has_view_filter_or_sort, has_like_filter_or_sort
 
+# URLパラメータのソートフィールド名 → Django ORM のフィールド名マッピング
+AUTHOR_SORT_MAP = {'author': 'authors__name', '-author': '-authors__name'}
+# distinct()後に順序を再適用するためのマッピング（randomを含む）
+DISTINCT_SORT_MAP = {'random': '?', **AUTHOR_SORT_MAP}
+
 
 def validate_positive_integer(value):
     """正の整数であることを検証（1以上）"""
@@ -187,15 +192,14 @@ class SongFilter(django_filters.FilterSet):
             'post_time', '-post_time',
         }
 
-        # バリデーション
+        # バリデーションはフィールド名変換より前に行う必要がある。
+        # 変換後の 'authors__name' は allowed_fields に含まれないため、
+        # 変換後に検証すると正当な 'author' 指定が ValidationError になる。
         if value not in allowed_fields:
             raise ValidationError(f'許可されていないソートフィールドです: {value}')
 
-        # authorソートをauthors__nameに変換
-        if value == 'author':
-            value = 'authors__name'
-        elif value == '-author':
-            value = '-authors__name'
+        # URLパラメータのフィールド名をDjangoのORM向けに変換
+        value = AUTHOR_SORT_MAP.get(value, value)
 
         return queryset.order_by(value)
 
@@ -236,8 +240,7 @@ class SongFilter(django_filters.FilterSet):
             ids = queryset.values('id').distinct()
             queryset = Song.objects.filter(id__in=Subquery(ids))
             sort = self.data.get('sort')
-            SORT_MAP = {'random': '?', 'author': 'authors__name', '-author': '-authors__name'}
-            if sort in SORT_MAP:
-                queryset = queryset.order_by(SORT_MAP[sort])
+            if sort in DISTINCT_SORT_MAP:
+                queryset = queryset.order_by(DISTINCT_SORT_MAP[sort])
 
         return queryset
