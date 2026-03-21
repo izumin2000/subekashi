@@ -2,6 +2,7 @@ from django.shortcuts import render
 from subekashi.models import *
 from subekashi.lib.url import *
 from subekashi.lib.discord import *
+from subekashi.constants.dynamic.ai import SEND_DISCORD_AI_RESULT
 
 
 def ai_result(request) :
@@ -10,8 +11,9 @@ def ai_result(request) :
     }
     
     aiIns = Ai.objects.filter(genetype = "model", score = 0)
-    if not aiIns.exists() :
-        send_discord(ERROR_DISCORD_URL, "aiInsのデータがありません。")
+    if not aiIns.exists():
+        if SEND_DISCORD_AI_RESULT:
+            send_discord(ERROR_DISCORD_URL, "aiInsのデータがありません。")
         aiIns = Ai.objects.filter(genetype = "model")
     dataD["aiInsL"] = aiIns.order_by('?')[:25]
     return render(request, "subekashi/ai_result.html", dataD)
