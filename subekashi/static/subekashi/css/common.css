@@ -390,7 +390,16 @@ h1 {
     color: #FFF;
     font-size: 40px;
     font-weight: lighter;
-    margin: 60px 0 5px 0;
+    margin: 60px 0 0 0;
+}
+
+h1::after {
+    content: "";
+    display: block;
+    height: 8px;
+    width: 150px;
+    margin: 5px auto 25px auto;
+    background-color: #fff;
 }
 
 h2 {
@@ -464,16 +473,8 @@ a {
     margin-right: 10px;
 }
 
-.underline {
-    text-align: center;
-    height: 8px;
-    width: 150px;
-    margin: 0 auto 25px auto;
-    background-color: #fff;
-}
-
 @media (max-width: 640px) {
-    .underline {
+    h1::after {
         margin-bottom: 15px;
     }
 }

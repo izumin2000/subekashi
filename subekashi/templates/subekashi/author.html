@@ -8,7 +8,6 @@
 {% block content %}
 <section>
     <h1>{{ author }}</h1>
-    <div class="underline"></div>
     {% for songIns in songInsL %}
         {% render_song_card songIns %}
     {% empty %}

@@ -37,7 +37,6 @@
     </details>
 
     <h1><span id="h1-title">{{ song.title }}</span>の編集</h1>
-    <div class="underline"></div>
     <form action="{% url 'subekashi:song_edit' song.id %}" method="POST" id="song-edit-form">{% csrf_token %}
         {% comment %} TODO 別名の入力項目を追加 {% endcomment %}
         <div class="form-col">
