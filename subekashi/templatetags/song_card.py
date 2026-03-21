@@ -3,6 +3,8 @@ from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.template.loader import render_to_string
 from subekashi.lib.url import get_all_media
+from subekashi.lib.discord import send_discord
+from config.settings import *
 
 
 register = template.Library()
@@ -18,7 +20,7 @@ def get_author(song):
     
     # 作者不明なら
     if not authors_list:
-        # TODO ここはありえないのでdiscordの通知を追加する
+        send_discord(ERROR_DISCORD_URL, f"作者が不明です： {ROOT_URL}/songs/{song.id}")
         return mark_safe('<i class="fas fa-user-circle"></i>作者不明')
     
     author = authors_list[0]
