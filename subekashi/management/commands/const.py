@@ -9,7 +9,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options) :
         # TODO pyファイルではなくjsonファイルにする
         CONST_INFO = {
-            'ai.py': 'GENEINFO = {\n\t"WORD_COUNT": 1440480,\n\t"SONG_COUNT": 3000,\n\t"GENE_DATE": "2024年9月9日",\n}',
+            'ai.py': 'GENEINFO = {\n\t"WORD_COUNT": 1440480,\n\t"SONG_COUNT": 3000,\n\t"GENE_DATE": "2024年9月9日",\n}\n\nSEND_DISCORD_AI_RESULT = True',
             'ban.py': 'BAN_LIST = []',
             'gpt.txt': '',
             'version.json': '{\n\t"VERSION": "dev"\n}',
