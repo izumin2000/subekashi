@@ -14,7 +14,7 @@ class Command(BaseCommand):
             'gpt.txt': '',
             'version.json': '{\n\t"VERSION": "dev"\n}',
             'reject.py': 'REJECT_LIST = []',
-            'maintenance.json': '{\n\t"IS_MAINTENANCE": false,\n\t"MAINTENANCE_MASSAGE": "<p>メンテナンス中です</p>"\n}',
+            'maintenance.json': '{\n\t"IS_MAINTENANCE": false,\n\t"MAINTENANCE_MESSAGE": "<p>メンテナンス中です</p>"\n}',
         }
         for file_name, text in CONST_INFO.items():
             const_path = os.path.join(BASE_DIR, 'subekashi/constants/dynamic', file_name)

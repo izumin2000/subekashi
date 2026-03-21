@@ -21,11 +21,11 @@ class Command(BaseCommand):
             file = open(version_path, 'w', encoding='utf-8')
             json.dump({"VERSION": version}, file, indent=4)
             file.close()
-            massage = f"バージョン：{version}"
-            self.stdout.write(self.style.SUCCESS(massage))
+            message = f"バージョン：{version}"
+            self.stdout.write(self.style.SUCCESS(message))
         else :
-            massage = CONST_ERROR
-            self.stdout.write(self.style.ERROR(massage))
+            message = CONST_ERROR
+            self.stdout.write(self.style.ERROR(message))
         return
     
     def add_arguments(self, parser):
