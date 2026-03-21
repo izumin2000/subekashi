@@ -192,16 +192,30 @@ async function getSongGuessers(text, to, signal, calling_func = () => {}) {
 
 // グローバルヘッダーの取得
 var globalHeaderEle, globalItemEles;
+const GLOBAL_HEADER_CACHE_KEY = "globalHeaderCache";
+const GLOBAL_HEADER_CACHE_TTL = 60 * 60 * 1000; // 1時間
+
 async function getGlobalHeader() {
-    try {
-        var globalHeaderRes = await fetch("https://global-header.imicom.workers.dev/");
-    } catch ( error ) {
-        document.getElementById("pc-global-items-wrapper").innerHTML = "<p>界隈グローバルヘッダーエラー</p>";
-        document.getElementById("sp-global-items-wrapper").innerHTML = "<p>界隈グローバルヘッダーエラー</p>";
-        return;
+    let globalHeaderText;
+    const cached = localStorage.getItem(GLOBAL_HEADER_CACHE_KEY);
+    if (cached) {
+        const { text, timestamp } = JSON.parse(cached);
+        if (Date.now() - timestamp < GLOBAL_HEADER_CACHE_TTL) {
+            globalHeaderText = text;
+        }
     }
 
-    var globalHeaderText = await globalHeaderRes.text();
+    if (!globalHeaderText) {
+        try {
+            var globalHeaderRes = await fetch("https://global-header.imicom.workers.dev/");
+        } catch ( error ) {
+            document.getElementById("pc-global-items-wrapper").innerHTML = "<p>界隈グローバルヘッダーエラー</p>";
+            document.getElementById("sp-global-items-wrapper").innerHTML = "<p>界隈グローバルヘッダーエラー</p>";
+            return;
+        }
+        globalHeaderText = await globalHeaderRes.text();
+        localStorage.setItem(GLOBAL_HEADER_CACHE_KEY, JSON.stringify({ text: globalHeaderText, timestamp: Date.now() }));
+    }
     globalHeaderEle = stringToHTML(globalHeaderText)
     globalItemEles = Array.from(globalHeaderEle.getElementsByClassName("imiN_list")[0].children)
     .slice(1, -1)
