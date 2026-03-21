@@ -646,6 +646,14 @@ details h3 {
 }
 
 
+.loading-black {
+    color: black;
+}
+.loading-black::before,
+.loading-black::after {
+    background: black;
+}
+
 /* フォーム */
 .form-col {
     display: flex;

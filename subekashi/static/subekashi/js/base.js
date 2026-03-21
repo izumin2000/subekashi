@@ -192,16 +192,45 @@ async function getSongGuessers(text, to, signal, calling_func = () => {}) {
 
 // グローバルヘッダーの取得
 var globalHeaderEle, globalItemEles;
+const GLOBAL_HEADER_CACHE_KEY = "globalHeaderCache";
+const GLOBAL_HEADER_CACHE_TTL = 60 * 60 * 1000; // 1時間
+
 async function getGlobalHeader() {
+    let globalHeaderText;
     try {
-        var globalHeaderRes = await fetch("https://global-header.imicom.workers.dev/");
-    } catch ( error ) {
-        document.getElementById("pc-global-items-wrapper").innerHTML = "<p>界隈グローバルヘッダーエラー</p>";
-        document.getElementById("sp-global-items-wrapper").innerHTML = "<p>界隈グローバルヘッダーエラー</p>";
-        return;
+        const cached = localStorage.getItem(GLOBAL_HEADER_CACHE_KEY);
+        if (cached) {
+            const { text, timestamp } = JSON.parse(cached);
+            if (Date.now() - timestamp < GLOBAL_HEADER_CACHE_TTL) {
+                globalHeaderText = text;
+            }
+        }
+    } catch {
+        // localStorageが利用不可またはキャッシュが壊れていた場合は無視してfetchに進む
+        try { localStorage.removeItem(GLOBAL_HEADER_CACHE_KEY); } catch {}
     }
 
-    var globalHeaderText = await globalHeaderRes.text();
+    if (!globalHeaderText) {
+        document.getElementById("pc-global-items-wrapper").innerHTML = "<span class=\"loading loading-black\"></span>";
+        document.getElementById("sp-global-items-wrapper").innerHTML = "<span class=\"loading loading-black\"></span>";
+        let globalHeaderRes;
+        try {
+            globalHeaderRes = await fetch("https://global-header.imicom.workers.dev/");
+            if (!globalHeaderRes.ok) {
+                throw new Error(`HTTP error: ${globalHeaderRes.status}`);
+            }
+        } catch ( error ) {
+            document.getElementById("pc-global-items-wrapper").innerHTML = "<p>界隈グローバルヘッダーエラー</p>";
+            document.getElementById("sp-global-items-wrapper").innerHTML = "<p>界隈グローバルヘッダーエラー</p>";
+            return;
+        }
+        globalHeaderText = await globalHeaderRes.text();
+        try {
+            localStorage.setItem(GLOBAL_HEADER_CACHE_KEY, JSON.stringify({ text: globalHeaderText, timestamp: Date.now() }));
+        } catch {
+            // ストレージ容量超過などは無視
+        }
+    }
     globalHeaderEle = stringToHTML(globalHeaderText)
     globalItemEles = Array.from(globalHeaderEle.getElementsByClassName("imiN_list")[0].children)
     .slice(1, -1)
@@ -227,8 +256,7 @@ function formatGlobalHeaderItem(itemEle) {
 
 function setGlobalHeader(type) {
     var globalItemsWrapperEle = document.getElementById(`${type}-global-items-wrapper`);
-    globalItemsWrapperEle.firstChild.remove();
-    globalItemsWrapperEle.firstChild.remove();
+    globalItemsWrapperEle.innerHTML = "";
     globalItemEles.forEach(globalItemEle => {
         globalItemsWrapperEle.appendChild(globalItemEle.cloneNode(true));
     });
