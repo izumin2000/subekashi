@@ -235,5 +235,7 @@ class SongFilter(django_filters.FilterSet):
         if any(key in self.data for key in NEED_DISTINCT_KEY_LIST) or (self.data.get('sort') in NEED_DISTINCT_SORT_LIST):
             ids = queryset.values('id').distinct()
             queryset = Song.objects.filter(id__in=Subquery(ids))
+            if self.data.get('sort') == 'random':
+                queryset = queryset.order_by('?')
 
         return queryset
