@@ -46,6 +46,13 @@ header {
     border-bottom: solid 4px #fff;
 }
 
+@media (min-width: 961px) {
+    header {
+        position: sticky;
+        top: -90px; /* -(#pc-global-items-wrapper 30px + #subekashi-header-top 60px) */
+    }
+}
+
 @media (max-width: 960px) {
     #pc-global-header {
         display: none;
@@ -119,12 +126,20 @@ header {
 
 #subekashi-header {
     display: flex;
+    flex-direction: column;
     position: relative;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     z-index: 1;
+}
+
+#subekashi-header-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     height: 60px;
+    width: 100%;
 }
 
 #subekashi-header img {
@@ -134,90 +149,95 @@ header {
     border-radius:50%;
 }
 
-#subekashi-header a {
+#subekashi-header-top a {
     display: inline-block;
-    vertical-align: top; 
+    vertical-align: top;
     font-size: 32px;
     color: #FFF;
     text-decoration: none;
 }
 
-/* サイドバー */
-aside {
-    display: block;
-    position: fixed;
-    top: 50%;
-    transform: translateY(-50%);
-    left: 0;
-    font-size: 32px;
-    width: 1.25em;
-    overflow-x: hidden;
-    background-color: #111111aa;
-    z-index: 99;
-    transition: all 300ms 0s ease;
+/* PCヘッダーメニュー */
+#pc-header-menu {
+    width: 100%;
+    overflow: hidden;
 }
 
 @media (max-width: 960px) {
-    aside {
+    #pc-header-menu {
         display: none;
     }
 }
 
-aside:hover {
-    width: 7.5em
-}
-
-aside table {
-    border: 0px none;
+#pc-header-menu table {
+    display: flex;
+    border: 0;
     width: 100%;
     border-spacing: 0;
 }
 
-aside td {
-    padding: 2px 0;
+#pc-header-menu tbody {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    width: 100%;
 }
 
-aside tr:hover {
+#pc-header-menu tr {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: background-color 300ms ease;
+}
+
+#pc-header-menu tr:hover {
     background-color: #ffffff33;
 }
 
-aside tr td:nth-child(1) i {
-    display: inline-block;
-    width: 50px;
-    margin: 0 auto;
+#pc-header-menu td {
+    display: block;
+    padding: 0;
+}
+
+#pc-header-menu a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    white-space: nowrap;
+    text-decoration: none;
+    padding: 4px 12px;
+    font-size: 22px;
+    color: #fff;
+}
+
+#pc-header-menu i {
+    display: block;
+    width: 1em;
+    margin: 0.3em auto;
     text-align: center;
 }
 
-aside a {
-    display: block;
-    white-space: nowrap;
-    text-decoration: none;
-    padding: 0.3em 0;
-}
-
-aside i {
-    width: 1em;
-    margin: 0.5em;
-}
-
-aside i::before {
-    width: 1em;
-}
-
-aside p {
-    display: inline-block;
-    margin-left: -10px;
+#pc-header-menu p {
+    font-family: 'k8x12s';
+    writing-mode: vertical-rl;
+    font-size: 15px;
+    line-height: 1;
+    color: #777;
+    max-height: 0;
+    overflow: hidden;
     opacity: 0;
-    transition: all 300ms 0s ease;
+    margin: 0;
+    transition: max-height 300ms ease, opacity 300ms ease;
 }
 
-aside:hover p {
-    margin-left: 0;
+#pc-header-menu:hover p {
+    max-height: 200px;
     opacity: 1;
+    transition-delay: 0.2s;
 }
 
-aside tr:hover p {
-    text-decoration: underline 2px #fff;
+#pc-header-menu tr:hover p {
+    color: #fff;
 }
 
 
