@@ -211,8 +211,8 @@ async function getGlobalHeader() {
     }
 
     if (!globalHeaderText) {
-        document.getElementById("pc-global-items-wrapper").innerHTML = "<p>界隈グローバルヘッダーの読み込み中...</p>";
-        document.getElementById("sp-global-items-wrapper").innerHTML = "<p>界隈グローバルヘッダーの読み込み中...</p>";
+        document.getElementById("pc-global-items-wrapper").innerHTML = "<span class=\"loading loading-black\"></span>";
+        document.getElementById("sp-global-items-wrapper").innerHTML = "<span class=\"loading loading-black\"></span>";
         let globalHeaderRes;
         try {
             globalHeaderRes = await fetch("https://global-header.imicom.workers.dev/");
