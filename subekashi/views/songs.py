@@ -1,6 +1,5 @@
 from django.shortcuts import render
 from subekashi.constants.constants import ALL_MEDIAS, LONG_TERM_COOKIE_AGE
-from subekashi.lib.query_utils import clean_query_params
 
 
 # Cookieに保存するフォームの設定
@@ -36,8 +35,8 @@ def songs(request):
         "display_media_index": DISPLAY_MEDIA_INDEX
     }
 
-    # POSTリクエストの場合はGET、それ以外はGET
-    REQUEST_DATA = request.POST if request.method == 'POST' else clean_query_params(request.GET)
+    # POSTリクエストの場合はPOST、それ以外はGET
+    REQUEST_DATA = request.POST if request.method == 'POST' else request.GET
     COOKIES = request.COOKIES
     cookies_to_set = {}
 
