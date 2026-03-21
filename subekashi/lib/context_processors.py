@@ -24,7 +24,7 @@ def context_processors(request):
         "aside_pages": ASIDE_PAGES,
         "version": version,
         "is_maintenance": maintenance.get("IS_MAINTENANCE", False),
-        "maintenance_massage": maintenance.get("MAINTENANCE_MASSAGE", "<p>メンテナンス中です</p>"),
+        "maintenance_message": maintenance.get("MAINTENANCE_MESSAGE", "<p>メンテナンス中です</p>"),
     }
 
     return context
