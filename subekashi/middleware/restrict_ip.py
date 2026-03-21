@@ -1,3 +1,5 @@
+import json
+import os
 from django.shortcuts import render
 from config.settings import *
 from subekashi.lib.ip import get_ip
@@ -6,11 +8,11 @@ class RestrictIPMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
         try:
-            from subekashi.constants.dynamic.ban import BAN_LIST
-        except :
+            ban_path = os.path.join(BASE_DIR, 'subekashi/constants/dynamic/ban.json')
+            with open(ban_path, "r", encoding="utf-8") as f:
+                self.BAN_LIST = json.load(f)
+        except:
             self.BAN_LIST = []
-        else:
-            self.BAN_LIST = BAN_LIST
 
     def __call__(self, request):
         ip = get_ip(request, raw=True)

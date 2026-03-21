@@ -1,8 +1,10 @@
+import json
+import os
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.urls import reverse
 from config.local_settings import NEW_DISCORD_URL, CONTACT_DISCORD_URL
-from config.settings import ROOT_URL
+from config.settings import ROOT_URL, BASE_DIR
 from subekashi.models import *
 from subekashi.lib.url import *
 from subekashi.lib.ip import *
@@ -82,7 +84,9 @@ def song_edit(request, song_id):
         
         # 掲載拒否リストの読み込み
         try:
-            from subekashi.constants.dynamic.reject import REJECT_LIST
+            reject_path = os.path.join(BASE_DIR, 'subekashi/constants/dynamic/reject.json')
+            with open(reject_path, "r", encoding="utf-8") as f:
+                REJECT_LIST = json.load(f)
         except:
             REJECT_LIST = []
         

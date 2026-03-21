@@ -7,13 +7,12 @@ class Command(BaseCommand):
     help = "定数ファイルの生成。すでにあるファイルは上書きしない。"
     
     def handle(self, *args, **options) :
-        # TODO pyファイルではなくjsonファイルにする
         CONST_INFO = {
-            'ai.py': 'GENEINFO = {\n\t"WORD_COUNT": 1440480,\n\t"SONG_COUNT": 3000,\n\t"GENE_DATE": "2024年9月9日",\n}',
-            'ban.py': 'BAN_LIST = []',
+            'ai.json': '{\n\t"WORD_COUNT": 1440480,\n\t"SONG_COUNT": 3000,\n\t"GENE_DATE": "2024年9月9日"\n}',
+            'ban.json': '[]',
             'gpt.txt': '',
             'version.json': '{\n\t"VERSION": "dev"\n}',
-            'reject.py': 'REJECT_LIST = []',
+            'reject.json': '[]',
             'maintenance.json': '{\n\t"IS_MAINTENANCE": false,\n\t"MAINTENANCE_MASSAGE": "<p>メンテナンス中です</p>"\n}',
         }
         for file_name, text in CONST_INFO.items():

@@ -1,3 +1,5 @@
+import json
+import os
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from config.settings import *
@@ -68,7 +70,9 @@ def song_new(request):
 
         # 掲載拒否リストの読み込み
         try:
-            from subekashi.constants.dynamic.reject import REJECT_LIST
+            reject_path = os.path.join(BASE_DIR, 'subekashi/constants/dynamic/reject.json')
+            with open(reject_path, "r", encoding="utf-8") as f:
+                REJECT_LIST = json.load(f)
         except:
             REJECT_LIST = []
 
