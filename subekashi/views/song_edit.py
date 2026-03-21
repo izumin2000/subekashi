@@ -93,7 +93,6 @@ def song_edit(request, song_id):
                 return render(request, 'subekashi/song_edit.html', dataD)
 
         # 模倣の編集
-        # TODO imitateテーブルを利用する
         old_imitate_id_set = set(song.imitate.split(",")) - set([""])       # 元々の各模倣元のID
         new_imitate_id_set = set(imitates.split(",")) - set([""])       # ユーザーが入力した各模倣元のID
 
