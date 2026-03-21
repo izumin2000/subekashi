@@ -1,26 +1,23 @@
 from django.shortcuts import render
 from subekashi.constants.constants import ALL_MEDIAS, LONG_TERM_COOKIE_AGE
+from subekashi.lib.query_utils import clean_query_params
 
 
 # Cookieに保存するフォームの設定
 COOKIE_FORMS = {
     'isdetail': {
-        'query_name': 'isdetail',
         'values': {'True', 'False'},
         'default': 'False'
     },
     'songrange': {
-        'query_name': 'issubeana',
         'values': {'all', 'subeana', 'xx'},
         'default': 'all'
     },
     'jokerange': {
-        'query_name': 'isjoke',
         'values': {'on', 'off', 'only'},
         'default': 'on'
     },
     'sort': {
-        'query_name': 'sort',
         'values': {'id', '-id', 'post_time', '-post_time', 'upload_time', '-upload_time', '-view', 'view', '-like', 'like', 'random'},
         'default': '-post_time'
     }
@@ -40,7 +37,7 @@ def songs(request):
     }
 
     # POSTリクエストの場合はGET、それ以外はGET
-    REQUEST_DATA = request.POST if request.method == 'POST' else request.GET
+    REQUEST_DATA = request.POST if request.method == 'POST' else clean_query_params(request.GET)
     COOKIES = request.COOKIES
     cookies_to_set = {}
 
@@ -48,12 +45,11 @@ def songs(request):
     is_saved_select = COOKIES.get('is_saved_select', 'on')
 
     for form_name, form_config in COOKIE_FORMS.items():
-        query_name = form_config['query_name']
         default_value = form_config['default']
         allowed_values = form_config['values']
 
-        if REQUEST_DATA.get(query_name):
-            value = REQUEST_DATA[query_name]
+        if REQUEST_DATA.get(form_name):
+            value = REQUEST_DATA[form_name]
             # 許可された値に対してバリデーションを実行
             if value not in allowed_values:
                 dataD[form_name] = default_value  # 不正な値の場合はデフォルト値を使用
@@ -72,7 +68,15 @@ def songs(request):
 
     # チェックボックスのURLクエリ対応
     for filter in BOOL_FORMS:
-        dataD[filter] = bool(REQUEST_DATA.get(filter))
+        value = REQUEST_DATA.get(filter)
+        if value != None:
+            value = value in ["true", "1"]
+            if filter == "issubeana":
+                dataD["songrange"] = "subeana" if value else "xx"
+            elif filter == "isjoke":
+                dataD["jokerange"] = "only" if value else "off"
+            else:
+                dataD[filter] = value
 
     response = render(request, "subekashi/songs.html", dataD)
 
