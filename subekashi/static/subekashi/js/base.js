@@ -211,6 +211,8 @@ async function getGlobalHeader() {
     }
 
     if (!globalHeaderText) {
+        document.getElementById("pc-global-items-wrapper").innerHTML = "<p>界隈グローバルヘッダーの読み込み中...</p>";
+        document.getElementById("sp-global-items-wrapper").innerHTML = "<p>界隈グローバルヘッダーの読み込み中...</p>";
         try {
             var globalHeaderRes = await fetch("https://global-header.imicom.workers.dev/");
             if (!globalHeaderRes.ok) {
@@ -253,8 +255,7 @@ function formatGlobalHeaderItem(itemEle) {
 
 function setGlobalHeader(type) {
     var globalItemsWrapperEle = document.getElementById(`${type}-global-items-wrapper`);
-    globalItemsWrapperEle.firstChild.remove();
-    globalItemsWrapperEle.firstChild.remove();
+    globalItemsWrapperEle.innerHTML = "";
     globalItemEles.forEach(globalItemEle => {
         globalItemsWrapperEle.appendChild(globalItemEle.cloneNode(true));
     });
