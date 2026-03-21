@@ -197,24 +197,25 @@ const GLOBAL_HEADER_CACHE_TTL = 60 * 60 * 1000; // 1時間
 
 async function getGlobalHeader() {
     let globalHeaderText;
-    const cached = localStorage.getItem(GLOBAL_HEADER_CACHE_KEY);
-    if (cached) {
-        try {
+    try {
+        const cached = localStorage.getItem(GLOBAL_HEADER_CACHE_KEY);
+        if (cached) {
             const { text, timestamp } = JSON.parse(cached);
             if (Date.now() - timestamp < GLOBAL_HEADER_CACHE_TTL) {
                 globalHeaderText = text;
             }
-        } catch {
-            // キャッシュが壊れていた場合は無視してfetchに進む
-            localStorage.removeItem(GLOBAL_HEADER_CACHE_KEY);
         }
+    } catch {
+        // localStorageが利用不可またはキャッシュが壊れていた場合は無視してfetchに進む
+        try { localStorage.removeItem(GLOBAL_HEADER_CACHE_KEY); } catch {}
     }
 
     if (!globalHeaderText) {
         document.getElementById("pc-global-items-wrapper").innerHTML = "<p>界隈グローバルヘッダーの読み込み中...</p>";
         document.getElementById("sp-global-items-wrapper").innerHTML = "<p>界隈グローバルヘッダーの読み込み中...</p>";
+        let globalHeaderRes;
         try {
-            var globalHeaderRes = await fetch("https://global-header.imicom.workers.dev/");
+            globalHeaderRes = await fetch("https://global-header.imicom.workers.dev/");
             if (!globalHeaderRes.ok) {
                 throw new Error(`HTTP error: ${globalHeaderRes.status}`);
             }
