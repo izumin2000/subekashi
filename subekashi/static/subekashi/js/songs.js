@@ -129,7 +129,6 @@ function categoryClick(song) {
     renderSearch();
 }
 
-// TODO ?songrange=で直接GETできるようにする
 function songrangeToQuery(songrange) {
     if (songrange == "subeana") {
         return { "issubeana": true };
