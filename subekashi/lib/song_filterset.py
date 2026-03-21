@@ -187,15 +187,15 @@ class SongFilter(django_filters.FilterSet):
             'post_time', '-post_time',
         }
 
+        # バリデーション
+        if value not in allowed_fields:
+            raise ValidationError(f'許可されていないソートフィールドです: {value}')
+
         # authorソートをauthors__nameに変換
         if value == 'author':
             value = 'authors__name'
         elif value == '-author':
             value = '-authors__name'
-
-        # バリデーション
-        if value not in allowed_fields:
-            raise ValidationError(f'許可されていないソートフィールドです: {value}')
 
         return queryset.order_by(value)
 
@@ -235,7 +235,9 @@ class SongFilter(django_filters.FilterSet):
         if any(key in self.data for key in NEED_DISTINCT_KEY_LIST) or (self.data.get('sort') in NEED_DISTINCT_SORT_LIST):
             ids = queryset.values('id').distinct()
             queryset = Song.objects.filter(id__in=Subquery(ids))
-            if self.data.get('sort') == 'random':
-                queryset = queryset.order_by('?')
+            sort = self.data.get('sort')
+            SORT_MAP = {'random': '?', 'author': 'authors__name', '-author': '-authors__name'}
+            if sort in SORT_MAP:
+                queryset = queryset.order_by(SORT_MAP[sort])
 
         return queryset
