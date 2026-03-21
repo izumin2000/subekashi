@@ -12,7 +12,7 @@ if (newsDisplayEle) {
     let currentIndex = 0;
 
     function showNews(newsEle_) {
-        newsEle = newsEle_.cloneNode(true)
+        const newsEle = newsEle_.cloneNode(true)
         newsDisplayEle.innerHTML = '';
         newsDisplayEle.appendChild(newsEle);
         const height = newsEle.clientHeight;
@@ -44,10 +44,31 @@ if (newsDisplayEle) {
 
 
 if (isShownAd) {
+    async function setad(view, click) {
+        const csrf = await getCSRF();
+        await fetch(
+            baseURL() + "/api/ad/" + adId + "/?format=json",
+            {
+                method: "PUT",
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrf
+                },
+                body: JSON.stringify(
+                    {
+                        "view": view,
+                        "click": click,
+                    }
+                ),
+                credentials: 'include',
+            }
+        )
+    };
+
     let onceView = false;
     window.addEventListener('scroll', async function () {
-        taeget_position = document.querySelector('#ad').getBoundingClientRect().top;
-            if (taeget_position <= window.innerHeight && onceView !== true) {
+        const target_position = document.querySelector('#ad').getBoundingClientRect().top;
+            if (target_position <= window.innerHeight && onceView !== true) {
                 onceView = true;
                 await setad(adView + 1, adClick);
             }
@@ -70,24 +91,3 @@ if (isShownAd) {
         }
     }
 }
-
-async function setad(view, click) {
-    const csrf = await getCSRF();
-    await fetch(
-        baseURL() + "/api/ad/" + adId + "/?format=json",
-        {
-            method: "PUT",
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrf
-            },
-            body: JSON.stringify(
-                {
-                    "view": view,
-                    "click": click,
-                }
-            ),
-            credentials: 'include',
-        }
-    )
-};
