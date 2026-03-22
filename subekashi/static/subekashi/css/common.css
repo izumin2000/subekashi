@@ -51,6 +51,15 @@ header {
         position: sticky;
         top: -90px; /* -(#pc-global-items-wrapper 30px + #subekashi-header-top 60px) */
     }
+
+    header:has(#pc-header-menu:hover) {
+        border-bottom-color: #000;
+        transition-delay: 0.2s;
+    }
+
+    #subekashi-header {
+        padding-bottom: 48px; /* #pc-header-menu のアイコン行の高さ分を確保 */
+    }
 }
 
 @media (max-width: 960px) {
@@ -159,7 +168,11 @@ header {
 
 /* PCヘッダーメニュー */
 #pc-header-menu {
-    width: 100%;
+    position: absolute;
+    top: 60px; /* #subekashi-header-top の高さ分 */
+    left: 0;
+    right: 0;
+    background-color: #000;
     overflow: hidden;
 }
 
@@ -186,7 +199,7 @@ header {
 #pc-header-menu tr {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     transition: background-color 300ms ease;
 }
 
@@ -197,6 +210,8 @@ header {
 #pc-header-menu td {
     display: block;
     padding: 0;
+    width: 100%;
+    flex: 1;
 }
 
 #pc-header-menu a {
@@ -208,6 +223,9 @@ header {
     padding: 4px 12px;
     font-size: 22px;
     color: #fff;
+    width: 100%;
+    box-sizing: border-box;
+    height: 100%;
 }
 
 #pc-header-menu i {
@@ -238,6 +256,15 @@ header {
 
 #pc-header-menu tr:hover p {
     color: #fff;
+}
+
+#pc-header-menu .fa-envelope {
+    margin-bottom: 3px !important;
+}
+
+#pc-header-menu .fa-robot {
+    margin-left: -2px !important;
+    margin-right: 2px !important;
 }
 
 
