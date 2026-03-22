@@ -258,11 +258,11 @@ header {
     color: #fff;
 }
 
-.fa-envelope {
+#pc-header-menu .fa-envelope {
     margin-bottom: 3px !important;
 }
 
-.fa-robot {
+#pc-header-menu .fa-robot {
     margin-left: -2px !important;
     margin-right: 2px !important;
 }
