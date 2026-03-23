@@ -28,8 +28,11 @@
         <link rel="shortcut icon" href="{% static 'subekashi/image/icon.ico' %}">
         <link rel="apple-touch-icon" href="{% static 'subekashi/image/apple-touch-icon.png' %}">
     </head>
-    <body>
+    <body data-pc-menu="{{ pc_menu_position }}">
         {% include './header.html' %}
+        {% if pc_menu_position == "aside" %}
+            {% include './aside.html' %}
+        {% endif %}
         <main>
             {% get_toast toast_type toast_text %}
             <div id="toast-container"></div>
