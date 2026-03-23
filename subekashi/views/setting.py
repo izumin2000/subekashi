@@ -10,7 +10,7 @@ import json
 ALLOWED_SETTING_KEYS = {
     'songrange', 'jokerange', 'news_type', 'is_shown_search',
     'is_shown_new', 'is_shown_ad', 'is_shown_ai', 'is_shown_lack',
-    'is_saved_select', 'brlyrics'
+    'is_saved_select', 'brlyrics', 'pc_menu_position'
 }
 
 # 各設定の許可される値
@@ -24,7 +24,8 @@ ALLOWED_SETTING_VALUES = {
     'is_shown_ai': {'on', 'off'},
     'is_shown_lack': {'0', '5', '10', '15'},
     'is_saved_select': {'on', 'off'},
-    'brlyrics': {'normal', 'pack', 'brless'}
+    'brlyrics': {'normal', 'pack', 'brless'},
+    'pc_menu_position': {'header', 'aside'}
 }
 
 
@@ -43,6 +44,7 @@ def setting(request):
     is_shown_lack = request.COOKIES.get("is_shown_lack", "5")
     is_saved_select = request.COOKIES.get("is_saved_select", "on")
     brlyrics = request.COOKIES.get("brlyrics", "normal")
+    pc_menu_position = request.COOKIES.get("pc_menu_position", "header")
 
     settings_data = {
         'top': [
@@ -135,6 +137,16 @@ def setting(request):
                     {'value': 'normal', 'text': '全ての改行を表示', 'selected': brlyrics == 'normal'},
                     {'value': 'pack', 'text': '連続した改行を非表示', 'selected': brlyrics == 'pack'},
                     {'value': 'brless', 'text': '全ての改行を非表示', 'selected': brlyrics == 'brless'},
+                ]
+            },
+        ],
+        'display': [
+            {
+                'label': 'PCメニューの位置',
+                'id': 'pc_menu_position',
+                'options': [
+                    {'value': 'header', 'text': 'トップ', 'selected': pc_menu_position == 'header'},
+                    {'value': 'aside', 'text': 'サイド', 'selected': pc_menu_position == 'aside'},
                 ]
             },
         ],

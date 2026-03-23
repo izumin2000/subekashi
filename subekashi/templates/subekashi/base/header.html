@@ -28,6 +28,8 @@
                 <a href="{% url 'subekashi:top' %}">全て歌詞の所為です。</a>
             {% endif %}
         </div>
-        {% include './pc_menu.html' %}
+        {% if pc_menu_position == "header" %}
+            {% include './pc_menu.html' %}
+        {% endif %}
     </div>
 </header>

@@ -8,7 +8,19 @@
 <section>
     <h1>設定</h1>
 
-    {% with top_settings=settings.top search_settings=settings.search song_settings=settings.song edit_settings=settings.edit %}
+    {% with top_settings=settings.top search_settings=settings.search song_settings=settings.song display_settings=settings.display edit_settings=settings.edit %}
+    <h2>表示設定</h2>
+    {% for setting in display_settings %}
+        <div class="form-col">
+            <label>{{ setting.label }}</label>
+            <select id="{{ setting.id }}" class="setting-input">
+                {% for option in setting.options %}
+                <option value="{{ option.value }}" {% if option.selected %}selected{% endif %}>{{ option.text }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    {% endfor %}
+
     <h2>トップ画面</h2>
     {% for setting in top_settings %}
         <div class="form-col">
@@ -102,6 +114,11 @@
 
         // 変更された設定を即座に保存
         await saveSingleSetting(input.id, input.value);
+
+        // メニュー位置の変更はサーバーサイドレンダリングのためページリロードが必要
+        if (input.id === 'pc_menu_position') {
+            location.reload();
+        }
     }
 
     async function saveSingleSetting(key, value) {

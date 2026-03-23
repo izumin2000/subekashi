@@ -1,0 +1,15 @@
+{% load static %}
+
+
+<aside>
+    <table>
+    {% for aside_page in aside_pages %}
+        <tr>
+            <td><a class="sansfont" href="{% url aside_page.url %}"><i class="{{ aside_page.icon }}"></i><p>{{ aside_page.name }}</p></a></td>
+        </tr>
+    {% endfor %}
+        <tr>
+            <td><a href="https://www.youtube.com/@subeteanatanoseidesu" target="_blank"><i class="far fa-user"></i><p>全てあなたの所為です。</p></a></td>
+        </tr>
+    </table>
+</aside>
