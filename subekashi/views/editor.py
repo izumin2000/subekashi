@@ -2,8 +2,7 @@ from django.shortcuts import render
 from django.core.paginator import Paginator
 from subekashi.models import Editor, History
 from subekashi.lib.ip import get_ip
-
-HISTORIES_PER_PAGE = 50
+from subekashi.constants.constants import HISTORIES_PER_PAGE
 
 
 def editor(request, editor_id):
