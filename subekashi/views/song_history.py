@@ -13,7 +13,7 @@ def song_history(request, song_id):
     dataD = {
         "metatitle": f"{song.title}の編集履歴",
         "song": song,
-        "historys": History.objects.filter(song = song).order_by("-create_time"),
+        "histories": History.objects.filter(song = song).order_by("-create_time"),
         "ip": get_ip(request)
     }
     
