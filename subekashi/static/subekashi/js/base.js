@@ -457,4 +457,17 @@ function autoScroll(deley) {
 // 読み込み時の実行
 window.onload = function() {
     getGlobalHeader();
+    applyDefokoLogo();
+}
+
+// 10000分の1の確率でヘッダーロゴをデフォ子に変更
+function applyDefokoLogo() {
+    if (Math.random() < 1 / 10000) {
+        var img = document.getElementById('header-logo-img');
+        if (!img) return;
+        img.src = baseURL() + "/static/subekashi/image/defoko20260205.gif";
+        img.alt = "デフォ子";
+        img.style.height = "60px";
+        img.removeAttribute('width');
+    }
 }
