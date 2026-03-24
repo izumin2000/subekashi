@@ -21,8 +21,19 @@
                 <div class="dummybutton"><i class="fas fa-arrows-alt-v"></i><p>全て開く/閉じる</p></div>
             </a>
         </div>
-        <p id="history-count">{{ histories.count }}件</p>
-        {% for history in histories %}
+        <p id="history-count">{{ total_count }}件</p>
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}">&laquo; 前へ</a>
+            {% endif %}
+            <span>{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">次へ &raquo;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% for history in page_obj %}
             <details class="history_details">
                 <summary><p>{{ history.create_time }}</p><p>{{ history.title }}</p></summary>
                 {% render_changes history %}
@@ -33,6 +44,17 @@
                 {% endif %}
             </details>
         {% endfor %}
+        {% if page_obj.paginator.num_pages > 1 %}
+        <div class="pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}">&laquo; 前へ</a>
+            {% endif %}
+            <span>{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">次へ &raquo;</a>
+            {% endif %}
+        </div>
+        {% endif %}
     {% else %}
         <p id="secret-info">この編集者の情報は非公開です。</p>
     {% endif %}
