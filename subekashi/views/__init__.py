@@ -8,6 +8,7 @@ from subekashi.views.author import author
 from subekashi.views.channel import channel
 from subekashi.views.contact import contact
 from subekashi.views.editor import editor
+from subekashi.views.histories import histories
 from subekashi.views.api.editor import EditorIsOpenView
 from subekashi.views.errors import *
 from subekashi.views.file import *

@@ -19,6 +19,11 @@ ASIDE_PAGES = [
         "icon": "fas fa-search"
     },
     {
+        "url": "subekashi:histories",
+        "name": "編集履歴",
+        "icon": "fas fa-pen"
+    },
+    {
         "url": "subekashi:ai",
         "name": "歌詞生成",
         "icon": "fa fa-robot"

@@ -22,6 +22,7 @@ urlpatterns = [
     path('songs/<int:song_id>/delete/', song_delete, name='song_delete'),
     path('authors/<int:author_id>/', author, name='author'),
     path('editor/<int:editor_id>/', editor, name='editor'),
+    path('histories/', histories, name='histories'),
     path('ai/', ai, name='ai'),
     path('ai/result/', ai_result, name='ai_result'),
     path('setting/', setting, name='setting'),
