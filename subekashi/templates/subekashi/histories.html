@@ -1,0 +1,74 @@
+{% extends "subekashi/base/base.html" %}
+
+
+{% load static %}
+{% load changes %}
+{% block noindex %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block css %}{% static 'subekashi/css/editor.css'%}{% endblock %}
+
+{% block content %}
+<section>
+    <h1><span id="h1-title">編集履歴</span></h1>
+    <div class="dummybuttons">
+        {% if my_editor %}
+            <a href="{% url 'subekashi:editor' my_editor.id %}">
+                <div class="dummybutton"><i class="fas fa-user-edit"></i><p>自分の編集履歴</p></div>
+            </a>
+        {% endif %}
+        <a onclick="reloadPage()">
+            <div class="dummybutton"><i class="fas fa-redo"></i><p>再読み込み</p></div>
+        </a>
+        <a onclick="openAll()">
+            <div class="dummybutton"><i class="fas fa-arrows-alt-v"></i><p>全て開く/閉じる</p></div>
+        </a>
+    </div>
+    <p id="history-count">{{ page_obj.paginator.count }}件</p>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}">&laquo; 前へ</a>
+        {% endif %}
+        <span>{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">次へ &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% for history in page_obj %}
+        <details class="history_details">
+            <summary><p>{{ history.create_time }}</p><p>{{ history.title }}</p></summary>
+            {% render_changes history %}
+            {% if history.song %}
+                <a href="{% url 'subekashi:song' history.song.id %}">{{ history.song.title }}</a>
+            {% else %}
+                <p>この曲は削除されました</p>
+            {% endif %}
+            {% if history.editor.is_open or history.editor.is_forced_open or history.editor.ip == ip %}
+                <p>編集者: <a href="{% url 'subekashi:editor' history.editor.id %}">
+                    {{ history.editor }}
+                    {% if history.editor.ip == ip %}(あなた){% endif %}
+                </a></p>
+            {% else %}
+                <p>編集者: 非公開</p>
+            {% endif %}
+        </details>
+    {% endfor %}
+
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}">&laquo; 前へ</a>
+        {% endif %}
+        <span>{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">次へ &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block js %}
+    <script src="{% static 'subekashi/js/editor.js' %}" defer></script>
+{% endblock %}

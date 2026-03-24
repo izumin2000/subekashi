@@ -20,7 +20,7 @@
             <div class="dummybutton"><i class="fas fa-arrows-alt-v"></i><p>全て開く/閉じる</p></div>
         </a>
     </div>
-    {% for history in historys %}
+    {% for history in histories %}
         <details class="history_details">
             <summary><p>{{ history.create_time }}</p><p>{{ history.title }}</p></summary>
             {% render_changes history %}
