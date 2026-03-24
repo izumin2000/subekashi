@@ -1,0 +1,8 @@
+{% if history.editor.is_open or history.editor.is_forced_open or history.editor.ip == ip %}
+    <p>編集者: <a href="{% url 'subekashi:editor' history.editor.id %}">
+        {{ history.editor }}
+        {% if history.editor.ip == ip %}(あなた){% endif %}
+    </a></p>
+{% else %}
+    <p>編集者: 非公開</p>
+{% endif %}
