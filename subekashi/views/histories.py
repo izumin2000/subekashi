@@ -7,7 +7,7 @@ HISTORIES_PER_PAGE = 50
 
 
 def histories(request):
-    all_histories = History.objects.order_by("-create_time")
+    all_histories = History.objects.select_related("song", "editor").order_by("-create_time")
     paginator = Paginator(all_histories, HISTORIES_PER_PAGE)
 
     page_number = request.GET.get("page", 1)
