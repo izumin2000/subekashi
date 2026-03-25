@@ -17,6 +17,10 @@
         {% endif %}
         {% include "subekashi/components/history_action_buttons.html" %}
     </div>
+    <form method="get" action="">
+        <input type="text" name="q" value="{{ search_query }}" placeholder="編集履歴の概要で検索">
+        <button type="submit">検索</button>
+    </form>
     <p id="history-count">{{ page_obj.paginator.count }}件</p>
 
     {% include "subekashi/components/pagination.html" %}
