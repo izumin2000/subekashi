@@ -1058,13 +1058,6 @@ footer a {
     margin: 0 1em;
 }
 
-.fa-history {
-    display: block;
-    font-size: 15px;
-    line-height: 15px;
-    margin-right: 0.5em;
-}
-
 @media(max-width: 960px) {
     #pc_version {
         display: none;

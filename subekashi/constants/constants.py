@@ -21,7 +21,7 @@ ASIDE_PAGES = [
     {
         "url": "subekashi:histories",
         "name": "編集履歴",
-        "icon": "fas fa-pen"
+        "icon": "fas fa-history"
     },
     {
         "url": "subekashi:ai",
