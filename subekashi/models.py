@@ -33,7 +33,7 @@ class Song(models.Model):
     title = models.CharField(default = "", max_length = 500)
     authors = models.ManyToManyField('Author', related_name='songs', blank=True)
     lyrics = models.TextField(blank = True, null = True, default = "", max_length = 10000)
-    imitates = models.ManyToManyField("self", symmetrical=False, related_name="imitateds", blank=True)
+    # imitates = models.ManyToManyField("self", symmetrical=False, related_name="imitateds", blank=True)     # TODO 自己参照
     imitate = models.CharField(blank = True, null = True, default = "", max_length = 10000)
     imitated = models.CharField(blank = True, null = True, default = "", max_length = 10000)
     post_time = models.DateTimeField(default = timezone.now)
