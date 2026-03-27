@@ -136,20 +136,20 @@ def song_edit(request, song_id):
             song.imitates.set(imitate_songs)
             song.authors.set(author_objects)
 
-        # SongLinkの更新（差分）
-        existing_links = {link.url: link for link in song.links.all()}
-        new_url_set = set(cleaned_url_list)
-        # 削除されたURLのSongLinkからこの曲を外す（他の曲が参照していなければ削除）
-        for url_str, link in existing_links.items():
-            if url_str not in new_url_set:
-                link.songs.remove(song)
-                if not link.songs.exists():
-                    link.delete()
-        # 新規追加されたURLはSongLinkを取得または作成してこの曲を追加
-        for url_str in new_url_set:
-            if url_str not in existing_links:
-                link, _ = SongLink.objects.get_or_create(url=url_str)
-                link.songs.add(song)
+            # SongLinkの更新（差分）
+            existing_links = {link.url: link for link in song.links.all()}
+            new_url_set = set(cleaned_url_list)
+            # 削除されたURLのSongLinkからこの曲を外す（他の曲が参照していなければ削除）
+            for url_str, link in existing_links.items():
+                if url_str not in new_url_set:
+                    link.songs.remove(song)
+                    if not link.songs.exists():
+                        link.delete()
+            # 新規追加されたURLはSongLinkを取得または作成してこの曲を追加
+            for url_str in new_url_set:
+                if url_str not in existing_links:
+                    link, _ = SongLink.objects.get_or_create(url=url_str)
+                    link.songs.add(song)
 
         # History DBの変更内容とDisocrdの#新規作成・変更チャンネルに送る文の用意
         changes = [["種類", "編集前", "編集後"]]
