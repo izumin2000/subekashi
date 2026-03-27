@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.urls import reverse
@@ -75,10 +76,9 @@ def song_edit(request, song_id):
         author_names = cleaned_authors.split(',')
         author_objects = get_or_create_authors(author_names)
         
-        # 自分自身や重複している曲は模倣元として登録できない
-        imitates_list = set(imitates.split(","))
-        imitates_list.discard(str(song_id))
-        imitates = ",".join(list(imitates_list)) if imitates else ""
+        # 自分自身や重複は除外し、Song オブジェクトのリストに変換
+        imitate_ids = {i.strip() for i in imitates.split(",") if i.strip()} - {str(song_id)}
+        imitate_songs = list(Song.objects.filter(id__in=imitate_ids))
         
         # 掲載拒否リストの読み込み
         try:
@@ -92,44 +92,16 @@ def song_edit(request, song_id):
                 dataD["error"] = f"{author.name}さんの曲は登録することができません。"
                 return render(request, 'subekashi/song_edit.html', dataD)
 
-        # 模倣の編集
-        old_imitate_id_set = set(song.imitate.split(",")) - set([""])       # 元々の各模倣元のID
-        new_imitate_id_set = set(imitates.split(",")) - set([""])       # ユーザーが入力した各模倣元のID
-
-        append_imitate_id_set = new_imitate_id_set - old_imitate_id_set     # 編集によって新しく追加された各模倣元のID
-        delete_imitate_id_set = old_imitate_id_set - new_imitate_id_set     # 編集によって削除された各模倣元のID
-
-        # 編集によって新しく追加された各模倣元先の模倣曲に編集した曲のsong_idを追加する
-        for append_imitate_id in append_imitate_id_set :
-            append_imitate = Song.objects.get(pk = append_imitate_id)
-            append_imitated_id_set = set(append_imitate.imitated.split(","))        # 模倣元先の模倣曲
-            append_imitated_id_set.add(str(song_id))        # 模倣元先の模倣曲に編集した曲のsong_idを追加する
-            
-            append_imitate.imitated = ",".join(append_imitated_id_set).strip(",")
-            append_imitate.save()
-            
-        # 編集によって削除された各模倣元先の模倣曲に編集した曲のsong_idを削除する
-        for delete_imitate_id in delete_imitate_id_set :
-            delete_imitate = Song.objects.get(pk = delete_imitate_id)
-            delete_imitated_id_set = set(delete_imitate.imitated.split(","))        # 模倣元先の模倣曲
-            if (delete_imitate_id != str(song_id)):
-                delete_imitated_id_set.remove(str(song_id))   # 模倣元先の模倣曲に編集した曲のsong_idを削除する
-            
-            delete_imitate.imitated = ",".join(delete_imitated_id_set).strip(",")
-            delete_imitate.save()
+        # 模倣の編集（ManyToManyはsetで差分を自動管理）
+        old_imitate_songs = list(song.imitates.all())
         
         # 変更内容のマークダウンと送信するDiscordの文言の作成
         def yes_no(value):
             return "はい" if value else "いいえ"
 
-        # song.imitateの形式をリンク付きタイトルの改行リストにする
-        def Ids2Info(ids):
-            song_id_list = ids.split(",") if ids else []
-            info = ""
-            for song_id in song_id_list:
-                song = Song.objects.get(id = song_id)
-                info += f"{song.title}\n"
-            return info[:-1]        # 最後の改行は不要
+        # Songのリストをタイトルの改行リストにする
+        def songs_to_info(songs):
+            return "\n".join(s.title for s in songs)
 
         # URL変更前後の値を取得（SongLinkベース）
         before_urls = ",".join(song.links.order_by('id').values_list('url', flat=True))
@@ -145,14 +117,13 @@ def song_edit(request, song_id):
             {"label": "インスト曲", "before": yes_no(song.isinst) ,"after": yes_no(is_inst)},
             {"label": "すべあな模倣曲", "before": yes_no(song.issubeana) ,"after": yes_no(is_subeana)},
             {"label": "下書き", "before": yes_no(song.isdraft) ,"after": yes_no(is_draft)},
-            {"label": "模倣", "before": Ids2Info(song.imitate), "after": Ids2Info(imitates)},
+            {"label": "模倣", "before": songs_to_info(old_imitate_songs), "after": songs_to_info(imitate_songs)},
             {"label": "歌詞", "before": song.lyrics, "after": lyrics.replace("\r\n", "\n")},
         ]
 
         # songの更新
         song.title = title
         song.lyrics = lyrics
-        song.imitate = imitates
         song.isoriginal = is_original
         song.isdeleted = is_deleted
         song.isjoke = is_joke
@@ -160,25 +131,25 @@ def song_edit(request, song_id):
         song.issubeana = is_subeana
         song.isdraft = is_draft
         song.post_time = timezone.now()
-        song.save()
+        with transaction.atomic():
+            song.save()
+            song.imitates.set(imitate_songs)
+            song.authors.set(author_objects)
 
-        # authorsフィールドの更新
-        song.authors.set(author_objects)
-
-        # SongLinkの更新（差分）
-        existing_links = {link.url: link for link in song.links.all()}
-        new_url_set = set(cleaned_url_list)
-        # 削除されたURLのSongLinkからこの曲を外す（他の曲が参照していなければ削除）
-        for url_str, link in existing_links.items():
-            if url_str not in new_url_set:
-                link.songs.remove(song)
-                if not link.songs.exists():
-                    link.delete()
-        # 新規追加されたURLはSongLinkを取得または作成してこの曲を追加
-        for url_str in new_url_set:
-            if url_str not in existing_links:
-                link, _ = SongLink.objects.get_or_create(url=url_str)
-                link.songs.add(song)
+            # SongLinkの更新（差分）
+            existing_links = {link.url: link for link in song.links.all()}
+            new_url_set = set(cleaned_url_list)
+            # 削除されたURLのSongLinkからこの曲を外す（他の曲が参照していなければ削除）
+            for url_str, link in existing_links.items():
+                if url_str not in new_url_set:
+                    link.songs.remove(song)
+                    if not link.songs.exists():
+                        link.delete()
+            # 新規追加されたURLはSongLinkを取得または作成してこの曲を追加
+            for url_str in new_url_set:
+                if url_str not in existing_links:
+                    link, _ = SongLink.objects.get_or_create(url=url_str)
+                    link.songs.add(song)
 
         # History DBの変更内容とDisocrdの#新規作成・変更チャンネルに送る文の用意
         changes = [["種類", "編集前", "編集後"]]

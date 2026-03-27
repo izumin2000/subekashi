@@ -15,23 +15,11 @@ def filter_by_keyword(keyword):
 
 # 模倣元のフィルター
 def filter_by_imitate(imitate):
-    imitate = str(imitate)
-    return (
-        Q(imitate = imitate) |
-        Q(imitate__startswith = imitate + ',') |
-        Q(imitate__endswith = ',' + imitate) |
-        Q(imitate__contains = ',' + imitate + ',')
-    )
+    return Q(imitates__id=imitate)
 
 # 模倣のフィルター
 def filter_by_imitated(imitated):
-    imitated = str(imitated)
-    return (
-        Q(imitated = imitated) |
-        Q(imitated__startswith = imitated + ',') |
-        Q(imitated__endswith = ',' + imitated) |
-        Q(imitated__contains = ',' + imitated + ',')
-    )
+    return Q(imitateds__id=imitated)
 
 # 模倣元の検索に利用するフィルター
 def filter_by_guesser(guesser):
@@ -60,7 +48,7 @@ def filter_by_lack():
     has_author_1 = Author.objects.filter(id=1, songs__id=OuterRef('pk'))
     return (
         Q(isdeleted=False) & ~Exists(any_links) |
-        Q(isoriginal=False, issubeana=True, imitate="") & ~Exists(has_author_1) |
+        Q(isoriginal=False, issubeana=True, imitates__isnull=True) & ~Exists(has_author_1) |
         Q(isinst=False, lyrics="")
     )
 
@@ -71,7 +59,7 @@ def make_is_lack_annotation():
     has_author_1 = Author.objects.filter(id=1, songs__id=OuterRef('pk'))
     return Case(
         When(Q(isdeleted=False) & ~Exists(any_links), then=Value(True)),
-        When(Q(isoriginal=False, issubeana=True, imitate='') & ~Exists(has_author_1), then=Value(True)),
+        When(Q(isoriginal=False, issubeana=True, imitates__isnull=True) & ~Exists(has_author_1), then=Value(True)),
         When(Q(isinst=False, lyrics=''), then=Value(True)),
         default=Value(False),
         output_field=BooleanField(),
