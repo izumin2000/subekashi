@@ -6,10 +6,10 @@ class Command(BaseCommand):
     help = "指定したSongを削除する"
 
     def add_arguments(self, parser):
-        parser.add_argument('-d', required=True, nargs='+', type=int)
+        parser.add_argument('ids', nargs='+', type=int)
 
     def handle(self, *args, **options):
-        for song_id in options['d']:
+        for song_id in options['ids']:
             try:
                 song = Song.objects.get(pk=song_id)
                 for link in song.links.all():
