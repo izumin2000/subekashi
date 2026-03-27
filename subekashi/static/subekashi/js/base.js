@@ -425,7 +425,7 @@ function isLack(song) {
         ? song.authors.some(author => author.id === 1)
         : false;
 
-    if (!song.isoriginal && !song.issubeana && song.imitate === "" && hasSpecialAuthor) {
+    if (!song.isoriginal && !song.issubeana && song.imitates.length === 0 && hasSpecialAuthor) {
         return true;
     }
 
