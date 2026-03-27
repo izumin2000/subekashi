@@ -34,8 +34,6 @@ class Song(models.Model):
     authors = models.ManyToManyField('Author', related_name='songs', blank=True)
     lyrics = models.TextField(blank = True, null = True, default = "", max_length = 10000)
     imitates = models.ManyToManyField("self", symmetrical=False, related_name="imitateds", blank=True)
-    imitate = models.CharField(blank = True, null = True, default = "", max_length = 10000)
-    imitated = models.CharField(blank = True, null = True, default = "", max_length = 10000)
     post_time = models.DateTimeField(default = timezone.now)
     upload_time = models.DateTimeField(blank = True, null = True)
     isoriginal = models.BooleanField(default = False)       # TODO is_
