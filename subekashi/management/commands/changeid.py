@@ -2,38 +2,29 @@ from django.core.management.base import BaseCommand
 from subekashi.models import Song
 
 class Command(BaseCommand):
-    def change_relation(self, song, id, to, is_imitate=True):
-        r  = song.imitate if is_imitate else song.imitated
-        
-        if not r:
-            return
-        
-        for i in r.split(","):
-            song = Song.objects.get(pk = i)
-            l = song.imitate.split(",") if not is_imitate else song.imitated.split(",")
-            l.remove(str(id))
-            l.append(str(to))
-            l_str = ",".join(l)
-            if is_imitate:
-                song.imitated = l_str
-            else:
-                song.imitate = l_str
-            song.save()
-    
     def handle(self, *args, **options):
-        id = options['id']
-        to = options['to']
-        
-        song = Song.objects.get(pk = id)
-        
-        song.id = to
-        self.change_relation(song, id, to)
-        self.change_relation(song, id, to, False)
+        old_id = options['id']
+        new_id = options['to']
+
+        song = Song.objects.get(pk=old_id)
+
+        # M2M関係を変更前に保持
+        imitate_targets = list(song.imitates.all())
+        imitated_sources = list(song.imitateds.all())
+
+        # 新IDで保存（INSERT）
+        song.id = new_id
         song.save()
-        
-        song = Song.objects.get(pk = id)
-        song.delete()
-        
+
+        # 新しいSongのM2M関係を設定
+        new_song = Song.objects.get(pk=new_id)
+        new_song.imitates.set(imitate_targets)
+        for source in imitated_sources:
+            source.imitates.add(new_song)
+
+        # 旧IDを削除（M2M中間テーブルのold_id参照はCASCADEで削除）
+        Song.objects.get(pk=old_id).delete()
+
     def add_arguments(self, parser):
         parser.add_argument('id', type=int)
         parser.add_argument('to', type=int)
