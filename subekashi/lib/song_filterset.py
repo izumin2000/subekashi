@@ -228,7 +228,7 @@ class SongFilter(django_filters.FilterSet):
             queryset = queryset.filter(like__gte=1)
 
         # フィルタ使用時、またはrandom/authorソート時にdistinct()を適用
-        NEED_DISTINCT_KEY_LIST = ['author', 'author_exact', 'keyword', 'guesser', 'islack', 'url', 'mediatypes']
+        NEED_DISTINCT_KEY_LIST = ['author', 'author_exact', 'keyword', 'guesser', 'islack', 'url', 'mediatypes', 'imitate', 'imitated']
         NEED_DISTINCT_SORT_LIST = ['random', 'author', '-author']
         if any(key in self.data for key in NEED_DISTINCT_KEY_LIST) or (self.data.get('sort') in NEED_DISTINCT_SORT_LIST):
             ids = queryset.values('id').distinct()

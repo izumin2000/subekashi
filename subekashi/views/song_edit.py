@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.shortcuts import render, redirect
 from django.utils import timezone
 from django.urls import reverse
@@ -130,13 +131,10 @@ def song_edit(request, song_id):
         song.issubeana = is_subeana
         song.isdraft = is_draft
         song.post_time = timezone.now()
-        song.save()
-
-        # imitatesフィールドの更新
-        song.imitates.set(imitate_songs)
-
-        # authorsフィールドの更新
-        song.authors.set(author_objects)
+        with transaction.atomic():
+            song.save()
+            song.imitates.set(imitate_songs)
+            song.authors.set(author_objects)
 
         # SongLinkの更新（差分）
         existing_links = {link.url: link for link in song.links.all()}
