@@ -1,9 +1,3 @@
-h1 {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
 #new-form-auto-info, #new-form-manual-info {
     text-align: center;
     min-height: 32px;
