@@ -185,8 +185,9 @@ python manage.py runserver
 - `islack`: 不完全な曲（情報が欠けている曲）
 
 **特殊フィルタ**
-- `imitate`: 模倣元（カンマ区切りで複数指定可、最大10000文字）
-- `imitated`: 被模倣（カンマ区切りで複数指定可、最大10000文字）
+
+- `imitate`: 模倣元の曲のsong ID（整数）
+- `imitated`: 被模倣の曲のsong ID（整数）
 - `guesser`: 候補（タイトルとチャンネルを検索、最大500文字）
 - `mediatypes`: メディアタイプ（正規表現対応、最大100文字）
 
@@ -266,6 +267,9 @@ python manage.py runserver
 
 **`url`フィールドについて**
 `url`は登録されたURLの配列です。複数のURLが登録されている場合はすべて含まれます。URLが未登録の場合は空配列`[]`が返されます。
+
+**`imitates` / `imitateds`フィールドについて**
+`imitates`はこの曲が模倣している曲のsong IDの整数配列です。`imitateds`はこの曲を模倣している曲のsong IDの整数配列（`imitates`の逆参照）です。いずれも模倣関係がない場合は空配列`[]`が返されます。
 
 ### Ad API
 **エンドポイント**: [https://lyrics.imicomweb.com/api/ad](https://lyrics.imicomweb.com/api/ad)
