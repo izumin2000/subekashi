@@ -77,7 +77,14 @@ def song_edit(request, song_id):
         author_objects = get_or_create_authors(author_names)
         
         # 自分自身や重複は除外し、Song オブジェクトのリストに変換
-        imitate_ids = {i.strip() for i in imitates.split(",") if i.strip()} - {str(song_id)}
+        imitate_ids = set()
+        for i in imitates.split(","):
+            i = i.strip()
+            if i and i != str(song_id):
+                try:
+                    imitate_ids.add(int(i))
+                except ValueError:
+                    pass
         imitate_songs = list(Song.objects.filter(id__in=imitate_ids))
         
         # 掲載拒否リストの読み込み
