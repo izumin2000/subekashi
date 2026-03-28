@@ -171,8 +171,9 @@ class Command(BaseCommand):
         # urlはSongモデルのフィールドではなくSongLinkで管理するため分離
         urls_data = songjson.pop('url', [])
 
-        # imitatesはManyToManyFieldのため保存後に設定する必要がある
+        # imitates/imitatedsはManyToManyFieldのため保存後に設定する必要がある
         imitates_data = songjson.pop('imitates', [])
+        songjson.pop('imitateds', [])  # 逆参照は imitates から自動管理されるため不要
 
         # Songオブジェクトを作成
         song = Song(**songjson)
