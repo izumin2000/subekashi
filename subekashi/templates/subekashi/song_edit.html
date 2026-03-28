@@ -77,7 +77,7 @@
                 </div>
             </template>
             <div id="imitate-list"></div>
-            <input type="text" id="imitate" name="imitate" value="{{ song.imitate }}" hidden>
+            <input type="text" id="imitate" name="imitate" value="{% for s in song.imitates.all %}{{ s.id }}{% if not forloop.last %},{% endif %}{% endfor %}" hidden>
         </div>
         <div class="form-col">
             <label for="lyrics">歌詞<i class="fas fa-info-circle" onclick="showTutorial('lyrics')"></i></label>
