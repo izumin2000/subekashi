@@ -79,6 +79,19 @@ class Command(BaseCommand):
         if song_link_rows:
             SongLink.songs.through.objects.bulk_create(song_link_rows, ignore_conflicts=True)
 
+        # imitates関係を一括作成（全Song作成済みのためスキップ不要）
+        self.stdout.write("imitates関係を設定中です...")
+        all_song_ids = set(Song.objects.values_list('id', flat=True))
+        imitate_rows = [
+            Song.imitates.through(from_song_id=song.id, to_song_id=target_id)
+            for song in songs
+            for target_id in getattr(song, '_imitates_data', [])
+            if target_id in all_song_ids
+        ]
+        if imitate_rows:
+            Song.imitates.through.objects.bulk_create(imitate_rows, ignore_conflicts=True)
+            self.stdout.write(f"  {len(imitate_rows)}件のimitates関係を作成しました。")
+
         self.stdout.write(self.style.SUCCESS(f"処理が完了しました。"))
 
     def request_song(self, id):
@@ -102,6 +115,8 @@ class Command(BaseCommand):
             self._set_song_authors(song)
             # SongLinkを設定
             self._set_song_links(song)
+            # imitatesを設定（参照先が存在しない場合はスキップ）
+            self._set_song_imitates(song)
             
 
     def _set_song_authors(self, song):
@@ -129,6 +144,22 @@ class Command(BaseCommand):
             link, _ = SongLink.objects.get_or_create(url=url)
             link.songs.add(song)
 
+    def _set_song_imitates(self, song):
+        """Songにimitatesを設定する（存在しないIDはスキップ）"""
+        if song is None:
+            return
+        if not hasattr(song, '_imitates_data') or not song._imitates_data:
+            return
+
+        for target_id in song._imitates_data:
+            try:
+                target = Song.objects.get(pk=target_id)
+                song.imitates.add(target)
+            except Song.DoesNotExist:
+                self.stdout.write(self.style.WARNING(
+                    f"  [{song.id}] 模倣元ID {target_id} はローカルに存在しないためスキップしました。"
+                ))
+
     def json_to_song(self, songjson: Dict):
         if Song.objects.filter(pk=songjson["id"]).exists():
             self.stdout.write(self.style.ERROR(f"ID {songjson['id']}はすでに存在しています。"))
@@ -140,10 +171,13 @@ class Command(BaseCommand):
         # urlはSongモデルのフィールドではなくSongLinkで管理するため分離
         urls_data = songjson.pop('url', [])
 
+        # imitatesはManyToManyFieldのため保存後に設定する必要がある
+        imitates_data = songjson.pop('imitates', [])
+
         # Songオブジェクトを作成
         song = Song(**songjson)
 
-        # authors/urlsデータを一時的に保存（保存後に設定するため）
+        # authors/urls/imitatesデータを一時的に保存（保存後に設定するため）
         song._authors_data = authors_data
         # 旧API: url は "url1,url2" 形式の文字列、新API: リスト
         if isinstance(urls_data, list):
@@ -152,6 +186,7 @@ class Command(BaseCommand):
             song._urls_data = [u.strip() for u in urls_data.split(',') if u.strip()]
         else:
             song._urls_data = []
+        song._imitates_data = imitates_data if isinstance(imitates_data, list) else []
 
         return song
 
