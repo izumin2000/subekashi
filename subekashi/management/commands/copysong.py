@@ -79,14 +79,15 @@ class Command(BaseCommand):
         if song_link_rows:
             SongLink.songs.through.objects.bulk_create(song_link_rows, ignore_conflicts=True)
 
-        # imitates関係を一括作成（全Song作成済みのためスキップ不要）
+        # imitates関係を一括作成
         self.stdout.write("imitates関係を設定中です...")
-        all_song_ids = set(Song.objects.values_list('id', flat=True))
+        all_target_ids = {tid for song in songs for tid in getattr(song, '_imitates_data', [])}
+        existing_ids = set(Song.objects.filter(pk__in=all_target_ids).values_list('id', flat=True))
         imitate_rows = [
             Song.imitates.through(from_song_id=song.id, to_song_id=target_id)
             for song in songs
             for target_id in getattr(song, '_imitates_data', [])
-            if target_id in all_song_ids
+            if target_id in existing_ids
         ]
         if imitate_rows:
             Song.imitates.through.objects.bulk_create(imitate_rows, ignore_conflicts=True)
@@ -117,7 +118,6 @@ class Command(BaseCommand):
             self._set_song_links(song)
             # imitatesを設定（参照先が存在しない場合はスキップ）
             self._set_song_imitates(song)
-            
 
     def _set_song_authors(self, song):
         """Songにauthorsを設定する"""
@@ -146,19 +146,17 @@ class Command(BaseCommand):
 
     def _set_song_imitates(self, song):
         """Songにimitatesを設定する（存在しないIDはスキップ）"""
-        if song is None:
-            return
         if not hasattr(song, '_imitates_data') or not song._imitates_data:
             return
 
-        for target_id in song._imitates_data:
-            try:
-                target = Song.objects.get(pk=target_id)
-                song.imitates.add(target)
-            except Song.DoesNotExist:
-                self.stdout.write(self.style.WARNING(
-                    f"  [{song.id}] 模倣元ID {target_id} はローカルに存在しないためスキップしました。"
-                ))
+        existing = Song.objects.filter(pk__in=song._imitates_data)
+        existing_ids = set(existing.values_list('pk', flat=True))
+        song.imitates.set(existing)
+
+        for target_id in set(song._imitates_data) - existing_ids:
+            self.stdout.write(self.style.WARNING(
+                f"  [{song.id}] 模倣元ID {target_id} はローカルに存在しないためスキップしました。"
+            ))
 
     def json_to_song(self, songjson: Dict):
         if Song.objects.filter(pk=songjson["id"]).exists():
