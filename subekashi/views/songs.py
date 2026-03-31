@@ -23,7 +23,7 @@ COOKIE_FORMS = {
 }
 
 # チェックボックス
-BOOL_FORMS = ["issubeana", "isjoke", "islack", "isdraft", "isoriginal", "isinst", "isdeleted"]
+BOOL_FORMS = ["is_subeana", "is_joke", "is_lack", "is_draft", "is_original", "is_inst", "is_deleted"]
 
 # 折りたたまれていないメディアタイプ
 DISPLAY_MEDIA_INDEX = 5
@@ -70,9 +70,9 @@ def songs(request):
         value = REQUEST_DATA.get(filter)
         if value != None:
             value = value in ["true", "1"]
-            if filter == "issubeana":
+            if filter == "is_subeana":
                 dataD["songrange"] = "subeana" if value else "xx"
-            elif filter == "isjoke":
+            elif filter == "is_joke":
                 dataD["jokerange"] = "only" if value else "off"
             else:
                 dataD[filter] = value

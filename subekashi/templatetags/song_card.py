@@ -53,7 +53,7 @@ def get_url(song):
     i_tags = ""
     
     # 非公開なら
-    if song.isdeleted:
+    if song.is_deleted:
         i_tags += "<i class='far fa-eye-slash'></i>"
     
     # 未登録なら
@@ -75,11 +75,11 @@ def get_lyrics(song):
     # html特殊文字をエスケープ
     lyrics=lyrics.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
     # インスト曲なら
-    if not lyrics and song.isinst:
+    if not lyrics and song.is_inst:
         return mark_safe('<i class="fas fa-align-center"></i>インスト曲')
-    
+
     # 歌詞を登録していないのなら
-    if not lyrics and not song.isinst:
+    if not lyrics and not song.is_inst:
         edit_url = reverse('subekashi:song_edit', args=[song.id])
         return mark_safe(f'<object><a href="{edit_url}"><i class="fas fa-align-center"></i>歌詞未登録</a></object>')
     

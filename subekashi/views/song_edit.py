@@ -20,7 +20,7 @@ def song_edit(request, song_id):
         return render(request, 'subekashi/404.html', status=404)
     
     # 編集不可の場合は元の曲情報閲覧画面に戻してロックされていますトーストを表示
-    if song.islock:
+    if song.is_lock:
         return redirect(f'/songs/{song_id}?toast=lock')
     
     dataD = {
@@ -118,12 +118,12 @@ def song_edit(request, song_id):
             {"label": "タイトル", "before": song.title ,"after": title},
             {"label": "作者", "before": song.authors_str(), "after": ", ".join([a.name for a in author_objects])},
             {"label": "URL", "before": before_urls ,"after": cleaned_url},
-            {"label": "オリジナル", "before": yes_no(song.isoriginal) ,"after": yes_no(is_original)},
-            {"label": "削除済み", "before": yes_no(song.isdeleted) ,"after": yes_no(is_deleted)},
-            {"label": "ネタ曲", "before": yes_no(song.isjoke) ,"after": yes_no(is_joke)},
-            {"label": "インスト曲", "before": yes_no(song.isinst) ,"after": yes_no(is_inst)},
-            {"label": "すべあな模倣曲", "before": yes_no(song.issubeana) ,"after": yes_no(is_subeana)},
-            {"label": "下書き", "before": yes_no(song.isdraft) ,"after": yes_no(is_draft)},
+            {"label": "オリジナル", "before": yes_no(song.is_original) ,"after": yes_no(is_original)},
+            {"label": "削除済み", "before": yes_no(song.is_deleted) ,"after": yes_no(is_deleted)},
+            {"label": "ネタ曲", "before": yes_no(song.is_joke) ,"after": yes_no(is_joke)},
+            {"label": "インスト曲", "before": yes_no(song.is_inst) ,"after": yes_no(is_inst)},
+            {"label": "すべあな模倣曲", "before": yes_no(song.is_subeana) ,"after": yes_no(is_subeana)},
+            {"label": "下書き", "before": yes_no(song.is_draft) ,"after": yes_no(is_draft)},
             {"label": "模倣", "before": songs_to_info(old_imitate_songs), "after": songs_to_info(imitate_songs)},
             {"label": "歌詞", "before": song.lyrics, "after": lyrics.replace("\r\n", "\n")},
         ]
@@ -131,12 +131,12 @@ def song_edit(request, song_id):
         # songの更新
         song.title = title
         song.lyrics = lyrics
-        song.isoriginal = is_original
-        song.isdeleted = is_deleted
-        song.isjoke = is_joke
-        song.isinst = is_inst
-        song.issubeana = is_subeana
-        song.isdraft = is_draft
+        song.is_original = is_original
+        song.is_deleted = is_deleted
+        song.is_joke = is_joke
+        song.is_inst = is_inst
+        song.is_subeana = is_subeana
+        song.is_draft = is_draft
         song.post_time = timezone.now()
         with transaction.atomic():
             song.save()

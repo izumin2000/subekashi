@@ -123,24 +123,24 @@
             {% endfor %}
         </div>
         <div class="checkbox-col">
-            <input type="checkbox" value="islack" id="islack" {% if islack %}checked{% endif %}>
-            <label for="islack">作成途中</label>
+            <input type="checkbox" value="is_lack" id="is_lack" {% if is_lack %}checked{% endif %}>
+            <label for="is_lack">作成途中</label>
         </div>
         <div class="checkbox-col">
-            <input type="checkbox" value="isdraft" id="isdraft" {% if isdraft %}checked{% endif %}>
-            <label for="isdraft">下書き</label>
+            <input type="checkbox" value="is_draft" id="is_draft" {% if is_draft %}checked{% endif %}>
+            <label for="is_draft">下書き</label>
         </div>
         <div class="checkbox-col">
-            <input type="checkbox" value="isoriginal" id="isoriginal" {% if isoriginal %}checked{% endif %}>
-            <label for="isoriginal">オリジナル模倣曲</label>
+            <input type="checkbox" value="is_original" id="is_original" {% if is_original %}checked{% endif %}>
+            <label for="is_original">オリジナル模倣曲</label>
         </div>
         <div class="checkbox-col">
-            <input type="checkbox" value="isinst" id="isinst" {% if isinst %}checked{% endif %}>
-            <label for="isinst">インスト曲</label>
+            <input type="checkbox" value="is_inst" id="is_inst" {% if is_inst %}checked{% endif %}>
+            <label for="is_inst">インスト曲</label>
         </div>
         <div class="checkbox-col">
-            <input type="checkbox" value="isdeleted" id="isdeleted" {% if isdeleted %}checked{% endif %}>
-            <label for="isdeleted">非公開/削除済み</label>
+            <input type="checkbox" value="is_deleted" id="is_deleted" {% if is_deleted %}checked{% endif %}>
+            <label for="is_deleted">非公開/削除済み</label>
         </div>
     </details>
     <input type="submit" id="search-button" value="検索" onclick="renderSearch()"></input>

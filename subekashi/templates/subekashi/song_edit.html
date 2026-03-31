@@ -84,32 +84,32 @@
             <textarea id="lyrics" name="lyrics">{{ song.lyrics }}</textarea>
         </div>
         <div class="checkbox-col">
-            <input type="checkbox" id="is-original" name="is-original" {% if song.isoriginal %}checked{% endif %}>
+            <input type="checkbox" id="is-original" name="is-original" {% if song.is_original %}checked{% endif %}>
             <label for="is-original">オリジナル模倣</label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-original')"></i>
         </div>
         <div class="checkbox-col">
-            <input type="checkbox" id="is-deleted" name="is-deleted" {% if song.isdeleted %}checked{% endif %}>
+            <input type="checkbox" id="is-deleted" name="is-deleted" {% if song.is_deleted %}checked{% endif %}>
             <label for="is-deleted">非公開/削除済み</label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-deleted')"></i>
         </div>
         <div class="checkbox-col">
-            <input type="checkbox" id="is-joke" name="is-joke" {% if song.isjoke %}checked{% endif %}>
+            <input type="checkbox" id="is-joke" name="is-joke" {% if song.is_joke %}checked{% endif %}>
             <label for="is-joke">ネタ曲</label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-joke')"></i>
         </div>
         <div class="checkbox-col">
-            <input type="checkbox" id="is-inst" name="is-inst" {% if song.isinst %}checked{% endif %}>
+            <input type="checkbox" id="is-inst" name="is-inst" {% if song.is_inst %}checked{% endif %}>
             <label for="is-inst">インスト</label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-inst')"></i>
         </div>
         <div class="checkbox-col">
-            <input type="checkbox" id="is-subeana" name="is-subeana" {% if song.issubeana %}checked{% endif %}>
+            <input type="checkbox" id="is-subeana" name="is-subeana" {% if song.is_subeana %}checked{% endif %}>
             <label for="is-subeana">すべあな界隈曲</label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-subeana')"></i>
         </div>
         <div class="checkbox-col">
-            <input type="checkbox" id="is-draft" name="is-draft" {% if song.isdraft %}checked{% endif %}>
+            <input type="checkbox" id="is-draft" name="is-draft" {% if song.is_draft %}checked{% endif %}>
             <label for="is-draft">下書き</label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-draft')"></i>
         </div>
