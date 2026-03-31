@@ -47,8 +47,8 @@ def filter_by_lack():
     any_links = SongLink.objects.filter(songs=OuterRef('pk'))
     has_author_1 = Author.objects.filter(id=1, songs__id=OuterRef('pk'))
     return (
-        Q(is_deleted=False) & ~Exists(any_links) |
-        Q(is_original=False, is_subeana=True, imitates__isnull=True) & ~Exists(has_author_1) |
+        (Q(is_deleted=False) & ~Exists(any_links)) |
+        (Q(is_original=False, is_subeana=True, imitates__isnull=True) & ~Exists(has_author_1)) |
         Q(is_inst=False, lyrics="")
     )
 

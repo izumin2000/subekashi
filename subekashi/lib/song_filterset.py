@@ -123,7 +123,7 @@ class SongFilter(django_filters.FilterSet):
         method='filter_mediatypes',
         validators=[validate_max_length(100)]
     )
-    is_lack = django_filters.BooleanFilter(method='filter_islack')
+    is_lack = django_filters.BooleanFilter(method='filter_is_lack')
 
     # ソート (randomをサポートするためCharFilterを使用)
     sort = django_filters.CharFilter(
@@ -160,7 +160,7 @@ class SongFilter(django_filters.FilterSet):
         """正規表現を使用したメディアタイプによるフィルタ"""
         return queryset.filter(filter_by_mediatypes(value))
 
-    def filter_islack(self, queryset, name, value):
+    def filter_is_lack(self, queryset, name, value):
         """不完全な曲をフィルタ"""
         if value:
             return queryset.filter(filter_by_lack())
