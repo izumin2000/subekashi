@@ -8,7 +8,7 @@ class Editor(models.Model):
     ip = models.CharField(default = "", unique=True, max_length = 100)
     is_open = models.BooleanField(default = True)
     is_forced_open = models.BooleanField(default = False)
-    
+
     def __str__(self):
         return f"全て{self.id}の所為です。"
 
@@ -29,22 +29,22 @@ class Song(models.Model):
         ("joke", "ネタ動画"),
         ("other", "その他"),
     )
-    
+
     title = models.CharField(default = "", max_length = 500)
     authors = models.ManyToManyField('Author', related_name='songs', blank=True)
     lyrics = models.TextField(blank = True, null = True, default = "", max_length = 10000)
     imitates = models.ManyToManyField("self", symmetrical=False, related_name="imitateds", blank=True)
     post_time = models.DateTimeField(default = timezone.now)
     upload_time = models.DateTimeField(blank = True, null = True)
-    isoriginal = models.BooleanField(default = False)       # TODO is_
-    isjoke = models.BooleanField(default = False)
-    isdeleted = models.BooleanField(default = False)
-    isdraft = models.BooleanField(default = False)
-    isinst = models.BooleanField(default = False)
-    issubeana = models.BooleanField(default = True)
-    isspecial = models.BooleanField(default = False)
-    islock = models.BooleanField(default = False)
-    islimited = models.BooleanField(default = False)
+    is_original = models.BooleanField(default = False)
+    is_joke = models.BooleanField(default = False)
+    is_deleted = models.BooleanField(default = False)
+    is_draft = models.BooleanField(default = False)
+    is_inst = models.BooleanField(default = False)
+    is_subeana = models.BooleanField(default = True)
+    is_special = models.BooleanField(default = False)
+    is_lock = models.BooleanField(default = False)
+    is_limited = models.BooleanField(default = False)
     view = models.IntegerField(blank = True, null = True)
     like = models.IntegerField(blank = True, null = True)
     category = models.CharField(default = "song", choices=CHOICES, max_length=10)
@@ -62,8 +62,6 @@ class Song(models.Model):
             self.lyrics = self.lyrics.replace("\r\n", "\n")
         super().save(*args, **kwargs)
 
-    # def imitates(self):
-        # return
 
 # 曲のURLの情報
 class SongLink(models.Model):
@@ -82,9 +80,6 @@ class Author(models.Model):
 
     def __str__(self):
         return self.name
-    
-    # def save(self, *args, **kwargs):
-        # super().save(*args, **kwargs)
 
 
 # 曲の作者のwebページの情報
@@ -112,9 +107,6 @@ class AuthorAlias(models.Model):
 
     def __str__(self):
         return self.name
-    
-    # def save(self, *args, **kwargs):
-        # super().save(*args, **kwargs)
 
 
 # ユーザーによる曲や作者の変更を記録した情報
@@ -125,7 +117,7 @@ class History(models.Model):
         ("edit", "編集"),
         ("delete", "削除申請"),
     )
-    
+
     song = models.ForeignKey(Song, blank = True, null = True, on_delete = models.SET_NULL, related_name="histories")
     title = models.CharField(default = "", max_length = 100)
     history_type = models.CharField(default = "new", choices=CHOICES, max_length = 10)
@@ -139,7 +131,7 @@ class Contact(models.Model):
     detail = models.TextField(max_length = 10000)
     post_time = models.DateField()
     answer = models.TextField(blank = True, null = True, max_length = 10000)
-    
+
     def __str__(self):
         return self.detail[:30]
 
@@ -149,7 +141,7 @@ class Ai(models.Model):
     lyrics = models.CharField(default = "", max_length = 100)
     score = models.IntegerField(default = 0)
     genetype = models.CharField(default = "", max_length = 100)
-    
+
     def __str__(self):
         return self.lyrics
 
@@ -166,6 +158,6 @@ class Ad(models.Model):
     click = models.IntegerField(default = 0)
     dup = models.IntegerField(default = 0)
     status = models.CharField(default = "still", choices=CHOICES, max_length=10)
-    
+
     def __str__(self):
         return self.url

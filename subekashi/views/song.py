@@ -55,8 +55,8 @@ def song(request, song_id):
     # タグを持っているかどうかの確認
     has_tag = any([
         song.authors.filter(id=1).exists(),
-        is_lack, song.isdraft, song.isoriginal, song.isjoke, song.isinst, song.isdeleted, song.islimited,
-        not song.issubeana
+        is_lack, song.is_draft, song.is_original, song.is_joke, song.is_inst, song.is_deleted, song.is_limited,
+        not song.is_subeana
     ])
     
     # テンプレートに渡す辞書を作成

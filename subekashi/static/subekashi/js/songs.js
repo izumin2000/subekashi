@@ -74,8 +74,8 @@ function restoreFormValuesFromCookies() {
 async function saveCookieToBackend(name, value) {
     const paramMap = {
         "isdetail": "isdetail",
-        "songrange": "issubeana",
-        "jokerange": "isjoke",
+        "songrange": "is_subeana",
+        "jokerange": "is_joke",
         "sort": "sort"
     };
     const param = paramMap[name];
@@ -131,18 +131,18 @@ function categoryClick(song) {
 
 function songrangeToQuery(songrange) {
     if (songrange == "subeana") {
-        return { "issubeana": true };
+        return { "is_subeana": true };
     } else if (songrange == "xx") {
-        return { "issubeana": false };
+        return { "is_subeana": false };
     };
     return {};
 }
 
 function isjokeToQuery(isjoke) {
     if (isjoke == "only") {
-        return { "isjoke": true };
+        return { "is_joke": true };
     } else if (isjoke == "off") {
-        return { "isjoke": false };
+        return { "is_joke": false };
     };
     return {};
 }
@@ -226,7 +226,7 @@ function renderSearch() {
 
 async function getsongCards(query) {
     try {
-        query["islimited"] = "False";
+        query["is_limited"] = "False";
         const songCards = await exponentialBackoff(`html/song_cards${toQueryString(query)}`, "search", renderSearch);
         return songCards;
     } catch(error) {

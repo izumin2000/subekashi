@@ -58,7 +58,7 @@ class Command(BaseCommand):
         song.view = info.get("view", 0)
         song.like = info.get("like", 0)
         song.upload_time = info.get("upload_time", None)
-        song.isdeleted = info.get("is_deleted", False)
+        song.is_deleted = info.get("is_deleted", False)
         song.save()
     
     def handle(self, *args, **options) :

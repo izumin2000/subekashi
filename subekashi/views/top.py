@@ -36,11 +36,11 @@ def top(request):
     if songrange == "all" :
         songInsL = Song.objects.all()
     elif songrange == "subeana" :
-        songInsL = Song.objects.filter(issubeana = True)
+        songInsL = Song.objects.filter(is_subeana = True)
     elif songrange == "xx" :
-        songInsL = Song.objects.filter(issubeana = False)
+        songInsL = Song.objects.filter(is_subeana = False)
     if jokerange == "off" :
-        songInsL = songInsL.filter(isjoke = False)
+        songInsL = songInsL.filter(is_joke = False)
 
     # 新着の表示設定
     new_count = int(request.COOKIES.get("is_shown_new", "5"))

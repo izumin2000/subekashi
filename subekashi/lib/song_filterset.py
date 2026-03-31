@@ -100,13 +100,13 @@ class SongFilter(django_filters.FilterSet):
     upload_time_lte = django_filters.DateTimeFilter(field_name='upload_time', lookup_expr='lte')
 
     # 真偽値フィルタ
-    issubeana = django_filters.BooleanFilter()
-    isjoke = django_filters.BooleanFilter()
-    isdraft = django_filters.BooleanFilter()
-    isoriginal = django_filters.BooleanFilter()
-    isinst = django_filters.BooleanFilter()
-    isdeleted = django_filters.BooleanFilter()
-    islimited = django_filters.BooleanFilter()
+    is_subeana = django_filters.BooleanFilter()
+    is_joke = django_filters.BooleanFilter()
+    is_draft = django_filters.BooleanFilter()
+    is_original = django_filters.BooleanFilter()
+    is_inst = django_filters.BooleanFilter()
+    is_deleted = django_filters.BooleanFilter()
+    is_limited = django_filters.BooleanFilter()
 
     # カスタムフィルタ
     keyword = django_filters.CharFilter(
@@ -123,7 +123,7 @@ class SongFilter(django_filters.FilterSet):
         method='filter_mediatypes',
         validators=[validate_max_length(100)]
     )
-    islack = django_filters.BooleanFilter(method='filter_islack')
+    is_lack = django_filters.BooleanFilter(method='filter_islack')
 
     # ソート (randomをサポートするためCharFilterを使用)
     sort = django_filters.CharFilter(
@@ -228,7 +228,7 @@ class SongFilter(django_filters.FilterSet):
             queryset = queryset.filter(like__gte=1)
 
         # フィルタ使用時、またはrandom/authorソート時にdistinct()を適用
-        NEED_DISTINCT_KEY_LIST = ['author', 'author_exact', 'keyword', 'guesser', 'islack', 'url', 'mediatypes', 'imitate', 'imitated']
+        NEED_DISTINCT_KEY_LIST = ['author', 'author_exact', 'keyword', 'guesser', 'is_lack', 'url', 'mediatypes', 'imitate', 'imitated']
         NEED_DISTINCT_SORT_LIST = ['random', 'author', '-author']
         if any(key in self.data for key in NEED_DISTINCT_KEY_LIST) or (self.data.get('sort') in NEED_DISTINCT_SORT_LIST):
             ids = queryset.values('id').distinct()

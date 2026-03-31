@@ -28,14 +28,14 @@ def get_active_filters(query):
         'like_lte': '高評価数/以下',
         'upload_time_gte': '投稿日/以降',
         'upload_time_lte': '投稿日/以前',
-        'issubeana': '界隈曲の種類',
-        'isjoke': 'ネタ曲',
+        'is_subeana': '界隈曲の種類',
+        'is_joke': 'ネタ曲',
         'mediatypes': 'メディア',
-        'islack': '作成途中',
-        'isdraft': '下書き',
-        'isoriginal': 'オリジナル模倣曲',
-        'isinst': 'インスト曲',
-        'isdeleted': '非公開/削除済み',
+        'is_lack': '作成途中',
+        'is_draft': '下書き',
+        'is_original': 'オリジナル模倣曲',
+        'is_inst': 'インスト曲',
+        'is_deleted': '非公開/削除済み',
     }
 
     active = []

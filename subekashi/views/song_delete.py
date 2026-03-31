@@ -14,7 +14,7 @@ def song_delete(request, song_id):
         return render(request, 'subekashi/404.html', status=404)
 
     # 曲が編集不可能なら編集画面に遷移せずロックトーストを表示する
-    if song.islock:
+    if song.is_lock:
         return redirect(f'/songs/{song_id}?toast=lock')
     
     dataD = {

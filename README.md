@@ -175,14 +175,15 @@ python manage.py runserver
 - `upload_time_lte`: アップロード日時の上限（ISO 8601形式）
 
 **真偽値フィルタ**
-- `issubeana`: すべあな曲かどうか
-- `isjoke`: ネタ曲かどうか
-- `isdraft`: 下書きかどうか
-- `isoriginal`: オリジナル模倣曲かどうか
-- `isinst`: インスト曲かどうか
-- `isdeleted`: 削除済みかどうか
-- `islimited`: すべかし内で限定公開かどうか
-- `islack`: 不完全な曲（情報が欠けている曲）
+
+- `is_subeana`: すべあな曲かどうか
+- `is_joke`: ネタ曲かどうか
+- `is_draft`: 下書きかどうか
+- `is_original`: オリジナル模倣曲かどうか
+- `is_inst`: インスト曲かどうか
+- `is_deleted`: 削除済みかどうか
+- `is_limited`: すべかし内で限定公開かどうか
+- `is_lack`: 不完全な曲（情報が欠けている曲）
 
 **特殊フィルタ**
 
