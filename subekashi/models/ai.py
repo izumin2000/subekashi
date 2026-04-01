@@ -9,3 +9,7 @@ class Ai(models.Model):
 
     def __str__(self):
         return self.lyrics
+
+    @classmethod
+    def get_top_scored(cls):
+        return cls.objects.filter(score=5)

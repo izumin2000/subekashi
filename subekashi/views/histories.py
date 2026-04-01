@@ -6,11 +6,8 @@ from subekashi.constants.constants import HISTORIES_PER_PAGE
 
 
 def histories(request):
-    all_histories = History.objects.select_related("song", "editor").order_by("-create_time")
-
     search_query = request.GET.get("q", "").strip()
-    if search_query:
-        all_histories = all_histories.filter(title__icontains=search_query)
+    all_histories = History.get_all(search_query)
 
     paginator = Paginator(all_histories, HISTORIES_PER_PAGE)
 
@@ -18,7 +15,7 @@ def histories(request):
     page_obj = paginator.get_page(page_number)
 
     ip = get_ip(request)
-    my_editor = Editor.objects.filter(ip=ip).first()
+    my_editor = Editor.get_by_ip(ip)
 
     dataD = {
         "metatitle": "編集履歴",

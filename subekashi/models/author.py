@@ -8,6 +8,20 @@ class Author(models.Model):
     def __str__(self):
         return self.name
 
+    @classmethod
+    def get_or_none(cls, pk):
+        try:
+            return cls.objects.get(pk=pk)
+        except cls.DoesNotExist:
+            return None
+
+    @classmethod
+    def get_by_name(cls, name):
+        try:
+            return cls.objects.get(name=name)
+        except cls.DoesNotExist:
+            return None
+
 
 # 曲の作者のwebページの情報
 class AuthorLink(models.Model):

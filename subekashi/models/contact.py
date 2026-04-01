@@ -9,3 +9,7 @@ class Contact(models.Model):
 
     def __str__(self):
         return self.detail[:30]
+
+    @classmethod
+    def get_answered(cls):
+        return cls.objects.exclude(answer="").order_by("-id")

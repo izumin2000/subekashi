@@ -16,3 +16,7 @@ class Ad(models.Model):
 
     def __str__(self):
         return self.url
+
+    @classmethod
+    def get_active(cls):
+        return cls.objects.filter(status="pass")

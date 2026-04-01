@@ -15,3 +15,14 @@ class Editor(models.Model):
     def get_or_create_from_ip(cls, ip):
         editor, _ = cls.objects.get_or_create(ip=ip)
         return editor
+
+    @classmethod
+    def get_or_none(cls, pk):
+        try:
+            return cls.objects.get(pk=pk)
+        except cls.DoesNotExist:
+            return None
+
+    @classmethod
+    def get_by_ip(cls, ip):
+        return cls.objects.filter(ip=ip).first()

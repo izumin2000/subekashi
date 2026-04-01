@@ -1,46 +1,30 @@
 from django.shortcuts import render
-from django.db.models import Q
 from django.views.decorators.cache import never_cache
-from config.settings import *
-from subekashi.models import *
-from article.models import Article
-from subekashi.constants.constants import *
-from subekashi.lib.query_filters import *
-from subekashi.lib.ip import *
-from subekashi.lib.discord import *
+from subekashi.models import Song, Ai, Ad
+from subekashi.lib.query_filters import filter_by_lack
+from subekashi.lib.song_service import get_top_news_articles
 import random
 
 
 @never_cache
 def top(request):
     dataD = {
-        "metatitle" : "トップ",
+        "metatitle": "トップ",
     }
-    
-    article_qs = Article.objects.filter(
-        is_open=True
-    ).filter(
-        Q(tag="news") | Q(tag="release")
-    ).order_by("-post_time")[:3]
-    
+
+    article_qs = get_top_news_articles()
+
     news_htmls = ""
     for article in article_qs:
         is_news = article.tag == "news"
         news_html = article.title if is_news else f"<a href='/articles/{article.article_id}'>{article.title}</a>"
         news_htmls += f"<span>{news_html}</span>"
     dataD["news_htmls"] = news_htmls
-    
+
     songrange = request.COOKIES.get("songrange", "subeana")
     jokerange = request.COOKIES.get("jokerange", "off")
 
-    if songrange == "all" :
-        songInsL = Song.objects.all()
-    elif songrange == "subeana" :
-        songInsL = Song.objects.filter(is_subeana = True)
-    elif songrange == "xx" :
-        songInsL = Song.objects.filter(is_subeana = False)
-    if jokerange == "off" :
-        songInsL = songInsL.filter(is_joke = False)
+    songInsL = Song.get_for_range(songrange, jokerange)
 
     # 新着の表示設定
     new_count = int(request.COOKIES.get("is_shown_new", "5"))
@@ -58,7 +42,7 @@ def top(request):
     # 生成された歌詞の表示設定
     is_ai_shown = request.COOKIES.get("is_shown_ai", "on") == "on"
     if is_ai_shown:
-        aiInsL = Ai.objects.filter(score = 5)[::-1]
+        aiInsL = list(Ai.get_top_scored())[::-1]
         if aiInsL:
             dataD["aiInsL"] = aiInsL[min(10, len(aiInsL))::-1]
 
@@ -66,11 +50,11 @@ def top(request):
     is_shown_ad = request.COOKIES.get("is_shown_ad", "on") == "on"
     dataD["is_shown_ad"] = is_shown_ad
     if is_shown_ad:
-        adInsL = Ad.objects.filter(status = "pass")
+        adInsL = list(Ad.get_active())
         if adInsL:
-            adInsL = random.sample(list(adInsL), min(len(adInsL), 10))
+            adInsL = random.sample(adInsL, min(len(adInsL), 10))
             adInsL = [adIns for adIns in adInsL for _ in range(adIns.dup)]
             adIns = random.choice(adInsL) if adInsL else []
             dataD["adIns"] = adIns
-    
+
     return render(request, 'subekashi/top.html', dataD)

@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from subekashi.lib.discord import *
+from subekashi.lib.discord import send_discord
 from subekashi.lib.ip import get_ip
 from subekashi.models import Contact
 from config.local_settings import CONTACT_DISCORD_URL
@@ -7,16 +7,15 @@ from config.local_settings import CONTACT_DISCORD_URL
 
 def contact(request):
     dataD = {
-        "metatitle" : "お問い合わせ",
+        "metatitle": "お問い合わせ",
     }
-    
-    contact_qs = Contact.objects.exclude(answer = "").order_by("-id")
-    dataD["contact_qs"] = contact_qs
-    
-    if request.method == "POST" :
+
+    dataD["contact_qs"] = Contact.get_answered()
+
+    if request.method == "POST":
         category = request.POST.get("category")
         detail = request.POST.get("detail")
-        
+
         # 選択肢か詳細が空なら
         if (not category) or (not detail):
             dataD["result"] = "入力必須項目を入力してください。"
@@ -31,7 +30,7 @@ def contact(request):
         if not is_ok:
             dataD["result"] = "内部エラーが発生しました。"
             return render(request, 'subekashi/contact.html', dataD)
-        
+
         # okトーストを表示
         dataD["result"] = "ok"
 

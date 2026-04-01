@@ -1,28 +1,30 @@
-from django.db import transaction
 from django.shortcuts import render, redirect
-from django.utils import timezone
 from django.urls import reverse
 from config.local_settings import NEW_DISCORD_URL, CONTACT_DISCORD_URL
-from config.settings import ROOT_URL
-from subekashi.models import *
-from subekashi.lib.url import *
-from subekashi.lib.ip import *
-from subekashi.lib.discord import *
-from subekashi.lib.song_search import song_search
+from subekashi.models import Song, Editor, History, SongLink
+from subekashi.lib.url import clean_url, get_allow_media
+from subekashi.lib.ip import get_ip
+from subekashi.lib.discord import send_discord
 from subekashi.lib.author_helpers import get_or_create_authors
+from subekashi.lib.song_service import (
+    check_reject_list,
+    validate_song_url,
+    get_imitate_songs,
+    update_song,
+    build_edit_song_discord_text,
+)
 
 
 def song_edit(request, song_id):
     # Songがなければ404
-    try :
-        song = Song.objects.get(pk = song_id)
-    except :
+    song = Song.get_or_none(song_id)
+    if song is None:
         return render(request, 'subekashi/404.html', status=404)
-    
+
     # 編集不可の場合は元の曲情報閲覧画面に戻してロックされていますトーストを表示
     if song.is_lock:
         return redirect(f'/songs/{song_id}?toast=lock')
-    
+
     dataD = {
         "metatitle": f"{song.title}の編集",
         "song": song,
@@ -40,16 +42,17 @@ def song_edit(request, song_id):
         is_inst = bool(request.POST.get("is-inst"))
         is_subeana = bool(request.POST.get("is-subeana"))
         is_draft = bool(request.POST.get("is-draft"))
-        
+
         # URLのバリデーション
         cleaned_url = clean_url(url)
         cleaned_url_list = cleaned_url.split(",") if cleaned_url else []
         for cleaned_url_item in cleaned_url_list:
             # allow_dup=Falseかつ自身以外の曲に紐づくURLが既に存在する場合はエラー
-            if SongLink.objects.filter(url__iexact=cleaned_url_item, allow_dup=False).exclude(songs__id=song_id).filter(songs__isnull=False).exists():
-                dataD["error"] = "URLは既に登録されています。"
+            error = validate_song_url(cleaned_url_item, exclude_song_id=song_id)
+            if error:
+                dataD["error"] = error
                 return render(request, 'subekashi/song_edit.html', dataD)
-            
+
             # 許可されていないメディアのURLならばエラー
             if not get_allow_media(cleaned_url_item):
                 contact_url = reverse('subekashi:contact')
@@ -75,68 +78,29 @@ def song_edit(request, song_id):
         # authorsフィールドの処理: カンマ区切りの作者をAuthorオブジェクトに変換
         author_names = cleaned_authors.split(',')
         author_objects = get_or_create_authors(author_names)
-        
+
         # 自分自身や重複は除外し、Song オブジェクトのリストに変換
-        imitate_ids = set()
-        for i in imitates.split(","):
-            i = i.strip()
-            if i and i != str(song_id):
-                try:
-                    imitate_ids.add(int(i))
-                except ValueError:
-                    pass
-        imitate_songs = list(Song.objects.filter(id__in=imitate_ids))
-        
+        imitate_songs = get_imitate_songs(imitates, song_id)
+
         # 掲載拒否作者か判断する
-        from subekashi.lib.song_service import check_reject_list, build_edit_song_discord_text
         reject_error = check_reject_list(author_objects)
         if reject_error:
             dataD["error"] = reject_error
             return render(request, 'subekashi/song_edit.html', dataD)
 
-        # 模倣の編集（ManyToManyはsetで差分を自動管理）
-        old_imitate_songs = list(song.imitates.all())
-
-        # URL変更前後の値を取得（SongLinkベース）
-        before_urls = ",".join(song.links.order_by('id').values_list('url', flat=True))
-
         # Discordテキストとchangesを構築（song更新前に実行）
         editor = Editor.get_or_create_from_ip(ip)
         edit_title, changes, discord_text, changed_labels = build_edit_song_discord_text(
-            song_id, song, title, author_objects, cleaned_url, before_urls,
-            old_imitate_songs, imitate_songs, lyrics,
+            song_id, song, title, author_objects, cleaned_url,
+            imitate_songs, lyrics,
             is_original, is_deleted, is_joke, is_inst, is_subeana, is_draft, editor,
         )
 
         # songの更新
-        song.title = title
-        song.lyrics = lyrics
-        song.is_original = is_original
-        song.is_deleted = is_deleted
-        song.is_joke = is_joke
-        song.is_inst = is_inst
-        song.is_subeana = is_subeana
-        song.is_draft = is_draft
-        song.post_time = timezone.now()
-        with transaction.atomic():
-            song.save()
-            song.imitates.set(imitate_songs)
-            song.authors.set(author_objects)
-
-            # SongLinkの更新（差分）
-            existing_links = {link.url: link for link in song.links.all()}
-            new_url_set = set(cleaned_url_list)
-            # 削除されたURLのSongLinkからこの曲を外す（他の曲が参照していなければ削除）
-            for url_str, link in existing_links.items():
-                if url_str not in new_url_set:
-                    link.songs.remove(song)
-                    if not link.songs.exists():
-                        link.delete()
-            # 新規追加されたURLはSongLinkを取得または作成してこの曲を追加
-            for url_str in new_url_set:
-                if url_str not in existing_links:
-                    link, _ = SongLink.objects.get_or_create(url=url_str)
-                    link.songs.add(song)
+        update_song(
+            song, title, lyrics, is_original, is_deleted, is_joke, is_inst,
+            is_subeana, is_draft, author_objects, imitate_songs, cleaned_url_list,
+        )
 
         if changed_labels:
             # 編集履歴を保存
@@ -152,16 +116,13 @@ def song_edit(request, song_id):
             is_ok = send_discord(NEW_DISCORD_URL, discord_text)
             if not is_ok:
                 return render(request, 'subekashi/500.html', status=500)
-        
+
         response = redirect(f'/songs/{song_id}?toast=edit')
         response["X-Robots-Tag"] = "noindex, nofollow"
         return response
     allow_dup_url = request.GET.get('allow_dup_url', '')
     if allow_dup_url:
         cleaned = clean_url(allow_dup_url) or allow_dup_url
-        link = SongLink.objects.filter(url__iexact=cleaned).first()
-        if link:
-            link.allow_dup = True
-            link.save()
-            send_discord(CONTACT_DISCORD_URL, f"重複許可したURL：{allow_dup_url}")
+        SongLink.set_allow_dup_for_url(cleaned)
+        send_discord(CONTACT_DISCORD_URL, f"重複許可したURL：{allow_dup_url}")
     return render(request, 'subekashi/song_edit.html', dataD)

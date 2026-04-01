@@ -32,3 +32,18 @@ class History(models.Model):
         )
         history.save()
         return history
+
+    @classmethod
+    def get_for_song(cls, song):
+        return cls.objects.select_related("editor").filter(song=song).order_by("-create_time")
+
+    @classmethod
+    def get_for_editor(cls, editor):
+        return cls.objects.select_related("song").filter(editor=editor).order_by("-create_time")
+
+    @classmethod
+    def get_all(cls, search_query=""):
+        qs = cls.objects.select_related("song", "editor").order_by("-create_time")
+        if search_query:
+            qs = qs.filter(title__icontains=search_query)
+        return qs

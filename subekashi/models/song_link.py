@@ -11,3 +11,12 @@ class SongLink(models.Model):
 
     def __str__(self):
         return self.url
+
+    @classmethod
+    def set_allow_dup_for_url(cls, url):
+        """指定URLのSongLinkのallow_dup=Trueに設定する"""
+        link = cls.objects.filter(url__iexact=url).first()
+        if link:
+            link.allow_dup = True
+            link.save()
+        return link

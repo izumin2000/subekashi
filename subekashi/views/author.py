@@ -1,10 +1,12 @@
-from django.shortcuts import render, get_object_or_404
-from subekashi.models import *
+from django.shortcuts import render
+from subekashi.models import Author, Song
 
 
 def author(request, author_id):
     # Author IDで検索、存在しなければ404
-    author_obj = get_object_or_404(Author, id=author_id)
+    author_obj = Author.get_or_none(author_id)
+    if author_obj is None:
+        return render(request, 'subekashi/404.html', status=404)
     author_name = author_obj.name
 
     dataD = {
@@ -12,13 +14,7 @@ def author(request, author_id):
         "author": author_name,
     }
 
-    # authorsフィールドでフィルタ
-    songInsL = (
-    Song.objects
-    .filter(authors__id=author_id)
-    .distinct()
-    .order_by('-id')
-)
+    songInsL = Song.get_for_author(author_id)
 
     dataD["songInsL"] = songInsL
     titles = ", ".join(song.title for song in songInsL)
