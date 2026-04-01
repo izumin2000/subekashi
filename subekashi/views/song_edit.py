@@ -87,46 +87,26 @@ def song_edit(request, song_id):
                     pass
         imitate_songs = list(Song.objects.filter(id__in=imitate_ids))
         
-        # 掲載拒否リストの読み込み
-        try:
-            from subekashi.constants.dynamic.reject import REJECT_LIST
-        except:
-            REJECT_LIST = []
-        
         # 掲載拒否作者か判断する
-        for author in author_objects:
-            if author.name in REJECT_LIST:
-                dataD["error"] = f"{author.name}さんの曲は登録することができません。"
-                return render(request, 'subekashi/song_edit.html', dataD)
+        from subekashi.lib.song_service import check_reject_list, build_edit_song_discord_text
+        reject_error = check_reject_list(author_objects)
+        if reject_error:
+            dataD["error"] = reject_error
+            return render(request, 'subekashi/song_edit.html', dataD)
 
         # 模倣の編集（ManyToManyはsetで差分を自動管理）
         old_imitate_songs = list(song.imitates.all())
-        
-        # 変更内容のマークダウンと送信するDiscordの文言の作成
-        def yes_no(value):
-            return "はい" if value else "いいえ"
-
-        # Songのリストをタイトルの改行リストにする
-        def songs_to_info(songs):
-            return "\n".join(s.title for s in songs)
 
         # URL変更前後の値を取得（SongLinkベース）
         before_urls = ",".join(song.links.order_by('id').values_list('url', flat=True))
 
-        # songを更新する前にhistoryのために更新前後のsongの情報を記録しておく
-        COLUMNS = [
-            {"label": "タイトル", "before": song.title ,"after": title},
-            {"label": "作者", "before": song.authors_str(), "after": ", ".join([a.name for a in author_objects])},
-            {"label": "URL", "before": before_urls ,"after": cleaned_url},
-            {"label": "オリジナル", "before": yes_no(song.is_original) ,"after": yes_no(is_original)},
-            {"label": "削除済み", "before": yes_no(song.is_deleted) ,"after": yes_no(is_deleted)},
-            {"label": "ネタ曲", "before": yes_no(song.is_joke) ,"after": yes_no(is_joke)},
-            {"label": "インスト曲", "before": yes_no(song.is_inst) ,"after": yes_no(is_inst)},
-            {"label": "すべあな模倣曲", "before": yes_no(song.is_subeana) ,"after": yes_no(is_subeana)},
-            {"label": "下書き", "before": yes_no(song.is_draft) ,"after": yes_no(is_draft)},
-            {"label": "模倣", "before": songs_to_info(old_imitate_songs), "after": songs_to_info(imitate_songs)},
-            {"label": "歌詞", "before": song.lyrics, "after": lyrics.replace("\r\n", "\n")},
-        ]
+        # Discordテキストとchangesを構築（song更新前に実行）
+        editor = Editor.get_or_create_from_ip(ip)
+        edit_title, changes, discord_text, changed_labels = build_edit_song_discord_text(
+            song_id, song, title, author_objects, cleaned_url, before_urls,
+            old_imitate_songs, imitate_songs, lyrics,
+            is_original, is_deleted, is_joke, is_inst, is_subeana, is_draft, editor,
+        )
 
         # songの更新
         song.title = title
@@ -158,51 +138,17 @@ def song_edit(request, song_id):
                     link, _ = SongLink.objects.get_or_create(url=url_str)
                     link.songs.add(song)
 
-        # History DBの変更内容とDisocrdの#新規作成・変更チャンネルに送る文の用意
-        changes = [["種類", "編集前", "編集後"]]
-        changed_labels = []
-        discord_text = f"編集されました\n{ROOT_URL}/songs/{song_id}/history\n\n"
-        for column in COLUMNS:
-            if column["before"] != column["after"]:     # ユーザーが編集時に変更した場合
-                label = column["label"]
-                changed_labels.append(label)
-
-                before = column.get("before", "なし")
-                after = column.get("after", "なし")
-
-                # 共通：Markdownテーブル
-                changes.append([label, before, after])
-
-                # Discord用テキスト
-                discord_text += f"**{label}**："
-                if label == "歌詞":
-                    discord_text += f"```{after}```\n"
-                elif label == "模倣":
-                    discord_text += f"\n{before} \n:arrow_down: \n{after}\n"
-                else:
-                    # beforeが存在する場合追記する
-                    if len(before) != 0:
-                        discord_text += f"`{before}` :arrow_right: "
-                    discord_text += f"`{after}`\n"
-                
-        title = f"{title}の{'と'.join(changed_labels)}を編集"
-        
-        if len(changed_labels) >= 1:
+        if changed_labels:
             # 編集履歴を保存
-            editor, _ = Editor.objects.get_or_create(ip = ip)
-            history = History(
-                song = song,
-                title = title,
-                history_type = "new",
-                create_time = timezone.now(),
-                changes = changes,
-                editor = editor
+            History.create_for_song(
+                song=song,
+                title=edit_title,
+                history_type="new",
+                changes=changes,
+                editor=editor,
             )
-            history.save()
-            
-            discord_text += f"編集者：`{editor}`"
-            
-            # Discordに送信し、送信できなければ削除し500ページに遷移
+
+            # Discordに送信し、送信できなければ500ページに遷移
             is_ok = send_discord(NEW_DISCORD_URL, discord_text)
             if not is_ok:
                 return render(request, 'subekashi/500.html', status=500)

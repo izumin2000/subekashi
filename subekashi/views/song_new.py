@@ -66,17 +66,12 @@ def song_new(request):
         author_names = cleaned_authors.split(',')
         authors = get_or_create_authors(author_names)
 
-        # 掲載拒否リストの読み込み
-        try:
-            from subekashi.constants.dynamic.reject import REJECT_LIST
-        except:
-            REJECT_LIST = []
-
         # 掲載拒否作者か判断する
-        for author in authors:
-            if author.name in REJECT_LIST:
-                dataD["error"] = f"{author.name}さんの曲は登録することができません。"
-                return render(request, 'subekashi/song_new.html', dataD)
+        from subekashi.lib.song_service import check_reject_list
+        reject_error = check_reject_list(authors)
+        if reject_error:
+            dataD["error"] = reject_error
+            return render(request, 'subekashi/song_new.html', dataD)
 
         # Songの登録
         ip = get_ip(request)
@@ -104,42 +99,23 @@ def song_new(request):
             link.songs.add(song)
 
         song_id = song.id
-        
-        # 変更内容のマークダウンと送信するDiscordの文言の作成
-        def yes_no(value):
-            return "はい" if value else "いいえ"
-        
-        COLUMNS = [
-            {"label": "タイトル", "value": title},
-            {"label": "作者", "value": ", ".join([a.name for a in authors])},
-            {"label": "URL", "value": cleaned_url},
-            {"label": "オリジナル", "value": yes_no(is_original)},
-            {"label": "削除済み", "value": yes_no(is_deleted)},
-            {"label": "ネタ曲", "value": yes_no(is_joke)},
-            {"label": "インスト曲", "value": yes_no(is_inst)},
-            {"label": "すべあな模倣曲", "value": yes_no(is_subeana)},
-        ]
-        
-        changes = [["種類", "内容"]]
-        discord_text = f"新規作成されました\n{ROOT_URL}/songs/{song_id}\n\n"
-        for column in COLUMNS:
-            if column["value"]:     # 通常、manual送信時にlabel=URLだけがFalseになる
-                changes.append([column['label'], column['value']])
-                discord_text += f"**{column['label']}**：`{column['value']}`\n"
+
+        # Discordテキストとchangesを構築
+        from subekashi.lib.song_service import build_new_song_discord_text
+        editor = Editor.get_or_create_from_ip(ip)
+        changes, discord_text = build_new_song_discord_text(
+            song_id, title, authors, cleaned_url,
+            is_original, is_deleted, is_joke, is_inst, is_subeana, editor,
+        )
 
         # 編集履歴を保存
-        editor, _ = Editor.objects.get_or_create(ip = ip)
-        history = History(
-            song = song,
-            title = f"{song.title}を新規作成",
-            history_type = "new",
-            create_time = timezone.now(),
-            changes = changes,
-            editor = editor
+        History.create_for_song(
+            song=song,
+            title=f"{song.title}を新規作成",
+            history_type="new",
+            changes=changes,
+            editor=editor,
         )
-        history.save()
-        
-        discord_text += f"編集者：`{editor}`"
         # Discordに送信し、送信できなければ削除し500ページに遷移
         is_ok = send_discord(NEW_DISCORD_URL, discord_text)
         if not is_ok:

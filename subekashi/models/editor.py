@@ -10,3 +10,8 @@ class Editor(models.Model):
 
     def __str__(self):
         return f"全て{self.id}の所為です。"
+
+    @classmethod
+    def get_or_create_from_ip(cls, ip):
+        editor, _ = cls.objects.get_or_create(ip=ip)
+        return editor

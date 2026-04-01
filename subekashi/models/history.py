@@ -19,3 +19,16 @@ class History(models.Model):
     create_time = models.DateTimeField(default = timezone.now)
     changes = models.JSONField(null=True, blank=True, default=None)
     editor = models.ForeignKey(Editor, on_delete = models.CASCADE, related_name="histories")
+
+    @classmethod
+    def create_for_song(cls, song, title, history_type, changes, editor):
+        history = cls(
+            song=song,
+            title=title,
+            history_type=history_type,
+            create_time=timezone.now(),
+            changes=changes,
+            editor=editor,
+        )
+        history.save()
+        return history
