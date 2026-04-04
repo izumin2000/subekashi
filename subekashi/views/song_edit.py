@@ -1,13 +1,12 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from config.local_settings import NEW_DISCORD_URL, CONTACT_DISCORD_URL
-from subekashi.models import Song, Editor, History, SongLink
+from subekashi.models import Song, Editor, History, SongLink, SongFields
 from subekashi.lib.url import clean_url, get_allow_media
 from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
 from subekashi.lib.author_helpers import get_or_create_authors
 from subekashi.lib.song_service import (
-    SongFields,
     check_reject_list,
     validate_song_url,
     get_imitate_songs,
@@ -114,7 +113,7 @@ def song_edit(request, song_id):
             History.create_for_song(
                 song=song,
                 title=edit_title,
-                history_type="new",
+                history_type="edit",
                 changes=changes,
                 editor=editor,
             )

@@ -1,13 +1,12 @@
-from dataclasses import make_dataclass, field as dc_field
+from dataclasses import dataclass
 from django.db import models
-from django.db.models.fields import NOT_PROVIDED as _NOT_PROVIDED
-from django.db.models.query_utils import DeferredAttribute
 from django.utils import timezone
 from .author import Author
+from .base import GetOrNoneMixin
 
 
 # 楽曲のメイン情報
-class Song(models.Model):
+class Song(GetOrNoneMixin, models.Model):
     CHOICES = (
         ("song", "曲"),
         ("arrange", "アレンジ"),
@@ -55,13 +54,6 @@ class Song(models.Model):
         super().save(*args, **kwargs)
 
     @classmethod
-    def get_or_none(cls, pk):
-        try:
-            return cls.objects.get(pk=pk)
-        except cls.DoesNotExist:
-            return None
-
-    @classmethod
     def get_for_range(cls, songrange, jokerange):
         """songrange/jokerangeの設定に応じたQuerySetを返す"""
         if songrange == "subeana":
@@ -90,25 +82,17 @@ class Song(models.Model):
         return self.authors.filter(id=1).exists()
 
 
-# Songモデルのフォームフィールドをまとめるデータクラス。
-# Song.__dict__からDeferredAttributeを持つフィールドを自動検出し、
-# システム管理フィールドのみを除外リストで管理する。
-_SONG_FIELDS_EXCLUDE = {'id', 'post_time', 'category', 'is_special', 'is_lock', 'is_limited'}
-
-
-def _build_song_fields():
-    specs = []
-    for name, descriptor in Song.__dict__.items():
-        if not isinstance(descriptor, DeferredAttribute):
-            continue
-        if name in _SONG_FIELDS_EXCLUDE:
-            continue
-        default = Song._meta.get_field(name).default
-        if default is _NOT_PROVIDED:
-            specs.append((name, object, dc_field(default=None)))
-        else:
-            specs.append((name, type(default), dc_field(default=default)))
-    return make_dataclass('SongFields', specs)
-
-
-SongFields = _build_song_fields()
+@dataclass
+class SongFields:
+    """Songモデルのフォームフィールドをまとめるデータクラス"""
+    title: str = ""
+    lyrics: str = ""
+    is_original: bool = False
+    is_deleted: bool = False
+    is_joke: bool = False
+    is_inst: bool = False
+    is_subeana: bool = True
+    is_draft: bool = False
+    upload_time: object = None
+    view: object = None
+    like: object = None

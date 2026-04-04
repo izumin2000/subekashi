@@ -1,17 +1,15 @@
 from django.shortcuts import render, redirect
 from config.local_settings import CONTACT_DISCORD_URL, NEW_DISCORD_URL
-from subekashi.models import Editor, History, SongLink
+from subekashi.models import Editor, History, SongLink, SongFields
 from subekashi.lib.url import clean_url, get_allow_media, is_youtube_url, get_youtube_id
 from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
 from subekashi.lib.youtube import get_youtube_api
 from subekashi.lib.author_helpers import get_or_create_authors
 from subekashi.lib.song_service import (
-    SongFields,
     check_reject_list,
     validate_song_url,
-    create_song,
-    set_song_authors_and_links,
+    create_song_with_relations,
     build_new_song_discord_text,
 )
 
@@ -92,11 +90,7 @@ def song_new(request):
             view=youtube_res.get("view", None),
             like=youtube_res.get("like", None),
         )
-        song = create_song(fields)
-
-        # authorsとSongLinkの設定
-        set_song_authors_and_links(song, authors, cleaned_url)
-
+        song = create_song_with_relations(fields, authors, cleaned_url)
         song_id = song.id
 
         # Discordテキストとchangesを構築

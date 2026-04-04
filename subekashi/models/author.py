@@ -1,19 +1,13 @@
 from django.db import models
+from .base import GetOrNoneMixin
 
 
 # 曲の作者の情報
-class Author(models.Model):
+class Author(GetOrNoneMixin, models.Model):
     name = models.CharField(unique=True, max_length = 500)
 
     def __str__(self):
         return self.name
-
-    @classmethod
-    def get_or_none(cls, pk):
-        try:
-            return cls.objects.get(pk=pk)
-        except cls.DoesNotExist:
-            return None
 
     @classmethod
     def get_by_name(cls, name):

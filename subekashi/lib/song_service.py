@@ -57,6 +57,14 @@ def set_song_authors_and_links(song, authors, cleaned_url):
         link.songs.add(song)
 
 
+def create_song_with_relations(fields: SongFields, authors, cleaned_url):
+    """Songとauthors/SongLinkをトランザクションでまとめて作成する"""
+    with transaction.atomic():
+        song = create_song(fields)
+        set_song_authors_and_links(song, authors, cleaned_url)
+    return song
+
+
 def get_imitate_songs(imitates_str, self_id):
     """カンマ区切りの模倣曲IDリストをSongオブジェクトのリストに変換する"""
     imitate_ids = set()
