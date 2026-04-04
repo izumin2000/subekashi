@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.views.decorators.cache import never_cache
 from subekashi.models import Song, Ai, Ad
 from subekashi.lib.query_filters import filter_by_lack
-from subekashi.lib.song_service import get_top_news_articles
+from article.models import Article
 import random
 
 
@@ -12,7 +12,7 @@ def top(request):
         "metatitle": "トップ",
     }
 
-    article_qs = get_top_news_articles()
+    article_qs = Article.get_top_news_articles()
 
     news_htmls = ""
     for article in article_qs:

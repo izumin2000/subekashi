@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 
 class Article(models.Model) :
     TAGS = (
@@ -21,3 +22,12 @@ class Article(models.Model) :
 
     def __str__(self):
         return self.title
+
+    @classmethod
+    def get_top_news_articles(cls):
+        """トップページ用のニュース・リリース記事を返す"""
+        return cls.objects.filter(
+            is_open=True
+        ).filter(
+            Q(tag="news") | Q(tag="release")
+        ).order_by("-post_time")[:3]

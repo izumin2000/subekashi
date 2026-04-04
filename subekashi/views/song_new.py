@@ -7,6 +7,7 @@ from subekashi.lib.discord import send_discord
 from subekashi.lib.youtube import get_youtube_api
 from subekashi.lib.author_helpers import get_or_create_authors
 from subekashi.lib.song_service import (
+    SongFields,
     check_reject_list,
     validate_song_url,
     create_song,
@@ -80,7 +81,7 @@ def song_new(request):
 
         # Songの登録
         ip = get_ip(request)
-        song = create_song(
+        fields = SongFields(
             title=title,
             is_original=is_original,
             is_deleted=is_deleted,
@@ -91,6 +92,7 @@ def song_new(request):
             view=youtube_res.get("view", None),
             like=youtube_res.get("like", None),
         )
+        song = create_song(fields)
 
         # authorsとSongLinkの設定
         set_song_authors_and_links(song, authors, cleaned_url)
@@ -99,10 +101,7 @@ def song_new(request):
 
         # Discordテキストとchangesを構築
         editor = Editor.get_or_create_from_ip(ip)
-        changes, discord_text = build_new_song_discord_text(
-            song_id, title, authors, cleaned_url,
-            is_original, is_deleted, is_joke, is_inst, is_subeana, editor,
-        )
+        changes, discord_text = build_new_song_discord_text(song_id, fields, authors, cleaned_url, editor)
 
         # 編集履歴を保存
         History.create_for_song(

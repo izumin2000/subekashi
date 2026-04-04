@@ -7,6 +7,7 @@ from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
 from subekashi.lib.author_helpers import get_or_create_authors
 from subekashi.lib.song_service import (
+    SongFields,
     check_reject_list,
     validate_song_url,
     get_imitate_songs,
@@ -88,19 +89,25 @@ def song_edit(request, song_id):
             dataD["error"] = reject_error
             return render(request, 'subekashi/song_edit.html', dataD)
 
+        fields = SongFields(
+            title=title,
+            lyrics=lyrics,
+            is_original=is_original,
+            is_deleted=is_deleted,
+            is_joke=is_joke,
+            is_inst=is_inst,
+            is_subeana=is_subeana,
+            is_draft=is_draft,
+        )
+
         # Discordテキストとchangesを構築（song更新前に実行）
         editor = Editor.get_or_create_from_ip(ip)
         edit_title, changes, discord_text, changed_labels = build_edit_song_discord_text(
-            song_id, song, title, author_objects, cleaned_url,
-            imitate_songs, lyrics,
-            is_original, is_deleted, is_joke, is_inst, is_subeana, is_draft, editor,
+            song_id, song, fields, author_objects, cleaned_url, imitate_songs, editor,
         )
 
         # songの更新
-        update_song(
-            song, title, lyrics, is_original, is_deleted, is_joke, is_inst,
-            is_subeana, is_draft, author_objects, imitate_songs, cleaned_url_list,
-        )
+        update_song(song, fields, author_objects, imitate_songs, cleaned_url_list)
 
         if changed_labels:
             # 編集履歴を保存

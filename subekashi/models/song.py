@@ -1,4 +1,7 @@
+from dataclasses import make_dataclass, field as dc_field
 from django.db import models
+from django.db.models.fields import NOT_PROVIDED as _NOT_PROVIDED
+from django.db.models.query_utils import DeferredAttribute
 from django.utils import timezone
 from .author import Author
 
@@ -86,3 +89,27 @@ class Song(models.Model):
     def has_subekashi_author(cls, song):
         """Songにid=1（すべあな）作者が紐づいているかを返す"""
         return song.authors.filter(id=1).exists()
+
+
+# Songモデルのフォームフィールドをまとめるデータクラス。
+# Song.__dict__からDeferredAttributeを持つフィールドを自動検出し、
+# システム管理フィールドのみを除外リストで管理する。
+_SONG_FIELDS_EXCLUDE = {'id', 'post_time', 'category', 'is_special', 'is_lock', 'is_limited'}
+
+
+def _build_song_fields():
+    specs = []
+    for name, descriptor in Song.__dict__.items():
+        if not isinstance(descriptor, DeferredAttribute):
+            continue
+        if name in _SONG_FIELDS_EXCLUDE:
+            continue
+        default = Song._meta.get_field(name).default
+        if default is _NOT_PROVIDED:
+            specs.append((name, object, dc_field(default=None)))
+        else:
+            specs.append((name, type(default), dc_field(default=default)))
+    return make_dataclass('SongFields', specs)
+
+
+SongFields = _build_song_fields()

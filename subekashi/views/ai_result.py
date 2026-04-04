@@ -1,23 +1,23 @@
 from django.shortcuts import render
-from subekashi.models import *
-from subekashi.lib.url import *
-from subekashi.lib.discord import *
+from subekashi.models import Ai
+from subekashi.lib.discord import send_discord
+from config.local_settings import ERROR_DISCORD_URL
 
 
-def ai_result(request) :
+def ai_result(request):
     dataD = {
-        "metatitle" : "歌詞の生成結果",
+        "metatitle": "歌詞の生成結果",
     }
-    
-    aiIns = Ai.objects.filter(genetype = "model", score = 0)
+
+    aiIns = Ai.get_unscored_model()
     if not aiIns.exists():
         try:
             from subekashi.constants.dynamic.ai import SEND_DISCORD_AI_RESULT
         except ImportError:
             SEND_DISCORD_AI_RESULT = True
-            
+
         if SEND_DISCORD_AI_RESULT:
             send_discord(ERROR_DISCORD_URL, "aiInsのデータがありません。")
-        aiIns = Ai.objects.filter(genetype = "model")
+        aiIns = Ai.get_all_model()
     dataD["aiInsL"] = aiIns.order_by('?')[:25]
     return render(request, "subekashi/ai_result.html", dataD)

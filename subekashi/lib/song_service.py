@@ -1,4 +1,8 @@
+from django.utils import timezone
+from django.db import transaction
 from config.settings import ROOT_URL
+from subekashi.models import Song, SongLink, SongFields
+from subekashi.lib.url import get_all_media
 
 
 def check_reject_list(authors):
@@ -19,7 +23,6 @@ def yes_no(value):
 
 def validate_song_url(cleaned_url, exclude_song_id=None):
     """URLの重複チェック。エラーメッセージを返す。問題なければNone。"""
-    from subekashi.models import SongLink
     qs = SongLink.objects.filter(url__iexact=cleaned_url, allow_dup=False, songs__isnull=False)
     if exclude_song_id is not None:
         qs = qs.exclude(songs__id=exclude_song_id)
@@ -28,22 +31,19 @@ def validate_song_url(cleaned_url, exclude_song_id=None):
     return None
 
 
-def create_song(title, is_original, is_deleted, is_joke, is_inst, is_subeana,
-                upload_time=None, view=None, like=None):
+def create_song(fields: SongFields):
     """Songを作成して保存する"""
-    from django.utils import timezone
-    from subekashi.models import Song
     song = Song(
-        title=title,
+        title=fields.title,
         post_time=timezone.now(),
-        is_original=is_original,
-        is_deleted=is_deleted,
-        is_joke=is_joke,
-        is_inst=is_inst,
-        is_subeana=is_subeana,
-        upload_time=upload_time,
-        view=view,
-        like=like,
+        is_original=fields.is_original,
+        is_deleted=fields.is_deleted,
+        is_joke=fields.is_joke,
+        is_inst=fields.is_inst,
+        is_subeana=fields.is_subeana,
+        upload_time=fields.upload_time,
+        view=fields.view,
+        like=fields.like,
     )
     song.save()
     return song
@@ -51,7 +51,6 @@ def create_song(title, is_original, is_deleted, is_joke, is_inst, is_subeana,
 
 def set_song_authors_and_links(song, authors, cleaned_url):
     """Songのauthorsと SongLink を設定する"""
-    from subekashi.models import SongLink
     song.authors.set(authors)
     for url_str in (cleaned_url.split(",") if cleaned_url else []):
         link, _ = SongLink.objects.get_or_create(url=url_str)
@@ -60,7 +59,6 @@ def set_song_authors_and_links(song, authors, cleaned_url):
 
 def get_imitate_songs(imitates_str, self_id):
     """カンマ区切りの模倣曲IDリストをSongオブジェクトのリストに変換する"""
-    from subekashi.models import Song
     imitate_ids = set()
     for i in imitates_str.split(","):
         i = i.strip()
@@ -72,20 +70,16 @@ def get_imitate_songs(imitates_str, self_id):
     return list(Song.objects.filter(id__in=imitate_ids))
 
 
-def update_song(song, title, lyrics, is_original, is_deleted, is_joke, is_inst,
-                is_subeana, is_draft, author_objects, imitate_songs, cleaned_url_list):
+def update_song(song, fields: SongFields, author_objects, imitate_songs, cleaned_url_list):
     """Songを更新し、関連するauthors/imitates/SongLinkも差分更新する（トランザクション）"""
-    from django.utils import timezone
-    from django.db import transaction
-    from subekashi.models import SongLink
-    song.title = title
-    song.lyrics = lyrics
-    song.is_original = is_original
-    song.is_deleted = is_deleted
-    song.is_joke = is_joke
-    song.is_inst = is_inst
-    song.is_subeana = is_subeana
-    song.is_draft = is_draft
+    song.title = fields.title
+    song.lyrics = fields.lyrics
+    song.is_original = fields.is_original
+    song.is_deleted = fields.is_deleted
+    song.is_joke = fields.is_joke
+    song.is_inst = fields.is_inst
+    song.is_subeana = fields.is_subeana
+    song.is_draft = fields.is_draft
     song.post_time = timezone.now()
     with transaction.atomic():
         song.save()
@@ -118,7 +112,6 @@ def build_delete_discord_text(song, reason, editor):
 
 def get_song_links_with_media(song):
     """SongのURLリストをメディア情報付きのdictリストで返す"""
-    from subekashi.lib.url import get_all_media
     links = []
     for link in song.links.all():
         media = get_all_media(link.url)
@@ -130,19 +123,17 @@ def get_song_links_with_media(song):
     return links
 
 
-def build_new_song_discord_text(song_id, title, authors, cleaned_url,
-                                 is_original, is_deleted, is_joke, is_inst, is_subeana,
-                                 editor):
+def build_new_song_discord_text(song_id, fields: SongFields, authors, cleaned_url, editor):
     """新規作成用のchangesリストとDiscordテキストを構築する"""
     COLUMNS = [
-        {"label": "タイトル", "value": title},
+        {"label": "タイトル", "value": fields.title},
         {"label": "作者", "value": ", ".join([a.name for a in authors])},
         {"label": "URL", "value": cleaned_url},
-        {"label": "オリジナル", "value": yes_no(is_original)},
-        {"label": "削除済み", "value": yes_no(is_deleted)},
-        {"label": "ネタ曲", "value": yes_no(is_joke)},
-        {"label": "インスト曲", "value": yes_no(is_inst)},
-        {"label": "すべあな模倣曲", "value": yes_no(is_subeana)},
+        {"label": "オリジナル", "value": yes_no(fields.is_original)},
+        {"label": "削除済み", "value": yes_no(fields.is_deleted)},
+        {"label": "ネタ曲", "value": yes_no(fields.is_joke)},
+        {"label": "インスト曲", "value": yes_no(fields.is_inst)},
+        {"label": "すべあな模倣曲", "value": yes_no(fields.is_subeana)},
     ]
 
     changes = [["種類", "内容"]]
@@ -156,21 +147,7 @@ def build_new_song_discord_text(song_id, title, authors, cleaned_url,
     return changes, discord_text
 
 
-def get_top_news_articles():
-    """トップページ用のニュース・リリース記事を返す"""
-    from django.db.models import Q
-    from article.models import Article
-    return Article.objects.filter(
-        is_open=True
-    ).filter(
-        Q(tag="news") | Q(tag="release")
-    ).order_by("-post_time")[:3]
-
-
-def build_edit_song_discord_text(song_id, song, title, author_objects, cleaned_url,
-                                  imitate_songs,
-                                  lyrics, is_original, is_deleted, is_joke, is_inst,
-                                  is_subeana, is_draft, editor):
+def build_edit_song_discord_text(song_id, song, fields: SongFields, author_objects, cleaned_url, imitate_songs, editor):
     """編集用のchangesリスト・Discordテキスト・変更ラベルリストを構築する"""
     def songs_to_info(songs):
         return "\n".join(s.title for s in songs)
@@ -179,17 +156,17 @@ def build_edit_song_discord_text(song_id, song, title, author_objects, cleaned_u
     before_urls = ",".join(song.links.order_by('id').values_list('url', flat=True))
 
     COLUMNS = [
-        {"label": "タイトル", "before": song.title, "after": title},
+        {"label": "タイトル", "before": song.title, "after": fields.title},
         {"label": "作者", "before": song.authors_str(), "after": ", ".join([a.name for a in author_objects])},
         {"label": "URL", "before": before_urls, "after": cleaned_url},
-        {"label": "オリジナル", "before": yes_no(song.is_original), "after": yes_no(is_original)},
-        {"label": "削除済み", "before": yes_no(song.is_deleted), "after": yes_no(is_deleted)},
-        {"label": "ネタ曲", "before": yes_no(song.is_joke), "after": yes_no(is_joke)},
-        {"label": "インスト曲", "before": yes_no(song.is_inst), "after": yes_no(is_inst)},
-        {"label": "すべあな模倣曲", "before": yes_no(song.is_subeana), "after": yes_no(is_subeana)},
-        {"label": "下書き", "before": yes_no(song.is_draft), "after": yes_no(is_draft)},
+        {"label": "オリジナル", "before": yes_no(song.is_original), "after": yes_no(fields.is_original)},
+        {"label": "削除済み", "before": yes_no(song.is_deleted), "after": yes_no(fields.is_deleted)},
+        {"label": "ネタ曲", "before": yes_no(song.is_joke), "after": yes_no(fields.is_joke)},
+        {"label": "インスト曲", "before": yes_no(song.is_inst), "after": yes_no(fields.is_inst)},
+        {"label": "すべあな模倣曲", "before": yes_no(song.is_subeana), "after": yes_no(fields.is_subeana)},
+        {"label": "下書き", "before": yes_no(song.is_draft), "after": yes_no(fields.is_draft)},
         {"label": "模倣", "before": songs_to_info(old_imitate_songs), "after": songs_to_info(imitate_songs)},
-        {"label": "歌詞", "before": song.lyrics, "after": lyrics.replace("\r\n", "\n")},
+        {"label": "歌詞", "before": song.lyrics, "after": fields.lyrics.replace("\r\n", "\n")},
     ]
 
     changes = [["種類", "編集前", "編集後"]]
@@ -213,7 +190,7 @@ def build_edit_song_discord_text(song_id, song, title, author_objects, cleaned_u
                     discord_text += f"`{before}` :arrow_right: "
                 discord_text += f"`{after}`\n"
 
-    edit_title = f"{title}の{'と'.join(changed_labels)}を編集"
+    edit_title = f"{fields.title}の{'と'.join(changed_labels)}を編集"
 
     if changed_labels:
         discord_text += f"編集者：`{editor}`"
