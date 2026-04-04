@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.db import transaction
 from config.local_settings import CONTACT_DISCORD_URL, NEW_DISCORD_URL
 from subekashi.models import Editor, History, SongLink, SongFields
 from subekashi.lib.url import clean_url, get_allow_media, is_youtube_url, get_youtube_id
@@ -90,27 +91,26 @@ def song_new(request):
             view=youtube_res.get("view", None),
             like=youtube_res.get("like", None),
         )
-        song = create_song_with_relations(fields, authors, cleaned_url)
-        song_id = song.id
-
-        # Discordテキストとchangesを構築
-        editor = Editor.get_or_create_from_ip(ip)
-        changes, discord_text = build_new_song_discord_text(song_id, fields, authors, cleaned_url, editor)
+        # Song・Editor・Historyをトランザクションでまとめて保存し、
+        # 全て成功した場合のみDiscordに送信する
+        with transaction.atomic():
+            song = create_song_with_relations(fields, authors, cleaned_url)
+            song_id = song.id
+            editor = Editor.get_or_create_from_ip(ip)
+            changes, discord_text = build_new_song_discord_text(song_id, fields, authors, cleaned_url, editor)
+            History.create_for_song(
+                song=song,
+                title=f"{song.title}を新規作成",
+                history_type="new",
+                changes=changes,
+                editor=editor,
+            )
 
         # Discordに送信し、送信できなければ削除し500ページに遷移
         is_ok = send_discord(NEW_DISCORD_URL, discord_text)
         if not is_ok:
             song.delete()
             return render(request, 'subekashi/500.html', status=500)
-
-        # 編集履歴を保存
-        History.create_for_song(
-            song=song,
-            title=f"{song.title}を新規作成",
-            history_type="new",
-            changes=changes,
-            editor=editor,
-        )
 
         # 登録できましたトーストを表示する
         return redirect(f'/songs/{song_id}/edit?toast={request.GET.get("toast")}')
