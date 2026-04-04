@@ -9,7 +9,7 @@ def check_reject_list(authors):
     """掲載拒否リストをチェック。NGならエラーメッセージを返す。問題なければNone。"""
     try:
         from subekashi.constants.dynamic.reject import REJECT_LIST
-    except Exception:
+    except ImportError:
         REJECT_LIST = []
     for author in authors:
         if author.name in REJECT_LIST:

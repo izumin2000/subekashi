@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from datetime import datetime
+from typing import Optional
 from django.db import models
 from django.utils import timezone
 from .author import Author
@@ -93,6 +95,6 @@ class SongFields:
     is_inst: bool = False
     is_subeana: bool = True
     is_draft: bool = False
-    upload_time: object = None
-    view: object = None
-    like: object = None
+    upload_time: Optional[datetime] = None
+    view: Optional[int] = None
+    like: Optional[int] = None
