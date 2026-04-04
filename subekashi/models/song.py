@@ -85,10 +85,9 @@ class Song(models.Model):
         from subekashi.lib.query_filters import filter_by_lack
         return cls.objects.filter(pk=pk).filter(filter_by_lack()).exists()
 
-    @classmethod
-    def has_subekashi_author(cls, song):
+    def has_subekashi_author(self):
         """Songにid=1（すべあな）作者が紐づいているかを返す"""
-        return song.authors.filter(id=1).exists()
+        return self.authors.filter(id=1).exists()
 
 
 # Songモデルのフォームフィールドをまとめるデータクラス。

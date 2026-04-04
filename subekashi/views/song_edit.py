@@ -130,6 +130,7 @@ def song_edit(request, song_id):
     allow_dup_url = request.GET.get('allow_dup_url', '')
     if allow_dup_url:
         cleaned = clean_url(allow_dup_url) or allow_dup_url
-        SongLink.set_allow_dup_for_url(cleaned)
-        send_discord(CONTACT_DISCORD_URL, f"重複許可したURL：{allow_dup_url}")
+        link = SongLink.set_allow_dup_for_url(cleaned)
+        if link:
+            send_discord(CONTACT_DISCORD_URL, f"重複許可したURL：{allow_dup_url}")
     return render(request, 'subekashi/song_edit.html', dataD)
