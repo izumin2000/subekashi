@@ -100,15 +100,17 @@ def song_edit(request, song_id):
         )
 
         # Discordテキストとchangesを構築（song更新前に実行）
-        editor = Editor.get_or_create_from_ip(ip)
         edit_title, changes, discord_text, changed_labels = build_edit_song_discord_text(
-            song_id, song, fields, author_objects, cleaned_url, imitate_songs, editor,
+            song_id, song, fields, author_objects, cleaned_url, imitate_songs,
         )
 
         # songの更新
         update_song(song, fields, author_objects, imitate_songs, cleaned_url_list)
 
         if changed_labels:
+            editor = Editor.get_or_create_from_ip(ip)
+            discord_text += f"編集者：`{editor}`"
+
             # 編集履歴を保存
             History.create_for_song(
                 song=song,

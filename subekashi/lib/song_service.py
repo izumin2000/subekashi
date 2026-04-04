@@ -80,16 +80,16 @@ def get_imitate_songs(imitates_str, self_id):
 
 def update_song(song, fields: SongFields, author_objects, imitate_songs, cleaned_url_list):
     """Songを更新し、関連するauthors/imitates/SongLinkも差分更新する（トランザクション）"""
-    song.title = fields.title
-    song.lyrics = fields.lyrics
-    song.is_original = fields.is_original
-    song.is_deleted = fields.is_deleted
-    song.is_joke = fields.is_joke
-    song.is_inst = fields.is_inst
-    song.is_subeana = fields.is_subeana
-    song.is_draft = fields.is_draft
-    song.post_time = timezone.now()
     with transaction.atomic():
+        song.title = fields.title
+        song.lyrics = fields.lyrics
+        song.is_original = fields.is_original
+        song.is_deleted = fields.is_deleted
+        song.is_joke = fields.is_joke
+        song.is_inst = fields.is_inst
+        song.is_subeana = fields.is_subeana
+        song.is_draft = fields.is_draft
+        song.post_time = timezone.now()
         song.save()
         song.imitates.set(imitate_songs)
         song.authors.set(author_objects)
@@ -155,7 +155,7 @@ def build_new_song_discord_text(song_id, fields: SongFields, authors, cleaned_ur
     return changes, discord_text
 
 
-def build_edit_song_discord_text(song_id, song, fields: SongFields, author_objects, cleaned_url, imitate_songs, editor):
+def build_edit_song_discord_text(song_id, song, fields: SongFields, author_objects, cleaned_url, imitate_songs):
     """編集用のchangesリスト・Discordテキスト・変更ラベルリストを構築する"""
     def songs_to_info(songs):
         return "\n".join(s.title for s in songs)
@@ -199,8 +199,5 @@ def build_edit_song_discord_text(song_id, song, fields: SongFields, author_objec
                 discord_text += f"`{after}`\n"
 
     edit_title = f"{fields.title}の{'と'.join(changed_labels)}を編集"
-
-    if changed_labels:
-        discord_text += f"編集者：`{editor}`"
 
     return edit_title, changes, discord_text, changed_labels
