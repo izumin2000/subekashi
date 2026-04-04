@@ -185,8 +185,8 @@ def build_edit_song_discord_text(song_id, song, fields: SongFields, author_objec
         if column["before"] != column["after"]:
             label = column["label"]
             changed_labels.append(label)
-            before = column.get("before", "なし")
-            after = column.get("after", "なし")
+            before = column["before"]
+            after = column["after"]
             changes.append([label, before, after])
             discord_text += f"**{label}**："
             if label == "歌詞":

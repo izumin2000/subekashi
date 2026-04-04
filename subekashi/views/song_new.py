@@ -97,6 +97,12 @@ def song_new(request):
         editor = Editor.get_or_create_from_ip(ip)
         changes, discord_text = build_new_song_discord_text(song_id, fields, authors, cleaned_url, editor)
 
+        # Discordに送信し、送信できなければ削除し500ページに遷移
+        is_ok = send_discord(NEW_DISCORD_URL, discord_text)
+        if not is_ok:
+            song.delete()
+            return render(request, 'subekashi/500.html', status=500)
+
         # 編集履歴を保存
         History.create_for_song(
             song=song,
@@ -105,11 +111,6 @@ def song_new(request):
             changes=changes,
             editor=editor,
         )
-        # Discordに送信し、送信できなければ削除し500ページに遷移
-        is_ok = send_discord(NEW_DISCORD_URL, discord_text)
-        if not is_ok:
-            song.delete()
-            return render(request, 'subekashi/500.html', status=500)
 
         # 登録できましたトーストを表示する
         return redirect(f'/songs/{song_id}/edit?toast={request.GET.get("toast")}')

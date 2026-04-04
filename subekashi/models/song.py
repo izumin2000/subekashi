@@ -76,6 +76,7 @@ class Song(GetOrNoneMixin, models.Model):
     @classmethod
     def is_lack(cls, pk):
         """指定pkのSongが未完成かどうかを返す"""
+        # query_filtersがSongをインポートするため循環インポート回避のためローカルインポート
         from subekashi.lib.query_filters import filter_by_lack
         return cls.objects.filter(pk=pk).filter(filter_by_lack()).exists()
 
