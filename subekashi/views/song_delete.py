@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.views import View
+from subekashi.forms import SongDeleteForm
 from subekashi.models import Song, Editor, History
 from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
@@ -27,12 +28,13 @@ class SongDeleteView(View):
 
     def post(self, request, song_id):
         context = self.get_base_context()
-        reason = request.POST.get("reason", "")
+        form = SongDeleteForm(request.POST)
 
-        # もし削除理由を入力していないのならやり直し
-        if not reason:
-            context["error"] = "削除理由を入力してください。"
+        if not form.is_valid():
+            context["error"] = form.errors['reason'][0]
             return render(request, "subekashi/song_edit.html", context)
+
+        reason = form.cleaned_data['reason']
 
         # 編集履歴を保存
         ip = get_ip(request)
@@ -53,5 +55,4 @@ class SongDeleteView(View):
             context["error"] = "お問い合わせを送信できませんでした。"
             return render(request, 'subekashi/song_edit.html', context)
 
-        # レンダリング
         return redirect(f'/songs/{song_id}?toast=delete')

@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
 from config.local_settings import NEW_DISCORD_URL, CONTACT_DISCORD_URL
+from subekashi.forms import SongEditForm
 from subekashi.models import Song, Editor, History, SongLink, SongFields
 from subekashi.lib.url import clean_url, get_allow_media
 from subekashi.lib.ip import get_ip
@@ -42,18 +43,23 @@ class SongEditView(View):
 
     def post(self, request, song_id):
         context = self.get_base_context()
+        form = SongEditForm(request.POST)
 
-        title = request.POST.get("title", "")
-        authors_input = request.POST.get("authors", "")
-        url = request.POST.get("url", "")
-        imitates = request.POST.get("imitate", "")
-        lyrics = request.POST.get("lyrics", "")
-        is_original = bool(request.POST.get("is-original"))
-        is_deleted = bool(request.POST.get("is-deleted"))
-        is_joke = bool(request.POST.get("is-joke"))
-        is_inst = bool(request.POST.get("is-inst"))
-        is_subeana = bool(request.POST.get("is-subeana"))
-        is_draft = bool(request.POST.get("is-draft"))
+        if not form.is_valid():
+            context["error"] = next(iter(form.errors.values()))[0]
+            return render(request, 'subekashi/song_edit.html', context)
+
+        title = form.cleaned_data['title']
+        authors_input = form.cleaned_data['authors']
+        url = form.cleaned_data['url']
+        imitates = form.cleaned_data['imitate']
+        lyrics = form.cleaned_data['lyrics']
+        is_original = form.cleaned_data['is_original']
+        is_deleted = form.cleaned_data['is_deleted']
+        is_joke = form.cleaned_data['is_joke']
+        is_inst = form.cleaned_data['is_inst']
+        is_subeana = form.cleaned_data['is_subeana']
+        is_draft = form.cleaned_data['is_draft']
 
         # URLのバリデーション
         cleaned_url = clean_url(url)
@@ -72,16 +78,6 @@ class SongEditView(View):
                 <a href='{contact_url}?&category=提案&detail={cleaned_url_item} を登録できるようにしてください。' target='_blank'>お問い合わせ</a>にて、\
                 該当のURLを登録できるように、ご連絡ください。"
                 return render(request, 'subekashi/song_edit.html', context)
-
-        # 作者が空または空白のみの場合はエラー
-        if not authors_input.strip():
-            context["error"] = "作者は空白にできません。"
-            return render(request, 'subekashi/song_edit.html', context)
-
-        # タイトルが空の場合はエラー
-        if not title:
-            context["error"] = "タイトルが未入力です。"
-            return render(request, 'subekashi/song_edit.html', context)
 
         # DBに保存する値たち
         ip = get_ip(request)

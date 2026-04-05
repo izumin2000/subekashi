@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.views import View
+from subekashi.forms import ContactForm
 from subekashi.lib.discord import send_discord
 from subekashi.lib.ip import get_ip
 from subekashi.models import Contact
@@ -22,13 +23,14 @@ class ContactView(View):
 
     def post(self, request):
         context = self.get_base_context()
-        category = request.POST.get("category")
-        detail = request.POST.get("detail")
+        form = ContactForm(request.POST)
 
-        # 選択肢か詳細が空なら
-        if (not category) or (not detail):
+        if not form.is_valid():
             context["result"] = "入力必須項目を入力してください。"
             return render(request, 'subekashi/contact.html', context)
+
+        category = form.cleaned_data['category']
+        detail = form.cleaned_data['detail']
 
         # discordに送信
         contact = f"種類：{category}\n\
