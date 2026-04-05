@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.db import transaction
+from django.views import View
 from config.local_settings import CONTACT_DISCORD_URL, NEW_DISCORD_URL
 from subekashi.models import Editor, History, SongLink, SongFields
 from subekashi.lib.url import clean_url, get_allow_media, is_youtube_url, get_youtube_id
@@ -15,12 +16,21 @@ from subekashi.lib.song_service import (
 )
 
 
-def song_new(request):
-    dataD = {
-        "metatitle": "曲の登録",
-    }
+class SongNewView(View):
+    def get_base_context(self):
+        return {"metatitle": "曲の登録"}
 
-    if request.method == "POST":
+    def get(self, request):
+        allow_dup_url = request.GET.get('allow_dup_url', '')
+        if allow_dup_url:
+            cleaned = clean_url(allow_dup_url) or allow_dup_url
+            link = SongLink.set_allow_dup_for_url(cleaned)
+            if link:
+                send_discord(CONTACT_DISCORD_URL, f"重複許可したURL：{allow_dup_url}")
+        return render(request, 'subekashi/song_new.html', self.get_base_context())
+
+    def post(self, request):
+        context = self.get_base_context()
         title = request.POST.get("title", "")
         authors_input = request.POST.get("authors", "")
         url = request.POST.get("url", "")
@@ -40,31 +50,31 @@ def song_new(request):
 
         # URLがYouTubeのURLでない場合はエラー
         if not is_youtube_url(url) and url:
-            dataD["error"] = "URLがYouTubeのURLではありません。"
-            return render(request, 'subekashi/song_new.html', dataD)
+            context["error"] = "URLがYouTubeのURLではありません。"
+            return render(request, 'subekashi/song_new.html', context)
 
         # URLが複数ならエラー
         if "," in url:
-            dataD["error"] = "URLは複数入力できません。"
-            return render(request, 'subekashi/song_new.html', dataD)
+            context["error"] = "URLは複数入力できません。"
+            return render(request, 'subekashi/song_new.html', context)
 
         # 既に登録されているURLの場合はエラー（allow_dup=Falseのみ）
         cleaned_url = clean_url(url)
         if cleaned_url:
             error = validate_song_url(cleaned_url)
             if error:
-                dataD["error"] = error
-                return render(request, 'subekashi/song_new.html', dataD)
+                context["error"] = error
+                return render(request, 'subekashi/song_new.html', context)
 
         # 作者が空または空白のみの場合はエラー
         if not authors_input.strip():
-            dataD["error"] = "作者は空白にできません。"
-            return render(request, 'subekashi/song_new.html', dataD)
+            context["error"] = "作者は空白にできません。"
+            return render(request, 'subekashi/song_new.html', context)
 
         # タイトルが空の場合はエラー
         if not title:
-            dataD["error"] = "タイトルが未入力です。"
-            return render(request, 'subekashi/song_new.html', dataD)
+            context["error"] = "タイトルが未入力です。"
+            return render(request, 'subekashi/song_new.html', context)
 
         cleaned_authors = authors_input.replace(" ,", ",").replace(", ", ",")
 
@@ -75,8 +85,8 @@ def song_new(request):
         # 掲載拒否作者か判断する
         reject_error = check_reject_list(authors)
         if reject_error:
-            dataD["error"] = reject_error
-            return render(request, 'subekashi/song_new.html', dataD)
+            context["error"] = reject_error
+            return render(request, 'subekashi/song_new.html', context)
 
         # Songの登録
         ip = get_ip(request)
@@ -114,10 +124,3 @@ def song_new(request):
 
         # 登録できましたトーストを表示する
         return redirect(f'/songs/{song_id}/edit?toast={request.GET.get("toast")}')
-    allow_dup_url = request.GET.get('allow_dup_url', '')
-    if allow_dup_url:
-        cleaned = clean_url(allow_dup_url) or allow_dup_url
-        link = SongLink.set_allow_dup_for_url(cleaned)
-        if link:
-            send_discord(CONTACT_DISCORD_URL, f"重複許可したURL：{allow_dup_url}")
-    return render(request, 'subekashi/song_new.html', dataD)

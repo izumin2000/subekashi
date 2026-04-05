@@ -1,8 +1,10 @@
-from django.shortcuts import render
+from django.views.generic import TemplateView
 
 
-def ad_complete(request) :
-    dataD = {
-        "metatitle" : "申請完了",
-    }
-    return render(request, "subekashi/ad_complete.html", dataD)
+class AdCompleteView(TemplateView):
+    template_name = "subekashi/ad_complete.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["metatitle"] = "申請完了"
+        return context
