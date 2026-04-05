@@ -39,7 +39,7 @@ body {
 
 /* ヘッダー */
 header {
-    z-index: 9999;
+    z-index: 1000;
     height: auto;
     width: 100%;
     background-color: #000;
