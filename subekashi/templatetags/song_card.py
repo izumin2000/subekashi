@@ -12,7 +12,7 @@ register = template.Library()
 @register.simple_tag
 def get_author(song):
     # authorsフィールドから作者を取得
-    authors_list = list(song.authors.all())
+    authors_list = list(song.authors.all()[:2])
 
     # 合作なら
     if len(authors_list) >= 2:
