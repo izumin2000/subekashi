@@ -1,14 +1,18 @@
 from django.shortcuts import render, redirect
-from django.utils import timezone
-from config.settings import *
-from config.local_settings import CONTACT_DISCORD_URL
-from subekashi.models import *
-from subekashi.lib.url import *
-from subekashi.lib.ip import *
-from subekashi.lib.discord import *
-from subekashi.lib.youtube import *
-from subekashi.lib.song_search import song_search
+from django.db import transaction
+from config.local_settings import CONTACT_DISCORD_URL, NEW_DISCORD_URL
+from subekashi.models import Editor, History, SongLink, SongFields
+from subekashi.lib.url import clean_url, get_allow_media, is_youtube_url, get_youtube_id
+from subekashi.lib.ip import get_ip
+from subekashi.lib.discord import send_discord
+from subekashi.lib.youtube import get_youtube_api
 from subekashi.lib.author_helpers import get_or_create_authors
+from subekashi.lib.song_service import (
+    check_reject_list,
+    validate_song_url,
+    create_song_with_relations,
+    build_new_song_discord_text,
+)
 
 
 def song_new(request):
@@ -25,31 +29,33 @@ def song_new(request):
         is_joke = bool(request.POST.get("is-joke-auto", "") + request.POST.get("is-joke-manual", ""))
         is_inst = bool(request.POST.get("is-inst-auto", "") + request.POST.get("is-inst-manual", ""))
         is_subeana = bool(request.POST.get("is-subeana-auto", "") + request.POST.get("is-subeana-manual", ""))
-        
+
         # YouTube APIから情報取得
         youtube_res = {}
-        if is_youtube_url(url) :
+        if is_youtube_url(url):
             youtube_id = get_youtube_id(url)
             youtube_res = get_youtube_api(youtube_id)
             title = youtube_res.get("title", "")
             authors_input = youtube_res.get("author", "")       # 現状、YouTube Data APIの仕様上,1チャンネルしか取得できない。
-            
+
         # URLがYouTubeのURLでない場合はエラー
         if not is_youtube_url(url) and url:
             dataD["error"] = "URLがYouTubeのURLではありません。"
             return render(request, 'subekashi/song_new.html', dataD)
-        
+
         # URLが複数ならエラー
         if "," in url:
             dataD["error"] = "URLは複数入力できません。"
             return render(request, 'subekashi/song_new.html', dataD)
-        
+
         # 既に登録されているURLの場合はエラー（allow_dup=Falseのみ）
         cleaned_url = clean_url(url)
-        if cleaned_url and SongLink.objects.filter(url__iexact=cleaned_url, allow_dup=False, songs__isnull=False).exists():
-            dataD["error"] = "URLは既に登録されています。"
-            return render(request, 'subekashi/song_new.html', dataD)
-        
+        if cleaned_url:
+            error = validate_song_url(cleaned_url)
+            if error:
+                dataD["error"] = error
+                return render(request, 'subekashi/song_new.html', dataD)
+
         # 作者が空または空白のみの場合はエラー
         if not authors_input.strip():
             dataD["error"] = "作者は空白にできません。"
@@ -66,94 +72,52 @@ def song_new(request):
         author_names = cleaned_authors.split(',')
         authors = get_or_create_authors(author_names)
 
-        # 掲載拒否リストの読み込み
-        try:
-            from subekashi.constants.dynamic.reject import REJECT_LIST
-        except:
-            REJECT_LIST = []
-
         # 掲載拒否作者か判断する
-        for author in authors:
-            if author.name in REJECT_LIST:
-                dataD["error"] = f"{author.name}さんの曲は登録することができません。"
-                return render(request, 'subekashi/song_new.html', dataD)
+        reject_error = check_reject_list(authors)
+        if reject_error:
+            dataD["error"] = reject_error
+            return render(request, 'subekashi/song_new.html', dataD)
 
         # Songの登録
         ip = get_ip(request)
-        song = Song(
-            title = title,
-            post_time = timezone.now(),
-            is_original = is_original,
-            is_deleted = is_deleted,
-            is_joke = is_joke,
-            is_inst = is_inst,
-            is_subeana = is_subeana,
-            upload_time = youtube_res.get("upload_time", None),
-            view = youtube_res.get("view", None),
-            like = youtube_res.get("like", None),
+        fields = SongFields(
+            title=title,
+            is_original=is_original,
+            is_deleted=is_deleted,
+            is_joke=is_joke,
+            is_inst=is_inst,
+            is_subeana=is_subeana,
+            upload_time=youtube_res.get("upload_time", None),
+            view=youtube_res.get("view", None),
+            like=youtube_res.get("like", None),
         )
+        # Song・Editor・Historyをトランザクションでまとめて保存し、
+        # 全て成功した場合のみDiscordに送信する
+        with transaction.atomic():
+            song = create_song_with_relations(fields, authors, cleaned_url)
+            song_id = song.id
+            editor = Editor.get_or_create_from_ip(ip)
+            changes, discord_text = build_new_song_discord_text(song_id, fields, authors, cleaned_url, editor)
+            History.create_for_song(
+                song=song,
+                title=f"{song.title}を新規作成",
+                history_type="new",
+                changes=changes,
+                editor=editor,
+            )
 
-        song.save()
-
-        # authorsフィールドの更新
-        song.authors.set(authors)
-
-        # SongLinkを取得または作成してこの曲を追加
-        for url_str in cleaned_url.split(",") if cleaned_url else []:
-            link, _ = SongLink.objects.get_or_create(url=url_str)
-            link.songs.add(song)
-
-        song_id = song.id
-        
-        # 変更内容のマークダウンと送信するDiscordの文言の作成
-        def yes_no(value):
-            return "はい" if value else "いいえ"
-        
-        COLUMNS = [
-            {"label": "タイトル", "value": title},
-            {"label": "作者", "value": ", ".join([a.name for a in authors])},
-            {"label": "URL", "value": cleaned_url},
-            {"label": "オリジナル", "value": yes_no(is_original)},
-            {"label": "削除済み", "value": yes_no(is_deleted)},
-            {"label": "ネタ曲", "value": yes_no(is_joke)},
-            {"label": "インスト曲", "value": yes_no(is_inst)},
-            {"label": "すべあな模倣曲", "value": yes_no(is_subeana)},
-        ]
-        
-        changes = [["種類", "内容"]]
-        discord_text = f"新規作成されました\n{ROOT_URL}/songs/{song_id}\n\n"
-        for column in COLUMNS:
-            if column["value"]:     # 通常、manual送信時にlabel=URLだけがFalseになる
-                changes.append([column['label'], column['value']])
-                discord_text += f"**{column['label']}**：`{column['value']}`\n"
-
-        # 編集履歴を保存
-        editor, _ = Editor.objects.get_or_create(ip = ip)
-        history = History(
-            song = song,
-            title = f"{song.title}を新規作成",
-            history_type = "new",
-            create_time = timezone.now(),
-            changes = changes,
-            editor = editor
-        )
-        history.save()
-        
-        discord_text += f"編集者：`{editor}`"
         # Discordに送信し、送信できなければ削除し500ページに遷移
         is_ok = send_discord(NEW_DISCORD_URL, discord_text)
         if not is_ok:
             song.delete()
             return render(request, 'subekashi/500.html', status=500)
-        
+
         # 登録できましたトーストを表示する
         return redirect(f'/songs/{song_id}/edit?toast={request.GET.get("toast")}')
     allow_dup_url = request.GET.get('allow_dup_url', '')
     if allow_dup_url:
         cleaned = clean_url(allow_dup_url) or allow_dup_url
-        link = SongLink.objects.filter(url__iexact=cleaned).first()
+        link = SongLink.set_allow_dup_for_url(cleaned)
         if link:
-            link.allow_dup = True
-            link.save()
             send_discord(CONTACT_DISCORD_URL, f"重複許可したURL：{allow_dup_url}")
     return render(request, 'subekashi/song_new.html', dataD)

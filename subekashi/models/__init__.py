@@ -1,6 +1,6 @@
 from .editor import Editor
 from .author import Author, AuthorLink, AuthorAlias
-from .song import Song
+from .song import Song, SongFields
 from .song_link import SongLink
 from .history import History
 from .contact import Contact

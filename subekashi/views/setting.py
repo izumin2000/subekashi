@@ -31,7 +31,7 @@ ALLOWED_SETTING_VALUES = {
 
 def setting(request):
     ip = get_ip(request)
-    editor, _ = Editor.objects.get_or_create(ip = ip)
+    editor = Editor.get_or_create_from_ip(ip)
 
     # 現在のcookie値を取得
     songrange = request.COOKIES.get("songrange", "subeana")

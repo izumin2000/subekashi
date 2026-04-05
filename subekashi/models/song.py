@@ -1,10 +1,14 @@
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Optional
 from django.db import models
 from django.utils import timezone
 from .author import Author
+from .base import GetOrNoneMixin
 
 
 # 楽曲のメイン情報
-class Song(models.Model):
+class Song(GetOrNoneMixin, models.Model):
     CHOICES = (
         ("song", "曲"),
         ("arrange", "アレンジ"),
@@ -50,3 +54,48 @@ class Song(models.Model):
         if self.lyrics:
             self.lyrics = self.lyrics.replace("\r\n", "\n")
         super().save(*args, **kwargs)
+
+    @classmethod
+    def get_for_range(cls, songrange, jokerange):
+        """songrange/jokerangeの設定に応じたQuerySetを返す"""
+        if songrange == "subeana":
+            qs = cls.objects.filter(is_subeana=True)
+        elif songrange == "xx":
+            qs = cls.objects.filter(is_subeana=False)
+        else:
+            qs = cls.objects.all()
+        if jokerange == "off":
+            qs = qs.filter(is_joke=False)
+        return qs
+
+    @classmethod
+    def get_for_author(cls, author_id):
+        """指定author_idに紐づくSongのQuerySetを返す"""
+        return cls.objects.filter(authors__id=author_id).distinct().order_by('-id')
+
+    @classmethod
+    def is_lack(cls, pk):
+        """指定pkのSongが未完成かどうかを返す"""
+        # query_filtersがSongをインポートするため循環インポート回避のためローカルインポート
+        from subekashi.lib.query_filters import filter_by_lack
+        return cls.objects.filter(pk=pk).filter(filter_by_lack()).exists()
+
+    def has_subekashi_author(self):
+        """Songにid=1（すべあな）作者が紐づいているかを返す"""
+        return self.authors.filter(id=1).exists()
+
+
+@dataclass
+class SongFields:
+    """Songモデルのフォームフィールドをまとめるデータクラス"""
+    title: str = ""
+    lyrics: str = ""
+    is_original: bool = False
+    is_deleted: bool = False
+    is_joke: bool = False
+    is_inst: bool = False
+    is_subeana: bool = True
+    is_draft: bool = False
+    upload_time: Optional[datetime] = None
+    view: Optional[int] = None
+    like: Optional[int] = None

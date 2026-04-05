@@ -1,28 +1,17 @@
 from django.shortcuts import render
-from subekashi.models import *
-from subekashi.lib.query_filters import filter_by_lack
-from subekashi.lib.url import get_all_media
+from subekashi.models import Song
+from subekashi.lib.song_service import get_song_links_with_media
 import re
 
 
 def song(request, song_id):
-    try:
-        song = Song.objects.get(pk = song_id)
-    except:
+    song = Song.get_or_none(song_id)
+    if song is None:
         return render(request, 'subekashi/404.html', status=404)
-    
+
     # URLのリンクを取得
-    links = []
-    for link in song.links.all():
-        media = get_all_media(link.url)
-        links.append(
-            {
-                "text": link.url,
-                "icon": media["icon"],
-                "name": media["name"]
-            }
-        )
-    
+    links = get_song_links_with_media(song)
+
     # 改行の設定
     br_lyrics = request.COOKIES.get("brlyrics", "normal")
     if br_lyrics == "normal":
@@ -31,7 +20,7 @@ def song(request, song_id):
         br_cleaned_lyrics = re.sub(r"\n+", "\n", song.lyrics)
     elif br_lyrics == "brless":
         br_cleaned_lyrics = song.lyrics.replace("\n", "")
-        
+
     # 模倣元songリストを取得
     imitate_list = song.imitates.all()
 
@@ -48,17 +37,17 @@ def song(request, song_id):
     # 歌詞の一部をdescriptionに記述
     description_lyrics = song.lyrics[:50]
     description += f"歌詞: {description_lyrics}" if description_lyrics else ""
-    
+
     # 未完成かどうか
-    is_lack = Song.objects.filter(pk=song_id).filter(filter_by_lack()).exists()
-    
+    is_lack = Song.is_lack(song_id)
+
     # タグを持っているかどうかの確認
     has_tag = any([
-        song.authors.filter(id=1).exists(),
+        song.has_subekashi_author(),
         is_lack, song.is_draft, song.is_original, song.is_joke, song.is_inst, song.is_deleted, song.is_limited,
         not song.is_subeana
     ])
-    
+
     # テンプレートに渡す辞書を作成
     dataD = {
         "description": description,
