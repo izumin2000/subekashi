@@ -232,7 +232,9 @@ class SongFilter(django_filters.FilterSet):
         NEED_DISTINCT_SORT_LIST = ['random', 'author', '-author']
         if any(key in self.data for key in NEED_DISTINCT_KEY_LIST) or (self.data.get('sort') in NEED_DISTINCT_SORT_LIST):
             ids = queryset.values('id').distinct()
-            queryset = Song.objects.filter(id__in=Subquery(ids))
+            # Song.objects.filter(...) で新規 queryset を作るため、song_search.py で設定した
+            # prefetch_related は引き継がれない。ここで明示的に再設定する。
+            queryset = Song.objects.prefetch_related('links', 'authors').filter(id__in=Subquery(ids))
             sort = self.data.get('sort')
             if sort in DISTINCT_SORT_MAP:
                 queryset = queryset.order_by(DISTINCT_SORT_MAP[sort])
