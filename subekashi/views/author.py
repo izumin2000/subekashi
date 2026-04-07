@@ -13,7 +13,7 @@ class AuthorView(View):
 
         songInsL = Song.get_for_author(author_id)
 
-        titles = ", ".join(song.title for song in songInsL)
+        titles = ", ".join(songInsL.values_list('title', flat=True))
         if len(titles) >= 80:
             titles = titles[:80] + "...など"
 
