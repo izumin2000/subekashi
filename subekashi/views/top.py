@@ -32,7 +32,7 @@ class TopView(View):
         # 新着の表示設定
         new_count = int(request.COOKIES.get("is_shown_new", "5"))
         if new_count > 0:
-            context["songInsL"] = list(songInsL)[:-(new_count + 1):-1]
+            context["songInsL"] = songInsL.order_by('-id')[:new_count]
 
         # 未完成の表示設定
         lack_count = int(request.COOKIES.get("is_shown_lack", "5"))

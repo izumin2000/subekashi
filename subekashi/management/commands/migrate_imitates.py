@@ -20,7 +20,7 @@ class Command(BaseCommand):
         total = 0
         skipped = 0
 
-        for song in Song.objects.all():
+        for song in Song.objects.iterator():
             if not song.imitate:
                 continue
 

@@ -25,24 +25,21 @@ class Command(BaseCommand):
             self.add_url(urlset, base_url + path, "0.9")
 
         # 優先度が0.8の動的パス (song_id)
-        songs = Song.objects.all()
-        for song in songs:
+        for song_id in Song.objects.values_list('id', flat=True).iterator():
             # /songs/<int:song_id> のURL
-            self.add_url(urlset, f"{base_url}/songs/{song.id}/", "0.8")
+            self.add_url(urlset, f"{base_url}/songs/{song_id}/", "0.8")
 
         # 優先度が0.8の動的パス (作者)
-        authors = Author.objects.all()
-        for author in authors:
+        for author_id, author_name in Author.objects.values_list('id', 'name').iterator():
             # /author/<int:author_id> のURL（新形式）
-            self.add_url(urlset, f"{base_url}/author/{author.id}/", "0.8")
+            self.add_url(urlset, f"{base_url}/author/{author_id}/", "0.8")
             # /channel/<str:author_name> のURL（旧形式、リダイレクトのため維持）
-            self.add_url(urlset, f"{base_url}/channel/{author.name}/", "0.7")
+            self.add_url(urlset, f"{base_url}/channel/{author_name}/", "0.7")
 
         # 優先度が0.8の動的パス (article_id)
-        articles = Article.objects.filter(is_open = True).exclude(tag = "news")
-        for article in articles:
-            # /articles/<int:article_id> のURL
-            self.add_url(urlset, f"{base_url}/articles/{article.article_id}/", "0.8")
+        for article_id in Article.objects.filter(is_open=True).exclude(tag="news").values_list('article_id', flat=True).iterator():
+            # /articles/<str:article_id> のURL
+            self.add_url(urlset, f"{base_url}/articles/{article_id}/", "0.8")
 
         # sitemap.xmlファイルの保存
         tree = ElementTree(urlset)

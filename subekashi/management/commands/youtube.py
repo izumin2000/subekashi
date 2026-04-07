@@ -75,7 +75,7 @@ class Command(BaseCommand):
             return
 
         # 全てのsongが対象なら（SongLinkが存在するSongのみ）
-        for song in Song.objects.filter(links__isnull=False).distinct():
+        for song in Song.objects.filter(links__isnull=False).distinct().iterator():
             info = self.get_youtube_info_sum(song)
             if not info:
                 continue
