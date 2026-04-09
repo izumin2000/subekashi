@@ -7,7 +7,7 @@ import math
 from django.test import TestCase
 from rest_framework.exceptions import ValidationError
 from subekashi.models import Song
-from subekashi.lib.song_search import song_search, DEFALT_SIZE
+from subekashi.lib.song_search import song_search, DEFAULT_SIZE
 
 
 def _create_songs(count, prefix="テスト曲"):
@@ -35,9 +35,9 @@ class SongSearchStatisticsTest(TestCase):
         _, stats = song_search({})
         self.assertEqual(stats["page"], 1)
 
-    def test_default_size_is_defalt_size(self):
+    def test_default_size_is_DEFAULT_SIZE(self):
         _, stats = song_search({})
-        self.assertEqual(stats["size"], DEFALT_SIZE)
+        self.assertEqual(stats["size"], DEFAULT_SIZE)
 
     def test_max_page_calculated_correctly(self):
         _, stats = song_search({"size": "3"})
@@ -73,17 +73,17 @@ class SongSearchPaginationTest(TestCase):
         _, stats = song_search({"page": "abc"})
         self.assertEqual(stats["page"], 1)
 
-    def test_invalid_size_defaults_to_defalt_size(self):
+    def test_invalid_size_defaults_to_DEFAULT_SIZE(self):
         _, stats = song_search({"size": "xyz"})
-        self.assertEqual(stats["size"], DEFALT_SIZE)
+        self.assertEqual(stats["size"], DEFAULT_SIZE)
 
-    def test_size_zero_defaults_to_defalt_size(self):
+    def test_size_zero_defaults_to_DEFAULT_SIZE(self):
         _, stats = song_search({"size": "0"})
-        self.assertEqual(stats["size"], DEFALT_SIZE)
+        self.assertEqual(stats["size"], DEFAULT_SIZE)
 
-    def test_negative_size_defaults_to_defalt_size(self):
+    def test_negative_size_defaults_to_DEFAULT_SIZE(self):
         _, stats = song_search({"size": "-1"})
-        self.assertEqual(stats["size"], DEFALT_SIZE)
+        self.assertEqual(stats["size"], DEFAULT_SIZE)
 
     def test_negative_page_defaults_to_page1(self):
         _, stats = song_search({"page": "-5"})
