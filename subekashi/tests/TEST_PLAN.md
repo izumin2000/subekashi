@@ -419,7 +419,7 @@
 
 ### 12. `article` アプリ
 
-**テストファイル案**: `article/tests/test_views.py`
+**テストファイル案**: `article/tests/test_views.py` （未実装）
 
 #### 12-1. `ArticlesView` (`/article/`)
 
@@ -466,7 +466,7 @@
 
 ---
 
-## ファイル構成案
+## ファイル構成
 
 ```
 subekashi/tests/
@@ -474,18 +474,28 @@ subekashi/tests/
 ├── TEST_PLAN.md                    # このファイル
 ├── test_author_migration.py        # 既存
 ├── song.py                         # 既存（外部依存あり）
-├── test_lib_url.py                 # 新規: URL処理ユーティリティ
-├── test_lib_song_service.py        # 新規: 曲サービス
-├── test_lib_query_filters.py       # 新規: クエリフィルター
-├── test_lib_query_utils.py         # 新規: クエリユーティリティ
-├── test_lib_author_helpers.py      # 新規: 作者ヘルパー
-├── test_lib_song_search.py         # 新規: 検索機能
-├── test_forms.py                   # 新規: フォームバリデーション
-├── test_views.py                   # 新規: ビュー
-├── test_api.py                     # 新規: REST API
-├── test_middleware.py              # 新規: ミドルウェア
-└── test_models.py                  # 新規: モデル基本動作
-
-article/tests/
-└── test_views.py                   # 新規: articleアプリのビュー
+├── test_lib_url.py                 # 実装済み: URL処理ユーティリティ
+├── test_lib_song_service.py        # 実装済み: 曲サービス
+├── test_lib_query_filters.py       # 実装済み: クエリフィルター
+├── test_lib_query_utils.py         # 実装済み: クエリユーティリティ
+├── test_lib_author_helpers.py      # 実装済み: 作者ヘルパー
+├── test_lib_song_search.py         # 実装済み: 検索機能
+├── test_forms.py                   # 実装済み: フォームバリデーション
+├── test_views.py                   # 実装済み: ビュー（GETのみ）
+├── test_api.py                     # 実装済み: REST API
+├── test_middleware.py              # 実装済み: ミドルウェア
+└── test_models.py                  # 実装済み: モデル基本動作
 ```
+
+## 今後の課題（未実装）
+
+- **`article` アプリのビューテスト** (`article/tests/test_views.py`)
+  - ArticlesView・DefaultArticleView の GET テスト
+
+- **ビュー層の POST テスト** (`test_views.py` への追加)
+  - フォームバリデーション自体は `test_forms.py` でカバー済みだが、
+    ビュー層での POST 処理は別途テストが必要:
+    - `SongNewView` POST: 正常時のリダイレクト先、バリデーションエラー時の再表示
+    - `SongEditView` POST: 同上
+    - `SongDeleteView` POST: Discord 送信のモック化
+    - `ContactView` POST: Discord 送信のモック化

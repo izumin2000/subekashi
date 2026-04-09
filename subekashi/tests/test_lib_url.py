@@ -138,7 +138,7 @@ class CleanUrlTest(SimpleTestCase):
     """clean_url() のテスト"""
 
     def test_space_before_comma_is_removed(self):
-        result = clean_url("https://youtu.be/aaaaaaaaaaа ,https://youtu.be/bbbbbbbbbbb")
+        result = clean_url("https://youtu.be/aaaaaaaaaaa ,https://youtu.be/bbbbbbbbbbb")
         self.assertNotIn(" ", result)
 
     def test_space_after_comma_is_removed(self):

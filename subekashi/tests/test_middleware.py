@@ -3,6 +3,7 @@
 
 RatelimitMiddleware・CacheControlMiddleware の動作を検証する。
 """
+import json
 from unittest.mock import MagicMock
 from django.http import HttpResponse, JsonResponse
 from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
@@ -47,8 +48,6 @@ class RatelimitMiddlewareTest(SimpleTestCase):
         self.assertIsInstance(response, JsonResponse)
 
     def test_ratelimited_response_contains_error_key(self):
-        import json
-
         def raise_ratelimited(req):
             raise Ratelimited()
 

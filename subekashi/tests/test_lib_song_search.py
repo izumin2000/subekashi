@@ -125,11 +125,13 @@ class SongSearchValidationErrorTest(TestCase):
         with self.assertRaises(ValidationError):
             song_search({"sort": "invalid_field_xyz"})
 
-    def test_negative_view_gte_raises_validation_error(self):
+    def test_zero_view_gte_raises_validation_error(self):
+        # バリデーターは1以上を要求するため、0はエラーになる
         with self.assertRaises(ValidationError):
             song_search({"view_gte": "0"})
 
-    def test_negative_like_gte_raises_validation_error(self):
+    def test_zero_like_gte_raises_validation_error(self):
+        # バリデーターは1以上を要求するため、0はエラーになる
         with self.assertRaises(ValidationError):
             song_search({"like_gte": "0"})
 

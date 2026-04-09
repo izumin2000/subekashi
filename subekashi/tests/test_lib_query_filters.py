@@ -107,15 +107,26 @@ class FilterByGuesserTest(TestCase):
 
 
 class FilterByLackTest(TestCase):
-    """filter_by_lack() のテスト"""
+    """filter_by_lack() のテスト
+
+    filter_by_lack() は以下の3条件のいずれかを満たす曲を「未完成」と判定する:
+      (A) is_deleted=False かつ SongLink が存在しない
+      (B) is_original=False かつ is_subeana=True かつ imitates が空 かつ author_id=1 なし
+      (C) is_inst=False かつ lyrics が空文字列
+
+    各テストで「意図しない条件」に引っかからないよう、検証したい条件以外は
+    明示的に打ち消したフィールド値を設定する。
+    """
 
     def test_song_without_url_and_not_deleted_is_lack(self):
-        song = Song.objects.create(title="URLなし曲", is_deleted=False)
+        # 条件(A): URLなし・削除されていない → 未完成
+        # 条件(C)に引っかからないよう lyrics を設定し、is_original=True で条件(B)を除外
+        song = Song.objects.create(title="URLなし曲", is_deleted=False, lyrics="歌詞あり", is_original=True)
         qs = Song.objects.filter(filter_by_lack())
         self.assertIn(song, qs)
 
     def test_song_with_url_is_not_lack(self):
-        # is_original=True にすると「すべあな模倣曲条件」に引っかからない
+        # 条件(A)を満たさない: URLあり・削除なし・歌詞あり・is_original=True(条件B除外)
         song = Song.objects.create(title="URLあり曲", lyrics="歌詞あり", is_original=True)
         link = SongLink.objects.create(url="https://youtu.be/hasurlsong1")
         link.songs.add(song)
@@ -123,12 +134,15 @@ class FilterByLackTest(TestCase):
         self.assertNotIn(song, qs)
 
     def test_song_without_lyrics_and_not_inst_is_lack(self):
-        song = Song.objects.create(title="歌詞なし曲", is_inst=False, lyrics="")
+        # 条件(C): インストでない かつ 歌詞なし → 未完成
+        # is_original=True で条件(B)を除外
+        song = Song.objects.create(title="歌詞なし曲", is_inst=False, lyrics="", is_original=True)
         qs = Song.objects.filter(filter_by_lack())
         self.assertIn(song, qs)
 
     def test_inst_song_without_lyrics_is_not_lack(self):
-        # is_original=True にすると「すべあな模倣曲条件」に引っかからない
+        # 条件(C)を満たさない: is_inst=True なら歌詞なしでも未完成ではない
+        # URLあり(条件A除外)・is_original=True(条件B除外)
         song = Song.objects.create(title="インスト曲", is_inst=True, lyrics="", is_original=True)
         link = SongLink.objects.create(url="https://youtu.be/instsong00001")
         link.songs.add(song)
@@ -136,7 +150,8 @@ class FilterByLackTest(TestCase):
         self.assertNotIn(song, qs)
 
     def test_deleted_song_is_not_caught_by_url_check(self):
-        # is_original=True にすると「すべあな模倣曲条件」に引っかからない
+        # 条件(A)を満たさない: is_deleted=True なら URLなしでも条件(A)の対象外
+        # is_original=True(条件B除外)・歌詞あり(条件C除外)
         song = Song.objects.create(title="削除済み曲", is_deleted=True, lyrics="歌詞あり", is_original=True)
         link = SongLink.objects.create(url="https://youtu.be/deletedsong1")
         link.songs.add(song)
@@ -154,7 +169,7 @@ class MakeIsLackAnnotationTest(TestCase):
         self.assertTrue(annotated.is_lack)
 
     def test_complete_song_annotated_false(self):
-        # is_original=True にすると「すべあな模倣曲条件」に引っかからない
+        # URLあり(条件A除外)・歌詞あり(条件C除外)・is_original=True(条件B除外)
         song = Song.objects.create(title="完成曲", lyrics="歌詞あり", is_original=True)
         link = SongLink.objects.create(url="https://youtu.be/complete00001")
         link.songs.add(song)
