@@ -98,12 +98,10 @@ class FilterByGuesserTest(TestCase):
         self.unrelated = Song.objects.create(title="関係ない曲")
 
     def test_filter_by_title(self):
-        from subekashi.lib.query_filters import filter_by_guesser
         qs = Song.objects.filter(filter_by_guesser("推測対象")).distinct()
         self.assertIn(self.song_by_title, qs)
 
     def test_filter_by_author_name(self):
-        from subekashi.lib.query_filters import filter_by_guesser
         qs = Song.objects.filter(filter_by_guesser("推測テスト作者")).distinct()
         self.assertIn(self.song_by_author, qs)
 

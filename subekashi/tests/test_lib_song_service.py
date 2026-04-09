@@ -48,25 +48,15 @@ class CheckRejectListTest(TestCase):
         self.assertIsNone(result)
 
     def test_ng_author_returns_error_message(self):
-        with patch(
-            "subekashi.lib.song_service.REJECT_LIST",
-            ["NGアーティスト"],
-            create=True,
-        ):
-            # モジュール内のREJECT_LISTを直接パッチ
-            with patch(
-                "subekashi.constants.dynamic.reject",
-                create=True,
-            ):
-                pass
-
-        # ImportError のフォールバック（空リスト）で安全作者はNoneを返すことを確認
-        with patch(
-            "subekashi.lib.song_service.check_reject_list",
-            wraps=check_reject_list,
-        ):
-            result = check_reject_list([self.safe_author])
-            self.assertIsNone(result)
+        # check_reject_list は関数内で動的に import するため、
+        # sys.modules にモックモジュールを差し込んで REJECT_LIST を制御する
+        from unittest.mock import MagicMock
+        mock_reject_module = MagicMock()
+        mock_reject_module.REJECT_LIST = ["NGアーティスト"]
+        with patch.dict("sys.modules", {"subekashi.constants.dynamic.reject": mock_reject_module}):
+            result = check_reject_list([self.ng_author])
+        self.assertIsNotNone(result)
+        self.assertIn("NGアーティスト", result)
 
     def test_import_error_falls_back_to_empty_list(self):
         with patch.dict("sys.modules", {"subekashi.constants.dynamic.reject": None}):
