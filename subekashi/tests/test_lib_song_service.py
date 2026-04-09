@@ -59,9 +59,12 @@ class CheckRejectListTest(TestCase):
         self.assertIn("NGアーティスト", result)
 
     def test_import_error_falls_back_to_empty_list(self):
+        # sys.modules[key] = None は Python 仕様として ImportError を発生させる
+        # (importlib ドキュメント: "If None, raises an ImportError")
+        # これにより reject モジュールが存在しない環境をシミュレートできる
         with patch.dict("sys.modules", {"subekashi.constants.dynamic.reject": None}):
             result = check_reject_list([self.safe_author])
-            self.assertIsNone(result)
+        self.assertIsNone(result)
 
 
 class ValidateSongUrlTest(TestCase):

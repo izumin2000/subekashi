@@ -150,12 +150,11 @@ class FilterByLackTest(TestCase):
         self.assertNotIn(song, qs)
 
     def test_deleted_song_is_not_caught_by_url_check(self):
-        # 条件(A)を満たさない: is_deleted=True なら URLなしでも条件(A)の対象外
-        # is_original=True(条件B除外)・歌詞あり(条件C除外)
+        # 条件(A)を満たさない: is_deleted=True なら URL がなくても条件(A)の対象外
+        # is_original=True(条件B除外)・歌詞あり(条件C除外)・URLなし（条件Aを意図的に満たさせる状況）
         song = Song.objects.create(title="削除済み曲", is_deleted=True, lyrics="歌詞あり", is_original=True)
-        link = SongLink.objects.create(url="https://youtu.be/deletedsong1")
-        link.songs.add(song)
-        qs = Song.objects.filter(filter_by_lack()).distinct()
+        # URL を持たないまま → 条件(A)は「is_deleted=False かつ URLなし」なので is_deleted=True は除外される
+        qs = Song.objects.filter(filter_by_lack())
         self.assertNotIn(song, qs)
 
 

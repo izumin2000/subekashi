@@ -81,6 +81,32 @@ class SongNewViewTest(TestCase):
         response = self.client.get(reverse("subekashi:song_new"))
         self.assertEqual(response.status_code, 200)
 
+    def test_post_non_youtube_url_returns_error(self):
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "https://example.com/video", "authors": "テスト作者", "title": "テスト曲"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("YouTube", response.context["error"])
+
+    def test_post_empty_authors_returns_error(self):
+        # URL なし・作者空白 → 作者バリデーションエラー
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "", "authors": "  ", "title": "テスト曲"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("作者", response.context["error"])
+
+    def test_post_empty_title_returns_error(self):
+        # URL なし・作者あり・タイトル空白 → タイトルバリデーションエラー
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "", "authors": "テスト作者", "title": ""},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("タイトル", response.context["error"])
+
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
 class SongEditViewTest(TestCase):
@@ -131,6 +157,26 @@ class SongDeleteViewTest(TestCase):
     def test_nonexistent_song_returns_404(self):
         response = self.client.get(reverse("subekashi:song_delete", args=[99999]))
         self.assertEqual(response.status_code, 404)
+
+    def test_post_valid_reason_redirects(self):
+        # SEND_DISCORD=False のため send_discord は即 True を返す
+        response = self.client.post(
+            reverse("subekashi:song_delete", args=[self.song.id]),
+            {"reason": "削除理由テスト"},
+        )
+        self.assertRedirects(
+            response,
+            f"/songs/{self.song.id}?toast=delete",
+            fetch_redirect_response=False,
+        )
+
+    def test_post_empty_reason_returns_error(self):
+        response = self.client.post(
+            reverse("subekashi:song_delete", args=[self.song.id]),
+            {"reason": ""},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("error", response.context)
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
@@ -194,6 +240,24 @@ class ContactViewTest(TestCase):
     def test_get_returns_200(self):
         response = self.client.get(reverse("subekashi:contact"))
         self.assertEqual(response.status_code, 200)
+
+    def test_post_valid_form_returns_ok(self):
+        # SEND_DISCORD=False のため send_discord は即 True を返す
+        response = self.client.post(
+            reverse("subekashi:contact"),
+            {"category": "不具合の報告", "detail": "テスト詳細文"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["result"], "ok")
+
+    def test_post_invalid_form_returns_error(self):
+        # detail が未入力の場合はフォームバリデーションエラー
+        response = self.client.post(
+            reverse("subekashi:contact"),
+            {"category": "不具合の報告"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("入力必須項目", response.context["result"])
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)

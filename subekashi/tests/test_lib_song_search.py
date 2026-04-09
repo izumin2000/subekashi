@@ -92,6 +92,8 @@ class SongSearchPaginationTest(TestCase):
     def test_list_value_for_page_is_handled(self):
         _, stats = song_search({"page": ["2", "3"]})
         self.assertIsInstance(stats["page"], int)
+        # clean_query_params はリストの先頭要素 "2" を使用する
+        self.assertEqual(stats["page"], 2)
 
 
 class SongSearchFilterTest(TestCase):
