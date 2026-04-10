@@ -1,0 +1,54 @@
+name: Test
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Create local_settings.py
+        run: |
+          cat > config/local_settings.py << 'EOF'
+          SECRET_KEY = "ci-test-secret-key"
+          NEW_DISCORD_URL = ""
+          DELETE_DISCORD_URL = ""
+          CONTACT_DISCORD_URL = ""
+          ERROR_DISCORD_URL = ""
+          DSP_DISCORD_URL = ""
+          PYTHONANYWHERE_USERNAME = ""
+          PYTHONANYWHERE_TOKEN = ""
+          YOUTUBE_API_KEY = ""
+          DEBUG = True
+          SEND_DISCORD = False
+          USE_MYSQL = False
+          MYSQL_PASSWORD = ""
+          EOF
+
+      - name: Create dynamic constants
+        run: |
+          cat > subekashi/constants/dynamic/maintenance.json << 'EOF'
+          {"IS_MAINTENANCE": false, "MAINTENANCE_MESSAGE": "<p>メンテナンス中です</p>"}
+          EOF
+          echo 'REJECT_LIST = []' > subekashi/constants/dynamic/reject.py
+          echo 'BAN_LIST = []'    > subekashi/constants/dynamic/ban.py
+          echo 'GENEINFO = {}' > subekashi/constants/dynamic/ai.py
+          echo '{"VERSION": "dev"}' > subekashi/constants/dynamic/version.json
+          touch subekashi/constants/dynamic/gpt.txt
+
+      - name: Run tests
+        run: python manage.py test subekashi.tests article.tests --verbosity=2

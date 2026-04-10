@@ -7,7 +7,7 @@ from subekashi.lib.query_utils import clean_query_params
 from subekashi.models import Song
 from rest_framework.exceptions import ValidationError
 
-DEFALT_SIZE = 50  # 1度の検索で取得できるsongオブジェクトの数
+DEFAULT_SIZE = 50  # 1度の検索で取得できるsongオブジェクトの数
 
 
 def song_search(querys):
@@ -65,11 +65,11 @@ def song_search(querys):
         page = 1
 
     try:
-        size = int(cleaned_querys.get("size", DEFALT_SIZE))
+        size = int(cleaned_querys.get("size", DEFAULT_SIZE))
         if size < 1 or size > MAX_QUERY_SIZE:
-            size = DEFALT_SIZE
+            size = DEFAULT_SIZE
     except (ValueError, TypeError):
-        size = DEFALT_SIZE
+        size = DEFAULT_SIZE
 
     # 統計情報をレスポンスに追加
     statistics["page"] = page
