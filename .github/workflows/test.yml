@@ -39,5 +39,16 @@ jobs:
           MYSQL_PASSWORD = ""
           EOF
 
+      - name: Create dynamic constants
+        run: |
+          cat > subekashi/constants/dynamic/maintenance.json << 'EOF'
+          {"IS_MAINTENANCE": false, "MAINTENANCE_MESSAGE": "<p>メンテナンス中です</p>"}
+          EOF
+          echo 'REJECT_LIST = []' > subekashi/constants/dynamic/reject.py
+          echo 'BAN_LIST = []'    > subekashi/constants/dynamic/ban.py
+          echo 'GENEINFO = {}' > subekashi/constants/dynamic/ai.py
+          echo '{"VERSION": "dev"}' > subekashi/constants/dynamic/version.json
+          touch subekashi/constants/dynamic/gpt.txt
+
       - name: Run tests
         run: python manage.py test subekashi.tests article.tests --verbosity=2
