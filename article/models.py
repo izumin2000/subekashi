@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 
 class Article(models.Model) :
     TAGS = (
@@ -19,6 +20,7 @@ class Article(models.Model) :
     post_time = models.DateTimeField(blank = True, null = True)
     is_open = models.BooleanField(default = True)
     is_md = models.BooleanField(default = True)
+    handle_as_news = models.BooleanField(default = False)
 
     def __str__(self):
         return self.title
@@ -29,5 +31,6 @@ class Article(models.Model) :
         return cls.objects.filter(
             is_open=True
         ).filter(
-            Q(tag="news") | Q(tag="release")
+            (Q(tag="news") | Q(tag="release") | Q(handle_as_news=True)) &
+            Q(post_time__lte=timezone.now())
         ).order_by("-post_time")[:3]

@@ -508,6 +508,14 @@ h2 {
     font-weight: lighter;
 }
 
+h3 {
+    font-size: 32px;
+    line-height: 32px;
+    color: #FFF;
+    margin-top: 10px;
+    font-weight: lighter;
+}
+
 p, li, a, i, td, label, details {
     color: #fff;
     font-size: 22px;
