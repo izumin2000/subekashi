@@ -45,7 +45,6 @@ class SongView(View):
 
         # タグを持っているかどうかの確認
         has_tag = any([
-            song.has_subekashi_author(),
             is_lack, song.is_draft, song.is_original, song.is_joke, song.is_inst, song.is_deleted, song.is_limited,
             not song.is_subeana
         ])
