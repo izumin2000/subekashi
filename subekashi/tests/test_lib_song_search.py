@@ -4,6 +4,7 @@ lib/song_search.py のテスト
 song_search() のページネーション・統計情報・バリデーションエラー処理を検証する。
 """
 import math
+from datetime import datetime, timezone
 from django.test import TestCase
 from rest_framework.exceptions import ValidationError
 from subekashi.models import Author, Song, SongLink
@@ -234,14 +235,15 @@ class SongSearchAutoYoutubeFilterDuplicateTest(TestCase):
     """auto YouTube フィルター適用時に複数リンクを持つ曲が重複しないことを検証"""
 
     def setUp(self):
-        from datetime import datetime, timezone
         self.song_a = Song.objects.create(
             title="YouTube曲A（リンク2本）",
             upload_time=datetime(2024, 1, 1, tzinfo=timezone.utc),
+            view=100,
         )
         self.song_b = Song.objects.create(
             title="YouTube曲B（リンク1本）",
             upload_time=datetime(2024, 1, 2, tzinfo=timezone.utc),
+            view=200,
         )
         # song_a に YouTube リンクを2本追加（重複の原因となるケース）
         link1 = SongLink.objects.create(url="https://youtu.be/aaa111")
@@ -252,13 +254,30 @@ class SongSearchAutoYoutubeFilterDuplicateTest(TestCase):
         link3 = SongLink.objects.create(url="https://youtu.be/bbb111")
         link3.songs.add(self.song_b)
 
-    def test_sort_upload_time_no_duplicate(self):
-        """sort=upload_time のみ指定時、複数 YouTube リンクを持つ曲が重複しない"""
-        _, stats = song_search({"sort": "upload_time", "size": "100"})
+    def _assert_no_duplicate(self, params):
+        """返ってきた曲に重複がなく、期待する2曲が含まれることを検証するヘルパー"""
+        songs, stats = song_search({**params, "size": "100"})
+        song_ids = [s.id for s in songs]
         self.assertEqual(stats["count"], 2)
+        self.assertEqual(len(song_ids), 2)
+        self.assertEqual(len(set(song_ids)), 2)
+        self.assertIn(self.song_a.id, song_ids)
+        self.assertIn(self.song_b.id, song_ids)
+
+    def test_sort_upload_time_no_duplicate(self):
+        """has_youtube_sort パス: sort=upload_time のみ指定時に重複しない"""
+        self._assert_no_duplicate({"sort": "upload_time"})
 
     def test_sort_upload_time_same_count_as_explicit_mediatypes(self):
         """sort=upload_time と sort=upload_time&mediatypes=youtube の件数が一致する"""
         _, stats_auto = song_search({"sort": "upload_time", "size": "100"})
         _, stats_explicit = song_search({"sort": "upload_time", "mediatypes": "youtube", "size": "100"})
         self.assertEqual(stats_auto["count"], stats_explicit["count"])
+
+    def test_upload_time_gte_filter_no_duplicate(self):
+        """has_youtube_filter パス: upload_time_gte 指定時に重複しない"""
+        self._assert_no_duplicate({"upload_time_gte": "2024-01-01T00:00:00Z"})
+
+    def test_view_lte_filter_no_duplicate(self):
+        """has_youtube_filter パス: view_lte 指定時に重複しない"""
+        self._assert_no_duplicate({"view_lte": "500"})
