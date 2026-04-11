@@ -391,6 +391,20 @@
 | `size` による `max_page` の計算 | 曲100件, `size=10` | `max_page=10` |
 | バリデーションエラーのあるパラメータ | 不正なfiltersetパラメータ | `ValidationError` が発生 |
 
+#### 10-2. sort とフィルターの組み合わせ（distinct適用後もソート順が維持されること）
+
+`keyword` や `author` 等のフィルターを使うと `distinct()` のため queryset が再構築される。
+その際にソート順が失われないことを確認する。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| keyword + sort=title | `{"keyword": "...", "sort": "title"}` | タイトル昇順で返される |
+| keyword + sort=-title | `{"keyword": "...", "sort": "-title"}` | タイトル降順で返される |
+| keyword + sort=id | `{"keyword": "...", "sort": "id"}` | ID昇順で返される |
+| keyword + sort=-id | `{"keyword": "...", "sort": "-id"}` | ID降順で返される |
+| title + sort=title | `{"title": "...", "sort": "title"}` | タイトル昇順で返される |
+| title + sort=-title | `{"title": "...", "sort": "-title"}` | タイトル降順で返される |
+
 ---
 
 ### 11. モデル — 基本動作
@@ -488,7 +502,7 @@
 ```
 subekashi/tests/
 ├── __init__.py
-├── TEST_PLAN.md                    # このファイル
+├── TEST_PLAN_UNIT.md               # このファイル
 ├── test_author_migration.py        # 既存
 ├── song.py                         # 既存（外部依存あり）
 ├── test_lib_url.py                 # 実装済み: URL処理ユーティリティ

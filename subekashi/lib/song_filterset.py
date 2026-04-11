@@ -15,7 +15,7 @@ from subekashi.lib.query_utils import has_view_filter_or_sort, has_like_filter_o
 
 # URLパラメータのソートフィールド名 → Django ORM のフィールド名マッピング
 AUTHOR_SORT_MAP = {'author': 'authors__name', '-author': '-authors__name'}
-# distinct()後に順序を再適用するためのマッピング（randomを含む）
+# URLパラメータ値をDjango ORM向けに変換する必要があるソートのマッピング
 DISTINCT_SORT_MAP = {'random': '?', **AUTHOR_SORT_MAP}
 
 
@@ -236,7 +236,7 @@ class SongFilter(django_filters.FilterSet):
             # prefetch_related は引き継がれない。ここで明示的に再設定する。
             queryset = Song.objects.prefetch_related('links', 'authors').filter(id__in=Subquery(ids))
             sort = self.data.get('sort')
-            if sort in DISTINCT_SORT_MAP:
-                queryset = queryset.order_by(DISTINCT_SORT_MAP[sort])
+            if sort:
+                queryset = queryset.order_by(DISTINCT_SORT_MAP.get(sort, sort))
 
         return queryset
