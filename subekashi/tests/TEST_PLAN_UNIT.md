@@ -203,6 +203,17 @@
 | `sort=-like` | `{"sort": "-like"}` | `True` |
 | 空辞書 | `{}` | `False` |
 
+#### 4-4. `has_upload_time_sort(query_data)`
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| `sort=upload_time` | `{"sort": "upload_time"}` | `True` |
+| `sort=-upload_time` | `{"sort": "-upload_time"}` | `True` |
+| 別のソート | `{"sort": "title"}` | `False` |
+| 空辞書 | `{}` | `False` |
+| view系ソート | `{"sort": "view"}` | `False` |
+| like系ソート | `{"sort": "like"}` | `False` |
+
 ---
 
 ### 5. `lib/author_helpers.py` — 作者ヘルパー
@@ -341,6 +352,15 @@
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | 正常アクセス | GETリクエスト | HTTP 200 |
+
+#### 7-11. `SongCardsView` (`/api/html/song_cards`)
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| `sort=upload_time` | GETリクエスト | HTTP 200、「再生数が1回以上の曲を表示しています」が含まれる |
+| `sort=-upload_time` | GETリクエスト | HTTP 200、「再生数が1回以上の曲を表示しています」が含まれる |
+| ソート指定なし | GETリクエスト | 投稿日用のsearch-infoが含まれない |
+| `sort=title` | GETリクエスト | 投稿日用のsearch-infoが含まれない |
 
 ---
 

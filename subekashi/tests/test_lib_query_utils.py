@@ -9,6 +9,7 @@ from subekashi.lib.query_utils import (
     clean_query_params,
     has_view_filter_or_sort,
     has_like_filter_or_sort,
+    has_upload_time_sort,
 )
 
 
@@ -101,3 +102,25 @@ class HasLikeFilterOrSortTest(SimpleTestCase):
 
     def test_like_lte_combined_with_other_keys(self):
         self.assertTrue(has_like_filter_or_sort({"like_lte": "10", "sort": "id"}))
+
+
+class HasUploadTimeSortTest(SimpleTestCase):
+    """has_upload_time_sort() のテスト"""
+
+    def test_sort_upload_time_returns_true(self):
+        self.assertTrue(has_upload_time_sort({"sort": "upload_time"}))
+
+    def test_sort_minus_upload_time_returns_true(self):
+        self.assertTrue(has_upload_time_sort({"sort": "-upload_time"}))
+
+    def test_other_sort_returns_false(self):
+        self.assertFalse(has_upload_time_sort({"sort": "title"}))
+
+    def test_empty_dict_returns_false(self):
+        self.assertFalse(has_upload_time_sort({}))
+
+    def test_view_sort_returns_false(self):
+        self.assertFalse(has_upload_time_sort({"sort": "view"}))
+
+    def test_like_sort_returns_false(self):
+        self.assertFalse(has_upload_time_sort({"sort": "like"}))
