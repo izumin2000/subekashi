@@ -6,7 +6,7 @@ song_search() のページネーション・統計情報・バリデーション
 import math
 from django.test import TestCase
 from rest_framework.exceptions import ValidationError
-from subekashi.models import Song
+from subekashi.models import Author, Song, SongLink
 from subekashi.lib.song_search import song_search, DEFAULT_SIZE
 
 
@@ -131,32 +131,81 @@ class SongSearchSortWithFilterTest(TestCase):
     def test_keyword_with_sort_title_asc(self):
         qs, _ = song_search({"keyword": "共通ワード", "sort": "title", "size": "100"})
         titles = [s.title for s in qs]
-        self.assertEqual(titles, sorted(titles))
+        self.assertEqual(titles, ["Aaa共通ワード", "Bbb共通ワード", "Ccc共通ワード"])
 
     def test_keyword_with_sort_title_desc(self):
         qs, _ = song_search({"keyword": "共通ワード", "sort": "-title", "size": "100"})
         titles = [s.title for s in qs]
-        self.assertEqual(titles, sorted(titles, reverse=True))
+        self.assertEqual(titles, ["Ccc共通ワード", "Bbb共通ワード", "Aaa共通ワード"])
 
     def test_keyword_with_sort_id_asc(self):
         qs, _ = song_search({"keyword": "共通ワード", "sort": "id", "size": "100"})
         ids = [s.id for s in qs]
+        self.assertEqual(len(ids), 3)
         self.assertEqual(ids, sorted(ids))
 
     def test_keyword_with_sort_id_desc(self):
         qs, _ = song_search({"keyword": "共通ワード", "sort": "-id", "size": "100"})
         ids = [s.id for s in qs]
+        self.assertEqual(len(ids), 3)
         self.assertEqual(ids, sorted(ids, reverse=True))
 
     def test_title_filter_with_sort_title_asc(self):
         qs, _ = song_search({"title": "共通ワード", "sort": "title", "size": "100"})
         titles = [s.title for s in qs]
-        self.assertEqual(titles, sorted(titles))
+        self.assertEqual(titles, ["Aaa共通ワード", "Bbb共通ワード", "Ccc共通ワード"])
 
     def test_title_filter_with_sort_title_desc(self):
         qs, _ = song_search({"title": "共通ワード", "sort": "-title", "size": "100"})
         titles = [s.title for s in qs]
-        self.assertEqual(titles, sorted(titles, reverse=True))
+        self.assertEqual(titles, ["Ccc共通ワード", "Bbb共通ワード", "Aaa共通ワード"])
+
+
+class SongSearchSortViewWithFilterTest(TestCase):
+    """sort=view / sort=-view とフィルターの組み合わせテスト"""
+
+    def setUp(self):
+        # YouTube URL を持ち view 値が異なる3曲を作成（sort=view は YouTube フィルターと view>=1 を自動適用）
+        for title, view, url_id in [
+            ("共通ワードA", 300, "viewsorttest01"),
+            ("共通ワードB", 100, "viewsorttest02"),
+            ("共通ワードC", 200, "viewsorttest03"),
+        ]:
+            song = Song.objects.create(title=title, view=view)
+            link = SongLink.objects.create(url=f"https://youtu.be/{url_id}")
+            link.songs.add(song)
+
+    def test_keyword_with_sort_view_asc(self):
+        qs, _ = song_search({"keyword": "共通ワード", "sort": "view", "size": "100"})
+        views = [s.view for s in qs]
+        self.assertEqual(views, [100, 200, 300])
+
+    def test_keyword_with_sort_view_desc(self):
+        qs, _ = song_search({"keyword": "共通ワード", "sort": "-view", "size": "100"})
+        views = [s.view for s in qs]
+        self.assertEqual(views, [300, 200, 100])
+
+
+class SongSearchSortWithAuthorFilterTest(TestCase):
+    """author フィルターと sort の組み合わせテスト（author も distinct() を引き起こす）"""
+
+    def setUp(self):
+        author = Author.objects.create(name="共通作者")
+        self.song_a = Song.objects.create(title="Aaa曲")
+        self.song_b = Song.objects.create(title="Bbb曲")
+        self.song_c = Song.objects.create(title="Ccc曲")
+        for song in [self.song_a, self.song_b, self.song_c]:
+            song.authors.add(author)
+
+    def test_author_filter_with_sort_title_asc(self):
+        qs, _ = song_search({"author": "共通作者", "sort": "title", "size": "100"})
+        titles = [s.title for s in qs]
+        self.assertEqual(titles, ["Aaa曲", "Bbb曲", "Ccc曲"])
+
+    def test_author_filter_with_sort_title_desc(self):
+        qs, _ = song_search({"author": "共通作者", "sort": "-title", "size": "100"})
+        titles = [s.title for s in qs]
+        self.assertEqual(titles, ["Ccc曲", "Bbb曲", "Aaa曲"])
 
 
 class SongSearchValidationErrorTest(TestCase):
