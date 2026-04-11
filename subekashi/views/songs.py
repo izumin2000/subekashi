@@ -76,15 +76,27 @@ class SongsView(View):
 
         # チェックボックスのURLクエリ対応
         for filter in BOOL_FORMS:
-            value = REQUEST_DATA.get(filter)
-            if value != None:
-                value = value in ["true", "1"]
-                if filter == "is_subeana":
-                    context["songrange"] = "subeana" if value else "xx"
-                elif filter == "is_joke":
-                    context["jokerange"] = "only" if value else "off"
+            raw = REQUEST_DATA.get(filter)
+            if raw is None:
+                continue
+            value_lower = raw.lower()
+            if filter == "is_subeana":
+                songrange_value = "subeana" if value_lower in ["true", "1"] else "xx"
+                context["songrange"] = songrange_value
+                if is_saved_select == 'on':
+                    cookies_to_set["search_songrange"] = songrange_value
+            elif filter == "is_joke":
+                if value_lower in ["true", "1", "only"]:
+                    jokerange_value = "only"
+                elif value_lower in ["all", "on"]:
+                    jokerange_value = "on"
                 else:
-                    context[filter] = value
+                    jokerange_value = "off"
+                context["jokerange"] = jokerange_value
+                if is_saved_select == 'on':
+                    cookies_to_set["search_jokerange"] = jokerange_value
+            else:
+                context[filter] = value_lower in ["true", "1"]
 
         response = render(request, "subekashi/songs.html", context)
 

@@ -48,6 +48,68 @@ class SongsViewTest(TestCase):
         response = self.client.get(reverse("subekashi:songs"), {"page": "1", "size": "10"})
         self.assertEqual(response.status_code, 200)
 
+    def test_bool_query_param_true_uppercase_sets_context(self):
+        """is_draft=True (大文字) でチェックボックスが有効になること"""
+        response = self.client.get(reverse("subekashi:songs"), {"is_draft": "True"})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["is_draft"])
+
+    def test_bool_query_param_1_sets_context(self):
+        """is_draft=1 でチェックボックスが有効になること"""
+        response = self.client.get(reverse("subekashi:songs"), {"is_draft": "1"})
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["is_draft"])
+
+    def test_bool_query_param_false_uppercase_sets_context(self):
+        """is_draft=False (大文字) でチェックボックスが無効になること"""
+        response = self.client.get(reverse("subekashi:songs"), {"is_draft": "False"})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.context["is_draft"])
+
+    def test_is_joke_true_sets_jokerange_only(self):
+        """is_joke=True でjokerangeがonlyになること"""
+        response = self.client.get(reverse("subekashi:songs"), {"is_joke": "True"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["jokerange"], "only")
+
+    def test_is_joke_only_sets_jokerange_only(self):
+        """is_joke=only でjokerangeがonlyになること"""
+        response = self.client.get(reverse("subekashi:songs"), {"is_joke": "only"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["jokerange"], "only")
+
+    def test_is_joke_false_sets_jokerange_off(self):
+        """is_joke=False でjokerangeがoffになること"""
+        response = self.client.get(reverse("subekashi:songs"), {"is_joke": "False"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["jokerange"], "off")
+
+    def test_is_joke_off_sets_jokerange_off(self):
+        """is_joke=off でjokerangeがoffになること"""
+        response = self.client.get(reverse("subekashi:songs"), {"is_joke": "off"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["jokerange"], "off")
+
+    def test_is_joke_all_sets_jokerange_on(self):
+        """is_joke=all でjokerangeがonになること"""
+        response = self.client.get(reverse("subekashi:songs"), {"is_joke": "all"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["jokerange"], "on")
+
+    def test_is_joke_on_sets_jokerange_on(self):
+        """is_joke=on でjokerangeがonになること"""
+        response = self.client.get(reverse("subekashi:songs"), {"is_joke": "on"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["jokerange"], "on")
+
+    def test_bool_query_params_all_fields(self):
+        """is_original/is_inst でもTrue/Falseが正しく変換されること"""
+        for field in ["is_original", "is_inst"]:
+            with self.subTest(field=field):
+                response = self.client.get(reverse("subekashi:songs"), {field: "True"})
+                self.assertEqual(response.status_code, 200)
+                self.assertTrue(response.context[field])
+
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
 class SongViewTest(TestCase):
