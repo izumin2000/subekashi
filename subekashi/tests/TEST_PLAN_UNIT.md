@@ -270,6 +270,16 @@
 | キーワード検索 | `?keyword=テスト` | HTTP 200、結果が絞られる |
 | ページネーション | `?page=2&size=10` | HTTP 200 |
 | 不正なページ番号 | `?page=abc` | HTTP 200 (デフォルト page=1 で処理) |
+| 真偽値クエリ (大文字True) | `?is_draft=True` | context["is_draft"] = True (チェックボックス有効) |
+| 真偽値クエリ (数値1) | `?is_draft=1` | context["is_draft"] = True |
+| 真偽値クエリ (大文字False) | `?is_draft=False` | context["is_draft"] = False |
+| is_joke=True | `?is_joke=True` | context["jokerange"] = "only" |
+| is_joke=only | `?is_joke=only` | context["jokerange"] = "only" |
+| is_joke=False | `?is_joke=False` | context["jokerange"] = "off" |
+| is_joke=off | `?is_joke=off` | context["jokerange"] = "off" |
+| is_joke=all | `?is_joke=all` | context["jokerange"] = "on" |
+| is_joke=on | `?is_joke=on` | context["jokerange"] = "on" |
+| is_original/is_inst 大文字True | `?is_original=True` など | 対応 context フィールドが True |
 
 #### 7-3. `SongView` (`/songs/<id>/`)
 
