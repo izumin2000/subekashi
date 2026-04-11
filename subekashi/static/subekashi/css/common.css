@@ -1026,6 +1026,29 @@ input::placeholder {
     line-height: normal;
 }
 
+.toast-close {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    line-height: 1;
+    color: #555;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    transition: color 0.15s;
+}
+
+.toast-close:hover {
+    background: none;
+    color: #111;
+}
+
 .toast a {
     text-decoration: underline 2px #111;
 }
