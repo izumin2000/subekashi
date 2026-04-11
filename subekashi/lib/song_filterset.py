@@ -216,7 +216,8 @@ class SongFilter(django_filters.FilterSet):
         has_youtube_filter = any(key in self.data for key in youtube_filters)
 
         # YouTube関連だがmediatypesが指定されていない場合、YouTubeフィルタを追加
-        if (has_youtube_sort or has_youtube_filter) and 'mediatypes' not in self.data:
+        auto_youtube_applied = (has_youtube_sort or has_youtube_filter) and 'mediatypes' not in self.data
+        if auto_youtube_applied:
             queryset = queryset.filter(filter_by_mediatypes('youtube'))
 
         # view関連のフィルタまたはソートがある場合、view >= 1 を適用
@@ -228,9 +229,10 @@ class SongFilter(django_filters.FilterSet):
             queryset = queryset.filter(like__gte=1)
 
         # フィルタ使用時、またはrandom/authorソート時にdistinct()を適用
+        # auto_youtube_applied の場合も links JOIN による重複が発生するため distinct が必要
         NEED_DISTINCT_KEY_LIST = ['author', 'author_exact', 'keyword', 'guesser', 'is_lack', 'url', 'mediatypes', 'imitate', 'imitated']
         NEED_DISTINCT_SORT_LIST = ['random', 'author', '-author']
-        if any(key in self.data for key in NEED_DISTINCT_KEY_LIST) or (self.data.get('sort') in NEED_DISTINCT_SORT_LIST):
+        if any(key in self.data for key in NEED_DISTINCT_KEY_LIST) or (self.data.get('sort') in NEED_DISTINCT_SORT_LIST) or auto_youtube_applied:
             ids = queryset.values('id').distinct()
             # Song.objects.filter(...) で新規 queryset を作るため、song_search.py で設定した
             # prefetch_related は引き継がれない。ここで明示的に再設定する。
