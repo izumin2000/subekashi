@@ -53,3 +53,16 @@ def has_like_filter_or_sort(query_data):
     has_like_lte_filter = 'like_lte' in query_data
     has_like_sort = query_data.get('sort') in ['like', '-like']
     return has_like_lte_filter or has_like_sort
+
+
+def has_upload_time_sort(query_data):
+    """
+    upload_time関連のソートが存在するかチェック
+
+    Args:
+        query_data: クエリパラメータの辞書
+
+    Returns:
+        bool: upload_time関連のソートが存在する場合True
+    """
+    return query_data.get('sort') in ['upload_time', '-upload_time']

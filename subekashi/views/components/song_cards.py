@@ -6,6 +6,7 @@ from subekashi.lib.query_utils import (
     clean_query_params,
     has_view_filter_or_sort,
     has_like_filter_or_sort,
+    has_upload_time_sort,
 )
 from django_ratelimit.decorators import ratelimit
 from rest_framework.exceptions import ValidationError
@@ -84,6 +85,10 @@ def song_cards(request):
         # 高評価数のフィルター/ソートなら.search-infoを追加
         if has_like_filter_or_sort(cleaned_query):
             result.append("<p class='search-info'>高評価数が1以上の曲を表示しています</p>")
+
+        # 投稿日のソートなら.search-infoを追加
+        if has_upload_time_sort(cleaned_query):
+            result.append("<p class='search-info'>YouTubeの曲を表示しています</p>")
         
         # ヒット数以外の何かしらの検索情報があれば水平線を画面に表示する
         if result:

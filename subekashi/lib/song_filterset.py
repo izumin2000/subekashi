@@ -11,7 +11,7 @@ from subekashi.lib.query_filters import (
     filter_by_lack,
 )
 from subekashi.lib.url import clean_url
-from subekashi.lib.query_utils import has_view_filter_or_sort, has_like_filter_or_sort
+from subekashi.lib.query_utils import has_view_filter_or_sort, has_like_filter_or_sort, has_upload_time_sort
 
 # URLパラメータのソートフィールド名 → Django ORM のフィールド名マッピング
 AUTHOR_SORT_MAP = {'author': 'authors__name', '-author': '-authors__name'}
@@ -207,7 +207,7 @@ class SongFilter(django_filters.FilterSet):
 
         # YouTube関連のパラメータが存在するかチェック
         YOUTUBE_ITEMS = ['view', 'like', 'upload_time']
-        YOUTUBE_SORT = ['upload_time', '-upload_time', 'view', '-view', 'like', '-like']
+        YOUTUBE_SORT = ['view', '-view', 'like', '-like']
 
         youtube_filters = [f'{item}_gte' for item in YOUTUBE_ITEMS] + \
                           [f'{item}_lte' for item in YOUTUBE_ITEMS]
@@ -220,6 +220,11 @@ class SongFilter(django_filters.FilterSet):
         if auto_youtube_applied:
             queryset = queryset.filter(filter_by_mediatypes('youtube'))
 
+        # upload_timeソートがある場合、mediatypes=youtubeを明示的に適用
+        upload_time_youtube_applied = has_upload_time_sort(self.data) and 'mediatypes' not in self.data
+        if upload_time_youtube_applied:
+            queryset = queryset.filter(filter_by_mediatypes('youtube'))
+
         # view関連のフィルタまたはソートがある場合、view >= 1 を適用
         if has_view_filter_or_sort(self.data):
             queryset = queryset.filter(view__gte=1)
@@ -229,10 +234,10 @@ class SongFilter(django_filters.FilterSet):
             queryset = queryset.filter(like__gte=1)
 
         # フィルタ使用時、またはrandom/authorソート時にdistinct()を適用
-        # auto_youtube_applied の場合も links JOIN による重複が発生するため distinct が必要
+        # auto_youtube_applied / upload_time_youtube_applied の場合も links JOIN による重複が発生するため distinct が必要
         NEED_DISTINCT_KEY_LIST = ['author', 'author_exact', 'keyword', 'guesser', 'is_lack', 'url', 'mediatypes', 'imitate', 'imitated']
         NEED_DISTINCT_SORT_LIST = ['random', 'author', '-author']
-        if any(key in self.data for key in NEED_DISTINCT_KEY_LIST) or (self.data.get('sort') in NEED_DISTINCT_SORT_LIST) or auto_youtube_applied:
+        if any(key in self.data for key in NEED_DISTINCT_KEY_LIST) or (self.data.get('sort') in NEED_DISTINCT_SORT_LIST) or auto_youtube_applied or upload_time_youtube_applied:
             ids = queryset.values('id').distinct()
             # Song.objects.filter(...) で新規 queryset を作るため、song_search.py で設定した
             # prefetch_related は引き継がれない。ここで明示的に再設定する。
