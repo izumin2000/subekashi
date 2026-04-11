@@ -236,7 +236,7 @@ class SongFilter(django_filters.FilterSet):
             # prefetch_related は引き継がれない。ここで明示的に再設定する。
             queryset = Song.objects.prefetch_related('links', 'authors').filter(id__in=Subquery(ids))
             sort = self.data.get('sort')
-            if sort in DISTINCT_SORT_MAP:
-                queryset = queryset.order_by(DISTINCT_SORT_MAP[sort])
+            if sort:
+                queryset = queryset.order_by(DISTINCT_SORT_MAP.get(sort, sort))
 
         return queryset

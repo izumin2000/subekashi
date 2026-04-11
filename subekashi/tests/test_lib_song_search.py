@@ -120,6 +120,45 @@ class SongSearchFilterTest(TestCase):
         self.assertEqual(stats["count"], 1)
 
 
+class SongSearchSortWithFilterTest(TestCase):
+    """sort と他フィルターを組み合わせた場合のソート順テスト（distinct適用後も維持されることを確認）"""
+
+    def setUp(self):
+        self.song_a = Song.objects.create(title="Aaa共通ワード")
+        self.song_b = Song.objects.create(title="Bbb共通ワード")
+        self.song_c = Song.objects.create(title="Ccc共通ワード")
+
+    def test_keyword_with_sort_title_asc(self):
+        qs, _ = song_search({"keyword": "共通ワード", "sort": "title", "size": "100"})
+        titles = [s.title for s in qs]
+        self.assertEqual(titles, sorted(titles))
+
+    def test_keyword_with_sort_title_desc(self):
+        qs, _ = song_search({"keyword": "共通ワード", "sort": "-title", "size": "100"})
+        titles = [s.title for s in qs]
+        self.assertEqual(titles, sorted(titles, reverse=True))
+
+    def test_keyword_with_sort_id_asc(self):
+        qs, _ = song_search({"keyword": "共通ワード", "sort": "id", "size": "100"})
+        ids = [s.id for s in qs]
+        self.assertEqual(ids, sorted(ids))
+
+    def test_keyword_with_sort_id_desc(self):
+        qs, _ = song_search({"keyword": "共通ワード", "sort": "-id", "size": "100"})
+        ids = [s.id for s in qs]
+        self.assertEqual(ids, sorted(ids, reverse=True))
+
+    def test_title_filter_with_sort_title_asc(self):
+        qs, _ = song_search({"title": "共通ワード", "sort": "title", "size": "100"})
+        titles = [s.title for s in qs]
+        self.assertEqual(titles, sorted(titles))
+
+    def test_title_filter_with_sort_title_desc(self):
+        qs, _ = song_search({"title": "共通ワード", "sort": "-title", "size": "100"})
+        titles = [s.title for s in qs]
+        self.assertEqual(titles, sorted(titles, reverse=True))
+
+
 class SongSearchValidationErrorTest(TestCase):
     """song_search() のバリデーションエラーテスト"""
 
