@@ -136,10 +136,16 @@ async function showToast(icon, text) {
     // 50文字越えの場合はlong用に
     if(text.length > 50) toastDiv.classList.add("long-time");
     iconI.className = icons[icon] ?? "";
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "toast-close";
+    closeBtn.textContent = "✕";
+    closeBtn.addEventListener("click", () => toastDiv.remove());
+
     //組み立て
     contentP.appendChild(iconI);
     contentP.innerHTML += text;
     toastDiv.appendChild(contentP);
+    toastDiv.appendChild(closeBtn);
 
     const toastContainerEle = document.getElementById('toast-container');
     if(!toastContainerEle) {
