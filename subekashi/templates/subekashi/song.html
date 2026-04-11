@@ -59,7 +59,7 @@
                 </td>
                 <td>
                     {% if is_lack %}
-                        <a href="{% url 'subekashi:songs' %}?is_lack=True">作成途中</a>
+                        <a href="{% url 'subekashi:songs' %}?is_lack=True">未完成</a>
                     {% endif %}
                     {% if song.is_draft %}
                         <a href="{% url 'subekashi:songs' %}?is_draft=True">下書き</a>
