@@ -88,7 +88,7 @@ def song_cards(request):
 
         # 投稿日のソートなら.search-infoを追加
         if has_upload_time_sort(cleaned_query):
-            result.append("<p class='search-info'>再生数が1回以上の曲を表示しています</p>")
+            result.append("<p class='search-info'>YouTubeの曲を表示しています</p>")
         
         # ヒット数以外の何かしらの検索情報があれば水平線を画面に表示する
         if result:

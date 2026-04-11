@@ -357,8 +357,8 @@
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
-| `sort=upload_time` | GETリクエスト | HTTP 200、「再生数が1回以上の曲を表示しています」が含まれる |
-| `sort=-upload_time` | GETリクエスト | HTTP 200、「再生数が1回以上の曲を表示しています」が含まれる |
+| `sort=upload_time` | GETリクエスト | HTTP 200、「YouTubeの曲を表示しています」が含まれる |
+| `sort=-upload_time` | GETリクエスト | HTTP 200、「YouTubeの曲を表示しています」が含まれる |
 | ソート指定なし | GETリクエスト | 投稿日用のsearch-infoが含まれない |
 | `sort=title` | GETリクエスト | 投稿日用のsearch-infoが含まれない |
 

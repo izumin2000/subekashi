@@ -343,29 +343,29 @@ class SongCardsViewTest(TestCase):
         Song.objects.create(title="カードテスト曲", lyrics="歌詞")
 
     def test_sort_upload_time_shows_search_info(self):
-        """sort=upload_time のとき「再生数が1回以上の曲を表示しています」が含まれること"""
+        """sort=upload_time のとき「YouTubeの曲を表示しています」が含まれること"""
         response = self.client.get(
             reverse("subekashi:song_cards"), {"sort": "upload_time"}
         )
         self.assertEqual(response.status_code, 200)
         content = "".join(response.json())
-        self.assertIn("再生数が1回以上の曲を表示しています", content)
+        self.assertIn("YouTubeの曲を表示しています", content)
 
     def test_sort_minus_upload_time_shows_search_info(self):
-        """sort=-upload_time のとき「再生数が1回以上の曲を表示しています」が含まれること"""
+        """sort=-upload_time のとき「YouTubeの曲を表示しています」が含まれること"""
         response = self.client.get(
             reverse("subekashi:song_cards"), {"sort": "-upload_time"}
         )
         self.assertEqual(response.status_code, 200)
         content = "".join(response.json())
-        self.assertIn("再生数が1回以上の曲を表示しています", content)
+        self.assertIn("YouTubeの曲を表示しています", content)
 
     def test_no_sort_does_not_show_upload_time_search_info(self):
         """sort指定なしのとき投稿日用のsearch-infoが含まれないこと"""
         response = self.client.get(reverse("subekashi:song_cards"))
         self.assertEqual(response.status_code, 200)
         content = "".join(response.json())
-        self.assertNotIn("再生数が1回以上の曲を表示しています", content)
+        self.assertNotIn("YouTubeの曲を表示しています", content)
 
     def test_other_sort_does_not_show_upload_time_search_info(self):
         """sort=title のとき投稿日用のsearch-infoが含まれないこと"""
@@ -374,7 +374,7 @@ class SongCardsViewTest(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         content = "".join(response.json())
-        self.assertNotIn("再生数が1回以上の曲を表示しています", content)
+        self.assertNotIn("YouTubeの曲を表示しています", content)
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
