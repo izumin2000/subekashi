@@ -228,3 +228,37 @@ class SongSearchValidationErrorTest(TestCase):
     def test_title_too_long_raises_validation_error(self):
         with self.assertRaises(ValidationError):
             song_search({"title": "あ" * 501})
+
+
+class SongSearchAutoYoutubeFilterDuplicateTest(TestCase):
+    """auto YouTube フィルター適用時に複数リンクを持つ曲が重複しないことを検証"""
+
+    def setUp(self):
+        from datetime import datetime, timezone
+        self.song_a = Song.objects.create(
+            title="YouTube曲A（リンク2本）",
+            upload_time=datetime(2024, 1, 1, tzinfo=timezone.utc),
+        )
+        self.song_b = Song.objects.create(
+            title="YouTube曲B（リンク1本）",
+            upload_time=datetime(2024, 1, 2, tzinfo=timezone.utc),
+        )
+        # song_a に YouTube リンクを2本追加（重複の原因となるケース）
+        link1 = SongLink.objects.create(url="https://youtu.be/aaa111")
+        link1.songs.add(self.song_a)
+        link2 = SongLink.objects.create(url="https://youtu.be/aaa222")
+        link2.songs.add(self.song_a)
+        # song_b に YouTube リンクを1本追加
+        link3 = SongLink.objects.create(url="https://youtu.be/bbb111")
+        link3.songs.add(self.song_b)
+
+    def test_sort_upload_time_no_duplicate(self):
+        """sort=upload_time のみ指定時、複数 YouTube リンクを持つ曲が重複しない"""
+        _, stats = song_search({"sort": "upload_time", "size": "100"})
+        self.assertEqual(stats["count"], 2)
+
+    def test_sort_upload_time_same_count_as_explicit_mediatypes(self):
+        """sort=upload_time と sort=upload_time&mediatypes=youtube の件数が一致する"""
+        _, stats_auto = song_search({"sort": "upload_time", "size": "100"})
+        _, stats_explicit = song_search({"sort": "upload_time", "mediatypes": "youtube", "size": "100"})
+        self.assertEqual(stats_auto["count"], stats_explicit["count"])
