@@ -272,6 +272,7 @@ class SongSearchAutoYoutubeFilterDuplicateTest(TestCase):
         """sort=upload_time と sort=upload_time&mediatypes=youtube の件数が一致する"""
         _, stats_auto = song_search({"sort": "upload_time", "size": "100"})
         _, stats_explicit = song_search({"sort": "upload_time", "mediatypes": "youtube", "size": "100"})
+        self.assertEqual(stats_auto["count"], 2)
         self.assertEqual(stats_auto["count"], stats_explicit["count"])
 
     def test_upload_time_gte_filter_no_duplicate(self):
