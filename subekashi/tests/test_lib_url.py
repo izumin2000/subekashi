@@ -168,6 +168,15 @@ class CleanUrlTest(SimpleTestCase):
         self.assertIn("x.com", result)
         self.assertNotIn("?s=20", result)
 
+    def test_trailing_slash_is_removed(self):
+        result = clean_url("https://nicovideo.jp/watch/sm12345678/")
+        self.assertFalse(result.endswith('/'))
+
+    def test_trailing_slash_removed_from_multiple_urls(self):
+        result = clean_url("https://nicovideo.jp/watch/sm12345678/,https://x.com/user/status/123/")
+        for url in result.split(","):
+            self.assertFalse(url.endswith('/'))
+
 
 class GetAllowMediaTest(SimpleTestCase):
     """get_allow_media() のテスト"""
