@@ -40,8 +40,10 @@ python -m venv .env
 5\. 仮想環境の起動（必要に応じて）  
 
 ```bat
-@REM Windows用
+@REM Windows PowerShell用
 .env/Scripts/activate.ps1;
+@REM Windows CMD用
+.env\Scripts\activate.bat
 ```
 ```bash
 # Linux用
@@ -121,8 +123,10 @@ python manage.py const
 仮想環境`.env`を起動します。  
 
 ```bat
-@REM Windows用
+@REM Windows PowerShell用
 .env/Scripts/activate.ps1;
+@REM Windows CMD用
+.env\Scripts\activate.bat
 ```
 ```bash
 # Linux用
