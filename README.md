@@ -104,7 +104,7 @@ python manage.py migrate
 マイグレーションした直後はデータベースにデータが入っておらずエラーになる処理がある為、以下のコマンドを実行して初期値を追加します。  
 
 ```bash
-python manage.py loaddata songs.json
+python manage.py loaddata data.json
 ```
 
 初期値には全てあなたの所為です。の全曲と『12』・『15』・『17』が登録されています。  
