@@ -246,16 +246,10 @@ async function getGlobalHeader() {
 }
 
 function formatGlobalHeaderItem(itemEle) {
-    var aTag = itemEle.closest('a');
+    const aTag = itemEle.closest('a');
 
-    var spOnly = itemEle.querySelector('span.sp_only');
-    var pcOnly = itemEle.querySelector('span.pc_only');
-
-    if (spOnly && pcOnly) {
-        aTag.innerText = pcOnly.innerHTML;
-    } else {
-        aTag.innerText = itemEle.innerText;
-    }
+    const pcOnly = itemEle.querySelector('span.pc_only');
+    aTag.innerText = pcOnly ? pcOnly.innerText : itemEle.innerText.trim();
 
     return itemEle;
 }
