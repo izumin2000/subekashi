@@ -75,6 +75,17 @@ h2 {
     margin: 20px;
 }
 
+#top-article {
+    background-color: #333;
+    padding: 5px 0;
+}
+
+#top-article a {
+    display: block;
+    text-align: center;
+    line-height: 50px;
+}
+
 #subekashi-links, #other-links {
     padding: 8px;
     text-align: center;
@@ -96,7 +107,7 @@ h2 {
 
 #imicom {
     display: block;
-    margin: 0 auto 15px auto;
+    margin: 8px auto 15px auto;
     width: 70vw;
     max-width: 300px;
     height: auto;
