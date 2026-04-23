@@ -1,9 +1,11 @@
 from django.shortcuts import render
+from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.cache import never_cache
 from subekashi.models import Song, Ai, Ad
 from subekashi.lib.query_filters import filter_by_lack
+from subekashi.constants.constants import RECOMEND_ARTICLES
 from article.models import Article
 import random
 
@@ -11,8 +13,17 @@ import random
 @method_decorator(never_cache, name='dispatch')
 class TopView(View):
     def get(self, request):
+        recomend_articles = [
+            {
+                "url": reverse(article["url_name"], args=article["args"]),
+                "title": article["title"],
+            }
+            for article in RECOMEND_ARTICLES
+        ]
+        
         context = {
             "metatitle": "トップ",
+            "RECOMEND_ARTICLES": recomend_articles
         }
 
         article_qs = Article.get_top_news_articles()

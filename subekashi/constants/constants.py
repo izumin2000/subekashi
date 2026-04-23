@@ -167,3 +167,21 @@ SHORT_TERM_COOKIE_AGE = 30 * 60
 LONG_TERM_COOKIE_AGE = 365 * 24 * 60 * 60
 
 HISTORIES_PER_PAGE = 50
+
+RECOMEND_ARTICLES = [
+    {
+        "url_name": "article:default_article",
+        "args": ["lilyriku"],
+        "title": "すべかしオリキャラ「リリ」と「リク」のご紹介",
+    },
+    {
+        "url_name": "article:default_article",
+        "args": ["discord"],
+        "title": "すべかしDiscordサーバーのご案内",
+    },
+    {
+        "url_name": "article:anniversary6",
+        "args": [],
+        "title": "6周年記念グラフィックアート",
+    },
+]
