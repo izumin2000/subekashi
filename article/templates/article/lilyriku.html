@@ -1,0 +1,73 @@
+{% extends "subekashi/base/base.html" %}
+
+
+{% load static %}
+
+{% block content %}
+<section>
+    <h1>すべかしオリキャラ「リリ」と「リク」のご紹介</h1>
+    <blockquote class="twitter-tweet"><p lang="ja" dir="ltr">【代理ちゃんのご紹介】<br>代理ちゃんの「リリ」と「リク」です！<br>絵は 忌み名。さん ( <a href="https://twitter.com/imina_371_?ref_src=twsrc%5Etfw">@imina_371_</a> ) さんが描いてくれました！<br>ハッシュタグは <a href="https://twitter.com/hashtag/%E3%83%AA%E3%83%AA%E3%83%AA%E3%82%AF%E3%83%AA%E3%83%AA%E3%83%83%E3%82%AF?src=hash&amp;ref_src=twsrc%5Etfw">#リリリクリリック</a> をお使いください～<br><br>【キャラクターガイドライン】<br>OK：見た目/設定の改変・NSFWの表現<br>NG：政治/宗教団体の利用・R18Gの表現 <a href="https://t.co/QSjuk3pIjU">pic.twitter.com/QSjuk3pIjU</a></p>&mdash; 全て歌詞の所為です。 (@subekashi) <a href="https://twitter.com/subekashi/status/1890364616162591124?ref_src=twsrc%5Etfw">February 14, 2025</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+    <div id="tweet-placeholder">
+        <a href="{% static 'article/image/lilyriku-big.png' %}">
+            <img src="{% static 'article/image/lilyriku-small.png' %}" alt="loading">
+            <p>クリックして高画質の画像を表示</p>            
+        </a>
+    </div>
+
+    <h1>オススメ</h1>
+    <p>リリやリクのイラストを以下のフォームからオススメできます。<br>
+        オススメされたイラストは<a href="{% url 'article:default_article' 'discord' %}">公式discord</a>にてリンクが掲載されます。<br><br>
+    </p>
+    <form>
+        <div class="form-col">
+            <label for="url">URL</label>
+            <input type="url" name="url" id="url">
+        </div>
+        <input type="submit" value="送信"></input>
+    </form>
+</section>
+{% endblock %}
+
+{% block js %}
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<script>
+    // 埋め込みの読み込みが終わったら元の画像を非表示
+    window.twttr = (function(d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0],
+                t = window.twttr || {};
+        if (d.getElementById(id)) return t;
+        js = d.createElement(s);
+        js.id = id;
+        js.src = "https://platform.twitter.com/widgets.js";
+        fjs.parentNode.insertBefore(js, fjs);
+
+        t._e = [];
+        t.ready = function(f) {
+            t._e.push(f);
+        };
+
+        return t;
+    }(document, "script", "twitter-wjs"));
+
+    twttr.ready(function (twttr) {
+        twttr.events.bind('rendered', function () {
+            document.getElementById('tweet-placeholder').style.display = 'none';
+        });
+    });
+    const currentUrl = new URL(window.location.href);
+
+
+    // URを送信したらモーダルを表示
+    if (currentUrl.searchParams.has("url")) {
+        currentUrl.searchParams.delete("url");
+
+        window.history.replaceState(
+            {},
+            document.title,
+            currentUrl.pathname + currentUrl.search + currentUrl.hash
+        );
+        
+        showToast("ok", "送信しました。");
+    }
+</script>
+{% endblock %}
