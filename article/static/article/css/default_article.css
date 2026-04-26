@@ -41,6 +41,10 @@
     border: solid 2px #999;;
 }
 
-#article-text ul {
+#article-text li {
     margin-left: 25px;
+}
+
+h3 {
+    margin-top: 30px;
 }
