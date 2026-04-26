@@ -24,7 +24,16 @@
         <input type="submit" value="検索"></input>
     </form>
     {% for article in articles %}
-        {% if article.tag == 'news' %}
+        {% if article.article_id == 'howToArticle' %}
+            <div class="article-wrapper" id="how-to-article">
+                <a href="{% url 'article:default_article' 'howToArticle' %}">
+                    <span class="article-title-wrapper news-underline">記事を作る方法</span>
+                </a>
+                {% if is_pinned_article %}
+                    <i id="close-button" class="fas fa-thumbtack" onclick="closeHowToArticle()"></i>
+                {% endif %}
+            </div>
+        {% elif article.tag == 'news' %}
             <div class="single-news-wrapper">
                 <p class="article-info">
                     <i class="fas fa-user"></i>
@@ -53,4 +62,14 @@
         </div>
     {% endfor %}
 </section>
+{% endblock %}
+
+{% block js %}
+<script>
+    function closeHowToArticle(){
+        setCookie("is_pinned_article", "False")
+        showToast("ok", "ピン留めを外しました。");
+        document.getElementById("close-button").remove();
+    }
+</script>
 {% endblock %}
