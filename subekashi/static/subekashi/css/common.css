@@ -649,7 +649,6 @@ details details a:hover {
 }
 
 summary {
-    text-align: left;
     list-style: none;
     margin-bottom: 0;
     padding: 5px 0;
