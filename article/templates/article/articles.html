@@ -6,7 +6,7 @@
 
 {% block content %}
 <section>
-    <h1>記事一覧</h1>
+    <h1>記事一覧<a href="{% url 'article:default_article' 'howToArticle' %}"><i class="fas fa-info-circle"></i></a></h1>
     <form method="get" action=".">
         <div class="form-col">
             <label for="tag">タグ</label>
@@ -27,7 +27,7 @@
         {% if article.article_id == 'howToArticle' %}
             <div class="article-wrapper" id="how-to-article">
                 <a href="{% url 'article:default_article' 'howToArticle' %}">
-                    <span class="article-title-wrapper news-underline">記事を作る方法</span>
+                    <span class="article-title-wrapper news-underline">記事の投稿方法</span>
                 </a>
                 {% if is_pinned_article %}
                     <i id="close-button" class="fas fa-thumbtack" onclick="closeHowToArticle()"></i>
