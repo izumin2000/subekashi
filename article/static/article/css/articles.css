@@ -58,8 +58,6 @@ form {
 
 #close-button {
     position: absolute;
-    right: 40px;
-    margin-top: 5px;
     margin-top: -26px;
     cursor: pointer;
 }
