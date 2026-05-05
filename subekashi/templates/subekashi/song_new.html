@@ -7,16 +7,7 @@
 
 {% block content %}
 <section>
-    <details>
-        <summary><i class="fas fa-bars"></i>曲の登録/編集にあたっての注意</summary>
-        <p>界隈曲ならすべあな界隈以外の曲も登録ができます。</p>
-        <p>それ以外の曲は掲載対象ではない為、削除されることがあります。</p>
-        <p>大文字・小文字・空白文字は全て区別されます。</p>
-        <p>登録時にエラーが発生した場合は<a href="{% url 'subekashi:contact' %}">こちら</a>からご連絡ください。</p>
-        <p>荒らしに対しては削除・BAN・法的措置といった対処をする場合があります。</p>
-    </details>
-
-    <h1>YouTubeの動画リンクから登録<i class="fas fa-info-circle" onclick="showTutorial('new-form-auto')"></i></h1>
+    <h1>YouTubeの動画リンクから登録<a href="{% url 'article:default_article' 'howToSong' %}"><i class="fas fa-info-circle"></i></a></h1>
     <form action="{% url 'subekashi:song_new' %}?toast=auto" method="POST" id="new-form-auto">{% csrf_token %}
         <div class="form-col">
             <label for="url">YouTubeの<br>動画リンク<i class="fas fa-info-circle" onclick="showTutorial('youtube-url')"></i></label>
@@ -51,7 +42,7 @@
         <p id="new-form-auto-info"><span class='loading'></span></p>
     </form>
     
-    <h1>曲名と作者から登録<i class="fas fa-info-circle" onclick="showTutorial('new-form-manual')"></i></h1>
+    <h1>曲名と作者から登録<a href="{% url 'article:default_article' 'howToSongNew' %}"><i class="fas fa-info-circle"></i></a></h1>
     <form action="{% url 'subekashi:song_new' %}?toast=manual" method="POST" id="new-form-manual">{% csrf_token %}
         <div class="form-col">
             <label for="title">曲名<i class="fas fa-info-circle" onclick="showTutorial('title')"></i></label>
@@ -90,7 +81,7 @@
         <p id="new-form-manual-info"><span class='loading'></span></p>
     </form>
 
-    <h1>???から登録<i class="fas fa-info-circle" onclick="showToast('', '<span style=\'color: red;\'>~~~@z@ÆÐäÞÚÊ엂빪풾𐇺</span>');"></i></h1>
+    <h1>???から登録<a href="{% url 'article:default_article' 'howToSongNew' %}"><i class="fas fa-info-circle"></i></a></h1>
 </section>
 {% endblock %}
 
