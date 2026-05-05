@@ -18,17 +18,6 @@
             </a>
         </div>
     {% endif %}
-    
-    <details id="delete-details">
-        <summary><i class="far fa-trash-alt"></i>削除申請</summary>
-        <form action="{% url 'subekashi:song_delete' song.id %}" method="POST">{% csrf_token %}
-            <div class="form-col">
-                <label>削除理由</label>
-                <textarea id="reason" name="reason" required>{{ request.GET.reason }}</textarea>
-            </div>
-            <input type="submit" value="送信" id="delete-submit" disabled>
-        </form>
-    </details>
 
     <h1><span id="h1-title">{{ song.title }}</span>の編集<a href="{% url 'article:default_article' 'howToSong' %}"><i class="fas fa-info-circle"></i></a></h1>
     <form action="{% url 'subekashi:song_edit' song.id %}" method="POST" id="song-edit-form">{% csrf_token %}
@@ -110,6 +99,17 @@
         <input type="submit" value="登録" id="song-edit-submit" disabled>
         <p id="song-edit-info-submit" class="song-edit-info"><span class='loading'></span></p>
     </form>
+    
+    <details id="delete-details">
+        <summary><i class="far fa-trash-alt"></i>削除申請</summary>
+        <form action="{% url 'subekashi:song_delete' song.id %}" method="POST">{% csrf_token %}
+            <div class="form-col">
+                <label>削除理由</label>
+                <textarea id="reason" name="reason" required>{{ request.GET.reason }}</textarea>
+            </div>
+            <input type="submit" value="送信" id="delete-submit" disabled>
+        </form>
+    </details>
 </section>
 {% endblock %}
 
