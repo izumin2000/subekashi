@@ -45,6 +45,23 @@
     margin-left: 25px;
 }
 
-h3 {
+#article-text h3 {
     margin-top: 30px;
+}
+
+#article-text table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+#article-text th, #article-text td {
+    border: 1px solid #666;
+    padding: 8px;
+    text-align: left;
+    vertical-align: top;
+}
+
+#article-text th {
+    background: #333;
+    color: #fff;
 }
