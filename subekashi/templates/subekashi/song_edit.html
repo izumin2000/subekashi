@@ -19,12 +19,6 @@
         </div>
     {% endif %}
     
-    <details>
-        <summary><i class="fas fa-exclamation-triangle"></i>曲の編集にあたっての注意</summary>
-        <p>登録時にエラーが発生した場合は<a href="{% url 'subekashi:contact' %}">こちら</a>からご連絡ください。</p>
-        <p>荒らしに対しては削除・BAN・法的措置といった対処をする場合があります。</p>
-    </details>
-    
     <details id="delete-details">
         <summary><i class="far fa-trash-alt"></i>削除申請</summary>
         <form action="{% url 'subekashi:song_delete' song.id %}" method="POST">{% csrf_token %}
@@ -36,7 +30,7 @@
         </form>
     </details>
 
-    <h1><span id="h1-title">{{ song.title }}</span>の編集</h1>
+    <h1><span id="h1-title">{{ song.title }}</span>の編集<a href="{% url 'article:default_article' 'howToSong' %}"><i class="fas fa-info-circle"></i></a></h1>
     <form action="{% url 'subekashi:song_edit' song.id %}" method="POST" id="song-edit-form">{% csrf_token %}
         {% comment %} TODO 別名の入力項目を追加 {% endcomment %}
         <div class="form-col">

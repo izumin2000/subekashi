@@ -6,7 +6,7 @@
 
 {% block content %}
 <section>
-    <h1>記事一覧</h1>
+    <h1>記事一覧<a href="{% url 'article:default_article' 'howToArticle' %}"><i class="fas fa-info-circle"></i></a></h1>
     <form method="get" action=".">
         <div class="form-col">
             <label for="tag">タグ</label>
