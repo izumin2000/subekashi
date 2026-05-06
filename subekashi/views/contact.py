@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.views import View
+from config.settings import ROOT_URL
 from subekashi.forms import ContactForm
 from subekashi.lib.discord import send_discord
 from subekashi.lib.ip import get_ip
@@ -31,13 +32,16 @@ class ContactView(View):
 
         category = form.cleaned_data['category']
         detail = form.cleaned_data['detail']
+        
+        contact = Contact.create_contact(detail)
 
-        # discordに送信
-        contact = f"種類：{category}\n\
+        content = f"\
+            種類：{category}\n\
             詳細：{detail}\n\
             IP：{get_ip(request)}\n\
+            {ROOT_URL}/admin/subekashi/contact/{contact.id}\n\
         "
-        is_ok = send_discord(CONTACT_DISCORD_URL, contact)
+        is_ok = send_discord(CONTACT_DISCORD_URL, content)
         if not is_ok:
             context["result"] = "内部エラーが発生しました。"
             return render(request, 'subekashi/contact.html', context)
