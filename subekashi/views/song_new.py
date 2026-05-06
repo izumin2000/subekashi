@@ -1,9 +1,10 @@
 from django.shortcuts import render, redirect
 from django.db import transaction
 from django.views import View
+from config.settings import ROOT_URL
 from config.local_settings import CONTACT_DISCORD_URL, NEW_DISCORD_URL
 from subekashi.models import Editor, History, SongLink, SongFields
-from subekashi.lib.url import clean_url, get_allow_media, is_youtube_url, get_youtube_id
+from subekashi.lib.url import clean_url, is_youtube_url, get_youtube_id
 from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
 from subekashi.lib.youtube import get_youtube_api
@@ -26,7 +27,7 @@ class SongNewView(View):
             cleaned = clean_url(allow_dup_url) or allow_dup_url
             link = SongLink.set_allow_dup_for_url(cleaned)
             if link:
-                send_discord(CONTACT_DISCORD_URL, f"重複許可したURL：{allow_dup_url}")
+                send_discord(CONTACT_DISCORD_URL, f"重複許可したURL：\n{allow_dup_url}\n{ROOT_URL}/songs/?url={allow_dup_url}")
         return render(request, 'subekashi/song_new.html', self.get_base_context())
 
     def post(self, request):
