@@ -72,29 +72,20 @@ function restoreFormValuesFromCookies() {
 
 // cookie formの内容をバックエンドに伝える
 async function saveCookieToBackend(name, value) {
-    const paramMap = {
-        "isdetail": "isdetail",
-        "songrange": "is_subeana",
-        "jokerange": "is_joke",
-        "sort": "sort"
-    };
-    const param = paramMap[name];
-    if (param) {
-        const url = `${baseURL()}/songs/`;
-        const csrfToken = await getCSRF();
-        const formData = new FormData();
-        formData.append(param, value);
+    const url = `${baseURL()}/songs/`;
+    const csrfToken = await getCSRF();
+    const formData = new FormData();
+    formData.append(name, value);
 
-        await fetch(url, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken
-            },
-            body: formData,
-            cache: 'no-cache',
-            credentials: 'same-origin'
-        }).catch(() => {});
-    }
+    await fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: formData,
+        cache: 'no-cache',
+        credentials: 'same-origin'
+    }).catch(() => {});
 }
 
 function getInputIds() {
