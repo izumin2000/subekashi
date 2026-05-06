@@ -11,19 +11,18 @@ register = template.Library()
 
 @register.simple_tag
 def get_author(song):
-    # authorsフィールドから作者を取得
-    authors_list = list(song.authors.all()[:2])
+    authors = song.authors.all()
 
-    # 合作なら
-    if len(authors_list) >= 2:
-        return mark_safe('<i class="fas fa-user-friends"></i>合作')
+    # 合作の場合
+    if authors.count() >= 2:
+        return mark_safe(f'<i class="fas fa-user-friends"></i>合作')
     
     # 作者不明なら
-    if not authors_list:
+    author = authors.first()
+    if author is None:
         send_discord(ERROR_DISCORD_URL, f"作者が不明です： {ROOT_URL}/songs/{song.id}")
         return mark_safe('<i class="fas fa-user-circle"></i>作者不明')
     
-    author = authors_list[0]
     # html特殊文字をエスケープ(一応)
     author_name = author.name.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
     author_url = reverse('subekashi:author', kwargs={'author_id': author.id})
