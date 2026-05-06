@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
+from config.settings import ROOT_URL
 from config.local_settings import NEW_DISCORD_URL, CONTACT_DISCORD_URL
 from subekashi.forms import SongEditForm
 from subekashi.models import Song, Editor, History, SongLink, SongFields
@@ -38,7 +39,7 @@ class SongEditView(View):
             cleaned = clean_url(allow_dup_url) or allow_dup_url
             link = SongLink.set_allow_dup_for_url(cleaned)
             if link:
-                send_discord(CONTACT_DISCORD_URL, f"重複許可したURL：{allow_dup_url}")
+                send_discord(CONTACT_DISCORD_URL, f"重複許可したURL：\n{allow_dup_url}\n{ROOT_URL}/songs/?url={allow_dup_url}")
         return render(request, 'subekashi/song_edit.html', self.get_base_context())
 
     def post(self, request, song_id):
