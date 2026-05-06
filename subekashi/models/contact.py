@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.db import models
 
 
@@ -12,4 +13,11 @@ class Contact(models.Model):
 
     @classmethod
     def get_answered(cls):
-        return cls.objects.exclude(answer="").order_by("-id")
+        return cls.objects.filter(answer__isnull=False).order_by("-id")
+    
+    @classmethod
+    def create_contact(detail):
+        return Contact.objects.create(
+            detail=detail,
+            post_time=timezone.localdate(),
+        )

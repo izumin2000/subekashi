@@ -27,7 +27,14 @@ class SongNewView(View):
             cleaned = clean_url(allow_dup_url) or allow_dup_url
             link = SongLink.set_allow_dup_for_url(cleaned)
             if link:
-                send_discord(CONTACT_DISCORD_URL, f"重複許可したURL：\n{allow_dup_url}\n{ROOT_URL}/songs/?url={allow_dup_url}")
+                content = f"\
+                    重複許可したURL：\n\
+                    {allow_dup_url}\n\
+                    {ROOT_URL}/songs/?url={allow_dup_url}\n\
+                    {ROOT_URL}/admin/subekashi/songlink/{link.id}\n\
+                    IP：{get_ip(request)}\n\
+                "
+                send_discord(CONTACT_DISCORD_URL, content)
         return render(request, 'subekashi/song_new.html', self.get_base_context())
 
     def post(self, request):
