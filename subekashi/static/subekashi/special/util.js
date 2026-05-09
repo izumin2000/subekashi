@@ -109,3 +109,126 @@ function animateRain() {
     }
     requestAnimationFrame(animateRain);
 }
+
+function kyouiku() {
+  const lyricsEl = document.getElementById('lyrics');
+  lyricsEl.style.display = 'none';
+
+  const existing = document.getElementById('kyouiku-stage');
+  if (existing) existing.remove();
+
+  const lines = lyricsEl.innerHTML
+    .split(/<br\s*\/?>/i)
+    .map(l => l.replace(/<[^>]+>/g, '').trim())
+    .filter(l => l);
+
+  // フォントサイズを vw 比率で定義（画面幅の何%か）
+  const KEYFRAMES_VW = [
+    { s: 0.00, fontVw: 30, opacity: 0 },  // 画面幅の30%
+    { s: 0.10, fontVw: 26, opacity: 1 },
+    { s: 0.30, fontVw: 15, opacity: 1 },
+    { s: 0.50, fontVw: 7, opacity: 1 },
+    { s: 0.70, fontVw: 3.5, opacity: 1 },
+    { s: 0.85, fontVw: 1.8, opacity: 1 },
+    { s: 1.00, fontVw: 0.6, opacity: 0 },
+  ];
+
+  const STEP_PER_LINE = 400;  // 200 → 400
+  const LINE_DURATION = 600;
+  const TOTAL_HEIGHT = lines.length * STEP_PER_LINE + LINE_DURATION + 300;
+
+  const stageEl = document.createElement('div');
+  stageEl.id = 'kyouiku-stage';
+  stageEl.style.cssText =
+    `width: 100%; height: ${TOTAL_HEIGHT}px; position: relative;`;
+  lyricsEl.insertAdjacentElement('afterend', stageEl);
+
+  if (!document.getElementById('kyouiku-style')) {
+    const style = document.createElement('style');
+    style.id = 'kyouiku-style';
+    style.textContent = `
+      .kyouiku-line {
+        position: fixed;
+        top: 50vh;
+        left: 50%;
+        transform: translateX(-50%) translateY(-50%);
+        white-space: nowrap;
+        letter-spacing: 0.12em;
+        line-height: 1;
+        opacity: 0;
+        color: #fff;
+        pointer-events: none;
+        z-index: 9999;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  const lineEls = lines.map(text => {
+    const el = document.createElement('div');
+    el.className = 'kyouiku-line';
+    el.textContent = text;
+    document.body.appendChild(el);
+    return el;
+  });
+
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function ease(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
+
+  // vw比率 → px に変換したキーフレームを生成
+  function buildKeyframes() {
+    const vw = window.innerWidth;
+    return KEYFRAMES_VW.map(kf => ({
+      s: kf.s,
+      font: vw * kf.fontVw / 100,
+      opacity: kf.opacity,
+    }));
+  }
+
+  function sampleKeyframes(kfs, s) {
+    if (s <= kfs[0].s) return { ...kfs[0] };
+    const last = kfs[kfs.length - 1];
+    if (s >= last.s) return { ...last };
+    for (let i = 0; i < kfs.length - 1; i++) {
+      const a = kfs[i], b = kfs[i + 1];
+      if (s >= a.s && s <= b.s) {
+        const t = ease((s - a.s) / (b.s - a.s));
+        return {
+          font: lerp(a.font, b.font, t),
+          opacity: lerp(a.opacity, b.opacity, t),
+        };
+      }
+    }
+  }
+
+  function update() {
+    const kfs = buildKeyframes();  // 毎フレーム現在のvwで計算
+    const stageTop = stageEl.getBoundingClientRect().top + window.scrollY;
+    const scrollInStage = window.scrollY - stageTop + window.innerHeight / 2;
+
+    lineEls.forEach((el, i) => {
+      const start = i * STEP_PER_LINE;
+      const end = start + LINE_DURATION;
+
+      if (scrollInStage <= start || scrollInStage >= end) {
+        el.style.opacity = '0';
+        return;
+      }
+
+      const s = clamp((scrollInStage - start) / LINE_DURATION, 0, 1);
+      const kf = sampleKeyframes(kfs, s);
+
+      el.style.fontSize = kf.font + 'px';
+      el.style.opacity = clamp(kf.opacity, 0, 1);
+      el.style.color = '#fff';
+    });
+  }
+
+  window.addEventListener('scroll', update, { passive: true });
+
+  // リサイズ時も再計算（フォントサイズが追従する）
+  window.addEventListener('resize', update, { passive: true });
+
+  update();
+}
