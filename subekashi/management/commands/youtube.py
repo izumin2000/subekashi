@@ -26,7 +26,7 @@ class Command(BaseCommand):
         }
 
         # SongLinkに1つもYouTubeの動画が無かったら
-        if not video_ids :
+        if not video_ids:
             return {}
 
         # 複数のYouTubeの動画を1つずつ確認する
@@ -46,7 +46,7 @@ class Command(BaseCommand):
             
             # upload_time_listにアップロード日時を追加
             upload_time = res.get("upload_time", None)
-            if upload_time :
+            if upload_time:
                 upload_time_list.append(upload_time)
                 
         info["is_deleted"] = is_deleted
@@ -61,25 +61,29 @@ class Command(BaseCommand):
         song.is_deleted = info.get("is_deleted", False)
         song.save()
     
-    def handle(self, *args, **options) :
+    def handle(self, *args, **options):
         id = options["id"]
         
         # song_idが指定されていたら
         if id:
-            song = Song.objects.get(pk = id)
+            song = Song.objects.get(pk=id)
             info = self.get_youtube_info_sum(song)
             if not info:
                 return
-            
             self.save_song(song, info)
             return
 
         # 全てのsongが対象なら（SongLinkが存在するSongのみ）
-        for song in Song.objects.filter(links__isnull=False).distinct().iterator():
+        # IDを先に全件取得してカーソルを閉じることでDBロックを防ぐ
+        song_ids = list(
+            Song.objects.filter(links__isnull=False).distinct().values_list('pk', flat=True)
+        )
+        
+        for song_id in song_ids:
+            song = Song.objects.get(pk=song_id)
             info = self.get_youtube_info_sum(song)
             if not info:
                 continue
-            
             self.save_song(song, info)
         
     def add_arguments(self, parser):
