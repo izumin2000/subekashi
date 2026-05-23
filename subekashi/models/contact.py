@@ -16,7 +16,7 @@ class Contact(models.Model):
         return cls.objects.filter(answer__isnull=False).order_by("-id")
     
     @classmethod
-    def create_contact(detail):
+    def create_contact(cls, detail):
         return Contact.objects.create(
             detail=detail,
             post_time=timezone.localdate(),
