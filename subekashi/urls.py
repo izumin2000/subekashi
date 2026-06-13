@@ -1,5 +1,6 @@
 from django.views.generic.base import RedirectView
-from django.urls import path, include
+from django.urls import path, include, register_converter
+from subekashi.converters import SQLiteIntConverter
 from subekashi.views import *
 from rest_framework import routers
 
@@ -11,17 +12,19 @@ defaultRouter.register('songlink', SongLinkAPI, basename='songlink')
 defaultRouter.register('ai', AiAPI)
 defaultRouter.register('ad', AdAPI)
 
+register_converter(SQLiteIntConverter, 'sqliteint')
+
 urlpatterns = [
     path('', TopView.as_view(), name='top'),
     path('contact/', ContactView.as_view(), name='contact'),
     path('songs/', SongsView.as_view(), name='songs'),
     path('songs/new/', SongNewView.as_view(), name='song_new'),
-    path('songs/<int:song_id>/', SongView.as_view(), name='song'),
-    path('songs/<int:song_id>/edit/', SongEditView.as_view(), name='song_edit'),
-    path('songs/<int:song_id>/history/', SongHistoryView.as_view(), name='song_history'),
-    path('songs/<int:song_id>/delete/', SongDeleteView.as_view(), name='song_delete'),
-    path('authors/<int:author_id>/', AuthorView.as_view(), name='author'),
-    path('editor/<int:editor_id>/', EditorView.as_view(), name='editor'),
+    path('songs/<sqliteint:song_id>/', SongView.as_view(), name='song'),
+    path('songs/<sqliteint:song_id>/edit/', SongEditView.as_view(), name='song_edit'),
+    path('songs/<sqliteint:song_id>/history/', SongHistoryView.as_view(), name='song_history'),
+    path('songs/<sqliteint:song_id>/delete/', SongDeleteView.as_view(), name='song_delete'),
+    path('authors/<sqliteint:author_id>/', AuthorView.as_view(), name='author'),
+    path('editor/<sqliteint:editor_id>/', EditorView.as_view(), name='editor'),
     path('histories/', HistoriesView.as_view(), name='histories'),
     path('ai/', AiView.as_view(), name='ai'),
     path('ai/result/', AiResultView.as_view(), name='ai_result'),
