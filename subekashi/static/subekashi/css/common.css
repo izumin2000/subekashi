@@ -807,7 +807,10 @@ input:focus {
 }
 
 .checkbox-col label {
+    display: inline-flex;
     width: 8em;
+    align-items: center;
+    justify-content: center;
 }
 
 input[type=checkbox] {
