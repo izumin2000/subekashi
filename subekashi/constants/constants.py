@@ -143,6 +143,12 @@ ALLOW_MEDIAS = [
         "regex": r"vidlii.com",
         "icon": "<i class='fas fa-caret-square-down'></i>",
     },
+    {
+        "id": "bluesky",
+        "name": "Bluesky",
+        "regex": r"bsky.app",
+        "icon": "<img src='/static/subekashi/image/bluesky.png' alt='Bluesky'></img>",
+    },
 ]
 
 ALL_MEDIAS = ALLOW_MEDIAS + [
