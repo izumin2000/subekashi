@@ -59,7 +59,7 @@
                 </td>
                 <td>
                     {% if is_questionable %}
-                        <p id="special-tag">界隈曲(?)</p>
+                        <p id="special-tag">界隈曲(?)<i class="fas fa-info-circle" onclick="showTutorial('is_questionable')"></i></p>
                     {% endif %}
                     {% if is_lack %}
                         <a href="{% url 'subekashi:songs' %}?is_lack=True">未完成</a>
