@@ -59,6 +59,7 @@ class SongView(View):
             "links": links,
             "imitate_list": imitate_list,
             "imitated_list": imitated_list,
-            "has_tag": has_tag
+            "has_tag": has_tag,
+            "is_questionable": song_id in [6570, 7989, 8000, 8012, 8016]
         }
         return render(request, "subekashi/song.html", context)
