@@ -58,6 +58,9 @@
                     <i class="fas fa-tags"></i><p>タグ</p>
                 </td>
                 <td>
+                    {% if is_questionable %}
+                        <p id="special-tag">界隈曲(?)</p>
+                    {% endif %}
                     {% if is_lack %}
                         <a href="{% url 'subekashi:songs' %}?is_lack=True">未完成</a>
                     {% endif %}
@@ -73,7 +76,7 @@
                     {% if song.is_inst %}
                         <a href="{% url 'subekashi:songs' %}?is_inst=True">インスト曲</a>
                     {% endif %}
-                    {% if not song.is_subeana %}
+                    {% if not song.is_subeana and not is_questionable %}
                         <a href="{% url 'subekashi:songs' %}?is_subeana=xx">非すべあな模倣曲</a>
                     {% endif %}
                     {% if song.is_deleted %}
