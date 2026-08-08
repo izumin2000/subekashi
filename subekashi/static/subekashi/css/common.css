@@ -543,6 +543,10 @@ a {
     font-weight: 1000 !important;
 }
 
+.imitatefont {
+    font-family: 'Imitate', 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif, Meiryo !important;
+}
+
 .info {
     color: #09F;
 }
