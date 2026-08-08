@@ -23,6 +23,7 @@ async function init() {
     document.getElementById("song-guesser").innerHTML = "";
     checkButton();
     checkDeleteForm();
+    updateQuestionableVisibility();
 };
 window.addEventListener('load', init);
 
@@ -344,6 +345,16 @@ async function checkUrlForm(prefetchedLinks = undefined) {
 }
 urlEle.addEventListener('input', checkUrlForm);
 
+// 界隈曲?チェック時、曲名/作者/URL以外のフォームを非表示にする
+function updateQuestionableVisibility() {
+    const checked = document.getElementById('is-questionable').checked;
+    document.querySelectorAll('[data-hide-if-questionable]').forEach(el => {
+        el.style.display = checked ? 'none' : '';
+    });
+    checkButton();
+}
+document.getElementById('is-questionable').addEventListener('change', updateQuestionableVisibility);
+
 // 登録ボタン
 function checkButton() {
     // ボタンのdisabledの変更
@@ -353,25 +364,29 @@ function checkButton() {
     // 未完成に関する変数の定義
     var message = "";
     var is_lack = false;
-    
+    const isQuestionable = document.getElementById('is-questionable').checked;
+
     // URLの未完成
     if (!document.getElementById("is-deleted").checked && (urlEle.value == "")) {
         message += "<li>「非公開/削除済み」にチェックをつけるか、URLを入力してください。</li>"
         is_lack = true;
     }
-    
-    // 模倣の未完成
-    const is_original = document.getElementById("is-original").checked;
-    const is_subeana = document.getElementById("is-subeana").checked;
-    if (!is_original && is_subeana && (imitateEle.value == "") && (authorsEle.value != "全てあなたの所為です。")) {
-        message += "<li>「オリジナル模倣」にチェックをつけるか、模倣曲を1曲以上登録してください。</li>"
-        is_lack = true;
-    }
 
-    // 歌詞の未完成
-    if (!document.getElementById("is-inst").checked && (lyricsEle.value == "")) {
-        message += "<li>「インスト」にチェックをつけるか、歌詞を入力してください。</li>"
-        is_lack = true;
+    // 界隈曲?の場合、歌詞・模倣は非表示かつ強制的に空になるため未完成の案内は不要
+    if (!isQuestionable) {
+        // 模倣の未完成
+        const is_original = document.getElementById("is-original").checked;
+        const is_subeana = document.getElementById("is-subeana").checked;
+        if (!is_original && is_subeana && (imitateEle.value == "") && (authorsEle.value != "全てあなたの所為です。")) {
+            message += "<li>「オリジナル模倣」にチェックをつけるか、模倣曲を1曲以上登録してください。</li>"
+            is_lack = true;
+        }
+
+        // 歌詞の未完成
+        if (!document.getElementById("is-inst").checked && (lyricsEle.value == "")) {
+            message += "<li>「インスト」にチェックをつけるか、歌詞を入力してください。</li>"
+            is_lack = true;
+        }
     }
     
     // 登録ボタンの下のメッセージ

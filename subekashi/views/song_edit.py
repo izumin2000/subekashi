@@ -68,6 +68,14 @@ class SongEditView(View):
         is_inst = form.cleaned_data['is_inst']
         is_subeana = form.cleaned_data['is_subeana']
         is_draft = form.cleaned_data['is_draft']
+        is_questionable = form.cleaned_data['is_questionable']
+
+        # is_questionableの場合、模倣・歌詞・下書き・オリジナル模倣はユーザーの入力値に関わらず空にする
+        if is_questionable:
+            imitates = ""
+            lyrics = ""
+            is_draft = False
+            is_original = False
 
         # URLのバリデーション
         cleaned_url = clean_url(url)
@@ -113,6 +121,7 @@ class SongEditView(View):
             is_inst=is_inst,
             is_subeana=is_subeana,
             is_draft=is_draft,
+            is_questionable=is_questionable,
         )
 
         # Discordテキストとchangesを構築（song更新前に実行）

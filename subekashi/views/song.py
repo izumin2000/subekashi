@@ -46,7 +46,7 @@ class SongView(View):
         # タグを持っているかどうかの確認
         has_tag = any([
             is_lack, song.is_draft, song.is_original, song.is_joke, song.is_inst, song.is_deleted, song.is_limited,
-            not song.is_subeana
+            song.is_questionable, not song.is_subeana
         ])
 
         context = {
@@ -60,6 +60,6 @@ class SongView(View):
             "imitate_list": imitate_list,
             "imitated_list": imitated_list,
             "has_tag": has_tag,
-            "is_questionable": song_id in [6570, 7989, 8000, 8012, 8016]
+            "is_questionable": song.is_questionable,
         }
         return render(request, "subekashi/song.html", context)

@@ -103,6 +103,7 @@
 | 正常な曲作成 | 有効な `SongFields` | Songオブジェクトが保存される |
 | `post_time` が自動設定される | fields に `post_time` なし | `timezone.now()` に近い時刻が設定される |
 | 各フラグが正しく設定される | `is_original=True`, `is_joke=False` など | Song属性がfieldsと一致する |
+| `is_questionable` が正しく設定される | `is_questionable=True` | `song.is_questionable` が `True` |
 
 #### 2-4. `get_imitate_songs(imitates_str, self_id)`
 
@@ -122,6 +123,7 @@
 | 他の曲に紐付かないURLは完全削除 | URLが他の曲にない | SongLinkレコードごと削除される |
 | 新しいURLの追加 | 新しいURL | SongLinkが作成・紐付けられる |
 | 作者の更新 | 新しい author_objects | Song.authors が更新される |
+| `is_questionable` の更新 | `is_questionable=True` | `song.is_questionable` が `True` に更新される |
 | トランザクション失敗時のロールバック | DB エラーを模擬 | 変更が元に戻る |
 
 #### 2-6. `build_delete_discord_text(song, reason, editor)`
@@ -137,6 +139,7 @@
 | タイトル変更 | before と after が異なるタイトル | 変更差分が `changes` リストに含まれる |
 | 変更なし | before と after が同じ | `changed_labels` が空リスト |
 | 複数フィールドの変更 | 複数の差分 | 全変更が `changes` に含まれ、`edit_title` に反映 |
+| `is_questionable` の変更 | before/after で `is_questionable` が異なる | `changed_labels` に「界隈曲?」が含まれる |
 
 ---
 
@@ -161,6 +164,7 @@
 | URLなし・削除されていない曲 | `is_deleted=False`, SongLink なし | 結果に含まれる |
 | 歌詞なし・インストではない曲 | `is_inst=False`, `lyrics=""` | 結果に含まれる |
 | すべて完備している曲 | URL・歌詞・作者あり | 結果に含まれない |
+| `is_questionable=True` の曲 | 他の未完成条件を満たしていても `is_questionable=True` | 無条件で結果に含まれない（常に完成扱い） |
 
 #### 3-3. `filter_by_mediatypes(mediatypes)`
 
@@ -178,6 +182,7 @@
 | --- | --- | --- |
 | 未完成の曲に annotate | 上記の `filter_by_lack` と同じ条件 | `is_lack=True` がアノテートされる |
 | 完成した曲に annotate | URLと歌詞が揃っている曲 | `is_lack=False` がアノテートされる |
+| `is_questionable=True` の曲に annotate | 他の未完成条件を満たしていても `is_questionable=True` | 無条件で `is_lack=False` がアノテートされる |
 
 ---
 
@@ -268,6 +273,7 @@
 | authorsが空 | `title="タイトル"`, `authors=""` | `is_valid() == False`、`"作者は空白にできません。"` |
 | urlは任意 | `url=""` (省略) | `is_valid() == True` |
 | is_original など boolean フラグ | `is_original=True` | `cleaned_data["is_original"] == True` |
+| is_questionable boolean フラグ | `is_questionable=True` | `cleaned_data["is_questionable"] == True` |
 | titleが500文字超 | `title="あ" * 501` | `is_valid() == False` |
 
 ---
@@ -301,6 +307,7 @@
 | is_joke=all | `?is_joke=all` | context["jokerange"] = "on" |
 | is_joke=on | `?is_joke=on` | context["jokerange"] = "on" |
 | is_original/is_inst 大文字True | `?is_original=True` など | 対応 context フィールドが True |
+| is_questionable 大文字True | `?is_questionable=True` | context["is_questionable"] = True |
 
 #### 7-3. `SongView` (`/songs/<id>/`)
 
@@ -309,6 +316,8 @@
 | 存在する曲ID | 有効なsong_id | HTTP 200 |
 | 存在しない曲ID | 無効なsong_id | HTTP 404 |
 | 削除済み曲 | `is_deleted=True` の曲 | HTTP 404 または特定の表示 |
+| is_questionable=True の曲 | `is_questionable=True` の曲 | レスポンスに「界隈曲?」タグが含まれる |
+| is_questionable=False の曲 | デフォルトの曲 | レスポンスに「界隈曲?」タグが含まれない |
 
 #### 7-4. `SongNewView` (`/songs/new/`)
 
@@ -318,6 +327,7 @@
 | POST: YouTube以外のURL | `url="https://example.com/..."` | HTTP 200、"YouTube" を含むエラー |
 | POST: 作者が空白 | `url=""`, `authors="  "` | HTTP 200、"作者" を含むエラー |
 | POST: タイトルが空 | `url=""`, `authors="テスト作者"`, `title=""` | HTTP 200、"タイトル" を含むエラー |
+| POST: is-questionable時、オリジナル模倣は強制OFF・その他フラグの入力値はそのまま保存される | `is-questionable-manual=on`, `is-original-manual=on`, `is-subeana-manual=on` | 保存されたSongの `is_questionable=True`、`is_original=False`、`is_subeana=True` |
 
 #### 7-5. `SongEditView` (`/songs/<id>/edit/`)
 
@@ -325,6 +335,8 @@
 | --- | --- | --- |
 | 存在する曲のGET | 有効なsong_id | HTTP 200 |
 | 存在しない曲のGET | 無効なsong_id | HTTP 404 |
+| POST: is_questionable時に歌詞・模倣・下書き・オリジナル模倣が強制的に空/OFF | `is_questionable=True`, `lyrics="..."`, `imitate="<id>"`, `is_draft=True`, `is_original=True` | 保存されたSongの `lyrics=""`、`imitates`が空、`is_draft=False`、`is_original=False`、`is_questionable=True` |
+| POST: is_questionable時も非公開/削除済み・ネタ曲・インスト・すべあな界隈曲は保存される | `is_questionable=True`, `is_deleted=True`, `is_joke=True`, `is_inst=True`, `is_subeana=True` | 各フラグがそれぞれ `True` のまま保存される |
 
 #### 7-6. `ContactView` (`/contact/`)
 
@@ -371,6 +383,8 @@
 | `sort=-upload_time` | GETリクエスト | HTTP 200、「YouTubeの曲を表示しています」が含まれる |
 | ソート指定なし | GETリクエスト | 投稿日用のsearch-infoが含まれない |
 | `sort=title` | GETリクエスト | 投稿日用のsearch-infoが含まれない |
+| `is_questionable=True` の曲 | GETリクエスト | カードHTMLに `song-card-lyrics` が含まれない |
+| `is_questionable=False` の曲 | GETリクエスト | カードHTMLに `song-card-lyrics` が含まれる |
 
 ---
 
@@ -457,6 +471,7 @@
 | --- | --- | --- |
 | 曲の作成 | `Song.objects.create(title="テスト曲", ...)` | DBに保存される |
 | `authors_str()` メソッド | 複数作者を持つ曲 | 作者名がカンマ区切りで返される |
+| `is_questionable` のデフォルト値 | フラグ未指定で作成 | `is_questionable == False` |
 | `is_deleted=True` の曲 | 削除フラグを立てる | DBに残るが削除済みとして扱われる |
 | ManyToMany: authors | `song.authors.add(author)` | 作者が曲に紐付く |
 | ManyToMany: imitates (自己参照) | `song.imitates.add(other_song)` | 模倣関係が成立する |

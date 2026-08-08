@@ -10,7 +10,9 @@
         <tr>
             <td class="song-card-col1" title="{{ song.authors.all|join:', ' }}">{% get_author song %}</td>
             <td class="song-card-view">{% get_view song %}</td>
-            <td class="song-card-lyrics">{% get_lyrics song %}</td>
+            {% if not song.is_questionable %}
+                <td class="song-card-lyrics">{% get_lyrics song %}</td>
+            {% endif %}
         </tr>
     </table>
 </a>

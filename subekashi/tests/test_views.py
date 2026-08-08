@@ -103,8 +103,8 @@ class SongsViewTest(TestCase):
         self.assertEqual(response.context["jokerange"], "on")
 
     def test_bool_query_params_all_fields(self):
-        """is_original/is_inst でもTrue/Falseが正しく変換されること"""
-        for field in ["is_original", "is_inst"]:
+        """is_original/is_inst/is_questionable でもTrue/Falseが正しく変換されること"""
+        for field in ["is_original", "is_inst", "is_questionable"]:
             with self.subTest(field=field):
                 response = self.client.get(reverse("subekashi:songs"), {field: "True"})
                 self.assertEqual(response.status_code, 200)
@@ -130,6 +130,16 @@ class SongViewTest(TestCase):
     def test_song_title_appears_in_response(self):
         response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
         self.assertContains(response, "詳細テスト曲")
+
+    def test_questionable_tag_appears_when_is_questionable(self):
+        self.song.is_questionable = True
+        self.song.save()
+        response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
+        self.assertContains(response, "界隈曲?")
+
+    def test_questionable_tag_not_shown_by_default(self):
+        response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
+        self.assertNotContains(response, "界隈曲?")
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
@@ -169,6 +179,25 @@ class SongNewViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("タイトル", response.context["error"])
 
+    def test_post_questionable_forces_original_false(self):
+        # is-questionable時、オリジナル模倣はユーザーの入力値に関わらず強制的にFalseになる
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {
+                "url": "",
+                "authors": "界隈曲テスト作者",
+                "title": "界隈曲テスト曲",
+                "is-questionable-manual": "on",
+                "is-original-manual": "on",
+                "is-subeana-manual": "on",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        song = Song.objects.get(title="界隈曲テスト曲")
+        self.assertTrue(song.is_questionable)
+        self.assertFalse(song.is_original)
+        self.assertTrue(song.is_subeana)
+
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
 class SongEditViewTest(TestCase):
@@ -185,6 +214,56 @@ class SongEditViewTest(TestCase):
     def test_nonexistent_song_returns_404(self):
         response = self.client.get(reverse("subekashi:song_edit", args=[99999]))
         self.assertEqual(response.status_code, 404)
+
+    def test_post_questionable_forces_lyrics_and_imitate_blank(self):
+        # is_questionable時、歌詞・模倣・下書きはユーザー入力に関わらず空/OFFになる
+        imitate_target = Song.objects.create(title="模倣元テスト曲")
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {
+                "title": "編集テスト曲",
+                "authors": "編集テスト作者",
+                "url": "",
+                "imitate": str(imitate_target.id),
+                "lyrics": "本来は保存されないはずの歌詞",
+                "is_questionable": True,
+                "is_draft": True,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.song.refresh_from_db()
+        self.assertTrue(self.song.is_questionable)
+        self.assertEqual(self.song.lyrics, "")
+        self.assertFalse(self.song.is_draft)
+        self.assertNotIn(imitate_target, self.song.imitates.all())
+
+    def test_post_questionable_honors_deleted_joke_inst_subeana_but_forces_original_false(self):
+        # is_questionable時、非公開/削除済み・ネタ曲・インスト・すべあな界隈曲の入力値は保存されるが、
+        # オリジナル模倣は入力値に関わらず強制的にFalseになる
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {
+                "title": "編集テスト曲",
+                "authors": "編集テスト作者",
+                "url": "",
+                "imitate": "",
+                "lyrics": "",
+                "is_questionable": True,
+                "is_original": True,
+                "is_deleted": True,
+                "is_joke": True,
+                "is_inst": True,
+                "is_subeana": True,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.song.refresh_from_db()
+        self.assertTrue(self.song.is_questionable)
+        self.assertFalse(self.song.is_original)
+        self.assertTrue(self.song.is_deleted)
+        self.assertTrue(self.song.is_joke)
+        self.assertTrue(self.song.is_inst)
+        self.assertTrue(self.song.is_subeana)
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
@@ -375,6 +454,25 @@ class SongCardsViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         content = "".join(response.json())
         self.assertNotIn("YouTubeの曲を表示しています", content)
+
+    def test_questionable_song_card_hides_lyrics(self):
+        """is_questionable=True の曲のカードには .song-card-lyrics が含まれないこと"""
+        Song.objects.create(title="界隈曲カードテスト", is_questionable=True)
+        response = self.client.get(
+            reverse("subekashi:song_cards"), {"keyword": "界隈曲カードテスト"}
+        )
+        self.assertEqual(response.status_code, 200)
+        content = "".join(response.json())
+        self.assertNotIn("song-card-lyrics", content)
+
+    def test_normal_song_card_shows_lyrics(self):
+        """is_questionable=False の曲のカードには .song-card-lyrics が含まれること"""
+        response = self.client.get(
+            reverse("subekashi:song_cards"), {"keyword": "カードテスト曲"}
+        )
+        self.assertEqual(response.status_code, 200)
+        content = "".join(response.json())
+        self.assertIn("song-card-lyrics", content)
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)

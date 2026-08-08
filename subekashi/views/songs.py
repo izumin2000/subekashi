@@ -24,7 +24,7 @@ COOKIE_FORMS = {
 }
 
 # チェックボックス
-BOOL_FORMS = ["is_subeana", "is_joke", "is_lack", "is_draft", "is_original", "is_inst", "is_deleted"]
+BOOL_FORMS = ["is_subeana", "is_joke", "is_lack", "is_draft", "is_original", "is_inst", "is_deleted", "is_questionable"]
 
 # 折りたたまれていないメディアタイプ
 DISPLAY_MEDIA_INDEX = 5

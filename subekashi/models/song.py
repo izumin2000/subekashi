@@ -38,6 +38,7 @@ class Song(GetOrNoneMixin, models.Model):
     is_special = models.BooleanField(default = False)
     is_lock = models.BooleanField(default = False)
     is_limited = models.BooleanField(default = False)
+    is_questionable = models.BooleanField(default = False)
     view = models.IntegerField(blank = True, null = True)
     like = models.IntegerField(blank = True, null = True)
     category = models.CharField(default = "song", choices=CHOICES, max_length=10)
@@ -96,6 +97,7 @@ class SongFields:
     is_inst: bool = False
     is_subeana: bool = True
     is_draft: bool = False
+    is_questionable: bool = False
     upload_time: Optional[datetime] = None
     view: Optional[int] = None
     like: Optional[int] = None

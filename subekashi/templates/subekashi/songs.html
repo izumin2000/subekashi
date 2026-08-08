@@ -142,6 +142,10 @@
             <input type="checkbox" value="is_deleted" id="is_deleted" {% if is_deleted %}checked{% endif %}>
             <label for="is_deleted">非公開/削除済み</label>
         </div>
+        <div class="checkbox-col">
+            <input type="checkbox" value="is_questionable" id="is_questionable" {% if is_questionable %}checked{% endif %}>
+            <label for="is_questionable">界隈曲?</label>
+        </div>
     </details>
     <input type="submit" id="search-button" value="検索" onclick="renderSearch()"></input>
     <div id="song-cards"></div>

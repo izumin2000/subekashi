@@ -47,3 +47,4 @@ class SongEditForm(forms.Form):
     is_inst = forms.BooleanField(required=False)
     is_subeana = forms.BooleanField(required=False)
     is_draft = forms.BooleanField(required=False)
+    is_questionable = forms.BooleanField(required=False)
