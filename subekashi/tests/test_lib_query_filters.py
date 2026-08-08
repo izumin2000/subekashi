@@ -158,6 +158,14 @@ class FilterByLackTest(TestCase):
         qs = Song.objects.filter(filter_by_lack())
         self.assertNotIn(song, qs)
 
+    def test_questionable_song_is_never_lack(self):
+        # is_questionable=True の場合、他の条件を満たしていても無条件で完成扱いになる
+        song = Song.objects.create(
+            title="界隈曲テスト", is_questionable=True, is_deleted=False, lyrics="", is_inst=False, is_original=False,
+        )
+        qs = Song.objects.filter(filter_by_lack())
+        self.assertNotIn(song, qs)
+
 
 class FilterByMediatypesTest(TestCase):
     """filter_by_mediatypes() のテスト
@@ -211,6 +219,13 @@ class MakeIsLackAnnotationTest(TestCase):
         song = Song.objects.create(title="完成曲", lyrics="歌詞あり", is_original=True)
         link = SongLink.objects.create(url="https://youtu.be/complete00001")
         link.songs.add(song)
+        qs = Song.objects.annotate(is_lack=make_is_lack_annotation())
+        annotated = qs.get(pk=song.pk)
+        self.assertFalse(annotated.is_lack)
+
+    def test_questionable_song_annotated_false(self):
+        # is_questionable=True の場合、他の条件を満たしていても無条件で is_lack=False
+        song = Song.objects.create(title="界隈曲アノテーションテスト", is_questionable=True, is_inst=False, lyrics="")
         qs = Song.objects.annotate(is_lack=make_is_lack_annotation())
         annotated = qs.get(pk=song.pk)
         self.assertFalse(annotated.is_lack)

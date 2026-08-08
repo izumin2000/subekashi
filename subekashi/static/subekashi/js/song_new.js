@@ -6,6 +6,7 @@ async function init() {
     urlEle.focus();     // #urlにカーソルをあわせる
     await checkAutoForm();
     await checkManualForm();
+    updateQuestionableVisibility();
 };
 window.addEventListener('load', init);
 
@@ -16,8 +17,18 @@ document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
         document.querySelectorAll(`input[data-sync="${syncGroup}"]`).forEach(cb => {
             cb.checked = this.checked;
         });
+        updateQuestionableVisibility();
     });
 });
+
+// 界隈曲?チェック時、オリジナル模倣を非表示にする
+function updateQuestionableVisibility() {
+    const checked = document.querySelectorAll('input[data-sync="questionable"]:checked').length > 0;
+    document.querySelectorAll('[data-hide-if-questionable]').forEach(el => {
+        el.style.display = checked ? 'none' : '';
+    });
+}
+updateQuestionableVisibility();
 
 // URL入力フォームの入力チェック
 async function checkAutoForm() {

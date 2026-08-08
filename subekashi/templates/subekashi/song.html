@@ -7,6 +7,14 @@
 {% block css %}{% static 'subekashi/css/song.css'%}{% endblock %}
 
 {% block content %}
+{% if song.is_questionable %}
+    <style>
+        html {
+            background-color: #003;
+            font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
+        }
+    </style>
+{% endif %}
 <section>
     <div class="dummybuttons">
         {% if not song.is_lock %}
@@ -26,7 +34,7 @@
                 <i class="fas fa-music"></i><p>曲名</p>
 
             </td>
-            <td class="sansfont">
+            <td{% if not song.is_questionable %} class="sansfont"{% endif %}>
                 {{ song.title }}
             </td>
         </tr>
@@ -59,7 +67,7 @@
                 </td>
                 <td>
                     {% if is_questionable %}
-                        <p id="special-tag">界隈曲(?)<i class="fas fa-info-circle" onclick="showTutorial('is_questionable')"></i></p>
+                        <p id="special-tag">界隈曲?<i class="fas fa-info-circle" onclick="showTutorial('is_questionable')"></i></p>
                     {% endif %}
                     {% if is_lack %}
                         <a href="{% url 'subekashi:songs' %}?is_lack=True">未完成</a>

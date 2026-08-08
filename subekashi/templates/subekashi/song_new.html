@@ -13,7 +13,7 @@
             <label for="url">YouTubeの<br>動画リンク<i class="fas fa-info-circle" onclick="showTutorial('youtube-url')"></i></label>
             <input type="url" id="url" name="url" value="{{ request.GET.url }}" required>
         </div>
-        <div class="checkbox-col">
+        <div class="checkbox-col" data-hide-if-questionable>
             <input type="checkbox" id="is-original-auto" name="is-original-auto" data-sync="original">
             <label for="is-original-auto">オリジナル模倣</label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-original')"></i>
@@ -38,6 +38,11 @@
             <label for="is-subeana-auto">すべあな界隈曲</label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-subeana')"></i>
         </div>
+        <div class="checkbox-col">
+            <input type="checkbox" id="is-questionable-auto" name="is-questionable-auto" data-sync="questionable">
+            <label for="is-questionable-auto">界隈曲?</label>
+            <i class="fas fa-info-circle" onclick="showTutorial('is_questionable')"></i>
+        </div>
         <input type="submit" value="登録" id="new-submit-auto" disabled>
         <p id="new-form-auto-info"><span class='loading'></span></p>
     </form>
@@ -52,7 +57,7 @@
             <label for="authors">作者<br>(複数可)<i class="fas fa-info-circle" onclick="showTutorial('authors')"></i></label>
             <input type="text" id="authors" name="authors" class="sansfont" value="{{ request.GET.authors }}" required>
         </div>
-        <div class="checkbox-col">
+        <div class="checkbox-col" data-hide-if-questionable>
             <input type="checkbox" id="is-original-manual" name="is-original-manual" data-sync="original">
             <label for="is-original-manual">オリジナル模倣</label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-original')"></i>
@@ -76,6 +81,11 @@
             <input type="checkbox" id="is-subeana-manual" name="is-subeana-manual" data-sync="subeana" checked>
             <label for="is-subeana-manual">すべあな界隈曲</label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-subeana')"></i>
+        </div>
+        <div class="checkbox-col">
+            <input type="checkbox" id="is-questionable-manual" name="is-questionable-manual" data-sync="questionable">
+            <label for="is-questionable-manual">界隈曲?</label>
+            <i class="fas fa-info-circle" onclick="showTutorial('is_questionable')"></i>
         </div>
         <input type="submit" value="登録" id="new-submit-manual" disabled>
         <p id="new-form-manual-info"><span class='loading'></span></p>

@@ -54,7 +54,7 @@ def filter_by_mediatypes(mediatypes):
 def filter_by_lack():
     any_links = SongLink.objects.filter(songs=OuterRef('pk'))
     has_author_1 = Author.objects.filter(id=1, songs__id=OuterRef('pk'))
-    return (
+    return Q(is_questionable=False) & (
         (Q(is_deleted=False) & ~Exists(any_links)) |
         (Q(is_original=False, is_subeana=True, imitates__isnull=True) & ~Exists(has_author_1)) |
         Q(is_inst=False, lyrics="")
@@ -66,6 +66,7 @@ def make_is_lack_annotation():
     any_links = SongLink.objects.filter(songs=OuterRef('pk'))
     has_author_1 = Author.objects.filter(id=1, songs__id=OuterRef('pk'))
     return Case(
+        When(Q(is_questionable=True), then=Value(False)),
         When(Q(is_deleted=False) & ~Exists(any_links), then=Value(True)),
         When(Q(is_original=False, is_subeana=True, imitates__isnull=True) & ~Exists(has_author_1), then=Value(True)),
         When(Q(is_inst=False, lyrics=''), then=Value(True)),

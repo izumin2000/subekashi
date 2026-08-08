@@ -135,8 +135,13 @@ class SongEditFormTest(SimpleTestCase):
     def test_boolean_flags_default_to_false(self):
         form = SongEditForm(data=self._make_data())
         form.is_valid()
-        for field in ["is_original", "is_deleted", "is_joke", "is_inst", "is_subeana", "is_draft"]:
+        for field in ["is_original", "is_deleted", "is_joke", "is_inst", "is_subeana", "is_draft", "is_questionable"]:
             self.assertFalse(form.cleaned_data[field], f"{field} のデフォルトが False でない")
+
+    def test_boolean_flag_is_questionable_true(self):
+        form = SongEditForm(data=self._make_data(is_questionable=True))
+        self.assertTrue(form.is_valid())
+        self.assertTrue(form.cleaned_data["is_questionable"])
 
     def test_all_optional_fields_provided(self):
         form = SongEditForm(data=self._make_data(

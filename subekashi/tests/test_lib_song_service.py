@@ -129,6 +129,11 @@ class CreateSongTest(TestCase):
         self.assertTrue(song.is_inst)
         self.assertFalse(song.is_subeana)
 
+    def test_is_questionable_is_set(self):
+        fields = SongFields(title="界隈曲テスト", is_questionable=True)
+        song = create_song(fields)
+        self.assertTrue(song.is_questionable)
+
     def test_post_time_is_set_automatically(self):
         before = timezone.now()
         fields = SongFields(title="タイムスタンプテスト曲")
@@ -269,6 +274,12 @@ class UpdateSongTest(TestCase):
         urls = list(self.song.links.values_list("url", flat=True))
         self.assertIn(new_url, urls)
 
+    def test_is_questionable_is_updated(self):
+        fields = SongFields(title="更新前タイトル", lyrics="更新前歌詞", is_questionable=True)
+        update_song(self.song, fields, [self.author1], [], ["https://youtu.be/beforeupdate1"])
+        self.song.refresh_from_db()
+        self.assertTrue(self.song.is_questionable)
+
     def test_imitates_are_updated(self):
         target_song = Song.objects.create(title="新しい模倣元")
         fields = SongFields(title="更新前タイトル", lyrics="更新前歌詞")
@@ -337,6 +348,13 @@ class BuildNewSongDiscordTextTest(TestCase):
         )
         self.assertIn("新規テスト作者", text)
 
+    def test_text_contains_questionable_label_when_true(self):
+        fields = SongFields(title="新規テスト曲", is_questionable=True)
+        _, text = build_new_song_discord_text(
+            self.song.id, fields, [self.author], "", "editor_ip"
+        )
+        self.assertIn("界隈曲?", text)
+
 
 class BuildEditSongDiscordTextTest(TestCase):
     """build_edit_song_discord_text() のテスト"""
@@ -382,3 +400,10 @@ class BuildEditSongDiscordTextTest(TestCase):
         self.assertIn("タイトル", changed_labels)
         self.assertIn("歌詞", changed_labels)
         self.assertIn("オリジナル", changed_labels)
+
+    def test_is_questionable_change_is_detected(self):
+        fields = SongFields(title="編集前タイトル", lyrics="編集前歌詞", is_questionable=True)
+        _, _, _, changed_labels = build_edit_song_discord_text(
+            self.song.id, self.song, fields, [self.author], "", []
+        )
+        self.assertIn("界隈曲?", changed_labels)

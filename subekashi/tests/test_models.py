@@ -95,6 +95,7 @@ class SongModelTest(TestCase):
         self.assertFalse(song.is_draft)
         self.assertFalse(song.is_inst)
         self.assertTrue(song.is_subeana)
+        self.assertFalse(song.is_questionable)
 
     def test_add_single_author(self):
         song = Song.objects.create(title="単一作者曲")

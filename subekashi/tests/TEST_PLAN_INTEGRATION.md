@@ -73,6 +73,14 @@
 | 検証: レスポンス | HTTP 200、`context["error"]` に重複を示すメッセージを含む |
 | 検証: DB | 新たな Song は作成されていない |
 
+#### 1-5. is_questionable 登録時、オリジナル模倣は強制OFF・その他の入力値はそのまま保存される
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作 | `POST /songs/new/` `{title="曲名", authors="作者", is-questionable-manual="on", is-original-manual="on", is-subeana-manual="on"}` |
+| 検証: レスポンス | `/songs/<id>/edit` へリダイレクト (302) |
+| 検証: Song | `is_questionable == True`、`is_original == False`（強制OFF）、`is_subeana == True`（曲名・作者・URLに加え非公開/削除済み・ネタ曲・インスト・すべあな界隈曲の入力値はそのまま保存される） |
+
 ---
 
 ### 2. 曲編集フロー
@@ -142,6 +150,23 @@
 | 操作 | `GET /songs/<id>/edit/` または `POST /songs/<id>/edit/` |
 | 検証 | `/songs/<id>?toast=lock` へリダイレクト (302) |
 | 検証 | Song は変更されていない |
+
+#### 2-8. is_questionable 編集時、歌詞・模倣・下書き・オリジナル模倣は強制的に空/OFFで保存される
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `lyrics`・`imitates`・`is_draft`・`is_original` などが設定済みの曲が存在する |
+| 操作 | `POST /songs/<id>/edit/` `{title=..., authors=..., is_questionable=True, lyrics="...", imitate="<id>", is_draft=True, is_original=True}` |
+| 検証: レスポンス | `/songs/<id>?toast=edit` へリダイレクト (302) |
+| 検証: Song | `is_questionable == True`、`lyrics == ""`、`imitates` が空、`is_draft == False`、`is_original == False`（曲名・作者・URLはそのまま保存） |
+
+#### 2-9. is_questionable 編集時も、非公開/削除済み・ネタ曲・インスト・すべあな界隈曲の入力値はそのまま保存される
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作 | `POST /songs/<id>/edit/` `{title=..., authors=..., is_questionable=True, is_deleted=True, is_joke=True, is_inst=True, is_subeana=True}` |
+| 検証: レスポンス | `/songs/<id>?toast=edit` へリダイレクト (302) |
+| 検証: Song | `is_questionable == True`、`is_deleted`・`is_joke`・`is_inst`・`is_subeana` がすべて入力通り `True` で保存される |
 
 ---
 
@@ -241,6 +266,9 @@
 | 前提 | URL なし・歌詞なし曲と、URL あり・歌詞あり曲が存在する |
 | 操作 | `GET /api/song/?lack=true` |
 | 検証 | 未完成曲のみ返される |
+| 前提（is_questionable） | URL なし・歌詞なしだが `is_questionable=True` の曲が存在する |
+| 操作 | `GET /api/song/?lack=true` |
+| 検証 | `is_questionable=True` の曲は未完成条件を満たしていても結果に含まれない |
 
 #### 5-5. SongsView ページでの検索
 

@@ -41,6 +41,7 @@ def create_song(fields: SongFields):
         is_joke=fields.is_joke,
         is_inst=fields.is_inst,
         is_subeana=fields.is_subeana,
+        is_questionable=fields.is_questionable,
         upload_time=fields.upload_time,
         view=fields.view,
         like=fields.like,
@@ -89,6 +90,7 @@ def update_song(song, fields: SongFields, author_objects, imitate_songs, cleaned
         song.is_inst = fields.is_inst
         song.is_subeana = fields.is_subeana
         song.is_draft = fields.is_draft
+        song.is_questionable = fields.is_questionable
         song.post_time = timezone.now()
         song.save()
         song.imitates.set(imitate_songs)
@@ -142,6 +144,7 @@ def build_new_song_discord_text(song_id, fields: SongFields, authors, cleaned_ur
         {"label": "ネタ曲", "value": yes_no(fields.is_joke)},
         {"label": "インスト曲", "value": yes_no(fields.is_inst)},
         {"label": "すべあな模倣曲", "value": yes_no(fields.is_subeana)},
+        {"label": "界隈曲?", "value": yes_no(fields.is_questionable)},
     ]
 
     changes = [["種類", "内容"]]
@@ -173,6 +176,7 @@ def build_edit_song_discord_text(song_id, song, fields: SongFields, author_objec
         {"label": "インスト曲", "before": yes_no(song.is_inst), "after": yes_no(fields.is_inst)},
         {"label": "すべあな模倣曲", "before": yes_no(song.is_subeana), "after": yes_no(fields.is_subeana)},
         {"label": "下書き", "before": yes_no(song.is_draft), "after": yes_no(fields.is_draft)},
+        {"label": "界隈曲?", "before": yes_no(song.is_questionable), "after": yes_no(fields.is_questionable)},
         {"label": "模倣", "before": songs_to_info(old_imitate_songs), "after": songs_to_info(imitate_songs)},
         {"label": "歌詞", "before": song.lyrics, "after": fields.lyrics.replace("\r\n", "\n")},
     ]

@@ -47,6 +47,11 @@ class SongNewView(View):
         is_joke = bool(request.POST.get("is-joke-auto", "") + request.POST.get("is-joke-manual", ""))
         is_inst = bool(request.POST.get("is-inst-auto", "") + request.POST.get("is-inst-manual", ""))
         is_subeana = bool(request.POST.get("is-subeana-auto", "") + request.POST.get("is-subeana-manual", ""))
+        is_questionable = bool(request.POST.get("is-questionable-auto", "") + request.POST.get("is-questionable-manual", ""))
+
+        # is_questionableの場合、オリジナル模倣はユーザーの入力値に関わらず空にする
+        if is_questionable:
+            is_original = False
 
         # YouTube APIから情報取得
         youtube_res = {}
@@ -105,6 +110,7 @@ class SongNewView(View):
             is_joke=is_joke,
             is_inst=is_inst,
             is_subeana=is_subeana,
+            is_questionable=is_questionable,
             upload_time=youtube_res.get("upload_time", None),
             view=youtube_res.get("view", None),
             like=youtube_res.get("like", None),
