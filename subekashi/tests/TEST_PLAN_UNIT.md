@@ -162,7 +162,17 @@
 | 歌詞なし・インストではない曲 | `is_inst=False`, `lyrics=""` | 結果に含まれる |
 | すべて完備している曲 | URL・歌詞・作者あり | 結果に含まれない |
 
-#### 3-3. `make_is_lack_annotation()`
+#### 3-3. `filter_by_mediatypes(mediatypes)`
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| `other`（URL未登録） | SongLink が1件も紐付いていない曲 | 結果に含まれる |
+| `other`（URL未登録） | SongLink が紐付いている曲 | 結果に含まれない |
+| `other`（URL未登録） | SongLink なし かつ `is_deleted=True`（非公開/削除済み） | 結果に含まれない |
+| 個別メディアタイプ（例: `youtube`） | 該当URLのSongLinkが紐付いている曲 | 結果に含まれる。URLなしの曲は含まれない |
+| 複数指定（例: `youtube,other`） | URLありの曲・URLなしの曲がそれぞれ存在 | 両方とも結果に含まれる |
+
+#### 3-4. `make_is_lack_annotation()`
 
 | テストケース | 前提条件 | 期待結果 |
 | --- | --- | --- |

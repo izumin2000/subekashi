@@ -31,16 +31,24 @@ def filter_by_guesser(guesser):
 # メディアの検索に利用するフィルター
 def filter_by_mediatypes(mediatypes):
     # mediatypeに当てはまる正規表現を抜き出す
+    # "other"（URL未登録）はリンクが1件も存在しないことを示すため、
+    # links__url__regex では判定できず個別にExistsで判定する
     media_regex_list = []
+    query = Q()
     for mediatype in mediatypes.split(","):
+        if mediatype == "other":
+            # 非公開/削除済みの曲は対象外とする
+            any_links = SongLink.objects.filter(songs=OuterRef('pk'))
+            query |= Q(is_deleted=False) & ~Exists(any_links)
+            continue
         for i, media in enumerate(ALL_MEDIAS):
             if mediatype == media["id"]:
                 media_regex_list.append(f"({ALL_MEDIAS[i]['regex']})")
                 continue
-    media_regex = "|".join(media_regex_list)
-    return (
-        Q(links__url__regex=media_regex)
-    )
+    if media_regex_list:
+        media_regex = "|".join(media_regex_list)
+        query |= Q(links__url__regex=media_regex)
+    return query
 
 # 未完成フィルター
 def filter_by_lack():

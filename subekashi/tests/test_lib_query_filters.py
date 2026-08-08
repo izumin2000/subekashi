@@ -11,6 +11,7 @@ from subekashi.lib.query_filters import (
     filter_by_imitated,
     filter_by_guesser,
     filter_by_lack,
+    filter_by_mediatypes,
     make_is_lack_annotation,
 )
 
@@ -156,6 +157,44 @@ class FilterByLackTest(TestCase):
         # URL を持たないまま → 条件(A)は「is_deleted=False かつ URLなし」なので is_deleted=True は除外される
         qs = Song.objects.filter(filter_by_lack())
         self.assertNotIn(song, qs)
+
+
+class FilterByMediatypesTest(TestCase):
+    """filter_by_mediatypes() のテスト
+
+    "other"（URL未登録）はSongLinkが1件も存在しないことを表すため、
+    links__url__regex では判定できず ~Exists() で判定する必要がある。
+    また非公開/削除済み（is_deleted=True）の曲は対象外とする。
+    """
+
+    def setUp(self):
+        self.song_without_link = Song.objects.create(title="URL未登録曲")
+        self.deleted_song_without_link = Song.objects.create(title="削除済みURL未登録曲", is_deleted=True)
+        self.song_with_youtube_link = Song.objects.create(title="YouTube曲")
+        link = SongLink.objects.create(url="https://youtu.be/mediatype12345")
+        link.songs.add(self.song_with_youtube_link)
+
+    def test_other_matches_song_without_any_link(self):
+        qs = Song.objects.filter(filter_by_mediatypes("other")).distinct()
+        self.assertIn(self.song_without_link, qs)
+
+    def test_other_does_not_match_song_with_link(self):
+        qs = Song.objects.filter(filter_by_mediatypes("other")).distinct()
+        self.assertNotIn(self.song_with_youtube_link, qs)
+
+    def test_other_does_not_match_deleted_song(self):
+        qs = Song.objects.filter(filter_by_mediatypes("other")).distinct()
+        self.assertNotIn(self.deleted_song_without_link, qs)
+
+    def test_youtube_matches_song_with_youtube_link(self):
+        qs = Song.objects.filter(filter_by_mediatypes("youtube")).distinct()
+        self.assertIn(self.song_with_youtube_link, qs)
+        self.assertNotIn(self.song_without_link, qs)
+
+    def test_youtube_and_other_combined_matches_both(self):
+        qs = Song.objects.filter(filter_by_mediatypes("youtube,other")).distinct()
+        self.assertIn(self.song_with_youtube_link, qs)
+        self.assertIn(self.song_without_link, qs)
 
 
 class MakeIsLackAnnotationTest(TestCase):
