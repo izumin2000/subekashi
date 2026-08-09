@@ -1,6 +1,11 @@
 from pathlib import Path
 import os
+import sys
 from .local_settings import *
+
+# テスト実行時は local_settings.py の値によらず Discord への送信を無効化する
+if 'test' in sys.argv:
+    SEND_DISCORD = False
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_URL = '/static/'

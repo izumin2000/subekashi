@@ -1,7 +1,6 @@
 import requests
 from time import sleep
-from config.settings import DEBUG
-from config.local_settings import SEND_DISCORD
+from config.settings import DEBUG, SEND_DISCORD
 
 
 def send_discord(url, content):
