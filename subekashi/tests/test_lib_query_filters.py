@@ -111,9 +111,9 @@ class FilterByLackTest(TestCase):
     """filter_by_lack() のテスト
 
     filter_by_lack() は以下の3条件のいずれかを満たす曲を「未完成」と判定する:
-      (A) is_deleted=False かつ SongLink が存在しない
-      (B) is_original=False かつ is_subeana=True かつ imitates が空 かつ author_id=1 なし
-      (C) is_inst=False かつ lyrics が空文字列
+      (A) is_deleted=False かつ SongLink が存在しない（is_questionable は問わない）
+      (B) is_questionable=False かつ is_original=False かつ is_subeana=True かつ imitates が空 かつ author_id=1 なし
+      (C) is_questionable=False かつ is_inst=False かつ lyrics が空文字列
 
     各テストで「意図しない条件」に引っかからないよう、検証したい条件以外は
     明示的に打ち消したフィールド値を設定する。
@@ -158,12 +158,23 @@ class FilterByLackTest(TestCase):
         qs = Song.objects.filter(filter_by_lack())
         self.assertNotIn(song, qs)
 
-    def test_questionable_song_is_never_lack(self):
-        # is_questionable=True の場合、他の条件を満たしていても無条件で完成扱いになる
+    def test_questionable_song_matching_condition_a_is_lack(self):
+        # 条件(A)は is_questionable を問わないため、URLなし・削除されていなければ未完成
         song = Song.objects.create(
-            title="界隈曲テスト", is_questionable=True, is_deleted=False, lyrics="", is_inst=False, is_original=False,
+            title="界隈曲URLなしテスト", is_questionable=True, is_deleted=False, lyrics="歌詞あり", is_original=True,
         )
         qs = Song.objects.filter(filter_by_lack())
+        self.assertIn(song, qs)
+
+    def test_questionable_song_not_matching_condition_b_or_c_is_not_lack(self):
+        # 条件(B)(C)は is_questionable=False が必須のため、is_questionable=True なら
+        # 条件(A)に該当しない限り未完成扱いにならない
+        song = Song.objects.create(
+            title="界隈曲完成扱いテスト", is_questionable=True, is_deleted=False, lyrics="", is_inst=False, is_original=False,
+        )
+        link = SongLink.objects.create(url="https://youtu.be/questionable0001")
+        link.songs.add(song)
+        qs = Song.objects.filter(filter_by_lack()).distinct()
         self.assertNotIn(song, qs)
 
 
@@ -223,9 +234,21 @@ class MakeIsLackAnnotationTest(TestCase):
         annotated = qs.get(pk=song.pk)
         self.assertFalse(annotated.is_lack)
 
-    def test_questionable_song_annotated_false(self):
-        # is_questionable=True の場合、他の条件を満たしていても無条件で is_lack=False
+    def test_questionable_song_matching_condition_a_annotated_true(self):
+        # 条件(A)は is_questionable を問わないため、URLなし・削除されていなければ is_lack=True
+        song = Song.objects.create(
+            title="界隈曲アノテーションURLなしテスト", is_questionable=True, lyrics="歌詞あり", is_original=True,
+        )
+        qs = Song.objects.annotate(is_lack=make_is_lack_annotation())
+        annotated = qs.get(pk=song.pk)
+        self.assertTrue(annotated.is_lack)
+
+    def test_questionable_song_not_matching_condition_b_or_c_annotated_false(self):
+        # 条件(B)(C)は is_questionable=False が必須のため、is_questionable=True かつ
+        # 条件(A)に該当しなければ is_lack=False
         song = Song.objects.create(title="界隈曲アノテーションテスト", is_questionable=True, is_inst=False, lyrics="")
+        link = SongLink.objects.create(url="https://youtu.be/questionable0002")
+        link.songs.add(song)
         qs = Song.objects.annotate(is_lack=make_is_lack_annotation())
         annotated = qs.get(pk=song.pk)
         self.assertFalse(annotated.is_lack)

@@ -164,7 +164,8 @@
 | URLなし・削除されていない曲 | `is_deleted=False`, SongLink なし | 結果に含まれる |
 | 歌詞なし・インストではない曲 | `is_inst=False`, `lyrics=""` | 結果に含まれる |
 | すべて完備している曲 | URL・歌詞・作者あり | 結果に含まれない |
-| `is_questionable=True` の曲 | 他の未完成条件を満たしていても `is_questionable=True` | 無条件で結果に含まれない（常に完成扱い） |
+| `is_questionable=True` かつURLなし・削除されていない曲 | `is_questionable=True`, `is_deleted=False`, SongLink なし | 結果に含まれる（URLなし条件は `is_questionable` を問わない） |
+| `is_questionable=True` かつ歌詞なし/模倣なし等の曲 | `is_questionable=True`, URLあり、歌詞なし等 | 結果に含まれない（歌詞なし・模倣なし条件は `is_questionable=False` が必須） |
 
 #### 3-3. `filter_by_mediatypes(mediatypes)`
 
@@ -182,7 +183,8 @@
 | --- | --- | --- |
 | 未完成の曲に annotate | 上記の `filter_by_lack` と同じ条件 | `is_lack=True` がアノテートされる |
 | 完成した曲に annotate | URLと歌詞が揃っている曲 | `is_lack=False` がアノテートされる |
-| `is_questionable=True` の曲に annotate | 他の未完成条件を満たしていても `is_questionable=True` | 無条件で `is_lack=False` がアノテートされる |
+| `is_questionable=True` かつURLなし・削除されていない曲に annotate | `is_questionable=True`, SongLink なし | `is_lack=True` がアノテートされる（URLなし条件は `is_questionable` を問わない） |
+| `is_questionable=True` かつ歌詞なし等の曲に annotate | `is_questionable=True`, URLあり、歌詞なし等 | `is_lack=False` がアノテートされる（歌詞なし条件は `is_questionable=False` が必須） |
 
 ---
 
