@@ -141,6 +141,22 @@ class SongViewTest(TestCase):
         response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
         self.assertNotContains(response, "界隈曲?")
 
+    def test_noindex_not_shown_by_default(self):
+        response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
+        self.assertNotContains(response, 'name="robots"')
+
+    def test_noindex_shown_when_is_questionable(self):
+        self.song.is_questionable = True
+        self.song.save()
+        response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
+        self.assertContains(response, '<meta name="robots" content="noindex, nofollow">')
+
+    def test_noindex_shown_when_is_limited(self):
+        self.song.is_limited = True
+        self.song.save()
+        response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
+        self.assertContains(response, '<meta name="robots" content="noindex, nofollow">')
+
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
 class SongNewViewTest(TestCase):
