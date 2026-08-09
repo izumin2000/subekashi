@@ -266,9 +266,12 @@
 | 前提 | URL なし・歌詞なし曲と、URL あり・歌詞あり曲が存在する |
 | 操作 | `GET /api/song/?lack=true` |
 | 検証 | 未完成曲のみ返される |
-| 前提（is_questionable） | URL なし・歌詞なしだが `is_questionable=True` の曲が存在する |
+| 前提（is_questionable、URLなし） | URL なし・削除されていないが `is_questionable=True` の曲が存在する |
 | 操作 | `GET /api/song/?lack=true` |
-| 検証 | `is_questionable=True` の曲は未完成条件を満たしていても結果に含まれない |
+| 検証 | URLなし条件は `is_questionable` を問わないため、結果に含まれる |
+| 前提（is_questionable、歌詞なし） | URL あり・歌詞なしだが `is_questionable=True` の曲が存在する |
+| 操作 | `GET /api/song/?lack=true` |
+| 検証 | 歌詞なし条件は `is_questionable=False` が必須のため、結果に含まれない |
 
 #### 5-5. SongsView ページでの検索
 

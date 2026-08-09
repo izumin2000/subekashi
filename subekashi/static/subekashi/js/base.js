@@ -415,10 +415,6 @@ function getAuthorText(song) {
 
 // 曲が未完成かどうか
 function isLack(song) {
-    if (song.is_questionable) {
-        return false;
-    }
-
     if (!song.is_deleted && (!song.url || song.url.length === 0)) {
         return true;
     }
@@ -428,11 +424,11 @@ function isLack(song) {
         ? song.authors.some(author => author.id === 1)
         : false;
 
-    if (!song.is_original && !song.is_subeana && song.imitates.length === 0 && hasSpecialAuthor) {
+    if (!song.is_questionable && !song.is_original && !song.is_subeana && song.imitates.length === 0 && hasSpecialAuthor) {
         return true;
     }
 
-    if (!song.is_inst && song.lyrics === "") {
+    if (!song.is_questionable && !song.is_inst && song.lyrics === "") {
         return true;
     }
 
