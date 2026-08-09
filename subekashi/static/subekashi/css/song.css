@@ -1,9 +1,9 @@
 .dummybutton {
-    background-color: #333;
+    background-color: #eee;
 }
 
 .dummybutton:hover {
-    background-color: #666;
+    background-color: #fff;
 }
 
 .dummybutton i {
@@ -12,7 +12,7 @@
 }
 
 .dummybutton p {
-    color: #fff;
+    color: #111;
     padding-top: 10px;
 }
 

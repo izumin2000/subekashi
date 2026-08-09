@@ -87,8 +87,8 @@ hr {
 }
 
 #scroll-to-results-container .dummybutton {
-    background-color: #333;
-    color: #fff;
+    background-color: #eee;
+    color: #111;
     border: 2px solid;
     pointer-events: auto;
     gap: 5px;
@@ -96,7 +96,7 @@ hr {
 }
 
 #scroll-to-results-container .dummybutton:hover {
-    background-color: #555;
+    background-color: #fff;
 }
 
 @media (max-width: 960px) {
