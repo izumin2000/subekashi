@@ -6,6 +6,10 @@
 
 {% block css %}{% static 'subekashi/css/song.css'%}{% endblock %}
 
+{% block noindex %}
+    {% if song.is_questionable or song.is_limited %}<meta name="robots" content="noindex, nofollow">{% endif %}
+{% endblock %}
+
 {% block content %}
 {% if song.is_questionable %}
     <style>
