@@ -4,8 +4,10 @@
 各ページの基本的なアクセス可否・ステータスコード・リダイレクト先を検証する。
 ManifestStaticFilesStorage はテストに不要なため StaticFilesStorage に差し替える。
 """
+from unittest.mock import patch
 from django.test import TestCase, Client, override_settings
 from django.urls import reverse
+from subekashi.forms import AuthorAliasForm
 from subekashi.models import Ad, Author, AuthorAlias, Contact, Editor, History, Song
 
 
@@ -513,6 +515,41 @@ class AuthorAliasNewViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(AuthorAlias.objects.filter(name=self.author.name).exists())
 
+    @patch("subekashi.views.author_alias.send_discord")
+    def test_post_sends_discord_notification(self, mock_send_discord):
+        mock_send_discord.return_value = True
+        self.client.post(
+            reverse("subekashi:author_alias_new", args=[self.author.id]),
+            {"name": "通知別名", "alias_type": "past"},
+        )
+        self.assertTrue(mock_send_discord.called)
+        content = mock_send_discord.call_args[0][1]
+        self.assertIn("通知別名", content)
+        self.assertIn(self.author.name, content)
+
+    @patch("subekashi.views.author_alias.send_discord")
+    def test_post_discord_failure_rolls_back_alias_and_returns_500(self, mock_send_discord):
+        mock_send_discord.return_value = False
+        response = self.client.post(
+            reverse("subekashi:author_alias_new", args=[self.author.id]),
+            {"name": "通知失敗別名", "alias_type": "past"},
+        )
+        self.assertEqual(response.status_code, 500)
+        self.assertFalse(AuthorAlias.objects.filter(name="通知失敗別名").exists())
+
+    def test_toctou_duplicate_name_shows_friendly_error_not_500(self):
+        # フォームのclean_name()での重複チェックをすり抜けた場合でも、
+        # DB制約(IntegrityError)を捕捉してフォームエラーに変換されることを確認する
+        AuthorAlias.objects.create(name="競合別名", author=self.author)
+        with patch.object(AuthorAliasForm, "clean_name", return_value="競合別名"):
+            response = self.client.post(
+                reverse("subekashi:author_alias_new", args=[self.author.id]),
+                {"name": "競合別名", "alias_type": "past"},
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "その別名は既に登録されています。")
+        self.assertEqual(AuthorAlias.objects.filter(name="競合別名").count(), 1)
+
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
 class AuthorAliasEditViewTest(TestCase):
@@ -584,6 +621,58 @@ class AuthorAliasEditViewTest(TestCase):
         self.alias.refresh_from_db()
         self.assertEqual(self.alias.name, "編集前別名")
 
+    def test_post_without_actual_change_skips_history(self):
+        # SongEditViewと同様、実質的な変更がない場合は履歴を作成しない
+        before_count = History.get_for_author(self.author).count()
+        response = self.client.post(
+            reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id]),
+            {"name": "編集前別名", "alias_type": "past"},
+        )
+        self.assertRedirects(
+            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=edit"
+        )
+        self.assertEqual(History.get_for_author(self.author).count(), before_count)
+
+    @patch("subekashi.views.author_alias.send_discord")
+    def test_post_without_actual_change_does_not_send_discord(self, mock_send_discord):
+        self.client.post(
+            reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id]),
+            {"name": "編集前別名", "alias_type": "past"},
+        )
+        self.assertFalse(mock_send_discord.called)
+
+    @patch("subekashi.views.author_alias.send_discord")
+    def test_post_with_change_sends_discord_notification(self, mock_send_discord):
+        mock_send_discord.return_value = True
+        self.client.post(
+            reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id]),
+            {"name": "編集後通知別名", "alias_type": "sns"},
+        )
+        self.assertTrue(mock_send_discord.called)
+        content = mock_send_discord.call_args[0][1]
+        self.assertIn("編集後通知別名", content)
+
+    @patch("subekashi.views.author_alias.send_discord")
+    def test_post_discord_failure_returns_500(self, mock_send_discord):
+        mock_send_discord.return_value = False
+        response = self.client.post(
+            reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id]),
+            {"name": "編集後失敗別名", "alias_type": "sns"},
+        )
+        self.assertEqual(response.status_code, 500)
+
+    def test_toctou_duplicate_name_shows_friendly_error_not_500(self):
+        AuthorAlias.objects.create(name="編集競合別名", author=self.author)
+        with patch.object(AuthorAliasForm, "clean_name", return_value="編集競合別名"):
+            response = self.client.post(
+                reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id]),
+                {"name": "編集競合別名", "alias_type": "past"},
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "その別名は既に登録されています。")
+        self.alias.refresh_from_db()
+        self.assertEqual(self.alias.name, "編集前別名")
+
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
 class AuthorAliasDeleteViewTest(TestCase):
@@ -625,6 +714,26 @@ class AuthorAliasDeleteViewTest(TestCase):
         self.assertEqual(history.history_type, "delete")
         self.assertIn("削除対象別名", history.title)
         self.assertEqual(history.author, self.author)
+
+    @patch("subekashi.views.author_alias.send_discord")
+    def test_post_sends_discord_notification(self, mock_send_discord):
+        mock_send_discord.return_value = True
+        self.client.post(
+            reverse("subekashi:author_alias_delete", args=[self.author.id, self.alias.id])
+        )
+        self.assertTrue(mock_send_discord.called)
+        content = mock_send_discord.call_args[0][1]
+        self.assertIn("削除対象別名", content)
+
+    @patch("subekashi.views.author_alias.send_discord")
+    def test_post_discord_failure_prevents_deletion(self, mock_send_discord):
+        mock_send_discord.return_value = False
+        response = self.client.post(
+            reverse("subekashi:author_alias_delete", args=[self.author.id, self.alias.id])
+        )
+        self.assertEqual(response.status_code, 500)
+        self.assertTrue(AuthorAlias.objects.filter(pk=self.alias.id).exists())
+        self.assertEqual(History.get_for_author(self.author).count(), 0)
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)

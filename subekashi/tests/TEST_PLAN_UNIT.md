@@ -441,6 +441,9 @@ DBアクセス（重複チェック）を伴うため `TestCase` を使用する
 | 正常なPOST | 上記 | `History.create_for_author()`が呼ばれ、`history_type="new"`のレコードが作成される |
 | nameが重複 | 既存のname | HTTP 200のままエラー表示、レコードは作成されない |
 | nameがauthor自身と同じ | `name=author.name` | HTTP 200のままエラー表示、レコードは作成されない |
+| Discord通知 | 正常なPOST | `send_discord()`がNEW_DISCORD_URL宛に、別名名・作者名を含む内容で呼ばれる |
+| Discord通知失敗 | `send_discord()`が`False`を返す | HTTP 500、作成したAuthorAliasはロールバック（削除）される |
+| TOCTOU（重複チェックのすり抜け） | `AuthorAliasForm.clean_name`をモックして重複チェックをバイパスし、既存nameでPOST | DB制約(IntegrityError)を捕捉し、HTTP 200のままフォームエラー表示（500にならない）。レコードは重複作成されない |
 
 #### 7-8-3. `AuthorAliasEditView` (`/authors/<id>/aliases/<alias_id>/edit`)（#992）
 
@@ -453,6 +456,10 @@ DBアクセス（重複チェック）を伴うため `TestCase` を使用する
 | 正常なPOST | 上記 | `History.create_for_author()`が呼ばれ、`history_type="edit"`のレコードが作成される |
 | 自分自身の現在のnameのまま更新 | `name`を変更しない | 重複エラーにならず更新される |
 | 他のaliasのnameと重複 | 同一author内の他のalias.name | HTTP 200のままエラー表示、更新されない |
+| 実質的な変更なし | `name`・`alias_type`とも変更しない値でPOST | リダイレクトはするが`History`は作成されず、Discord通知も送られない（SongEditViewと同様） |
+| Discord通知 | 実質的な変更があるPOST | `send_discord()`がNEW_DISCORD_URL宛に、変更後の内容を含む形で呼ばれる |
+| Discord通知失敗 | 変更ありのPOSTで`send_discord()`が`False`を返す | HTTP 500 |
+| TOCTOU（重複チェックのすり抜け） | `AuthorAliasForm.clean_name`をモックして重複チェックをバイパスし、既存nameでPOST | DB制約(IntegrityError)を捕捉し、HTTP 200のままフォームエラー表示（500にならない）。更新前の値のまま維持される |
 
 #### 7-8-4. `AuthorAliasDeleteView` (`/authors/<id>/aliases/<alias_id>/delete`)（#992）
 
@@ -462,6 +469,8 @@ DBアクセス（重複チェック）を伴うため `TestCase` を使用する
 | 存在しないalias_id | 無効なalias_id | HTTP 404 |
 | 正常なPOST | POSTリクエスト | AuthorAliasが削除され一覧画面へリダイレクト |
 | 正常なPOST | 上記 | `History.create_for_author()`が呼ばれ、`history_type="delete"`、`history.author`は削除後も維持される |
+| Discord通知 | 正常なPOST | `send_discord()`がNEW_DISCORD_URL宛に、削除対象の別名名を含む内容で呼ばれる（新規・編集と同じ通知先） |
+| Discord通知失敗 | `send_discord()`が`False`を返す | HTTP 500。AuthorAliasは削除されず、Historyも作成されない（通知できた場合のみ実削除する設計） |
 
 #### 7-9. `ChannelView` (`/channel/<name>/`)
 
@@ -759,6 +768,36 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | 作者1人 | `song.authors` に1件 | 作者名と作者ページへのリンクを表示 |
 | 作者2人以上 | `song.authors` に2件以上 | 「合作」を表示 |
 | 作者名の特殊文字 | `name="<script>"` | HTMLエスケープされる |
+
+---
+
+### 16. `lib/author_alias_service.py` — 別名Discord通知サービス（#992）
+
+**テストファイル**: `tests/test_lib_author_alias_service.py`
+
+#### 16-1. `build_new_alias_discord_text(author, alias, editor)`
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 作者名を含む | 通常のauthor/alias | 戻り値に作者名が含まれる |
+| 別名を含む | 通常のauthor/alias | 戻り値に別名が含まれる |
+| 種別の表示名を含む | `alias_type="past"` | 戻り値に「以前の名称」が含まれる |
+| 編集者を含む | 任意のeditor | 戻り値に編集者情報が含まれる |
+
+#### 16-2. `build_edit_alias_discord_text(author, old_name, changes, editor)`
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| name変更を含む | `changes`に`["別名", 旧, 新]`を含む | 戻り値に変更前・変更後の別名が含まれる |
+| alias_type変更を含む | `changes`に`["種別", 旧, 新]`を含む | 戻り値に変更前・変更後の種別表示名が含まれる |
+| 作者名を含む | 通常のauthor | 戻り値に作者名が含まれる |
+
+#### 16-3. `build_delete_alias_discord_text(author, alias_name, editor)`
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 作者名を含む | 通常のauthor | 戻り値に作者名が含まれる |
+| 別名を含む | 任意のalias_name | 戻り値に別名が含まれる |
 
 ---
 
