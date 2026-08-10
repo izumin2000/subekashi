@@ -8,6 +8,14 @@
 {% block content %}
 <section>
     <h1>{{ author }}</h1>
+    <div class="dummybuttons">
+        <div class="dummybutton-with-count">
+            <a href="{% url 'subekashi:author_aliases' author_id %}">
+                <div class="dummybutton black-dummybutton"><p>別名</p></div>
+            </a>
+            {% if alias_count >= 1 %}<p id="alias-count">{{ alias_count }}件の別名</p>{% endif %}
+        </div>
+    </div>
     {% for songIns in songInsL %}
         {% render_song_card songIns %}
     {% empty %}
