@@ -298,6 +298,32 @@ class ContactModelTest(TestCase):
         contact = Contact.create_contact("テスト問い合わせ内容")
         self.assertEqual(contact.post_time, timezone.localdate())
 
+    def test_create_contact_answer_is_empty(self):
+        contact = Contact.create_contact("テスト問い合わせ内容")
+        self.assertFalse(contact.answer)
+
+    def test_get_answered_excludes_unanswered(self):
+        Contact.objects.create(detail="未回答", post_time=timezone.localdate())
+        result = Contact.get_answered()
+        self.assertEqual(list(result), [])
+
+    def test_get_answered_includes_answered(self):
+        contact = Contact.objects.create(
+            detail="回答済み", post_time=timezone.localdate(), answer="回答内容"
+        )
+        result = Contact.get_answered()
+        self.assertIn(contact, result)
+
+    def test_get_answered_orders_by_id_desc(self):
+        first = Contact.objects.create(
+            detail="1件目", post_time=timezone.localdate(), answer="回答1"
+        )
+        second = Contact.objects.create(
+            detail="2件目", post_time=timezone.localdate(), answer="回答2"
+        )
+        result = list(Contact.get_answered())
+        self.assertEqual(result, [second, first])
+
 
 class HistoryModelTest(TestCase):
     """History モデルのテスト（author向け拡張分）"""
@@ -368,29 +394,3 @@ class HistoryModelTest(TestCase):
         results = list(History.get_for_author(self.author))
 
         self.assertEqual(results, [newer, older])
-
-    def test_create_contact_answer_is_empty(self):
-        contact = Contact.create_contact("テスト問い合わせ内容")
-        self.assertFalse(contact.answer)
-
-    def test_get_answered_excludes_unanswered(self):
-        Contact.objects.create(detail="未回答", post_time=timezone.localdate())
-        result = Contact.get_answered()
-        self.assertEqual(list(result), [])
-
-    def test_get_answered_includes_answered(self):
-        contact = Contact.objects.create(
-            detail="回答済み", post_time=timezone.localdate(), answer="回答内容"
-        )
-        result = Contact.get_answered()
-        self.assertIn(contact, result)
-
-    def test_get_answered_orders_by_id_desc(self):
-        first = Contact.objects.create(
-            detail="1件目", post_time=timezone.localdate(), answer="回答1"
-        )
-        second = Contact.objects.create(
-            detail="2件目", post_time=timezone.localdate(), answer="回答2"
-        )
-        result = list(Contact.get_answered())
-        self.assertEqual(result, [second, first])
