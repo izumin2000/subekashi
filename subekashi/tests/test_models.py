@@ -6,7 +6,7 @@ Song, Author, AuthorAlias, SongLink の CRUD・制約・メソッドを検証す
 from django.db import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
-from subekashi.models import Author, AuthorAlias, Contact, Song, SongLink
+from subekashi.models import Author, AuthorAlias, Contact, Editor, History, Song, SongLink
 
 
 class AuthorModelTest(TestCase):
@@ -323,3 +323,74 @@ class ContactModelTest(TestCase):
         )
         result = list(Contact.get_answered())
         self.assertEqual(result, [second, first])
+
+
+class HistoryModelTest(TestCase):
+    """History モデルのテスト（author向け拡張分）"""
+
+    def setUp(self):
+        self.editor = Editor.objects.create(ip="127.0.0.1")
+        self.author = Author.objects.create(name="履歴テスト作者")
+        self.song = Song.objects.create(title="履歴テスト曲")
+
+    def test_create_for_author_sets_author_and_leaves_song_null(self):
+        history = History.create_for_author(
+            author=self.author,
+            title="別名を追加",
+            history_type="edit",
+            changes=[["変更前", "変更後"], ["", "別名A"]],
+            editor=self.editor,
+        )
+        self.assertEqual(history.author, self.author)
+        self.assertIsNone(history.song)
+        self.assertEqual(history.history_type, "edit")
+
+    def test_create_for_song_leaves_author_null(self):
+        history = History.create_for_song(
+            song=self.song,
+            title="曲を編集",
+            history_type="edit",
+            changes=[["変更前", "変更後"], ["旧タイトル", "新タイトル"]],
+            editor=self.editor,
+        )
+        self.assertEqual(history.song, self.song)
+        self.assertIsNone(history.author)
+
+    def test_author_set_null_on_author_delete(self):
+        history = History.create_for_author(
+            author=self.author,
+            title="作者削除テスト",
+            history_type="delete",
+            changes=["理由", "テスト"],
+            editor=self.editor,
+        )
+        self.author.delete()
+        history.refresh_from_db()
+        self.assertIsNone(history.author)
+
+    def test_get_for_author_returns_only_matching_author_histories(self):
+        other_author = Author.objects.create(name="別の作者")
+        target_history = History.create_for_author(
+            author=self.author, title="対象", history_type="edit", changes=None, editor=self.editor,
+        )
+        History.create_for_author(
+            author=other_author, title="対象外", history_type="edit", changes=None, editor=self.editor,
+        )
+
+        results = list(History.get_for_author(self.author))
+
+        self.assertEqual(results, [target_history])
+
+    def test_get_for_author_orders_by_create_time_desc(self):
+        older = History.create_for_author(
+            author=self.author, title="古い", history_type="edit", changes=None, editor=self.editor,
+        )
+        older.create_time = timezone.now() - timezone.timedelta(days=1)
+        older.save()
+        newer = History.create_for_author(
+            author=self.author, title="新しい", history_type="edit", changes=None, editor=self.editor,
+        )
+
+        results = list(History.get_for_author(self.author))
+
+        self.assertEqual(results, [newer, older])

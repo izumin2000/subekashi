@@ -6,7 +6,7 @@ ManifestStaticFilesStorage はテストに不要なため StaticFilesStorage に
 """
 from django.test import TestCase, Client, override_settings
 from django.urls import reverse
-from subekashi.models import Ad, Author, Contact, Song
+from subekashi.models import Ad, Author, Contact, Editor, History, Song
 
 
 STATIC_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
@@ -337,6 +337,30 @@ class SongDeleteViewTest(TestCase):
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+class EditorViewTest(TestCase):
+    """EditorView (/editor/<id>/) のテスト"""
+
+    def setUp(self):
+        self.client = Client()
+        self.editor = Editor.objects.create(ip="127.0.0.4", is_open=True)
+
+    def test_existing_editor_returns_200(self):
+        response = self.client.get(reverse("subekashi:editor", args=[self.editor.id]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_author_history_links_to_author_page_not_deleted_message(self):
+        author = Author.objects.create(name="編集者履歴テスト作者")
+        History.create_for_author(
+            author=author, title="別名を追加", history_type="edit", changes=None, editor=self.editor,
+        )
+
+        response = self.client.get(reverse("subekashi:editor", args=[self.editor.id]))
+
+        self.assertContains(response, "編集者履歴テスト作者")
+        self.assertNotContains(response, "この曲は削除されました")
+
+
+@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
 class AuthorViewTest(TestCase):
     """AuthorView (/authors/<id>/) のテスト"""
 
@@ -443,6 +467,31 @@ class HistoriesViewTest(TestCase):
     def test_get_returns_200(self):
         response = self.client.get(reverse("subekashi:histories"))
         self.assertEqual(response.status_code, 200)
+
+    def test_author_history_links_to_author_page_not_deleted_message(self):
+        # author向けのHistory(song=None)が「この曲は削除されました」と誤表示されないことを確認する
+        editor = Editor.objects.create(ip="127.0.0.2")
+        author = Author.objects.create(name="履歴一覧テスト作者")
+        History.create_for_author(
+            author=author, title="別名を追加", history_type="edit", changes=None, editor=editor,
+        )
+
+        response = self.client.get(reverse("subekashi:histories"))
+
+        self.assertContains(response, "履歴一覧テスト作者")
+        self.assertNotContains(response, "この曲は削除されました")
+
+    def test_author_deleted_after_history_shows_deleted_message(self):
+        editor = Editor.objects.create(ip="127.0.0.3")
+        author = Author.objects.create(name="削除される作者")
+        History.create_for_author(
+            author=author, title="作者削除", history_type="delete", changes=["理由", "テスト"], editor=editor,
+        )
+        author.delete()
+
+        response = self.client.get(reverse("subekashi:histories"))
+
+        self.assertContains(response, "この曲または作者は削除されました")
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE, RATELIMIT_ENABLE=False)
