@@ -505,6 +505,17 @@
 | --- | --- | --- |
 | エイリアスの作成 | `AuthorAlias.objects.create(name="別名", author=author)` | DBに保存される |
 | `name` のユニーク制約 | 同じ名前で2件作成 | `IntegrityError` が発生 |
+| `alias_type` のデフォルト値 | `alias_type` 未指定で作成 | `alias_type == "another"` |
+
+#### 11-3-1. `Author.get_effective_aliases()`（双方向解決ロジック）
+
+| テストケース | 操作 | 期待結果 |
+| --- | --- | --- |
+| 別名なし | 別名未登録のauthor | 空リストを返す |
+| 対象authorが存在しない場合は単方向 | `author(foo)` に `name="foo_sub"` の別名を追加（`Author(foo_sub)` は未登録） | `foo.get_effective_aliases()` に正方向(`is_reverse=False`)の1件のみ |
+| 対象authorが後から登録されると双方向になる | 上記に加え `Author.objects.create(name="foo_sub")` を作成 | `foo` 側は正方向のまま、`foo_sub.get_effective_aliases()` に逆方向(`is_reverse=True`, `name="foo"`)の1件が追加される |
+| 正方向・逆方向の混在 | `foo` に正方向の別名、別author(`bar`)が `name="foo"` の別名を保持 | `foo.get_effective_aliases()` に正方向1件・逆方向1件の計2件 |
+| 自分自身の別名は逆方向に二重計上しない | `foo` が `name` に自身以外の値を持つ別名を1件保持 | 逆方向のexclude(author=self)により重複しない |
 
 #### 11-4. `SongLink` モデル
 
