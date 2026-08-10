@@ -413,6 +413,15 @@
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | 正常アクセス | GETリクエスト | HTTP 200 |
+| author向けHistory (#991) | `History.create_for_author()`で作成したHistoryが存在 | 作者名・作者ページへのリンクが表示され、「この曲は削除されました」は表示されない |
+| author削除後のHistory (#991) | 上記のauthorを削除 | 「この曲または作者は削除されました」が表示される |
+
+#### 7-10-1. `EditorView` (`/editor/<id>/`)（#991でauthor向けHistory表示を追加）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 存在するeditor | 有効なeditor_id | HTTP 200 |
+| author向けHistory | `History.create_for_author()`で作成したHistoryが存在 | 作者名が表示され、「この曲は削除されました」は表示されない |
 
 #### 7-11. `SongCardsView` (`/api/html/song_cards`)
 
@@ -569,6 +578,15 @@
 | `create_contact(detail)` | `Contact.create_contact("内容")` | レコードが作成され `post_time` が今日の日付になる |
 | `get_answered()` | `answer` が空(`None`)のレコード | 結果に含まれない |
 | `get_answered()` | `answer` が設定されたレコード | 結果に含まれる、`-id` 順 |
+
+#### 11-6. `History` モデル（author向け拡張分、#991）
+
+| テストケース | 操作 | 期待結果 |
+| --- | --- | --- |
+| `create_for_author()` | `History.create_for_author(author=author, ...)` | `history.author`が設定され`history.song`は`None`のまま |
+| `create_for_song()` | `History.create_for_song(song=song, ...)` | `history.song`が設定され`history.author`は`None`のまま |
+| authorの削除 | `create_for_author()`後に`author.delete()` | `history.author`が`None`になる（`on_delete=SET_NULL`、Historyレコード自体は残る） |
+| `get_for_author(author)` | 複数authorのHistoryが存在する状態で対象authorを指定 | 対象authorのHistoryのみが`-create_time`順で返される |
 
 ---
 
