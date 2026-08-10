@@ -33,7 +33,7 @@ def ad(request) :
                 continue
             
             adIns = Ad.objects.filter(url = adForm).first()
-            if adForm != "" :
+            if adForm != "" and adIns :
                 adIns.dup -= 1
                 adIns.save()
             

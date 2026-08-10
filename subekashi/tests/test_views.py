@@ -6,7 +6,7 @@ ManifestStaticFilesStorage はテストに不要なため StaticFilesStorage に
 """
 from django.test import TestCase, Client, override_settings
 from django.urls import reverse
-from subekashi.models import Author, Song
+from subekashi.models import Ad, Author, Song
 
 
 STATIC_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
@@ -507,3 +507,53 @@ class RedirectViewTest(TestCase):
         response = self.client.get("/new/")
         self.assertEqual(response.status_code, 302)
         self.assertRedirects(response, "/songs/new/", fetch_redirect_response=False)
+
+
+@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+class AdViewTest(TestCase):
+    """AdView (/ad/) のテスト"""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_get_returns_200(self):
+        response = self.client.get(reverse("subekashi:ad"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_post_with_unregistered_previous_ad_does_not_error(self):
+        """
+        cookieに残った旧宣伝URLがAdレコードとして存在しない場合でも
+        AttributeErrorにならず正常に処理されること（Issue #985）
+        """
+        previous_ad_url = "https://www.youtube.com/watch?v=aaaaaaaaaaa"
+        response = self.client.post(
+            reverse("subekashi:ad"),
+            {
+                "url1": "",
+                "ad1": previous_ad_url,
+                "url2": "",
+                "ad2": "",
+                "url3": "",
+                "ad3": "",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse("subekashi:ad_complete"))
+
+    def test_post_valid_new_ad_redirects_and_increments_dup(self):
+        # SEND_DISCORD=False のため send_discord は即 True を返す
+        new_ad_url = "https://www.youtube.com/watch?v=bbbbbbbbbbb"
+        response = self.client.post(
+            reverse("subekashi:ad"),
+            {
+                "url1": new_ad_url,
+                "ad1": "",
+                "url2": "",
+                "ad2": "",
+                "url3": "",
+                "ad3": "",
+            },
+        )
+        self.assertRedirects(response, reverse("subekashi:ad_complete"))
+        adIns = Ad.objects.get(url="https://youtu.be/bbbbbbbbbbb")
+        self.assertEqual(adIns.dup, 1)
