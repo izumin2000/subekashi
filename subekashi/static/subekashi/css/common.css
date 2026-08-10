@@ -931,6 +931,19 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
     transition: all 0.25s;
 }
 
+/* 画面遷移系ボタン */
+.dummybutton.black-dummybutton {
+    background-color: #333;
+}
+
+.dummybutton.black-dummybutton:hover {
+    background-color: #666;
+}
+
+.dummybutton.black-dummybutton p {
+    color: #fff;
+}
+
 input::placeholder {
     text-align: center;
 }
