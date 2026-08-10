@@ -1,4 +1,5 @@
 from django import forms
+from subekashi.models import AuthorAlias
 
 
 CONTACT_CATEGORY_CHOICES = [
@@ -28,6 +29,39 @@ class SongDeleteForm(forms.Form):
         widget=forms.Textarea,
         error_messages={'required': '削除理由を入力してください。'},
     )
+
+
+class AuthorAliasForm(forms.Form):
+    name = forms.CharField(
+        max_length=500,
+        error_messages={'required': '別名を入力してください。'},
+    )
+    alias_type = forms.ChoiceField(
+        choices=AuthorAlias.CHOICES,
+        error_messages={
+            'required': '種別を選択してください。',
+            'invalid_choice': '種別を選択してください。',
+        },
+    )
+
+    def __init__(self, *args, author=None, editing_alias=None, **kwargs):
+        self.author = author
+        self.editing_alias = editing_alias
+        super().__init__(*args, **kwargs)
+
+    def clean_name(self):
+        name = self.cleaned_data['name']
+
+        if self.author is not None and name == self.author.name:
+            raise forms.ValidationError('作者自身の名前は別名として登録できません。')
+
+        duplicate_qs = AuthorAlias.objects.filter(name=name)
+        if self.editing_alias is not None:
+            duplicate_qs = duplicate_qs.exclude(pk=self.editing_alias.pk)
+        if duplicate_qs.exists():
+            raise forms.ValidationError('その別名は既に登録されています。')
+
+        return name
 
 
 class SongEditForm(forms.Form):

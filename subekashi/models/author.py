@@ -76,3 +76,7 @@ class EffectiveAlias:
     alias_type: str
     source: AuthorAlias
     is_reverse: bool = False
+
+    @property
+    def alias_type_display(self):
+        return dict(AuthorAlias.CHOICES).get(self.alias_type, self.alias_type)

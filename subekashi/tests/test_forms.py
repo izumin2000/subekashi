@@ -1,11 +1,13 @@
 """
 forms.py のテスト
 
-ContactForm, SongDeleteForm, SongEditForm のバリデーションを検証する。
-フォームはDBアクセスしないため SimpleTestCase を使用する。
+ContactForm, SongDeleteForm, SongEditForm, AuthorAliasForm のバリデーションを検証する。
+ContactForm/SongDeleteForm/SongEditFormはDBアクセスしないため SimpleTestCase を使用するが、
+AuthorAliasFormはclean_name()で重複チェックのためDBアクセスするため TestCase を使用する。
 """
-from django.test import SimpleTestCase
-from subekashi.forms import ContactForm, SongDeleteForm, SongEditForm
+from django.test import SimpleTestCase, TestCase
+from subekashi.forms import AuthorAliasForm, ContactForm, SongDeleteForm, SongEditForm
+from subekashi.models import Author, AuthorAlias
 
 
 class ContactFormTest(SimpleTestCase):
@@ -152,3 +154,61 @@ class SongEditFormTest(SimpleTestCase):
             is_joke=False,
         ))
         self.assertTrue(form.is_valid())
+
+
+class AuthorAliasFormTest(TestCase):
+    """AuthorAliasForm のテスト"""
+
+    def setUp(self):
+        self.author = Author.objects.create(name="フォームテスト作者")
+
+    def _make_data(self, **kwargs):
+        defaults = {"name": "別名A", "alias_type": "past"}
+        defaults.update(kwargs)
+        return defaults
+
+    def test_valid_form(self):
+        form = AuthorAliasForm(data=self._make_data(), author=self.author)
+        self.assertTrue(form.is_valid())
+
+    def test_empty_name_is_invalid(self):
+        form = AuthorAliasForm(data=self._make_data(name=""), author=self.author)
+        self.assertFalse(form.is_valid())
+        self.assertIn("name", form.errors)
+
+    def test_invalid_alias_type_is_invalid(self):
+        form = AuthorAliasForm(data=self._make_data(alias_type="不正な種別"), author=self.author)
+        self.assertFalse(form.is_valid())
+        self.assertIn("alias_type", form.errors)
+
+    def test_all_choice_values_are_valid(self):
+        for value, _label in AuthorAlias.CHOICES:
+            form = AuthorAliasForm(data=self._make_data(alias_type=value), author=self.author)
+            self.assertTrue(form.is_valid(), f"alias_type '{value}' が無効と判定された")
+
+    def test_name_same_as_author_name_is_invalid(self):
+        form = AuthorAliasForm(data=self._make_data(name=self.author.name), author=self.author)
+        self.assertFalse(form.is_valid())
+        self.assertIn("作者自身の名前は別名として登録できません。", form.errors["name"])
+
+    def test_duplicate_name_is_invalid(self):
+        AuthorAlias.objects.create(name="既存別名", author=self.author)
+        form = AuthorAliasForm(data=self._make_data(name="既存別名"), author=self.author)
+        self.assertFalse(form.is_valid())
+        self.assertIn("その別名は既に登録されています。", form.errors["name"])
+
+    def test_editing_alias_excludes_itself_from_duplicate_check(self):
+        alias = AuthorAlias.objects.create(name="編集対象別名", author=self.author)
+        form = AuthorAliasForm(
+            data=self._make_data(name="編集対象別名"), author=self.author, editing_alias=alias,
+        )
+        self.assertTrue(form.is_valid())
+
+    def test_editing_alias_still_detects_duplicate_with_other_alias(self):
+        AuthorAlias.objects.create(name="別の既存別名", author=self.author)
+        alias = AuthorAlias.objects.create(name="編集対象別名2", author=self.author)
+        form = AuthorAliasForm(
+            data=self._make_data(name="別の既存別名"), author=self.author, editing_alias=alias,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("その別名は既に登録されています。", form.errors["name"])

@@ -405,6 +405,58 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 
 ---
 
+### 11. 別名（AuthorAlias）管理フロー（#992）
+
+**テストファイル**: `tests/test_views.py`（`AuthorAliasesViewTest` / `AuthorAliasNewViewTest` / `AuthorAliasEditViewTest` / `AuthorAliasDeleteViewTest`）
+
+#### 11-1. 別名の新規登録から一覧表示まで
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `Author(name="foo")` が存在する |
+| 操作 | `POST /authors/<foo.id>/aliases/new` に `name="foo_sub"`, `alias_type="past"` |
+| 検証 | `/authors/<foo.id>/aliases` へリダイレクト、`AuthorAlias`が作成される |
+| 検証 | `History.get_for_author(foo)` に `history_type="new"` のレコードが1件作成される |
+| 検証 | `GET /authors/<foo.id>/aliases` に `foo_sub` が表示され、編集・削除リンクを含む |
+
+#### 11-2. 双方向解決が一覧画面に反映される
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `Author(name="foo")` に別名 `foo_sub` を登録済み |
+| 操作 | 後から `Author(name="foo_sub")` を新規登録し、`GET /authors/<foo_sub.id>/aliases` |
+| 検証 | 逆方向の別名として `foo` が表示されるが、編集・削除リンクは含まれない |
+
+#### 11-3. 別名の編集
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `foo` に別名 `foo_sub` が登録済み |
+| 操作 | `POST /authors/<foo.id>/aliases/<alias.id>/edit` に `name="foo_sub2"`, `alias_type="sns"` |
+| 検証 | 一覧画面へリダイレクト、`AuthorAlias.name`・`alias_type`が更新される |
+| 検証 | `History`に `history_type="edit"` のレコードが作成される |
+
+#### 11-4. 別名の削除
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `foo` に別名 `foo_sub` が登録済み |
+| 操作 | `POST /authors/<foo.id>/aliases/<alias.id>/delete` |
+| 検証 | 一覧画面へリダイレクト、`AuthorAlias`が削除される |
+| 検証 | `History`に `history_type="delete"` のレコードが作成され、`history.author`は削除後も`foo`を指したまま |
+
+#### 11-5. channelリンクとSong検索への反映
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `Song1(author=foo)`, `Song2(author=foo_sub)` が存在し、`foo`に別名`foo_sub`(`alias_type="past"`)を登録 |
+| 操作 | `GET /authors/<foo.id>/aliases` |
+| 検証 | `foo_sub`の項目に `/channel/foo_sub/` へのリンクが含まれる |
+| 操作 | `GET /songs/?keyword=foo_sub` |
+| 検証 | `Song1`・`Song2`の両方がヒットする（#990の別名フィルターとの連携） |
+
+---
+
 ## テスト実装の方針
 
 ### ディレクトリ構成（案）

@@ -312,6 +312,21 @@
 | is_questionable boolean フラグ | `is_questionable=True` | `cleaned_data["is_questionable"] == True` |
 | titleが500文字超 | `title="あ" * 501` | `is_valid() == False` |
 
+#### 6-4. `AuthorAliasForm`（#992）
+
+DBアクセス（重複チェック）を伴うため `TestCase` を使用する。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 正常な入力 | `name="別名A"`, `alias_type="past"` | `is_valid() == True` |
+| nameが空 | `name=""` | `is_valid() == False` |
+| 不正なalias_type | `alias_type="不正な種別"` | `is_valid() == False` |
+| CHOICES全ての値 | `alias_type`にCHOICESの各キー | いずれも `is_valid() == True` |
+| nameがauthor自身のnameと同じ | `name=author.name` | `is_valid() == False`、`"作者自身の名前は別名として登録できません。"` |
+| nameが既存のAuthorAlias.nameと重複 | 既存のname | `is_valid() == False`、`"その別名は既に登録されています。"` |
+| 編集時に自分自身のnameのまま | `editing_alias=alias`, `name=alias.name` | `is_valid() == True`（自分自身は重複チェックから除外） |
+| 編集時に他のaliasのnameと重複 | `editing_alias=alias`, `name=`他のalias.name | `is_valid() == False` |
+
 ---
 
 ### 7. ビュー — ページアクセスと HTTP レスポンス
@@ -400,6 +415,53 @@
 | --- | --- | --- |
 | 存在する作者ID | 有効なauthor_id | HTTP 200 |
 | 存在しない作者ID | 無効なauthor_id | HTTP 404 |
+| 別名なし (#992) | 別名未登録 | 別名一覧への導線は表示されるが「件の別名」は表示されない |
+| 正方向の別名あり (#992) | 別名を1件登録 | 「1件の別名」が表示される |
+| 逆方向の別名あり (#992) | 他authorが自分のnameと一致する別名を保持 | 「1件の別名」が表示される（正方向＋逆方向の合計） |
+
+#### 7-8-1. `AuthorAliasesView` (`/authors/<id>/aliases`)（#992）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 存在しないauthor_id | 無効なauthor_id | HTTP 404 |
+| 別名なし | 別名未登録のauthor | HTTP 200、「別名が見つかりませんでした」 |
+| 正方向の別名 | 別名を1件登録 | 別名名が表示され、編集・削除リンクが含まれる |
+| 逆方向の別名 | 他authorが自分のnameと一致する別名を保持 | 相手authorの名前が表示されるが、編集・削除リンクは含まれない |
+| `alias_type=past`かつ対象authorが実在 | 別名nameと同名のAuthorが存在 | `channel/<name>/`へのリンクが含まれる |
+| `alias_type=past`だが対象authorが不在 | 別名nameと同名のAuthorが存在しない | `channel/<name>/`へのリンクが含まれない |
+| `alias_type`がpast/another以外 | 例: `abbr`。対象authorは実在 | `channel/<name>/`へのリンクが含まれない |
+
+#### 7-8-2. `AuthorAliasNewView` (`/authors/<id>/aliases/new`)（#992）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 正常アクセス | GETリクエスト | HTTP 200 |
+| 存在しないauthor_id | 無効なauthor_id | HTTP 404 |
+| 正常なPOST | 有効な`name`・`alias_type` | AuthorAliasが作成され一覧画面へリダイレクト |
+| 正常なPOST | 上記 | `History.create_for_author()`が呼ばれ、`history_type="new"`のレコードが作成される |
+| nameが重複 | 既存のname | HTTP 200のままエラー表示、レコードは作成されない |
+| nameがauthor自身と同じ | `name=author.name` | HTTP 200のままエラー表示、レコードは作成されない |
+
+#### 7-8-3. `AuthorAliasEditView` (`/authors/<id>/aliases/<alias_id>/edit`)（#992）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 正常アクセス | GETリクエスト | HTTP 200 |
+| 存在しないalias_id | 無効なalias_id | HTTP 404 |
+| 他authorが所有するalias_id | 別authorのalias_idを指定 | HTTP 404 |
+| 正常なPOST | 有効な`name`・`alias_type` | AuthorAliasが更新され一覧画面へリダイレクト |
+| 正常なPOST | 上記 | `History.create_for_author()`が呼ばれ、`history_type="edit"`のレコードが作成される |
+| 自分自身の現在のnameのまま更新 | `name`を変更しない | 重複エラーにならず更新される |
+| 他のaliasのnameと重複 | 同一author内の他のalias.name | HTTP 200のままエラー表示、更新されない |
+
+#### 7-8-4. `AuthorAliasDeleteView` (`/authors/<id>/aliases/<alias_id>/delete`)（#992）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 正常アクセス | GETリクエスト | HTTP 200、削除確認内容が表示される |
+| 存在しないalias_id | 無効なalias_id | HTTP 404 |
+| 正常なPOST | POSTリクエスト | AuthorAliasが削除され一覧画面へリダイレクト |
+| 正常なPOST | 上記 | `History.create_for_author()`が呼ばれ、`history_type="delete"`、`history.author`は削除後も維持される |
 
 #### 7-9. `ChannelView` (`/channel/<name>/`)
 
@@ -562,6 +624,13 @@
 | 対象authorが後から登録されると双方向になる | 上記に加え `Author.objects.create(name="foo_sub")` を作成 | `foo` 側は正方向のまま、`foo_sub.get_effective_aliases()` に逆方向(`is_reverse=True`, `name="foo"`)の1件が追加される |
 | 正方向・逆方向の混在 | `foo` に正方向の別名、別author(`bar`)が `name="foo"` の別名を保持 | `foo.get_effective_aliases()` に正方向1件・逆方向1件の計2件 |
 | 自分自身の別名は逆方向に二重計上しない | `foo` が `name="foo"`（自身の name と同じ値）の別名を1件保持 | 逆方向クエリが `exclude(author=self)` により同じaliasを除外し、正方向1件のみ（計1件） |
+
+#### 11-3-2. `EffectiveAlias.alias_type_display`（#992）
+
+| テストケース | 操作 | 期待結果 |
+| --- | --- | --- |
+| CHOICESに存在する値 | `alias_type="past"` | `"以前の名称"` を返す |
+| CHOICESに存在しない値 | `alias_type="unknown_type"` | 生の値をそのまま返す（フォールバック） |
 
 #### 11-4. `SongLink` モデル
 

@@ -6,7 +6,7 @@ ManifestStaticFilesStorage はテストに不要なため StaticFilesStorage に
 """
 from django.test import TestCase, Client, override_settings
 from django.urls import reverse
-from subekashi.models import Ad, Author, Contact, Editor, History, Song
+from subekashi.models import Ad, Author, AuthorAlias, Contact, Editor, History, Song
 
 
 STATIC_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
@@ -381,6 +381,250 @@ class AuthorViewTest(TestCase):
     def test_author_name_appears_in_response(self):
         response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
         self.assertContains(response, "ビューテスト作者")
+
+    def test_alias_link_present_without_count_when_no_aliases(self):
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
+        self.assertContains(response, reverse("subekashi:author_aliases", args=[self.author.id]))
+        self.assertNotContains(response, "件の別名")
+
+    def test_alias_count_shown_when_forward_alias_exists(self):
+        AuthorAlias.objects.create(name="件数テスト別名", author=self.author, alias_type="past")
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
+        self.assertContains(response, "1件の別名")
+
+    def test_alias_count_includes_reverse_aliases(self):
+        target = Author.objects.create(name="件数逆方向対象")
+        AuthorAlias.objects.create(name=self.author.name, author=target, alias_type="past")
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
+        self.assertContains(response, "1件の別名")
+
+
+@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+class AuthorAliasesViewTest(TestCase):
+    """AuthorAliasesView (/authors/<id>/aliases) のテスト"""
+
+    def setUp(self):
+        self.client = Client()
+        self.author = Author.objects.create(name="別名一覧テスト作者")
+
+    def test_nonexistent_author_returns_404(self):
+        response = self.client.get(reverse("subekashi:author_aliases", args=[99999]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_no_aliases_returns_200(self):
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "別名が見つかりませんでした")
+
+    def test_forward_alias_is_displayed_with_edit_delete_links(self):
+        alias = AuthorAlias.objects.create(name="別名X", author=self.author, alias_type="spell")
+
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+
+        self.assertContains(response, "別名X")
+        self.assertContains(response, reverse("subekashi:author_alias_edit", args=[self.author.id, alias.id]))
+        self.assertContains(response, reverse("subekashi:author_alias_delete", args=[self.author.id, alias.id]))
+
+    def test_reverse_alias_is_displayed_without_edit_delete_links(self):
+        target = Author.objects.create(name="別名逆方向対象")
+        alias = AuthorAlias.objects.create(name=self.author.name, author=target, alias_type="past")
+
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+
+        self.assertContains(response, "別名逆方向対象")
+        self.assertNotContains(response, reverse("subekashi:author_alias_edit", args=[self.author.id, alias.id]))
+        self.assertNotContains(response, reverse("subekashi:author_alias_delete", args=[self.author.id, alias.id]))
+
+    def test_past_alias_with_existing_author_links_to_channel(self):
+        Author.objects.create(name="別名チャンネル対象")
+        AuthorAlias.objects.create(name="別名チャンネル対象", author=self.author, alias_type="past")
+
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+
+        self.assertContains(response, reverse("subekashi:channel", args=["別名チャンネル対象"]))
+
+    def test_past_alias_without_existing_author_does_not_link_to_channel(self):
+        AuthorAlias.objects.create(name="実在しない別名", author=self.author, alias_type="past")
+
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+
+        self.assertContains(response, "実在しない別名")
+        self.assertNotContains(response, reverse("subekashi:channel", args=["実在しない別名"]))
+
+    def test_non_linkable_alias_type_does_not_link_to_channel_even_if_author_exists(self):
+        Author.objects.create(name="略称対象作者")
+        AuthorAlias.objects.create(name="略称対象作者", author=self.author, alias_type="abbr")
+
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+
+        self.assertNotContains(response, reverse("subekashi:channel", args=["略称対象作者"]))
+
+
+@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+class AuthorAliasNewViewTest(TestCase):
+    """AuthorAliasNewView (/authors/<id>/aliases/new) のテスト"""
+
+    def setUp(self):
+        self.client = Client()
+        self.author = Author.objects.create(name="別名新規テスト作者")
+
+    def test_get_returns_200(self):
+        response = self.client.get(reverse("subekashi:author_alias_new", args=[self.author.id]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_nonexistent_author_returns_404(self):
+        response = self.client.get(reverse("subekashi:author_alias_new", args=[99999]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_post_creates_alias_and_redirects_to_list(self):
+        response = self.client.post(
+            reverse("subekashi:author_alias_new", args=[self.author.id]),
+            {"name": "新規別名A", "alias_type": "past"},
+        )
+        self.assertRedirects(
+            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=new"
+        )
+        self.assertTrue(AuthorAlias.objects.filter(name="新規別名A", author=self.author).exists())
+
+    def test_post_creates_history(self):
+        self.client.post(
+            reverse("subekashi:author_alias_new", args=[self.author.id]),
+            {"name": "新規別名B", "alias_type": "past"},
+        )
+        history = History.get_for_author(self.author).first()
+        self.assertIsNotNone(history)
+        self.assertEqual(history.history_type, "new")
+        self.assertIn("新規別名B", history.title)
+
+    def test_post_duplicate_name_shows_error_without_creating(self):
+        AuthorAlias.objects.create(name="重複別名", author=self.author)
+        response = self.client.post(
+            reverse("subekashi:author_alias_new", args=[self.author.id]),
+            {"name": "重複別名", "alias_type": "past"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(AuthorAlias.objects.filter(name="重複別名").count(), 1)
+
+    def test_post_name_same_as_author_shows_error(self):
+        response = self.client.post(
+            reverse("subekashi:author_alias_new", args=[self.author.id]),
+            {"name": self.author.name, "alias_type": "past"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(AuthorAlias.objects.filter(name=self.author.name).exists())
+
+
+@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+class AuthorAliasEditViewTest(TestCase):
+    """AuthorAliasEditView (/authors/<id>/aliases/<alias_id>/edit) のテスト"""
+
+    def setUp(self):
+        self.client = Client()
+        self.author = Author.objects.create(name="別名編集テスト作者")
+        self.alias = AuthorAlias.objects.create(name="編集前別名", author=self.author, alias_type="past")
+
+    def test_get_returns_200(self):
+        response = self.client.get(
+            reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id])
+        )
+        self.assertEqual(response.status_code, 200)
+
+    def test_nonexistent_alias_returns_404(self):
+        response = self.client.get(
+            reverse("subekashi:author_alias_edit", args=[self.author.id, 99999])
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_alias_belonging_to_other_author_returns_404(self):
+        other_author = Author.objects.create(name="別の作者")
+        response = self.client.get(
+            reverse("subekashi:author_alias_edit", args=[other_author.id, self.alias.id])
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_post_updates_alias_and_redirects_to_list(self):
+        response = self.client.post(
+            reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id]),
+            {"name": "編集後別名", "alias_type": "sns"},
+        )
+        self.assertRedirects(
+            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=edit"
+        )
+        self.alias.refresh_from_db()
+        self.assertEqual(self.alias.name, "編集後別名")
+        self.assertEqual(self.alias.alias_type, "sns")
+
+    def test_post_creates_history(self):
+        self.client.post(
+            reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id]),
+            {"name": "編集後別名2", "alias_type": "sns"},
+        )
+        history = History.get_for_author(self.author).first()
+        self.assertIsNotNone(history)
+        self.assertEqual(history.history_type, "edit")
+        self.assertIn("編集前別名", history.title)
+
+    def test_post_can_keep_own_name_unchanged(self):
+        # 自分自身(編集対象)の現在の名前のまま更新しても重複エラーにならない
+        response = self.client.post(
+            reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id]),
+            {"name": "編集前別名", "alias_type": "sns"},
+        )
+        self.assertRedirects(
+            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=edit"
+        )
+
+    def test_post_duplicate_name_with_other_alias_shows_error(self):
+        AuthorAlias.objects.create(name="他の別名", author=self.author)
+        response = self.client.post(
+            reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id]),
+            {"name": "他の別名", "alias_type": "past"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.alias.refresh_from_db()
+        self.assertEqual(self.alias.name, "編集前別名")
+
+
+@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+class AuthorAliasDeleteViewTest(TestCase):
+    """AuthorAliasDeleteView (/authors/<id>/aliases/<alias_id>/delete) のテスト"""
+
+    def setUp(self):
+        self.client = Client()
+        self.author = Author.objects.create(name="別名削除テスト作者")
+        self.alias = AuthorAlias.objects.create(name="削除対象別名", author=self.author, alias_type="past")
+
+    def test_get_returns_200(self):
+        response = self.client.get(
+            reverse("subekashi:author_alias_delete", args=[self.author.id, self.alias.id])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "削除対象別名")
+
+    def test_nonexistent_alias_returns_404(self):
+        response = self.client.get(
+            reverse("subekashi:author_alias_delete", args=[self.author.id, 99999])
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_post_deletes_alias_and_redirects_to_list(self):
+        response = self.client.post(
+            reverse("subekashi:author_alias_delete", args=[self.author.id, self.alias.id])
+        )
+        self.assertRedirects(
+            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=delete"
+        )
+        self.assertFalse(AuthorAlias.objects.filter(pk=self.alias.id).exists())
+
+    def test_post_creates_history_and_preserves_author_link(self):
+        self.client.post(
+            reverse("subekashi:author_alias_delete", args=[self.author.id, self.alias.id])
+        )
+        history = History.get_for_author(self.author).first()
+        self.assertIsNotNone(history)
+        self.assertEqual(history.history_type, "delete")
+        self.assertIn("削除対象別名", history.title)
+        self.assertEqual(history.author, self.author)
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)

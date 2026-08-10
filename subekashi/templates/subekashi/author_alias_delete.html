@@ -1,0 +1,20 @@
+{% extends "subekashi/base/base.html" %}
+
+
+{% load static %}
+{% block css %}{% static 'subekashi/css/author_aliases.css'%}{% endblock %}
+
+{% block content %}
+<section>
+    <h1>{{ author.name }}の別名『{{ alias.name }}』を削除</h1>
+    <p>この別名を削除します。よろしいですか？</p>
+    <div class="dummybuttons">
+        <a href="{% url 'subekashi:author_aliases' author.id %}">
+            <div class="dummybutton black-dummybutton"><p>キャンセル</p></div>
+        </a>
+        <form action="{% url 'subekashi:author_alias_delete' author.id alias.id %}" method="POST" class="dummybutton-form">{% csrf_token %}
+            <button type="submit" class="dummybutton black-dummybutton"><p>削除する</p></button>
+        </form>
+    </div>
+</section>
+{% endblock %}

@@ -7,6 +7,7 @@ from django.db import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
 from subekashi.models import Author, AuthorAlias, Contact, Editor, History, Song, SongLink
+from subekashi.models.author import EffectiveAlias
 
 
 class AuthorModelTest(TestCase):
@@ -134,6 +135,20 @@ class AuthorEffectiveAliasesTest(TestCase):
 
         self.assertEqual(len(effective), 1)
         self.assertFalse(effective[0].is_reverse)
+
+    def test_alias_type_display_returns_human_readable_label(self):
+        AuthorAlias.objects.create(name="foo_past", author=self.author, alias_type="past")
+
+        effective = self.author.get_effective_aliases()
+
+        self.assertEqual(effective[0].alias_type_display, "以前の名称")
+
+    def test_alias_type_display_falls_back_to_raw_value_for_unknown_type(self):
+        # CHOICESにない値が入るケース（DBレベルではchoicesは強制されないため起こりうる）でも例外を出さない
+        alias = AuthorAlias.objects.create(name="foo_unknown", author=self.author, alias_type="past")
+        effective_alias = EffectiveAlias(name="foo_unknown", alias_type="unknown_type", source=alias)
+
+        self.assertEqual(effective_alias.alias_type_display, "unknown_type")
 
 
 class SongModelTest(TestCase):

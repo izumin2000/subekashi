@@ -5,6 +5,12 @@ from subekashi.views.ai import AiView
 from subekashi.views.ai_result import AiResultView
 from subekashi.views.api.ai import AiAPI
 from subekashi.views.author import AuthorView
+from subekashi.views.author_alias import (
+    AuthorAliasesView,
+    AuthorAliasNewView,
+    AuthorAliasEditView,
+    AuthorAliasDeleteView,
+)
 from subekashi.views.channel import ChannelView
 from subekashi.views.contact import ContactView
 from subekashi.views.editor import EditorView
