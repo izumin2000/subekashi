@@ -71,6 +71,12 @@
 | Googleリダイレクトリンク | `"https://www.google.com/url?q=https://youtu.be/abc1234abcd"` | `"https://youtu.be/abc1234abcd"` |
 | 複数URL | `"https://youtu.be/abc1234abcd,https://x.com/u/1"` | 各URLが正規化されたカンマ区切り |
 
+#### 1-6. `get_allow_media(url)`
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| Bluesky URL | `https://bsky.app/profile/example.bsky.social` | `result["id"] == "bluesky"` |
+
 ---
 
 ### 2. `lib/song_service.py` — 曲サービス
@@ -508,6 +514,14 @@
 | `url` のユニーク制約 | 同じURLで2件作成 | `IntegrityError` が発生 |
 | 曲との多対多関係 | `link.songs.add(song)` | 関係が成立する |
 
+#### 11-5. `Contact` モデル
+
+| テストケース | 操作 | 期待結果 |
+| --- | --- | --- |
+| `create_contact(detail)` | `Contact.create_contact("内容")` | レコードが作成され `post_time` が今日の日付になる |
+| `get_answered()` | `answer` が空(`None`)のレコード | 結果に含まれない |
+| `get_answered()` | `answer` が設定されたレコード | 結果に含まれる、`-id` 順 |
+
 ---
 
 ### 12. `article` アプリ
@@ -531,6 +545,85 @@
 | 記事タイトルの表示 | 有効なarticle_id | レスポンスにタイトルが含まれる |
 | 存在しない記事ID | 無効なarticle_id | HTTP 404 |
 | 非公開記事 | `is_open=False` | HTTP 404 |
+
+#### 12-3. `is_pinned_article` Cookie による並び替え (`ArticlesView`)
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| Cookie未指定（デフォルトTrue） | `article_id="howToArticle"` の記事が存在 | 一覧の先頭が `howToArticle` になる |
+| Cookie `is_pinned_article=False` | 同上 | `-post_time` 順のみで並び、`howToArticle` は先頭固定されない |
+
+#### 12-4. `Article.get_top_news_articles()`
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| `tag="news"` の記事 | 公開済み・投稿済み | 結果に含まれる |
+| `tag="release"` の記事 | 公開済み・投稿済み | 結果に含まれる |
+| `handle_as_news=True` の記事 | `tag="blog"` など他タグでも | 結果に含まれる |
+| 上記以外のタグ | `handle_as_news=False` | 結果に含まれない |
+| 非公開記事 | `is_open=False` | 結果に含まれない |
+| 未来の`post_time` | `post_time` が未来日時 | 結果に含まれない |
+| 件数上限 | 該当記事が5件 | 最大3件までに絞られる |
+| 並び順 | 複数の該当記事 | `-post_time` の降順 |
+
+---
+
+### 13. `converters.py` — URLコンバータ
+
+**テストファイル**: `tests/test_converters.py`
+
+#### 13-1. `SQLiteIntConverter`
+
+巨大な整数を含むURLアクセス時にSQLiteのINTEGER範囲を超えて`OverflowError`が発生していた不具合の修正に対応。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 通常の整数 | `"123"` | `123` を返す |
+| SQLite INT最大値 | `str(9223372036854775807)` | そのまま返す |
+| 最大値超過 | `str(9223372036854775808)` | `ValueError` が発生 |
+| 巨大な数値 | `"9" * 30` | `ValueError` が発生 |
+| `/songs/<id>/` への巨大なID | `"9" * 30` | HTTP 404（500エラーにならない） |
+
+---
+
+### 14. `management/commands` — 管理コマンド
+
+**テストファイル**: `tests/test_management_commands.py`
+
+#### 14-1. `delete` コマンド
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 通常削除 | `delete <id>` | Songが削除される |
+| デフォルトの挙動 | `delete <id>` | 紐づく`SongLink.is_removed`が`True`になる |
+| `--keep-links` 指定 | `delete <id> --keep-links` | `SongLink.is_removed`は`False`のまま |
+| 存在しないID | `delete 999999` | 例外を投げず警告を出力 |
+
+#### 14-2. `youtube` コマンド
+
+DBロックエラー対策で全件処理時に先にID一覧を取得する方式に変更したことに対応（YouTube APIはモック化）。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| `-id` 指定 | 特定のSongのみ対象 | 指定Songのみ`view`等が更新される |
+| `-id` 未指定 | SongLinkが紐づく全Song | 該当する全Songが更新される |
+| SongLinkが無いSong | 対象外 | 更新されない（スキップ） |
+| 全動画が取得不可 | `get_youtube_api` が `{}` を返す | `is_deleted=True` で保存される |
+
+---
+
+### 15. `templatetags/song_card.py` — テンプレートタグ
+
+**テストファイル**: `tests/test_templatetags_song_card.py`
+
+#### 15-1. `get_author(song)`
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 作者0人 | `song.authors` が空 | 「作者不明」を表示 |
+| 作者1人 | `song.authors` に1件 | 作者名と作者ページへのリンクを表示 |
+| 作者2人以上 | `song.authors` に2件以上 | 「合作」を表示 |
+| 作者名の特殊文字 | `name="<script>"` | HTMLエスケープされる |
 
 ---
 
@@ -580,7 +673,10 @@ subekashi/tests/
 ├── test_views.py                   # 実装済み: ビュー（GET・POST）
 ├── test_api.py                     # 実装済み: REST API
 ├── test_middleware.py              # 実装済み: ミドルウェア
-└── test_models.py                  # 実装済み: モデル基本動作
+├── test_models.py                  # 実装済み: モデル基本動作
+├── test_converters.py              # 実装済み: URLコンバータ
+├── test_management_commands.py     # 実装済み: 管理コマンド
+└── test_templatetags_song_card.py  # 実装済み: song_card テンプレートタグ
 
 article/
 └── tests.py                        # 実装済み: ArticlesView・DefaultArticleView

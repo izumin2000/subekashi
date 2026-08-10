@@ -3,6 +3,8 @@ article アプリのビューテスト
 
 ArticlesView・DefaultArticleView の HTTP レスポンスを検証する。
 """
+from datetime import timedelta
+
 from django.test import TestCase, Client, override_settings
 from django.utils import timezone
 from article.models import Article
@@ -43,6 +45,97 @@ class ArticlesViewTest(TestCase):
     def test_keyword_no_match_returns_200(self):
         response = self.client.get("/articles/", {"keyword": "存在しないキーワードXYZ"})
         self.assertEqual(response.status_code, 200)
+
+    def test_is_pinned_article_default_pins_howto_article_first(self):
+        Article.objects.create(
+            article_id="howToArticle",
+            title="使い方記事",
+            tag="howto",
+            post_time=timezone.now() - timedelta(days=1),
+            is_open=True,
+        )
+        response = self.client.get("/articles/")
+        articles = list(response.context["articles"])
+        self.assertEqual(articles[0].article_id, "howToArticle")
+
+    def test_is_pinned_article_false_sorts_by_post_time_only(self):
+        Article.objects.create(
+            article_id="howToArticle",
+            title="使い方記事",
+            tag="howto",
+            post_time=timezone.now() - timedelta(days=1),
+            is_open=True,
+        )
+        self.client.cookies["is_pinned_article"] = "False"
+        response = self.client.get("/articles/")
+        articles = list(response.context["articles"])
+        self.assertEqual(articles[0].article_id, self.article.article_id)
+
+
+class ArticleModelTest(TestCase):
+    """Article.get_top_news_articles() のテスト"""
+
+    def test_news_tag_article_is_included(self):
+        article = Article.objects.create(
+            article_id="news-1", title="ニュース記事", tag="news",
+            post_time=timezone.now(), is_open=True,
+        )
+        self.assertIn(article, Article.get_top_news_articles())
+
+    def test_release_tag_article_is_included(self):
+        article = Article.objects.create(
+            article_id="release-1", title="リリース記事", tag="release",
+            post_time=timezone.now(), is_open=True,
+        )
+        self.assertIn(article, Article.get_top_news_articles())
+
+    def test_handle_as_news_article_is_included_regardless_of_tag(self):
+        article = Article.objects.create(
+            article_id="blog-as-news", title="ニュース扱いブログ", tag="blog",
+            post_time=timezone.now(), is_open=True, handle_as_news=True,
+        )
+        self.assertIn(article, Article.get_top_news_articles())
+
+    def test_other_tag_article_is_excluded(self):
+        article = Article.objects.create(
+            article_id="blog-1", title="通常ブログ", tag="blog",
+            post_time=timezone.now(), is_open=True,
+        )
+        self.assertNotIn(article, Article.get_top_news_articles())
+
+    def test_closed_article_is_excluded(self):
+        article = Article.objects.create(
+            article_id="news-closed", title="非公開ニュース", tag="news",
+            post_time=timezone.now(), is_open=False,
+        )
+        self.assertNotIn(article, Article.get_top_news_articles())
+
+    def test_future_post_time_article_is_excluded(self):
+        article = Article.objects.create(
+            article_id="news-future", title="未来投稿ニュース", tag="news",
+            post_time=timezone.now() + timedelta(days=1), is_open=True,
+        )
+        self.assertNotIn(article, Article.get_top_news_articles())
+
+    def test_limited_to_three_articles(self):
+        for i in range(5):
+            Article.objects.create(
+                article_id=f"news-{i}", title=f"ニュース{i}", tag="news",
+                post_time=timezone.now() - timedelta(days=i), is_open=True,
+            )
+        self.assertEqual(len(Article.get_top_news_articles()), 3)
+
+    def test_ordered_by_post_time_desc(self):
+        older = Article.objects.create(
+            article_id="news-older", title="古いニュース", tag="news",
+            post_time=timezone.now() - timedelta(days=2), is_open=True,
+        )
+        newer = Article.objects.create(
+            article_id="news-newer", title="新しいニュース", tag="news",
+            post_time=timezone.now() - timedelta(days=1), is_open=True,
+        )
+        result = list(Article.get_top_news_articles())
+        self.assertLess(result.index(newer), result.index(older))
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)

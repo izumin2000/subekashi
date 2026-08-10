@@ -224,6 +224,22 @@
 | 操作 | `POST /contact/` `{category="不具合の報告"}` (`detail` 欠落) |
 | 検証 | HTTP 200、`context["result"]` にエラーメッセージが含まれる |
 
+#### 4-3. 正常な問い合わせ送信時にContactレコードが自動登録される
+
+`Contact.create_contact()` によりお問い合わせ内容がDBに自動登録される（実装は `tests/test_views.py` の `ContactViewTest` に追加済み）。
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作 | `POST /contact/` `{category="不具合の報告", detail="テスト詳細文"}` |
+| 検証 | `Contact.objects.filter(detail="テスト詳細文").exists() == True` |
+
+#### 4-4. 不正入力時はContactレコードが作成されない
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作 | `POST /contact/` `{category="不具合の報告"}` (`detail` 欠落) |
+| 検証 | `Contact.objects.count()` が操作前後で変化しない |
+
 ---
 
 ### 5. 楽曲検索・API フロー

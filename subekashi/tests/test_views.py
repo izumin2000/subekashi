@@ -6,7 +6,7 @@ ManifestStaticFilesStorage はテストに不要なため StaticFilesStorage に
 """
 from django.test import TestCase, Client, override_settings
 from django.urls import reverse
-from subekashi.models import Ad, Author, Song
+from subekashi.models import Ad, Author, Contact, Song
 
 
 STATIC_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
@@ -407,6 +407,14 @@ class ContactViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["result"], "ok")
 
+    def test_post_valid_form_creates_contact_record(self):
+        # 自動登録によりContactレコードが作成されること
+        self.client.post(
+            reverse("subekashi:contact"),
+            {"category": "不具合の報告", "detail": "テスト詳細文"},
+        )
+        self.assertTrue(Contact.objects.filter(detail="テスト詳細文").exists())
+
     def test_post_invalid_form_returns_error(self):
         # detail が未入力の場合はフォームバリデーションエラー
         response = self.client.post(
@@ -415,6 +423,14 @@ class ContactViewTest(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn("入力必須項目", response.context["result"])
+
+    def test_post_invalid_form_does_not_create_contact_record(self):
+        count_before = Contact.objects.count()
+        self.client.post(
+            reverse("subekashi:contact"),
+            {"category": "不具合の報告"},
+        )
+        self.assertEqual(Contact.objects.count(), count_before)
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
