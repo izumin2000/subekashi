@@ -1,7 +1,24 @@
 from django.db.models import BooleanField, Case, Exists, OuterRef, Q, Value, When
 from subekashi.constants.constants import ALL_MEDIAS
 from subekashi.lib.url import clean_url
-from subekashi.models import Author, SongLink
+from subekashi.models import Author, AuthorAlias, SongLink
+
+# authorの別名（双方向）にマッチするQを返す
+# 正方向: authorに登録された別名がvalueにマッチする
+# 逆方向: nameがauthor.nameと一致する別名を他のauthorが持ち、その別名がvalueにマッチする場合、
+#         name側のauthorも対象にする（#989の双方向解決に対応）
+def filter_by_author_alias(lookup, value):
+    forward_lookup = {f"authors__aliases__name__{lookup}": value}
+    reverse_names = AuthorAlias.objects.filter(**{f"author__name__{lookup}": value}).values("name")
+    return Q(**forward_lookup) | Q(authors__name__in=reverse_names)
+
+# 作者名によるフィルター（別名・双方向を含む、部分一致）
+def filter_by_author(value):
+    return Q(authors__name__icontains=value) | filter_by_author_alias("icontains", value)
+
+# 作者名によるフィルター（別名・双方向を含む、完全一致）
+def filter_by_author_exact(value):
+    return Q(authors__name__exact=value) | filter_by_author_alias("exact", value)
 
 # topやsearchにあるキーワード検索のフィルター
 def filter_by_keyword(keyword):
@@ -9,6 +26,7 @@ def filter_by_keyword(keyword):
     return (
         Q(title__contains=keyword) |
         Q(authors__name__contains=keyword) |
+        filter_by_author_alias("contains", keyword) |
         Q(lyrics__contains=keyword) |
         Q(links__url__icontains=url_keyword)
     )
@@ -25,7 +43,8 @@ def filter_by_imitated(imitated):
 def filter_by_guesser(guesser):
     return (
         Q(title__contains = guesser) |
-        Q(authors__name__contains = guesser)
+        Q(authors__name__contains = guesser) |
+        filter_by_author_alias("contains", guesser)
     )
 
 # メディアの検索に利用するフィルター

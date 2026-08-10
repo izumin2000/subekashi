@@ -9,6 +9,8 @@ from subekashi.lib.query_filters import (
     filter_by_guesser,
     filter_by_mediatypes,
     filter_by_lack,
+    filter_by_author,
+    filter_by_author_exact,
 )
 from subekashi.lib.url import clean_url
 from subekashi.lib.query_utils import has_view_filter_or_sort, has_like_filter_or_sort, has_upload_time_sort
@@ -49,8 +51,7 @@ class SongFilter(django_filters.FilterSet):
         validators=[validate_max_length(500)]
     )
     author = django_filters.CharFilter(
-        field_name='authors__name',
-        lookup_expr='icontains',
+        method='filter_author',
         validators=[validate_max_length(500)]
     )
     lyrics = django_filters.CharFilter(
@@ -69,8 +70,7 @@ class SongFilter(django_filters.FilterSet):
         validators=[validate_max_length(500)]
     )
     author_exact = django_filters.CharFilter(
-        field_name='authors__name',
-        lookup_expr='exact',
+        method='filter_author_exact',
         validators=[validate_max_length(500)]
     )
 
@@ -139,6 +139,14 @@ class SongFilter(django_filters.FilterSet):
     def filter_keyword(self, queryset, name, value):
         """複数フィールドにわたるキーワード検索"""
         return queryset.filter(filter_by_keyword(value))
+
+    def filter_author(self, queryset, name, value):
+        """作者名によるフィルタ（別名・双方向を含む部分一致）"""
+        return queryset.filter(filter_by_author(value))
+
+    def filter_author_exact(self, queryset, name, value):
+        """作者名によるフィルタ（別名・双方向を含む完全一致）"""
+        return queryset.filter(filter_by_author_exact(value))
 
     def filter_url(self, queryset, name, value):
         """SongLinkテーブルのURLによるフィルタ（clean_urlを適用し部分一致）"""

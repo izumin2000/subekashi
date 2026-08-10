@@ -162,6 +162,29 @@
 | 歌詞部分一致 | キーワードが歌詞に含まれる | その曲が結果に含まれる |
 | URL部分一致 | キーワードがURLに含まれる | その曲が結果に含まれる |
 | 一致なし | 存在しないキーワード | 空のクエリセット |
+| 別名（正方向）一致 | `author(yamada)` の別名が `sasaki`、`Author(sasaki)` が別途存在。keyword=`sasaki` | `yamada` の曲・`sasaki` の曲の両方が結果に含まれる |
+| 別名（逆方向）一致 | 上記と同じ前提。keyword=`yamada` | 双方向解決により `yamada` の曲・`sasaki` の曲の両方が結果に含まれる |
+| 対象authorが存在しない別名 | `author` の別名が `single_alias`（`Author(single_alias)` は未登録） | keyword=`single_alias` で正方向のみヒットする |
+
+`yamada`/`sasaki`のように、owner名とtarget名が互いの部分文字列にならない組み合わせを使う。
+`foo`/`foo_sub`のような包含関係だと、素の作者名一致（`icontains`/`contains`）だけで
+逆方向テストが偶然パスしてしまい、別名解決コードを経由したかどうかを検証できないため。
+
+#### 3-1-1. `filter_by_author(value)` / `filter_by_author_exact(value)`（`filter_by_author_alias`経由の別名・双方向対応）
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| 作者名の部分一致 | `authors__name`に一致 | 結果に含まれる |
+| 別名（正方向）の部分一致 | `filter_by_keyword`と同様の`yamada`/`sasaki`構成、keyword=`sasaki` | `yamada`・`sasaki`双方の曲が結果に含まれる |
+| 別名（逆方向）の部分一致 | 上記と同じ前提、keyword=`yamada` | `yamada`・`sasaki`双方の曲が結果に含まれる |
+| 完全一致（`_exact`） | 部分文字列のみ指定 | 一致せず結果に含まれない |
+| 完全一致（`_exact`、別名逆方向） | `author.name`に完全一致する値を指定 | 双方向解決により別名先の曲も結果に含まれる |
+
+#### 3-1-2. `filter_by_guesser(guesser)`（別名・双方向対応の追加分）
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| 別名（正方向・逆方向）一致 | `filter_by_keyword`と同様の`yamada`/`sasaki`構成 | 正方向・逆方向いずれの検索語でも双方の曲が結果に含まれる |
 
 #### 3-2. `filter_by_lack()`
 
@@ -474,6 +497,20 @@
 | keyword + sort=-id | `{"keyword": "...", "sort": "-id"}` | ID降順で返される |
 | title + sort=title | `{"title": "...", "sort": "title"}` | タイトル昇順で返される |
 | title + sort=-title | `{"title": "...", "sort": "-title"}` | タイトル降順で返される |
+
+#### 10-3. author/author_exact/keywordフィルターの別名（双方向）対応
+
+`author(yamada)` に別名 `sasaki`（`Author(sasaki)` も別途存在）を登録したシナリオで、
+`song_search()` 経由でも双方向解決が機能することを確認する。owner名(`yamada`)とtarget名
+(`sasaki`)は互いの部分文字列にならない組み合わせを使い、素の作者名一致だけで
+逆方向テストが偶然パスしないようにしている。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| author（正方向） | `{"author": "sasaki"}` | `yamada`・`sasaki`双方の曲がヒット |
+| author（逆方向） | `{"author": "yamada"}` | `yamada`・`sasaki`双方の曲がヒット |
+| author_exact（逆方向） | `{"author_exact": "yamada"}` | `yamada`・`sasaki`双方の曲がヒット |
+| keyword（逆方向） | `{"keyword": "yamada"}` | `yamada`・`sasaki`双方の曲がヒット |
 
 ---
 
