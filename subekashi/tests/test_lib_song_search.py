@@ -7,7 +7,7 @@ import math
 from datetime import datetime, timezone
 from django.test import TestCase
 from rest_framework.exceptions import ValidationError
-from subekashi.models import Author, Song, SongLink
+from subekashi.models import Author, AuthorAlias, Song, SongLink
 from subekashi.lib.song_search import song_search, DEFAULT_SIZE
 
 
@@ -207,6 +207,50 @@ class SongSearchSortWithAuthorFilterTest(TestCase):
         qs, _ = song_search({"author": "共通作者", "sort": "-title", "size": "100"})
         titles = [s.title for s in qs]
         self.assertEqual(titles, ["Ccc曲", "Bbb曲", "Aaa曲"])
+
+
+class SongSearchAuthorAliasBidirectionalTest(TestCase):
+    """author/author_exact/keywordフィルターの別名（双方向）対応の結合テスト
+
+    issue #969本文のシナリオをsong_search()経由で検証する
+    """
+
+    def setUp(self):
+        self.foo = Author.objects.create(name="検索foo")
+        self.foo_sub = Author.objects.create(name="検索foo_sub")
+        self.song1 = Song.objects.create(title="検索Song1")
+        self.song1.authors.add(self.foo)
+        self.song2 = Song.objects.create(title="検索Song2")
+        self.song2.authors.add(self.foo_sub)
+        AuthorAlias.objects.create(name="検索foo_sub", author=self.foo, alias_type="past")
+
+    def test_author_filter_forward_alias_matches_both_songs(self):
+        qs, stats = song_search({"author": "検索foo_sub", "size": "100"})
+        titles = {s.title for s in qs}
+        self.assertEqual(stats["count"], 2)
+        self.assertIn("検索Song1", titles)
+        self.assertIn("検索Song2", titles)
+
+    def test_author_filter_reverse_alias_matches_both_songs(self):
+        qs, stats = song_search({"author": "検索foo", "size": "100"})
+        titles = {s.title for s in qs}
+        self.assertEqual(stats["count"], 2)
+        self.assertIn("検索Song1", titles)
+        self.assertIn("検索Song2", titles)
+
+    def test_author_exact_reverse_alias_matches_both_songs(self):
+        qs, stats = song_search({"author_exact": "検索foo", "size": "100"})
+        titles = {s.title for s in qs}
+        self.assertEqual(stats["count"], 2)
+        self.assertIn("検索Song1", titles)
+        self.assertIn("検索Song2", titles)
+
+    def test_keyword_filter_reverse_alias_matches_both_songs(self):
+        qs, stats = song_search({"keyword": "検索foo", "size": "100"})
+        titles = {s.title for s in qs}
+        self.assertEqual(stats["count"], 2)
+        self.assertIn("検索Song1", titles)
+        self.assertIn("検索Song2", titles)
 
 
 class SongSearchValidationErrorTest(TestCase):

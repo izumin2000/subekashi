@@ -4,7 +4,7 @@ lib/query_filters.py のテスト
 楽曲検索フィルター関数の Q オブジェクト生成・適用結果を検証する。
 """
 from django.test import TestCase
-from subekashi.models import Author, Song, SongLink
+from subekashi.models import Author, AuthorAlias, Song, SongLink
 from subekashi.lib.query_filters import (
     filter_by_keyword,
     filter_by_imitate,
@@ -12,6 +12,8 @@ from subekashi.lib.query_filters import (
     filter_by_guesser,
     filter_by_lack,
     filter_by_mediatypes,
+    filter_by_author,
+    filter_by_author_exact,
     make_is_lack_annotation,
 )
 
@@ -50,6 +52,50 @@ class FilterByKeywordTest(TestCase):
     def test_no_match_returns_empty(self):
         qs = Song.objects.filter(filter_by_keyword("存在しないキーワードXYZ999"))
         self.assertEqual(qs.count(), 0)
+
+
+class FilterByKeywordAuthorAliasTest(TestCase):
+    """filter_by_keyword() の別名（双方向）対応のテスト
+
+    issue #969本文のシナリオ:
+    1. Song1 (author: foo) 追加
+    2. Song2 (author: foo_sub) 追加
+    3. fooに別名foo_subを追加
+    4. keyword=foo_subで検索 → Song1, Song2がヒットすること
+    5. keyword=fooで検索 → 双方向のためSong1, Song2の双方がヒットすること
+    """
+
+    def setUp(self):
+        self.foo = Author.objects.create(name="foo")
+        self.foo_sub = Author.objects.create(name="foo_sub")
+        self.song1 = Song.objects.create(title="Song1")
+        self.song1.authors.add(self.foo)
+        self.song2 = Song.objects.create(title="Song2")
+        self.song2.authors.add(self.foo_sub)
+        AuthorAlias.objects.create(name="foo_sub", author=self.foo, alias_type="past")
+
+    def test_forward_alias_name_matches_owning_authors_songs(self):
+        # 正方向: keyword=foo_sub はfooの別名にマッチするためSong1もヒットする
+        qs = Song.objects.filter(filter_by_keyword("foo_sub")).distinct()
+        self.assertIn(self.song1, qs)
+        self.assertIn(self.song2, qs)
+
+    def test_reverse_alias_matches_target_authors_own_songs(self):
+        # 逆方向: keyword=foo はfoo_subの逆方向別名にもなるためSong2もヒットする
+        qs = Song.objects.filter(filter_by_keyword("foo")).distinct()
+        self.assertIn(self.song1, qs)
+        self.assertIn(self.song2, qs)
+
+    def test_unidirectional_when_target_author_not_registered(self):
+        # 対象authorがまだ存在しない別名は単方向のまま、別名のnameを検索すればヒットする
+        Author.objects.create(name="single")
+        single_song = Song.objects.create(title="SingleSong")
+        author = Author.objects.get(name="single")
+        single_song.authors.add(author)
+        AuthorAlias.objects.create(name="single_alias", author=author, alias_type="spell")
+
+        qs = Song.objects.filter(filter_by_keyword("single_alias")).distinct()
+        self.assertIn(single_song, qs)
 
 
 class FilterByImitateTest(TestCase):
@@ -105,6 +151,81 @@ class FilterByGuesserTest(TestCase):
     def test_filter_by_author_name(self):
         qs = Song.objects.filter(filter_by_guesser("推測テスト作者")).distinct()
         self.assertIn(self.song_by_author, qs)
+
+    def test_filter_by_author_alias_bidirectional(self):
+        foo = Author.objects.create(name="推測foo")
+        foo_sub = Author.objects.create(name="推測foo_sub")
+        song_foo = Song.objects.create(title="推測foo曲")
+        song_foo.authors.add(foo)
+        song_foo_sub = Song.objects.create(title="推測foo_sub曲")
+        song_foo_sub.authors.add(foo_sub)
+        AuthorAlias.objects.create(name="推測foo_sub", author=foo, alias_type="past")
+
+        # 正方向
+        qs = Song.objects.filter(filter_by_guesser("推測foo_sub")).distinct()
+        self.assertIn(song_foo, qs)
+        self.assertIn(song_foo_sub, qs)
+
+        # 逆方向
+        qs = Song.objects.filter(filter_by_guesser("推測foo")).distinct()
+        self.assertIn(song_foo, qs)
+        self.assertIn(song_foo_sub, qs)
+
+
+class FilterByAuthorTest(TestCase):
+    """filter_by_author() のテスト（別名・双方向の部分一致）"""
+
+    def setUp(self):
+        self.foo = Author.objects.create(name="afoo")
+        self.foo_sub = Author.objects.create(name="afoo_sub")
+        self.song1 = Song.objects.create(title="AuthorSong1")
+        self.song1.authors.add(self.foo)
+        self.song2 = Song.objects.create(title="AuthorSong2")
+        self.song2.authors.add(self.foo_sub)
+        AuthorAlias.objects.create(name="afoo_sub", author=self.foo, alias_type="past")
+
+    def test_matches_own_author_name(self):
+        qs = Song.objects.filter(filter_by_author("afoo")).distinct()
+        self.assertIn(self.song1, qs)
+        self.assertIn(self.song2, qs)
+
+    def test_matches_forward_alias(self):
+        qs = Song.objects.filter(filter_by_author("afoo_sub")).distinct()
+        self.assertIn(self.song1, qs)
+        self.assertIn(self.song2, qs)
+
+    def test_partial_match(self):
+        qs = Song.objects.filter(filter_by_author("afo")).distinct()
+        self.assertIn(self.song1, qs)
+        self.assertIn(self.song2, qs)
+
+
+class FilterByAuthorExactTest(TestCase):
+    """filter_by_author_exact() のテスト（別名・双方向の完全一致）"""
+
+    def setUp(self):
+        self.foo = Author.objects.create(name="efoo")
+        self.foo_sub = Author.objects.create(name="efoo_sub")
+        self.song1 = Song.objects.create(title="ExactSong1")
+        self.song1.authors.add(self.foo)
+        self.song2 = Song.objects.create(title="ExactSong2")
+        self.song2.authors.add(self.foo_sub)
+        AuthorAlias.objects.create(name="efoo_sub", author=self.foo, alias_type="past")
+
+    def test_exact_match_does_not_match_partial(self):
+        qs = Song.objects.filter(filter_by_author_exact("efo")).distinct()
+        self.assertNotIn(self.song1, qs)
+        self.assertNotIn(self.song2, qs)
+
+    def test_exact_match_own_name(self):
+        qs = Song.objects.filter(filter_by_author_exact("efoo")).distinct()
+        self.assertIn(self.song1, qs)
+        self.assertIn(self.song2, qs)
+
+    def test_exact_match_forward_alias(self):
+        qs = Song.objects.filter(filter_by_author_exact("efoo_sub")).distinct()
+        self.assertIn(self.song1, qs)
+        self.assertIn(self.song2, qs)
 
 
 class FilterByLackTest(TestCase):
