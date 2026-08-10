@@ -23,6 +23,10 @@ class Author(GetOrNoneMixin, models.Model):
         正方向: 自身に登録されたAuthorAlias
         逆方向: nameが自身のname属性と一致する、他のauthorが持つAuthorAlias
         （そのauthorのnameを別名として扱う）
+
+        呼び出しごとに2クエリ（正方向・逆方向）発行するため、複数authorに対して
+        ループで呼び出すとN+1になる。一覧表示等で複数author分をまとめて扱う場合は
+        呼び出し側でprefetch_relatedや一括取得を検討すること。
         """
         forward = [
             EffectiveAlias(name=alias.name, alias_type=alias.alias_type, source=alias, is_reverse=False)
@@ -62,10 +66,12 @@ class AuthorAlias(models.Model):
         return self.name
 
 
-# Author.get_effective_aliases()が返す、双方向解決済みの別名1件分の情報
-# is_reverse=Trueの場合、sourceは他のauthorが所有するAuthorAliasであり編集・削除の対象にはできない
 @dataclass
 class EffectiveAlias:
+    """Author.get_effective_aliases()が返す、双方向解決済みの別名1件分の情報
+
+    is_reverse=Trueの場合、sourceは他のauthorが所有するAuthorAliasであり編集・削除の対象にはできない
+    """
     name: str
     alias_type: str
     source: AuthorAlias

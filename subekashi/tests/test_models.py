@@ -126,8 +126,9 @@ class AuthorEffectiveAliasesTest(TestCase):
         self.assertIn(("bar", True), names)
 
     def test_reverse_excludes_own_aliases(self):
-        # 自分自身が持つAuthorAlias.nameが自分のnameと一致する場合、二重に数えない
-        AuthorAlias.objects.create(name="foo_alias", author=self.author, alias_type="spell")
+        # 自分自身が持つAuthorAliasのnameが自分自身のname("foo")と一致する場合、
+        # exclude(author=self)がないと逆方向クエリにも同じaliasがヒットし二重計上されてしまう
+        AuthorAlias.objects.create(name="foo", author=self.author, alias_type="spell")
 
         effective = self.author.get_effective_aliases()
 
