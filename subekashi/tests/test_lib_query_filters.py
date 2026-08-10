@@ -57,32 +57,39 @@ class FilterByKeywordTest(TestCase):
 class FilterByKeywordAuthorAliasTest(TestCase):
     """filter_by_keyword() の別名（双方向）対応のテスト
 
-    issue #969本文のシナリオ:
-    1. Song1 (author: foo) 追加
-    2. Song2 (author: foo_sub) 追加
-    3. fooに別名foo_subを追加
-    4. keyword=foo_subで検索 → Song1, Song2がヒットすること
-    5. keyword=fooで検索 → 双方向のためSong1, Song2の双方がヒットすること
+    issue #969本文のシナリオ（foo/foo_sub）に準じるが、owner/targetの名前は
+    互いに部分文字列関係にならないものを使う。foo/foo_subのように片方がもう
+    片方を含む名前だと、icontains/containsによる素の作者名一致
+    (Q(authors__name__contains=keyword)) だけでテストが通ってしまい、
+    別名解決コードを経由したかどうかを検証できないため。
+
+    1. Song1 (author: yamada) 追加
+    2. Song2 (author: sasaki) 追加
+    3. yamadaに別名sasakiを追加（sasakiという名前のAuthorも別途実在する）
+    4. keyword=sasakiで検索 → Song1, Song2がヒットすること（正方向）
+    5. keyword=yamadaで検索 → 双方向のためSong1, Song2の双方がヒットすること（逆方向）
     """
 
     def setUp(self):
-        self.foo = Author.objects.create(name="foo")
-        self.foo_sub = Author.objects.create(name="foo_sub")
+        self.owner = Author.objects.create(name="yamada")
+        self.target = Author.objects.create(name="sasaki")
         self.song1 = Song.objects.create(title="Song1")
-        self.song1.authors.add(self.foo)
+        self.song1.authors.add(self.owner)
         self.song2 = Song.objects.create(title="Song2")
-        self.song2.authors.add(self.foo_sub)
-        AuthorAlias.objects.create(name="foo_sub", author=self.foo, alias_type="past")
+        self.song2.authors.add(self.target)
+        AuthorAlias.objects.create(name="sasaki", author=self.owner, alias_type="past")
 
     def test_forward_alias_name_matches_owning_authors_songs(self):
-        # 正方向: keyword=foo_sub はfooの別名にマッチするためSong1もヒットする
-        qs = Song.objects.filter(filter_by_keyword("foo_sub")).distinct()
+        # 正方向: keyword=sasakiはyamadaの別名にマッチするためSong1もヒットする
+        qs = Song.objects.filter(filter_by_keyword("sasaki")).distinct()
         self.assertIn(self.song1, qs)
         self.assertIn(self.song2, qs)
 
     def test_reverse_alias_matches_target_authors_own_songs(self):
-        # 逆方向: keyword=foo はfoo_subの逆方向別名にもなるためSong2もヒットする
-        qs = Song.objects.filter(filter_by_keyword("foo")).distinct()
+        # 逆方向: keyword=yamadaはsasaki自身の名前とは無関係な文字列であり、
+        # 素の作者名一致(authors__name__contains)ではSong2はヒットしない。
+        # 別名解決コードの逆方向ロジックによってのみSong2がヒットする。
+        qs = Song.objects.filter(filter_by_keyword("yamada")).distinct()
         self.assertIn(self.song1, qs)
         self.assertIn(self.song2, qs)
 
@@ -153,49 +160,54 @@ class FilterByGuesserTest(TestCase):
         self.assertIn(self.song_by_author, qs)
 
     def test_filter_by_author_alias_bidirectional(self):
-        foo = Author.objects.create(name="推測foo")
-        foo_sub = Author.objects.create(name="推測foo_sub")
-        song_foo = Song.objects.create(title="推測foo曲")
-        song_foo.authors.add(foo)
-        song_foo_sub = Song.objects.create(title="推測foo_sub曲")
-        song_foo_sub.authors.add(foo_sub)
-        AuthorAlias.objects.create(name="推測foo_sub", author=foo, alias_type="past")
+        # owner/targetの名前は部分文字列関係にならないものを使う（素の作者名一致で
+        # 偶然パスしてしまい、別名解決コードを経由したか検証できなくなるのを防ぐため）
+        owner = Author.objects.create(name="推測ヤマダ")
+        target = Author.objects.create(name="推測ササキ")
+        song_owner = Song.objects.create(title="推測ヤマダ曲")
+        song_owner.authors.add(owner)
+        song_target = Song.objects.create(title="推測ササキ曲")
+        song_target.authors.add(target)
+        AuthorAlias.objects.create(name="推測ササキ", author=owner, alias_type="past")
 
         # 正方向
-        qs = Song.objects.filter(filter_by_guesser("推測foo_sub")).distinct()
-        self.assertIn(song_foo, qs)
-        self.assertIn(song_foo_sub, qs)
+        qs = Song.objects.filter(filter_by_guesser("推測ササキ")).distinct()
+        self.assertIn(song_owner, qs)
+        self.assertIn(song_target, qs)
 
-        # 逆方向
-        qs = Song.objects.filter(filter_by_guesser("推測foo")).distinct()
-        self.assertIn(song_foo, qs)
-        self.assertIn(song_foo_sub, qs)
+        # 逆方向: "推測ヤマダ"は"推測ササキ"の部分文字列ではないため、
+        # 別名解決コードの逆方向ロジックがなければsong_targetはヒットしない
+        qs = Song.objects.filter(filter_by_guesser("推測ヤマダ")).distinct()
+        self.assertIn(song_owner, qs)
+        self.assertIn(song_target, qs)
 
 
 class FilterByAuthorTest(TestCase):
-    """filter_by_author() のテスト（別名・双方向の部分一致）"""
+    """filter_by_author() のテスト（別名・双方向の部分一致）
+
+    owner/targetの名前は部分文字列関係にならないものを使う（素の作者名一致
+    Q(authors__name__icontains=value) で偶然パスしてしまうのを防ぐため）
+    """
 
     def setUp(self):
-        self.foo = Author.objects.create(name="afoo")
-        self.foo_sub = Author.objects.create(name="afoo_sub")
+        self.owner = Author.objects.create(name="ayamada")
+        self.target = Author.objects.create(name="asasaki")
         self.song1 = Song.objects.create(title="AuthorSong1")
-        self.song1.authors.add(self.foo)
+        self.song1.authors.add(self.owner)
         self.song2 = Song.objects.create(title="AuthorSong2")
-        self.song2.authors.add(self.foo_sub)
-        AuthorAlias.objects.create(name="afoo_sub", author=self.foo, alias_type="past")
-
-    def test_matches_own_author_name(self):
-        qs = Song.objects.filter(filter_by_author("afoo")).distinct()
-        self.assertIn(self.song1, qs)
-        self.assertIn(self.song2, qs)
+        self.song2.authors.add(self.target)
+        AuthorAlias.objects.create(name="asasaki", author=self.owner, alias_type="past")
 
     def test_matches_forward_alias(self):
-        qs = Song.objects.filter(filter_by_author("afoo_sub")).distinct()
+        # 正方向: "asasaki"はownerの別名にマッチするためSong1もヒットする
+        qs = Song.objects.filter(filter_by_author("asasaki")).distinct()
         self.assertIn(self.song1, qs)
         self.assertIn(self.song2, qs)
 
-    def test_partial_match(self):
-        qs = Song.objects.filter(filter_by_author("afo")).distinct()
+    def test_matches_reverse_alias(self):
+        # 逆方向: "ayamada"はtarget("asasaki")の部分文字列ではないため、
+        # 別名解決コードの逆方向ロジックがなければSong2はヒットしない
+        qs = Song.objects.filter(filter_by_author("ayamada")).distinct()
         self.assertIn(self.song1, qs)
         self.assertIn(self.song2, qs)
 

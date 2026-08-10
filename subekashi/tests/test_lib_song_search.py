@@ -212,41 +212,46 @@ class SongSearchSortWithAuthorFilterTest(TestCase):
 class SongSearchAuthorAliasBidirectionalTest(TestCase):
     """author/author_exact/keywordフィルターの別名（双方向）対応の結合テスト
 
-    issue #969本文のシナリオをsong_search()経由で検証する
+    issue #969本文のシナリオ（foo/foo_sub）に準じるが、owner/targetの名前は
+    互いに部分文字列関係にならないものを使う。片方がもう片方を含む名前だと、
+    素の作者名一致（icontains/contains）だけで逆方向テストが偶然パスしてしまい、
+    別名解決コードを経由したかどうかを検証できないため。
     """
 
     def setUp(self):
-        self.foo = Author.objects.create(name="検索foo")
-        self.foo_sub = Author.objects.create(name="検索foo_sub")
+        self.owner = Author.objects.create(name="検索ヤマダ")
+        self.target = Author.objects.create(name="検索ササキ")
         self.song1 = Song.objects.create(title="検索Song1")
-        self.song1.authors.add(self.foo)
+        self.song1.authors.add(self.owner)
         self.song2 = Song.objects.create(title="検索Song2")
-        self.song2.authors.add(self.foo_sub)
-        AuthorAlias.objects.create(name="検索foo_sub", author=self.foo, alias_type="past")
+        self.song2.authors.add(self.target)
+        AuthorAlias.objects.create(name="検索ササキ", author=self.owner, alias_type="past")
 
     def test_author_filter_forward_alias_matches_both_songs(self):
-        qs, stats = song_search({"author": "検索foo_sub", "size": "100"})
+        qs, stats = song_search({"author": "検索ササキ", "size": "100"})
         titles = {s.title for s in qs}
         self.assertEqual(stats["count"], 2)
         self.assertIn("検索Song1", titles)
         self.assertIn("検索Song2", titles)
 
     def test_author_filter_reverse_alias_matches_both_songs(self):
-        qs, stats = song_search({"author": "検索foo", "size": "100"})
+        # "検索ヤマダ"は"検索ササキ"の部分文字列ではないため、逆方向ロジックが
+        # なければ検索Song2はヒットしない
+        qs, stats = song_search({"author": "検索ヤマダ", "size": "100"})
         titles = {s.title for s in qs}
         self.assertEqual(stats["count"], 2)
         self.assertIn("検索Song1", titles)
         self.assertIn("検索Song2", titles)
 
     def test_author_exact_reverse_alias_matches_both_songs(self):
-        qs, stats = song_search({"author_exact": "検索foo", "size": "100"})
+        qs, stats = song_search({"author_exact": "検索ヤマダ", "size": "100"})
         titles = {s.title for s in qs}
         self.assertEqual(stats["count"], 2)
         self.assertIn("検索Song1", titles)
         self.assertIn("検索Song2", titles)
 
     def test_keyword_filter_reverse_alias_matches_both_songs(self):
-        qs, stats = song_search({"keyword": "検索foo", "size": "100"})
+        qs, stats = song_search({"keyword": "検索ヤマダ", "size": "100"})
         titles = {s.title for s in qs}
         self.assertEqual(stats["count"], 2)
         self.assertIn("検索Song1", titles)
