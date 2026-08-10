@@ -67,9 +67,73 @@ class AuthorAliasModelTest(TestCase):
         self.author.delete()
         self.assertEqual(AuthorAlias.objects.filter(name="削除テスト別名").count(), 0)
 
-    def test_default_alias_type_is_other(self):
+    def test_default_alias_type_is_another(self):
         alias = AuthorAlias.objects.create(name="デフォルト別名", author=self.author)
-        self.assertEqual(alias.alias_type, "other")
+        self.assertEqual(alias.alias_type, "another")
+
+
+class AuthorEffectiveAliasesTest(TestCase):
+    """Author.get_effective_aliases() の双方向解決ロジックのテスト"""
+
+    def setUp(self):
+        self.author = Author.objects.create(name="foo")
+
+    def test_no_aliases_returns_empty_list(self):
+        self.assertEqual(self.author.get_effective_aliases(), [])
+
+    def test_forward_alias_when_target_author_not_exist(self):
+        # 別名の対象となる名前のauthorがまだ存在しない場合は正方向のみ
+        alias = AuthorAlias.objects.create(name="foo_sub", author=self.author, alias_type="past")
+
+        effective = self.author.get_effective_aliases()
+
+        self.assertEqual(len(effective), 1)
+        self.assertEqual(effective[0].name, "foo_sub")
+        self.assertEqual(effective[0].alias_type, "past")
+        self.assertEqual(effective[0].source, alias)
+        self.assertFalse(effective[0].is_reverse)
+
+    def test_becomes_bidirectional_when_target_author_registered(self):
+        # 単方向のaliasを登録した後にnameが一致するauthorを登録すると双方向になる
+        alias = AuthorAlias.objects.create(name="foo_sub", author=self.author, alias_type="past")
+        foo_sub = Author.objects.create(name="foo_sub")
+
+        # fooからは正方向のfoo_subが見える
+        foo_effective = self.author.get_effective_aliases()
+        self.assertEqual(len(foo_effective), 1)
+        self.assertEqual(foo_effective[0].name, "foo_sub")
+        self.assertFalse(foo_effective[0].is_reverse)
+
+        # foo_subからは逆方向のfooが見える
+        foo_sub_effective = foo_sub.get_effective_aliases()
+        self.assertEqual(len(foo_sub_effective), 1)
+        self.assertEqual(foo_sub_effective[0].name, "foo")
+        self.assertEqual(foo_sub_effective[0].alias_type, "past")
+        self.assertEqual(foo_sub_effective[0].source, alias)
+        self.assertTrue(foo_sub_effective[0].is_reverse)
+
+    def test_mixes_forward_and_reverse_aliases(self):
+        # foo自身に登録された別名(正方向) + 他authorがfooをnameに持つ別名(逆方向)を両方含む
+        AuthorAlias.objects.create(name="foo_forward", author=self.author, alias_type="spell")
+        other_author = Author.objects.create(name="bar")
+        AuthorAlias.objects.create(name="foo", author=other_author, alias_type="sns")
+
+        effective = self.author.get_effective_aliases()
+        names = {(e.name, e.is_reverse) for e in effective}
+
+        self.assertEqual(len(effective), 2)
+        self.assertIn(("foo_forward", False), names)
+        self.assertIn(("bar", True), names)
+
+    def test_reverse_excludes_own_aliases(self):
+        # 自分自身が持つAuthorAliasのnameが自分自身のname("foo")と一致する場合、
+        # exclude(author=self)がないと逆方向クエリにも同じaliasがヒットし二重計上されてしまう
+        AuthorAlias.objects.create(name="foo", author=self.author, alias_type="spell")
+
+        effective = self.author.get_effective_aliases()
+
+        self.assertEqual(len(effective), 1)
+        self.assertFalse(effective[0].is_reverse)
 
 
 class SongModelTest(TestCase):
