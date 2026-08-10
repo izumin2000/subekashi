@@ -177,6 +177,39 @@ class FilterByLackTest(TestCase):
         qs = Song.objects.filter(filter_by_lack()).distinct()
         self.assertNotIn(song, qs)
 
+    def test_subeana_song_without_special_author_is_lack(self):
+        # 条件(B): is_subeana=True かつ 特殊作者(id=1)なし → 未完成
+        # URLあり(条件A除外)・歌詞あり(条件C除外)
+        song = Song.objects.create(
+            title="すべあな曲特殊作者なしテスト", is_original=False, is_subeana=True, lyrics="歌詞あり",
+        )
+        link = SongLink.objects.create(url="https://youtu.be/subeananoauthor01")
+        link.songs.add(song)
+        qs = Song.objects.filter(filter_by_lack()).distinct()
+        self.assertIn(song, qs)
+
+    def test_subeana_song_with_special_author_is_not_lack(self):
+        # 条件(B)を満たさない: 特殊作者(id=1)が紐づいている場合は未完成ではない
+        author = Author.objects.create(pk=1, name="全てあなたの所為です。")
+        song = Song.objects.create(
+            title="すべあな曲特殊作者ありテスト", is_original=False, is_subeana=True, lyrics="歌詞あり",
+        )
+        song.authors.add(author)
+        link = SongLink.objects.create(url="https://youtu.be/subeanawithauthor01")
+        link.songs.add(song)
+        qs = Song.objects.filter(filter_by_lack()).distinct()
+        self.assertNotIn(song, qs)
+
+    def test_non_subeana_song_without_special_author_is_not_lack(self):
+        # 条件(B)を満たさない: is_subeana=False の場合は特殊作者の有無に関わらず未完成ではない
+        song = Song.objects.create(
+            title="非すべあな曲テスト", is_original=False, is_subeana=False, lyrics="歌詞あり",
+        )
+        link = SongLink.objects.create(url="https://youtu.be/nonsubeana00001")
+        link.songs.add(song)
+        qs = Song.objects.filter(filter_by_lack()).distinct()
+        self.assertNotIn(song, qs)
+
 
 class FilterByMediatypesTest(TestCase):
     """filter_by_mediatypes() のテスト
@@ -248,6 +281,31 @@ class MakeIsLackAnnotationTest(TestCase):
         # 条件(A)に該当しなければ is_lack=False
         song = Song.objects.create(title="界隈曲アノテーションテスト", is_questionable=True, is_inst=False, lyrics="")
         link = SongLink.objects.create(url="https://youtu.be/questionable0002")
+        link.songs.add(song)
+        qs = Song.objects.annotate(is_lack=make_is_lack_annotation())
+        annotated = qs.get(pk=song.pk)
+        self.assertFalse(annotated.is_lack)
+
+    def test_subeana_song_without_special_author_annotated_true(self):
+        # 条件(B): is_subeana=True かつ 特殊作者(id=1)なし → is_lack=True
+        # URLあり(条件A除外)・歌詞あり(条件C除外)
+        song = Song.objects.create(
+            title="すべあな曲アノテーション特殊作者なしテスト", is_original=False, is_subeana=True, lyrics="歌詞あり",
+        )
+        link = SongLink.objects.create(url="https://youtu.be/subeananoauthor02")
+        link.songs.add(song)
+        qs = Song.objects.annotate(is_lack=make_is_lack_annotation())
+        annotated = qs.get(pk=song.pk)
+        self.assertTrue(annotated.is_lack)
+
+    def test_subeana_song_with_special_author_annotated_false(self):
+        # 条件(B)を満たさない: 特殊作者(id=1)が紐づいている場合は is_lack=False
+        author = Author.objects.create(pk=1, name="全てあなたの所為です。")
+        song = Song.objects.create(
+            title="すべあな曲アノテーション特殊作者ありテスト", is_original=False, is_subeana=True, lyrics="歌詞あり",
+        )
+        song.authors.add(author)
+        link = SongLink.objects.create(url="https://youtu.be/subeanawithauthor02")
         link.songs.add(song)
         qs = Song.objects.annotate(is_lack=make_is_lack_annotation())
         annotated = qs.get(pk=song.pk)
