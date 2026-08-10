@@ -11,10 +11,10 @@
     {% if request.GET.toast %}
         <div class="dummybuttons">
             <a href="{% url 'subekashi:song_new' %}">
-                <div class="dummybutton"><p>続けて新規登録する</p></div>
+                <div class="dummybutton black-dummybutton"><p>続けて新規登録する</p></div>
             </a>
             <a href="{% url 'subekashi:song' song.id %}">
-                <div class="dummybutton"><p>登録した記事を見る</p></div>
+                <div class="dummybutton black-dummybutton"><p>登録した記事を見る</p></div>
             </a>
         </div>
     {% endif %}
