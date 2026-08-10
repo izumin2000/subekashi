@@ -5,7 +5,8 @@ Song, Author, AuthorAlias, SongLink の CRUD・制約・メソッドを検証す
 """
 from django.db import IntegrityError
 from django.test import TestCase
-from subekashi.models import Author, AuthorAlias, Song, SongLink
+from django.utils import timezone
+from subekashi.models import Author, AuthorAlias, Contact, Song, SongLink
 
 
 class AuthorModelTest(TestCase):
@@ -219,3 +220,42 @@ class SongLinkModelTest(TestCase):
     def test_set_allow_dup_for_nonexistent_url_returns_none(self):
         result = SongLink.set_allow_dup_for_url("https://youtu.be/notexist1234")
         self.assertIsNone(result)
+
+
+class ContactModelTest(TestCase):
+    """Contact モデルのテスト"""
+
+    def test_create_contact_creates_record(self):
+        contact = Contact.create_contact("テスト問い合わせ内容")
+        self.assertIsNotNone(contact.pk)
+        self.assertEqual(contact.detail, "テスト問い合わせ内容")
+
+    def test_create_contact_sets_post_time_to_today(self):
+        contact = Contact.create_contact("テスト問い合わせ内容")
+        self.assertEqual(contact.post_time, timezone.localdate())
+
+    def test_create_contact_answer_is_empty(self):
+        contact = Contact.create_contact("テスト問い合わせ内容")
+        self.assertFalse(contact.answer)
+
+    def test_get_answered_excludes_unanswered(self):
+        Contact.objects.create(detail="未回答", post_time=timezone.localdate())
+        result = Contact.get_answered()
+        self.assertEqual(list(result), [])
+
+    def test_get_answered_includes_answered(self):
+        contact = Contact.objects.create(
+            detail="回答済み", post_time=timezone.localdate(), answer="回答内容"
+        )
+        result = Contact.get_answered()
+        self.assertIn(contact, result)
+
+    def test_get_answered_orders_by_id_desc(self):
+        first = Contact.objects.create(
+            detail="1件目", post_time=timezone.localdate(), answer="回答1"
+        )
+        second = Contact.objects.create(
+            detail="2件目", post_time=timezone.localdate(), answer="回答2"
+        )
+        result = list(Contact.get_answered())
+        self.assertEqual(result, [second, first])

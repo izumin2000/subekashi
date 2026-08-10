@@ -205,6 +205,11 @@ class GetAllowMediaTest(SimpleTestCase):
         self.assertIsNot(result, False)
         self.assertEqual(result["id"], "soundcloud")
 
+    def test_bluesky_url_returns_bluesky_media(self):
+        result = get_allow_media("https://bsky.app/profile/example.bsky.social")
+        self.assertIsNot(result, False)
+        self.assertEqual(result["id"], "bluesky")
+
 
 class GetAllMediaTest(SimpleTestCase):
     """get_all_media() のテスト（SEND_DISCORD=False のため外部送信なし）"""
