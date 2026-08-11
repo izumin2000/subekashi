@@ -6,7 +6,8 @@ Song, Author, AuthorAlias, SongLink の CRUD・制約・メソッドを検証す
 from django.db import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
-from subekashi.models import Author, AuthorAlias, Contact, Song, SongLink
+from subekashi.models import Author, AuthorAlias, Contact, Editor, History, Song, SongLink
+from subekashi.models.author import EffectiveAlias
 
 
 class AuthorModelTest(TestCase):
@@ -67,9 +68,87 @@ class AuthorAliasModelTest(TestCase):
         self.author.delete()
         self.assertEqual(AuthorAlias.objects.filter(name="削除テスト別名").count(), 0)
 
-    def test_default_alias_type_is_other(self):
+    def test_default_alias_type_is_another(self):
         alias = AuthorAlias.objects.create(name="デフォルト別名", author=self.author)
-        self.assertEqual(alias.alias_type, "other")
+        self.assertEqual(alias.alias_type, "another")
+
+
+class AuthorEffectiveAliasesTest(TestCase):
+    """Author.get_effective_aliases() の双方向解決ロジックのテスト"""
+
+    def setUp(self):
+        self.author = Author.objects.create(name="foo")
+
+    def test_no_aliases_returns_empty_list(self):
+        self.assertEqual(self.author.get_effective_aliases(), [])
+
+    def test_forward_alias_when_target_author_not_exist(self):
+        # 別名の対象となる名前のauthorがまだ存在しない場合は正方向のみ
+        alias = AuthorAlias.objects.create(name="foo_sub", author=self.author, alias_type="past")
+
+        effective = self.author.get_effective_aliases()
+
+        self.assertEqual(len(effective), 1)
+        self.assertEqual(effective[0].name, "foo_sub")
+        self.assertEqual(effective[0].alias_type, "past")
+        self.assertEqual(effective[0].source, alias)
+        self.assertFalse(effective[0].is_reverse)
+
+    def test_becomes_bidirectional_when_target_author_registered(self):
+        # 単方向のaliasを登録した後にnameが一致するauthorを登録すると双方向になる
+        alias = AuthorAlias.objects.create(name="foo_sub", author=self.author, alias_type="past")
+        foo_sub = Author.objects.create(name="foo_sub")
+
+        # fooからは正方向のfoo_subが見える
+        foo_effective = self.author.get_effective_aliases()
+        self.assertEqual(len(foo_effective), 1)
+        self.assertEqual(foo_effective[0].name, "foo_sub")
+        self.assertFalse(foo_effective[0].is_reverse)
+
+        # foo_subからは逆方向のfooが見える
+        foo_sub_effective = foo_sub.get_effective_aliases()
+        self.assertEqual(len(foo_sub_effective), 1)
+        self.assertEqual(foo_sub_effective[0].name, "foo")
+        self.assertEqual(foo_sub_effective[0].alias_type, "past")
+        self.assertEqual(foo_sub_effective[0].source, alias)
+        self.assertTrue(foo_sub_effective[0].is_reverse)
+
+    def test_mixes_forward_and_reverse_aliases(self):
+        # foo自身に登録された別名(正方向) + 他authorがfooをnameに持つ別名(逆方向)を両方含む
+        AuthorAlias.objects.create(name="foo_forward", author=self.author, alias_type="spell")
+        other_author = Author.objects.create(name="bar")
+        AuthorAlias.objects.create(name="foo", author=other_author, alias_type="sns")
+
+        effective = self.author.get_effective_aliases()
+        names = {(e.name, e.is_reverse) for e in effective}
+
+        self.assertEqual(len(effective), 2)
+        self.assertIn(("foo_forward", False), names)
+        self.assertIn(("bar", True), names)
+
+    def test_reverse_excludes_own_aliases(self):
+        # 自分自身が持つAuthorAliasのnameが自分自身のname("foo")と一致する場合、
+        # exclude(author=self)がないと逆方向クエリにも同じaliasがヒットし二重計上されてしまう
+        AuthorAlias.objects.create(name="foo", author=self.author, alias_type="spell")
+
+        effective = self.author.get_effective_aliases()
+
+        self.assertEqual(len(effective), 1)
+        self.assertFalse(effective[0].is_reverse)
+
+    def test_alias_type_display_returns_human_readable_label(self):
+        AuthorAlias.objects.create(name="foo_past", author=self.author, alias_type="past")
+
+        effective = self.author.get_effective_aliases()
+
+        self.assertEqual(effective[0].alias_type_display, "以前の名称")
+
+    def test_alias_type_display_falls_back_to_raw_value_for_unknown_type(self):
+        # CHOICESにない値が入るケース（DBレベルではchoicesは強制されないため起こりうる）でも例外を出さない
+        alias = AuthorAlias.objects.create(name="foo_unknown", author=self.author, alias_type="past")
+        effective_alias = EffectiveAlias(name="foo_unknown", alias_type="unknown_type", source=alias)
+
+        self.assertEqual(effective_alias.alias_type_display, "unknown_type")
 
 
 class SongModelTest(TestCase):
@@ -259,3 +338,74 @@ class ContactModelTest(TestCase):
         )
         result = list(Contact.get_answered())
         self.assertEqual(result, [second, first])
+
+
+class HistoryModelTest(TestCase):
+    """History モデルのテスト（author向け拡張分）"""
+
+    def setUp(self):
+        self.editor = Editor.objects.create(ip="127.0.0.1")
+        self.author = Author.objects.create(name="履歴テスト作者")
+        self.song = Song.objects.create(title="履歴テスト曲")
+
+    def test_create_for_author_sets_author_and_leaves_song_null(self):
+        history = History.create_for_author(
+            author=self.author,
+            title="別名を追加",
+            history_type="edit",
+            changes=[["変更前", "変更後"], ["", "別名A"]],
+            editor=self.editor,
+        )
+        self.assertEqual(history.author, self.author)
+        self.assertIsNone(history.song)
+        self.assertEqual(history.history_type, "edit")
+
+    def test_create_for_song_leaves_author_null(self):
+        history = History.create_for_song(
+            song=self.song,
+            title="曲を編集",
+            history_type="edit",
+            changes=[["変更前", "変更後"], ["旧タイトル", "新タイトル"]],
+            editor=self.editor,
+        )
+        self.assertEqual(history.song, self.song)
+        self.assertIsNone(history.author)
+
+    def test_author_set_null_on_author_delete(self):
+        history = History.create_for_author(
+            author=self.author,
+            title="作者削除テスト",
+            history_type="delete",
+            changes=["理由", "テスト"],
+            editor=self.editor,
+        )
+        self.author.delete()
+        history.refresh_from_db()
+        self.assertIsNone(history.author)
+
+    def test_get_for_author_returns_only_matching_author_histories(self):
+        other_author = Author.objects.create(name="別の作者")
+        target_history = History.create_for_author(
+            author=self.author, title="対象", history_type="edit", changes=None, editor=self.editor,
+        )
+        History.create_for_author(
+            author=other_author, title="対象外", history_type="edit", changes=None, editor=self.editor,
+        )
+
+        results = list(History.get_for_author(self.author))
+
+        self.assertEqual(results, [target_history])
+
+    def test_get_for_author_orders_by_create_time_desc(self):
+        older = History.create_for_author(
+            author=self.author, title="古い", history_type="edit", changes=None, editor=self.editor,
+        )
+        older.create_time = timezone.now() - timezone.timedelta(days=1)
+        older.save()
+        newer = History.create_for_author(
+            author=self.author, title="新しい", history_type="edit", changes=None, editor=self.editor,
+        )
+
+        results = list(History.get_for_author(self.author))
+
+        self.assertEqual(results, [newer, older])

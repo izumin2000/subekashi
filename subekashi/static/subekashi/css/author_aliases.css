@@ -1,0 +1,73 @@
+.alias-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.alias-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.alias-name {
+    color: #fff;
+    font-size: 18px;
+    margin-right: 10px;
+}
+
+.alias-type {
+    color: #999;
+    font-size: 18px;
+}
+
+.alias-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.alias-actions a {
+    color: #333;
+    font-size: 18px;
+}
+
+#alias-not-found {
+    margin: 25px;
+    text-align: center;
+}
+
+.dummybutton i {
+    margin-right: 10px;
+    font-size: 1.0em;
+}
+
+/* アイコンとテキストを上下中央寄せにする（共通のp{padding-top:5px}を打ち消す） */
+.dummybuttons .dummybutton {
+    align-items: center;
+}
+
+.dummybuttons .dummybutton p {
+    padding-top: 0;
+}
+
+.alias-type-description {
+    margin: 10px 0;
+}
+
+.alias-type-description i {
+    margin-right: 8px;
+}
+
+/* delete画面: フォームを.dummybuttons内の他要素と並べるため、フォーム自体のボックスを消す */
+.dummybutton-form {
+    display: contents;
+}
+
+/* buttonタグのデフォルトスタイル(font-size/margin等)を打ち消し、.dummybuttonの見た目に揃える */
+.dummybuttons button.dummybutton {
+    font-size: inherit;
+    margin: 0;
+    border: none;
+}

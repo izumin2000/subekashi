@@ -162,6 +162,40 @@
 | 歌詞部分一致 | キーワードが歌詞に含まれる | その曲が結果に含まれる |
 | URL部分一致 | キーワードがURLに含まれる | その曲が結果に含まれる |
 | 一致なし | 存在しないキーワード | 空のクエリセット |
+| 別名（正方向）一致 | `author(yamada)` の別名が `sasaki`、`Author(sasaki)` が別途存在。keyword=`sasaki` | `yamada` の曲・`sasaki` の曲の両方が結果に含まれる |
+| 別名（逆方向）一致 | 上記と同じ前提。keyword=`yamada` | 双方向解決により `yamada` の曲・`sasaki` の曲の両方が結果に含まれる |
+| 対象authorが存在しない別名 | `author` の別名が `single_alias`（`Author(single_alias)` は未登録） | keyword=`single_alias` で正方向のみヒットする |
+
+`yamada`/`sasaki`のように、owner名とtarget名が互いの部分文字列にならない組み合わせを使う。
+`foo`/`foo_sub`のような包含関係だと、素の作者名一致（`icontains`/`contains`）だけで
+逆方向テストが偶然パスしてしまい、別名解決コードを経由したかどうかを検証できないため。
+
+#### 3-1-1. `filter_by_author(value)` / `filter_by_author_exact(value)`（`filter_by_author_alias`経由の別名・双方向対応）
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| 作者名の部分一致 | `authors__name`に一致 | 結果に含まれる |
+| 別名（正方向）の部分一致 | `filter_by_keyword`と同様の`yamada`/`sasaki`構成、keyword=`sasaki` | `yamada`・`sasaki`双方の曲が結果に含まれる |
+| 別名（逆方向）の部分一致 | 上記と同じ前提、keyword=`yamada` | `yamada`・`sasaki`双方の曲が結果に含まれる |
+| 完全一致（`_exact`） | 部分文字列のみ指定 | 一致せず結果に含まれない |
+| 完全一致（`_exact`、別名逆方向） | `author.name`に完全一致する値を指定 | 双方向解決により別名先の曲も結果に含まれる |
+
+#### 3-1-2. `filter_by_guesser(guesser)`（別名・双方向対応の追加分）
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| 別名（正方向・逆方向）一致 | `filter_by_keyword`と同様の`yamada`/`sasaki`構成 | 正方向・逆方向いずれの検索語でも双方の曲が結果に含まれる |
+
+#### 3-1-3. `alias_type="another"`（別名義）の除外（#996）
+
+`another`は同一人物が運用していても意図的に区別して扱うべきものであり、双方向解決（検索）の対象外とする。
+`filter_by_author` / `filter_by_author_exact` / `filter_by_keyword` / `filter_by_guesser` すべてに共通の挙動。
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| 正方向・`alias_type=another` | ownerの別名(`alias_type="another"`)のnameで検索 | ownerの曲は結果に含まれない（target自身の曲のみヒット） |
+| 逆方向・`alias_type=another` | owner自身のnameで検索 | target側の曲は結果に含まれない |
+| 同一ownerに`another`以外の別名も存在 | `another`の別名と`past`の別名を両方持つowner | `past`側の別名名での検索は通常通りヒットする（`another`の存在に影響されない） |
 
 #### 3-2. `filter_by_lack()`
 
@@ -289,6 +323,21 @@
 | is_questionable boolean フラグ | `is_questionable=True` | `cleaned_data["is_questionable"] == True` |
 | titleが500文字超 | `title="あ" * 501` | `is_valid() == False` |
 
+#### 6-4. `AuthorAliasForm`（#992）
+
+DBアクセス（重複チェック）を伴うため `TestCase` を使用する。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 正常な入力 | `name="別名A"`, `alias_type="past"` | `is_valid() == True` |
+| nameが空 | `name=""` | `is_valid() == False` |
+| 不正なalias_type | `alias_type="不正な種別"` | `is_valid() == False` |
+| CHOICES全ての値 | `alias_type`にCHOICESの各キー | いずれも `is_valid() == True` |
+| nameがauthor自身のnameと同じ | `name=author.name` | `is_valid() == False`、`"作者自身の名前は別名として登録できません。"` |
+| nameが既存のAuthorAlias.nameと重複 | 既存のname | `is_valid() == False`、`"その別名は既に登録されています。"` |
+| 編集時に自分自身のnameのまま | `editing_alias=alias`, `name=alias.name` | `is_valid() == True`（自分自身は重複チェックから除外） |
+| 編集時に他のaliasのnameと重複 | `editing_alias=alias`, `name=`他のalias.name | `is_valid() == False` |
+
 ---
 
 ### 7. ビュー — ページアクセスと HTTP レスポンス
@@ -377,6 +426,72 @@
 | --- | --- | --- |
 | 存在する作者ID | 有効なauthor_id | HTTP 200 |
 | 存在しない作者ID | 無効なauthor_id | HTTP 404 |
+| 別名なし (#992) | 別名未登録 | 別名一覧への導線は表示されるが「件の別名」は表示されない |
+| 正方向の別名あり (#992) | 別名を1件登録 | 「1件の別名」が表示される |
+| 逆方向の別名あり (#992) | 他authorが自分のnameと一致する別名を保持 | 「1件の別名」が表示される（正方向＋逆方向の合計） |
+
+#### 7-8-1. `AuthorAliasesView` (`/authors/<id>/aliases`)（#992）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 存在しないauthor_id | 無効なauthor_id | HTTP 404 |
+| 別名なし | 別名未登録のauthor | HTTP 200、「別名が見つかりませんでした」 |
+| 正方向の別名 | 別名を1件登録 | 別名名が表示され、編集・削除リンクが含まれる |
+| 逆方向の別名 | 他authorが自分のnameと一致する別名を保持 | 相手authorの名前が表示されるが、編集・削除リンクは含まれない |
+| `alias_type=past`かつ対象authorが実在 | 別名nameと同名のAuthorが存在 | `channel/<name>/`へのリンクが含まれる |
+| `alias_type=past`だが対象authorが不在 | 別名nameと同名のAuthorが存在しない | `channel/<name>/`へのリンクが含まれない |
+| `alias_type`がpast/another以外 | 例: `abbr`。対象authorは実在 | `channel/<name>/`へのリンクが含まれない |
+| 再読み込みボタン (#996) | 正常アクセス | `reloadPage()`呼び出しと`fa-redo`アイコンが含まれる |
+| 追加ボタンのアイコン (#996) | 正常アクセス | `fa-plus`アイコンが含まれる |
+
+#### 7-8-2. `AuthorAliasNewView` (`/authors/<id>/aliases/new`)（#992）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 正常アクセス | GETリクエスト | HTTP 200 |
+| 存在しないauthor_id | 無効なauthor_id | HTTP 404 |
+| 正常なPOST | 有効な`name`・`alias_type` | AuthorAliasが作成され一覧画面へリダイレクト |
+| 正常なPOST | 上記 | `History.create_for_author()`が呼ばれ、`history_type="new"`のレコードが作成される |
+| nameが重複 | 既存のname | HTTP 200のままエラー表示、レコードは作成されない |
+| nameがauthor自身と同じ | `name=author.name` | HTTP 200のままエラー表示、レコードは作成されない |
+| Discord通知 | 正常なPOST | `send_discord()`がNEW_DISCORD_URL宛に、別名名・作者名を含む内容で呼ばれる |
+| Discord通知失敗 | `send_discord()`が`False`を返す | HTTP 500。DB書き込み前に通知するため、AuthorAliasは作成されず、孤立したHistoryも作成されない |
+| TOCTOU（重複チェックのすり抜け） | `AuthorAliasForm.clean_name`をモックして重複チェックをバイパスし、既存nameでPOST | DB制約(IntegrityError)を捕捉し、HTTP 200のままフォームエラー表示（500にならない）。レコードは重複作成されない |
+| `alias_type`のプレースホルダー (#996) | GETリクエスト | `<option value="" selected disabled>選択してください</option>`が含まれる |
+| `alias_type`の説明属性 (#996) | GETリクエスト | 各`<option>`に`data-description`属性が付与されている |
+| 登録ボタンの初期状態 (#996) | GETリクエスト | `<input type="submit" ... disabled>`（フォームがinvalidな状態で初期表示される） |
+| author_alias_form.jsの読み込み (#996) | GETリクエスト | スクリプトタグが含まれる |
+
+#### 7-8-3. `AuthorAliasEditView` (`/authors/<id>/aliases/<alias_id>/edit`)（#992）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 正常アクセス | GETリクエスト | HTTP 200 |
+| 存在しないalias_id | 無効なalias_id | HTTP 404 |
+| 他authorが所有するalias_id | 別authorのalias_idを指定 | HTTP 404 |
+| 正常なPOST | 有効な`name`・`alias_type` | AuthorAliasが更新され一覧画面へリダイレクト |
+| 正常なPOST | 上記 | `History.create_for_author()`が呼ばれ、`history_type="edit"`のレコードが作成される |
+| 自分自身の現在のnameのまま更新 | `name`を変更しない | 重複エラーにならず更新される |
+| 他のaliasのnameと重複 | 同一author内の他のalias.name | HTTP 200のままエラー表示、更新されない |
+| 実質的な変更なし | `name`・`alias_type`とも変更しない値でPOST | リダイレクトはするが`History`は作成されず、Discord通知も送られない（SongEditViewと同様） |
+| Discord通知 | 実質的な変更があるPOST | `send_discord()`がNEW_DISCORD_URL宛に、変更後の内容を含む形で呼ばれる |
+| Discord通知失敗 | 変更ありのPOSTで`send_discord()`が`False`を返す | HTTP 500。DB書き込み前に通知するため、AuthorAliasは更新されず（元の値のまま）、Historyも作成されない |
+| TOCTOU（重複チェックのすり抜け） | `AuthorAliasForm.clean_name`をモックして重複チェックをバイパスし、既存nameでPOST | DB制約(IntegrityError)を捕捉し、HTTP 200のままフォームエラー表示（500にならない）。更新前の値のまま維持される |
+| 現在のalias_typeが選択済み (#996) | GETリクエスト | 該当する`<option>`に`selected`が付与されている |
+| `alias_type`のプレースホルダー (#996) | GETリクエスト | `<option value="" disabled>選択してください</option>`が含まれる（selectedではない） |
+| author_alias_form.jsの読み込み (#996) | GETリクエスト | スクリプトタグが含まれる |
+
+#### 7-8-4. `AuthorAliasDeleteView` (`/authors/<id>/aliases/<alias_id>/delete`)（#992）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 正常アクセス | GETリクエスト | HTTP 200、削除確認内容が表示される |
+| 存在しないalias_id | 無効なalias_id | HTTP 404 |
+| 正常なPOST | POSTリクエスト | AuthorAliasが削除され一覧画面へリダイレクト |
+| 正常なPOST | 上記 | `History.create_for_author()`が呼ばれ、`history_type="delete"`、`history.author`は削除後も維持される |
+| Discord通知 | 正常なPOST | `send_discord()`がNEW_DISCORD_URL宛に、削除対象の別名名を含む内容で呼ばれる（新規・編集と同じ通知先） |
+| Discord通知失敗 | `send_discord()`が`False`を返す | HTTP 500。AuthorAliasは削除されず、Historyも作成されない（通知できた場合のみ実削除する設計） |
+| キャンセル・削除ボタンのアイコン (#996) | GETリクエスト | `fa-times`・`fa-trash-alt`アイコンが含まれる |
 
 #### 7-9. `ChannelView` (`/channel/<name>/`)
 
@@ -390,6 +505,15 @@
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | 正常アクセス | GETリクエスト | HTTP 200 |
+| author向けHistory (#991) | `History.create_for_author()`で作成したHistoryが存在 | 作者名・作者ページへのリンクが表示され、「この曲は削除されました」は表示されない |
+| author削除後のHistory (#991) | 上記のauthorを削除 | 「この曲または作者は削除されました」が表示される |
+
+#### 7-10-1. `EditorView` (`/editor/<id>/`)（#991でauthor向けHistory表示を追加）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 存在するeditor | 有効なeditor_id | HTTP 200 |
+| author向けHistory | `History.create_for_author()`で作成したHistoryが存在 | 作者名が表示され、「この曲は削除されました」は表示されない |
 
 #### 7-11. `SongCardsView` (`/api/html/song_cards`)
 
@@ -475,6 +599,20 @@
 | title + sort=title | `{"title": "...", "sort": "title"}` | タイトル昇順で返される |
 | title + sort=-title | `{"title": "...", "sort": "-title"}` | タイトル降順で返される |
 
+#### 10-3. author/author_exact/keywordフィルターの別名（双方向）対応
+
+`author(yamada)` に別名 `sasaki`（`Author(sasaki)` も別途存在）を登録したシナリオで、
+`song_search()` 経由でも双方向解決が機能することを確認する。owner名(`yamada`)とtarget名
+(`sasaki`)は互いの部分文字列にならない組み合わせを使い、素の作者名一致だけで
+逆方向テストが偶然パスしないようにしている。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| author（正方向） | `{"author": "sasaki"}` | `yamada`・`sasaki`双方の曲がヒット |
+| author（逆方向） | `{"author": "yamada"}` | `yamada`・`sasaki`双方の曲がヒット |
+| author_exact（逆方向） | `{"author_exact": "yamada"}` | `yamada`・`sasaki`双方の曲がヒット |
+| keyword（逆方向） | `{"keyword": "yamada"}` | `yamada`・`sasaki`双方の曲がヒット |
+
 ---
 
 ### 11. モデル — 基本動作
@@ -505,6 +643,24 @@
 | --- | --- | --- |
 | エイリアスの作成 | `AuthorAlias.objects.create(name="別名", author=author)` | DBに保存される |
 | `name` のユニーク制約 | 同じ名前で2件作成 | `IntegrityError` が発生 |
+| `alias_type` のデフォルト値 | `alias_type` 未指定で作成 | `alias_type == "another"` |
+
+#### 11-3-1. `Author.get_effective_aliases()`（双方向解決ロジック）
+
+| テストケース | 操作 | 期待結果 |
+| --- | --- | --- |
+| 別名なし | 別名未登録のauthor | 空リストを返す |
+| 対象authorが存在しない場合は単方向 | `author(foo)` に `name="foo_sub"` の別名を追加（`Author(foo_sub)` は未登録） | `foo.get_effective_aliases()` に正方向(`is_reverse=False`)の1件のみ |
+| 対象authorが後から登録されると双方向になる | 上記に加え `Author.objects.create(name="foo_sub")` を作成 | `foo` 側は正方向のまま、`foo_sub.get_effective_aliases()` に逆方向(`is_reverse=True`, `name="foo"`)の1件が追加される |
+| 正方向・逆方向の混在 | `foo` に正方向の別名、別author(`bar`)が `name="foo"` の別名を保持 | `foo.get_effective_aliases()` に正方向1件・逆方向1件の計2件 |
+| 自分自身の別名は逆方向に二重計上しない | `foo` が `name="foo"`（自身の name と同じ値）の別名を1件保持 | 逆方向クエリが `exclude(author=self)` により同じaliasを除外し、正方向1件のみ（計1件） |
+
+#### 11-3-2. `EffectiveAlias.alias_type_display`（#992）
+
+| テストケース | 操作 | 期待結果 |
+| --- | --- | --- |
+| CHOICESに存在する値 | `alias_type="past"` | `"以前の名称"` を返す |
+| CHOICESに存在しない値 | `alias_type="unknown_type"` | 生の値をそのまま返す（フォールバック） |
 
 #### 11-4. `SongLink` モデル
 
@@ -521,6 +677,15 @@
 | `create_contact(detail)` | `Contact.create_contact("内容")` | レコードが作成され `post_time` が今日の日付になる |
 | `get_answered()` | `answer` が空(`None`)のレコード | 結果に含まれない |
 | `get_answered()` | `answer` が設定されたレコード | 結果に含まれる、`-id` 順 |
+
+#### 11-6. `History` モデル（author向け拡張分、#991）
+
+| テストケース | 操作 | 期待結果 |
+| --- | --- | --- |
+| `create_for_author()` | `History.create_for_author(author=author, ...)` | `history.author`が設定され`history.song`は`None`のまま |
+| `create_for_song()` | `History.create_for_song(song=song, ...)` | `history.song`が設定され`history.author`は`None`のまま |
+| authorの削除 | `create_for_author()`後に`author.delete()` | `history.author`が`None`になる（`on_delete=SET_NULL`、Historyレコード自体は残る） |
+| `get_for_author(author)` | 複数authorのHistoryが存在する状態で対象authorを指定 | 対象authorのHistoryのみが`-create_time`順で返される |
 
 ---
 
@@ -624,6 +789,36 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | 作者1人 | `song.authors` に1件 | 作者名と作者ページへのリンクを表示 |
 | 作者2人以上 | `song.authors` に2件以上 | 「合作」を表示 |
 | 作者名の特殊文字 | `name="<script>"` | HTMLエスケープされる |
+
+---
+
+### 16. `lib/author_alias_service.py` — 別名Discord通知サービス（#992）
+
+**テストファイル**: `tests/test_lib_author_alias_service.py`
+
+#### 16-1. `build_new_alias_discord_text(author, alias, editor)`
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 作者名を含む | 通常のauthor/alias | 戻り値に作者名が含まれる |
+| 別名を含む | 通常のauthor/alias | 戻り値に別名が含まれる |
+| 種別の表示名を含む | `alias_type="past"` | 戻り値に「以前の名称」が含まれる |
+| 編集者を含む | 任意のeditor | 戻り値に編集者情報が含まれる |
+
+#### 16-2. `build_edit_alias_discord_text(author, old_name, changes, editor)`
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| name変更を含む | `changes`に`["別名", 旧, 新]`を含む | 戻り値に変更前・変更後の別名が含まれる |
+| alias_type変更を含む | `changes`に`["種別", 旧, 新]`を含む | 戻り値に変更前・変更後の種別表示名が含まれる |
+| 作者名を含む | 通常のauthor | 戻り値に作者名が含まれる |
+
+#### 16-3. `build_delete_alias_discord_text(author, alias_name, editor)`
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 作者名を含む | 通常のauthor | 戻り値に作者名が含まれる |
+| 別名を含む | 任意のalias_name | 戻り値に別名が含まれる |
 
 ---
 

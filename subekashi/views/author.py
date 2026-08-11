@@ -20,7 +20,9 @@ class AuthorView(View):
         context = {
             "metatitle": author_name,
             "author": author_name,
+            "author_id": author_obj.id,
             "songInsL": songInsL,
+            "alias_count": len(author_obj.get_effective_aliases()),
             "description": f"{author_name}の曲一覧：{titles}",
         }
         return render(request, "subekashi/author.html", context)

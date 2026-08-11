@@ -30,8 +30,10 @@
             {% render_changes history %}
             {% if history.song %}
                 <a href="{% url 'subekashi:song' history.song.id %}">{{ history.song.title }}</a>
+            {% elif history.author %}
+                <a href="{% url 'subekashi:author' history.author.id %}">{{ history.author.name }}</a>
             {% else %}
-                <p>この曲は削除されました</p>
+                <p>この曲または作者は削除されました</p>
             {% endif %}
             {% include "subekashi/components/editor_link.html" %}
         </details>

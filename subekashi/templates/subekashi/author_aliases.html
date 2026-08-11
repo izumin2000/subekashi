@@ -1,0 +1,62 @@
+{% extends "subekashi/base/base.html" %}
+
+
+{% load static %}
+{% block css %}{% static 'subekashi/css/author_aliases.css'%}{% endblock %}
+
+{% block content %}
+<section>
+    <h1>{{ author.name }}の別名一覧</h1>
+    <div class="dummybuttons">
+        <a onclick="reloadPage()">
+            <div class="dummybutton black-dummybutton"><i class="fas fa-redo"></i><p>再読み込み</p></div>
+        </a>
+        <a href="{% url 'subekashi:author_alias_new' author.id %}">
+            <div class="dummybutton black-dummybutton"><i class="fas fa-plus"></i><p>別名を追加する</p></div>
+        </a>
+    </div>
+
+    {% for row in alias_rows %}
+        <div class="alias-row">
+            <div class="alias-info">
+                {% if row.show_channel_link %}
+                    <a href="{% url 'subekashi:channel' row.name %}" class="alias-name">{{ row.name }}</a>
+                {% else %}
+                    <span class="alias-name">{{ row.name }}</span>
+                {% endif %}
+                <span class="alias-type">{{ row.alias_type_display }}</span>
+            </div>
+            {% if not row.is_reverse %}
+                <div class="alias-actions">
+                    <a href="{% url 'subekashi:author_alias_edit' author.id row.alias_id %}"><i class="fas fa-pen"></i></a>
+                    <a href="{% url 'subekashi:author_alias_delete' author.id row.alias_id %}"><i class="far fa-trash-alt"></i></a>
+                </div>
+            {% endif %}
+        </div>
+    {% empty %}
+        <p id="alias-not-found">別名が見つかりませんでした</p>
+    {% endfor %}
+</section>
+{% endblock %}
+
+{% block js %}
+<script defer>
+    // historyを更新するリロード（subekashi/js/editor.jsと同様。DOMContentLoaded時に
+    // <details>要素の存在を前提とする処理を含むため、editor.js自体は読み込まない）
+    function reloadPage() {
+        const newUrl = location.pathname + '?reload=' + Date.now();
+        history.replaceState(null, '', newUrl);
+        location.reload();
+    }
+
+    {% if request.GET.toast == "new" %}
+        showToast("ok", "別名を追加しました。");
+    {% elif request.GET.toast == "edit" %}
+        showToast("ok", "別名を編集しました。");
+    {% elif request.GET.toast == "delete" %}
+        showToast("ok", "別名を削除しました。");
+    {% endif %}
+
+    deleteToastUrlQuery()
+</script>
+{% endblock %}

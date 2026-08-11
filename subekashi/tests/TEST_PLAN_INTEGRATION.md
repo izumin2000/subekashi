@@ -405,6 +405,90 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 
 ---
 
+### 11. 別名（AuthorAlias）管理フロー（#992）
+
+**テストファイル**: `tests/test_views.py`（`AuthorAliasesViewTest` / `AuthorAliasNewViewTest` / `AuthorAliasEditViewTest` / `AuthorAliasDeleteViewTest`）
+
+#### 11-1. 別名の新規登録から一覧表示まで
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `Author(name="foo")` が存在する |
+| 操作 | `POST /authors/<foo.id>/aliases/new` に `name="foo_sub"`, `alias_type="past"` |
+| 検証 | `/authors/<foo.id>/aliases` へリダイレクト、`AuthorAlias`が作成される |
+| 検証 | `History.get_for_author(foo)` に `history_type="new"` のレコードが1件作成される |
+| 検証 | `GET /authors/<foo.id>/aliases` に `foo_sub` が表示され、編集・削除リンクを含む |
+
+#### 11-2. 双方向解決が一覧画面に反映される
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `Author(name="foo")` に別名 `foo_sub` を登録済み |
+| 操作 | 後から `Author(name="foo_sub")` を新規登録し、`GET /authors/<foo_sub.id>/aliases` |
+| 検証 | 逆方向の別名として `foo` が表示されるが、編集・削除リンクは含まれない |
+
+#### 11-3. 別名の編集
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `foo` に別名 `foo_sub` が登録済み |
+| 操作 | `POST /authors/<foo.id>/aliases/<alias.id>/edit` に `name="foo_sub2"`, `alias_type="sns"` |
+| 検証 | 一覧画面へリダイレクト、`AuthorAlias.name`・`alias_type`が更新される |
+| 検証 | `History`に `history_type="edit"` のレコードが作成される |
+
+#### 11-4. 別名の削除
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `foo` に別名 `foo_sub` が登録済み |
+| 操作 | `POST /authors/<foo.id>/aliases/<alias.id>/delete` |
+| 検証 | 一覧画面へリダイレクト、`AuthorAlias`が削除される |
+| 検証 | `History`に `history_type="delete"` のレコードが作成され、`history.author`は削除後も`foo`を指したまま |
+
+#### 11-5. channelリンクとSong検索への反映
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `Song1(author=foo)`, `Song2(author=foo_sub)` が存在し、`foo`に別名`foo_sub`(`alias_type="past"`)を登録 |
+| 操作 | `GET /authors/<foo.id>/aliases` |
+| 検証 | `foo_sub`の項目に `/channel/foo_sub/` へのリンクが含まれる |
+| 操作 | `GET /songs/?keyword=foo_sub` |
+| 検証 | `Song1`・`Song2`の両方がヒットする（#990の別名フィルターとの連携） |
+
+#### 11-6. Discord通知（仕様変更）
+
+`send_discord()` をモックして検証する。`SEND_DISCORD=False` により通常のテストでは実送信されないため、
+運用上の可視性を確認する目的でモックを使い明示的にテストする。
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作 | `POST /authors/<foo.id>/aliases/new` |
+| 検証 | `send_discord()` がNEW_DISCORD_URL宛に呼ばれ、別名名・作者名を含む |
+| 操作 | 実質的な変更を伴う `POST /authors/<foo.id>/aliases/<alias.id>/edit` |
+| 検証 | `send_discord()` がNEW_DISCORD_URL宛に呼ばれる |
+| 操作 | `POST /authors/<foo.id>/aliases/<alias.id>/delete` |
+| 検証 | `send_discord()` がNEW_DISCORD_URL宛に呼ばれ、削除対象の別名名を含む（新規・編集と同じ通知先） |
+| 操作 | `send_discord()` が失敗（`False`を返す）した状態で新規登録・削除 |
+| 検証 | 新規登録: 作成したAuthorAliasがロールバックされHTTP 500。削除: AuthorAliasは削除されずHTTP 500（通知できた場合のみ実行される設計） |
+
+#### 11-7. 変更なし編集はHistory・Discord通知をスキップ
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `foo` に別名 `foo_sub`(`alias_type="past"`) が登録済み |
+| 操作 | `POST /authors/<foo.id>/aliases/<alias.id>/edit` に変更前と同じ `name="foo_sub"`, `alias_type="past"` |
+| 検証 | 一覧画面へリダイレクトはするが、`History`は作成されず`send_discord()`も呼ばれない（SongEditViewと同様の挙動） |
+
+#### 11-8. 重複チェックのTOCTOU対策
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `foo` に別名 `foo_sub` が既に登録済み |
+| 操作 | `AuthorAliasForm.clean_name` の重複チェックをモックでバイパスした状態で、同じ `name="foo_sub"` を新規登録POST |
+| 検証 | DB制約(`IntegrityError`)を`AuthorAliasNewView`が捕捉し、500エラーにならずHTTP 200のままフォームエラーが表示される。`AuthorAlias`は重複作成されない |
+
+---
+
 ## テスト実装の方針
 
 ### ディレクトリ構成（案）
