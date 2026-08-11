@@ -584,6 +584,8 @@ class AuthorAliasNewViewTest(TestCase):
         )
         self.assertEqual(response.status_code, 500)
         self.assertFalse(AuthorAlias.objects.filter(name="通知失敗別名").exists())
+        # Discord通知前にはDBへ一切書き込まないため、孤立したHistoryも作成されない
+        self.assertEqual(History.get_for_author(self.author).count(), 0)
 
     def test_toctou_duplicate_name_shows_friendly_error_not_500(self):
         # フォームのclean_name()での重複チェックをすり抜けた場合でも、
@@ -727,6 +729,12 @@ class AuthorAliasEditViewTest(TestCase):
             {"name": "編集後失敗別名", "alias_type": "sns"},
         )
         self.assertEqual(response.status_code, 500)
+        # Discord通知失敗時はDBへコミットしないため、editが実際には成功してしまわないこと・
+        # 孤立したHistoryが残らないことを確認する
+        self.alias.refresh_from_db()
+        self.assertEqual(self.alias.name, "編集前別名")
+        self.assertEqual(self.alias.alias_type, "past")
+        self.assertEqual(History.get_for_author(self.author).count(), 0)
 
     def test_toctou_duplicate_name_shows_friendly_error_not_500(self):
         AuthorAlias.objects.create(name="編集競合別名", author=self.author)

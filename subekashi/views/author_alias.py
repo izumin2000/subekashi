@@ -97,14 +97,23 @@ class AuthorAliasNewView(View):
             context["error"] = list(form.errors.values())[0][0]
             return render(request, 'subekashi/author_alias_new.html', context)
 
+        # 未保存のAuthorAliasインスタンスでDiscordテキストを構築し、
+        # 通知が成功した場合のみDBへコミットする（Deleteと同じ「通知成功後にDB確定」パターン）
+        alias = AuthorAlias(
+            name=form.cleaned_data['name'],
+            alias_type=form.cleaned_data['alias_type'],
+            author=self.author,
+        )
+        editor = Editor.get_or_create_from_ip(get_ip(request))
+
+        discord_text = build_new_alias_discord_text(self.author, alias, editor)
+        is_ok = send_discord(NEW_DISCORD_URL, discord_text)
+        if not is_ok:
+            return render(request, 'subekashi/500.html', status=500)
+
         try:
             with transaction.atomic():
-                alias = AuthorAlias.objects.create(
-                    name=form.cleaned_data['name'],
-                    alias_type=form.cleaned_data['alias_type'],
-                    author=self.author,
-                )
-                editor = Editor.get_or_create_from_ip(get_ip(request))
+                alias.save()
                 History.create_for_author(
                     author=self.author,
                     title=f"別名『{alias.name}』を追加",
@@ -117,12 +126,6 @@ class AuthorAliasNewView(View):
             # （フォームのclean_name()での重複チェックをすり抜けてDB制約に抵触するケース）
             context["error"] = DUPLICATE_NAME_ERROR
             return render(request, 'subekashi/author_alias_new.html', context)
-
-        discord_text = build_new_alias_discord_text(self.author, alias, editor)
-        is_ok = send_discord(NEW_DISCORD_URL, discord_text)
-        if not is_ok:
-            alias.delete()
-            return render(request, 'subekashi/500.html', status=500)
 
         return redirect(f"{reverse('subekashi:author_aliases', args=[self.author.id])}?toast=new")
 
@@ -159,21 +162,10 @@ class AuthorAliasEditView(View):
         old_name = self.alias.name
         old_alias_type_display = self.alias.get_alias_type_display()
 
+        # 変更内容の判定はDBへの保存前に行う（未保存のインスタンスに対してフィールドを
+        # 書き換えるだけなので、このリクエスト内で破棄されても副作用はない）
         self.alias.name = form.cleaned_data['name']
         self.alias.alias_type = form.cleaned_data['alias_type']
-
-        try:
-            # atomic()で囲むことで、IntegrityError発生時にDB接続のトランザクションを
-            # セーブポイント単位でロールバックし、直後のrefresh_from_db()が
-            # TransactionManagementErrorにならないようにする
-            with transaction.atomic():
-                self.alias.save()
-        except IntegrityError:
-            # ほぼ同時に同名の別名がPOSTされた場合のTOCTOU対策
-            self.alias.refresh_from_db()
-            context["error"] = DUPLICATE_NAME_ERROR
-            return render(request, 'subekashi/author_alias_edit.html', context)
-
         new_alias_type_display = self.alias.get_alias_type_display()
 
         changes = [["種類", "編集前", "編集後"]]
@@ -182,21 +174,34 @@ class AuthorAliasEditView(View):
         if old_alias_type_display != new_alias_type_display:
             changes.append(["種別", old_alias_type_display, new_alias_type_display])
 
-        # 実質的な変更がない場合は履歴作成・Discord通知をスキップする（SongEditViewと同様の挙動）
-        if len(changes) > 1:
-            editor = Editor.get_or_create_from_ip(get_ip(request))
-            History.create_for_author(
-                author=self.author,
-                title=f"別名『{old_name}』を編集",
-                history_type="edit",
-                changes=changes,
-                editor=editor,
-            )
+        # 実質的な変更がない場合は保存・履歴作成・Discord通知をスキップする（SongEditViewと同様の挙動）
+        if len(changes) <= 1:
+            return redirect(f"{reverse('subekashi:author_aliases', args=[self.author.id])}?toast=edit")
 
-            discord_text = build_edit_alias_discord_text(self.author, old_name, changes, editor)
-            is_ok = send_discord(NEW_DISCORD_URL, discord_text)
-            if not is_ok:
-                return render(request, 'subekashi/500.html', status=500)
+        # Discordへの通知が成功した場合のみDBへコミットする
+        # （Deleteと同じ「通知成功後にDB確定」パターン。通知に失敗した場合、
+        # self.aliasへの変更は未保存のままリクエストの終了とともに破棄される）
+        editor = Editor.get_or_create_from_ip(get_ip(request))
+        discord_text = build_edit_alias_discord_text(self.author, old_name, changes, editor)
+        is_ok = send_discord(NEW_DISCORD_URL, discord_text)
+        if not is_ok:
+            return render(request, 'subekashi/500.html', status=500)
+
+        try:
+            with transaction.atomic():
+                self.alias.save()
+                History.create_for_author(
+                    author=self.author,
+                    title=f"別名『{old_name}』を編集",
+                    history_type="edit",
+                    changes=changes,
+                    editor=editor,
+                )
+        except IntegrityError:
+            # ほぼ同時に同名の別名がPOSTされた場合のTOCTOU対策
+            self.alias.refresh_from_db()
+            context["error"] = DUPLICATE_NAME_ERROR
+            return render(request, 'subekashi/author_alias_edit.html', context)
 
         return redirect(f"{reverse('subekashi:author_aliases', args=[self.author.id])}?toast=edit")
 
