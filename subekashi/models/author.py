@@ -46,7 +46,8 @@ class AuthorLink(models.Model):
 
 
 # 曲の作者の別の呼び方の情報
-# 曲の登録時や編集時に正式な呼び方(author.name)に変更するために使用される
+# nameがauthor.nameに対して双方向に別名をつける（Author.get_effective_aliases()参照）。
+# 曲の検索(subekashi/lib/query_filters.py)やAuthorの別名一覧画面で利用される
 class AuthorAlias(models.Model):
     CHOICES = (
         ("id", "ID"),

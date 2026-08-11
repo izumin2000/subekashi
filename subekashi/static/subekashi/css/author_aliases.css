@@ -38,6 +38,28 @@
     text-align: center;
 }
 
+.dummybutton i {
+    margin-right: 10px;
+    font-size: 1.0em;
+}
+
+/* アイコンとテキストを上下中央寄せにする（共通のp{padding-top:5px}を打ち消す） */
+.dummybuttons .dummybutton {
+    align-items: center;
+}
+
+.dummybuttons .dummybutton p {
+    padding-top: 0;
+}
+
+.alias-type-description {
+    margin: 10px 0;
+}
+
+.alias-type-description i {
+    margin-right: 8px;
+}
+
 /* delete画面: フォームを.dummybuttons内の他要素と並べるため、フォーム自体のボックスを消す */
 .dummybutton-form {
     display: contents;

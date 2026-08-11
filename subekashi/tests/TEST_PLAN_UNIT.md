@@ -186,6 +186,17 @@
 | --- | --- | --- |
 | 別名（正方向・逆方向）一致 | `filter_by_keyword`と同様の`yamada`/`sasaki`構成 | 正方向・逆方向いずれの検索語でも双方の曲が結果に含まれる |
 
+#### 3-1-3. `alias_type="another"`（別名義）の除外（#996）
+
+`another`は同一人物が運用していても意図的に区別して扱うべきものであり、双方向解決（検索）の対象外とする。
+`filter_by_author` / `filter_by_author_exact` / `filter_by_keyword` / `filter_by_guesser` すべてに共通の挙動。
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| 正方向・`alias_type=another` | ownerの別名(`alias_type="another"`)のnameで検索 | ownerの曲は結果に含まれない（target自身の曲のみヒット） |
+| 逆方向・`alias_type=another` | owner自身のnameで検索 | target側の曲は結果に含まれない |
+| 同一ownerに`another`以外の別名も存在 | `another`の別名と`past`の別名を両方持つowner | `past`側の別名名での検索は通常通りヒットする（`another`の存在に影響されない） |
+
 #### 3-2. `filter_by_lack()`
 
 | テストケース | 前提条件 | 期待結果 |
@@ -430,6 +441,8 @@ DBアクセス（重複チェック）を伴うため `TestCase` を使用する
 | `alias_type=past`かつ対象authorが実在 | 別名nameと同名のAuthorが存在 | `channel/<name>/`へのリンクが含まれる |
 | `alias_type=past`だが対象authorが不在 | 別名nameと同名のAuthorが存在しない | `channel/<name>/`へのリンクが含まれない |
 | `alias_type`がpast/another以外 | 例: `abbr`。対象authorは実在 | `channel/<name>/`へのリンクが含まれない |
+| 再読み込みボタン (#996) | 正常アクセス | `reloadPage()`呼び出しと`fa-redo`アイコンが含まれる |
+| 追加ボタンのアイコン (#996) | 正常アクセス | `fa-plus`アイコンが含まれる |
 
 #### 7-8-2. `AuthorAliasNewView` (`/authors/<id>/aliases/new`)（#992）
 
@@ -444,6 +457,10 @@ DBアクセス（重複チェック）を伴うため `TestCase` を使用する
 | Discord通知 | 正常なPOST | `send_discord()`がNEW_DISCORD_URL宛に、別名名・作者名を含む内容で呼ばれる |
 | Discord通知失敗 | `send_discord()`が`False`を返す | HTTP 500、作成したAuthorAliasはロールバック（削除）される |
 | TOCTOU（重複チェックのすり抜け） | `AuthorAliasForm.clean_name`をモックして重複チェックをバイパスし、既存nameでPOST | DB制約(IntegrityError)を捕捉し、HTTP 200のままフォームエラー表示（500にならない）。レコードは重複作成されない |
+| `alias_type`のプレースホルダー (#996) | GETリクエスト | `<option value="" selected disabled>選択してください</option>`が含まれる |
+| `alias_type`の説明属性 (#996) | GETリクエスト | 各`<option>`に`data-description`属性が付与されている |
+| 登録ボタンの初期状態 (#996) | GETリクエスト | `<input type="submit" ... disabled>`（フォームがinvalidな状態で初期表示される） |
+| author_alias_form.jsの読み込み (#996) | GETリクエスト | スクリプトタグが含まれる |
 
 #### 7-8-3. `AuthorAliasEditView` (`/authors/<id>/aliases/<alias_id>/edit`)（#992）
 
@@ -460,6 +477,9 @@ DBアクセス（重複チェック）を伴うため `TestCase` を使用する
 | Discord通知 | 実質的な変更があるPOST | `send_discord()`がNEW_DISCORD_URL宛に、変更後の内容を含む形で呼ばれる |
 | Discord通知失敗 | 変更ありのPOSTで`send_discord()`が`False`を返す | HTTP 500 |
 | TOCTOU（重複チェックのすり抜け） | `AuthorAliasForm.clean_name`をモックして重複チェックをバイパスし、既存nameでPOST | DB制約(IntegrityError)を捕捉し、HTTP 200のままフォームエラー表示（500にならない）。更新前の値のまま維持される |
+| 現在のalias_typeが選択済み (#996) | GETリクエスト | 該当する`<option>`に`selected`が付与されている |
+| `alias_type`のプレースホルダー (#996) | GETリクエスト | `<option value="" disabled>選択してください</option>`が含まれる（selectedではない） |
+| author_alias_form.jsの読み込み (#996) | GETリクエスト | スクリプトタグが含まれる |
 
 #### 7-8-4. `AuthorAliasDeleteView` (`/authors/<id>/aliases/<alias_id>/delete`)（#992）
 
@@ -471,6 +491,7 @@ DBアクセス（重複チェック）を伴うため `TestCase` を使用する
 | 正常なPOST | 上記 | `History.create_for_author()`が呼ばれ、`history_type="delete"`、`history.author`は削除後も維持される |
 | Discord通知 | 正常なPOST | `send_discord()`がNEW_DISCORD_URL宛に、削除対象の別名名を含む内容で呼ばれる（新規・編集と同じ通知先） |
 | Discord通知失敗 | `send_discord()`が`False`を返す | HTTP 500。AuthorAliasは削除されず、Historyも作成されない（通知できた場合のみ実削除する設計） |
+| キャンセル・削除ボタンのアイコン (#996) | GETリクエスト | `fa-times`・`fa-trash-alt`アイコンが含まれる |
 
 #### 7-9. `ChannelView` (`/channel/<name>/`)
 

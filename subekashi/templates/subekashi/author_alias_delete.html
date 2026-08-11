@@ -10,10 +10,10 @@
     <p>この別名を削除します。よろしいですか？</p>
     <div class="dummybuttons">
         <a href="{% url 'subekashi:author_aliases' author.id %}">
-            <div class="dummybutton black-dummybutton"><p>キャンセル</p></div>
+            <div class="dummybutton black-dummybutton"><i class="fas fa-times"></i><p>キャンセル</p></div>
         </a>
         <form action="{% url 'subekashi:author_alias_delete' author.id alias.id %}" method="POST" class="dummybutton-form">{% csrf_token %}
-            <button type="submit" class="dummybutton black-dummybutton"><p>削除する</p></button>
+            <button type="submit" class="dummybutton black-dummybutton"><i class="far fa-trash-alt"></i><p>削除する</p></button>
         </form>
     </div>
 </section>

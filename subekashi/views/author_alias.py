@@ -17,6 +17,26 @@ from subekashi.lib.author_alias_service import (
 LINKABLE_ALIAS_TYPES = ("past", "another")
 DUPLICATE_NAME_ERROR = "その別名は既に登録されています。"
 
+CHANNEL_LINK_NOTE = "対応する名義が存在する場合、一覧画面でチャンネルページへのリンクが表示されます。"
+
+ALIAS_TYPE_DESCRIPTIONS = {
+    "id": "YouTubeチャンネルIDなど、名前ではなく識別子としての別名です。",
+    "abbr": "作者名を短縮した略称です。",
+    "common": "正式名称ではないが、広く使われている呼び方です。",
+    "past": f"以前使用されていた名称です。{CHANNEL_LINK_NOTE}",
+    "sns": "SNS上で使われている名称です。",
+    "spell": "表記揺れ（ひらがな・カタカナ・英字表記の違いなど）です。",
+    "another": f"同一人物が運用している別名義です。曲検索では自動的に同一視されません。{CHANNEL_LINK_NOTE}",
+}
+
+
+def alias_type_choices():
+    """new/edit画面のalias_typeフォーム用の選択肢（各選択肢の説明文付き）を返す"""
+    return [
+        {"value": value, "label": label, "description": ALIAS_TYPE_DESCRIPTIONS.get(value, "")}
+        for value, label in AuthorAlias.CHOICES
+    ]
+
 
 class AuthorAliasesView(View):
     def get(self, request, author_id):
@@ -63,7 +83,7 @@ class AuthorAliasNewView(View):
         return {
             "metatitle": f"{self.author.name}の別名を追加",
             "author": self.author,
-            "alias_type_choices": AuthorAlias.CHOICES,
+            "alias_type_choices": alias_type_choices(),
         }
 
     def get(self, request, author_id):
@@ -122,7 +142,7 @@ class AuthorAliasEditView(View):
             "metatitle": f"{self.author.name}の別名『{self.alias.name}』を編集",
             "author": self.author,
             "alias": self.alias,
-            "alias_type_choices": AuthorAlias.CHOICES,
+            "alias_type_choices": alias_type_choices(),
         }
 
     def get(self, request, author_id, alias_id):
