@@ -461,6 +461,15 @@ class AuthorAliasesViewTest(TestCase):
 
         self.assertNotContains(response, reverse("subekashi:channel", args=["略称対象作者"]))
 
+    def test_reload_button_present(self):
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+        self.assertContains(response, "reloadPage()")
+        self.assertContains(response, "fa-redo")
+
+    def test_add_button_has_plus_icon(self):
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+        self.assertContains(response, "fa-plus")
+
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
 class AuthorAliasNewViewTest(TestCase):
@@ -477,6 +486,45 @@ class AuthorAliasNewViewTest(TestCase):
     def test_nonexistent_author_returns_404(self):
         response = self.client.get(reverse("subekashi:author_alias_new", args=[99999]))
         self.assertEqual(response.status_code, 404)
+
+    def test_alias_type_has_placeholder_option(self):
+        response = self.client.get(reverse("subekashi:author_alias_new", args=[self.author.id]))
+        self.assertContains(response, '<option value="" selected disabled>選択してください</option>')
+
+    def test_alias_type_options_have_description_attribute(self):
+        response = self.client.get(reverse("subekashi:author_alias_new", args=[self.author.id]))
+        self.assertContains(response, 'data-description="以前使用されていた名称です。')
+
+    def test_linkable_alias_types_mention_channel_link_in_description(self):
+        # past/anotherはchannelリンクが貼られる種別のため、説明文にその旨を含める
+        response = self.client.get(reverse("subekashi:author_alias_new", args=[self.author.id]))
+        content = response.content.decode()
+        past_option = content[content.index('value="past"'):content.index('</option>', content.index('value="past"'))]
+        another_option = content[content.index('value="another"'):content.index('</option>', content.index('value="another"'))]
+        abbr_option = content[content.index('value="abbr"'):content.index('</option>', content.index('value="abbr"'))]
+        self.assertIn("チャンネルページへのリンク", past_option)
+        self.assertIn("チャンネルページへのリンク", another_option)
+        self.assertNotIn("チャンネルページへのリンク", abbr_option)
+
+    def test_submit_button_initially_disabled(self):
+        response = self.client.get(reverse("subekashi:author_alias_new", args=[self.author.id]))
+        self.assertContains(response, '<input type="submit" value="登録" disabled>')
+
+    def test_alias_type_description_has_info_icon_between_form_and_button(self):
+        response = self.client.get(reverse("subekashi:author_alias_new", args=[self.author.id]))
+        content = response.content.decode()
+        self.assertContains(response, "fas fa-info-circle info")
+        self.assertContains(response, 'id="alias-type-description-text"')
+        # 説明欄がフォームのフィールド群より後、送信ボタンより前にあることを確認する
+        description_index = content.index('id="alias-type-description"')
+        select_index = content.index('id="alias_type"')
+        submit_index = content.index('<input type="submit"')
+        self.assertLess(select_index, description_index)
+        self.assertLess(description_index, submit_index)
+
+    def test_includes_author_alias_form_js(self):
+        response = self.client.get(reverse("subekashi:author_alias_new", args=[self.author.id]))
+        self.assertContains(response, "author_alias_form.js")
 
     def test_post_creates_alias_and_redirects_to_list(self):
         response = self.client.post(
@@ -565,6 +613,25 @@ class AuthorAliasEditViewTest(TestCase):
             reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id])
         )
         self.assertEqual(response.status_code, 200)
+
+    def test_current_alias_type_is_selected(self):
+        response = self.client.get(
+            reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id])
+        )
+        self.assertContains(response, 'value="past" data-description="以前使用されていた名称です。')
+        self.assertContains(response, 'selected>以前の名称</option>')
+
+    def test_alias_type_has_disabled_placeholder_option(self):
+        response = self.client.get(
+            reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id])
+        )
+        self.assertContains(response, '<option value="" disabled>選択してください</option>')
+
+    def test_includes_author_alias_form_js(self):
+        response = self.client.get(
+            reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id])
+        )
+        self.assertContains(response, "author_alias_form.js")
 
     def test_nonexistent_alias_returns_404(self):
         response = self.client.get(
@@ -689,6 +756,13 @@ class AuthorAliasDeleteViewTest(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "削除対象別名")
+
+    def test_cancel_and_delete_buttons_have_icons(self):
+        response = self.client.get(
+            reverse("subekashi:author_alias_delete", args=[self.author.id, self.alias.id])
+        )
+        self.assertContains(response, "fa-times")
+        self.assertContains(response, "fa-trash-alt")
 
     def test_nonexistent_alias_returns_404(self):
         response = self.client.get(

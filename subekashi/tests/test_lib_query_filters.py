@@ -240,6 +240,54 @@ class FilterByAuthorExactTest(TestCase):
         self.assertIn(self.song2, qs)
 
 
+class FilterByAuthorAliasAnotherTypeExcludedTest(TestCase):
+    """alias_type="another"（別名義）は検索フィルターの別名解決対象から除外されることのテスト（#996）
+
+    別名義は同一人物の表記揺れ・旧名等とは異なり、意図的に区別して扱うべきものの
+    ため、双方向解決（filter_by_author_alias）の対象外とする。
+    """
+
+    def setUp(self):
+        self.owner = Author.objects.create(name="another_yamada")
+        self.target = Author.objects.create(name="another_sasaki")
+        self.song1 = Song.objects.create(title="AnotherSong1")
+        self.song1.authors.add(self.owner)
+        self.song2 = Song.objects.create(title="AnotherSong2")
+        self.song2.authors.add(self.target)
+        AuthorAlias.objects.create(name="another_sasaki", author=self.owner, alias_type="another")
+
+    def test_filter_by_author_forward_excludes_another(self):
+        qs = Song.objects.filter(filter_by_author("another_sasaki")).distinct()
+        self.assertNotIn(self.song1, qs)
+        self.assertIn(self.song2, qs)
+
+    def test_filter_by_author_reverse_excludes_another(self):
+        qs = Song.objects.filter(filter_by_author("another_yamada")).distinct()
+        self.assertIn(self.song1, qs)
+        self.assertNotIn(self.song2, qs)
+
+    def test_filter_by_author_exact_excludes_another(self):
+        qs = Song.objects.filter(filter_by_author_exact("another_sasaki")).distinct()
+        self.assertNotIn(self.song1, qs)
+        self.assertIn(self.song2, qs)
+
+    def test_filter_by_keyword_excludes_another(self):
+        qs = Song.objects.filter(filter_by_keyword("another_sasaki")).distinct()
+        self.assertNotIn(self.song1, qs)
+        self.assertIn(self.song2, qs)
+
+    def test_filter_by_guesser_excludes_another(self):
+        qs = Song.objects.filter(filter_by_guesser("another_sasaki")).distinct()
+        self.assertNotIn(self.song1, qs)
+        self.assertIn(self.song2, qs)
+
+    def test_non_another_type_still_matches(self):
+        # 同じownerに別名義以外(past)の別名も追加した場合、そちらは通常通りヒットする
+        AuthorAlias.objects.create(name="another_yamada_past", author=self.owner, alias_type="past")
+        qs = Song.objects.filter(filter_by_author("another_yamada_past")).distinct()
+        self.assertIn(self.song1, qs)
+
+
 class FilterByLackTest(TestCase):
     """filter_by_lack() のテスト
 

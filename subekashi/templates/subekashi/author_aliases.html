@@ -8,8 +8,11 @@
 <section>
     <h1>{{ author.name }}の別名一覧</h1>
     <div class="dummybuttons">
+        <a onclick="reloadPage()">
+            <div class="dummybutton black-dummybutton"><i class="fas fa-redo"></i><p>再読み込み</p></div>
+        </a>
         <a href="{% url 'subekashi:author_alias_new' author.id %}">
-            <div class="dummybutton black-dummybutton"><p>別名を追加する</p></div>
+            <div class="dummybutton black-dummybutton"><i class="fas fa-plus"></i><p>別名を追加する</p></div>
         </a>
     </div>
 
@@ -38,6 +41,14 @@
 
 {% block js %}
 <script defer>
+    // historyを更新するリロード（subekashi/js/editor.jsと同様。DOMContentLoaded時に
+    // <details>要素の存在を前提とする処理を含むため、editor.js自体は読み込まない）
+    function reloadPage() {
+        const newUrl = location.pathname + '?reload=' + Date.now();
+        history.replaceState(null, '', newUrl);
+        location.reload();
+    }
+
     {% if request.GET.toast == "new" %}
         showToast("ok", "別名を追加しました。");
     {% elif request.GET.toast == "edit" %}

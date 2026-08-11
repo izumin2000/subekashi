@@ -15,17 +15,22 @@
         <div class="form-col">
             <label for="alias_type">種別</label>
             <select id="alias_type" name="alias_type" required>
-                {% for value, label in alias_type_choices %}
-                    <option value="{{ value }}" {% if value == alias.alias_type %}selected{% endif %}>{{ label }}</option>
+                <option value="" disabled>選択してください</option>
+                {% for choice in alias_type_choices %}
+                    <option value="{{ choice.value }}" data-description="{{ choice.description }}" {% if choice.value == alias.alias_type %}selected{% endif %}>{{ choice.label }}</option>
                 {% endfor %}
             </select>
         </div>
+        <p id="alias-type-description" class="alias-type-description info">
+            <i id="alias-type-description-icon" class="fas fa-info-circle info"></i><span id="alias-type-description-text"></span>
+        </p>
         <input type="submit" value="更新">
     </form>
 </section>
 {% endblock %}
 
 {% block js %}
+<script src="{% static 'subekashi/js/author_alias_form.js' %}" defer></script>
 <script defer>
     {% if error %}
         showToast("error", "{{ error }}");
