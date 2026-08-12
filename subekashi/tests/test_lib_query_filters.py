@@ -240,11 +240,11 @@ class FilterByAuthorExactTest(TestCase):
         self.assertIn(self.song2, qs)
 
 
-class FilterByAuthorAliasAnotherTypeExcludedTest(TestCase):
-    """alias_type="another"（別名義）は検索フィルターの別名解決対象から除外されることのテスト（#996）
+class FilterByAuthorAliasAnotherTypeIncludedTest(TestCase):
+    """alias_type="another"（別名義）は検索フィルターの別名解決対象に含まれることのテスト（#1004）
 
-    別名義は同一人物の表記揺れ・旧名等とは異なり、意図的に区別して扱うべきものの
-    ため、双方向解決（filter_by_author_alias）の対象外とする。
+    #996では"another"を双方向解決から除外していたが、#1003の推移的関係解決の方針に
+    合わせて撤回した。"another"は同一人物が運用する別人格として双方向解決の対象に含める。
     """
 
     def setUp(self):
@@ -256,35 +256,77 @@ class FilterByAuthorAliasAnotherTypeExcludedTest(TestCase):
         self.song2.authors.add(self.target)
         AuthorAlias.objects.create(name="another_sasaki", author=self.owner, alias_type="another")
 
-    def test_filter_by_author_forward_excludes_another(self):
+    def test_filter_by_author_forward_includes_another(self):
         qs = Song.objects.filter(filter_by_author("another_sasaki")).distinct()
+        self.assertIn(self.song1, qs)
+        self.assertIn(self.song2, qs)
+
+    def test_filter_by_author_reverse_includes_another(self):
+        qs = Song.objects.filter(filter_by_author("another_yamada")).distinct()
+        self.assertIn(self.song1, qs)
+        self.assertIn(self.song2, qs)
+
+    def test_filter_by_author_exact_includes_another(self):
+        qs = Song.objects.filter(filter_by_author_exact("another_sasaki")).distinct()
+        self.assertIn(self.song1, qs)
+        self.assertIn(self.song2, qs)
+
+    def test_filter_by_keyword_includes_another(self):
+        qs = Song.objects.filter(filter_by_keyword("another_sasaki")).distinct()
+        self.assertIn(self.song1, qs)
+        self.assertIn(self.song2, qs)
+
+    def test_filter_by_guesser_includes_another(self):
+        qs = Song.objects.filter(filter_by_guesser("another_sasaki")).distinct()
+        self.assertIn(self.song1, qs)
+        self.assertIn(self.song2, qs)
+
+
+class FilterByAuthorAliasGroupTypeExcludedTest(TestCase):
+    """alias_type="group"（グループ）は検索フィルターの別名解決対象から除外されることのテスト（#1004）
+
+    グループは合作アカウント等、複数人が運用する名義であり、これを媒介に個人名義同士を
+    同一視してしまうと無関係な人物の名義が混入するため、双方向解決の対象外とする。
+    """
+
+    def setUp(self):
+        self.owner = Author.objects.create(name="group_yamada")
+        self.target = Author.objects.create(name="group_sasaki")
+        self.song1 = Song.objects.create(title="GroupSong1")
+        self.song1.authors.add(self.owner)
+        self.song2 = Song.objects.create(title="GroupSong2")
+        self.song2.authors.add(self.target)
+        AuthorAlias.objects.create(name="group_sasaki", author=self.owner, alias_type="group")
+
+    def test_filter_by_author_forward_excludes_group(self):
+        qs = Song.objects.filter(filter_by_author("group_sasaki")).distinct()
         self.assertNotIn(self.song1, qs)
         self.assertIn(self.song2, qs)
 
-    def test_filter_by_author_reverse_excludes_another(self):
-        qs = Song.objects.filter(filter_by_author("another_yamada")).distinct()
+    def test_filter_by_author_reverse_excludes_group(self):
+        qs = Song.objects.filter(filter_by_author("group_yamada")).distinct()
         self.assertIn(self.song1, qs)
         self.assertNotIn(self.song2, qs)
 
-    def test_filter_by_author_exact_excludes_another(self):
-        qs = Song.objects.filter(filter_by_author_exact("another_sasaki")).distinct()
+    def test_filter_by_author_exact_excludes_group(self):
+        qs = Song.objects.filter(filter_by_author_exact("group_sasaki")).distinct()
         self.assertNotIn(self.song1, qs)
         self.assertIn(self.song2, qs)
 
-    def test_filter_by_keyword_excludes_another(self):
-        qs = Song.objects.filter(filter_by_keyword("another_sasaki")).distinct()
+    def test_filter_by_keyword_excludes_group(self):
+        qs = Song.objects.filter(filter_by_keyword("group_sasaki")).distinct()
         self.assertNotIn(self.song1, qs)
         self.assertIn(self.song2, qs)
 
-    def test_filter_by_guesser_excludes_another(self):
-        qs = Song.objects.filter(filter_by_guesser("another_sasaki")).distinct()
+    def test_filter_by_guesser_excludes_group(self):
+        qs = Song.objects.filter(filter_by_guesser("group_sasaki")).distinct()
         self.assertNotIn(self.song1, qs)
         self.assertIn(self.song2, qs)
 
-    def test_non_another_type_still_matches(self):
-        # 同じownerに別名義以外(past)の別名も追加した場合、そちらは通常通りヒットする
-        AuthorAlias.objects.create(name="another_yamada_past", author=self.owner, alias_type="past")
-        qs = Song.objects.filter(filter_by_author("another_yamada_past")).distinct()
+    def test_non_group_type_still_matches(self):
+        # 同じownerにグループ以外(past)の別名も追加した場合、そちらは通常通りヒットする
+        AuthorAlias.objects.create(name="group_yamada_past", author=self.owner, alias_type="past")
+        qs = Song.objects.filter(filter_by_author("group_yamada_past")).distinct()
         self.assertIn(self.song1, qs)
 
 

@@ -3,9 +3,12 @@ from subekashi.constants.constants import ALL_MEDIAS
 from subekashi.lib.url import clean_url
 from subekashi.models import Author, AuthorAlias, SongLink
 
-# alias_type="another"（別名義）は同一人物が運用していても意図的に区別して扱うべきものであり、
-# 検索時に自動的に同一視されると意図しない結果になるため双方向解決の対象外とする（#996）
-NON_ANOTHER_ALIAS_TYPES = [value for value, _ in AuthorAlias.CHOICES if value != "another"]
+# alias_type="group"（グループ）は合作アカウント等、複数人が運用する名義であり、
+# これを介して個人名義同士を同一視してしまうと無関係な人物の名義が混入するため、
+# 双方向解決の対象外とする（#1004）
+# なお"another"（別名義）は同一人物が運用する別人格として扱われ、双方向解決の対象に含める
+# （#996ではanotherを除外していたが、#1003の推移的関係解決の方針に合わせて撤回した）
+NON_GROUP_ALIAS_TYPES = [value for value, _ in AuthorAlias.CHOICES if value != "group"]
 
 # authorの別名（双方向）にマッチするQを返す
 # 正方向: authorに登録された別名がvalueにマッチする
@@ -17,10 +20,10 @@ def filter_by_author_alias(lookup, value):
     # （否定条件(~Q)をANDすると多対多の行スコープが崩れるため、alias_type__inの正方向条件を使う）
     forward_condition = Q(**{
         f"authors__aliases__name__{lookup}": value,
-        "authors__aliases__alias_type__in": NON_ANOTHER_ALIAS_TYPES,
+        "authors__aliases__alias_type__in": NON_GROUP_ALIAS_TYPES,
     })
     reverse_names = (
-        AuthorAlias.objects.exclude(alias_type="another")
+        AuthorAlias.objects.exclude(alias_type="group")
         .filter(**{f"author__name__{lookup}": value})
         .values("name")
     )

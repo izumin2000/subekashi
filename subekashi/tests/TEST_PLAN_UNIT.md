@@ -186,16 +186,28 @@
 | --- | --- | --- |
 | 別名（正方向・逆方向）一致 | `filter_by_keyword`と同様の`yamada`/`sasaki`構成 | 正方向・逆方向いずれの検索語でも双方の曲が結果に含まれる |
 
-#### 3-1-3. `alias_type="another"`（別名義）の除外（#996）
+#### 3-1-3. `alias_type="another"`（別名義）の双方向解決への包含（#1004）
 
-`another`は同一人物が運用していても意図的に区別して扱うべきものであり、双方向解決（検索）の対象外とする。
+`another`は同一人物が運用する別人格として扱い、双方向解決（検索）の対象に含める
+（#996では除外していたが、#1003の推移的関係解決の方針に合わせて撤回した）。
 `filter_by_author` / `filter_by_author_exact` / `filter_by_keyword` / `filter_by_guesser` すべてに共通の挙動。
 
 | テストケース | 前提条件 | 期待結果 |
 | --- | --- | --- |
-| 正方向・`alias_type=another` | ownerの別名(`alias_type="another"`)のnameで検索 | ownerの曲は結果に含まれない（target自身の曲のみヒット） |
-| 逆方向・`alias_type=another` | owner自身のnameで検索 | target側の曲は結果に含まれない |
-| 同一ownerに`another`以外の別名も存在 | `another`の別名と`past`の別名を両方持つowner | `past`側の別名名での検索は通常通りヒットする（`another`の存在に影響されない） |
+| 正方向・`alias_type=another` | ownerの別名(`alias_type="another"`)のnameで検索 | owner・target双方の曲が結果に含まれる |
+| 逆方向・`alias_type=another` | owner自身のnameで検索 | owner・target双方の曲が結果に含まれる |
+
+#### 3-1-4. `alias_type="group"`（グループ）の除外（#1004）
+
+`group`は合作アカウント等、複数人が運用する名義であり、これを媒介に個人名義同士を
+同一視してしまうと無関係な人物の名義が混入するため、双方向解決（検索）の対象外とする。
+`filter_by_author` / `filter_by_author_exact` / `filter_by_keyword` / `filter_by_guesser` すべてに共通の挙動。
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| 正方向・`alias_type=group` | ownerの別名(`alias_type="group"`)のnameで検索 | ownerの曲は結果に含まれない（target自身の曲のみヒット） |
+| 逆方向・`alias_type=group` | owner自身のnameで検索 | target側の曲は結果に含まれない |
+| 同一ownerに`group`以外の別名も存在 | `group`の別名と`past`の別名を両方持つowner | `past`側の別名名での検索は通常通りヒットする（`group`の存在に影響されない） |
 
 #### 3-2. `filter_by_lack()`
 

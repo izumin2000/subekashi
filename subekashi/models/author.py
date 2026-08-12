@@ -57,6 +57,7 @@ class AuthorAlias(models.Model):
         ("sns", "SNSでの名称"),
         ("spell", "表記揺れ"),
         ("another", "別名義"),
+        ("group", "グループ"),
     )
 
     name = models.CharField(unique=True, max_length = 500)
