@@ -370,6 +370,9 @@ DBアクセス（重複チェック）を伴うため `TestCase` を使用する
 | is_joke=on | `?is_joke=on` | context["jokerange"] = "on" |
 | is_original/is_inst 大文字True | `?is_original=True` など | 対応 context フィールドが True |
 | is_questionable 大文字True | `?is_questionable=True` | context["is_questionable"] = True |
+| is_subeana経由の絞り込み(タグリンク等)は保存設定cookieを上書きしない | `is_saved_select=on`, `search_songrange=subeana` (cookie), `?is_subeana=xx` | context["songrange"] = "xx"（表示のみ反映）、`search_songrange` cookieは上書きされない |
+| is_joke経由の絞り込み(タグリンク等)は保存設定cookieを上書きしない | `is_saved_select=on`, `search_jokerange=on` (cookie), `?is_joke=only` | context["jokerange"] = "only"（表示のみ反映）、`search_jokerange` cookieは上書きされない |
+| songrangeクエリ(検索フォーム経由)は引き続きcookieに保存される | `is_saved_select=on`, `?songrange=xx` | `search_songrange` cookieに "xx" が保存される |
 
 #### 7-3. `SongView` (`/songs/<id>/`)
 

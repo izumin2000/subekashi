@@ -80,11 +80,11 @@ class SongsView(View):
             if raw is None:
                 continue
             value_lower = raw.lower()
+            # is_subeana/is_joke は曲詳細ページのタグリンク等からの一時的な絞り込み用パラメータのため、
+            # その表示にのみ反映し、検索の保存設定(cookie)は上書きしない
             if filter == "is_subeana":
                 songrange_value = "subeana" if value_lower in ["true", "1"] else "xx"
                 context["songrange"] = songrange_value
-                if is_saved_select == 'on':
-                    cookies_to_set["search_songrange"] = songrange_value
             elif filter == "is_joke":
                 if value_lower in ["true", "1", "only"]:
                     jokerange_value = "only"
@@ -93,8 +93,6 @@ class SongsView(View):
                 else:
                     jokerange_value = "off"
                 context["jokerange"] = jokerange_value
-                if is_saved_select == 'on':
-                    cookies_to_set["search_jokerange"] = jokerange_value
             else:
                 context[filter] = value_lower in ["true", "1"]
 
