@@ -197,6 +197,20 @@
 | 逆方向・`alias_type=another` | owner自身のnameで検索 | target側の曲は結果に含まれない |
 | 同一ownerに`another`以外の別名も存在 | `another`の別名と`past`の別名を両方持つowner | `past`側の別名名での検索は通常通りヒットする（`another`の存在に影響されない） |
 
+#### 3-1-4. `alias_type="group"`（グループ）の暫定除外（#1004）
+
+`group`は本来メンバー→グループの片方向のみ解決されるべきだが、非対称ロジックの実装は#1006に
+委譲されているため、それまでの暫定措置として`another`と同様に双方向解決の対象外とする。
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| 正方向・`alias_type=group` | ownerの別名(`alias_type="group"`)のnameで検索 | ownerの曲は結果に含まれない（target自身の曲のみヒット） |
+| 逆方向・`alias_type=group` | owner自身のnameで検索 | target側の曲は結果に含まれない |
+| 完全一致（`_exact`）・`alias_type=group` | ownerの別名(`alias_type="group"`)のnameで完全一致検索 | ownerの曲は結果に含まれない |
+| `filter_by_keyword`・`alias_type=group` | 同上のnameでkeyword検索 | ownerの曲は結果に含まれない |
+| `filter_by_guesser`・`alias_type=group` | 同上のnameでguesser検索 | ownerの曲は結果に含まれない |
+| 同一ownerに`group`以外の別名も存在 | `group`の別名と`past`の別名を両方持つowner | `past`側の別名名での検索は通常通りヒットする（`group`の存在に影響されない） |
+
 #### 3-2. `filter_by_lack()`
 
 | テストケース | 前提条件 | 期待結果 |
@@ -464,6 +478,8 @@ DBアクセス（重複チェック）を伴うため `TestCase` を使用する
 | `alias_type`の説明属性 (#996) | GETリクエスト | 各`<option>`に`data-description`属性が付与されている |
 | 登録ボタンの初期状態 (#996) | GETリクエスト | `<input type="submit" ... disabled>`（フォームがinvalidな状態で初期表示される） |
 | author_alias_form.jsの読み込み (#996) | GETリクエスト | スクリプトタグが含まれる |
+| `group`選択肢 (#1004) | GETリクエスト | `value="group"`の選択肢（「グループ」）が含まれる |
+| 別名義(another)の説明文 (#1004) | GETリクエスト | 「公認」の旨が含まれる |
 
 #### 7-8-3. `AuthorAliasEditView` (`/authors/<id>/aliases/<alias_id>/edit`)（#992）
 
@@ -647,6 +663,7 @@ DBアクセス（重複チェック）を伴うため `TestCase` を使用する
 | エイリアスの作成 | `AuthorAlias.objects.create(name="別名", author=author)` | DBに保存される |
 | `name` のユニーク制約 | 同じ名前で2件作成 | `IntegrityError` が発生 |
 | `alias_type` のデフォルト値 | `alias_type` 未指定で作成 | `alias_type == "another"` |
+| `group`種別 (#1004) | `alias_type="group"`で作成 | DBに保存される。`CHOICES`に`"group"`が含まれる |
 
 #### 11-3-1. `Author.get_effective_aliases()`（双方向解決ロジック）
 

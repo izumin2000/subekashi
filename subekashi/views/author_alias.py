@@ -14,7 +14,7 @@ from subekashi.lib.author_alias_service import (
 )
 
 
-LINKABLE_ALIAS_TYPES = ("past", "another")
+LINKABLE_ALIAS_TYPES = ("past", "another", "group")
 DUPLICATE_NAME_ERROR = "その別名は既に登録されています。"
 
 CHANNEL_LINK_NOTE = "対応する名義が存在する場合、一覧画面でチャンネルページへのリンクが表示されます。"
@@ -26,7 +26,8 @@ ALIAS_TYPE_DESCRIPTIONS = {
     "past": f"以前使用されていた名称です。{CHANNEL_LINK_NOTE}",
     "sns": "SNS上で使われている名称です。",
     "spell": "表記揺れ（ひらがな・カタカナ・英字表記の違いなど）です。",
-    "another": f"同一人物が運用している別名義です。曲検索では自動的に同一視されません。{CHANNEL_LINK_NOTE}",
+    "another": f"同一人物が運用している、本人公認の別名義です。曲検索では自動的に同一視されません。{CHANNEL_LINK_NOTE}",
+    "group": f"合作アカウント等、複数人で運用している名義です。{CHANNEL_LINK_NOTE}",
 }
 
 
@@ -46,7 +47,7 @@ class AuthorAliasesView(View):
 
         effective_aliases = author.get_effective_aliases()
 
-        # alias_typeがpast/anotherの別名のうち、実在するAuthorに対してのみchannelリンクを貼る
+        # alias_typeがpast/another/groupの別名のうち、実在するAuthorに対してのみchannelリンクを貼る
         linkable_names = set(
             Author.objects.filter(
                 name__in=[ea.name for ea in effective_aliases if ea.alias_type in LINKABLE_ALIAS_TYPES]
