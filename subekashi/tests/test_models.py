@@ -7,7 +7,7 @@ from django.db import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
 from subekashi.models import Author, AuthorAlias, Contact, Editor, History, Song, SongLink
-from subekashi.models.author import EffectiveAlias
+from subekashi.models.author import EffectiveAlias, TransitiveAlias
 
 
 class AuthorModelTest(TestCase):
@@ -155,6 +155,89 @@ class AuthorEffectiveAliasesTest(TestCase):
         effective_alias = EffectiveAlias(name="foo_unknown", alias_type="unknown_type", source=alias)
 
         self.assertEqual(effective_alias.alias_type_display, "unknown_type")
+
+
+class AuthorTransitiveAliasesTest(TestCase):
+    """Author.get_transitive_aliases() の推移的関係解決ロジックのテスト（#1005）
+
+    #1003で確認された具体例（名義Aに別名義B・以前の名称C・以前の名称D・グループEを登録）を
+    そのまま再現し、各起点からの見え方が仕様表の通りになることを確認する。
+    """
+
+    def setUp(self):
+        self.a = Author.objects.create(name="author_a")
+        self.b = Author.objects.create(name="author_b")
+        self.c = Author.objects.create(name="author_c")
+        self.d = Author.objects.create(name="author_d")
+        self.e = Author.objects.create(name="author_e")
+        AuthorAlias.objects.create(name="author_b", author=self.a, alias_type="another")
+        AuthorAlias.objects.create(name="author_c", author=self.a, alias_type="past")
+        AuthorAlias.objects.create(name="author_d", author=self.a, alias_type="past")
+        AuthorAlias.objects.create(name="author_e", author=self.a, alias_type="group")
+
+    def as_tuples(self, transitive_aliases):
+        return {(t.name, t.alias_type_display, t.is_direct, t.is_reverse) for t in transitive_aliases}
+
+    def test_no_aliases_returns_empty_list(self):
+        lone = Author.objects.create(name="lone")
+        self.assertEqual(lone.get_transitive_aliases(), [])
+
+    def test_author_a_sees_all_four_directly(self):
+        result = self.as_tuples(self.a.get_transitive_aliases())
+        self.assertEqual(result, {
+            ("author_b", "別名義", True, False),
+            ("author_c", "以前の名称", True, False),
+            ("author_d", "以前の名称", True, False),
+            ("author_e", "所属グループ", True, False),
+        })
+
+    def test_author_b_sees_only_a_another_does_not_bridge(self):
+        result = self.as_tuples(self.b.get_transitive_aliases())
+        self.assertEqual(result, {
+            ("author_a", "別名義", True, True),
+        })
+
+    def test_author_c_sees_a_and_transitively_b_d_e_via_past(self):
+        result = self.as_tuples(self.c.get_transitive_aliases())
+        self.assertEqual(result, {
+            ("author_a", "以前の名称", True, True),
+            ("author_b", "別名義", False, False),
+            ("author_d", "以前の名称", False, False),
+            ("author_e", "所属グループ", False, False),
+        })
+
+    def test_author_d_sees_a_and_transitively_b_c_e_via_past(self):
+        result = self.as_tuples(self.d.get_transitive_aliases())
+        self.assertEqual(result, {
+            ("author_a", "以前の名称", True, True),
+            ("author_b", "別名義", False, False),
+            ("author_c", "以前の名称", False, False),
+            ("author_e", "所属グループ", False, False),
+        })
+
+    def test_author_e_sees_only_a_group_does_not_bridge(self):
+        result = self.as_tuples(self.e.get_transitive_aliases())
+        self.assertEqual(result, {
+            ("author_a", "所属している名義", True, True),
+        })
+
+    def test_cycle_terminates_without_duplicates(self):
+        x = Author.objects.create(name="cycle_x")
+        y = Author.objects.create(name="cycle_y")
+        AuthorAlias.objects.create(name="cycle_y", author=x, alias_type="spell")
+        AuthorAlias.objects.create(name="cycle_x", author=y, alias_type="spell")
+
+        result = x.get_transitive_aliases()
+
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0].name, "cycle_y")
+        self.assertEqual(result[0].alias_type, "spell")
+
+    def test_alias_type_display_falls_back_to_raw_value_for_unknown_type(self):
+        alias = AuthorAlias.objects.create(name="foo_unknown", author=self.a, alias_type="past")
+        transitive_alias = TransitiveAlias(name="foo_unknown", alias_type="unknown_type", source=alias)
+
+        self.assertEqual(transitive_alias.alias_type_display, "unknown_type")
 
 
 class SongModelTest(TestCase):
