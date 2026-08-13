@@ -464,6 +464,8 @@ DBアクセス（重複チェック）を伴うため `TestCase` を使用する
 | `alias_type`の説明属性 (#996) | GETリクエスト | 各`<option>`に`data-description`属性が付与されている |
 | 登録ボタンの初期状態 (#996) | GETリクエスト | `<input type="submit" ... disabled>`（フォームがinvalidな状態で初期表示される） |
 | author_alias_form.jsの読み込み (#996) | GETリクエスト | スクリプトタグが含まれる |
+| `group`選択肢 (#1004) | GETリクエスト | `value="group"`の選択肢（「グループ」）が含まれる |
+| 別名義(another)の説明文 (#1004) | GETリクエスト | 「公認」の旨が含まれる |
 
 #### 7-8-3. `AuthorAliasEditView` (`/authors/<id>/aliases/<alias_id>/edit`)（#992）
 
@@ -647,6 +649,7 @@ DBアクセス（重複チェック）を伴うため `TestCase` を使用する
 | エイリアスの作成 | `AuthorAlias.objects.create(name="別名", author=author)` | DBに保存される |
 | `name` のユニーク制約 | 同じ名前で2件作成 | `IntegrityError` が発生 |
 | `alias_type` のデフォルト値 | `alias_type` 未指定で作成 | `alias_type == "another"` |
+| `group`種別 (#1004) | `alias_type="group"`で作成 | DBに保存される。`CHOICES`に`"group"`が含まれる |
 
 #### 11-3-1. `Author.get_effective_aliases()`（双方向解決ロジック）
 

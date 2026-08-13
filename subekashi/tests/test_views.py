@@ -521,15 +521,29 @@ class AuthorAliasNewViewTest(TestCase):
         self.assertContains(response, 'data-description="以前使用されていた名称です。')
 
     def test_linkable_alias_types_mention_channel_link_in_description(self):
-        # past/anotherはchannelリンクが貼られる種別のため、説明文にその旨を含める
+        # past/another/groupはchannelリンクが貼られる種別のため、説明文にその旨を含める
         response = self.client.get(reverse("subekashi:author_alias_new", args=[self.author.id]))
         content = response.content.decode()
         past_option = content[content.index('value="past"'):content.index('</option>', content.index('value="past"'))]
         another_option = content[content.index('value="another"'):content.index('</option>', content.index('value="another"'))]
+        group_option = content[content.index('value="group"'):content.index('</option>', content.index('value="group"'))]
         abbr_option = content[content.index('value="abbr"'):content.index('</option>', content.index('value="abbr"'))]
         self.assertIn("チャンネルページへのリンク", past_option)
         self.assertIn("チャンネルページへのリンク", another_option)
+        self.assertIn("チャンネルページへのリンク", group_option)
         self.assertNotIn("チャンネルページへのリンク", abbr_option)
+
+    def test_group_option_is_available(self):
+        response = self.client.get(reverse("subekashi:author_alias_new", args=[self.author.id]))
+        self.assertContains(response, 'value="group"')
+        self.assertContains(response, "グループ</option>")
+
+    def test_another_description_mentions_official_recognition(self):
+        # 別名義は本人による公認が前提であることを説明文に明記する
+        response = self.client.get(reverse("subekashi:author_alias_new", args=[self.author.id]))
+        content = response.content.decode()
+        another_option = content[content.index('value="another"'):content.index('</option>', content.index('value="another"'))]
+        self.assertIn("公認", another_option)
 
     def test_submit_button_initially_disabled(self):
         response = self.client.get(reverse("subekashi:author_alias_new", args=[self.author.id]))

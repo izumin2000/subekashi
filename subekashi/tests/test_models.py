@@ -72,6 +72,12 @@ class AuthorAliasModelTest(TestCase):
         alias = AuthorAlias.objects.create(name="デフォルト別名", author=self.author)
         self.assertEqual(alias.alias_type, "another")
 
+    def test_group_is_valid_alias_type_choice(self):
+        # #1004で追加。合作アカウント等を表す種別
+        self.assertIn("group", dict(AuthorAlias.CHOICES))
+        alias = AuthorAlias.objects.create(name="グループ別名", author=self.author, alias_type="group")
+        self.assertEqual(alias.alias_type, "group")
+
 
 class AuthorEffectiveAliasesTest(TestCase):
     """Author.get_effective_aliases() の双方向解決ロジックのテスト"""
