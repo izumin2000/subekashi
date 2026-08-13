@@ -48,14 +48,21 @@ function restoreFormValuesFromCookies() {
         return;
     }
 
+    // URLクエリで明示的に指定されている項目は、そちらを優先しcookieでの上書きは行わない
+    const urlParams = new URLSearchParams(window.location.search);
+
     const cookieFormMappings = [
         { cookieName: 'search_isdetail', elementId: 'isdetail', isDetailsElement: true },
-        { cookieName: 'search_songrange', elementId: 'songrange' },
-        { cookieName: 'search_jokerange', elementId: 'jokerange' },
-        { cookieName: 'search_sort', elementId: 'sort' }
+        { cookieName: 'search_songrange', elementId: 'songrange', queryKeys: ['songrange', 'is_subeana'] },
+        { cookieName: 'search_jokerange', elementId: 'jokerange', queryKeys: ['jokerange', 'is_joke'] },
+        { cookieName: 'search_sort', elementId: 'sort', queryKeys: ['sort'] }
     ];
 
-    cookieFormMappings.forEach(({ cookieName, elementId, isDetailsElement }) => {
+    cookieFormMappings.forEach(({ cookieName, elementId, isDetailsElement, queryKeys }) => {
+        if (queryKeys && queryKeys.some((key) => urlParams.has(key))) {
+            return;
+        }
+
         const cookieValue = cookies[cookieName];
         if (cookieValue) {
             const element = document.getElementById(elementId);
