@@ -8,7 +8,7 @@ from subekashi.models import Author, AuthorAlias, SongLink
 # alias_type="group"（グループ）も本来はメンバー→グループの片方向のみの解決が必要だが、
 # その非対称ロジックは#1006で実装するため、それまでの暫定措置として双方向解決の対象外とする（#1004）
 EXCLUDED_FROM_BIDIRECTIONAL_ALIAS_TYPES = ("another", "group")
-NON_ANOTHER_ALIAS_TYPES = [
+BIDIRECTIONAL_ALIAS_TYPES = [
     value for value, _ in AuthorAlias.CHOICES if value not in EXCLUDED_FROM_BIDIRECTIONAL_ALIAS_TYPES
 ]
 
@@ -22,7 +22,7 @@ def filter_by_author_alias(lookup, value):
     # （否定条件(~Q)をANDすると多対多の行スコープが崩れるため、alias_type__inの正方向条件を使う）
     forward_condition = Q(**{
         f"authors__aliases__name__{lookup}": value,
-        "authors__aliases__alias_type__in": NON_ANOTHER_ALIAS_TYPES,
+        "authors__aliases__alias_type__in": BIDIRECTIONAL_ALIAS_TYPES,
     })
     reverse_names = (
         AuthorAlias.objects.exclude(alias_type__in=EXCLUDED_FROM_BIDIRECTIONAL_ALIAS_TYPES)
