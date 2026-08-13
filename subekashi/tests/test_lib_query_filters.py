@@ -314,6 +314,27 @@ class FilterByAuthorAliasGroupTypeExcludedTest(TestCase):
         self.assertIn(self.song1, qs)
         self.assertNotIn(self.song2, qs)
 
+    def test_filter_by_author_exact_excludes_group(self):
+        qs = Song.objects.filter(filter_by_author_exact("group_sasaki")).distinct()
+        self.assertNotIn(self.song1, qs)
+        self.assertIn(self.song2, qs)
+
+    def test_filter_by_keyword_excludes_group(self):
+        qs = Song.objects.filter(filter_by_keyword("group_sasaki")).distinct()
+        self.assertNotIn(self.song1, qs)
+        self.assertIn(self.song2, qs)
+
+    def test_filter_by_guesser_excludes_group(self):
+        qs = Song.objects.filter(filter_by_guesser("group_sasaki")).distinct()
+        self.assertNotIn(self.song1, qs)
+        self.assertIn(self.song2, qs)
+
+    def test_non_group_type_still_matches(self):
+        # 同じownerにグループ以外(past)の別名も追加した場合、そちらは通常通りヒットする
+        AuthorAlias.objects.create(name="group_yamada_past", author=self.owner, alias_type="past")
+        qs = Song.objects.filter(filter_by_author("group_yamada_past")).distinct()
+        self.assertIn(self.song1, qs)
+
 
 class FilterByLackTest(TestCase):
     """filter_by_lack() のテスト

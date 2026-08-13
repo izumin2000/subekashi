@@ -206,6 +206,10 @@
 | --- | --- | --- |
 | 正方向・`alias_type=group` | ownerの別名(`alias_type="group"`)のnameで検索 | ownerの曲は結果に含まれない（target自身の曲のみヒット） |
 | 逆方向・`alias_type=group` | owner自身のnameで検索 | target側の曲は結果に含まれない |
+| 完全一致（`_exact`）・`alias_type=group` | ownerの別名(`alias_type="group"`)のnameで完全一致検索 | ownerの曲は結果に含まれない |
+| `filter_by_keyword`・`alias_type=group` | 同上のnameでkeyword検索 | ownerの曲は結果に含まれない |
+| `filter_by_guesser`・`alias_type=group` | 同上のnameでguesser検索 | ownerの曲は結果に含まれない |
+| 同一ownerに`group`以外の別名も存在 | `group`の別名と`past`の別名を両方持つowner | `past`側の別名名での検索は通常通りヒットする（`group`の存在に影響されない） |
 
 #### 3-2. `filter_by_lack()`
 
