@@ -112,6 +112,31 @@ class SongsViewTest(TestCase):
                 self.assertEqual(response.status_code, 200)
                 self.assertTrue(response.context[field])
 
+    def test_is_subeana_query_param_does_not_overwrite_saved_songrange_cookie(self):
+        """曲詳細ページのタグリンク(is_subeana)経由の絞り込みでsearch_songrange cookieが上書きされないこと"""
+        self.client.cookies["is_saved_select"] = "on"
+        self.client.cookies["search_songrange"] = "subeana"
+        response = self.client.get(reverse("subekashi:songs"), {"is_subeana": "xx"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["songrange"], "xx")
+        self.assertNotIn("search_songrange", response.cookies)
+
+    def test_is_joke_query_param_does_not_overwrite_saved_jokerange_cookie(self):
+        """曲詳細ページのタグリンク(is_joke)経由の絞り込みでsearch_jokerange cookieが上書きされないこと"""
+        self.client.cookies["is_saved_select"] = "on"
+        self.client.cookies["search_jokerange"] = "on"
+        response = self.client.get(reverse("subekashi:songs"), {"is_joke": "only"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["jokerange"], "only")
+        self.assertNotIn("search_jokerange", response.cookies)
+
+    def test_songrange_query_param_still_saves_cookie(self):
+        """検索フォーム経由(songrange)の変更は引き続きcookieに保存されること"""
+        self.client.cookies["is_saved_select"] = "on"
+        response = self.client.get(reverse("subekashi:songs"), {"songrange": "xx"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.cookies["search_songrange"].value, "xx")
+
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
 class SongViewTest(TestCase):
