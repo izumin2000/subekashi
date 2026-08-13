@@ -47,7 +47,7 @@ class AuthorAliasesView(View):
 
         effective_aliases = author.get_effective_aliases()
 
-        # alias_typeがpast/anotherの別名のうち、実在するAuthorに対してのみchannelリンクを貼る
+        # alias_typeがpast/another/groupの別名のうち、実在するAuthorに対してのみchannelリンクを貼る
         linkable_names = set(
             Author.objects.filter(
                 name__in=[ea.name for ea in effective_aliases if ea.alias_type in LINKABLE_ALIAS_TYPES]

@@ -197,6 +197,16 @@
 | 逆方向・`alias_type=another` | owner自身のnameで検索 | target側の曲は結果に含まれない |
 | 同一ownerに`another`以外の別名も存在 | `another`の別名と`past`の別名を両方持つowner | `past`側の別名名での検索は通常通りヒットする（`another`の存在に影響されない） |
 
+#### 3-1-4. `alias_type="group"`（グループ）の暫定除外（#1004）
+
+`group`は本来メンバー→グループの片方向のみ解決されるべきだが、非対称ロジックの実装は#1006に
+委譲されているため、それまでの暫定措置として`another`と同様に双方向解決の対象外とする。
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| 正方向・`alias_type=group` | ownerの別名(`alias_type="group"`)のnameで検索 | ownerの曲は結果に含まれない（target自身の曲のみヒット） |
+| 逆方向・`alias_type=group` | owner自身のnameで検索 | target側の曲は結果に含まれない |
+
 #### 3-2. `filter_by_lack()`
 
 | テストケース | 前提条件 | 期待結果 |

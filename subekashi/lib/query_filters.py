@@ -5,7 +5,12 @@ from subekashi.models import Author, AuthorAlias, SongLink
 
 # alias_type="another"（別名義）は同一人物が運用していても意図的に区別して扱うべきものであり、
 # 検索時に自動的に同一視されると意図しない結果になるため双方向解決の対象外とする（#996）
-NON_ANOTHER_ALIAS_TYPES = [value for value, _ in AuthorAlias.CHOICES if value != "another"]
+# alias_type="group"（グループ）も本来はメンバー→グループの片方向のみの解決が必要だが、
+# その非対称ロジックは#1006で実装するため、それまでの暫定措置として双方向解決の対象外とする（#1004）
+EXCLUDED_FROM_BIDIRECTIONAL_ALIAS_TYPES = ("another", "group")
+NON_ANOTHER_ALIAS_TYPES = [
+    value for value, _ in AuthorAlias.CHOICES if value not in EXCLUDED_FROM_BIDIRECTIONAL_ALIAS_TYPES
+]
 
 # authorの別名（双方向）にマッチするQを返す
 # 正方向: authorに登録された別名がvalueにマッチする
@@ -20,7 +25,7 @@ def filter_by_author_alias(lookup, value):
         "authors__aliases__alias_type__in": NON_ANOTHER_ALIAS_TYPES,
     })
     reverse_names = (
-        AuthorAlias.objects.exclude(alias_type="another")
+        AuthorAlias.objects.exclude(alias_type__in=EXCLUDED_FROM_BIDIRECTIONAL_ALIAS_TYPES)
         .filter(**{f"author__name__{lookup}": value})
         .values("name")
     )

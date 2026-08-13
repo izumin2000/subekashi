@@ -288,6 +288,33 @@ class FilterByAuthorAliasAnotherTypeExcludedTest(TestCase):
         self.assertIn(self.song1, qs)
 
 
+class FilterByAuthorAliasGroupTypeExcludedTest(TestCase):
+    """alias_type="group"（グループ）が検索フィルターの双方向解決対象から暫定的に除外されることのテスト（#1004）
+
+    本来グループはメンバー→グループの片方向のみ解決されるべきだが、非対称ロジックの実装は
+    #1006に委譲されているため、それまでの暫定措置として双方向解決の対象外としている。
+    """
+
+    def setUp(self):
+        self.owner = Author.objects.create(name="group_yamada")
+        self.target = Author.objects.create(name="group_sasaki")
+        self.song1 = Song.objects.create(title="GroupSong1")
+        self.song1.authors.add(self.owner)
+        self.song2 = Song.objects.create(title="GroupSong2")
+        self.song2.authors.add(self.target)
+        AuthorAlias.objects.create(name="group_sasaki", author=self.owner, alias_type="group")
+
+    def test_filter_by_author_forward_excludes_group(self):
+        qs = Song.objects.filter(filter_by_author("group_sasaki")).distinct()
+        self.assertNotIn(self.song1, qs)
+        self.assertIn(self.song2, qs)
+
+    def test_filter_by_author_reverse_excludes_group(self):
+        qs = Song.objects.filter(filter_by_author("group_yamada")).distinct()
+        self.assertIn(self.song1, qs)
+        self.assertNotIn(self.song2, qs)
+
+
 class FilterByLackTest(TestCase):
     """filter_by_lack() のテスト
 
