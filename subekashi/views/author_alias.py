@@ -48,7 +48,10 @@ class AuthorAliasesView(View):
         transitive_aliases = author.get_transitive_aliases()
 
         # 各別名nameに対応する実在Authorのidを一括取得する。
-        # channelリンクの判定と、編集可能な行での遷移先（別名自体の一覧画面）の算出に使う
+        # channelリンクの判定と、編集可能な行での遷移先（別名自体の一覧画面）の算出に使う。
+        # IN句の対象はクラスタ内の全別名名のため、get_transitive_aliases()自体が
+        # 既にクラスタサイズに比例したコストを持つ点と合わせて、巨大なクラスタでは
+        # このクエリのコストも大きくなる点に注意すること
         author_ids_by_name = dict(
             Author.objects.filter(
                 name__in=[ta.name for ta in transitive_aliases]

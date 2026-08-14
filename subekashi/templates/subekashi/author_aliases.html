@@ -26,9 +26,9 @@
                 {% endif %}
                 <span class="alias-type">{{ row.alias_type_display }}</span>
             </div>
-            {% if row.next_alias_author_id or row.is_editable %}
+            {% if row.next_alias_author_id is not None or row.is_editable %}
                 <div class="alias-actions">
-                    {% if row.next_alias_author_id %}
+                    {% if row.next_alias_author_id is not None %}
                         <a href="{% url 'subekashi:author_aliases' row.next_alias_author_id %}"><i class="fas fa-arrow-right"></i></a>
                     {% endif %}
                     {% if row.is_editable %}

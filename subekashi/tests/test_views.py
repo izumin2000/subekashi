@@ -485,6 +485,18 @@ class AuthorAliasesViewTest(TestCase):
         self.assertNotContains(response, reverse("subekashi:author_alias_edit", args=[self.author.id, alias.id]))
         self.assertNotContains(response, reverse("subekashi:author_alias_delete", args=[self.author.id, alias.id]))
 
+    def test_reverse_alias_shows_nav_icon_even_when_owner_id_is_zero(self):
+        # 遷移先author idが0の場合でもアイコンが表示されることを確認する
+        # （テンプレート側が`{% if row.next_alias_author_id %}`のような真偽値判定だと
+        # 0がfalsyになり表示されなくなる。`is not None`で判定する必要がある）
+        target = Author.objects.create(id=0, name="別名逆方向遷移対象ゼロ")
+        AuthorAlias.objects.create(name=self.author.name, author=target, alias_type="past")
+
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+
+        self.assertContains(response, "fa-arrow-right")
+        self.assertContains(response, reverse("subekashi:author_aliases", args=[target.id]))
+
     def test_reverse_alias_shows_nav_icon_to_owning_authors_list(self):
         # 編集・削除できない逆方向の別名は、代わりにその別名を所有するauthor自身の
         # 一覧画面への遷移アイコン(fa-arrow-right)を表示する
