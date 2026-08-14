@@ -7,6 +7,34 @@ from .base import GetOrNoneMixin
 NON_BRIDGING_ALIAS_TYPES = ("another", "group")
 
 
+def get_alias_edges(name, author):
+    """nameのノードから伸びるAuthorAliasの辺を全て返す（alias_typeによる絞り込みはしない）
+
+    (target_name, alias_type, source, is_reverse) のタプルのリストを返す。
+    正方向: authorが直接所有するAuthorAlias（authorがNone、つまりnameに対応する
+    Authorが実在しない場合は正方向の辺は存在しない）
+    逆方向: nameをname属性として持つ、他のauthorが所有するAuthorAlias
+
+    AuthorAlias.authorはnull不可のフィールドのため、authorがNoneの場合の
+    `.exclude(author=author)`（`.exclude(author=None)`）は何も除外しない
+    no-opとして働き、意図通りに動作する。
+
+    Author.get_transitive_aliases()（#1005）とsubekashi.lib.query_filtersの
+    検索フィルター（#1006）で共通利用する低レベルヘルパー。
+    """
+    edges = []
+    if author is not None:
+        edges += [
+            (alias.name, alias.alias_type, alias, False)
+            for alias in author.aliases.all()
+        ]
+    edges += [
+        (alias.author.name, alias.alias_type, alias, True)
+        for alias in AuthorAlias.objects.filter(name=name).exclude(author=author).select_related("author")
+    ]
+    return edges
+
+
 # 曲の作者の情報
 class Author(GetOrNoneMixin, models.Model):
     name = models.CharField(unique=True, max_length = 500)
@@ -57,19 +85,6 @@ class Author(GetOrNoneMixin, models.Model):
         最大2クエリ、中継可能な場合はさらにAuthor検索が1クエリ発行される）ため、
         巨大なクラスタに対して呼び出すとコストが大きくなる点に注意すること。
         """
-        def edges_from(name, author):
-            edges = []
-            if author is not None:
-                edges += [
-                    (alias.name, alias.alias_type, alias, False)
-                    for alias in author.aliases.all()
-                ]
-            edges += [
-                (alias.author.name, alias.alias_type, alias, True)
-                for alias in AuthorAlias.objects.filter(name=name).exclude(author=author).select_related("author")
-            ]
-            return edges
-
         visited_names = {self.name}
         results = []
         queue = deque([(self.name, self)])
@@ -77,7 +92,7 @@ class Author(GetOrNoneMixin, models.Model):
         while queue:
             current_name, current_author = queue.popleft()
             is_direct = current_name == self.name
-            for target_name, alias_type, source, is_reverse in edges_from(current_name, current_author):
+            for target_name, alias_type, source, is_reverse in get_alias_edges(current_name, current_author):
                 if target_name in visited_names:
                     continue
                 visited_names.add(target_name)

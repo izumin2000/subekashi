@@ -197,19 +197,33 @@
 | 逆方向・`alias_type=another` | owner自身のnameで検索 | target側の曲は結果に含まれない |
 | 同一ownerに`another`以外の別名も存在 | `another`の別名と`past`の別名を両方持つowner | `past`側の別名名での検索は通常通りヒットする（`another`の存在に影響されない） |
 
-#### 3-1-4. `alias_type="group"`（グループ）の暫定除外（#1004）
+#### 3-1-4. `alias_type="group"`（グループ）の片方向解決（#1006）
 
-`group`は本来メンバー→グループの片方向のみ解決されるべきだが、非対称ロジックの実装は#1006に
-委譲されているため、それまでの暫定措置として`another`と同様に双方向解決の対象外とする。
+`group`はメンバー→グループの片方向のみ考慮する。メンバー名義で検索するとグループ自身の
+曲もヒットするが、グループ名義で検索してもメンバー個々の曲はヒットしない（合作アカウントを
+介して他人の名義の曲が混入するのを防ぐ）。#1004時点では暫定的に双方向とも除外していたが、
+#1005の推移的関係解決を踏まえてこの非対称ルールに置き換えた。
 
 | テストケース | 前提条件 | 期待結果 |
 | --- | --- | --- |
-| 正方向・`alias_type=group` | ownerの別名(`alias_type="group"`)のnameで検索 | ownerの曲は結果に含まれない（target自身の曲のみヒット） |
-| 逆方向・`alias_type=group` | owner自身のnameで検索 | target側の曲は結果に含まれない |
-| 完全一致（`_exact`）・`alias_type=group` | ownerの別名(`alias_type="group"`)のnameで完全一致検索 | ownerの曲は結果に含まれない |
-| `filter_by_keyword`・`alias_type=group` | 同上のnameでkeyword検索 | ownerの曲は結果に含まれない |
-| `filter_by_guesser`・`alias_type=group` | 同上のnameでguesser検索 | ownerの曲は結果に含まれない |
-| 同一ownerに`group`以外の別名も存在 | `group`の別名と`past`の別名を両方持つowner | `past`側の別名名での検索は通常通りヒットする（`group`の存在に影響されない） |
+| メンバー名義で検索 | memberの別名(`alias_type="group"`)にgroupのnameを登録 | memberの曲・group自身の曲の両方がヒットする |
+| グループ名義で検索（`filter_by_author`） | 同上 | group自身の曲のみヒットし、memberの曲はヒットしない |
+| グループ名義で検索（`_exact`） | 同上 | 同上 |
+| グループ名義で検索（`filter_by_keyword`） | 同上 | 同上 |
+| グループ名義で検索（`filter_by_guesser`） | 同上 | 同上 |
+
+#### 3-1-5. 推移的関係解決の検索への適用（#1006）
+
+#1003で確認された具体例（名義Aに別名義B・以前の名称C・以前の名称D・グループEを登録）が、
+`filter_by_author_exact`で以下の検索結果になることを確認する結合テスト。
+
+| テストケース | 検索語 | 期待結果 |
+| --- | --- | --- |
+| Aで検索 | `tamura`(A) | A, C, D, E の曲がヒットする（Bは含まれない） |
+| Bで検索 | `inoue`(B) | Bの曲のみヒットする（`another`は中継点にならない） |
+| Cで検索 | `kobayashi`(C) | A, C, D, E の曲がヒットする（`past`経由でAを介してD・Eに到達） |
+| Dで検索 | `yoshida`(D) | A, C, D, E の曲がヒットする（Cと対称） |
+| Eで検索 | `watanabe`(E) | Eの曲のみヒットする（`group`は中継点にならない） |
 
 #### 3-2. `filter_by_lack()`
 
