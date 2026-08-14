@@ -26,7 +26,7 @@
                 {% endif %}
                 <span class="alias-type">{{ row.alias_type_display }}</span>
             </div>
-            {% if not row.is_reverse %}
+            {% if row.is_editable %}
                 <div class="alias-actions">
                     <a href="{% url 'subekashi:author_alias_edit' author.id row.alias_id %}"><i class="fas fa-pen"></i></a>
                     <a href="{% url 'subekashi:author_alias_delete' author.id row.alias_id %}"><i class="far fa-trash-alt"></i></a>
