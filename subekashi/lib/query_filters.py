@@ -3,38 +3,28 @@ from django.db.models import BooleanField, Case, Exists, OuterRef, Q, Value, Whe
 from subekashi.constants.constants import ALL_MEDIAS
 from subekashi.lib.url import clean_url
 from subekashi.models import Author, AuthorAlias, SongLink
-
-# 中継点（推移的な探索での2ホップ目以降）として使える種別。
-# alias_type="another"（別名義）は同一人物が運用していても意図的に区別して扱うべきものであり、
-# 検索では正方向・逆方向とも一切考慮しない（#996、#1004で撤回した「除外撤回」を再度撤回）。
-# alias_type="group"（グループ）はメンバー→グループの片方向のみ考慮する（#1006、詳細は#1003参照）。
-BRIDGING_ALIAS_TYPES = [value for value, _ in AuthorAlias.CHOICES if value not in ("another", "group")]
+from subekashi.models.author import NON_BRIDGING_ALIAS_TYPES, get_alias_edges
 
 
 def _bridging_cluster(seed_names):
-    """seed_namesを起点に、BRIDGING_ALIAS_TYPESの関係のみを辿って到達できる
-    Author名の集合を返す（#1005のAuthor.get_transitive_aliases()と同じ、
-    another・groupを中継点にしないルールを名前の集合に対して適用したもの）。
+    """seed_namesを起点に、NON_BRIDGING_ALIAS_TYPES（another・group）以外の
+    関係のみを辿って到達できるAuthor名の集合を返す。
+
+    #1005のAuthor.get_transitive_aliases()と同じ非中継ルールを、特定のAuthorに
+    紐付かない名前の集合に対して適用したもので、辺の取得自体はget_alias_edges()
+    を共通利用することでget_transitive_aliases()とロジックの二重化を避けている。
     """
     visited = set(seed_names)
     queue = deque(seed_names)
     while queue:
         name = queue.popleft()
         author = Author.get_by_name(name)
-        neighbor_names = set()
-        if author is not None:
-            neighbor_names |= set(
-                author.aliases.filter(alias_type__in=BRIDGING_ALIAS_TYPES).values_list("name", flat=True)
-            )
-        neighbor_names |= set(
-            AuthorAlias.objects.filter(name=name, alias_type__in=BRIDGING_ALIAS_TYPES)
-            .exclude(author=author)
-            .values_list("author__name", flat=True)
-        )
-        for neighbor_name in neighbor_names:
-            if neighbor_name not in visited:
-                visited.add(neighbor_name)
-                queue.append(neighbor_name)
+        for target_name, alias_type, _source, _is_reverse in get_alias_edges(name, author):
+            if alias_type in NON_BRIDGING_ALIAS_TYPES:
+                continue
+            if target_name not in visited:
+                visited.add(target_name)
+                queue.append(target_name)
     return visited
 
 
@@ -47,7 +37,8 @@ def _resolve_author_alias_names(lookup, value):
     - それ以外の種別（id/abbr/common/past/sns/spell）は推移的に双方向解決する
     """
     forward_owner_names = set(
-        AuthorAlias.objects.filter(**{f"name__{lookup}": value}, alias_type__in=BRIDGING_ALIAS_TYPES)
+        AuthorAlias.objects.filter(**{f"name__{lookup}": value})
+        .exclude(alias_type__in=NON_BRIDGING_ALIAS_TYPES)
         .values_list("author__name", flat=True)
     )
     reverse_anchor_names = set(
