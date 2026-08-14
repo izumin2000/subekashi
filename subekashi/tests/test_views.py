@@ -425,6 +425,18 @@ class AuthorViewTest(TestCase):
         response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
         self.assertContains(response, "1件の別名")
 
+    def test_alias_count_reflects_transitive_count(self):
+        # 件数表示はget_transitive_aliases()（#1005）の件数に合わせる（#1007）。
+        # 自分から見て1ホップ(past)先の別名がさらに別名(spell)を持つ場合、
+        # 2ホップ先の別名も件数に含まれる
+        middle = Author.objects.create(name="件数中継作者")
+        AuthorAlias.objects.create(name=middle.name, author=self.author, alias_type="past")
+        AuthorAlias.objects.create(name="件数先端別名", author=middle, alias_type="spell")
+
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
+
+        self.assertContains(response, "2件の別名")
+
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
 class AuthorAliasesViewTest(TestCase):
@@ -494,6 +506,74 @@ class AuthorAliasesViewTest(TestCase):
     def test_add_button_has_plus_icon(self):
         response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
         self.assertContains(response, "fa-plus")
+
+
+@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+class AuthorAliasesViewTransitiveResolutionTest(TestCase):
+    """AuthorAliasesView の推移的関係解決の反映のテスト（#1007）
+
+    #1003で確認された具体例（名義Aに別名義B・以前の名称C・以前の名称D・グループEを登録）を
+    そのまま再現し、各authorの一覧画面が仕様表の通りになることを確認する。
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.a = Author.objects.create(name="view_tamura")
+        self.b = Author.objects.create(name="view_inoue")
+        self.c = Author.objects.create(name="view_kobayashi")
+        self.d = Author.objects.create(name="view_yoshida")
+        self.e = Author.objects.create(name="view_watanabe")
+        self.alias_b = AuthorAlias.objects.create(name="view_inoue", author=self.a, alias_type="another")
+        self.alias_c = AuthorAlias.objects.create(name="view_kobayashi", author=self.a, alias_type="past")
+        self.alias_d = AuthorAlias.objects.create(name="view_yoshida", author=self.a, alias_type="past")
+        self.alias_e = AuthorAlias.objects.create(name="view_watanabe", author=self.a, alias_type="group")
+
+    def test_author_a_list_shows_four_direct_relations_all_editable(self):
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.a.id]))
+
+        self.assertContains(response, "view_inoue")
+        self.assertContains(response, "別名義")
+        self.assertContains(response, "view_kobayashi")
+        self.assertContains(response, "view_yoshida")
+        self.assertContains(response, "以前の名称")
+        self.assertContains(response, "view_watanabe")
+        self.assertContains(response, "所属グループ")
+        # 4件とも自分が直接保有する別名のため、編集・削除リンクが4件分含まれる
+        for alias in [self.alias_b, self.alias_c, self.alias_d, self.alias_e]:
+            self.assertContains(response, reverse("subekashi:author_alias_edit", args=[self.a.id, alias.id]))
+            self.assertContains(response, reverse("subekashi:author_alias_delete", args=[self.a.id, alias.id]))
+
+    def test_author_b_list_shows_only_a_another_does_not_bridge(self):
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.b.id]))
+
+        self.assertContains(response, "view_tamura")
+        self.assertContains(response, "別名義")
+        self.assertNotContains(response, "view_kobayashi")
+        self.assertNotContains(response, "view_yoshida")
+        self.assertNotContains(response, "view_watanabe")
+        # 逆方向のため編集・削除リンクは含まれない
+        self.assertNotContains(response, "fa-pen")
+
+    def test_author_c_list_shows_a_b_d_e_transitively_via_past(self):
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.c.id]))
+
+        self.assertContains(response, "view_tamura")
+        self.assertContains(response, "view_inoue")
+        self.assertContains(response, "view_yoshida")
+        self.assertContains(response, "view_watanabe")
+        self.assertContains(response, "所属グループ")
+        # Aへの関係は逆方向、B/D/Eへの関係は間接的なため、いずれも編集・削除できない
+        self.assertNotContains(response, "fa-pen")
+
+    def test_author_e_list_shows_only_a_group_does_not_bridge(self):
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.e.id]))
+
+        self.assertContains(response, "view_tamura")
+        self.assertContains(response, "所属している名義")
+        self.assertNotContains(response, "view_inoue")
+        self.assertNotContains(response, "view_kobayashi")
+        self.assertNotContains(response, "view_yoshida")
+        self.assertNotContains(response, "fa-pen")
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)

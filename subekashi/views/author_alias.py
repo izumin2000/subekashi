@@ -45,24 +45,25 @@ class AuthorAliasesView(View):
         if author is None:
             return render(request, 'subekashi/404.html', status=404)
 
-        effective_aliases = author.get_effective_aliases()
+        transitive_aliases = author.get_transitive_aliases()
 
         # alias_typeがpast/another/groupの別名のうち、実在するAuthorに対してのみchannelリンクを貼る
         linkable_names = set(
             Author.objects.filter(
-                name__in=[ea.name for ea in effective_aliases if ea.alias_type in LINKABLE_ALIAS_TYPES]
+                name__in=[ta.name for ta in transitive_aliases if ta.alias_type in LINKABLE_ALIAS_TYPES]
             ).values_list("name", flat=True)
         )
 
         alias_rows = [
             {
-                "name": ea.name,
-                "alias_type_display": ea.alias_type_display,
-                "is_reverse": ea.is_reverse,
-                "alias_id": ea.source.id,
-                "show_channel_link": ea.alias_type in LINKABLE_ALIAS_TYPES and ea.name in linkable_names,
+                "name": ta.name,
+                "alias_type_display": ta.alias_type_display,
+                # 直接自分が保有する別名（1ホップかつ正方向）のみ編集・削除できる
+                "is_editable": ta.is_direct and not ta.is_reverse,
+                "alias_id": ta.source.id,
+                "show_channel_link": ta.alias_type in LINKABLE_ALIAS_TYPES and ta.name in linkable_names,
             }
-            for ea in effective_aliases
+            for ta in transitive_aliases
         ]
 
         context = {
