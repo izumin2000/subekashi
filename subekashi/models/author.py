@@ -165,7 +165,8 @@ class TransitiveAlias:
     編集・削除の対象にはできない。
 
     is_reverseはこのエントリを発見した最後の1ホップの向き（正方向か逆方向か）を表し、
-    alias_type="group"の場合の表示ラベルの出し分け（所属グループ/所属している名義）にも使う。
+    alias_type="group"の場合の表示ラベルの出し分け（所属グループ/所属している名義）、
+    alias_type="past"の場合の表示ラベルの出し分け（以前の名称/その後の名称、#1019）にも使う。
     """
     name: str
     alias_type: str
@@ -177,4 +178,6 @@ class TransitiveAlias:
     def alias_type_display(self):
         if self.alias_type == "group":
             return "所属している名義" if self.is_reverse else "所属グループ"
+        if self.alias_type == "past" and self.is_reverse:
+            return "その後の名称"
         return dict(AuthorAlias.CHOICES).get(self.alias_type, self.alias_type)

@@ -474,6 +474,24 @@ class AuthorAliasesViewTest(TestCase):
         self.assertNotContains(response, reverse("subekashi:author_alias_edit", args=[self.author.id, alias.id]))
         self.assertNotContains(response, reverse("subekashi:author_alias_delete", args=[self.author.id, alias.id]))
 
+    def test_forward_past_alias_shows_izen_no_meisho(self):
+        # #1019: 正方向（自分がpastの別名を登録している側）は「以前の名称」のまま
+        AuthorAlias.objects.create(name="以前の名称対象", author=self.author, alias_type="past")
+
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+
+        self.assertContains(response, "以前の名称")
+        self.assertNotContains(response, "その後の名称")
+
+    def test_reverse_past_alias_shows_sonogo_no_meisho(self):
+        # #1019: 逆方向（相手が自分をpastの別名として登録している側）は「その後の名称」と表示する
+        target = Author.objects.create(name="その後の名称対象")
+        AuthorAlias.objects.create(name=self.author.name, author=target, alias_type="past")
+
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+
+        self.assertContains(response, "その後の名称")
+
     def test_past_alias_with_existing_author_links_to_channel(self):
         Author.objects.create(name="別名チャンネル対象")
         AuthorAlias.objects.create(name="別名チャンネル対象", author=self.author, alias_type="past")
@@ -562,6 +580,9 @@ class AuthorAliasesViewTransitiveResolutionTest(TestCase):
         self.assertContains(response, "view_yoshida")
         self.assertContains(response, "view_watanabe")
         self.assertContains(response, "所属グループ")
+        # Aへの関係は逆方向のため「その後の名称」、Dへの関係は間接的だが正方向のため「以前の名称」のまま（#1019）
+        self.assertContains(response, "その後の名称")
+        self.assertContains(response, "以前の名称")
         # Aへの関係は逆方向、B/D/Eへの関係は間接的なため、いずれも編集・削除できない
         self.assertNotContains(response, "fa-pen")
 
