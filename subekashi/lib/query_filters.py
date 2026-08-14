@@ -1,35 +1,73 @@
+from collections import deque
 from django.db.models import BooleanField, Case, Exists, OuterRef, Q, Value, When
 from subekashi.constants.constants import ALL_MEDIAS
 from subekashi.lib.url import clean_url
 from subekashi.models import Author, AuthorAlias, SongLink
 
+# 中継点（推移的な探索での2ホップ目以降）として使える種別。
 # alias_type="another"（別名義）は同一人物が運用していても意図的に区別して扱うべきものであり、
-# 検索時に自動的に同一視されると意図しない結果になるため双方向解決の対象外とする（#996）
-# alias_type="group"（グループ）も本来はメンバー→グループの片方向のみの解決が必要だが、
-# その非対称ロジックは#1006で実装するため、それまでの暫定措置として双方向解決の対象外とする（#1004）
-EXCLUDED_FROM_BIDIRECTIONAL_ALIAS_TYPES = ("another", "group")
-BIDIRECTIONAL_ALIAS_TYPES = [
-    value for value, _ in AuthorAlias.CHOICES if value not in EXCLUDED_FROM_BIDIRECTIONAL_ALIAS_TYPES
-]
+# 検索では正方向・逆方向とも一切考慮しない（#996、#1004で撤回した「除外撤回」を再度撤回）。
+# alias_type="group"（グループ）はメンバー→グループの片方向のみ考慮する（#1006、詳細は#1003参照）。
+BRIDGING_ALIAS_TYPES = [value for value, _ in AuthorAlias.CHOICES if value not in ("another", "group")]
 
-# authorの別名（双方向）にマッチするQを返す
-# 正方向: authorに登録された別名がvalueにマッチする
-# 逆方向: nameがauthor.nameと一致する別名を他のauthorが持ち、その別名がvalueにマッチする場合、
-#         name側のauthorも対象にする（#989の双方向解決に対応）
-def filter_by_author_alias(lookup, value):
-    # name一致とalias_type制限を同一dictにまとめることで、複数aliasを持つauthorに対しても
-    # 同一のAuthorAlias行に対して両条件が適用されるようにする
-    # （否定条件(~Q)をANDすると多対多の行スコープが崩れるため、alias_type__inの正方向条件を使う）
-    forward_condition = Q(**{
-        f"authors__aliases__name__{lookup}": value,
-        "authors__aliases__alias_type__in": BIDIRECTIONAL_ALIAS_TYPES,
-    })
-    reverse_names = (
-        AuthorAlias.objects.exclude(alias_type__in=EXCLUDED_FROM_BIDIRECTIONAL_ALIAS_TYPES)
-        .filter(**{f"author__name__{lookup}": value})
-        .values("name")
+
+def _bridging_cluster(seed_names):
+    """seed_namesを起点に、BRIDGING_ALIAS_TYPESの関係のみを辿って到達できる
+    Author名の集合を返す（#1005のAuthor.get_transitive_aliases()と同じ、
+    another・groupを中継点にしないルールを名前の集合に対して適用したもの）。
+    """
+    visited = set(seed_names)
+    queue = deque(seed_names)
+    while queue:
+        name = queue.popleft()
+        author = Author.get_by_name(name)
+        neighbor_names = set()
+        if author is not None:
+            neighbor_names |= set(
+                author.aliases.filter(alias_type__in=BRIDGING_ALIAS_TYPES).values_list("name", flat=True)
+            )
+        neighbor_names |= set(
+            AuthorAlias.objects.filter(name=name, alias_type__in=BRIDGING_ALIAS_TYPES)
+            .exclude(author=author)
+            .values_list("author__name", flat=True)
+        )
+        for neighbor_name in neighbor_names:
+            if neighbor_name not in visited:
+                visited.add(neighbor_name)
+                queue.append(neighbor_name)
+    return visited
+
+
+def _resolve_author_alias_names(lookup, value):
+    """検索語(value)に対応する実効的なAuthor名の集合を返す（#1006）
+
+    - alias_type="another"は正方向・逆方向とも一切考慮しない
+    - alias_type="group"はメンバー→グループの片方向のみ考慮する
+      （グループ自身の名義で検索してもメンバー個々の曲は含めない）
+    - それ以外の種別（id/abbr/common/past/sns/spell）は推移的に双方向解決する
+    """
+    forward_owner_names = set(
+        AuthorAlias.objects.filter(**{f"name__{lookup}": value}, alias_type__in=BRIDGING_ALIAS_TYPES)
+        .values_list("author__name", flat=True)
     )
-    return forward_condition | Q(authors__name__in=reverse_names)
+    reverse_anchor_names = set(
+        Author.objects.filter(**{f"name__{lookup}": value}).values_list("name", flat=True)
+    )
+    seed_names = forward_owner_names | reverse_anchor_names
+    if not seed_names:
+        return set()
+
+    cluster_names = _bridging_cluster(seed_names)
+    group_target_names = set(
+        AuthorAlias.objects.filter(author__name__in=cluster_names, alias_type="group")
+        .values_list("name", flat=True)
+    )
+    return cluster_names | group_target_names
+
+
+# authorの別名（推移的な双方向解決を含む）にマッチするQを返す（#1005/#1006）
+def filter_by_author_alias(lookup, value):
+    return Q(authors__name__in=_resolve_author_alias_names(lookup, value))
 
 # 作者名によるフィルター（別名・双方向を含む、部分一致）
 def filter_by_author(value):
