@@ -200,7 +200,7 @@ class AuthorTransitiveAliasesTest(TestCase):
     def test_author_c_sees_a_and_transitively_b_d_e_via_past(self):
         result = self.as_tuples(self.c.get_transitive_aliases())
         self.assertEqual(result, {
-            ("author_a", "以前の名称", True, True),
+            ("author_a", "その後の名称", True, True),
             ("author_b", "別名義", False, False),
             ("author_d", "以前の名称", False, False),
             ("author_e", "所属グループ", False, False),
@@ -209,7 +209,7 @@ class AuthorTransitiveAliasesTest(TestCase):
     def test_author_d_sees_a_and_transitively_b_c_e_via_past(self):
         result = self.as_tuples(self.d.get_transitive_aliases())
         self.assertEqual(result, {
-            ("author_a", "以前の名称", True, True),
+            ("author_a", "その後の名称", True, True),
             ("author_b", "別名義", False, False),
             ("author_c", "以前の名称", False, False),
             ("author_e", "所属グループ", False, False),
@@ -238,6 +238,20 @@ class AuthorTransitiveAliasesTest(TestCase):
         transitive_alias = TransitiveAlias(name="foo_unknown", alias_type="unknown_type", source=alias)
 
         self.assertEqual(transitive_alias.alias_type_display, "unknown_type")
+
+    def test_alias_type_display_past_forward_stays_zenno_no_meisho(self):
+        # #1019: 正方向（自分がpastの別名を登録している側）は従来通り「以前の名称」のまま
+        alias = AuthorAlias.objects.create(name="foo_past_forward", author=self.a, alias_type="past")
+        transitive_alias = TransitiveAlias(name="foo_past_forward", alias_type="past", source=alias, is_reverse=False)
+
+        self.assertEqual(transitive_alias.alias_type_display, "以前の名称")
+
+    def test_alias_type_display_past_reverse_shows_sonogo_no_meisho(self):
+        # #1019: 逆方向（相手が自分をpastの別名として登録している側）は「その後の名称」と表示する
+        alias = AuthorAlias.objects.create(name="foo_past_reverse", author=self.a, alias_type="past")
+        transitive_alias = TransitiveAlias(name="foo_past_reverse", alias_type="past", source=alias, is_reverse=True)
+
+        self.assertEqual(transitive_alias.alias_type_display, "その後の名称")
 
 
 class SongModelTest(TestCase):

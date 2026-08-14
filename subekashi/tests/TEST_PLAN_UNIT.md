@@ -477,8 +477,10 @@ DBアクセス（重複チェック）を伴うため `TestCase` を使用する
 | `alias_type`がpast/another以外 | 例: `abbr`。対象authorは実在 | `channel/<name>/`へのリンクが含まれない |
 | 再読み込みボタン (#996) | 正常アクセス | `reloadPage()`呼び出しと`fa-redo`アイコンが含まれる |
 | 追加ボタンのアイコン (#996) | 正常アクセス | `fa-plus`アイコンが含まれる |
+| `alias_type=past`・正方向のラベル (#1019) | 自分がpastの別名を登録 | 「以前の名称」と表示される |
+| `alias_type=past`・逆方向のラベル (#1019) | 他authorが自分をpastの別名として登録 | 「その後の名称」と表示される |
 
-##### 推移的関係解決の反映（#1007）
+##### 推移的関係解決の反映（#1007、#1019）
 
 #1003・#1005の具体例（名義Aに別名義B・以前の名称C・以前の名称D・グループEを登録）を再現し、各authorの一覧画面が仕様表の通りになることを確認する。
 
@@ -486,7 +488,7 @@ DBアクセス（重複チェック）を伴うため `TestCase` を使用する
 | --- | --- | --- |
 | Aの一覧 | `A.get_transitive_aliases()`を表示 | B(別名義)・C(以前の名称)・D(以前の名称)・E(所属グループ)の4件が表示され、いずれも編集・削除リンクを含む（直接保有） |
 | Bの一覧 | 同上 | Aのみ表示される（`another`は中継点にならないためC/D/Eは表示されない）。編集・削除リンクは含まれない（逆方向） |
-| Cの一覧 | 同上 | A・B・D・Eが表示される（`past`経由でAを介して推移的に到達）。いずれも編集・削除リンクは含まれない（自分が直接保有する別名ではない） |
+| Cの一覧 | 同上 | A（その後の名称）・B・D（以前の名称）・Eが表示される（`past`経由でAを介して推移的に到達）。いずれも編集・削除リンクは含まれない（自分が直接保有する別名ではない） |
 | Eの一覧 | 同上 | Aのみ表示され、ラベルは「所属している名義」（`group`は中継点にならないためB/C/Dは表示されない）。編集・削除リンクは含まれない |
 | グループラベルの出し分け | 同上 | Aの一覧ではEの関係が「所属グループ」、Eの一覧ではAの関係が「所属している名義」と表示される |
 
@@ -714,17 +716,21 @@ DBアクセス（重複チェック）を伴うため `TestCase` を使用する
 #### 11-3-3. `Author.get_transitive_aliases()`（推移的関係解決ロジック、#1005）
 
 具体例: 名義Aに「別名義B」「以前の名称C」「以前の名称D」「グループE」を登録した場合の5パターン全てを検証する。
+`past`の関係は、正方向（自分がpastの別名を登録している側）では「以前の名称」、逆方向
+（相手が自分をpastの別名として登録している側）では「その後の名称」と表示する（#1019）。
 
 | テストケース | 操作 | 期待結果 |
 | --- | --- | --- |
 | 別名なし | 別名未登録のauthor | 空リストを返す |
 | Aの一覧 | `A.get_transitive_aliases()` | B(別名義,direct), C(以前の名称,direct), D(以前の名称,direct), E(所属グループ,direct) の4件 |
 | Bの一覧 | `B.get_transitive_aliases()` | A(別名義,direct,reverse)の1件のみ。`another`は中継点にならないためC/D/Eには辿らない |
-| Cの一覧 | `C.get_transitive_aliases()` | A(以前の名称,direct,reverse), B(別名義,indirect), D(以前の名称,indirect), E(所属グループ,indirect) の4件。`past`は中継点になるためAを経由してB/D/Eを発見する |
-| Dの一覧 | `D.get_transitive_aliases()` | A(以前の名称,direct,reverse), B(別名義,indirect), C(以前の名称,indirect), E(所属グループ,indirect) の4件 |
+| Cの一覧 | `C.get_transitive_aliases()` | A(その後の名称,direct,reverse), B(別名義,indirect), D(以前の名称,indirect), E(所属グループ,indirect) の4件。`past`は中継点になるためAを経由してB/D/Eを発見する |
+| Dの一覧 | `D.get_transitive_aliases()` | A(その後の名称,direct,reverse), B(別名義,indirect), C(以前の名称,indirect), E(所属グループ,indirect) の4件 |
 | Eの一覧 | `E.get_transitive_aliases()` | A(所属している名義,direct,reverse)の1件のみ。`group`は中継点にならないためB/C/Dには辿らない |
 | 循環関係の終端 | `x`↔`y`が互いに`spell`の別名を保持（閉路） | 訪問済みノードとして扱われ無限ループにならず、重複なく1件のみ返す |
 | `TransitiveAlias.alias_type_display`（CHOICESに存在しない値） | `alias_type="unknown_type"` | 生の値をそのまま返す（フォールバック） |
+| `TransitiveAlias.alias_type_display`（`past`・正方向、#1019） | `alias_type="past"`, `is_reverse=False` | `"以前の名称"` を返す |
+| `TransitiveAlias.alias_type_display`（`past`・逆方向、#1019） | `alias_type="past"`, `is_reverse=True` | `"その後の名称"` を返す |
 
 #### 11-4. `SongLink` モデル
 
