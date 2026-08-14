@@ -464,6 +464,17 @@ class AuthorAliasesViewTest(TestCase):
         self.assertContains(response, reverse("subekashi:author_alias_edit", args=[self.author.id, alias.id]))
         self.assertContains(response, reverse("subekashi:author_alias_delete", args=[self.author.id, alias.id]))
 
+    def test_forward_alias_without_existing_author_shows_no_nav_icon(self):
+        # 編集可能な行（自分が直接保有する別名）で、別名自体に対応する実在Authorが
+        # 存在しない場合、遷移アイコンは表示しない（フォールバック先が自分自身になり
+        # 無意味なため、編集可能な行では所有者へのフォールバックを行わない設計）
+        AuthorAlias.objects.create(name="実在しない別名Y", author=self.author, alias_type="spell")
+
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+
+        self.assertContains(response, "実在しない別名Y")
+        self.assertNotContains(response, "fa-arrow-right")
+
     def test_reverse_alias_is_displayed_without_edit_delete_links(self):
         target = Author.objects.create(name="別名逆方向対象")
         alias = AuthorAlias.objects.create(name=self.author.name, author=target, alias_type="past")

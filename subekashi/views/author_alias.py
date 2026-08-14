@@ -60,12 +60,13 @@ class AuthorAliasesView(View):
             is_editable = ta.is_direct and not ta.is_reverse
 
             # 別名自体(ta.name)に対応する実在Authorを優先して遷移先にする。
-            # 対応するAuthorがない場合、編集不可の行に限り、このAuthorAlias自体を実際に
-            # 所有しているauthor(source.author)へのフォールバックリンクを出す
-            # （所有者は必ず実在するため確実にリンクできる）。編集可能な行はもともと
-            # 自分がsource.authorなので、フォールバックしても意味がなく対象外とする
+            # 対応するAuthorがない場合、このAuthorAlias自体を実際に所有している
+            # author(source.author)へフォールバックする（所有者は必ず実在するため
+            # 確実にリンクできる）。編集可能な行（is_editable=True）はsource.authorが
+            # 常に自分自身であるため、下のif next_alias_author_id == author.idで
+            # 結果的にNoneに戻る（フォールバックしても意味がないという意図の通り）
             next_alias_author_id = author_ids_by_name.get(ta.name)
-            if next_alias_author_id is None and not is_editable:
+            if next_alias_author_id is None:
                 next_alias_author_id = ta.source.author_id
 
             if next_alias_author_id == author.id:
