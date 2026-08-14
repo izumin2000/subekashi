@@ -682,6 +682,21 @@ DBアクセス（重複チェック）を伴うため `TestCase` を使用する
 | CHOICESに存在する値 | `alias_type="past"` | `"以前の名称"` を返す |
 | CHOICESに存在しない値 | `alias_type="unknown_type"` | 生の値をそのまま返す（フォールバック） |
 
+#### 11-3-3. `Author.get_transitive_aliases()`（推移的関係解決ロジック、#1005）
+
+具体例: 名義Aに「別名義B」「以前の名称C」「以前の名称D」「グループE」を登録した場合の5パターン全てを検証する。
+
+| テストケース | 操作 | 期待結果 |
+| --- | --- | --- |
+| 別名なし | 別名未登録のauthor | 空リストを返す |
+| Aの一覧 | `A.get_transitive_aliases()` | B(別名義,direct), C(以前の名称,direct), D(以前の名称,direct), E(所属グループ,direct) の4件 |
+| Bの一覧 | `B.get_transitive_aliases()` | A(別名義,direct,reverse)の1件のみ。`another`は中継点にならないためC/D/Eには辿らない |
+| Cの一覧 | `C.get_transitive_aliases()` | A(以前の名称,direct,reverse), B(別名義,indirect), D(以前の名称,indirect), E(所属グループ,indirect) の4件。`past`は中継点になるためAを経由してB/D/Eを発見する |
+| Dの一覧 | `D.get_transitive_aliases()` | A(以前の名称,direct,reverse), B(別名義,indirect), C(以前の名称,indirect), E(所属グループ,indirect) の4件 |
+| Eの一覧 | `E.get_transitive_aliases()` | A(所属している名義,direct,reverse)の1件のみ。`group`は中継点にならないためB/C/Dには辿らない |
+| 循環関係の終端 | `x`↔`y`が互いに`spell`の別名を保持（閉路） | 訪問済みノードとして扱われ無限ループにならず、重複なく1件のみ返す |
+| `TransitiveAlias.alias_type_display`（CHOICESに存在しない値） | `alias_type="unknown_type"` | 生の値をそのまま返す（フォールバック） |
+
 #### 11-4. `SongLink` モデル
 
 | テストケース | 操作 | 期待結果 |
