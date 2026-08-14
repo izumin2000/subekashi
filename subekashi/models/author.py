@@ -82,8 +82,16 @@ class Author(GetOrNoneMixin, models.Model):
         無限ループ・重複を防ぐ。
 
         訪問するノード数に比例してクエリが発行される（各ノードごとに正方向・逆方向で
-        最大2クエリ、中継可能な場合はさらにAuthor検索が1クエリ発行される）ため、
-        巨大なクラスタに対して呼び出すとコストが大きくなる点に注意すること。
+        最大2クエリ、正方向かつ中継可能な場合はさらにAuthor検索が1クエリ発行される）
+        ため、巨大なクラスタに対して呼び出すとコストが大きくなる点に注意すること。
+
+        各エントリのTransitiveAlias.author_idには、可能な範囲で追加クエリなしに
+        解決できたauthor idを設定する（逆方向は所有者自身が実体のためselect_related
+        済みのデータから、正方向かつ中継可能な種別は中継探索のためどのみち発行される
+        Author検索から、それぞれ追加コストなしに取得する）。正方向かつ中継不可な種別
+        （another/group）は中継探索を行わないため解決されず、Noneのままになる。
+        呼び出し側でこの名前に対応するAuthorの有無が必要な場合は、author_idがNoneの
+        エントリに限定して補完的に問い合わせること（#1023）。
         """
         visited_names = {self.name}
         results = []
@@ -96,15 +104,27 @@ class Author(GetOrNoneMixin, models.Model):
                 if target_name in visited_names:
                     continue
                 visited_names.add(target_name)
+
+                if is_reverse:
+                    # 逆方向はこの行の所有者(source.author)がtarget_nameの実体そのもの。
+                    # get_alias_edges()内でselect_related済みのため追加クエリは発生しない
+                    target_author = source.author
+                elif alias_type not in NON_BRIDGING_ALIAS_TYPES:
+                    # 正方向かつ中継可能な種別のみ、中継探索のためにAuthorを解決する
+                    target_author = Author.get_by_name(target_name)
+                else:
+                    target_author = None
+
                 results.append(TransitiveAlias(
                     name=target_name,
                     alias_type=alias_type,
                     source=source,
                     is_reverse=is_reverse,
                     is_direct=is_direct,
+                    author_id=target_author.id if target_author is not None else None,
                 ))
                 if alias_type not in NON_BRIDGING_ALIAS_TYPES:
-                    queue.append((target_name, Author.get_by_name(target_name)))
+                    queue.append((target_name, target_author))
 
         return results
 
@@ -167,12 +187,17 @@ class TransitiveAlias:
     is_reverseはこのエントリを発見した最後の1ホップの向き（正方向か逆方向か）を表し、
     alias_type="group"の場合の表示ラベルの出し分け（所属グループ/所属している名義）、
     alias_type="past"の場合の表示ラベルの出し分け（以前の名称/その後の名称、#1019）にも使う。
+
+    author_idはnameに対応する実在Authorのid（存在しない場合はNone）。
+    get_transitive_aliases()が追加クエリなしに解決できた範囲でのみ設定され、
+    正方向かつalias_typeが"another"・"group"のエントリは常にNoneになる（#1023）。
     """
     name: str
     alias_type: str
     source: AuthorAlias
     is_reverse: bool = False
     is_direct: bool = False
+    author_id: int = None
 
     @property
     def alias_type_display(self):

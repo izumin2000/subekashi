@@ -502,6 +502,15 @@ DBアクセス（重複チェック）を伴うため `TestCase` を使用する
 | グループラベルの出し分け | 同上 | Aの一覧ではEの関係が「所属グループ」、Eの一覧ではAの関係が「所属している名義」と表示される |
 | 対応するAuthorが不在の別名のフォールバック | pがghost(past、Author不在)とr(past、Author実在)の別名を持ち、rの一覧を表示 | pへの関係は直接だが逆方向で編集できず、pは実在するため遷移アイコンが表示される。一方ghostへの関係は間接的で対応する実在Authorがないため、フォールバックとして所有者p自身の一覧画面への遷移アイコンが表示される（結果としてpの一覧へのリンクが2件表示される） |
 
+##### 遷移先author idの補完クエリの範囲（#1023）
+
+`AuthorAliasesView`は`TransitiveAlias.author_id`（#1023で追加。`get_transitive_aliases()`が追加クエリなしに解決した範囲でのみ設定される）を優先して使い、`author_id`が`None`の行（正方向かつ`another`/`group`のリーフエッジ）に限定して補完的にAuthorを問い合わせる。この対象はクラスタ全体ではなく未解決の名前のみのため、クラスタが大きくなっても補完クエリのIN句が際限なく大きくなることはない。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| クエリ数の回帰防止 | Cの一覧を表示（A・Dはauthor_id解決済み、B・Eは未解決） | ビューの総クエリ数が想定通り（9件）に収まる |
+| 補完クエリの対象範囲 | 同上 | 補完クエリのIN句にB・Eの名前のみが含まれ、解決済みのA・Dの名前は含まれない |
+
 #### 7-8-2. `AuthorAliasNewView` (`/authors/<id>/aliases/new`)（#992）
 
 | テストケース | 条件 | 期待結果 |
@@ -741,6 +750,8 @@ DBアクセス（重複チェック）を伴うため `TestCase` を使用する
 | `TransitiveAlias.alias_type_display`（CHOICESに存在しない値） | `alias_type="unknown_type"` | 生の値をそのまま返す（フォールバック） |
 | `TransitiveAlias.alias_type_display`（`past`・正方向、#1019） | `alias_type="past"`, `is_reverse=False` | `"以前の名称"` を返す |
 | `TransitiveAlias.alias_type_display`（`past`・逆方向、#1019） | `alias_type="past"`, `is_reverse=True` | `"その後の名称"` を返す |
+| `TransitiveAlias.author_id`（逆方向・正方向かつ中継可能、#1023） | AのA.get_transitive_aliases()でC/D（past、正方向）、CのC.get_transitive_aliases()でA（past、逆方向）等 | 追加クエリなしに解決済みのauthor idが設定される |
+| `TransitiveAlias.author_id`（正方向かつ中継不可、#1023） | AのA.get_transitive_aliases()でB（another）・E（group）、CのC.get_transitive_aliases()でB・E（間接的） | `None`のまま（get_transitive_aliases()内では解決されない） |
 
 #### 11-4. `SongLink` モデル
 
