@@ -288,13 +288,14 @@ class FilterByAuthorAliasAnotherTypeExcludedTest(TestCase):
         self.assertIn(self.song1, qs)
 
 
-class FilterByAuthorAliasGroupTypeAsymmetricTest(TestCase):
-    """alias_type="group"（グループ）が検索フィルターで片方向のみ考慮されることのテスト（#1006）
+class FilterByAuthorAliasGroupTypeExcludedTest(TestCase):
+    """alias_type="group"（グループ）は検索フィルターで正方向・逆方向とも一切
+    考慮されないことのテスト（仕様変更、#1006）
 
-    メンバー名義で検索した場合はグループ自身の曲もヒットするが、
-    グループ名義で検索してもメンバー個々の曲はヒットしない
-    （合作アカウントを介して他人の名義の曲が混入するのを防ぐため）。
-    #1004時点では暫定的に双方向とも除外していたが、その制限を#1006で緩和した。
+    メンバー名義で検索してもグループ自身の曲はヒットせず、グループ名義で検索しても
+    メンバー個々の曲はヒットしない。#1006時点では暫定的にメンバー→グループの
+    片方向のみ考慮していたが、フィードバック元への再確認によりanotherと同様に
+    完全除外する方針に変更した（詳細は#1003参照）。
     """
 
     def setUp(self):
@@ -306,30 +307,36 @@ class FilterByAuthorAliasGroupTypeAsymmetricTest(TestCase):
         self.group_song.authors.add(self.group)
         AuthorAlias.objects.create(name="group_account", author=self.member, alias_type="group")
 
-    def test_member_search_also_hits_group_song(self):
-        qs = Song.objects.filter(filter_by_author("group_member")).distinct()
-        self.assertIn(self.member_song, qs)
-        self.assertIn(self.group_song, qs)
-
-    def test_group_search_does_not_hit_member_song(self):
+    def test_filter_by_author_forward_excludes_group(self):
         qs = Song.objects.filter(filter_by_author("group_account")).distinct()
         self.assertNotIn(self.member_song, qs)
         self.assertIn(self.group_song, qs)
 
-    def test_group_search_exact_does_not_hit_member_song(self):
+    def test_filter_by_author_reverse_excludes_group(self):
+        qs = Song.objects.filter(filter_by_author("group_member")).distinct()
+        self.assertIn(self.member_song, qs)
+        self.assertNotIn(self.group_song, qs)
+
+    def test_filter_by_author_exact_excludes_group(self):
         qs = Song.objects.filter(filter_by_author_exact("group_account")).distinct()
         self.assertNotIn(self.member_song, qs)
         self.assertIn(self.group_song, qs)
 
-    def test_group_search_keyword_does_not_hit_member_song(self):
+    def test_filter_by_keyword_excludes_group(self):
         qs = Song.objects.filter(filter_by_keyword("group_account")).distinct()
         self.assertNotIn(self.member_song, qs)
         self.assertIn(self.group_song, qs)
 
-    def test_group_search_guesser_does_not_hit_member_song(self):
+    def test_filter_by_guesser_excludes_group(self):
         qs = Song.objects.filter(filter_by_guesser("group_account")).distinct()
         self.assertNotIn(self.member_song, qs)
         self.assertIn(self.group_song, qs)
+
+    def test_non_group_type_still_matches(self):
+        # 同じmemberにグループ以外(past)の別名も追加した場合、そちらは通常通りヒットする
+        AuthorAlias.objects.create(name="group_member_past", author=self.member, alias_type="past")
+        qs = Song.objects.filter(filter_by_author("group_member_past")).distinct()
+        self.assertIn(self.member_song, qs)
 
 
 class FilterByAuthorAliasTransitiveResolutionTest(TestCase):
@@ -340,11 +347,14 @@ class FilterByAuthorAliasTransitiveResolutionTest(TestCase):
 
     | 検索語 | ヒットする曲の作者 |
     | --- | --- |
-    | A | A, C, D, E |
+    | A | A, C, D |
     | B | B のみ |
-    | C | A, C, D, E |
-    | D | A, C, D, E |
+    | C | A, C, D |
+    | D | A, C, D |
     | E | E のみ |
+
+    グループEはanotherと同様に検索では完全に除外されるため、A/C/Dを検索してもEは
+    ヒットしない（仕様変更、#1006）。
     """
 
     def setUp(self):
@@ -372,17 +382,17 @@ class FilterByAuthorAliasTransitiveResolutionTest(TestCase):
     def search(self, value):
         return set(Song.objects.filter(filter_by_author_exact(value)).distinct())
 
-    def test_search_a_hits_a_c_d_e_not_b(self):
-        self.assertEqual(self.search("tamura"), {self.song_a, self.song_c, self.song_d, self.song_e})
+    def test_search_a_hits_a_c_d_not_b_not_e(self):
+        self.assertEqual(self.search("tamura"), {self.song_a, self.song_c, self.song_d})
 
     def test_search_b_hits_only_b(self):
         self.assertEqual(self.search("inoue"), {self.song_b})
 
-    def test_search_c_hits_a_c_d_e_not_b(self):
-        self.assertEqual(self.search("kobayashi"), {self.song_a, self.song_c, self.song_d, self.song_e})
+    def test_search_c_hits_a_c_d_not_b_not_e(self):
+        self.assertEqual(self.search("kobayashi"), {self.song_a, self.song_c, self.song_d})
 
-    def test_search_d_hits_a_c_d_e_not_b(self):
-        self.assertEqual(self.search("yoshida"), {self.song_a, self.song_c, self.song_d, self.song_e})
+    def test_search_d_hits_a_c_d_not_b_not_e(self):
+        self.assertEqual(self.search("yoshida"), {self.song_a, self.song_c, self.song_d})
 
     def test_search_e_hits_only_e(self):
         self.assertEqual(self.search("watanabe"), {self.song_e})

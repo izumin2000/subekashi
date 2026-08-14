@@ -31,9 +31,8 @@ def _bridging_cluster(seed_names):
 def _resolve_author_alias_names(lookup, value):
     """検索語(value)に対応する実効的なAuthor名の集合を返す（#1006）
 
-    - alias_type="another"は正方向・逆方向とも一切考慮しない
-    - alias_type="group"はメンバー→グループの片方向のみ考慮する
-      （グループ自身の名義で検索してもメンバー個々の曲は含めない）
+    - alias_type="another"・"group"は正方向・逆方向とも一切考慮しない
+      （グループ自身の名義・メンバー名義のどちらで検索しても、もう一方は含めない）
     - それ以外の種別（id/abbr/common/past/sns/spell）は推移的に双方向解決する
     """
     forward_owner_names = set(
@@ -48,12 +47,7 @@ def _resolve_author_alias_names(lookup, value):
     if not seed_names:
         return set()
 
-    cluster_names = _bridging_cluster(seed_names)
-    group_target_names = set(
-        AuthorAlias.objects.filter(author__name__in=cluster_names, alias_type="group")
-        .values_list("name", flat=True)
-    )
-    return cluster_names | group_target_names
+    return _bridging_cluster(seed_names)
 
 
 # authorの別名（推移的な双方向解決を含む）にマッチするQを返す（#1005/#1006）
