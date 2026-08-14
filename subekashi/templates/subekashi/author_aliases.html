@@ -26,10 +26,15 @@
                 {% endif %}
                 <span class="alias-type">{{ row.alias_type_display }}</span>
             </div>
-            {% if row.is_editable %}
+            {% if row.next_alias_author_id is not None or row.is_editable %}
                 <div class="alias-actions">
-                    <a href="{% url 'subekashi:author_alias_edit' author.id row.alias_id %}"><i class="fas fa-pen"></i></a>
-                    <a href="{% url 'subekashi:author_alias_delete' author.id row.alias_id %}"><i class="far fa-trash-alt"></i></a>
+                    {% if row.next_alias_author_id is not None %}
+                        <a href="{% url 'subekashi:author_aliases' row.next_alias_author_id %}"><i class="fas fa-arrow-right"></i></a>
+                    {% endif %}
+                    {% if row.is_editable %}
+                        <a href="{% url 'subekashi:author_alias_edit' author.id row.alias_id %}"><i class="fas fa-pen"></i></a>
+                        <a href="{% url 'subekashi:author_alias_delete' author.id row.alias_id %}"><i class="far fa-trash-alt"></i></a>
+                    {% endif %}
                 </div>
             {% endif %}
         </div>

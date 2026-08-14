@@ -464,6 +464,17 @@ class AuthorAliasesViewTest(TestCase):
         self.assertContains(response, reverse("subekashi:author_alias_edit", args=[self.author.id, alias.id]))
         self.assertContains(response, reverse("subekashi:author_alias_delete", args=[self.author.id, alias.id]))
 
+    def test_forward_alias_without_existing_author_shows_no_nav_icon(self):
+        # 編集可能な行（自分が直接保有する別名）で、別名自体に対応する実在Authorが
+        # 存在しない場合、遷移アイコンは表示しない（フォールバック先が自分自身になり
+        # 無意味なため、編集可能な行では所有者へのフォールバックを行わない設計）
+        AuthorAlias.objects.create(name="実在しない別名Y", author=self.author, alias_type="spell")
+
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+
+        self.assertContains(response, "実在しない別名Y")
+        self.assertNotContains(response, "fa-arrow-right")
+
     def test_reverse_alias_is_displayed_without_edit_delete_links(self):
         target = Author.objects.create(name="別名逆方向対象")
         alias = AuthorAlias.objects.create(name=self.author.name, author=target, alias_type="past")
@@ -473,6 +484,29 @@ class AuthorAliasesViewTest(TestCase):
         self.assertContains(response, "別名逆方向対象")
         self.assertNotContains(response, reverse("subekashi:author_alias_edit", args=[self.author.id, alias.id]))
         self.assertNotContains(response, reverse("subekashi:author_alias_delete", args=[self.author.id, alias.id]))
+
+    def test_reverse_alias_shows_nav_icon_even_when_owner_id_is_zero(self):
+        # 遷移先author idが0の場合でもアイコンが表示されることを確認する
+        # （テンプレート側が`{% if row.next_alias_author_id %}`のような真偽値判定だと
+        # 0がfalsyになり表示されなくなる。`is not None`で判定する必要がある）
+        target = Author.objects.create(id=0, name="別名逆方向遷移対象ゼロ")
+        AuthorAlias.objects.create(name=self.author.name, author=target, alias_type="past")
+
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+
+        self.assertContains(response, "fa-arrow-right")
+        self.assertContains(response, reverse("subekashi:author_aliases", args=[target.id]))
+
+    def test_reverse_alias_shows_nav_icon_to_owning_authors_list(self):
+        # 編集・削除できない逆方向の別名は、代わりにその別名を所有するauthor自身の
+        # 一覧画面への遷移アイコン(fa-arrow-right)を表示する
+        target = Author.objects.create(name="別名逆方向遷移対象")
+        AuthorAlias.objects.create(name=self.author.name, author=target, alias_type="past")
+
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+
+        self.assertContains(response, "fa-arrow-right")
+        self.assertContains(response, reverse("subekashi:author_aliases", args=[target.id]))
 
     def test_forward_past_alias_shows_izen_no_meisho(self):
         # #1019: 正方向（自分がpastの別名を登録している側）は「以前の名称」のまま
@@ -560,6 +594,12 @@ class AuthorAliasesViewTransitiveResolutionTest(TestCase):
         for alias in [self.alias_b, self.alias_c, self.alias_d, self.alias_e]:
             self.assertContains(response, reverse("subekashi:author_alias_edit", args=[self.a.id, alias.id]))
             self.assertContains(response, reverse("subekashi:author_alias_delete", args=[self.a.id, alias.id]))
+        # 編集可能な行でも、別名自体(B/C/D/E)に対応する実在Authorへの遷移アイコンが表示される
+        self.assertContains(response, "fa-arrow-right")
+        self.assertContains(response, reverse("subekashi:author_aliases", args=[self.b.id]))
+        self.assertContains(response, reverse("subekashi:author_aliases", args=[self.c.id]))
+        self.assertContains(response, reverse("subekashi:author_aliases", args=[self.d.id]))
+        self.assertContains(response, reverse("subekashi:author_aliases", args=[self.e.id]))
 
     def test_author_b_list_shows_only_a_another_does_not_bridge(self):
         response = self.client.get(reverse("subekashi:author_aliases", args=[self.b.id]))
@@ -571,6 +611,9 @@ class AuthorAliasesViewTransitiveResolutionTest(TestCase):
         self.assertNotContains(response, "view_watanabe")
         # 逆方向のため編集・削除リンクは含まれない
         self.assertNotContains(response, "fa-pen")
+        # Aへの関係は直接（1ホップ）だが逆方向で編集できないため、Aの一覧への遷移アイコンが表示される
+        self.assertContains(response, "fa-arrow-right")
+        self.assertContains(response, reverse("subekashi:author_aliases", args=[self.a.id]))
 
     def test_author_c_list_shows_a_b_d_e_transitively_via_past(self):
         response = self.client.get(reverse("subekashi:author_aliases", args=[self.c.id]))
@@ -585,6 +628,13 @@ class AuthorAliasesViewTransitiveResolutionTest(TestCase):
         self.assertContains(response, "以前の名称")
         # Aへの関係は逆方向、B/D/Eへの関係は間接的なため、いずれも編集・削除できない
         self.assertNotContains(response, "fa-pen")
+        # 編集できない4件（A・B・D・E）全てに、それぞれの別名一覧への遷移アイコンが表示される
+        # （ホップ数・方向を問わず、対応するAuthorが実在すれば表示する）
+        self.assertContains(response, "fa-arrow-right")
+        self.assertContains(response, reverse("subekashi:author_aliases", args=[self.a.id]))
+        self.assertContains(response, reverse("subekashi:author_aliases", args=[self.b.id]))
+        self.assertContains(response, reverse("subekashi:author_aliases", args=[self.d.id]))
+        self.assertContains(response, reverse("subekashi:author_aliases", args=[self.e.id]))
 
     def test_author_e_list_shows_only_a_group_does_not_bridge(self):
         response = self.client.get(reverse("subekashi:author_aliases", args=[self.e.id]))
@@ -595,6 +645,27 @@ class AuthorAliasesViewTransitiveResolutionTest(TestCase):
         self.assertNotContains(response, "view_kobayashi")
         self.assertNotContains(response, "view_yoshida")
         self.assertNotContains(response, "fa-pen")
+        # Aへの関係は直接（1ホップ）だが逆方向で編集できないため、Aの一覧への遷移アイコンが表示される
+        self.assertContains(response, "fa-arrow-right")
+        self.assertContains(response, reverse("subekashi:author_aliases", args=[self.a.id]))
+
+    def test_alias_without_existing_author_falls_back_to_owner_nav_icon(self):
+        # 別名自体(ghost)に対応する実在Authorが存在しない場合でも、編集できない行は
+        # そのAuthorAlias自体を実際に所有しているauthor(p)のページへフォールバックする。
+        # p→ghost(past、Authorなし)、p→r(past、rは実在) という構成でrの一覧を見ると、
+        # pへの関係(直接・逆方向)もghostへの関係(間接)も、どちらもpのページへ遷移する
+        p = Author.objects.create(name="view_nav_p")
+        r = Author.objects.create(name="view_nav_r")
+        AuthorAlias.objects.create(name="view_nav_ghost", author=p, alias_type="past")
+        AuthorAlias.objects.create(name=r.name, author=p, alias_type="past")
+
+        response = self.client.get(reverse("subekashi:author_aliases", args=[r.id]))
+
+        self.assertContains(response, "view_nav_ghost")
+        self.assertContains(response, "view_nav_p")
+        self.assertContains(response, reverse("subekashi:author_aliases", args=[p.id]))
+        # p自身の行、ghostのフォールバック行の2件分の遷移アイコンが表示される
+        self.assertEqual(response.content.decode().count("fa-arrow-right"), 2)
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
