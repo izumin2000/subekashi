@@ -47,24 +47,39 @@ class AuthorAliasesView(View):
 
         transitive_aliases = author.get_transitive_aliases()
 
-        # alias_typeがpast/another/groupの別名のうち、実在するAuthorに対してのみchannelリンクを貼る
-        linkable_names = set(
+        # 各別名nameに対応する実在Authorのidを一括取得する。
+        # channelリンクの判定と、編集可能な行での遷移先（別名自体の一覧画面）の算出に使う
+        author_ids_by_name = dict(
             Author.objects.filter(
-                name__in=[ta.name for ta in transitive_aliases if ta.alias_type in LINKABLE_ALIAS_TYPES]
-            ).values_list("name", flat=True)
+                name__in=[ta.name for ta in transitive_aliases]
+            ).values_list("name", "id")
         )
 
-        alias_rows = [
-            {
+        alias_rows = []
+        for ta in transitive_aliases:
+            is_editable = ta.is_direct and not ta.is_reverse
+
+            # 別名自体(ta.name)に対応する実在Authorを優先して遷移先にする。
+            # 対応するAuthorがない場合、編集不可の行に限り、このAuthorAlias自体を実際に
+            # 所有しているauthor(source.author)へのフォールバックリンクを出す
+            # （所有者は必ず実在するため確実にリンクできる）。編集可能な行はもともと
+            # 自分がsource.authorなので、フォールバックしても意味がなく対象外とする
+            next_alias_author_id = author_ids_by_name.get(ta.name)
+            if next_alias_author_id is None and not is_editable:
+                next_alias_author_id = ta.source.author_id
+
+            if next_alias_author_id == author.id:
+                # 遷移先が現在表示中のページ自身の場合はリンクを出さない
+                next_alias_author_id = None
+
+            alias_rows.append({
                 "name": ta.name,
                 "alias_type_display": ta.alias_type_display,
-                # 直接自分が保有する別名（1ホップかつ正方向）のみ編集・削除できる
-                "is_editable": ta.is_direct and not ta.is_reverse,
+                "is_editable": is_editable,
                 "alias_id": ta.source.id,
-                "show_channel_link": ta.alias_type in LINKABLE_ALIAS_TYPES and ta.name in linkable_names,
-            }
-            for ta in transitive_aliases
-        ]
+                "show_channel_link": ta.alias_type in LINKABLE_ALIAS_TYPES and ta.name in author_ids_by_name,
+                "next_alias_author_id": next_alias_author_id,
+            })
 
         context = {
             "metatitle": f"{author.name}の別名一覧",
