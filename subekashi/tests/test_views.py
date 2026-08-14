@@ -5,7 +5,9 @@
 ManifestStaticFilesStorage はテストに不要なため StaticFilesStorage に差し替える。
 """
 from unittest.mock import patch
+from django.db import connection
 from django.test import TestCase, Client, override_settings
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from subekashi.forms import AuthorAliasForm
 from subekashi.models import Ad, Author, AuthorAlias, Contact, Editor, History, Song
@@ -635,6 +637,32 @@ class AuthorAliasesViewTransitiveResolutionTest(TestCase):
         self.assertContains(response, reverse("subekashi:author_aliases", args=[self.b.id]))
         self.assertContains(response, reverse("subekashi:author_aliases", args=[self.d.id]))
         self.assertContains(response, reverse("subekashi:author_aliases", args=[self.e.id]))
+
+    def test_author_c_list_query_count_is_bounded(self):
+        # #1023: 遷移先author idの補完的な問い合わせが、クラスタ全体ではなく
+        # 未解決の名前(B・E)のみを対象にした1クエリに収まっていることの回帰防止テスト。
+        # クエリ数が増えた場合はこの値を更新しつつ、原因を確認すること
+        with self.assertNumQueries(9):
+            self.client.get(reverse("subekashi:author_aliases", args=[self.c.id]))
+
+    def test_author_c_list_unresolved_query_scope_excludes_resolved_names(self):
+        # #1023: 補完的な問い合わせのIN句が、get_transitive_aliases()側で既に
+        # author_idを解決済みのA・D（別名一覧に4件とも表示されるが、A・Dはauthor_idが
+        # 解決済みのため対象外になるはず）を含まず、未解決のB・Eのみに絞られていることを
+        # 直接確認する（クエリ数だけではクラスタ全体を対象にする regression を検知できないため）
+        with CaptureQueriesContext(connection) as ctx:
+            self.client.get(reverse("subekashi:author_aliases", args=[self.c.id]))
+
+        unresolved_queries = [
+            q for q in ctx.captured_queries
+            if 'subekashi_author"."name" IN' in q["sql"]
+        ]
+        self.assertEqual(len(unresolved_queries), 1)
+        sql = unresolved_queries[0]["sql"]
+        self.assertIn("view_inoue", sql)
+        self.assertIn("view_watanabe", sql)
+        self.assertNotIn("view_tamura", sql)
+        self.assertNotIn("view_yoshida", sql)
 
     def test_author_e_list_shows_only_a_group_does_not_bridge(self):
         response = self.client.get(reverse("subekashi:author_aliases", args=[self.e.id]))

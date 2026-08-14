@@ -221,6 +221,34 @@ class AuthorTransitiveAliasesTest(TestCase):
             ("author_a", "所属している名義", True, True),
         })
 
+    def test_author_id_resolves_for_reverse_and_bridging_forward_entries(self):
+        # #1023: 逆方向、および正方向かつ中継可能な種別（past等）のエントリは、
+        # get_transitive_aliases()自体が追加クエリなしに解決したauthor_idを持つ
+        by_name = {t.name: t.author_id for t in self.a.get_transitive_aliases()}
+        self.assertEqual(by_name["author_c"], self.c.id)
+        self.assertEqual(by_name["author_d"], self.d.id)
+
+        by_name = {t.name: t.author_id for t in self.c.get_transitive_aliases()}
+        self.assertEqual(by_name["author_a"], self.a.id)
+        self.assertEqual(by_name["author_d"], self.d.id)
+
+        by_name = {t.name: t.author_id for t in self.b.get_transitive_aliases()}
+        self.assertEqual(by_name["author_a"], self.a.id)
+
+        by_name = {t.name: t.author_id for t in self.e.get_transitive_aliases()}
+        self.assertEqual(by_name["author_a"], self.a.id)
+
+    def test_author_id_is_none_for_non_bridging_forward_entries(self):
+        # #1023: 正方向かつalias_typeがanother/group（中継不可）のエントリは、
+        # get_transitive_aliases()内では解決されずauthor_idがNoneのままになる
+        by_name = {t.name: t.author_id for t in self.a.get_transitive_aliases()}
+        self.assertIsNone(by_name["author_b"])
+        self.assertIsNone(by_name["author_e"])
+
+        by_name = {t.name: t.author_id for t in self.c.get_transitive_aliases()}
+        self.assertIsNone(by_name["author_b"])
+        self.assertIsNone(by_name["author_e"])
+
     def test_cycle_terminates_without_duplicates(self):
         x = Author.objects.create(name="cycle_x")
         y = Author.objects.create(name="cycle_y")

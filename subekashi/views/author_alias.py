@@ -47,20 +47,19 @@ class AuthorAliasesView(View):
 
         transitive_aliases = author.get_transitive_aliases()
 
-        # 各別名nameに対応する実在Authorのidを一括取得する。
-        # channelリンクの判定と、編集可能な行での遷移先（別名自体の一覧画面）の算出に使う。
-        # IN句の対象はクラスタ内の全別名名のため、get_transitive_aliases()自体が
-        # 既にクラスタサイズに比例したコストを持つ点と合わせて、巨大なクラスタでは
-        # このクエリのコストも大きくなる点に注意すること
-        author_ids_by_name = dict(
-            Author.objects.filter(
-                name__in=[ta.name for ta in transitive_aliases]
-            ).values_list("name", "id")
-        )
+        # get_transitive_aliases()が追加クエリなしに解決できなかった行（正方向かつ
+        # another/groupのリーフエッジのみ）に限定して、対応する実在Authorのidを
+        # 補完的に一括取得する。対象はクラスタ全体ではなく未解決の一部の名前に限られる
+        # ため、クラスタが大きくなってもこのクエリのIN句が際限なく大きくなることはない（#1023）
+        unresolved_names = [ta.name for ta in transitive_aliases if ta.author_id is None]
+        resolved_ids_by_name = dict(
+            Author.objects.filter(name__in=unresolved_names).values_list("name", "id")
+        ) if unresolved_names else {}
 
         alias_rows = []
         for ta in transitive_aliases:
             is_editable = ta.is_direct and not ta.is_reverse
+            matched_author_id = ta.author_id if ta.author_id is not None else resolved_ids_by_name.get(ta.name)
 
             # 別名自体(ta.name)に対応する実在Authorを優先して遷移先にする。
             # 対応するAuthorがない場合、このAuthorAlias自体を実際に所有している
@@ -68,7 +67,7 @@ class AuthorAliasesView(View):
             # 確実にリンクできる）。編集可能な行（is_editable=True）はsource.authorが
             # 常に自分自身であるため、下のif next_alias_author_id == author.idで
             # 結果的にNoneに戻る（フォールバックしても意味がないという意図の通り）
-            next_alias_author_id = author_ids_by_name.get(ta.name)
+            next_alias_author_id = matched_author_id
             if next_alias_author_id is None:
                 next_alias_author_id = ta.source.author_id
 
@@ -81,7 +80,7 @@ class AuthorAliasesView(View):
                 "alias_type_display": ta.alias_type_display,
                 "is_editable": is_editable,
                 "alias_id": ta.source.id,
-                "show_channel_link": ta.alias_type in LINKABLE_ALIAS_TYPES and ta.name in author_ids_by_name,
+                "show_channel_link": ta.alias_type in LINKABLE_ALIAS_TYPES and matched_author_id is not None,
                 "next_alias_author_id": next_alias_author_id,
             })
 
