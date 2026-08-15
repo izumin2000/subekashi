@@ -129,6 +129,10 @@
         showToast("ok", "登録しました。続けてURL・模倣・歌詞等を登録することができます。");
     {% endif %}
 
+    {% if request.GET.primary_name_normalized %}
+        showToast("info", "入力した作者名の一部が、一番有名な名義に自動的に変換されて保存されました。");
+    {% endif %}
+
     deleteToastUrlQuery()
 </script>
 {% endblock %}

@@ -8,7 +8,7 @@ from subekashi.lib.url import clean_url, is_youtube_url, get_youtube_id
 from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
 from subekashi.lib.youtube import get_youtube_api
-from subekashi.lib.author_helpers import get_or_create_authors
+from subekashi.lib.author_helpers import get_or_create_authors, author_names_were_normalized
 from subekashi.lib.song_service import (
     check_reject_list,
     validate_song_url,
@@ -94,6 +94,8 @@ class SongNewView(View):
         # authorsフィールドの処理: カンマ区切りの作者名をAuthorオブジェクトに変換
         author_names = cleaned_authors.split(',')
         authors = get_or_create_authors(author_names)
+        # 入力した作者名が一番有名な名義（past別名から変換）に正規化されたかどうか
+        primary_name_normalized = author_names_were_normalized(author_names, authors)
 
         # 掲載拒否作者か判断する
         reject_error = check_reject_list(authors)
@@ -137,4 +139,7 @@ class SongNewView(View):
             return render(request, 'subekashi/500.html', status=500)
 
         # 登録できましたトーストを表示する
-        return redirect(f'/songs/{song_id}/edit?toast={request.GET.get("toast")}')
+        redirect_url = f'/songs/{song_id}/edit?toast={request.GET.get("toast")}'
+        if primary_name_normalized:
+            redirect_url += '&primary_name_normalized=1'
+        return redirect(redirect_url)

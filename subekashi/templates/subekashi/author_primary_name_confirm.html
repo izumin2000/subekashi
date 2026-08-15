@@ -1,0 +1,47 @@
+{% extends "subekashi/base/base.html" %}
+
+
+{% load static %}
+{% block css %}{% static 'subekashi/css/author_aliases.css'%}{% endblock %}
+
+{% block content %}
+<section>
+    <h1>一番有名な名義の変更を確認</h1>
+    {% if song_titles %}
+        <ul id="primary-name-song-list">
+            {% for song_title in song_titles %}
+                <li{% if forloop.counter > 10 %} class="primary-name-song-hidden" style="display:none;"{% endif %}>{{ song_title }}</li>
+            {% endfor %}
+        </ul>
+        {% if song_titles|length > 10 %}
+            <div class="dummybuttons">
+                <button type="button" id="primary-name-show-all-songs" class="dummybutton black-dummybutton"><i class="fas fa-arrows-alt-v"></i><p>全て表示</p></button>
+            </div>
+        {% endif %}
+        <p>の名義を『{{ new_name }}』に変更されます</p>
+    {% else %}
+        <p>名義を『{{ new_name }}』に変更されます</p>
+    {% endif %}
+    {% if conflicting_author %}
+        <p>既存の作者『{{ conflicting_author.name }}』（id={{ conflicting_author.id }}）がこの作者に統合され、削除されます。この操作は取り消せません</p>
+    {% endif %}
+    <div class="dummybuttons">
+        <a href="{% url 'subekashi:author_aliases' author.id %}">
+            <div class="dummybutton black-dummybutton"><i class="fas fa-times"></i><p>戻る</p></div>
+        </a>
+        <form action="{% url 'subekashi:author_primary_name_set' author.id %}" method="POST" class="dummybutton-form">{% csrf_token %}
+            <input type="hidden" name="name" value="{{ new_name }}">
+            <button type="submit" class="dummybutton black-dummybutton primary-name-confirm-save"><i class="fas fa-check"></i><p>変更する</p></button>
+        </form>
+    </div>
+</section>
+{% endblock %}
+
+{% block js %}
+<script defer>
+    document.getElementById('primary-name-show-all-songs')?.addEventListener('click', function() {
+        document.querySelectorAll('.primary-name-song-hidden').forEach(li => li.style.display = '');
+        this.remove();
+    });
+</script>
+{% endblock %}

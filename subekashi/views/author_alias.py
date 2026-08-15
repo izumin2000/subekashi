@@ -1,9 +1,10 @@
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
 from config.local_settings import NEW_DISCORD_URL
-from subekashi.models import Author, AuthorAlias, Editor, History
+from subekashi.models import Author, AuthorAlias, AuthorLink, Editor, History, Song
 from subekashi.forms import AuthorAliasForm, AuthorPrimaryNameForm
 from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
@@ -24,7 +25,7 @@ ALIAS_TYPE_DESCRIPTIONS = {
     "id": "YouTubeチャンネルIDなど、名前ではなく識別子としての別名です。",
     "abbr": "作者名を短縮した略称です。",
     "common": "正式名称ではないが、広く使われている呼び方です。",
-    "past": f"以前使用されていた名称です。{CHANNEL_LINK_NOTE}",
+    "past": f"以前使用されていた名称です。別名一覧画面から一番有名な名義として選択でき、選択するとこの名前が今後の作者の表示名になります。{CHANNEL_LINK_NOTE}",
     "sns": "SNS上で使われている名称です。",
     "spell": "表記揺れ（ひらがな・カタカナ・英字表記の違いなど）です。",
     "another": f"同一人物が運用している、本人公認の別名義です。曲検索では自動的に同一視されません。{CHANNEL_LINK_NOTE}",
@@ -273,14 +274,64 @@ class AuthorAliasDeleteView(View):
         return redirect(f"{reverse('subekashi:author_aliases', args=[self.author.id])}?toast=delete")
 
 
+class AuthorPrimaryNameConfirmView(View):
+    """一番有名な名義の変更前の確認画面（#1029）
+
+    選択した名義が既存の別Authorと衝突する場合、そのAuthorが自動的に統合
+    （マージ）され削除される。これはIPアドレスのみで判別する匿名の編集者でも
+    実行できてしまうため、実際に変更する前に内容を確認できるワンクッションを挟む。
+    """
+    def dispatch(self, request, author_id, *args, **kwargs):
+        self.author = Author.get_or_none(author_id)
+        if self.author is None:
+            return render(request, 'subekashi/404.html', status=404)
+        return super().dispatch(request, author_id, *args, **kwargs)
+
+    def get(self, request, author_id):
+        base_url = reverse('subekashi:author_aliases', args=[self.author.id])
+        form = AuthorPrimaryNameForm(request.GET, author=self.author)
+
+        if not form.is_valid():
+            return redirect(f"{base_url}?toast=primary_error")
+
+        new_name = form.cleaned_data['name']
+        if new_name == self.author.name:
+            return redirect(base_url)
+
+        conflicting_author = Author.objects.filter(name=new_name).exclude(pk=self.author.pk).first()
+
+        # 名義の変更によって表示上の作者名が変わる曲を一覧できるようにする。
+        # 衝突するAuthorが存在する場合、その曲もマージによりこのauthorに
+        # 付け替わり同じく新名義で表示されるようになるため対象に含める。
+        # 同じ曲がauthor・conflicting_author双方の共著になっているケース
+        # （同一曲が両名義で重複してしまう）に備え、Song単位でdistinct()する
+        song_filter = Q(authors=self.author)
+        if conflicting_author is not None:
+            song_filter |= Q(authors=conflicting_author)
+        song_titles = list(Song.objects.filter(song_filter).distinct().values_list("title", flat=True))
+
+        context = {
+            "metatitle": f"{self.author.name}の一番有名な名義の変更を確認",
+            "author": self.author,
+            "old_name": self.author.name,
+            "new_name": new_name,
+            "conflicting_author": conflicting_author,
+            "song_titles": song_titles,
+        }
+        return render(request, 'subekashi/author_primary_name_confirm.html', context)
+
+
 class AuthorPrimaryNameSetView(View):
     """一番有名な名義の変更（#1008）
 
     author.nameと、選択されたalias_type="past"のAuthorAlias.nameを入れ替える。
     Song.authorsはAuthorのPK参照のため、この入れ替えだけで既存のSongデータは
-    一切変更せずに表示上の正規化が完了する。選択した名前が既存の別のAuthorの
-    名前と衝突する場合はAuthorPrimaryNameForm側で選択不可としており、
-    マージ（Song・AuthorAliasの付け替え）は行わない。
+    一切変更せずに表示上の正規化が完了する。
+
+    選択した名前が既存の別のAuthor（conflicting_author）の名前と衝突する場合
+    （同一人物が重複して別々のAuthor行として登録されているケース）は、その
+    Authorが持つSong・AuthorLink・AuthorAliasを全てこのauthorに付け替えた上で
+    conflicting_authorを削除する（マージしてから名義を切り替える、#1029）。
     """
     def dispatch(self, request, author_id, *args, **kwargs):
         self.author = Author.get_or_none(author_id)
@@ -301,19 +352,28 @@ class AuthorPrimaryNameSetView(View):
         if new_name == old_name:
             return redirect(base_url)
 
+        conflicting_author = Author.objects.filter(name=new_name).exclude(pk=self.author.pk).first()
+
         # 旧名(old_name)を新たなpast別名として登録し直すが、AuthorAlias.nameは
         # グローバルにunique（他のauthorが既にold_nameと同名の別名を持つ「逆方向」の
         # 関係は正常な状態としてありうる）なため、衝突している場合は登録できない。
+        # ただしconflicting_author自身が持つ別名は、これからマージにより
+        # このauthorのものになるため対象外とする
+        old_name_conflict_qs = AuthorAlias.objects.filter(name=old_name)
+        if conflicting_author is not None:
+            old_name_conflict_qs = old_name_conflict_qs.exclude(author=conflicting_author)
         # これは同時実行のレースではなく既存データ次第で毎回決定的に失敗するため、
         # Discord通知を送る前に弾く（通知だけ成功してDBが更新されない不整合を避ける）
-        if AuthorAlias.objects.filter(name=old_name).exists():
+        if old_name_conflict_qs.exists():
             return redirect(f"{base_url}?toast=primary_error")
 
         editor = Editor.get_or_create_from_ip(get_ip(request))
 
         # Discordへの通知が成功した場合のみDBへコミットする
         # （New/Edit/Deleteと同じ「通知成功後にDB確定」パターン）
-        discord_text = build_set_primary_name_discord_text(self.author, old_name, new_name, editor)
+        discord_text = build_set_primary_name_discord_text(
+            self.author, old_name, new_name, editor, merged_author=conflicting_author
+        )
         is_ok = send_discord(NEW_DISCORD_URL, discord_text)
         if not is_ok:
             return render(request, 'subekashi/500.html', status=500)
@@ -330,17 +390,48 @@ class AuthorPrimaryNameSetView(View):
 
         try:
             with transaction.atomic():
+                # conflicting_authorについてもTOCTOU対策として再取得してから統合する
+                current_conflict = Author.objects.filter(name=new_name).exclude(pk=self.author.pk).first()
+                merged_author_info = None
+                if current_conflict is not None:
+                    # Historyはon_delete=SET_NULLのため付け替えは行わず、統合の事実を
+                    # 別途新しいHistoryとして記録する（過去の履歴内容自体は改変しない）
+                    merged_author_info = f"id={current_conflict.id}, name={current_conflict.name}"
+                    self.author.songs.add(*current_conflict.songs.all())
+                    AuthorLink.objects.filter(author=current_conflict).update(author=self.author)
+                    AuthorAlias.objects.filter(author=current_conflict).update(author=self.author)
+                    current_conflict.delete()
+
                 # 選択された側のAuthorAlias行は、これからauthor自身の名前になるため削除する
                 selected_alias.delete()
                 self.author.name = new_name
                 self.author.save()
-                # 旧名を新たな「以前の名称」として登録し直す
-                AuthorAlias.objects.create(name=old_name, author=self.author, alias_type="past")
+                # 旧名を新たな「以前の名称」として登録し直す。マージにより既に
+                # 同名の別名が存在する場合（conflicting_authorがold_nameと同名の別名を
+                # 持っていたケース）は、新規作成せずその別名を再利用しつつ、他の
+                # past別名と同様に選択候補になるようalias_typeを"past"へ揃える
+                existing_old_alias = AuthorAlias.objects.filter(name=old_name).first()
+                if existing_old_alias is None:
+                    AuthorAlias.objects.create(name=old_name, author=self.author, alias_type="past")
+                elif current_conflict is not None and existing_old_alias.author_id == self.author.id:
+                    if existing_old_alias.alias_type != "past":
+                        existing_old_alias.alias_type = "past"
+                        existing_old_alias.save()
+                else:
+                    # send_discord()の待機中に、無関係な別authorがold_nameと同名の
+                    # 別名を新規作成していた場合（TOCTOU）。マージにより付け替わった
+                    # ものだと確認できない限り再利用せず、従来通りIntegrityErrorと
+                    # 同じ扱いで安全側に倒す（他authorの別名を誤って書き換えない）
+                    raise IntegrityError(f"AuthorAlias(name={old_name!r}) already exists and is not owned by self.author")
+
+                changes = [["種類", "編集前", "編集後"], ["一番有名な名義", old_name, new_name]]
+                if merged_author_info is not None:
+                    changes.append(["統合したAuthor", merged_author_info, "（削除）"])
                 History.create_for_author(
                     author=self.author,
                     title=f"一番有名な名義を『{new_name}』に変更",
                     history_type="edit",
-                    changes=[["種類", "編集前", "編集後"], ["一番有名な名義", old_name, new_name]],
+                    changes=changes,
                     editor=editor,
                 )
         except IntegrityError:

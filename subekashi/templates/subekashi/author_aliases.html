@@ -10,7 +10,7 @@
 
     {% if primary_name_candidates|length > 1 %}
         <h1>一番有名な名義<i class="fas fa-info-circle" onclick="showTutorial('primary-name')"></i></h1>
-        <form method="POST" action="{% url 'subekashi:author_primary_name_set' author.id %}" id="primary-name-form">{% csrf_token %}
+        <form method="GET" action="{% url 'subekashi:author_primary_name_confirm' author.id %}" id="primary-name-form">
             {% for candidate in primary_name_candidates %}
                 <div class="checkbox-col">
                     <input type="radio" name="name" value="{{ candidate }}" id="primary-name-{{ forloop.counter }}" {% if candidate == author.name %}checked{% endif %}>
@@ -18,7 +18,7 @@
                 </div>
             {% endfor %}
             <div class="dummybuttons">
-                <button type="submit" class="dummybutton black-dummybutton"><i class="fas fa-check"></i><p>保存する</p></button>
+                <button type="submit" id="primary-name-submit" class="dummybutton black-dummybutton" disabled><i class="fas fa-check"></i><p>変更する</p></button>
             </div>
         </form>
     {% endif %}
@@ -70,6 +70,19 @@
         location.reload();
     }
 
+    // 一番有名な名義フォーム: 選択が現在の名義から変わっていない間は変更するボタンをdisabledにする
+    (function() {
+        const primaryNameForm = document.getElementById('primary-name-form');
+        if (!primaryNameForm) return;
+        const submitBtn = document.getElementById('primary-name-submit');
+        const initialValue = primaryNameForm.querySelector('input[name="name"]:checked')?.value;
+        primaryNameForm.querySelectorAll('input[name="name"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                submitBtn.disabled = primaryNameForm.querySelector('input[name="name"]:checked')?.value === initialValue;
+            });
+        });
+    })();
+
     {% if request.GET.toast == "new" %}
         showToast("ok", "別名を追加しました。");
     {% elif request.GET.toast == "edit" %}
@@ -79,7 +92,7 @@
     {% elif request.GET.toast == "primary" %}
         showToast("ok", "一番有名な名義を変更しました。");
     {% elif request.GET.toast == "primary_error" %}
-        showToast("error", "一番有名な名義を変更できませんでした。選択した名義が既に別の作者として登録されている可能性があります。");
+        showToast("error", "一番有名な名義を変更できませんでした。時間をおいて再度お試しください。");
     {% endif %}
 
     deleteToastUrlQuery()

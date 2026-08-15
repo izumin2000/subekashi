@@ -205,6 +205,10 @@
         showToast("warning", "この曲は編集できません。");
     {% endif %}
 
+    {% if request.GET.primary_name_normalized %}
+        showToast("info", "入力した作者名の一部が、一番有名な名義に自動的に変換されて保存されました。");
+    {% endif %}
+
     deleteToastUrlQuery()
 </script>
 

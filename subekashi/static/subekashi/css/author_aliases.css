@@ -71,3 +71,23 @@
     margin: 0;
     border: none;
 }
+
+/* .dummybutton単体と同じ詳細度(0,1,0)のため、確実に上書きするクラスの組み合わせにする */
+.dummybutton.primary-name-confirm-save {
+    width: 120px;
+}
+
+/* disabled時、.dummybutton.black-dummybuttonの背景色(#333)が.dummybutton:disabledの
+   背景色(#666)より詳細度が同じで後勝ちしてしまい、disabled状態の見た目にならない */
+.dummybutton.black-dummybutton:disabled {
+    background-color: #666;
+    cursor: not-allowed;
+}
+
+#primary-name-song-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    list-style: none;
+    padding: 0;
+}

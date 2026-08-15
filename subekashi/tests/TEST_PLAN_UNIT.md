@@ -382,7 +382,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `alias_type="past"`の別名を選択 | `name=`past別名のname | `is_valid() == True` |
 | `alias_type="past"`以外（例: another）は候補外 | `name=`another別名のname | `is_valid() == False`、`"選択できない名義です。"` |
 | 全く関係ない名前 | `name="全く関係ない名前"` | `is_valid() == False`、`"選択できない名義です。"` |
-| past別名の名前が別のAuthorと衝突 | 別Authorが同名で実在する状態で`name=`該当past別名のname | `is_valid() == False`、`"その名義は既に別の作者として登録されているため選択できません。"`（マージは行わない） |
+| past別名の名前が別のAuthorと衝突 | 別Authorが同名で実在する状態で`name=`該当past別名のname | `is_valid() == True`（衝突するAuthorの統合はAuthorPrimaryNameSetView側で行う、#1029） |
 
 ---
 
@@ -442,6 +442,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | POST: 作者が空白 | `url=""`, `authors="  "` | HTTP 200、"作者" を含むエラー |
 | POST: タイトルが空 | `url=""`, `authors="テスト作者"`, `title=""` | HTTP 200、"タイトル" を含むエラー |
 | POST: is-questionable時、オリジナル模倣は強制OFF・その他フラグの入力値はそのまま保存される | `is-questionable-manual=on`, `is-original-manual=on`, `is-subeana-manual=on` | 保存されたSongの `is_questionable=True`、`is_original=False`、`is_subeana=True` |
+| POST: 作者名がpast別名と一致し一番有名な名義へ正規化される（#1029） | `authors=`past別名のname | 保存後、redirect先URLに`primary_name_normalized=1`が付与される |
+| POST: 正規化が発生しない | `authors=`通常の作者名 | redirect先URLに`primary_name_normalized`は付与されない |
 
 #### 7-5. `SongEditView` (`/songs/<id>/edit/`)
 
@@ -451,6 +453,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 存在しない曲のGET | 無効なsong_id | HTTP 404 |
 | POST: is_questionable時に歌詞・模倣・下書き・オリジナル模倣が強制的に空/OFF | `is_questionable=True`, `lyrics="..."`, `imitate="<id>"`, `is_draft=True`, `is_original=True` | 保存されたSongの `lyrics=""`、`imitates`が空、`is_draft=False`、`is_original=False`、`is_questionable=True` |
 | POST: is_questionable時も非公開/削除済み・ネタ曲・インスト・すべあな界隈曲は保存される | `is_questionable=True`, `is_deleted=True`, `is_joke=True`, `is_inst=True`, `is_subeana=True` | 各フラグがそれぞれ `True` のまま保存される |
+| POST: 作者名がpast別名と一致し一番有名な名義へ正規化される（#1029） | `authors=`past別名のname | 保存後、redirect先URLに`primary_name_normalized=1`が付与される |
+| POST: 正規化が発生しない | `authors=`通常の作者名 | redirect先URLに`primary_name_normalized`は付与されない |
 
 #### 7-6. `ContactView` (`/contact/`)
 
@@ -497,6 +501,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `alias_type=past`・逆方向のラベル (#1019) | 他authorが自分をpastの別名として登録 | 「その後の名称」と表示される |
 | 逆方向の別名の遷移アイコン | 他authorが自分のnameと一致する別名を保持 | 編集できない代わりに、相手authorの別名一覧への遷移アイコン(`fa-arrow-right`)が表示される |
 | 遷移先author idが0の場合の遷移アイコン | 遷移先authorを`id=0`で作成 | テンプレートが`is not None`で判定しているため、`id=0`でも遷移アイコンが表示される（真偽値判定だと0がfalsyになり表示されなくなる） |
+| 一番有名な名義フォームの初期状態（#1029） | past別名が存在するauthorのGET | `#primary-name-submit`ボタンが`disabled`かつラベルは「変更する」（初期選択は現在の名義のままのため変更不要） |
 
 ##### 推移的関係解決の反映・遷移アイコン（#1007、#1019）
 
@@ -546,6 +551,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | author_alias_form.jsの読み込み (#996) | GETリクエスト | スクリプトタグが含まれる |
 | `group`選択肢 (#1004) | GETリクエスト | `value="group"`の選択肢（「グループ」）が含まれる |
 | 別名義(another)の説明文 (#1004) | GETリクエスト | 「公認」の旨が含まれる |
+| 以前の名称(past)の説明文 (#1029) | GETリクエスト | 一番有名な名義として選択できる旨（「一番有名な名義」）が含まれる |
 
 #### 7-8-3. `AuthorAliasEditView` (`/authors/<id>/aliases/<alias_id>/edit`)（#992）
 
@@ -578,9 +584,9 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | Discord通知失敗 | `send_discord()`が`False`を返す | HTTP 500。AuthorAliasは削除されず、Historyも作成されない（通知できた場合のみ実削除する設計） |
 | キャンセル・削除ボタンのアイコン (#996) | GETリクエスト | `fa-times`・`fa-trash-alt`アイコンが含まれる |
 
-#### 7-8-5. `AuthorPrimaryNameSetView` (`/authors/<id>/aliases/primary`)（#1008）
+#### 7-8-5. `AuthorPrimaryNameSetView` (`/authors/<id>/aliases/primary`)（#1008, #1029）
 
-`Author.name`と、選択された`alias_type="past"`のAuthorAlias.nameを入れ替える。Song.authorsはAuthorのPK参照のため、この入れ替えだけで既存のSongデータは一切変更不要。
+`Author.name`と、選択された`alias_type="past"`のAuthorAlias.nameを入れ替える。Song.authorsはAuthorのPK参照のため、この入れ替えだけで既存のSongデータは一切変更不要。選択した名前が別のAuthor（conflicting_author）と衝突する場合は、そのAuthorが持つSong・AuthorLink・AuthorAliasを全てこのauthorに付け替えた上でconflicting_authorを削除する（マージしてから名義を切り替える、#1029）。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
@@ -588,14 +594,41 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 現在の名前を選択 | `name=author.name` | 何も変更されず一覧画面へリダイレクト（no-op） |
 | past別名を選択 | `name=`past別名のname | `Author.name`が入れ替わる。選ばれた側のAuthorAlias行は削除され、旧名が新たな`past`別名として再登録される。`?toast=primary`付きでリダイレクト |
 | `alias_type`がpast以外の別名を選択 | `name=`another等の別名のname | 変更されず、`?toast=primary_error`付きでリダイレクト |
-| 別のAuthorと衝突するpast別名を選択 | 別Authorが同名で実在 | 変更されず、`?toast=primary_error`付きでリダイレクト（フォーム側の`clean_name`で弾かれる。仮に弾かれなくても`Author.name`のunique制約による`IntegrityError`が同じ結果になる二重の安全策） |
+| 別のAuthorと衝突するpast別名を選択 | 別Author（conflicting_author）が同名で実在し、Song・AuthorLink・AuthorAliasを持つ | conflicting_authorのSong・AuthorLink・AuthorAliasが全てこのauthorに付け替えられ、conflicting_authorが削除された上で名義が切り替わる。`?toast=primary`付きでリダイレクト |
+| 統合対象の曲数が多い場合のクエリ数 | conflicting_authorが複数のSongを持つ | `author.songs.add(*queryset)`による一括付け替えのため、曲数を増やしてもクエリ数がほぼ変わらない（曲ごとにadd()するN+1にならない） |
+| conflicting_authorが旧名と同名の別名を既に保有 | conflicting_authorのAuthorAlias.name == old_name | マージ後にその別名をそのまま活かし、`old_name`のAuthorAliasが重複登録（IntegrityError）されない。他のpast別名と同様に選択候補になるよう`alias_type`が`"past"`へ更新される |
 | 正常なPOST | past別名を選択 | `History.create_for_author()`が呼ばれ、`history_type="edit"`、`changes`に`["一番有名な名義", 旧名, 新名]`が含まれる |
+| 統合ありのHistory | 衝突するconflicting_authorが存在 | `changes`に`["統合したAuthor", "id=..., name=...", "（削除）"]`の行が追加される |
+| conflicting_author自身の過去のHistoryは改変しない | conflicting_authorに紐づく既存のHistoryが存在 | 統合実行後もそのHistoryの`title`等の内容は変更されない（`author`は`on_delete=SET_NULL`によりNULLになる） |
 | Discord通知 | 正常なPOST | `send_discord()`がNEW_DISCORD_URL宛に、変更前後の名前を含む内容で呼ばれる |
+| Discord通知（統合あり） | 衝突するconflicting_authorが存在 | 通知内容に統合したAuthorのidが含まれる |
 | Discord通知失敗 | `send_discord()`が`False`を返す | HTTP 500。`Author.name`は変更されず、選択されたAuthorAlias行も削除されない（通知成功後にDB確定するパターン） |
-| Discord通知待機中の並行削除（TOCTOU） | `send_discord()`の完了待ち中に対象のpast別名が別リクエストで削除されたと仮定 | `AuthorAlias.DoesNotExist`が未処理の例外(500)にならず、他の異常系と同じく`?toast=primary_error`へ穏当にリダイレクトされる。`Author.name`は変更されない |
-| 旧名(old_name)が既存の別名と衝突 | old_nameと同名の`AuthorAlias`を別authorが既に保有（「逆方向」の関係として正常にありうる状態） | `AuthorAlias.name`のグローバルなunique制約により再登録が決定的に失敗するため、Discord通知を送る前に検知して`?toast=primary_error`へリダイレクトする。`send_discord()`は呼ばれない |
-| 別名一覧画面のフォーム表示 | authorが`alias_type="past"`の別名を持つ | フォーム（`#primary-name-form`）と「一番有名な名義」の見出しが表示される |
+| Discord通知待機中の並行削除（TOCTOU、選択した別名） | `send_discord()`の完了待ち中に対象のpast別名が別リクエストで削除されたと仮定 | `AuthorAlias.DoesNotExist`が未処理の例外(500)にならず、他の異常系と同じく`?toast=primary_error`へ穏当にリダイレクトされる。`Author.name`は変更されない |
+| Discord通知待機中の並行削除（TOCTOU、conflicting_author） | `send_discord()`の完了待ち中にconflicting_authorが別リクエストで削除されたと仮定 | マージ部分をスキップし、通常の名義切り替えとして`?toast=primary`付きで成立する |
+| Discord通知待機中の無関係な別名作成（TOCTOU） | `send_discord()`の完了待ち中に、conflicting_authorとは無関係な別authorがold_nameと同名の`AuthorAlias`を新規作成したと仮定 | マージにより付け替わったものと誤認せず（所有者を確認できないため）安全側に倒し、統合・名義変更ともにロールバックして`?toast=primary_error`へリダイレクトする。無関係な別名のalias_typeは書き換えられない |
+| 旧名(old_name)が既存の別名と衝突 | old_nameと同名の`AuthorAlias`をconflicting_author以外の別authorが既に保有（「逆方向」の関係として正常にありうる状態） | `AuthorAlias.name`のグローバルなunique制約により再登録が決定的に失敗するため、Discord通知を送る前に検知して`?toast=primary_error`へリダイレクトする。`send_discord()`は呼ばれない |
+| 別名一覧画面のフォーム表示 | authorが`alias_type="past"`の別名を持つ | フォーム（`#primary-name-form`）と「一番有名な名義」の見出しが表示される。フォームの送信先は確認画面（`AuthorPrimaryNameConfirmView`）になっている |
 | 別名一覧画面のフォーム非表示 | authorが`alias_type="past"`の別名を持たない | フォームは表示されない（選択肢が現在の名前1件のみのため） |
+
+#### 7-8-6. `AuthorPrimaryNameConfirmView` (`/authors/<id>/aliases/primary/confirm`)（#1029）
+
+一番有名な名義の変更前に内容を確認させるための画面。選択した名義が既存の別Authorと衝突する場合、そのAuthorが自動的に統合・削除されてしまうことをIPベースの匿名編集者でも実行できてしまうため、実際の変更前にワンクッション挟む安全策として追加した。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 存在しないauthor_id | 無効なauthor_id | HTTP 404 |
+| 無効な名義 | 候補にない`name` | 確認画面を表示せず`?toast=primary_error`付きで別名一覧へリダイレクト |
+| 現在の名前を選択 | `name=author.name` | 確認画面を表示せず別名一覧へリダイレクト（変更不要のため） |
+| 衝突なしの確認画面 | 衝突するAuthorが存在しない | 変更前後の名前が表示され、統合に関する警告文は表示されない |
+| 衝突ありの確認画面 | 衝突するAuthor（conflicting_author）が存在 | 統合されるAuthorのid・名前を含む警告文（「削除されます」）が表示される |
+| 対象曲がない場合の表示 | authorもconflicting_authorもSongを持たない | 「名義を『新名』に変更されます」という文のみ表示される（#1029で「旧名から新名へ」から簡略化） |
+| 対象曲の一覧表示 | authorがSongを持つ | 各Songのタイトルが箇条書きで表示された上で「の名義を『新名』に変更されます」と続く |
+| conflicting_authorの曲も一覧に含む | conflicting_authorがSongを持つ | conflicting_author側のSongタイトルも箇条書きに含まれる（マージ後にこのauthorへ付け替わるため） |
+| 共著曲は重複表示されない | 同じSongがauthor・conflicting_author双方の共著になっている | そのSongタイトルは箇条書きに1回だけ表示される（`distinct()`によるSong単位の重複排除） |
+| 曲が10件以下の場合 | Songが10件以下 | 「全て表示」ボタン（`#primary-name-show-all-songs`）は表示されず、全曲が表示された状態になる |
+| 曲が11件以上の場合 | Songが11件以上 | 11件目以降が`class="primary-name-song-hidden"`で非表示になり、「全て表示」ボタンが表示される |
+| 保存ボタンのラベル・幅 | 確認画面の表示 | ボタンのラベルは「変更する」（「保存する」は含まれない）、`primary-name-confirm-save`クラス（width: 120px）が付与される |
+| データを変更しない | GETリクエストのみ | `Author`・`AuthorAlias`等のデータは一切変更されない |
 
 #### 7-9. `ChannelView` (`/channel/<name>/`)
 

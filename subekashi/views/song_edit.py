@@ -8,7 +8,7 @@ from subekashi.models import Song, Editor, History, SongLink, SongFields
 from subekashi.lib.url import clean_url, get_allow_media
 from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
-from subekashi.lib.author_helpers import get_or_create_authors
+from subekashi.lib.author_helpers import get_or_create_authors, author_names_were_normalized
 from subekashi.lib.song_service import (
     check_reject_list,
     validate_song_url,
@@ -102,6 +102,8 @@ class SongEditView(View):
         # authorsフィールドの処理: カンマ区切りの作者をAuthorオブジェクトに変換
         author_names = cleaned_authors.split(',')
         author_objects = get_or_create_authors(author_names)
+        # 入力した作者名が一番有名な名義（past別名から変換）に正規化されたかどうか
+        primary_name_normalized = author_names_were_normalized(author_names, author_objects)
 
         # 自分自身や重複は除外し、Song オブジェクトのリストに変換
         imitate_songs = get_imitate_songs(imitates, song_id)
@@ -150,6 +152,9 @@ class SongEditView(View):
             if not is_ok:
                 return render(request, 'subekashi/500.html', status=500)
 
-        response = redirect(f'/songs/{song_id}?toast=edit')
+        redirect_url = f'/songs/{song_id}?toast=edit'
+        if primary_name_normalized:
+            redirect_url += '&primary_name_normalized=1'
+        response = redirect(redirect_url)
         response["X-Robots-Tag"] = "noindex, nofollow"
         return response
