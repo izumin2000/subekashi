@@ -241,10 +241,10 @@ class AuthorPrimaryNameFormTest(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn("選択できない名義です。", form.errors["name"])
 
-    def test_past_alias_name_conflicting_with_another_author_is_invalid(self):
-        # past別名の名前と完全一致する別のAuthorが既に存在する場合は選択できない（マージはしない）
+    def test_past_alias_name_conflicting_with_another_author_is_valid(self):
+        # past別名の名前と完全一致する別のAuthorが既に存在していても選択可能。
+        # 衝突するAuthorの統合（マージ）はAuthorPrimaryNameSetView側で行う（#1029）
         Author.objects.create(name="衝突する名前")
         AuthorAlias.objects.create(name="衝突する名前", author=self.author, alias_type="past")
         form = AuthorPrimaryNameForm(data={"name": "衝突する名前"}, author=self.author)
-        self.assertFalse(form.is_valid())
-        self.assertIn("その名義は既に別の作者として登録されているため選択できません。", form.errors["name"])
+        self.assertTrue(form.is_valid())

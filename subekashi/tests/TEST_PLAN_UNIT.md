@@ -382,7 +382,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `alias_type="past"`の別名を選択 | `name=`past別名のname | `is_valid() == True` |
 | `alias_type="past"`以外（例: another）は候補外 | `name=`another別名のname | `is_valid() == False`、`"選択できない名義です。"` |
 | 全く関係ない名前 | `name="全く関係ない名前"` | `is_valid() == False`、`"選択できない名義です。"` |
-| past別名の名前が別のAuthorと衝突 | 別Authorが同名で実在する状態で`name=`該当past別名のname | `is_valid() == False`、`"その名義は既に別の作者として登録されているため選択できません。"`（マージは行わない） |
+| past別名の名前が別のAuthorと衝突 | 別Authorが同名で実在する状態で`name=`該当past別名のname | `is_valid() == True`（衝突するAuthorの統合はAuthorPrimaryNameSetView側で行う、#1029） |
 
 ---
 
@@ -578,9 +578,9 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | Discord通知失敗 | `send_discord()`が`False`を返す | HTTP 500。AuthorAliasは削除されず、Historyも作成されない（通知できた場合のみ実削除する設計） |
 | キャンセル・削除ボタンのアイコン (#996) | GETリクエスト | `fa-times`・`fa-trash-alt`アイコンが含まれる |
 
-#### 7-8-5. `AuthorPrimaryNameSetView` (`/authors/<id>/aliases/primary`)（#1008）
+#### 7-8-5. `AuthorPrimaryNameSetView` (`/authors/<id>/aliases/primary`)（#1008, #1029）
 
-`Author.name`と、選択された`alias_type="past"`のAuthorAlias.nameを入れ替える。Song.authorsはAuthorのPK参照のため、この入れ替えだけで既存のSongデータは一切変更不要。
+`Author.name`と、選択された`alias_type="past"`のAuthorAlias.nameを入れ替える。Song.authorsはAuthorのPK参照のため、この入れ替えだけで既存のSongデータは一切変更不要。選択した名前が別のAuthor（conflicting_author）と衝突する場合は、そのAuthorが持つSong・AuthorLink・AuthorAliasを全てこのauthorに付け替えた上でconflicting_authorを削除する（マージしてから名義を切り替える、#1029）。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
@@ -588,12 +588,15 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 現在の名前を選択 | `name=author.name` | 何も変更されず一覧画面へリダイレクト（no-op） |
 | past別名を選択 | `name=`past別名のname | `Author.name`が入れ替わる。選ばれた側のAuthorAlias行は削除され、旧名が新たな`past`別名として再登録される。`?toast=primary`付きでリダイレクト |
 | `alias_type`がpast以外の別名を選択 | `name=`another等の別名のname | 変更されず、`?toast=primary_error`付きでリダイレクト |
-| 別のAuthorと衝突するpast別名を選択 | 別Authorが同名で実在 | 変更されず、`?toast=primary_error`付きでリダイレクト（フォーム側の`clean_name`で弾かれる。仮に弾かれなくても`Author.name`のunique制約による`IntegrityError`が同じ結果になる二重の安全策） |
+| 別のAuthorと衝突するpast別名を選択 | 別Author（conflicting_author）が同名で実在し、Song・AuthorLink・AuthorAliasを持つ | conflicting_authorのSong・AuthorLink・AuthorAliasが全てこのauthorに付け替えられ、conflicting_authorが削除された上で名義が切り替わる。`?toast=primary`付きでリダイレクト |
+| conflicting_authorが旧名と同名の別名を既に保有 | conflicting_authorのAuthorAlias.name == old_name | マージ後にその別名をそのまま活かし、`old_name`のAuthorAliasが重複登録（IntegrityError）されない |
 | 正常なPOST | past別名を選択 | `History.create_for_author()`が呼ばれ、`history_type="edit"`、`changes`に`["一番有名な名義", 旧名, 新名]`が含まれる |
 | Discord通知 | 正常なPOST | `send_discord()`がNEW_DISCORD_URL宛に、変更前後の名前を含む内容で呼ばれる |
+| Discord通知（統合あり） | 衝突するconflicting_authorが存在 | 通知内容に統合したAuthorのidが含まれる |
 | Discord通知失敗 | `send_discord()`が`False`を返す | HTTP 500。`Author.name`は変更されず、選択されたAuthorAlias行も削除されない（通知成功後にDB確定するパターン） |
-| Discord通知待機中の並行削除（TOCTOU） | `send_discord()`の完了待ち中に対象のpast別名が別リクエストで削除されたと仮定 | `AuthorAlias.DoesNotExist`が未処理の例外(500)にならず、他の異常系と同じく`?toast=primary_error`へ穏当にリダイレクトされる。`Author.name`は変更されない |
-| 旧名(old_name)が既存の別名と衝突 | old_nameと同名の`AuthorAlias`を別authorが既に保有（「逆方向」の関係として正常にありうる状態） | `AuthorAlias.name`のグローバルなunique制約により再登録が決定的に失敗するため、Discord通知を送る前に検知して`?toast=primary_error`へリダイレクトする。`send_discord()`は呼ばれない |
+| Discord通知待機中の並行削除（TOCTOU、選択した別名） | `send_discord()`の完了待ち中に対象のpast別名が別リクエストで削除されたと仮定 | `AuthorAlias.DoesNotExist`が未処理の例外(500)にならず、他の異常系と同じく`?toast=primary_error`へ穏当にリダイレクトされる。`Author.name`は変更されない |
+| Discord通知待機中の並行削除（TOCTOU、conflicting_author） | `send_discord()`の完了待ち中にconflicting_authorが別リクエストで削除されたと仮定 | マージ部分をスキップし、通常の名義切り替えとして`?toast=primary`付きで成立する |
+| 旧名(old_name)が既存の別名と衝突 | old_nameと同名の`AuthorAlias`をconflicting_author以外の別authorが既に保有（「逆方向」の関係として正常にありうる状態） | `AuthorAlias.name`のグローバルなunique制約により再登録が決定的に失敗するため、Discord通知を送る前に検知して`?toast=primary_error`へリダイレクトする。`send_discord()`は呼ばれない |
 | 別名一覧画面のフォーム表示 | authorが`alias_type="past"`の別名を持つ | フォーム（`#primary-name-form`）と「一番有名な名義」の見出しが表示される |
 | 別名一覧画面のフォーム非表示 | authorが`alias_type="past"`の別名を持たない | フォームは表示されない（選択肢が現在の名前1件のみのため） |
 
@@ -914,18 +917,6 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | 曲タイトルが重複するケース | 統合後に同一タイトルの曲が両者に存在 | 「曲タイトル重複」として両方の曲idを含むエラーが出力される |
 | 重複しない曲のケース | 統合後もタイトルが重複しない曲 | 「統合対象曲（重複なし）」として曲idを含む通常メッセージが出力される |
 | データを一切変更しない | 重複候補・重複曲が存在する状態で実行 | 実行後もAuthor・AuthorAlias・Songの状態が変化しない |
-
-#### 14-4. `merge_duplicate_authors` コマンド（重複Authorの統合、#1029）
-
-`merge_duplicate_authors <primary_id> <duplicate_id>`で、duplicate側のSong・AuthorLink・AuthorAliasを全てprimary側に付け替えた上でduplicate Authorを削除する。曲タイトルが重複するSongが1件でもある場合は統合を中止する。
-
-| テストケース | 条件 | 期待結果 |
-| --- | --- | --- |
-| 正常な統合 | 衝突なし | Song・AuthorLink・AuthorAliasがprimaryに付け替えられ、duplicateが削除される |
-| primary_idが存在しない | `merge_duplicate_authors 999999 <duplicate_id>` | 「存在しません」エラーを出力し、データは変更されない |
-| duplicate_idが存在しない | `merge_duplicate_authors <primary_id> 999999` | 「存在しません」エラーを出力する |
-| primaryとduplicateが同一 | 同じidを指定 | 「同じid」エラーを出力し、データは変更されない |
-| 曲タイトルが重複するケース | 統合すると同一タイトルの曲が両者に存在 | 「中止しました」エラーを出力し、Author・Songのいずれも変更されない |
 
 ---
 

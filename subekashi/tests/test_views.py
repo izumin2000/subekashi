@@ -10,7 +10,7 @@ from django.test import TestCase, Client, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from subekashi.forms import AuthorAliasForm
-from subekashi.models import Ad, Author, AuthorAlias, Contact, Editor, History, Song
+from subekashi.models import Ad, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song
 
 
 STATIC_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
@@ -1110,18 +1110,60 @@ class AuthorPrimaryNameSetViewTest(TestCase):
         self.author.refresh_from_db()
         self.assertEqual(self.author.name, "現在の名義")
 
-    def test_selecting_name_conflicting_with_another_author_is_rejected(self):
-        Author.objects.create(name="以前の名義")
+    def test_selecting_name_conflicting_with_another_author_merges_and_deletes_it(self):
+        # 選択した名義が既に別のAuthorとして登録されている場合、そのAuthorを
+        # このauthorに統合（マージ）した上で名義を変更する（#1029）
+        conflicting = Author.objects.create(name="以前の名義")
+        song = Song.objects.create(title="conflicting側の曲")
+        song.authors.add(conflicting)
+        link = AuthorLink.objects.create(url="https://example.com/conflicting", author=conflicting)
+        conflicting_alias = AuthorAlias.objects.create(name="conflictingの別名", author=conflicting, alias_type="another")
+
         response = self.client.post(
             reverse("subekashi:author_primary_name_set", args=[self.author.id]),
             {"name": "以前の名義"},
         )
+
         self.assertRedirects(
-            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=primary_error"
+            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=primary"
         )
         self.author.refresh_from_db()
-        self.assertEqual(self.author.name, "現在の名義")
-        self.assertTrue(AuthorAlias.objects.filter(pk=self.past_alias.pk).exists())
+        self.assertEqual(self.author.name, "以前の名義")
+        self.assertFalse(Author.objects.filter(pk=conflicting.pk).exists())
+
+        song.refresh_from_db()
+        self.assertIn(self.author, song.authors.all())
+
+        link.refresh_from_db()
+        self.assertEqual(link.author_id, self.author.id)
+
+        conflicting_alias.refresh_from_db()
+        self.assertEqual(conflicting_alias.author_id, self.author.id)
+
+        new_alias = AuthorAlias.objects.get(name="現在の名義")
+        self.assertEqual(new_alias.author, self.author)
+        self.assertEqual(new_alias.alias_type, "past")
+
+    def test_merge_reuses_conflicting_authors_alias_matching_old_name(self):
+        # conflicting_authorが既にold_nameと同名の別名を持っている場合、
+        # マージ後にその別名をそのまま活かし、重複登録（IntegrityError）を起こさない
+        conflicting = Author.objects.create(name="以前の名義")
+        existing_alias = AuthorAlias.objects.create(name="現在の名義", author=conflicting, alias_type="another")
+
+        response = self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+            {"name": "以前の名義"},
+        )
+
+        self.assertRedirects(
+            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=primary"
+        )
+        self.author.refresh_from_db()
+        self.assertEqual(self.author.name, "以前の名義")
+
+        existing_alias.refresh_from_db()
+        self.assertEqual(existing_alias.author_id, self.author.id)
+        self.assertEqual(AuthorAlias.objects.filter(name="現在の名義").count(), 1)
 
     def test_post_creates_history_with_before_and_after_names(self):
         self.client.post(
@@ -1145,6 +1187,42 @@ class AuthorPrimaryNameSetViewTest(TestCase):
         content = mock_send_discord.call_args[0][1]
         self.assertIn("現在の名義", content)
         self.assertIn("以前の名義", content)
+
+    @patch("subekashi.views.author_alias.send_discord")
+    def test_post_discord_notification_mentions_merged_author(self, mock_send_discord):
+        conflicting = Author.objects.create(name="以前の名義")
+        mock_send_discord.return_value = True
+
+        self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+            {"name": "以前の名義"},
+        )
+
+        content = mock_send_discord.call_args[0][1]
+        self.assertIn(f"Author(id={conflicting.id})", content)
+
+    @patch("subekashi.views.author_alias.send_discord")
+    def test_conflicting_author_deleted_concurrently_during_discord_wait_still_succeeds(self, mock_send_discord):
+        # send_discord()の完了を待つ間に、統合対象のconflicting_authorが別のリクエストで
+        # 削除されてしまうケース。マージ部分をスキップして通常の名義切り替えとして完了する
+        conflicting = Author.objects.create(name="以前の名義")
+
+        def delete_conflicting_then_succeed(url, content):
+            conflicting.delete()
+            return True
+
+        mock_send_discord.side_effect = delete_conflicting_then_succeed
+
+        response = self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+            {"name": "以前の名義"},
+        )
+
+        self.assertRedirects(
+            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=primary"
+        )
+        self.author.refresh_from_db()
+        self.assertEqual(self.author.name, "以前の名義")
 
     @patch("subekashi.views.author_alias.send_discord")
     def test_post_discord_failure_prevents_name_change(self, mock_send_discord):

@@ -3,7 +3,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
 from config.local_settings import NEW_DISCORD_URL
-from subekashi.models import Author, AuthorAlias, Editor, History
+from subekashi.models import Author, AuthorAlias, AuthorLink, Editor, History
 from subekashi.forms import AuthorAliasForm, AuthorPrimaryNameForm
 from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
@@ -278,9 +278,12 @@ class AuthorPrimaryNameSetView(View):
 
     author.nameと、選択されたalias_type="past"のAuthorAlias.nameを入れ替える。
     Song.authorsはAuthorのPK参照のため、この入れ替えだけで既存のSongデータは
-    一切変更せずに表示上の正規化が完了する。選択した名前が既存の別のAuthorの
-    名前と衝突する場合はAuthorPrimaryNameForm側で選択不可としており、
-    マージ（Song・AuthorAliasの付け替え）は行わない。
+    一切変更せずに表示上の正規化が完了する。
+
+    選択した名前が既存の別のAuthor（conflicting_author）の名前と衝突する場合
+    （同一人物が重複して別々のAuthor行として登録されているケース）は、その
+    Authorが持つSong・AuthorLink・AuthorAliasを全てこのauthorに付け替えた上で
+    conflicting_authorを削除する（マージしてから名義を切り替える、#1029）。
     """
     def dispatch(self, request, author_id, *args, **kwargs):
         self.author = Author.get_or_none(author_id)
@@ -301,19 +304,28 @@ class AuthorPrimaryNameSetView(View):
         if new_name == old_name:
             return redirect(base_url)
 
+        conflicting_author = Author.objects.filter(name=new_name).exclude(pk=self.author.pk).first()
+
         # 旧名(old_name)を新たなpast別名として登録し直すが、AuthorAlias.nameは
         # グローバルにunique（他のauthorが既にold_nameと同名の別名を持つ「逆方向」の
         # 関係は正常な状態としてありうる）なため、衝突している場合は登録できない。
+        # ただしconflicting_author自身が持つ別名は、これからマージにより
+        # このauthorのものになるため対象外とする
+        old_name_conflict_qs = AuthorAlias.objects.filter(name=old_name)
+        if conflicting_author is not None:
+            old_name_conflict_qs = old_name_conflict_qs.exclude(author=conflicting_author)
         # これは同時実行のレースではなく既存データ次第で毎回決定的に失敗するため、
         # Discord通知を送る前に弾く（通知だけ成功してDBが更新されない不整合を避ける）
-        if AuthorAlias.objects.filter(name=old_name).exists():
+        if old_name_conflict_qs.exists():
             return redirect(f"{base_url}?toast=primary_error")
 
         editor = Editor.get_or_create_from_ip(get_ip(request))
 
         # Discordへの通知が成功した場合のみDBへコミットする
         # （New/Edit/Deleteと同じ「通知成功後にDB確定」パターン）
-        discord_text = build_set_primary_name_discord_text(self.author, old_name, new_name, editor)
+        discord_text = build_set_primary_name_discord_text(
+            self.author, old_name, new_name, editor, merged_author=conflicting_author
+        )
         is_ok = send_discord(NEW_DISCORD_URL, discord_text)
         if not is_ok:
             return render(request, 'subekashi/500.html', status=500)
@@ -330,12 +342,23 @@ class AuthorPrimaryNameSetView(View):
 
         try:
             with transaction.atomic():
+                # conflicting_authorについてもTOCTOU対策として再取得してから統合する
+                current_conflict = Author.objects.filter(name=new_name).exclude(pk=self.author.pk).first()
+                if current_conflict is not None:
+                    for song in current_conflict.songs.all():
+                        song.authors.add(self.author)
+                    AuthorLink.objects.filter(author=current_conflict).update(author=self.author)
+                    AuthorAlias.objects.filter(author=current_conflict).update(author=self.author)
+                    current_conflict.delete()
+
                 # 選択された側のAuthorAlias行は、これからauthor自身の名前になるため削除する
                 selected_alias.delete()
                 self.author.name = new_name
                 self.author.save()
-                # 旧名を新たな「以前の名称」として登録し直す
-                AuthorAlias.objects.create(name=old_name, author=self.author, alias_type="past")
+                # 旧名を新たな「以前の名称」として登録し直す（マージにより既に
+                # 同名の別名が存在する場合は、それをそのまま活かし重複登録はしない）
+                if not AuthorAlias.objects.filter(name=old_name).exists():
+                    AuthorAlias.objects.create(name=old_name, author=self.author, alias_type="past")
                 History.create_for_author(
                     author=self.author,
                     title=f"一番有名な名義を『{new_name}』に変更",

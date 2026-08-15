@@ -1,5 +1,5 @@
 from django import forms
-from subekashi.models import Author, AuthorAlias
+from subekashi.models import AuthorAlias
 
 
 CONTACT_CATEGORY_CHOICES = [
@@ -68,7 +68,8 @@ class AuthorPrimaryNameForm(forms.Form):
     """一番有名な名義の選択フォーム（#1008）
 
     選択肢はauthor自身の現在の名前 + alias_type="past"の別名のみ。
-    選んだ名前が別のAuthorの名前と衝突する場合は選択できない（マージは行わない）。
+    選んだ名前が別のAuthorの名前と衝突する場合、AuthorPrimaryNameSetView側で
+    そのAuthorをこのauthorに統合（マージ）した上で名義を切り替える。
     """
     name = forms.CharField(
         max_length=500,
@@ -87,9 +88,6 @@ class AuthorPrimaryNameForm(forms.Form):
         )
         if name not in candidates:
             raise forms.ValidationError('選択できない名義です。')
-
-        if Author.objects.filter(name=name).exclude(pk=self.author.pk).exists():
-            raise forms.ValidationError('その名義は既に別の作者として登録されているため選択できません。')
 
         return name
 

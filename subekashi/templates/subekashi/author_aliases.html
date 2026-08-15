@@ -79,7 +79,7 @@
     {% elif request.GET.toast == "primary" %}
         showToast("ok", "一番有名な名義を変更しました。");
     {% elif request.GET.toast == "primary_error" %}
-        showToast("error", "一番有名な名義を変更できませんでした。選択した名義が既に別の作者として登録されている可能性があります。");
+        showToast("error", "一番有名な名義を変更できませんでした。時間をおいて再度お試しください。");
     {% endif %}
 
     deleteToastUrlQuery()
