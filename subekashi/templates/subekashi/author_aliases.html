@@ -24,6 +24,9 @@
     {% endif %}
 
     <div class="dummybuttons">
+        <a href="{% url 'subekashi:author' author.id %}">
+            <div class="dummybutton black-dummybutton"><i class="fas fa-user-circle"></i><p>作者ページ</p></div>
+        </a>
         <a onclick="reloadPage()">
             <div class="dummybutton black-dummybutton"><i class="fas fa-redo"></i><p>再読み込み</p></div>
         </a>

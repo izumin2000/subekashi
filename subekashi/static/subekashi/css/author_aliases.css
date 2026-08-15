@@ -73,7 +73,7 @@
 }
 
 /* .dummybutton単体と同じ詳細度(0,1,0)のため、確実に上書きするクラスの組み合わせにする */
-.dummybutton.primary-name-confirm-save {
+.dummybutton.dummybutton-w120 {
     width: 120px;
 }
 

@@ -462,6 +462,11 @@ class AuthorViewTest(TestCase):
         self.assertContains(response, reverse("subekashi:author_aliases", args=[self.author.id]))
         self.assertNotContains(response, "件の別名")
 
+    def test_alias_link_has_icon(self):
+        # 別名ボタンにfa-people-arrowsアイコンを表示する（#1024）
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
+        self.assertContains(response, "fa-people-arrows")
+
     def test_alias_count_shown_when_forward_alias_exists(self):
         AuthorAlias.objects.create(name="件数テスト別名", author=self.author, alias_type="past")
         response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
@@ -502,6 +507,23 @@ class AuthorAliasesViewTest(TestCase):
         response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "別名が見つかりませんでした")
+
+    def test_author_page_link_is_present(self):
+        # 別名一覧画面から作者自身のページへ遷移できるボタンを表示する（#1024）。
+        # reverse("subekashi:author", ...)は"/authors/<id>/aliases/..."等の他リンクの
+        # プレフィックスとしても部分一致してしまうため、ボタンのラベルで判定する
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+        author_url = reverse("subekashi:author", args=[self.author.id])
+        self.assertContains(response, f'href="{author_url}"')
+        self.assertContains(response, "作者ページ")
+
+    def test_author_page_link_is_leftmost_button(self):
+        # 作者ページボタンは.dummybuttons内の一番左（DOM順で最初）に配置する（#1024）
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+        content = response.content.decode()
+        author_url = reverse("subekashi:author", args=[self.author.id])
+        self.assertLess(content.index(f'href="{author_url}"'), content.index("再読み込み"))
+        self.assertLess(content.index(f'href="{author_url}"'), content.index("別名を追加する"))
 
     def test_forward_alias_is_displayed_with_edit_delete_links(self):
         alias = AuthorAlias.objects.create(name="別名X", author=self.author, alias_type="spell")
@@ -915,6 +937,26 @@ class AuthorAliasEditViewTest(TestCase):
         )
         self.assertContains(response, 'value="past" data-description="以前使用されていた名称です。')
         self.assertContains(response, 'selected>以前の名称</option>')
+
+    def test_back_to_alias_list_button_is_present(self):
+        # 別名一覧画面へ戻るボタンを表示する（#1024）。
+        # reverse("subekashi:author_aliases", ...)は、このページ自体のフォームaction
+        # ("/authors/<id>/aliases/<alias_id>/edit/")のプレフィックスとしても部分一致
+        # してしまうため、href属性値として厳密に一致するかで判定する
+        response = self.client.get(
+            reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id])
+        )
+        aliases_url = reverse("subekashi:author_aliases", args=[self.author.id])
+        self.assertContains(response, f'href="{aliases_url}"')
+        self.assertContains(response, "戻る")
+
+    def test_submit_button_matches_confirm_screen_style(self):
+        # 更新ボタンを一番有名な名義の変更確認画面と同様のdummybutton形式にする（#1024）
+        response = self.client.get(
+            reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id])
+        )
+        self.assertContains(response, "更新する")
+        self.assertContains(response, '<button type="submit" class="dummybutton black-dummybutton dummybutton-w120">')
 
     def test_alias_type_has_disabled_placeholder_option(self):
         response = self.client.get(
@@ -1573,7 +1615,7 @@ class AuthorPrimaryNameConfirmViewTest(TestCase):
             reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
         )
         self.assertContains(response, "変更する")
-        self.assertContains(response, "primary-name-confirm-save")
+        self.assertContains(response, "dummybutton-w120")
         self.assertNotContains(response, "保存する")
 
     def test_show_all_songs_button_hidden_when_ten_or_fewer_songs(self):

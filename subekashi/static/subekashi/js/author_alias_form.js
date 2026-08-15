@@ -1,6 +1,6 @@
 window.addEventListener('DOMContentLoaded', () => {
     const form = document.querySelector('form');
-    const submitButton = form.querySelector('input[type="submit"]');
+    const submitButton = form.querySelector('[type="submit"]');
     const aliasTypeSelect = document.getElementById('alias_type');
     const descriptionEl = document.getElementById('alias-type-description-text');
     const descriptionIconEl = document.getElementById('alias-type-description-icon');
