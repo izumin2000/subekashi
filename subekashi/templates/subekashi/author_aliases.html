@@ -8,21 +8,6 @@
 <section>
     <h1>{{ author.name }}の別名一覧</h1>
 
-    {% if primary_name_candidates|length > 1 %}
-        <h1>一番有名な名義<i class="fas fa-info-circle" onclick="showTutorial('primary-name')"></i></h1>
-        <form method="GET" action="{% url 'subekashi:author_primary_name_confirm' author.id %}" id="primary-name-form">
-            {% for candidate in primary_name_candidates %}
-                <div class="checkbox-col">
-                    <input type="radio" name="name" value="{{ candidate }}" id="primary-name-{{ forloop.counter }}" {% if candidate == author.name %}checked{% endif %}>
-                    <label for="primary-name-{{ forloop.counter }}">{{ candidate }}</label>
-                </div>
-            {% endfor %}
-            <div class="dummybuttons">
-                <button type="submit" id="primary-name-submit" class="dummybutton black-dummybutton" disabled><i class="fas fa-check"></i><p>変更する</p></button>
-            </div>
-        </form>
-    {% endif %}
-
     <div class="dummybuttons">
         <a href="{% url 'subekashi:author' author.id %}">
             <div class="dummybutton black-dummybutton"><i class="fas fa-user-circle"></i><p>作者ページ</p></div>
@@ -60,6 +45,21 @@
     {% empty %}
         <p id="alias-not-found">別名が見つかりませんでした</p>
     {% endfor %}
+
+    {% if primary_name_candidates|length > 1 %}
+        <h1>一番有名な名義<i class="fas fa-info-circle" onclick="showTutorial('primary-name')"></i></h1>
+        <form method="GET" action="{% url 'subekashi:author_primary_name_confirm' author.id %}" id="primary-name-form">
+            {% for candidate in primary_name_candidates %}
+                <div class="checkbox-col">
+                    <input type="radio" name="name" value="{{ candidate }}" id="primary-name-{{ forloop.counter }}" {% if candidate == author.name %}checked{% endif %}>
+                    <label for="primary-name-{{ forloop.counter }}">{{ candidate }}</label>
+                </div>
+            {% endfor %}
+            <div class="dummybuttons">
+                <button type="submit" id="primary-name-submit" class="dummybutton black-dummybutton" disabled><i class="fas fa-check"></i><p>変更する</p></button>
+            </div>
+        </form>
+    {% endif %}
 </section>
 {% endblock %}
 
