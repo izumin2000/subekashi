@@ -817,7 +817,7 @@ input:focus {
     justify-content: center;
 }
 
-input[type=checkbox] {
+input[type=checkbox], input[type=radio] {
     display: inline-block;
     box-shadow: none;
     height: 25px;

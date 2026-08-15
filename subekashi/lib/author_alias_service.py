@@ -39,3 +39,14 @@ def build_delete_alias_discord_text(author, alias_name, editor):
         f"**別名**：`{alias_name}`\n"
         f"編集者：`{editor}`"
     )
+
+
+def build_set_primary_name_discord_text(author, old_name, new_name, editor):
+    """一番有名な名義の変更用のDiscordテキストを構築する（#1008）"""
+    return (
+        f"一番有名な名義が変更されました\n"
+        f"{ROOT_URL}/authors/{author.id}/aliases\n\n"
+        f"**変更前**：`{old_name}`\n"
+        f"**変更後**：`{new_name}`\n"
+        f"編集者：`{editor}`"
+    )

@@ -1,5 +1,5 @@
 from django import forms
-from subekashi.models import AuthorAlias
+from subekashi.models import Author, AuthorAlias
 
 
 CONTACT_CATEGORY_CHOICES = [
@@ -60,6 +60,36 @@ class AuthorAliasForm(forms.Form):
             duplicate_qs = duplicate_qs.exclude(pk=self.editing_alias.pk)
         if duplicate_qs.exists():
             raise forms.ValidationError('その別名は既に登録されています。')
+
+        return name
+
+
+class AuthorPrimaryNameForm(forms.Form):
+    """一番有名な名義の選択フォーム（#1008）
+
+    選択肢はauthor自身の現在の名前 + alias_type="past"の別名のみ。
+    選んだ名前が別のAuthorの名前と衝突する場合は選択できない（マージは行わない）。
+    """
+    name = forms.CharField(
+        max_length=500,
+        error_messages={'required': '名義を選択してください。'},
+    )
+
+    def __init__(self, *args, author=None, **kwargs):
+        self.author = author
+        super().__init__(*args, **kwargs)
+
+    def clean_name(self):
+        name = self.cleaned_data['name']
+
+        candidates = {self.author.name} | set(
+            self.author.aliases.filter(alias_type="past").values_list("name", flat=True)
+        )
+        if name not in candidates:
+            raise forms.ValidationError('選択できない名義です。')
+
+        if Author.objects.filter(name=name).exclude(pk=self.author.pk).exists():
+            raise forms.ValidationError('その名義は既に別の作者として登録されているため選択できません。')
 
         return name
 
