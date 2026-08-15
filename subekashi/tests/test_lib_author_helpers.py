@@ -111,3 +111,15 @@ class GetOrCreateAuthorsTest(TestCase):
 
         self.assertIsNotNone(result)
         self.assertIn("NGアーティスト", result)
+
+    def test_past_alias_lookup_is_batched_not_per_name(self):
+        # past別名の存在チェックは名前ごとに都度クエリを発行せず、1クエリで一括取得する。
+        # 名前が何件あってもこのクエリ数は増えない（N+1にならない）ことの回帰防止テスト
+        for i in range(5):
+            author = Author.objects.create(name=f"現在の名義{i}")
+            AuthorAlias.objects.create(name=f"以前の名義{i}", author=author, alias_type="past")
+
+        with self.assertNumQueries(1):
+            authors = get_or_create_authors([f"以前の名義{i}" for i in range(5)])
+
+        self.assertEqual(len(authors), 5)

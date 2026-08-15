@@ -321,6 +321,7 @@
 | `alias_type="past"`の別名は現在の名義に正規化される (#1008) | 入力が`past`別名の`name`と完全一致 | 新規Authorを作らず、その別名の`author`（＝現在の一番有名な名義）を返す |
 | `alias_type="past"`以外は正規化されない (#1008) | 入力が`another`別名の`name`と完全一致 | 入力文字列のまま新規Authorとして作成される（意図的に区別すべき別人格を巻き込まないため） |
 | past正規化とREJECT_LISTすり抜け防止 (#1008) | REJECT_LIST登録済みauthorのpast別名で入力 | `get_or_create_authors()`が現在の名義に正規化するため、`check_reject_list()`が正しく検知できる |
+| past別名の一括取得 (#1008) | past別名5件を含む入力 | past別名の存在チェックが名前ごとに都度クエリを発行せず、1クエリで一括取得される（N+1にならない） |
 
 ---
 

@@ -20,13 +20,21 @@ def get_or_create_authors(author_names):
     Returns:
         list[Author]: Authorオブジェクトのリスト
     """
+    non_empty_names = [name for name in author_names if name]  # 空文字列をスキップ
+
+    # past別名の存在チェックを名前ごとに都度発行せず、1クエリで一括取得する
+    past_authors_by_name = {
+        alias.name: alias.author
+        for alias in AuthorAlias.objects.filter(
+            name__in=non_empty_names, alias_type="past"
+        ).select_related("author")
+    }
+
     author_objects = []
-    for name in author_names:
-        if not name:  # 空文字列をスキップ
-            continue
-        past_alias = AuthorAlias.objects.filter(name=name, alias_type="past").select_related("author").first()
-        if past_alias is not None:
-            author_objects.append(past_alias.author)
+    for name in non_empty_names:
+        past_author = past_authors_by_name.get(name)
+        if past_author is not None:
+            author_objects.append(past_author)
             continue
         author, _ = Author.objects.get_or_create(name=name)
         author_objects.append(author)
