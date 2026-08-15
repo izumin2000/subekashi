@@ -915,6 +915,18 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | 重複しない曲のケース | 統合後もタイトルが重複しない曲 | 「統合対象曲（重複なし）」として曲idを含む通常メッセージが出力される |
 | データを一切変更しない | 重複候補・重複曲が存在する状態で実行 | 実行後もAuthor・AuthorAlias・Songの状態が変化しない |
 
+#### 14-4. `merge_duplicate_authors` コマンド（重複Authorの統合、#1029）
+
+`merge_duplicate_authors <primary_id> <duplicate_id>`で、duplicate側のSong・AuthorLink・AuthorAliasを全てprimary側に付け替えた上でduplicate Authorを削除する。曲タイトルが重複するSongが1件でもある場合は統合を中止する。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 正常な統合 | 衝突なし | Song・AuthorLink・AuthorAliasがprimaryに付け替えられ、duplicateが削除される |
+| primary_idが存在しない | `merge_duplicate_authors 999999 <duplicate_id>` | 「存在しません」エラーを出力し、データは変更されない |
+| duplicate_idが存在しない | `merge_duplicate_authors <primary_id> 999999` | 「存在しません」エラーを出力する |
+| primaryとduplicateが同一 | 同じidを指定 | 「同じid」エラーを出力し、データは変更されない |
+| 曲タイトルが重複するケース | 統合すると同一タイトルの曲が両者に存在 | 「中止しました」エラーを出力し、Author・Songのいずれも変更されない |
+
 ---
 
 ### 15. `templatetags/song_card.py` — テンプレートタグ

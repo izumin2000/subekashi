@@ -4,6 +4,7 @@
 delete: is_removedをfalseのままにする--keep-linksオプションを検証する。
 youtube: DBロック対策で処理方式を変更した後の挙動（id指定・全件処理・リンク無しスキップ・動画削除時の扱い）を検証する。
 detect_primary_name_duplicates: 一番有名な名義の重複候補検出レポート（#1008）を検証する。
+merge_duplicate_authors: 重複したAuthorの統合コマンド（#1029）を検証する。
 """
 from io import StringIO
 from unittest.mock import patch
@@ -11,7 +12,7 @@ from unittest.mock import patch
 from django.core.management import call_command
 from django.test import TestCase
 
-from subekashi.models import Author, AuthorAlias, Song, SongLink
+from subekashi.models import Author, AuthorAlias, AuthorLink, Song, SongLink
 
 
 class DeleteCommandTest(TestCase):
@@ -182,3 +183,77 @@ class DetectPrimaryNameDuplicatesCommandTest(TestCase):
         self.assertTrue(Author.objects.filter(pk=duplicate.pk).exists())
         self.assertTrue(AuthorAlias.objects.filter(name="以前の名義6").exists())
         self.assertTrue(Song.objects.filter(pk=song.pk, authors=duplicate).exists())
+
+
+class MergeDuplicateAuthorsCommandTest(TestCase):
+    """merge_duplicate_authors コマンド（重複Authorの統合、#1029）のテスト"""
+
+    def _run(self, primary_id, duplicate_id):
+        out = StringIO()
+        call_command("merge_duplicate_authors", primary_id, duplicate_id, stdout=out)
+        return out.getvalue()
+
+    def test_merge_moves_songs_links_aliases_and_deletes_duplicate(self):
+        primary = Author.objects.create(name="現在の名義7")
+        duplicate = Author.objects.create(name="以前の名義7")
+
+        song = Song.objects.create(title="duplicate側の曲")
+        song.authors.add(duplicate)
+        link = AuthorLink.objects.create(url="https://example.com/duplicate", author=duplicate)
+        alias = AuthorAlias.objects.create(name="duplicateの別名", author=duplicate, alias_type="another")
+
+        output = self._run(primary.id, duplicate.id)
+
+        self.assertIn("統合しました", output)
+        self.assertFalse(Author.objects.filter(pk=duplicate.pk).exists())
+
+        song.refresh_from_db()
+        self.assertIn(primary, song.authors.all())
+
+        link.refresh_from_db()
+        self.assertEqual(link.author_id, primary.id)
+
+        alias.refresh_from_db()
+        self.assertEqual(alias.author_id, primary.id)
+
+    def test_nonexistent_primary_id_reports_error_and_does_not_modify_data(self):
+        duplicate = Author.objects.create(name="以前の名義8")
+
+        output = self._run(999999, duplicate.id)
+
+        self.assertIn("存在しません", output)
+        self.assertTrue(Author.objects.filter(pk=duplicate.pk).exists())
+
+    def test_nonexistent_duplicate_id_reports_error(self):
+        primary = Author.objects.create(name="現在の名義9")
+
+        output = self._run(primary.id, 999999)
+
+        self.assertIn("存在しません", output)
+
+    def test_same_id_reports_error(self):
+        author = Author.objects.create(name="現在の名義10")
+
+        output = self._run(author.id, author.id)
+
+        self.assertIn("同じid", output)
+        self.assertTrue(Author.objects.filter(pk=author.pk).exists())
+
+    def test_colliding_song_titles_abort_merge_without_changes(self):
+        primary = Author.objects.create(name="現在の名義11")
+        duplicate = Author.objects.create(name="以前の名義11")
+
+        primary_song = Song.objects.create(title="同じタイトルの曲11")
+        primary_song.authors.add(primary)
+        duplicate_song = Song.objects.create(title="同じタイトルの曲11")
+        duplicate_song.authors.add(duplicate)
+
+        output = self._run(primary.id, duplicate.id)
+
+        self.assertIn("中止しました", output)
+        self.assertIn("同じタイトルの曲11", output)
+
+        self.assertTrue(Author.objects.filter(pk=duplicate.pk).exists())
+        duplicate_song.refresh_from_db()
+        self.assertIn(duplicate, duplicate_song.authors.all())
+        self.assertNotIn(primary, duplicate_song.authors.all())
