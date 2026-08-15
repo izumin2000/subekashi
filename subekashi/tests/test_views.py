@@ -780,6 +780,13 @@ class AuthorAliasNewViewTest(TestCase):
         self.assertIn("チャンネルページへのリンク", group_option)
         self.assertNotIn("チャンネルページへのリンク", abbr_option)
 
+    def test_past_description_mentions_primary_name(self):
+        # past種別の説明に、一番有名な名義として選択できる旨を含める（#1029）
+        response = self.client.get(reverse("subekashi:author_alias_new", args=[self.author.id]))
+        content = response.content.decode()
+        past_option = content[content.index('value="past"'):content.index('</option>', content.index('value="past"'))]
+        self.assertIn("一番有名な名義", past_option)
+
     def test_group_option_is_available(self):
         response = self.client.get(reverse("subekashi:author_alias_new", args=[self.author.id]))
         self.assertContains(response, 'value="group"')
@@ -1437,13 +1444,28 @@ class AuthorPrimaryNameSetViewTest(TestCase):
 
     def test_alias_list_page_shows_primary_name_form_when_past_alias_exists(self):
         response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
-        self.assertContains(response, "primary-name-form")
+        self.assertContains(response, 'id="primary-name-form"')
         self.assertContains(response, "一番有名な名義")
 
     def test_alias_list_page_hides_primary_name_form_when_no_past_alias(self):
+        # フォーム本体（HTML要素）が描画されないことを確認する。判定用JS自体は
+        # フォームの有無に関わらず読み込まれ、要素が存在しない場合は何もせず
+        # no-opする実装のため、bareな文字列一致ではなくid属性の有無で判定する
         author = Author.objects.create(name="別名なし作者")
         response = self.client.get(reverse("subekashi:author_aliases", args=[author.id]))
-        self.assertNotContains(response, "primary-name-form")
+        self.assertNotContains(response, 'id="primary-name-form"')
+
+    def test_primary_name_submit_button_is_disabled_and_labeled_change(self):
+        # 初期状態（現在の名義が選択されたまま）では変更不要なためボタンはdisabled、
+        # ラベルは「変更する」（#1029）
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+        self.assertContains(response, 'id="primary-name-submit"')
+        self.assertContains(response, "変更する")
+        content = response.content.decode()
+        submit_button = content[
+            content.index('id="primary-name-submit"'):content.index("</button>", content.index('id="primary-name-submit"'))
+        ]
+        self.assertIn("disabled", submit_button)
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
@@ -1509,7 +1531,7 @@ class AuthorPrimaryNameConfirmViewTest(TestCase):
         response = self.client.get(
             reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
         )
-        self.assertContains(response, "名義が『現在の名義』から『以前の名義』に変更されます")
+        self.assertContains(response, "名義を『以前の名義』に変更されます")
 
     def test_shows_affected_song_titles(self):
         song = Song.objects.create(title="変更対象の曲")
@@ -1520,7 +1542,7 @@ class AuthorPrimaryNameConfirmViewTest(TestCase):
         )
 
         self.assertContains(response, "変更対象の曲")
-        self.assertContains(response, "の名義が『現在の名義』から『以前の名義』に変更されます")
+        self.assertContains(response, "の名義を『以前の名義』に変更されます")
 
     def test_shows_conflicting_authors_song_titles_too(self):
         conflicting = Author.objects.create(name="以前の名義")
@@ -1545,6 +1567,39 @@ class AuthorPrimaryNameConfirmViewTest(TestCase):
         )
 
         self.assertEqual(response.content.decode().count("共著の曲"), 1)
+
+    def test_save_button_is_labeled_change_with_fixed_width(self):
+        response = self.client.get(
+            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
+        )
+        self.assertContains(response, "変更する")
+        self.assertContains(response, "primary-name-confirm-save")
+        self.assertNotContains(response, "保存する")
+
+    def test_show_all_songs_button_hidden_when_ten_or_fewer_songs(self):
+        # ボタンのid文字列自体はno-opなJS（要素が無ければ何もしない）内にも常に
+        # 出現するため、実際のbutton要素・li要素のクラス属性の有無で判定する
+        for i in range(10):
+            Song.objects.create(title=f"曲{i}").authors.add(self.author)
+
+        response = self.client.get(
+            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
+        )
+
+        self.assertNotContains(response, 'id="primary-name-show-all-songs"')
+        self.assertNotContains(response, 'class="primary-name-song-hidden"')
+
+    def test_show_all_songs_button_shown_and_hides_songs_past_ten(self):
+        for i in range(11):
+            Song.objects.create(title=f"曲{i}").authors.add(self.author)
+
+        response = self.client.get(
+            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
+        )
+
+        self.assertContains(response, 'id="primary-name-show-all-songs"')
+        self.assertContains(response, "全て表示")
+        self.assertEqual(response.content.decode().count('class="primary-name-song-hidden"'), 1)
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)

@@ -501,6 +501,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `alias_type=past`・逆方向のラベル (#1019) | 他authorが自分をpastの別名として登録 | 「その後の名称」と表示される |
 | 逆方向の別名の遷移アイコン | 他authorが自分のnameと一致する別名を保持 | 編集できない代わりに、相手authorの別名一覧への遷移アイコン(`fa-arrow-right`)が表示される |
 | 遷移先author idが0の場合の遷移アイコン | 遷移先authorを`id=0`で作成 | テンプレートが`is not None`で判定しているため、`id=0`でも遷移アイコンが表示される（真偽値判定だと0がfalsyになり表示されなくなる） |
+| 一番有名な名義フォームの初期状態（#1029） | past別名が存在するauthorのGET | `#primary-name-submit`ボタンが`disabled`かつラベルは「変更する」（初期選択は現在の名義のままのため変更不要） |
 
 ##### 推移的関係解決の反映・遷移アイコン（#1007、#1019）
 
@@ -550,6 +551,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | author_alias_form.jsの読み込み (#996) | GETリクエスト | スクリプトタグが含まれる |
 | `group`選択肢 (#1004) | GETリクエスト | `value="group"`の選択肢（「グループ」）が含まれる |
 | 別名義(another)の説明文 (#1004) | GETリクエスト | 「公認」の旨が含まれる |
+| 以前の名称(past)の説明文 (#1029) | GETリクエスト | 一番有名な名義として選択できる旨（「一番有名な名義」）が含まれる |
 
 #### 7-8-3. `AuthorAliasEditView` (`/authors/<id>/aliases/<alias_id>/edit`)（#992）
 
@@ -619,10 +621,13 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 現在の名前を選択 | `name=author.name` | 確認画面を表示せず別名一覧へリダイレクト（変更不要のため） |
 | 衝突なしの確認画面 | 衝突するAuthorが存在しない | 変更前後の名前が表示され、統合に関する警告文は表示されない |
 | 衝突ありの確認画面 | 衝突するAuthor（conflicting_author）が存在 | 統合されるAuthorのid・名前を含む警告文（「削除されます」）が表示される |
-| 対象曲がない場合の表示 | authorもconflicting_authorもSongを持たない | 「名義が『旧名』から『新名』に変更されます」という文のみ表示される |
-| 対象曲の一覧表示 | authorがSongを持つ | 各Songのタイトルが箇条書きで表示された上で「の名義が『旧名』から『新名』に変更されます」と続く |
+| 対象曲がない場合の表示 | authorもconflicting_authorもSongを持たない | 「名義を『新名』に変更されます」という文のみ表示される（#1029で「旧名から新名へ」から簡略化） |
+| 対象曲の一覧表示 | authorがSongを持つ | 各Songのタイトルが箇条書きで表示された上で「の名義を『新名』に変更されます」と続く |
 | conflicting_authorの曲も一覧に含む | conflicting_authorがSongを持つ | conflicting_author側のSongタイトルも箇条書きに含まれる（マージ後にこのauthorへ付け替わるため） |
 | 共著曲は重複表示されない | 同じSongがauthor・conflicting_author双方の共著になっている | そのSongタイトルは箇条書きに1回だけ表示される（`distinct()`によるSong単位の重複排除） |
+| 曲が10件以下の場合 | Songが10件以下 | 「全て表示」ボタン（`#primary-name-show-all-songs`）は表示されず、全曲が表示された状態になる |
+| 曲が11件以上の場合 | Songが11件以上 | 11件目以降が`class="primary-name-song-hidden"`で非表示になり、「全て表示」ボタンが表示される |
+| 保存ボタンのラベル・幅 | 確認画面の表示 | ボタンのラベルは「変更する」（「保存する」は含まれない）、`primary-name-confirm-save`クラス（width: 120px）が付与される |
 | データを変更しない | GETリクエストのみ | `Author`・`AuthorAlias`等のデータは一切変更されない |
 
 #### 7-9. `ChannelView` (`/channel/<name>/`)

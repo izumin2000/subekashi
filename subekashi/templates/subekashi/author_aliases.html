@@ -18,7 +18,7 @@
                 </div>
             {% endfor %}
             <div class="dummybuttons">
-                <button type="submit" class="dummybutton black-dummybutton"><i class="fas fa-check"></i><p>保存する</p></button>
+                <button type="submit" id="primary-name-submit" class="dummybutton black-dummybutton" disabled><i class="fas fa-check"></i><p>変更する</p></button>
             </div>
         </form>
     {% endif %}
@@ -69,6 +69,19 @@
         history.replaceState(null, '', newUrl);
         location.reload();
     }
+
+    // 一番有名な名義フォーム: 選択が現在の名義から変わっていない間は変更するボタンをdisabledにする
+    (function() {
+        const primaryNameForm = document.getElementById('primary-name-form');
+        if (!primaryNameForm) return;
+        const submitBtn = document.getElementById('primary-name-submit');
+        const initialValue = primaryNameForm.querySelector('input[name="name"]:checked')?.value;
+        primaryNameForm.querySelectorAll('input[name="name"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                submitBtn.disabled = primaryNameForm.querySelector('input[name="name"]:checked')?.value === initialValue;
+            });
+        });
+    })();
 
     {% if request.GET.toast == "new" %}
         showToast("ok", "別名を追加しました。");
