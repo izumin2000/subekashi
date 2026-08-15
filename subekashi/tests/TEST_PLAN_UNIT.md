@@ -598,6 +598,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | Discord通知失敗 | `send_discord()`が`False`を返す | HTTP 500。`Author.name`は変更されず、選択されたAuthorAlias行も削除されない（通知成功後にDB確定するパターン） |
 | Discord通知待機中の並行削除（TOCTOU、選択した別名） | `send_discord()`の完了待ち中に対象のpast別名が別リクエストで削除されたと仮定 | `AuthorAlias.DoesNotExist`が未処理の例外(500)にならず、他の異常系と同じく`?toast=primary_error`へ穏当にリダイレクトされる。`Author.name`は変更されない |
 | Discord通知待機中の並行削除（TOCTOU、conflicting_author） | `send_discord()`の完了待ち中にconflicting_authorが別リクエストで削除されたと仮定 | マージ部分をスキップし、通常の名義切り替えとして`?toast=primary`付きで成立する |
+| Discord通知待機中の無関係な別名作成（TOCTOU） | `send_discord()`の完了待ち中に、conflicting_authorとは無関係な別authorがold_nameと同名の`AuthorAlias`を新規作成したと仮定 | マージにより付け替わったものと誤認せず（所有者を確認できないため）安全側に倒し、統合・名義変更ともにロールバックして`?toast=primary_error`へリダイレクトする。無関係な別名のalias_typeは書き換えられない |
 | 旧名(old_name)が既存の別名と衝突 | old_nameと同名の`AuthorAlias`をconflicting_author以外の別authorが既に保有（「逆方向」の関係として正常にありうる状態） | `AuthorAlias.name`のグローバルなunique制約により再登録が決定的に失敗するため、Discord通知を送る前に検知して`?toast=primary_error`へリダイレクトする。`send_discord()`は呼ばれない |
 | 別名一覧画面のフォーム表示 | authorが`alias_type="past"`の別名を持つ | フォーム（`#primary-name-form`）と「一番有名な名義」の見出しが表示される。フォームの送信先は確認画面（`AuthorPrimaryNameConfirmView`）になっている |
 | 別名一覧画面のフォーム非表示 | authorが`alias_type="past"`の別名を持たない | フォームは表示されない（選択肢が現在の名前1件のみのため） |

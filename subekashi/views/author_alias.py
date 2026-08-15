@@ -400,9 +400,16 @@ class AuthorPrimaryNameSetView(View):
                 existing_old_alias = AuthorAlias.objects.filter(name=old_name).first()
                 if existing_old_alias is None:
                     AuthorAlias.objects.create(name=old_name, author=self.author, alias_type="past")
-                elif existing_old_alias.alias_type != "past":
-                    existing_old_alias.alias_type = "past"
-                    existing_old_alias.save()
+                elif current_conflict is not None and existing_old_alias.author_id == self.author.id:
+                    if existing_old_alias.alias_type != "past":
+                        existing_old_alias.alias_type = "past"
+                        existing_old_alias.save()
+                else:
+                    # send_discord()の待機中に、無関係な別authorがold_nameと同名の
+                    # 別名を新規作成していた場合（TOCTOU）。マージにより付け替わった
+                    # ものだと確認できない限り再利用せず、従来通りIntegrityErrorと
+                    # 同じ扱いで安全側に倒す（他authorの別名を誤って書き換えない）
+                    raise IntegrityError(f"AuthorAlias(name={old_name!r}) already exists and is not owned by self.author")
 
                 changes = [["種類", "編集前", "編集後"], ["一番有名な名義", old_name, new_name]]
                 if merged_author_info is not None:

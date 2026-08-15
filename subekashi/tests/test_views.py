@@ -1260,6 +1260,39 @@ class AuthorPrimaryNameSetViewTest(TestCase):
         self.assertEqual(self.author.name, "以前の名義")
 
     @patch("subekashi.views.author_alias.send_discord")
+    def test_unrelated_alias_matching_old_name_created_during_discord_wait_is_not_corrupted(self, mock_send_discord):
+        # send_discord()の待機中に、マージ対象(conflicting_author)とは無関係な別authorが
+        # old_nameと同名のAuthorAliasを新規作成してしまうケース（TOCTOU）。
+        # マージにより付け替わったものと誤認して所有者チェックなしに再利用（alias_typeの
+        # 書き換え）してしまうと、無関係な別authorのデータを破壊することになるため、
+        # 安全側に倒して統合全体をロールバックすることを確認する
+        conflicting = Author.objects.create(name="以前の名義")
+        unrelated_author = Author.objects.create(name="無関係な作者")
+
+        def create_unrelated_alias_then_succeed(url, content):
+            AuthorAlias.objects.create(name="現在の名義", author=unrelated_author, alias_type="another")
+            return True
+
+        mock_send_discord.side_effect = create_unrelated_alias_then_succeed
+
+        response = self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+            {"name": "以前の名義"},
+        )
+
+        self.assertRedirects(
+            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=primary_error"
+        )
+        self.author.refresh_from_db()
+        self.assertEqual(self.author.name, "現在の名義")
+        # マージ・名義変更ともにロールバックされる
+        self.assertTrue(Author.objects.filter(pk=conflicting.pk).exists())
+        # 無関係な別名は書き換えられない
+        unrelated_alias = AuthorAlias.objects.get(name="現在の名義")
+        self.assertEqual(unrelated_alias.author_id, unrelated_author.id)
+        self.assertEqual(unrelated_alias.alias_type, "another")
+
+    @patch("subekashi.views.author_alias.send_discord")
     def test_post_discord_failure_prevents_name_change(self, mock_send_discord):
         mock_send_discord.return_value = False
         response = self.client.post(
