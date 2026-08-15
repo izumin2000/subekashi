@@ -593,6 +593,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | Discord通知 | 正常なPOST | `send_discord()`がNEW_DISCORD_URL宛に、変更前後の名前を含む内容で呼ばれる |
 | Discord通知失敗 | `send_discord()`が`False`を返す | HTTP 500。`Author.name`は変更されず、選択されたAuthorAlias行も削除されない（通知成功後にDB確定するパターン） |
 | Discord通知待機中の並行削除（TOCTOU） | `send_discord()`の完了待ち中に対象のpast別名が別リクエストで削除されたと仮定 | `AuthorAlias.DoesNotExist`が未処理の例外(500)にならず、他の異常系と同じく`?toast=primary_error`へ穏当にリダイレクトされる。`Author.name`は変更されない |
+| 旧名(old_name)が既存の別名と衝突 | old_nameと同名の`AuthorAlias`を別authorが既に保有（「逆方向」の関係として正常にありうる状態） | `AuthorAlias.name`のグローバルなunique制約により再登録が決定的に失敗するため、Discord通知を送る前に検知して`?toast=primary_error`へリダイレクトする。`send_discord()`は呼ばれない |
 | 別名一覧画面のフォーム表示 | authorが`alias_type="past"`の別名を持つ | フォーム（`#primary-name-form`）と「一番有名な名義」の見出しが表示される |
 | 別名一覧画面のフォーム非表示 | authorが`alias_type="past"`の別名を持たない | フォームは表示されない（選択肢が現在の名前1件のみのため） |
 

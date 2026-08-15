@@ -1183,6 +1183,28 @@ class AuthorPrimaryNameSetViewTest(TestCase):
         self.assertEqual(self.author.name, "現在の名義")
         self.assertEqual(History.get_for_author(self.author).count(), 0)
 
+    def test_old_name_conflicting_with_existing_alias_is_rejected_before_discord(self):
+        # AuthorAlias.nameはグローバルにuniqueなため、旧名(old_name)が既に別のauthorの
+        # 別名として登録されている場合、以前の名称として再登録できずIntegrityErrorになる。
+        # これは同時実行のレースではなく既存データ次第で毎回決定的に失敗するため、
+        # Discord通知を送る前に弾く（通知だけ成功してDBが更新されない不整合を避ける）
+        other = Author.objects.create(name="別の作者")
+        AuthorAlias.objects.create(name=self.author.name, author=other, alias_type="another")
+
+        with patch("subekashi.views.author_alias.send_discord") as mock_send_discord:
+            response = self.client.post(
+                reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+                {"name": "以前の名義"},
+            )
+            self.assertFalse(mock_send_discord.called)
+
+        self.assertRedirects(
+            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=primary_error"
+        )
+        self.author.refresh_from_db()
+        self.assertEqual(self.author.name, "現在の名義")
+        self.assertTrue(AuthorAlias.objects.filter(pk=self.past_alias.pk).exists())
+
     def test_alias_list_page_shows_primary_name_form_when_past_alias_exists(self):
         response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
         self.assertContains(response, "primary-name-form")

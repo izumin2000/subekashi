@@ -301,6 +301,14 @@ class AuthorPrimaryNameSetView(View):
         if new_name == old_name:
             return redirect(base_url)
 
+        # 旧名(old_name)を新たなpast別名として登録し直すが、AuthorAlias.nameは
+        # グローバルにunique（他のauthorが既にold_nameと同名の別名を持つ「逆方向」の
+        # 関係は正常な状態としてありうる）なため、衝突している場合は登録できない。
+        # これは同時実行のレースではなく既存データ次第で毎回決定的に失敗するため、
+        # Discord通知を送る前に弾く（通知だけ成功してDBが更新されない不整合を避ける）
+        if AuthorAlias.objects.filter(name=old_name).exists():
+            return redirect(f"{base_url}?toast=primary_error")
+
         editor = Editor.get_or_create_from_ip(get_ip(request))
 
         # Discordへの通知が成功した場合のみDBへコミットする

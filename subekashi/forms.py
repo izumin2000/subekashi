@@ -71,6 +71,7 @@ class AuthorPrimaryNameForm(forms.Form):
     選んだ名前が別のAuthorの名前と衝突する場合は選択できない（マージは行わない）。
     """
     name = forms.CharField(
+        max_length=500,
         error_messages={'required': '名義を選択してください。'},
     )
 
