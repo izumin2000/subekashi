@@ -14,7 +14,9 @@
             {% endfor %}
         </ul>
         {% if song_titles|length > 10 %}
-            <button type="button" id="primary-name-show-all-songs" class="dummybutton black-dummybutton"><i class="fas fa-arrows-alt-v"></i><p>全て表示</p></button>
+            <div class="dummybuttons">
+                <button type="button" id="primary-name-show-all-songs" class="dummybutton black-dummybutton"><i class="fas fa-arrows-alt-v"></i><p>全て表示</p></button>
+            </div>
         {% endif %}
         <p>の名義を『{{ new_name }}』に変更されます</p>
     {% else %}
