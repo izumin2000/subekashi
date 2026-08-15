@@ -243,6 +243,30 @@ class SongNewViewTest(TestCase):
         self.assertFalse(song.is_original)
         self.assertTrue(song.is_subeana)
 
+    def test_post_with_past_alias_author_name_normalizes_and_flags_toast(self):
+        # 入力した作者名がpast別名と一致する場合、一番有名な名義に正規化されて
+        # 保存される。redirect先のURLにその旨を伝えるtoast用のフラグが付与される
+        primary_author = Author.objects.create(name="現在の名義")
+        AuthorAlias.objects.create(name="以前の名義", author=primary_author, alias_type="past")
+
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "", "authors": "以前の名義", "title": "正規化テスト曲"},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("primary_name_normalized=1", response.url)
+        song = Song.objects.get(title="正規化テスト曲")
+        self.assertIn(primary_author, song.authors.all())
+
+    def test_post_without_normalization_does_not_flag_toast(self):
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "", "authors": "正規化されない作者", "title": "通常テスト曲"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertNotIn("primary_name_normalized", response.url)
+
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
 class SongEditViewTest(TestCase):
@@ -309,6 +333,28 @@ class SongEditViewTest(TestCase):
         self.assertTrue(self.song.is_joke)
         self.assertTrue(self.song.is_inst)
         self.assertTrue(self.song.is_subeana)
+
+    def test_post_with_past_alias_author_name_normalizes_and_flags_toast(self):
+        primary_author = Author.objects.create(name="現在の名義")
+        AuthorAlias.objects.create(name="以前の名義", author=primary_author, alias_type="past")
+
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {"title": "編集テスト曲", "authors": "以前の名義", "url": "", "imitate": "", "lyrics": ""},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("primary_name_normalized=1", response.url)
+        self.song.refresh_from_db()
+        self.assertIn(primary_author, self.song.authors.all())
+
+    def test_post_without_normalization_does_not_flag_toast(self):
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {"title": "編集テスト曲", "authors": "正規化されない作者", "url": "", "imitate": "", "lyrics": ""},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertNotIn("primary_name_normalized", response.url)
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
@@ -1420,6 +1466,34 @@ class AuthorPrimaryNameConfirmViewTest(TestCase):
         self.author.refresh_from_db()
         self.assertEqual(self.author.name, "現在の名義")
         self.assertEqual(Author.objects.count(), 2)
+
+    def test_no_songs_falls_back_to_plain_message(self):
+        response = self.client.get(
+            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
+        )
+        self.assertContains(response, "名義が『現在の名義』から『以前の名義』に変更されます")
+
+    def test_shows_affected_song_titles(self):
+        song = Song.objects.create(title="変更対象の曲")
+        song.authors.add(self.author)
+
+        response = self.client.get(
+            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
+        )
+
+        self.assertContains(response, "変更対象の曲")
+        self.assertContains(response, "の名義が『現在の名義』から『以前の名義』に変更されます")
+
+    def test_shows_conflicting_authors_song_titles_too(self):
+        conflicting = Author.objects.create(name="以前の名義")
+        conflicting_song = Song.objects.create(title="統合対象作者の曲")
+        conflicting_song.authors.add(conflicting)
+
+        response = self.client.get(
+            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
+        )
+
+        self.assertContains(response, "統合対象作者の曲")
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)

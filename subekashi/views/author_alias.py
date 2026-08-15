@@ -297,12 +297,22 @@ class AuthorPrimaryNameConfirmView(View):
         if new_name == self.author.name:
             return redirect(base_url)
 
+        conflicting_author = Author.objects.filter(name=new_name).exclude(pk=self.author.pk).first()
+
+        # 名義の変更によって表示上の作者名が変わる曲を一覧できるようにする。
+        # 衝突するAuthorが存在する場合、その曲もマージによりこのauthorに
+        # 付け替わり同じく新名義で表示されるようになるため対象に含める
+        song_titles = list(self.author.songs.values_list("title", flat=True))
+        if conflicting_author is not None:
+            song_titles += list(conflicting_author.songs.values_list("title", flat=True))
+
         context = {
             "metatitle": f"{self.author.name}の一番有名な名義の変更を確認",
             "author": self.author,
             "old_name": self.author.name,
             "new_name": new_name,
-            "conflicting_author": Author.objects.filter(name=new_name).exclude(pk=self.author.pk).first(),
+            "conflicting_author": conflicting_author,
+            "song_titles": song_titles,
         }
         return render(request, 'subekashi/author_primary_name_confirm.html', context)
 

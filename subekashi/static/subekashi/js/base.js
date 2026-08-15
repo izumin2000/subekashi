@@ -393,8 +393,14 @@ function showTutorial(place) {
 // 表示用のトーストURLクエリを削除
 function deleteToastUrlQuery() {
     const url = new URL(window.location.href);
-    if (url.searchParams.has('toast')) {
-        url.searchParams.delete('toast');
+    let changed = false;
+    for (const key of ['toast', 'primary_name_normalized']) {
+        if (url.searchParams.has(key)) {
+            url.searchParams.delete(key);
+            changed = true;
+        }
+    }
+    if (changed) {
         window.history.replaceState({}, '', url.toString());
     }
 }

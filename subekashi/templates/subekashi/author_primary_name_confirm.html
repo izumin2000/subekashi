@@ -7,12 +7,19 @@
 {% block content %}
 <section>
     <h1>一番有名な名義の変更を確認</h1>
-    <ul>
-        <li>名義が『{{ old_name }}』から『{{ new_name }}』に変更されます</li>
-        {% if conflicting_author %}
-            <li>既存の作者『{{ conflicting_author.name }}』（id={{ conflicting_author.id }}）がこの作者に統合され、削除されます。この操作は取り消せません</li>
-        {% endif %}
-    </ul>
+    {% if song_titles %}
+        <ul>
+            {% for song_title in song_titles %}
+                <li>{{ song_title }}</li>
+            {% endfor %}
+        </ul>
+        <p>の名義が『{{ old_name }}』から『{{ new_name }}』に変更されます</p>
+    {% else %}
+        <p>名義が『{{ old_name }}』から『{{ new_name }}』に変更されます</p>
+    {% endif %}
+    {% if conflicting_author %}
+        <p>既存の作者『{{ conflicting_author.name }}』（id={{ conflicting_author.id }}）がこの作者に統合され、削除されます。この操作は取り消せません</p>
+    {% endif %}
     <div class="dummybuttons">
         <a href="{% url 'subekashi:author_aliases' author.id %}">
             <div class="dummybutton black-dummybutton"><i class="fas fa-times"></i><p>戻る</p></div>

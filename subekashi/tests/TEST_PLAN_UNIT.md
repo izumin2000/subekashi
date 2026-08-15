@@ -442,6 +442,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | POST: 作者が空白 | `url=""`, `authors="  "` | HTTP 200、"作者" を含むエラー |
 | POST: タイトルが空 | `url=""`, `authors="テスト作者"`, `title=""` | HTTP 200、"タイトル" を含むエラー |
 | POST: is-questionable時、オリジナル模倣は強制OFF・その他フラグの入力値はそのまま保存される | `is-questionable-manual=on`, `is-original-manual=on`, `is-subeana-manual=on` | 保存されたSongの `is_questionable=True`、`is_original=False`、`is_subeana=True` |
+| POST: 作者名がpast別名と一致し一番有名な名義へ正規化される（#1029） | `authors=`past別名のname | 保存後、redirect先URLに`primary_name_normalized=1`が付与される |
+| POST: 正規化が発生しない | `authors=`通常の作者名 | redirect先URLに`primary_name_normalized`は付与されない |
 
 #### 7-5. `SongEditView` (`/songs/<id>/edit/`)
 
@@ -451,6 +453,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 存在しない曲のGET | 無効なsong_id | HTTP 404 |
 | POST: is_questionable時に歌詞・模倣・下書き・オリジナル模倣が強制的に空/OFF | `is_questionable=True`, `lyrics="..."`, `imitate="<id>"`, `is_draft=True`, `is_original=True` | 保存されたSongの `lyrics=""`、`imitates`が空、`is_draft=False`、`is_original=False`、`is_questionable=True` |
 | POST: is_questionable時も非公開/削除済み・ネタ曲・インスト・すべあな界隈曲は保存される | `is_questionable=True`, `is_deleted=True`, `is_joke=True`, `is_inst=True`, `is_subeana=True` | 各フラグがそれぞれ `True` のまま保存される |
+| POST: 作者名がpast別名と一致し一番有名な名義へ正規化される（#1029） | `authors=`past別名のname | 保存後、redirect先URLに`primary_name_normalized=1`が付与される |
+| POST: 正規化が発生しない | `authors=`通常の作者名 | redirect先URLに`primary_name_normalized`は付与されない |
 
 #### 7-6. `ContactView` (`/contact/`)
 
@@ -614,6 +618,9 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 現在の名前を選択 | `name=author.name` | 確認画面を表示せず別名一覧へリダイレクト（変更不要のため） |
 | 衝突なしの確認画面 | 衝突するAuthorが存在しない | 変更前後の名前が表示され、統合に関する警告文は表示されない |
 | 衝突ありの確認画面 | 衝突するAuthor（conflicting_author）が存在 | 統合されるAuthorのid・名前を含む警告文（「削除されます」）が表示される |
+| 対象曲がない場合の表示 | authorもconflicting_authorもSongを持たない | 「名義が『旧名』から『新名』に変更されます」という文のみ表示される |
+| 対象曲の一覧表示 | authorがSongを持つ | 各Songのタイトルが箇条書きで表示された上で「の名義が『旧名』から『新名』に変更されます」と続く |
+| conflicting_authorの曲も一覧に含む | conflicting_authorがSongを持つ | conflicting_author側のSongタイトルも箇条書きに含まれる（マージ後にこのauthorへ付け替わるため） |
 | データを変更しない | GETリクエストのみ | `Author`・`AuthorAlias`等のデータは一切変更されない |
 
 #### 7-9. `ChannelView` (`/channel/<name>/`)

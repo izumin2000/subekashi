@@ -102,6 +102,10 @@ class SongEditView(View):
         # authorsフィールドの処理: カンマ区切りの作者をAuthorオブジェクトに変換
         author_names = cleaned_authors.split(',')
         author_objects = get_or_create_authors(author_names)
+        # 入力した作者名が一番有名な名義（past別名から変換）に正規化されたかどうか
+        primary_name_normalized = any(
+            name != author.name for name, author in zip([n for n in author_names if n], author_objects)
+        )
 
         # 自分自身や重複は除外し、Song オブジェクトのリストに変換
         imitate_songs = get_imitate_songs(imitates, song_id)
@@ -150,6 +154,9 @@ class SongEditView(View):
             if not is_ok:
                 return render(request, 'subekashi/500.html', status=500)
 
-        response = redirect(f'/songs/{song_id}?toast=edit')
+        redirect_url = f'/songs/{song_id}?toast=edit'
+        if primary_name_normalized:
+            redirect_url += '&primary_name_normalized=1'
+        response = redirect(redirect_url)
         response["X-Robots-Tag"] = "noindex, nofollow"
         return response
