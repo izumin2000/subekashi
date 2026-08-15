@@ -33,6 +33,10 @@
     font-size: 18px;
 }
 
+.alias-actions .fa-arrow-right {
+    margin-right: 3px;
+}
+
 #alias-not-found {
     margin: 25px;
     text-align: center;
