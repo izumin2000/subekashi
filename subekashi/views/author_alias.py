@@ -310,10 +310,20 @@ class AuthorPrimaryNameSetView(View):
         if not is_ok:
             return render(request, 'subekashi/500.html', status=500)
 
+        # send_discord()（ネットワークI/O）の完了を待つ間に、別のリクエストが対象の
+        # past別名を変更・削除してしまうTOCTOU対策。.get()だとDoesNotExistが
+        # IntegrityError以外の未処理の例外として伝播してしまうため、.filter().first()で
+        # Noneチェックしてから同じtoast=primary_errorに倒す（他の分岐と挙動を揃える）
+        selected_alias = AuthorAlias.objects.filter(
+            author=self.author, name=new_name, alias_type="past"
+        ).first()
+        if selected_alias is None:
+            return redirect(f"{base_url}?toast=primary_error")
+
         try:
             with transaction.atomic():
                 # 選択された側のAuthorAlias行は、これからauthor自身の名前になるため削除する
-                AuthorAlias.objects.get(author=self.author, name=new_name, alias_type="past").delete()
+                selected_alias.delete()
                 self.author.name = new_name
                 self.author.save()
                 # 旧名を新たな「以前の名称」として登録し直す

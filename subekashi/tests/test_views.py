@@ -1159,6 +1159,30 @@ class AuthorPrimaryNameSetViewTest(TestCase):
         self.assertTrue(AuthorAlias.objects.filter(pk=self.past_alias.pk).exists())
         self.assertEqual(History.get_for_author(self.author).count(), 0)
 
+    @patch("subekashi.views.author_alias.send_discord")
+    def test_alias_deleted_concurrently_during_discord_wait_redirects_with_error(self, mock_send_discord):
+        # send_discord()（ネットワークI/O）の完了を待つ間に、別のリクエストが対象の
+        # past別名を削除してしまうケースを、send_discordのside_effectで模擬する。
+        # DoesNotExistが未処理の例外(500)にならず、他の異常系と同じくtoast=primary_error
+        # へ穏当にリダイレクトされることを確認する
+        def delete_alias_then_succeed(url, content):
+            self.past_alias.delete()
+            return True
+
+        mock_send_discord.side_effect = delete_alias_then_succeed
+
+        response = self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+            {"name": "以前の名義"},
+        )
+
+        self.assertRedirects(
+            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=primary_error"
+        )
+        self.author.refresh_from_db()
+        self.assertEqual(self.author.name, "現在の名義")
+        self.assertEqual(History.get_for_author(self.author).count(), 0)
+
     def test_alias_list_page_shows_primary_name_form_when_past_alias_exists(self):
         response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
         self.assertContains(response, "primary-name-form")
