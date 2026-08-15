@@ -913,6 +913,13 @@ input[type=submit], button {
     padding-top: 5px;
 }
 
+/* アイコン付きdummybutton用の共通スタイル。author.css/author_aliases.css/
+   editor.css/song.cssで同一内容が個別に定義されていたため集約した */
+.dummybutton i {
+    margin-right: 10px;
+    font-size: 1.0em;
+}
+
 input[type=submit]:hover, button:hover, .dummybutton:hover {
     background-color: #fff;
 }

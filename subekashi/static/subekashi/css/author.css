@@ -20,6 +20,11 @@
     gap: 4px;
 }
 
+/* アイコンとテキストを上下中央寄せにする（共通のp{padding-top:5px}を打ち消す） */
+.dummybuttons .dummybutton p {
+    padding-top: 0;
+}
+
 #alias-count {
     font-size: 12px;
     color: #fff;

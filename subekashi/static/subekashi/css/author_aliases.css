@@ -38,11 +38,6 @@
     text-align: center;
 }
 
-.dummybutton i {
-    margin-right: 10px;
-    font-size: 1.0em;
-}
-
 /* アイコンとテキストを上下中央寄せにする（共通のp{padding-top:5px}を打ち消す） */
 .dummybuttons .dummybutton {
     align-items: center;
@@ -73,8 +68,8 @@
 }
 
 /* .dummybutton単体と同じ詳細度(0,1,0)のため、確実に上書きするクラスの組み合わせにする */
-.dummybutton.primary-name-confirm-save {
-    width: 120px;
+.dummybutton.dummybutton-w140 {
+    width: 140px;
 }
 
 /* disabled時、.dummybutton.black-dummybuttonの背景色(#333)が.dummybutton:disabledの
@@ -82,6 +77,11 @@
 .dummybutton.black-dummybutton:disabled {
     background-color: #666;
     cursor: not-allowed;
+}
+
+.dummybuttons .dummybutton:disabled p,
+.dummybuttons .dummybutton:disabled i {
+    color: #aaa;
 }
 
 #primary-name-song-list {

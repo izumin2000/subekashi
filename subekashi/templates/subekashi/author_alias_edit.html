@@ -24,7 +24,12 @@
         <p id="alias-type-description" class="alias-type-description info">
             <i id="alias-type-description-icon" class="fas fa-info-circle info"></i><span id="alias-type-description-text"></span>
         </p>
-        <input type="submit" value="更新">
+        <div class="dummybuttons">
+            <a href="{% url 'subekashi:author_aliases' author.id %}">
+                <div class="dummybutton black-dummybutton"><i class="fas fa-times"></i><p>戻る</p></div>
+            </a>
+            <button type="submit" class="dummybutton black-dummybutton dummybutton-w140"><i class="fas fa-check"></i><p>更新する</p></button>
+        </div>
     </form>
 </section>
 {% endblock %}

@@ -483,8 +483,9 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 正方向の別名あり (#992) | 別名を1件登録 | 「1件の別名」が表示される |
 | 逆方向の別名あり (#992) | 他authorが自分のnameと一致する別名を保持 | 「1件の別名」が表示される（正方向＋逆方向の合計） |
 | 推移的な件数 (#1007) | `past`で1ホップ先の別名がさらに`spell`の別名を持つ（2ホップ） | 「2件の別名」が表示される（`get_transitive_aliases()`の件数に合わせる） |
+| 別名ボタンのアイコン (#1024) | 正常アクセス | `fa-people-arrows`アイコンが含まれる |
 
-#### 7-8-1. `AuthorAliasesView` (`/authors/<id>/aliases`)（#992、#1007）
+#### 7-8-1. `AuthorAliasesView` (`/authors/<id>/aliases`)（#992、#1007、#1024）
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
@@ -502,6 +503,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 逆方向の別名の遷移アイコン | 他authorが自分のnameと一致する別名を保持 | 編集できない代わりに、相手authorの別名一覧への遷移アイコン(`fa-arrow-right`)が表示される |
 | 遷移先author idが0の場合の遷移アイコン | 遷移先authorを`id=0`で作成 | テンプレートが`is not None`で判定しているため、`id=0`でも遷移アイコンが表示される（真偽値判定だと0がfalsyになり表示されなくなる） |
 | 一番有名な名義フォームの初期状態（#1029） | past別名が存在するauthorのGET | `#primary-name-submit`ボタンが`disabled`かつラベルは「変更する」（初期選択は現在の名義のままのため変更不要） |
+| 作者ページへの導線（#1024） | 正常アクセス | 作者自身のページ（`/authors/<id>/`）へのリンク（`href`属性完全一致で判定。`/authors/<id>/aliases/...`系の他リンクとの部分一致による誤検出を避けるため）が表示される |
+| 作者ページボタンの位置（#1024） | 正常アクセス | `.dummybuttons`内で「再読み込み」「別名を追加する」より前（DOM順で最初、一番左）に配置される |
 
 ##### 推移的関係解決の反映・遷移アイコン（#1007、#1019）
 
@@ -553,7 +556,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 別名義(another)の説明文 (#1004) | GETリクエスト | 「公認」の旨が含まれる |
 | 以前の名称(past)の説明文 (#1029) | GETリクエスト | 一番有名な名義として選択できる旨（「一番有名な名義」）が含まれる |
 
-#### 7-8-3. `AuthorAliasEditView` (`/authors/<id>/aliases/<alias_id>/edit`)（#992）
+#### 7-8-3. `AuthorAliasEditView` (`/authors/<id>/aliases/<alias_id>/edit`)（#992、#1024）
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
@@ -571,6 +574,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 現在のalias_typeが選択済み (#996) | GETリクエスト | 該当する`<option>`に`selected`が付与されている |
 | `alias_type`のプレースホルダー (#996) | GETリクエスト | `<option value="" disabled>選択してください</option>`が含まれる（selectedではない） |
 | author_alias_form.jsの読み込み (#996) | GETリクエスト | スクリプトタグが含まれる |
+| 別名一覧画面へ戻るボタン (#1024) | GETリクエスト | 別名一覧画面（`/authors/<id>/aliases/`）へのリンク（`href`属性完全一致で判定。このページ自体のフォームaction`/authors/<id>/aliases/<alias_id>/edit/`との部分一致による誤検出を避けるため）と「戻る」の文言が含まれる |
+| 更新ボタンのスタイル (#1024) | GETリクエスト | 更新ボタンが一番有名な名義の変更確認画面と同様の`dummybutton`形式（`<button type="submit" class="dummybutton black-dummybutton dummybutton-w140">`、幅140px）で「更新する」と表示され、「戻る」ボタンと同じ`.dummybuttons`内に並ぶ |
 
 #### 7-8-4. `AuthorAliasDeleteView` (`/authors/<id>/aliases/<alias_id>/delete`)（#992）
 
@@ -627,7 +632,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 共著曲は重複表示されない | 同じSongがauthor・conflicting_author双方の共著になっている | そのSongタイトルは箇条書きに1回だけ表示される（`distinct()`によるSong単位の重複排除） |
 | 曲が10件以下の場合 | Songが10件以下 | 「全て表示」ボタン（`#primary-name-show-all-songs`）は表示されず、全曲が表示された状態になる |
 | 曲が11件以上の場合 | Songが11件以上 | 11件目以降が`class="primary-name-song-hidden"`で非表示になり、「全て表示」ボタンが表示される |
-| 保存ボタンのラベル・幅 | 確認画面の表示 | ボタンのラベルは「変更する」（「保存する」は含まれない）、`primary-name-confirm-save`クラス（width: 120px）が付与される |
+| 保存ボタンのラベル・幅 | 確認画面の表示 | ボタンのラベルは「変更する」（「保存する」は含まれない）、`dummybutton-w140`クラス（width: 140px。author_alias_edit.htmlの更新ボタンと共通のクラス）が付与される |
 | データを変更しない | GETリクエストのみ | `Author`・`AuthorAlias`等のデータは一切変更されない |
 
 #### 7-9. `ChannelView` (`/channel/<name>/`)
