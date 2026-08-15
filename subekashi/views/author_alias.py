@@ -4,13 +4,14 @@ from django.urls import reverse
 from django.views import View
 from config.local_settings import NEW_DISCORD_URL
 from subekashi.models import Author, AuthorAlias, Editor, History
-from subekashi.forms import AuthorAliasForm
+from subekashi.forms import AuthorAliasForm, AuthorPrimaryNameForm
 from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
 from subekashi.lib.author_alias_service import (
     build_new_alias_discord_text,
     build_edit_alias_discord_text,
     build_delete_alias_discord_text,
+    build_set_primary_name_discord_text,
 )
 
 
@@ -88,6 +89,10 @@ class AuthorAliasesView(View):
             "metatitle": f"{author.name}の別名一覧",
             "author": author,
             "alias_rows": alias_rows,
+            # 一番有名な名義の選択肢（#1008）。候補は現在の名前 + alias_type="past"の別名のみ
+            "primary_name_candidates": [author.name] + list(
+                author.aliases.filter(alias_type="past").values_list("name", flat=True)
+            ),
         }
         return render(request, 'subekashi/author_aliases.html', context)
 
@@ -266,3 +271,62 @@ class AuthorAliasDeleteView(View):
             self.alias.delete()
 
         return redirect(f"{reverse('subekashi:author_aliases', args=[self.author.id])}?toast=delete")
+
+
+class AuthorPrimaryNameSetView(View):
+    """一番有名な名義の変更（#1008）
+
+    author.nameと、選択されたalias_type="past"のAuthorAlias.nameを入れ替える。
+    Song.authorsはAuthorのPK参照のため、この入れ替えだけで既存のSongデータは
+    一切変更せずに表示上の正規化が完了する。選択した名前が既存の別のAuthorの
+    名前と衝突する場合はAuthorPrimaryNameForm側で選択不可としており、
+    マージ（Song・AuthorAliasの付け替え）は行わない。
+    """
+    def dispatch(self, request, author_id, *args, **kwargs):
+        self.author = Author.get_or_none(author_id)
+        if self.author is None:
+            return render(request, 'subekashi/404.html', status=404)
+        return super().dispatch(request, author_id, *args, **kwargs)
+
+    def post(self, request, author_id):
+        base_url = reverse('subekashi:author_aliases', args=[self.author.id])
+        form = AuthorPrimaryNameForm(request.POST, author=self.author)
+
+        if not form.is_valid():
+            return redirect(f"{base_url}?toast=primary_error")
+
+        new_name = form.cleaned_data['name']
+        old_name = self.author.name
+
+        if new_name == old_name:
+            return redirect(base_url)
+
+        editor = Editor.get_or_create_from_ip(get_ip(request))
+
+        # Discordへの通知が成功した場合のみDBへコミットする
+        # （New/Edit/Deleteと同じ「通知成功後にDB確定」パターン）
+        discord_text = build_set_primary_name_discord_text(self.author, old_name, new_name, editor)
+        is_ok = send_discord(NEW_DISCORD_URL, discord_text)
+        if not is_ok:
+            return render(request, 'subekashi/500.html', status=500)
+
+        try:
+            with transaction.atomic():
+                # 選択された側のAuthorAlias行は、これからauthor自身の名前になるため削除する
+                AuthorAlias.objects.get(author=self.author, name=new_name, alias_type="past").delete()
+                self.author.name = new_name
+                self.author.save()
+                # 旧名を新たな「以前の名称」として登録し直す
+                AuthorAlias.objects.create(name=old_name, author=self.author, alias_type="past")
+                History.create_for_author(
+                    author=self.author,
+                    title=f"一番有名な名義を『{new_name}』に変更",
+                    history_type="edit",
+                    changes=[["種類", "編集前", "編集後"], ["一番有名な名義", old_name, new_name]],
+                    editor=editor,
+                )
+        except IntegrityError:
+            # ほぼ同時に同名の別名が別途登録された場合等のTOCTOU対策
+            return redirect(f"{base_url}?toast=primary_error")
+
+        return redirect(f"{base_url}?toast=primary")

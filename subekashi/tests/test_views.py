@@ -642,7 +642,8 @@ class AuthorAliasesViewTransitiveResolutionTest(TestCase):
         # #1023: 遷移先author idの補完的な問い合わせが、クラスタ全体ではなく
         # 未解決の名前(B・E)のみを対象にした1クエリに収まっていることの回帰防止テスト。
         # クエリ数が増えた場合はこの値を更新しつつ、原因を確認すること
-        with self.assertNumQueries(9):
+        # （10クエリ目は#1008で追加した一番有名な名義の候補一覧取得）
+        with self.assertNumQueries(10):
             self.client.get(reverse("subekashi:author_aliases", args=[self.c.id]))
 
     def test_author_c_list_unresolved_query_scope_excludes_resolved_names(self):
@@ -1055,6 +1056,118 @@ class AuthorAliasDeleteViewTest(TestCase):
         self.assertEqual(response.status_code, 500)
         self.assertTrue(AuthorAlias.objects.filter(pk=self.alias.id).exists())
         self.assertEqual(History.get_for_author(self.author).count(), 0)
+
+
+@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+class AuthorPrimaryNameSetViewTest(TestCase):
+    """AuthorPrimaryNameSetView (/authors/<id>/aliases/primary) のテスト（#1008）"""
+
+    def setUp(self):
+        self.client = Client()
+        self.author = Author.objects.create(name="現在の名義")
+        self.past_alias = AuthorAlias.objects.create(name="以前の名義", author=self.author, alias_type="past")
+
+    def test_nonexistent_author_returns_404(self):
+        response = self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[99999]), {"name": "以前の名義"}
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_selecting_current_name_is_noop_and_redirects(self):
+        response = self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+            {"name": self.author.name},
+        )
+        self.assertRedirects(response, reverse("subekashi:author_aliases", args=[self.author.id]))
+        self.author.refresh_from_db()
+        self.assertEqual(self.author.name, "現在の名義")
+
+    def test_selecting_past_alias_swaps_name_and_reregisters_old_name_as_past(self):
+        response = self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+            {"name": "以前の名義"},
+        )
+        self.assertRedirects(
+            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=primary"
+        )
+        self.author.refresh_from_db()
+        self.assertEqual(self.author.name, "以前の名義")
+        # 選ばれた側の別名行は消え、旧名が新たなpast別名として登録される
+        self.assertFalse(AuthorAlias.objects.filter(pk=self.past_alias.pk).exists())
+        new_alias = AuthorAlias.objects.get(name="現在の名義")
+        self.assertEqual(new_alias.author, self.author)
+        self.assertEqual(new_alias.alias_type, "past")
+
+    def test_selecting_non_past_alias_type_is_rejected(self):
+        AuthorAlias.objects.create(name="別名義候補", author=self.author, alias_type="another")
+        response = self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+            {"name": "別名義候補"},
+        )
+        self.assertRedirects(
+            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=primary_error"
+        )
+        self.author.refresh_from_db()
+        self.assertEqual(self.author.name, "現在の名義")
+
+    def test_selecting_name_conflicting_with_another_author_is_rejected(self):
+        Author.objects.create(name="以前の名義")
+        response = self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+            {"name": "以前の名義"},
+        )
+        self.assertRedirects(
+            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=primary_error"
+        )
+        self.author.refresh_from_db()
+        self.assertEqual(self.author.name, "現在の名義")
+        self.assertTrue(AuthorAlias.objects.filter(pk=self.past_alias.pk).exists())
+
+    def test_post_creates_history_with_before_and_after_names(self):
+        self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+            {"name": "以前の名義"},
+        )
+        history = History.get_for_author(self.author).first()
+        self.assertIsNotNone(history)
+        self.assertEqual(history.history_type, "edit")
+        self.assertIn("以前の名義", history.title)
+        self.assertEqual(history.changes[1], ["一番有名な名義", "現在の名義", "以前の名義"])
+
+    @patch("subekashi.views.author_alias.send_discord")
+    def test_post_sends_discord_notification(self, mock_send_discord):
+        mock_send_discord.return_value = True
+        self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+            {"name": "以前の名義"},
+        )
+        self.assertTrue(mock_send_discord.called)
+        content = mock_send_discord.call_args[0][1]
+        self.assertIn("現在の名義", content)
+        self.assertIn("以前の名義", content)
+
+    @patch("subekashi.views.author_alias.send_discord")
+    def test_post_discord_failure_prevents_name_change(self, mock_send_discord):
+        mock_send_discord.return_value = False
+        response = self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+            {"name": "以前の名義"},
+        )
+        self.assertEqual(response.status_code, 500)
+        self.author.refresh_from_db()
+        self.assertEqual(self.author.name, "現在の名義")
+        self.assertTrue(AuthorAlias.objects.filter(pk=self.past_alias.pk).exists())
+        self.assertEqual(History.get_for_author(self.author).count(), 0)
+
+    def test_alias_list_page_shows_primary_name_form_when_past_alias_exists(self):
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+        self.assertContains(response, "primary-name-form")
+        self.assertContains(response, "一番有名な名義")
+
+    def test_alias_list_page_hides_primary_name_form_when_no_past_alias(self):
+        author = Author.objects.create(name="別名なし作者")
+        response = self.client.get(reverse("subekashi:author_aliases", args=[author.id]))
+        self.assertNotContains(response, "primary-name-form")
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)

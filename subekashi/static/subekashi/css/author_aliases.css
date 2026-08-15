@@ -65,6 +65,18 @@
     display: contents;
 }
 
+/* 一番有名な名義の選択フォーム（#1008） */
+#primary-name-label {
+    color: #999;
+    font-size: 18px;
+    margin: 15px 0 5px;
+}
+
+.primary-name-option {
+    display: block;
+    padding: 5px 0;
+}
+
 /* buttonタグのデフォルトスタイル(font-size/margin等)を打ち消し、.dummybuttonの見た目に揃える */
 .dummybuttons button.dummybutton {
     font-size: inherit;

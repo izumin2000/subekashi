@@ -16,6 +16,21 @@
         </a>
     </div>
 
+    {% if primary_name_candidates|length > 1 %}
+        <form method="POST" action="{% url 'subekashi:author_primary_name_set' author.id %}" id="primary-name-form">{% csrf_token %}
+            <p id="primary-name-label">一番有名な名義</p>
+            {% for candidate in primary_name_candidates %}
+                <label class="primary-name-option">
+                    <input type="radio" name="name" value="{{ candidate }}" {% if candidate == author.name %}checked{% endif %}>
+                    {{ candidate }}
+                </label>
+            {% endfor %}
+            <div class="dummybuttons">
+                <button type="submit" class="dummybutton black-dummybutton"><i class="fas fa-check"></i><p>保存する</p></button>
+            </div>
+        </form>
+    {% endif %}
+
     {% for row in alias_rows %}
         <div class="alias-row">
             <div class="alias-info">
@@ -60,6 +75,10 @@
         showToast("ok", "別名を編集しました。");
     {% elif request.GET.toast == "delete" %}
         showToast("ok", "別名を削除しました。");
+    {% elif request.GET.toast == "primary" %}
+        showToast("ok", "一番有名な名義を変更しました。");
+    {% elif request.GET.toast == "primary_error" %}
+        showToast("error", "一番有名な名義を変更できませんでした。選択した名義が既に別の作者として登録されている可能性があります。");
     {% endif %}
 
     deleteToastUrlQuery()

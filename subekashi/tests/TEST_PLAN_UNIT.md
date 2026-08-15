@@ -318,6 +318,9 @@
 | 既存作者は新規作成しない | DBに存在する作者名 | 同じAuthorオブジェクトが返される（重複なし）|
 | 空文字列をスキップ | `["作者A", "", "作者B"]` | 空文字列を除いた2件のAuthor |
 | 全て空文字列 | `["", ""]` | 空のリスト |
+| `alias_type="past"`の別名は現在の名義に正規化される (#1008) | 入力が`past`別名の`name`と完全一致 | 新規Authorを作らず、その別名の`author`（＝現在の一番有名な名義）を返す |
+| `alias_type="past"`以外は正規化されない (#1008) | 入力が`another`別名の`name`と完全一致 | 入力文字列のまま新規Authorとして作成される（意図的に区別すべき別人格を巻き込まないため） |
+| past正規化とREJECT_LISTすり抜け防止 (#1008) | REJECT_LIST登録済みauthorのpast別名で入力 | `get_or_create_authors()`が現在の名義に正規化するため、`check_reject_list()`が正しく検知できる |
 
 ---
 
@@ -367,6 +370,18 @@ DBアクセス（重複チェック）を伴うため `TestCase` を使用する
 | nameが既存のAuthorAlias.nameと重複 | 既存のname | `is_valid() == False`、`"その別名は既に登録されています。"` |
 | 編集時に自分自身のnameのまま | `editing_alias=alias`, `name=alias.name` | `is_valid() == True`（自分自身は重複チェックから除外） |
 | 編集時に他のaliasのnameと重複 | `editing_alias=alias`, `name=`他のalias.name | `is_valid() == False` |
+
+#### 6-5. `AuthorPrimaryNameForm`（#1008）
+
+DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使用する。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 現在のAuthor.nameを選択 | `name=author.name` | `is_valid() == True` |
+| `alias_type="past"`の別名を選択 | `name=`past別名のname | `is_valid() == True` |
+| `alias_type="past"`以外（例: another）は候補外 | `name=`another別名のname | `is_valid() == False`、`"選択できない名義です。"` |
+| 全く関係ない名前 | `name="全く関係ない名前"` | `is_valid() == False`、`"選択できない名義です。"` |
+| past別名の名前が別のAuthorと衝突 | 別Authorが同名で実在する状態で`name=`該当past別名のname | `is_valid() == False`、`"その名義は既に別の作者として登録されているため選択できません。"`（マージは行わない） |
 
 ---
 
@@ -561,6 +576,23 @@ DBアクセス（重複チェック）を伴うため `TestCase` を使用する
 | Discord通知 | 正常なPOST | `send_discord()`がNEW_DISCORD_URL宛に、削除対象の別名名を含む内容で呼ばれる（新規・編集と同じ通知先） |
 | Discord通知失敗 | `send_discord()`が`False`を返す | HTTP 500。AuthorAliasは削除されず、Historyも作成されない（通知できた場合のみ実削除する設計） |
 | キャンセル・削除ボタンのアイコン (#996) | GETリクエスト | `fa-times`・`fa-trash-alt`アイコンが含まれる |
+
+#### 7-8-5. `AuthorPrimaryNameSetView` (`/authors/<id>/aliases/primary`)（#1008）
+
+`Author.name`と、選択された`alias_type="past"`のAuthorAlias.nameを入れ替える。Song.authorsはAuthorのPK参照のため、この入れ替えだけで既存のSongデータは一切変更不要。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 存在しないauthor_id | 無効なauthor_id | HTTP 404 |
+| 現在の名前を選択 | `name=author.name` | 何も変更されず一覧画面へリダイレクト（no-op） |
+| past別名を選択 | `name=`past別名のname | `Author.name`が入れ替わる。選ばれた側のAuthorAlias行は削除され、旧名が新たな`past`別名として再登録される。`?toast=primary`付きでリダイレクト |
+| `alias_type`がpast以外の別名を選択 | `name=`another等の別名のname | 変更されず、`?toast=primary_error`付きでリダイレクト |
+| 別のAuthorと衝突するpast別名を選択 | 別Authorが同名で実在 | 変更されず、`?toast=primary_error`付きでリダイレクト（フォーム側の`clean_name`で弾かれる。仮に弾かれなくても`Author.name`のunique制約による`IntegrityError`が同じ結果になる二重の安全策） |
+| 正常なPOST | past別名を選択 | `History.create_for_author()`が呼ばれ、`history_type="edit"`、`changes`に`["一番有名な名義", 旧名, 新名]`が含まれる |
+| Discord通知 | 正常なPOST | `send_discord()`がNEW_DISCORD_URL宛に、変更前後の名前を含む内容で呼ばれる |
+| Discord通知失敗 | `send_discord()`が`False`を返す | HTTP 500。`Author.name`は変更されず、選択されたAuthorAlias行も削除されない（通知成功後にDB確定するパターン） |
+| 別名一覧画面のフォーム表示 | authorが`alias_type="past"`の別名を持つ | フォーム（`#primary-name-form`）と「一番有名な名義」の見出しが表示される |
+| 別名一覧画面のフォーム非表示 | authorが`alias_type="past"`の別名を持たない | フォームは表示されない（選択肢が現在の名前1件のみのため） |
 
 #### 7-9. `ChannelView` (`/channel/<name>/`)
 

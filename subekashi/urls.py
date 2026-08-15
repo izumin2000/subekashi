@@ -25,6 +25,7 @@ urlpatterns = [
     path('songs/<sqliteint:song_id>/delete/', SongDeleteView.as_view(), name='song_delete'),
     path('authors/<sqliteint:author_id>/', AuthorView.as_view(), name='author'),
     path('authors/<sqliteint:author_id>/aliases/', AuthorAliasesView.as_view(), name='author_aliases'),
+    path('authors/<sqliteint:author_id>/aliases/primary/', AuthorPrimaryNameSetView.as_view(), name='author_primary_name_set'),
     path('authors/<sqliteint:author_id>/aliases/new/', AuthorAliasNewView.as_view(), name='author_alias_new'),
     path('authors/<sqliteint:author_id>/aliases/<sqliteint:alias_id>/edit/', AuthorAliasEditView.as_view(), name='author_alias_edit'),
     path('authors/<sqliteint:author_id>/aliases/<sqliteint:alias_id>/delete/', AuthorAliasDeleteView.as_view(), name='author_alias_delete'),

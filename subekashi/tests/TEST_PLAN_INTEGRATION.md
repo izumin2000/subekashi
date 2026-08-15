@@ -487,6 +487,21 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 | 操作 | `AuthorAliasForm.clean_name` の重複チェックをモックでバイパスした状態で、同じ `name="foo_sub"` を新規登録POST |
 | 検証 | DB制約(`IntegrityError`)を`AuthorAliasNewView`が捕捉し、500エラーにならずHTTP 200のままフォームエラーが表示される。`AuthorAlias`は重複作成されない |
 
+#### 11-9. 一番有名な名義の選択から曲登録正規化まで（#1008）
+
+**テストファイル**: `tests/test_views.py`（`AuthorPrimaryNameSetViewTest`）、`tests/test_lib_author_helpers.py`
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `Author(name="foo")` に別名 `foo_old`(`alias_type="past"`) が登録済み。`foo_old`という名前の別Authorは存在しない |
+| 操作 | `POST /authors/<foo.id>/aliases/primary` に `name="foo_old"` |
+| 検証 | `Author.name`が`"foo_old"`に入れ替わり、旧名`"foo"`が新たな`past`別名として再登録される。`?toast=primary`付きで一覧画面へリダイレクト |
+| 検証 | `History`に`history_type="edit"`のレコードが作成され、`send_discord()`が変更前後の名前を含む内容で呼ばれる |
+| 操作（正規化の確認） | 上記の状態変更後、`POST /songs/new/` の`authors`に旧名`"foo"`を指定して曲登録 |
+| 検証 | `get_or_create_authors()`が`"foo"`を`past`別名として解決し、新規Authorを作らず`Author(name="foo_old")`（同一のAuthor行）に紐づく |
+| 操作（衝突ケース） | 選択したpast別名の名前と完全一致する別のAuthorが既に存在する状態で `POST /authors/<foo.id>/aliases/primary` |
+| 検証 | `Author.name`は変更されず、`?toast=primary_error`付きでリダイレクトされる（マージは行われない） |
+
 ---
 
 ## テスト実装の方針
