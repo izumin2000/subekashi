@@ -7,6 +7,22 @@
 {% block content %}
 <section>
     <h1>{{ author.name }}の別名一覧</h1>
+
+    {% if primary_name_candidates|length > 1 %}
+        <h1>一番有名な名義<i class="fas fa-info-circle" onclick="showTutorial('primary-name')"></i></h1>
+        <form method="POST" action="{% url 'subekashi:author_primary_name_set' author.id %}" id="primary-name-form">{% csrf_token %}
+            {% for candidate in primary_name_candidates %}
+                <div class="checkbox-col">
+                    <input type="radio" name="name" value="{{ candidate }}" id="primary-name-{{ forloop.counter }}" {% if candidate == author.name %}checked{% endif %}>
+                    <label for="primary-name-{{ forloop.counter }}">{{ candidate }}</label>
+                </div>
+            {% endfor %}
+            <div class="dummybuttons">
+                <button type="submit" class="dummybutton black-dummybutton"><i class="fas fa-check"></i><p>保存する</p></button>
+            </div>
+        </form>
+    {% endif %}
+
     <div class="dummybuttons">
         <a onclick="reloadPage()">
             <div class="dummybutton black-dummybutton"><i class="fas fa-redo"></i><p>再読み込み</p></div>
@@ -15,21 +31,6 @@
             <div class="dummybutton black-dummybutton"><i class="fas fa-plus"></i><p>別名を追加する</p></div>
         </a>
     </div>
-
-    {% if primary_name_candidates|length > 1 %}
-        <form method="POST" action="{% url 'subekashi:author_primary_name_set' author.id %}" id="primary-name-form">{% csrf_token %}
-            <p id="primary-name-label">一番有名な名義</p>
-            {% for candidate in primary_name_candidates %}
-                <label class="primary-name-option">
-                    <input type="radio" name="name" value="{{ candidate }}" {% if candidate == author.name %}checked{% endif %}>
-                    {{ candidate }}
-                </label>
-            {% endfor %}
-            <div class="dummybuttons">
-                <button type="submit" class="dummybutton black-dummybutton"><i class="fas fa-check"></i><p>保存する</p></button>
-            </div>
-        </form>
-    {% endif %}
 
     {% for row in alias_rows %}
         <div class="alias-row">
