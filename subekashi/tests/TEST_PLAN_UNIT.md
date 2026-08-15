@@ -593,6 +593,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | past別名を選択 | `name=`past別名のname | `Author.name`が入れ替わる。選ばれた側のAuthorAlias行は削除され、旧名が新たな`past`別名として再登録される。`?toast=primary`付きでリダイレクト |
 | `alias_type`がpast以外の別名を選択 | `name=`another等の別名のname | 変更されず、`?toast=primary_error`付きでリダイレクト |
 | 別のAuthorと衝突するpast別名を選択 | 別Author（conflicting_author）が同名で実在し、Song・AuthorLink・AuthorAliasを持つ | conflicting_authorのSong・AuthorLink・AuthorAliasが全てこのauthorに付け替えられ、conflicting_authorが削除された上で名義が切り替わる。`?toast=primary`付きでリダイレクト |
+| 統合対象の曲数が多い場合のクエリ数 | conflicting_authorが複数のSongを持つ | `author.songs.add(*queryset)`による一括付け替えのため、曲数を増やしてもクエリ数がほぼ変わらない（曲ごとにadd()するN+1にならない） |
 | conflicting_authorが旧名と同名の別名を既に保有 | conflicting_authorのAuthorAlias.name == old_name | マージ後にその別名をそのまま活かし、`old_name`のAuthorAliasが重複登録（IntegrityError）されない。他のpast別名と同様に選択候補になるよう`alias_type`が`"past"`へ更新される |
 | 正常なPOST | past別名を選択 | `History.create_for_author()`が呼ばれ、`history_type="edit"`、`changes`に`["一番有名な名義", 旧名, 新名]`が含まれる |
 | 統合ありのHistory | 衝突するconflicting_authorが存在 | `changes`に`["統合したAuthor", "id=..., name=...", "（削除）"]`の行が追加される |
@@ -621,6 +622,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 対象曲がない場合の表示 | authorもconflicting_authorもSongを持たない | 「名義が『旧名』から『新名』に変更されます」という文のみ表示される |
 | 対象曲の一覧表示 | authorがSongを持つ | 各Songのタイトルが箇条書きで表示された上で「の名義が『旧名』から『新名』に変更されます」と続く |
 | conflicting_authorの曲も一覧に含む | conflicting_authorがSongを持つ | conflicting_author側のSongタイトルも箇条書きに含まれる（マージ後にこのauthorへ付け替わるため） |
+| 共著曲は重複表示されない | 同じSongがauthor・conflicting_author双方の共著になっている | そのSongタイトルは箇条書きに1回だけ表示される（`distinct()`によるSong単位の重複排除） |
 | データを変更しない | GETリクエストのみ | `Author`・`AuthorAlias`等のデータは一切変更されない |
 
 #### 7-9. `ChannelView` (`/channel/<name>/`)

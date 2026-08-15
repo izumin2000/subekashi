@@ -8,7 +8,7 @@ from subekashi.lib.url import clean_url, is_youtube_url, get_youtube_id
 from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
 from subekashi.lib.youtube import get_youtube_api
-from subekashi.lib.author_helpers import get_or_create_authors
+from subekashi.lib.author_helpers import get_or_create_authors, author_names_were_normalized
 from subekashi.lib.song_service import (
     check_reject_list,
     validate_song_url,
@@ -95,9 +95,7 @@ class SongNewView(View):
         author_names = cleaned_authors.split(',')
         authors = get_or_create_authors(author_names)
         # 入力した作者名が一番有名な名義（past別名から変換）に正規化されたかどうか
-        primary_name_normalized = any(
-            name != author.name for name, author in zip([n for n in author_names if n], authors)
-        )
+        primary_name_normalized = author_names_were_normalized(author_names, authors)
 
         # 掲載拒否作者か判断する
         reject_error = check_reject_list(authors)

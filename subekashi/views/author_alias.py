@@ -1,9 +1,10 @@
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
 from config.local_settings import NEW_DISCORD_URL
-from subekashi.models import Author, AuthorAlias, AuthorLink, Editor, History
+from subekashi.models import Author, AuthorAlias, AuthorLink, Editor, History, Song
 from subekashi.forms import AuthorAliasForm, AuthorPrimaryNameForm
 from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
@@ -301,10 +302,13 @@ class AuthorPrimaryNameConfirmView(View):
 
         # 名義の変更によって表示上の作者名が変わる曲を一覧できるようにする。
         # 衝突するAuthorが存在する場合、その曲もマージによりこのauthorに
-        # 付け替わり同じく新名義で表示されるようになるため対象に含める
-        song_titles = list(self.author.songs.values_list("title", flat=True))
+        # 付け替わり同じく新名義で表示されるようになるため対象に含める。
+        # 同じ曲がauthor・conflicting_author双方の共著になっているケース
+        # （同一曲が両名義で重複してしまう）に備え、Song単位でdistinct()する
+        song_filter = Q(authors=self.author)
         if conflicting_author is not None:
-            song_titles += list(conflicting_author.songs.values_list("title", flat=True))
+            song_filter |= Q(authors=conflicting_author)
+        song_titles = list(Song.objects.filter(song_filter).distinct().values_list("title", flat=True))
 
         context = {
             "metatitle": f"{self.author.name}の一番有名な名義の変更を確認",
@@ -393,8 +397,7 @@ class AuthorPrimaryNameSetView(View):
                     # Historyはon_delete=SET_NULLのため付け替えは行わず、統合の事実を
                     # 別途新しいHistoryとして記録する（過去の履歴内容自体は改変しない）
                     merged_author_info = f"id={current_conflict.id}, name={current_conflict.name}"
-                    for song in current_conflict.songs.all():
-                        song.authors.add(self.author)
+                    self.author.songs.add(*current_conflict.songs.all())
                     AuthorLink.objects.filter(author=current_conflict).update(author=self.author)
                     AuthorAlias.objects.filter(author=current_conflict).update(author=self.author)
                     current_conflict.delete()

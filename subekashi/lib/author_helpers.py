@@ -4,6 +4,10 @@ Author関連のヘルパー関数
 from subekashi.models import Author, AuthorAlias
 
 
+def _non_empty_names(author_names):
+    return [name for name in author_names if name]  # 空文字列をスキップ
+
+
 def get_or_create_authors(author_names):
     """
     作者名のリストからAuthorオブジェクトのリストを返す
@@ -20,7 +24,7 @@ def get_or_create_authors(author_names):
     Returns:
         list[Author]: Authorオブジェクトのリスト
     """
-    non_empty_names = [name for name in author_names if name]  # 空文字列をスキップ
+    non_empty_names = _non_empty_names(author_names)
 
     # past別名の存在チェックを名前ごとに都度発行せず、1クエリで一括取得する
     past_authors_by_name = {
@@ -39,3 +43,19 @@ def get_or_create_authors(author_names):
         author, _ = Author.objects.get_or_create(name=name)
         author_objects.append(author)
     return author_objects
+
+
+def author_names_were_normalized(author_names, authors):
+    """
+    get_or_create_authors(author_names)の戻り値がauthorsであるとき、
+    past別名から一番有名な名義への正規化が1件でも発生したかどうかを返す（#1029）
+
+    Args:
+        author_names: get_or_create_authors()に渡したものと同じ入力
+        authors: get_or_create_authors(author_names)の戻り値
+
+    Returns:
+        bool
+    """
+    non_empty_names = _non_empty_names(author_names)
+    return any(name != author.name for name, author in zip(non_empty_names, authors))

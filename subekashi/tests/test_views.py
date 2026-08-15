@@ -1213,6 +1213,44 @@ class AuthorPrimaryNameSetViewTest(TestCase):
         self.assertEqual(existing_alias.alias_type, "past")
         self.assertEqual(AuthorAlias.objects.filter(name="現在の名義").count(), 1)
 
+    def test_merging_songs_query_count_does_not_scale_with_song_count(self):
+        # conflicting_authorのSongをauthor.songs.add(*queryset)でまとめて付け替える
+        # ことで、統合対象の曲数が増えてもクエリ数がほぼ変わらないことを確認する。
+        # Editor.get_or_create_from_ip()はIPごとに最初の1回だけINSERTが発生するため、
+        # 計測対象のリクエストより前にウォームアップしてクエリ数の比較に影響しないようにする
+        warmup_author = Author.objects.create(name="ウォームアップ用作者")
+        AuthorAlias.objects.create(name="ウォームアップ用別名", author=warmup_author, alias_type="past")
+        self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[warmup_author.id]),
+            {"name": "ウォームアップ用別名"},
+        )
+
+        author_one_song = Author.objects.create(name="現在の名義A")
+        AuthorAlias.objects.create(name="以前の名義A", author=author_one_song, alias_type="past")
+        conflicting_one_song = Author.objects.create(name="以前の名義A")
+        Song.objects.create(title="曲A").authors.add(conflicting_one_song)
+
+        with CaptureQueriesContext(connection) as ctx_one_song:
+            self.client.post(
+                reverse("subekashi:author_primary_name_set", args=[author_one_song.id]),
+                {"name": "以前の名義A"},
+            )
+
+        author_many_songs = Author.objects.create(name="現在の名義B")
+        AuthorAlias.objects.create(name="以前の名義B", author=author_many_songs, alias_type="past")
+        conflicting_many_songs = Author.objects.create(name="以前の名義B")
+        for i in range(5):
+            Song.objects.create(title=f"曲B{i}").authors.add(conflicting_many_songs)
+
+        with CaptureQueriesContext(connection) as ctx_many_songs:
+            self.client.post(
+                reverse("subekashi:author_primary_name_set", args=[author_many_songs.id]),
+                {"name": "以前の名義B"},
+            )
+
+        self.assertEqual(len(ctx_one_song.captured_queries), len(ctx_many_songs.captured_queries))
+
+
     def test_merge_records_history_with_merged_author_info(self):
         conflicting = Author.objects.create(name="以前の名義")
         conflicting_id = conflicting.id
@@ -1494,6 +1532,19 @@ class AuthorPrimaryNameConfirmViewTest(TestCase):
         )
 
         self.assertContains(response, "統合対象作者の曲")
+
+    def test_song_shared_by_both_authors_is_not_listed_twice(self):
+        # 同じ曲がauthor・conflicting_author双方の共著になっている場合、
+        # 曲タイトルが確認画面に重複して表示されないことを確認する
+        conflicting = Author.objects.create(name="以前の名義")
+        shared_song = Song.objects.create(title="共著の曲")
+        shared_song.authors.add(self.author, conflicting)
+
+        response = self.client.get(
+            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
+        )
+
+        self.assertEqual(response.content.decode().count("共著の曲"), 1)
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
