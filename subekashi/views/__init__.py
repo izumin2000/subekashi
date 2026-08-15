@@ -10,6 +10,7 @@ from subekashi.views.author_alias import (
     AuthorAliasNewView,
     AuthorAliasEditView,
     AuthorAliasDeleteView,
+    AuthorPrimaryNameConfirmView,
     AuthorPrimaryNameSetView,
 )
 from subekashi.views.channel import ChannelView

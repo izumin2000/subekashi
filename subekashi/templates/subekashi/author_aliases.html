@@ -10,7 +10,7 @@
 
     {% if primary_name_candidates|length > 1 %}
         <h1>一番有名な名義<i class="fas fa-info-circle" onclick="showTutorial('primary-name')"></i></h1>
-        <form method="POST" action="{% url 'subekashi:author_primary_name_set' author.id %}" id="primary-name-form">{% csrf_token %}
+        <form method="GET" action="{% url 'subekashi:author_primary_name_confirm' author.id %}" id="primary-name-form">
             {% for candidate in primary_name_candidates %}
                 <div class="checkbox-col">
                     <input type="radio" name="name" value="{{ candidate }}" id="primary-name-{{ forloop.counter }}" {% if candidate == author.name %}checked{% endif %}>

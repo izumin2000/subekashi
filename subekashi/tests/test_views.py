@@ -1146,7 +1146,8 @@ class AuthorPrimaryNameSetViewTest(TestCase):
 
     def test_merge_reuses_conflicting_authors_alias_matching_old_name(self):
         # conflicting_authorが既にold_nameと同名の別名を持っている場合、
-        # マージ後にその別名をそのまま活かし、重複登録（IntegrityError）を起こさない
+        # マージ後にその別名をそのまま活かし、重複登録（IntegrityError）を起こさない。
+        # 他のpast別名と同様に今後も選択候補になるよう、alias_typeは"past"へ揃える
         conflicting = Author.objects.create(name="以前の名義")
         existing_alias = AuthorAlias.objects.create(name="現在の名義", author=conflicting, alias_type="another")
 
@@ -1163,7 +1164,41 @@ class AuthorPrimaryNameSetViewTest(TestCase):
 
         existing_alias.refresh_from_db()
         self.assertEqual(existing_alias.author_id, self.author.id)
+        self.assertEqual(existing_alias.alias_type, "past")
         self.assertEqual(AuthorAlias.objects.filter(name="現在の名義").count(), 1)
+
+    def test_merge_records_history_with_merged_author_info(self):
+        conflicting = Author.objects.create(name="以前の名義")
+        conflicting_id = conflicting.id
+
+        self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+            {"name": "以前の名義"},
+        )
+
+        history = History.get_for_author(self.author).first()
+        self.assertIsNotNone(history)
+        merge_row = next((row for row in history.changes if row[0] == "統合したAuthor"), None)
+        self.assertIsNotNone(merge_row)
+        self.assertIn(f"id={conflicting_id}", merge_row[1])
+
+    def test_merge_does_not_modify_conflicting_authors_own_history(self):
+        # マージ対象Authorの過去のHistoryは改変しない（Author自体はon_delete=SET_NULLで
+        # authorがNULLになるだけで、Historyの内容自体は保持される）
+        conflicting = Author.objects.create(name="以前の名義")
+        other_editor = Editor.objects.create(ip="127.0.0.9")
+        old_history = History.create_for_author(
+            author=conflicting, title="別名を追加", history_type="edit", changes=None, editor=other_editor,
+        )
+
+        self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+            {"name": "以前の名義"},
+        )
+
+        old_history.refresh_from_db()
+        self.assertIsNone(old_history.author)
+        self.assertEqual(old_history.title, "別名を追加")
 
     def test_post_creates_history_with_before_and_after_names(self):
         self.client.post(
@@ -1292,6 +1327,66 @@ class AuthorPrimaryNameSetViewTest(TestCase):
         author = Author.objects.create(name="別名なし作者")
         response = self.client.get(reverse("subekashi:author_aliases", args=[author.id]))
         self.assertNotContains(response, "primary-name-form")
+
+
+@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+class AuthorPrimaryNameConfirmViewTest(TestCase):
+    """AuthorPrimaryNameConfirmView (/authors/<id>/aliases/primary/confirm) のテスト（#1029）
+
+    衝突するAuthorが存在する場合に自動的にマージ・削除されてしまうことへの安全策として、
+    実際の変更前に内容を確認できる画面を経由させるためのビュー。
+    """
+    def setUp(self):
+        self.client = Client()
+        self.author = Author.objects.create(name="現在の名義")
+        self.past_alias = AuthorAlias.objects.create(name="以前の名義", author=self.author, alias_type="past")
+
+    def test_nonexistent_author_returns_404(self):
+        response = self.client.get(
+            reverse("subekashi:author_primary_name_confirm", args=[99999]), {"name": "以前の名義"}
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_invalid_name_redirects_with_error(self):
+        response = self.client.get(
+            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "全く関係ない名前"}
+        )
+        self.assertRedirects(
+            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=primary_error"
+        )
+
+    def test_current_name_redirects_to_alias_list_without_confirmation(self):
+        response = self.client.get(
+            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": self.author.name}
+        )
+        self.assertRedirects(response, reverse("subekashi:author_aliases", args=[self.author.id]))
+
+    def test_shows_confirmation_without_merge_warning_when_no_conflict(self):
+        response = self.client.get(
+            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "現在の名義")
+        self.assertContains(response, "以前の名義")
+        self.assertNotContains(response, "削除されます")
+
+    def test_shows_merge_warning_when_conflicting_author_exists(self):
+        conflicting = Author.objects.create(name="以前の名義")
+        response = self.client.get(
+            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f"id={conflicting.id}")
+        self.assertContains(response, "削除されます")
+
+    def test_confirmation_page_does_not_modify_any_data(self):
+        Author.objects.create(name="以前の名義")
+        self.client.get(
+            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
+        )
+        self.author.refresh_from_db()
+        self.assertEqual(self.author.name, "現在の名義")
+        self.assertEqual(Author.objects.count(), 2)
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)

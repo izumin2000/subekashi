@@ -589,16 +589,31 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | past別名を選択 | `name=`past別名のname | `Author.name`が入れ替わる。選ばれた側のAuthorAlias行は削除され、旧名が新たな`past`別名として再登録される。`?toast=primary`付きでリダイレクト |
 | `alias_type`がpast以外の別名を選択 | `name=`another等の別名のname | 変更されず、`?toast=primary_error`付きでリダイレクト |
 | 別のAuthorと衝突するpast別名を選択 | 別Author（conflicting_author）が同名で実在し、Song・AuthorLink・AuthorAliasを持つ | conflicting_authorのSong・AuthorLink・AuthorAliasが全てこのauthorに付け替えられ、conflicting_authorが削除された上で名義が切り替わる。`?toast=primary`付きでリダイレクト |
-| conflicting_authorが旧名と同名の別名を既に保有 | conflicting_authorのAuthorAlias.name == old_name | マージ後にその別名をそのまま活かし、`old_name`のAuthorAliasが重複登録（IntegrityError）されない |
+| conflicting_authorが旧名と同名の別名を既に保有 | conflicting_authorのAuthorAlias.name == old_name | マージ後にその別名をそのまま活かし、`old_name`のAuthorAliasが重複登録（IntegrityError）されない。他のpast別名と同様に選択候補になるよう`alias_type`が`"past"`へ更新される |
 | 正常なPOST | past別名を選択 | `History.create_for_author()`が呼ばれ、`history_type="edit"`、`changes`に`["一番有名な名義", 旧名, 新名]`が含まれる |
+| 統合ありのHistory | 衝突するconflicting_authorが存在 | `changes`に`["統合したAuthor", "id=..., name=...", "（削除）"]`の行が追加される |
+| conflicting_author自身の過去のHistoryは改変しない | conflicting_authorに紐づく既存のHistoryが存在 | 統合実行後もそのHistoryの`title`等の内容は変更されない（`author`は`on_delete=SET_NULL`によりNULLになる） |
 | Discord通知 | 正常なPOST | `send_discord()`がNEW_DISCORD_URL宛に、変更前後の名前を含む内容で呼ばれる |
 | Discord通知（統合あり） | 衝突するconflicting_authorが存在 | 通知内容に統合したAuthorのidが含まれる |
 | Discord通知失敗 | `send_discord()`が`False`を返す | HTTP 500。`Author.name`は変更されず、選択されたAuthorAlias行も削除されない（通知成功後にDB確定するパターン） |
 | Discord通知待機中の並行削除（TOCTOU、選択した別名） | `send_discord()`の完了待ち中に対象のpast別名が別リクエストで削除されたと仮定 | `AuthorAlias.DoesNotExist`が未処理の例外(500)にならず、他の異常系と同じく`?toast=primary_error`へ穏当にリダイレクトされる。`Author.name`は変更されない |
 | Discord通知待機中の並行削除（TOCTOU、conflicting_author） | `send_discord()`の完了待ち中にconflicting_authorが別リクエストで削除されたと仮定 | マージ部分をスキップし、通常の名義切り替えとして`?toast=primary`付きで成立する |
 | 旧名(old_name)が既存の別名と衝突 | old_nameと同名の`AuthorAlias`をconflicting_author以外の別authorが既に保有（「逆方向」の関係として正常にありうる状態） | `AuthorAlias.name`のグローバルなunique制約により再登録が決定的に失敗するため、Discord通知を送る前に検知して`?toast=primary_error`へリダイレクトする。`send_discord()`は呼ばれない |
-| 別名一覧画面のフォーム表示 | authorが`alias_type="past"`の別名を持つ | フォーム（`#primary-name-form`）と「一番有名な名義」の見出しが表示される |
+| 別名一覧画面のフォーム表示 | authorが`alias_type="past"`の別名を持つ | フォーム（`#primary-name-form`）と「一番有名な名義」の見出しが表示される。フォームの送信先は確認画面（`AuthorPrimaryNameConfirmView`）になっている |
 | 別名一覧画面のフォーム非表示 | authorが`alias_type="past"`の別名を持たない | フォームは表示されない（選択肢が現在の名前1件のみのため） |
+
+#### 7-8-6. `AuthorPrimaryNameConfirmView` (`/authors/<id>/aliases/primary/confirm`)（#1029）
+
+一番有名な名義の変更前に内容を確認させるための画面。選択した名義が既存の別Authorと衝突する場合、そのAuthorが自動的に統合・削除されてしまうことをIPベースの匿名編集者でも実行できてしまうため、実際の変更前にワンクッション挟む安全策として追加した。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 存在しないauthor_id | 無効なauthor_id | HTTP 404 |
+| 無効な名義 | 候補にない`name` | 確認画面を表示せず`?toast=primary_error`付きで別名一覧へリダイレクト |
+| 現在の名前を選択 | `name=author.name` | 確認画面を表示せず別名一覧へリダイレクト（変更不要のため） |
+| 衝突なしの確認画面 | 衝突するAuthorが存在しない | 変更前後の名前が表示され、統合に関する警告文は表示されない |
+| 衝突ありの確認画面 | 衝突するAuthor（conflicting_author）が存在 | 統合されるAuthorのid・名前を含む警告文（「削除されます」）が表示される |
+| データを変更しない | GETリクエストのみ | `Author`・`AuthorAlias`等のデータは一切変更されない |
 
 #### 7-9. `ChannelView` (`/channel/<name>/`)
 

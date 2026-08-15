@@ -273,6 +273,40 @@ class AuthorAliasDeleteView(View):
         return redirect(f"{reverse('subekashi:author_aliases', args=[self.author.id])}?toast=delete")
 
 
+class AuthorPrimaryNameConfirmView(View):
+    """一番有名な名義の変更前の確認画面（#1029）
+
+    選択した名義が既存の別Authorと衝突する場合、そのAuthorが自動的に統合
+    （マージ）され削除される。これはIPアドレスのみで判別する匿名の編集者でも
+    実行できてしまうため、実際に変更する前に内容を確認できるワンクッションを挟む。
+    """
+    def dispatch(self, request, author_id, *args, **kwargs):
+        self.author = Author.get_or_none(author_id)
+        if self.author is None:
+            return render(request, 'subekashi/404.html', status=404)
+        return super().dispatch(request, author_id, *args, **kwargs)
+
+    def get(self, request, author_id):
+        base_url = reverse('subekashi:author_aliases', args=[self.author.id])
+        form = AuthorPrimaryNameForm(request.GET, author=self.author)
+
+        if not form.is_valid():
+            return redirect(f"{base_url}?toast=primary_error")
+
+        new_name = form.cleaned_data['name']
+        if new_name == self.author.name:
+            return redirect(base_url)
+
+        context = {
+            "metatitle": f"{self.author.name}の一番有名な名義の変更を確認",
+            "author": self.author,
+            "old_name": self.author.name,
+            "new_name": new_name,
+            "conflicting_author": Author.objects.filter(name=new_name).exclude(pk=self.author.pk).first(),
+        }
+        return render(request, 'subekashi/author_primary_name_confirm.html', context)
+
+
 class AuthorPrimaryNameSetView(View):
     """一番有名な名義の変更（#1008）
 
@@ -344,7 +378,11 @@ class AuthorPrimaryNameSetView(View):
             with transaction.atomic():
                 # conflicting_authorについてもTOCTOU対策として再取得してから統合する
                 current_conflict = Author.objects.filter(name=new_name).exclude(pk=self.author.pk).first()
+                merged_author_info = None
                 if current_conflict is not None:
+                    # Historyはon_delete=SET_NULLのため付け替えは行わず、統合の事実を
+                    # 別途新しいHistoryとして記録する（過去の履歴内容自体は改変しない）
+                    merged_author_info = f"id={current_conflict.id}, name={current_conflict.name}"
                     for song in current_conflict.songs.all():
                         song.authors.add(self.author)
                     AuthorLink.objects.filter(author=current_conflict).update(author=self.author)
@@ -355,15 +393,25 @@ class AuthorPrimaryNameSetView(View):
                 selected_alias.delete()
                 self.author.name = new_name
                 self.author.save()
-                # 旧名を新たな「以前の名称」として登録し直す（マージにより既に
-                # 同名の別名が存在する場合は、それをそのまま活かし重複登録はしない）
-                if not AuthorAlias.objects.filter(name=old_name).exists():
+                # 旧名を新たな「以前の名称」として登録し直す。マージにより既に
+                # 同名の別名が存在する場合（conflicting_authorがold_nameと同名の別名を
+                # 持っていたケース）は、新規作成せずその別名を再利用しつつ、他の
+                # past別名と同様に選択候補になるようalias_typeを"past"へ揃える
+                existing_old_alias = AuthorAlias.objects.filter(name=old_name).first()
+                if existing_old_alias is None:
                     AuthorAlias.objects.create(name=old_name, author=self.author, alias_type="past")
+                elif existing_old_alias.alias_type != "past":
+                    existing_old_alias.alias_type = "past"
+                    existing_old_alias.save()
+
+                changes = [["種類", "編集前", "編集後"], ["一番有名な名義", old_name, new_name]]
+                if merged_author_info is not None:
+                    changes.append(["統合したAuthor", merged_author_info, "（削除）"])
                 History.create_for_author(
                     author=self.author,
                     title=f"一番有名な名義を『{new_name}』に変更",
                     history_type="edit",
-                    changes=[["種類", "編集前", "編集後"], ["一番有名な名義", old_name, new_name]],
+                    changes=changes,
                     editor=editor,
                 )
         except IntegrityError:

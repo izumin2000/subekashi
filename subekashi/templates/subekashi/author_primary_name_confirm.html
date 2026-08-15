@@ -1,0 +1,26 @@
+{% extends "subekashi/base/base.html" %}
+
+
+{% load static %}
+{% block css %}{% static 'subekashi/css/author_aliases.css'%}{% endblock %}
+
+{% block content %}
+<section>
+    <h1>一番有名な名義の変更を確認</h1>
+    <ul>
+        <li>名義が『{{ old_name }}』から『{{ new_name }}』に変更されます</li>
+        {% if conflicting_author %}
+            <li>既存の作者『{{ conflicting_author.name }}』（id={{ conflicting_author.id }}）がこの作者に統合され、削除されます。この操作は取り消せません</li>
+        {% endif %}
+    </ul>
+    <div class="dummybuttons">
+        <a href="{% url 'subekashi:author_aliases' author.id %}">
+            <div class="dummybutton black-dummybutton"><i class="fas fa-times"></i><p>戻る</p></div>
+        </a>
+        <form action="{% url 'subekashi:author_primary_name_set' author.id %}" method="POST" class="dummybutton-form">{% csrf_token %}
+            <input type="hidden" name="name" value="{{ new_name }}">
+            <button type="submit" class="dummybutton black-dummybutton"><i class="fas fa-check"></i><p>保存する</p></button>
+        </form>
+    </div>
+</section>
+{% endblock %}
