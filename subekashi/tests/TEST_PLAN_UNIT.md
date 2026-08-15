@@ -575,7 +575,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `alias_type`のプレースホルダー (#996) | GETリクエスト | `<option value="" disabled>選択してください</option>`が含まれる（selectedではない） |
 | author_alias_form.jsの読み込み (#996) | GETリクエスト | スクリプトタグが含まれる |
 | 別名一覧画面へ戻るボタン (#1024) | GETリクエスト | 別名一覧画面（`/authors/<id>/aliases/`）へのリンク（`href`属性完全一致で判定。このページ自体のフォームaction`/authors/<id>/aliases/<alias_id>/edit/`との部分一致による誤検出を避けるため）と「戻る」の文言が含まれる |
-| 更新ボタンのスタイル (#1024) | GETリクエスト | 更新ボタンが一番有名な名義の変更確認画面と同様の`dummybutton`形式（`<button type="submit" class="dummybutton black-dummybutton dummybutton-w120">`、幅120px）で「更新する」と表示され、「戻る」ボタンと同じ`.dummybuttons`内に並ぶ |
+| 更新ボタンのスタイル (#1024) | GETリクエスト | 更新ボタンが一番有名な名義の変更確認画面と同様の`dummybutton`形式（`<button type="submit" class="dummybutton black-dummybutton dummybutton-w140">`、幅140px）で「更新する」と表示され、「戻る」ボタンと同じ`.dummybuttons`内に並ぶ |
 
 #### 7-8-4. `AuthorAliasDeleteView` (`/authors/<id>/aliases/<alias_id>/delete`)（#992）
 
@@ -632,7 +632,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 共著曲は重複表示されない | 同じSongがauthor・conflicting_author双方の共著になっている | そのSongタイトルは箇条書きに1回だけ表示される（`distinct()`によるSong単位の重複排除） |
 | 曲が10件以下の場合 | Songが10件以下 | 「全て表示」ボタン（`#primary-name-show-all-songs`）は表示されず、全曲が表示された状態になる |
 | 曲が11件以上の場合 | Songが11件以上 | 11件目以降が`class="primary-name-song-hidden"`で非表示になり、「全て表示」ボタンが表示される |
-| 保存ボタンのラベル・幅 | 確認画面の表示 | ボタンのラベルは「変更する」（「保存する」は含まれない）、`dummybutton-w120`クラス（width: 120px。author_alias_edit.htmlの更新ボタンと共通のクラス）が付与される |
+| 保存ボタンのラベル・幅 | 確認画面の表示 | ボタンのラベルは「変更する」（「保存する」は含まれない）、`dummybutton-w140`クラス（width: 140px。author_alias_edit.htmlの更新ボタンと共通のクラス）が付与される |
 | データを変更しない | GETリクエストのみ | `Author`・`AuthorAlias`等のデータは一切変更されない |
 
 #### 7-9. `ChannelView` (`/channel/<name>/`)

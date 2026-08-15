@@ -31,7 +31,7 @@
         </a>
         <form action="{% url 'subekashi:author_primary_name_set' author.id %}" method="POST" class="dummybutton-form">{% csrf_token %}
             <input type="hidden" name="name" value="{{ new_name }}">
-            <button type="submit" class="dummybutton black-dummybutton dummybutton-w120"><i class="fas fa-check"></i><p>変更する</p></button>
+            <button type="submit" class="dummybutton black-dummybutton dummybutton-w140"><i class="fas fa-check"></i><p>変更する</p></button>
         </form>
     </div>
 </section>

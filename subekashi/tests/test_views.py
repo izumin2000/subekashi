@@ -956,7 +956,7 @@ class AuthorAliasEditViewTest(TestCase):
             reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id])
         )
         self.assertContains(response, "更新する")
-        self.assertContains(response, '<button type="submit" class="dummybutton black-dummybutton dummybutton-w120">')
+        self.assertContains(response, '<button type="submit" class="dummybutton black-dummybutton dummybutton-w140">')
 
     def test_alias_type_has_disabled_placeholder_option(self):
         response = self.client.get(
@@ -1615,7 +1615,7 @@ class AuthorPrimaryNameConfirmViewTest(TestCase):
             reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
         )
         self.assertContains(response, "変更する")
-        self.assertContains(response, "dummybutton-w120")
+        self.assertContains(response, "dummybutton-w140")
         self.assertNotContains(response, "保存する")
 
     def test_show_all_songs_button_hidden_when_ten_or_fewer_songs(self):
