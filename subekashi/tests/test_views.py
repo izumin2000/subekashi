@@ -1239,6 +1239,99 @@ class AuthorPrimaryNameSetViewTest(TestCase):
         self.assertEqual(new_alias.author, self.author)
         self.assertEqual(new_alias.alias_type, "past")
 
+    def test_merge_records_history_on_each_reassigned_song(self):
+        # 統合によりauthorが変わる曲それぞれの編集履歴一覧にも記録する（#1034）。
+        # conflicting_authorはname=new_nameで検索されるため、名前だけを編集前後に
+        # 並べると常に同一文字列になり「何も変わっていないように」見えてしまう。
+        # 実際に変わったのはAuthorの実体（id）であるため、idを含めて記録する
+        conflicting = Author.objects.create(name="以前の名義")
+        conflicting_id = conflicting.id
+        song1 = Song.objects.create(title="統合対象曲1")
+        song1.authors.add(conflicting)
+        song2 = Song.objects.create(title="統合対象曲2")
+        song2.authors.add(conflicting)
+        unrelated_author = Author.objects.create(name="無関係な作者")
+        unrelated_song = Song.objects.create(title="無関係な曲")
+        unrelated_song.authors.add(unrelated_author)
+
+        self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+            {"name": "以前の名義"},
+        )
+
+        for song in (song1, song2):
+            # 将来同様の重複バグが再発した際に検知できるよう、件数も明示的に確認する
+            self.assertEqual(History.get_for_song(song).count(), 1)
+            history = History.get_for_song(song).first()
+            self.assertIsNotNone(history)
+            self.assertEqual(history.history_type, "edit")
+            self.assertEqual(history.title, "一番有名な名義の変更により作者を統合")
+            merge_row = next((row for row in history.changes if row[0] == "作者"), None)
+            self.assertIsNotNone(merge_row)
+            self.assertEqual(merge_row[1], f"id={conflicting_id}, name=以前の名義")
+            self.assertEqual(merge_row[2], f"id={self.author.id}, name=以前の名義")
+
+        # このauthorとは無関係な曲の編集履歴は増えない
+        self.assertEqual(History.get_for_song(unrelated_song).count(), 0)
+
+    def test_rename_without_merge_records_history_on_existing_songs(self):
+        # 衝突するAuthorが存在しない単純な名義変更でも、元々このauthorに
+        # 紐づいている曲の編集履歴一覧に「作者の名義が変更された」旨を記録する（#1034）
+        own_song = Song.objects.create(title="既存の曲")
+        own_song.authors.add(self.author)
+
+        self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+            {"name": "以前の名義"},
+        )
+
+        # 将来同様の重複バグが再発した際に検知できるよう、件数も明示的に確認する
+        self.assertEqual(History.get_for_song(own_song).count(), 1)
+        history = History.get_for_song(own_song).first()
+        self.assertIsNotNone(history)
+        self.assertEqual(history.history_type, "edit")
+        self.assertEqual(history.title, "一番有名な名義の変更により作者を変更")
+        rename_row = next((row for row in history.changes if row[0] == "作者"), None)
+        self.assertIsNotNone(rename_row)
+        self.assertEqual(rename_row[1], "現在の名義")
+        self.assertEqual(rename_row[2], "以前の名義")
+
+    def test_merge_and_rename_histories_both_created_in_same_request(self):
+        # マージ対象の曲（統合側）と、元々このauthorに紐づく別の曲（改名側）が
+        # 同時に存在するケースで、1回のbulk_create()呼び出しで両方に正しく
+        # 履歴が作成されることを確認する（#1034）
+        conflicting = Author.objects.create(name="以前の名義")
+        merged_song = Song.objects.create(title="統合対象曲")
+        merged_song.authors.add(conflicting)
+        own_song = Song.objects.create(title="元々このauthorの曲")
+        own_song.authors.add(self.author)
+
+        self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+            {"name": "以前の名義"},
+        )
+
+        self.assertEqual(History.get_for_song(merged_song).count(), 1)
+        self.assertEqual(History.get_for_song(merged_song).first().title, "一番有名な名義の変更により作者を統合")
+
+        self.assertEqual(History.get_for_song(own_song).count(), 1)
+        self.assertEqual(History.get_for_song(own_song).first().title, "一番有名な名義の変更により作者を変更")
+
+    def test_song_shared_by_both_authors_before_merge_gets_only_one_history(self):
+        # あるSongが統合前から既にself.authorとconflicting_author双方に紐づいて
+        # いた場合、マージ側・名義変更側の両方から履歴が1件ずつ、計2件作成されて
+        # しまわないよう重複を排除する（#1034）
+        conflicting = Author.objects.create(name="以前の名義")
+        shared_song = Song.objects.create(title="共著の曲")
+        shared_song.authors.add(self.author, conflicting)
+
+        self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+            {"name": "以前の名義"},
+        )
+
+        self.assertEqual(History.get_for_song(shared_song).count(), 1)
+
     def test_merge_reuses_conflicting_authors_alias_matching_old_name(self):
         # conflicting_authorが既にold_nameと同名の別名を持っている場合、
         # マージ後にその別名をそのまま活かし、重複登録（IntegrityError）を起こさない。
