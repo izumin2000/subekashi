@@ -1246,8 +1246,9 @@ class AuthorPrimaryNameSetViewTest(TestCase):
         song1.authors.add(conflicting)
         song2 = Song.objects.create(title="統合対象曲2")
         song2.authors.add(conflicting)
+        unrelated_author = Author.objects.create(name="無関係な作者")
         unrelated_song = Song.objects.create(title="無関係な曲")
-        unrelated_song.authors.add(self.author)
+        unrelated_song.authors.add(unrelated_author)
 
         self.client.post(
             reverse("subekashi:author_primary_name_set", args=[self.author.id]),
@@ -1263,8 +1264,27 @@ class AuthorPrimaryNameSetViewTest(TestCase):
             self.assertEqual(merge_row[1], "以前の名義")
             self.assertEqual(merge_row[2], "以前の名義")
 
-        # マージに関与しない曲の編集履歴は増えない
+        # このauthorとは無関係な曲の編集履歴は増えない
         self.assertEqual(History.get_for_song(unrelated_song).count(), 0)
+
+    def test_rename_without_merge_records_history_on_existing_songs(self):
+        # 衝突するAuthorが存在しない単純な名義変更でも、元々このauthorに
+        # 紐づいている曲の編集履歴一覧に「作者の名義が変更された」旨を記録する（#1034）
+        own_song = Song.objects.create(title="既存の曲")
+        own_song.authors.add(self.author)
+
+        self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+            {"name": "以前の名義"},
+        )
+
+        history = History.get_for_song(own_song).first()
+        self.assertIsNotNone(history)
+        self.assertEqual(history.history_type, "edit")
+        rename_row = next((row for row in history.changes if row[0] == "作者"), None)
+        self.assertIsNotNone(rename_row)
+        self.assertEqual(rename_row[1], "現在の名義")
+        self.assertEqual(rename_row[2], "以前の名義")
 
     def test_merge_reuses_conflicting_authors_alias_matching_old_name(self):
         # conflicting_authorが既にold_nameと同名の別名を持っている場合、

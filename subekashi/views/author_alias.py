@@ -391,9 +391,14 @@ class AuthorPrimaryNameSetView(View):
 
         try:
             with transaction.atomic():
+                # 統合（マージ）で新たに加わる曲と区別するため、この時点で既に
+                # このauthorに紐づいている曲を確定させておく（#1034）
+                pre_existing_songs = list(self.author.songs.all())
+
                 # conflicting_authorについてもTOCTOU対策として再取得してから統合する
                 current_conflict = Author.objects.filter(name=new_name).exclude(pk=self.author.pk).first()
                 merged_author_info = None
+                merge_song_histories = []
                 if current_conflict is not None:
                     # Historyはon_delete=SET_NULLのため付け替えは行わず、統合の事実を
                     # 別途新しいHistoryとして記録する（過去の履歴内容自体は改変しない）
@@ -406,21 +411,18 @@ class AuthorPrimaryNameSetView(View):
                     current_conflict.delete()
 
                     # 統合によりauthorが変わった曲それぞれの編集履歴一覧にも記録する（#1034）。
-                    # この時点ではself.author.nameはまだold_nameのままのためnew_nameを使う。
-                    # 曲ごとにHistory.create_for_song()を呼ぶとN+1になるため、
-                    # bulk_create()でまとめて作成する
-                    if merged_songs:
-                        History.objects.bulk_create([
-                            History(
-                                song=song,
-                                title=f"作者『{conflict_name}』の統合により作者が『{new_name}』に変更",
-                                history_type="edit",
-                                create_time=timezone.now(),
-                                changes=[["種類", "編集前", "編集後"], ["作者", conflict_name, new_name]],
-                                editor=editor,
-                            )
-                            for song in merged_songs
-                        ])
+                    # 実際のbulk_create()は、下の名義変更分と合わせて1回にまとめて行う
+                    merge_song_histories = [
+                        History(
+                            song=song,
+                            title=f"作者『{conflict_name}』の統合により作者が『{new_name}』に変更",
+                            history_type="edit",
+                            create_time=timezone.now(),
+                            changes=[["種類", "編集前", "編集後"], ["作者", conflict_name, new_name]],
+                            editor=editor,
+                        )
+                        for song in merged_songs
+                    ]
 
                 # 選択された側のAuthorAlias行は、これからauthor自身の名前になるため削除する
                 selected_alias.delete()
@@ -454,6 +456,24 @@ class AuthorPrimaryNameSetView(View):
                     changes=changes,
                     editor=editor,
                 )
+
+                # 名義変更により作者の表示名が変わった、元々このauthorに紐づいていた
+                # 曲それぞれの編集履歴一覧にも記録する（#1034）。マージで新たに加わった
+                # 曲の分（merge_song_histories）と合わせ、1回のbulk_create()でまとめて作成する
+                rename_song_histories = [
+                    History(
+                        song=song,
+                        title=f"作者の名義が『{old_name}』から『{new_name}』に変更",
+                        history_type="edit",
+                        create_time=timezone.now(),
+                        changes=[["種類", "編集前", "編集後"], ["作者", old_name, new_name]],
+                        editor=editor,
+                    )
+                    for song in pre_existing_songs
+                ]
+                song_histories = merge_song_histories + rename_song_histories
+                if song_histories:
+                    History.objects.bulk_create(song_histories)
         except IntegrityError:
             # ほぼ同時に同名の別名が別途登録された場合等のTOCTOU対策
             return redirect(f"{base_url}?toast=primary_error")
