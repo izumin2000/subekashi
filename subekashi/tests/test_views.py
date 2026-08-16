@@ -9,6 +9,8 @@ from django.db import connection
 from django.test import TestCase, Client, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
+from django.utils import timezone
+from article.models import Article
 from subekashi.forms import AuthorAliasForm
 from subekashi.models import Ad, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song
 
@@ -26,6 +28,45 @@ class TopViewTest(TestCase):
     def test_get_returns_200(self):
         response = self.client.get(reverse("subekashi:top"))
         self.assertEqual(response.status_code, 200)
+
+    def test_news_tag_article_has_no_link(self):
+        """tag=newsかつhandle_as_news=Falseの記事はリンクされずタイトルのみ表示される"""
+        Article.objects.create(
+            article_id="news-1", title="通常ニュース", tag="news",
+            post_time=timezone.now(), is_open=True,
+        )
+        response = self.client.get(reverse("subekashi:top"))
+        self.assertContains(response, "<span>通常ニュース</span>")
+
+    def test_release_tag_article_has_link(self):
+        """tag=releaseの記事はDefaultArticleViewへのリンクでタイトル全体がくくられる"""
+        article = Article.objects.create(
+            article_id="release-1", title="リリース記事", tag="release",
+            post_time=timezone.now(), is_open=True,
+        )
+        response = self.client.get(reverse("subekashi:top"))
+        url = reverse("article:default_article", args=[article.article_id])
+        self.assertContains(response, f"<span><a href='{url}'>リリース記事</a></span>")
+
+    def test_handle_as_news_article_has_link(self):
+        """handle_as_news=Trueの記事はtagに関わらずDefaultArticleViewへのリンクでタイトル全体がくくられる"""
+        article = Article.objects.create(
+            article_id="blog-as-news", title="ニュース扱いブログ", tag="blog",
+            post_time=timezone.now(), is_open=True, handle_as_news=True,
+        )
+        response = self.client.get(reverse("subekashi:top"))
+        url = reverse("article:default_article", args=[article.article_id])
+        self.assertContains(response, f"<span><a href='{url}'>ニュース扱いブログ</a></span>")
+
+    def test_news_tag_with_handle_as_news_has_link(self):
+        """tag=newsでもhandle_as_news=Trueならリンクされる"""
+        article = Article.objects.create(
+            article_id="news-as-news", title="扱い指定ニュース", tag="news",
+            post_time=timezone.now(), is_open=True, handle_as_news=True,
+        )
+        response = self.client.get(reverse("subekashi:top"))
+        url = reverse("article:default_article", args=[article.article_id])
+        self.assertContains(response, f"<span><a href='{url}'>扱い指定ニュース</a></span>")
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)

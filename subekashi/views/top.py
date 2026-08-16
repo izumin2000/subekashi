@@ -31,8 +31,12 @@ class TopView(View):
 
         news_htmls = ""
         for article in article_qs:
-            is_news = article.tag == "news"
-            news_html = article.title if is_news else f"<a href='/articles/{article.article_id}'>{article.title}</a>"
+            should_link = article.handle_as_news or article.tag != "news"
+            if should_link:
+                article_url = reverse('article:default_article', args=[article.article_id])
+                news_html = f"<a href='{article_url}'>{article.title}</a>"
+            else:
+                news_html = article.title
             news_htmls += f"<span>{news_html}</span>"
         context["news_htmls"] = news_htmls
 

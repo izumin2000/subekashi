@@ -396,6 +396,10 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | 正常アクセス | GETリクエスト | HTTP 200 |
 | テンプレートが使用される | GETリクエスト | `subekashi/top.html` がレンダリングされる |
+| ニュース欄のリンク付与（#961） | `tag="news"`, `handle_as_news=False`の記事 | タイトルのみ表示され`<a>`タグは付与されない |
+| ニュース欄のリンク付与（#961） | `tag="release"`の記事 | `DefaultArticleView`へのURLでタイトル全体が`<a>`タグにくくられる |
+| ニュース欄のリンク付与（#961） | `handle_as_news=True`の記事（`tag`は`news`以外） | `DefaultArticleView`へのURLでタイトル全体が`<a>`タグにくくられる |
+| ニュース欄のリンク付与（#961） | `tag="news"`かつ`handle_as_news=True`の記事 | `handle_as_news`が優先され、リンクが付与される |
 
 #### 7-2. `SongsView` (`/songs/`)
 
