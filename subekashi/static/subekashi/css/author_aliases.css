@@ -95,3 +95,9 @@
     list-style: none;
     padding: 0;
 }
+
+/* 候補の名義名は長さが不揃いのため、共通の.checkbox-col labelの固定幅(8em)を
+   一番有名な名義フォームに限り無効化する */
+#primary-name-form .checkbox-col label {
+    width: auto;
+}

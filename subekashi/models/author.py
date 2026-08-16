@@ -156,6 +156,20 @@ class AuthorAlias(models.Model):
     author = models.ForeignKey(Author, on_delete = models.CASCADE, related_name="aliases")
 
     class Meta:
+        # 【MySQL移行時の注意】(#1044)
+        # 下記のUniqueConstraint(condition=...)は「部分インデックス」であり、
+        # SQLite・PostgreSQLではサポートされるが、MySQLではDjangoが未サポートのため
+        # 実際のDB制約としては作成されない（`python manage.py check`でmodels.W036の
+        # system check warningが出るのみで、例外にはならず静かにスキップされる）。
+        # 現状（config/settings.pyのUSE_MYSQL=False）はSQLite上で実際にDBレベルの
+        # 重複防止が効いているが、将来USE_MYSQL=Trueに切り替える際は、切り替え前に
+        # USE_MYSQL=Trueの設定で`python manage.py check`を実行しW036が出ないか
+        # 必ず確認すること。W036が出る場合、MySQL上ではこの制約が効かず
+        # AuthorAliasForm.clean()のアプリ層チェックのみが重複防止の頼りになる
+        # （views/author_alias.pyのTOCTOU対策用IntegrityError catchも同時に
+        # 無効化される点に注意。DBレベルでの完全な保証が必要になった場合は、
+        # MySQLでも通常のユニークインデックスとして効く生成列などの
+        # ワークアラウンドを別途検討すること）
         constraints = [
             # alias_type="group"（合作アカウント等、複数人で運用している名義）以外は
             # 従来通りnameをグローバルにユニークとする（#1044）
