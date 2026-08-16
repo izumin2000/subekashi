@@ -17,6 +17,7 @@ class TopView(View):
             {
                 "url": article["url"] if "url" in article else reverse(article["url_name"], args=article["args"]),
                 "title": article["title"],
+                "external": "url" in article,
             }
             for article in RECOMEND_ARTICLES
         ]
