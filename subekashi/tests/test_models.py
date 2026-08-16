@@ -78,6 +78,27 @@ class AuthorAliasModelTest(TestCase):
         alias = AuthorAlias.objects.create(name="グループ別名", author=self.author, alias_type="group")
         self.assertEqual(alias.alias_type, "group")
 
+    def test_group_name_can_be_shared_by_multiple_authors(self):
+        # alias_type="group"は、複数のauthorが同じ名前で登録できる（#1044）
+        author2 = Author.objects.create(name="別の作者(group)")
+        AuthorAlias.objects.create(name="合作グループ", author=self.author, alias_type="group")
+        alias2 = AuthorAlias.objects.create(name="合作グループ", author=author2, alias_type="group")
+        self.assertEqual(alias2.name, "合作グループ")
+        self.assertEqual(AuthorAlias.objects.filter(name="合作グループ").count(), 2)
+
+    def test_same_author_cannot_create_duplicate_group_name(self):
+        # 同じauthorによる同じグループ名の重複作成はDB制約でも防がれる（#1044）
+        AuthorAlias.objects.create(name="重複グループ", author=self.author, alias_type="group")
+        with self.assertRaises(IntegrityError):
+            AuthorAlias.objects.create(name="重複グループ", author=self.author, alias_type="group")
+
+    def test_non_group_name_still_globally_unique(self):
+        # group以外の種別は、DB制約レベルでも従来通りグローバルにユニークのまま（#1044）
+        author2 = Author.objects.create(name="別の作者(非group)")
+        AuthorAlias.objects.create(name="通常別名", author=self.author, alias_type="spell")
+        with self.assertRaises(IntegrityError):
+            AuthorAlias.objects.create(name="通常別名", author=author2, alias_type="spell")
+
 
 class AuthorEffectiveAliasesTest(TestCase):
     """Author.get_effective_aliases() の双方向解決ロジックのテスト"""
@@ -266,6 +287,22 @@ class AuthorTransitiveAliasesTest(TestCase):
         transitive_alias = TransitiveAlias(name="foo_unknown", alias_type="unknown_type", source=alias)
 
         self.assertEqual(transitive_alias.alias_type_display, "unknown_type")
+
+    def test_group_name_shared_by_multiple_authors_each_see_only_their_own_entry(self):
+        # #1044: 複数のauthorが同じグループ名を登録できるようになったが、groupは
+        # 中継不可（NON_BRIDGING_ALIAS_TYPES）のため、あるauthorの一覧には自分自身が
+        # 登録したグループ名のみが表示され、同じグループ名を登録した他authorの存在は
+        # 見えない（グループメンバー一覧UIは#1044のスコープ外として意図的に対象外）
+        group_x = Author.objects.create(name="group_member_x")
+        group_y = Author.objects.create(name="group_member_y")
+        AuthorAlias.objects.create(name="shared_group", author=group_x, alias_type="group")
+        AuthorAlias.objects.create(name="shared_group", author=group_y, alias_type="group")
+
+        result_x = self.as_tuples(group_x.get_transitive_aliases())
+        self.assertEqual(result_x, {("shared_group", "所属グループ", True, False)})
+
+        result_y = self.as_tuples(group_y.get_transitive_aliases())
+        self.assertEqual(result_y, {("shared_group", "所属グループ", True, False)})
 
     def test_alias_type_display_past_forward_stays_zenno_no_meisho(self):
         # #1019: 正方向（自分がpastの別名を登録している側）は従来通り「以前の名称」のまま

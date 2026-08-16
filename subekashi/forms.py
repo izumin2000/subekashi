@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Q
 from subekashi.models import AuthorAlias
 
 
@@ -55,13 +56,31 @@ class AuthorAliasForm(forms.Form):
         if self.author is not None and name == self.author.name:
             raise forms.ValidationError('作者自身の名前は別名として登録できません。')
 
-        duplicate_qs = AuthorAlias.objects.filter(name=name)
-        if self.editing_alias is not None:
-            duplicate_qs = duplicate_qs.exclude(pk=self.editing_alias.pk)
-        if duplicate_qs.exists():
-            raise forms.ValidationError('その別名は既に登録されています。')
-
         return name
+
+    def clean(self):
+        # alias_typeがname以降に定義されているため、cleaned_data['alias_type']が
+        # 使えるclean()側で重複チェックを行う（#1044）
+        cleaned_data = super().clean()
+        name = cleaned_data.get('name')
+        alias_type = cleaned_data.get('alias_type')
+        if name is None or alias_type is None:
+            return cleaned_data
+
+        conflict_qs = AuthorAlias.objects.filter(name=name)
+        if self.editing_alias is not None:
+            conflict_qs = conflict_qs.exclude(pk=self.editing_alias.pk)
+
+        if alias_type == "group" and self.author is not None:
+            # 同じグループ名を別のauthorが登録することは許可するが、同じauthorによる
+            # 重複登録や、group以外の種別（past/another等）・Authorとの名前衝突は
+            # 従来通りブロックする
+            conflict_qs = conflict_qs.exclude(Q(alias_type="group") & ~Q(author=self.author))
+
+        if conflict_qs.exists():
+            self.add_error('name', 'その別名は既に登録されています。')
+
+        return cleaned_data
 
 
 class AuthorPrimaryNameForm(forms.Form):

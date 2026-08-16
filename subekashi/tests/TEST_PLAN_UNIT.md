@@ -371,6 +371,10 @@ DBアクセス（重複チェック）を伴うため `TestCase` を使用する
 | nameが既存のAuthorAlias.nameと重複 | 既存のname | `is_valid() == False`、`"その別名は既に登録されています。"` |
 | 編集時に自分自身のnameのまま | `editing_alias=alias`, `name=alias.name` | `is_valid() == True`（自分自身は重複チェックから除外） |
 | 編集時に他のaliasのnameと重複 | `editing_alias=alias`, `name=`他のalias.name | `is_valid() == False` |
+| `group`名を別のauthorが登録 (#1044) | 既に別authorが`alias_type="group"`で登録済みの名前を、`alias_type="group"`で別authorが登録 | `is_valid() == True`（groupは複数authorでの共有を許可する） |
+| 同一authorによる`group`名の重複 (#1044) | 自分自身が既に`alias_type="group"`で登録済みの名前を、再度`alias_type="group"`で登録 | `is_valid() == False`、`"その別名は既に登録されています。"` |
+| `group`名がgroup以外の別名と衝突 (#1044) | `alias_type`がgroup以外の既存別名と同じ名前を`alias_type="group"`で登録 | `is_valid() == False`（groupの緩和はgroup同士に限定） |
+| group以外の種別が既存の`group`名と衝突 (#1044) | 既存の`alias_type="group"`の別名と同じ名前を、group以外の種別で登録 | `is_valid() == False`（groupの緩和はgroup同士に限定） |
 
 #### 6-5. `AuthorPrimaryNameForm`（#1008）
 
@@ -792,9 +796,12 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | テストケース | 操作 | 期待結果 |
 | --- | --- | --- |
 | エイリアスの作成 | `AuthorAlias.objects.create(name="別名", author=author)` | DBに保存される |
-| `name` のユニーク制約 | 同じ名前で2件作成 | `IntegrityError` が発生 |
+| `name` のユニーク制約 | 同じ名前で2件作成（`alias_type`はgroup以外） | `IntegrityError` が発生 |
 | `alias_type` のデフォルト値 | `alias_type` 未指定で作成 | `alias_type == "another"` |
 | `group`種別 (#1004) | `alias_type="group"`で作成 | DBに保存される。`CHOICES`に`"group"`が含まれる |
+| `group`名の複数author登録 (#1044) | 同じ名前・`alias_type="group"`で別々のauthorが作成 | 両方ともDBに保存される（`(name, alias_type="group")`の組み合わせは複数authorで共有できる） |
+| `group`名の同一author重複はブロック (#1044) | 同じauthorが同じ`group`名で2件作成 | `IntegrityError` が発生（`(name, author)`単位のユニーク制約） |
+| `group`以外は引き続きグローバルにユニーク (#1044) | 同じ名前・`alias_type="spell"`等で別々のauthorが作成 | 2件目で`IntegrityError` が発生（従来通り） |
 
 #### 11-3-1. `Author.get_effective_aliases()`（双方向解決ロジック）
 
@@ -833,6 +840,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `TransitiveAlias.alias_type_display`（`past`・逆方向、#1019） | `alias_type="past"`, `is_reverse=True` | `"その後の名称"` を返す |
 | `TransitiveAlias.author_id`（逆方向・正方向かつ中継可能、#1023） | AのA.get_transitive_aliases()でC/D（past、正方向）、CのC.get_transitive_aliases()でA（past、逆方向）等 | 追加クエリなしに解決済みのauthor idが設定される |
 | `TransitiveAlias.author_id`（正方向かつ中継不可、#1023） | AのA.get_transitive_aliases()でB（another）・E（group）、CのC.get_transitive_aliases()でB・E（間接的） | `None`のまま（get_transitive_aliases()内では解決されない） |
+| 同じグループ名を複数authorが共有する場合 (#1044) | 別々のauthor（x, y）が同じ名前・`alias_type="group"`の別名をそれぞれ登録 | `x.get_transitive_aliases()`にはxが登録した1件のみが表示され、`y.get_transitive_aliases()`にはyが登録した1件のみが表示される。`group`は中継不可のため、xの一覧からyの存在は辿れない（グループメンバー一覧UIは#1044のスコープ外として意図的に非対応） |
 
 #### 11-4. `SongLink` モデル
 

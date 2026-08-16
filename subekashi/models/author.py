@@ -151,9 +151,27 @@ class AuthorAlias(models.Model):
         ("group", "グループ"),
     )
 
-    name = models.CharField(unique=True, max_length = 500)
+    name = models.CharField(max_length = 500)
     alias_type = models.CharField(default = "another", choices=CHOICES, max_length=10)
     author = models.ForeignKey(Author, on_delete = models.CASCADE, related_name="aliases")
+
+    class Meta:
+        constraints = [
+            # alias_type="group"（合作アカウント等、複数人で運用している名義）以外は
+            # 従来通りnameをグローバルにユニークとする（#1044）
+            models.UniqueConstraint(
+                fields=["name"],
+                condition=~models.Q(alias_type="group"),
+                name="unique_authoralias_name_except_group",
+            ),
+            # alias_type="group"は複数のauthorが同じグループ名を登録できるようにするため、
+            # (name, author)単位でのみユニークとする（同じauthorによる重複登録のみ防ぐ）
+            models.UniqueConstraint(
+                fields=["name", "author"],
+                condition=models.Q(alias_type="group"),
+                name="unique_authoralias_name_author_for_group",
+            ),
+        ]
 
     def __str__(self):
         return self.name
