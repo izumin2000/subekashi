@@ -602,7 +602,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 別のAuthorと衝突するpast別名を選択 | 別Author（conflicting_author）が同名で実在し、Song・AuthorLink・AuthorAliasを持つ | conflicting_authorのSong・AuthorLink・AuthorAliasが全てこのauthorに付け替えられ、conflicting_authorが削除された上で名義が切り替わる。`?toast=primary`付きでリダイレクト |
 | 統合対象の曲数が多い場合のクエリ数 | conflicting_authorが複数のSongを持つ | `author.songs.add(*queryset)`による一括付け替えのため、曲数を増やしてもクエリ数がほぼ変わらない（曲ごとにadd()するN+1にならない） |
 | 統合による曲の編集履歴記録（#1034） | conflicting_authorが複数のSongを持つ状態でマージ | 統合により付け替わった各Songの編集履歴一覧（`History.get_for_song(song)`）に、`history_type="edit"`・`changes`に`["作者", 旧author名, 新名義]`を含むレコードが作成される。`History.objects.bulk_create()`でまとめて作成するため曲数分のクエリにはならない。このauthorと無関係なSongの編集履歴は増えない |
-| 単純な名義変更（マージなし）でも曲の編集履歴を記録（#1034） | 衝突するAuthorが存在しない状態で名義変更 | 元々このauthorに紐づいていた各Songの編集履歴一覧にも、`changes`に`["作者", old_name, new_name]`を含む`history_type="edit"`のレコードが作成される（名義変更により表示上の作者名が変わるため） |
+| 単純な名義変更（マージなし）でも曲の編集履歴を記録（#1034） | 衝突するAuthorが存在しない状態で名義変更 | 元々このauthorに紐づいていた各Songの編集履歴一覧にも、`title="一番有名な名義の変更により作者を変更"`・`changes`に`["作者", old_name, new_name]`を含む`history_type="edit"`のレコードが作成される（名義変更により表示上の作者名が変わるため） |
 | conflicting_authorが旧名と同名の別名を既に保有 | conflicting_authorのAuthorAlias.name == old_name | マージ後にその別名をそのまま活かし、`old_name`のAuthorAliasが重複登録（IntegrityError）されない。他のpast別名と同様に選択候補になるよう`alias_type`が`"past"`へ更新される |
 | 正常なPOST | past別名を選択 | `History.create_for_author()`が呼ばれ、`history_type="edit"`、`changes`に`["一番有名な名義", 旧名, 新名]`が含まれる |
 | 統合ありのHistory | 衝突するconflicting_authorが存在 | `changes`に`["統合したAuthor", "id=..., name=...", "（削除）"]`の行が追加される |

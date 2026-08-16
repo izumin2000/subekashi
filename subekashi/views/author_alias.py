@@ -463,7 +463,7 @@ class AuthorPrimaryNameSetView(View):
                 rename_song_histories = [
                     History(
                         song=song,
-                        title=f"作者の名義が『{old_name}』から『{new_name}』に変更",
+                        title="一番有名な名義の変更により作者を変更",
                         history_type="edit",
                         create_time=timezone.now(),
                         changes=[["種類", "編集前", "編集後"], ["作者", old_name, new_name]],

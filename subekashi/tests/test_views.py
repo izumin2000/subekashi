@@ -1281,6 +1281,7 @@ class AuthorPrimaryNameSetViewTest(TestCase):
         history = History.get_for_song(own_song).first()
         self.assertIsNotNone(history)
         self.assertEqual(history.history_type, "edit")
+        self.assertEqual(history.title, "一番有名な名義の変更により作者を変更")
         rename_row = next((row for row in history.changes if row[0] == "作者"), None)
         self.assertIsNotNone(rename_row)
         self.assertEqual(rename_row[1], "現在の名義")
