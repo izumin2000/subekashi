@@ -35,6 +35,7 @@ function openDeleteDetails() {
     const details = document.getElementById('delete-details');
     if (details) {
       details.open = true;
+      details.scrollIntoView();
     }
   }
 }
