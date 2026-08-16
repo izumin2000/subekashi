@@ -16,7 +16,7 @@ class Command(BaseCommand) :
         COMMANDS = [
             "git pull origin main",
             "pip install -r requirements.txt",
-            "python manage.py collectstatic --noinput",
+            "python manage.py collectstatic --noinput --clear",
             "python manage.py appversion"
         ]
         if not options['no_migrate']:
