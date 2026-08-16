@@ -76,7 +76,7 @@
     <h1>おすすめ記事</h1>
     <div id="top-article">
         {% for article in RECOMEND_ARTICLES %}
-            <a href="{{ article.url }}">{{ article.title }}</a>
+            <a href="{{ article.url }}"{% if article.external %} target="_blank" rel="noopener"{% endif %}>{{ article.title }}</a>
         {% endfor %}
     </div>
 
