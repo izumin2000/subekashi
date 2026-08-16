@@ -2,6 +2,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.shortcuts import render, redirect
 from django.urls import reverse
+from django.utils import timezone
 from django.views import View
 from config.local_settings import NEW_DISCORD_URL
 from subekashi.models import Author, AuthorAlias, AuthorLink, Editor, History, Song
@@ -396,11 +397,30 @@ class AuthorPrimaryNameSetView(View):
                 if current_conflict is not None:
                     # Historyはon_delete=SET_NULLのため付け替えは行わず、統合の事実を
                     # 別途新しいHistoryとして記録する（過去の履歴内容自体は改変しない）
-                    merged_author_info = f"id={current_conflict.id}, name={current_conflict.name}"
-                    self.author.songs.add(*current_conflict.songs.all())
+                    conflict_name = current_conflict.name
+                    merged_author_info = f"id={current_conflict.id}, name={conflict_name}"
+                    merged_songs = list(current_conflict.songs.all())
+                    self.author.songs.add(*merged_songs)
                     AuthorLink.objects.filter(author=current_conflict).update(author=self.author)
                     AuthorAlias.objects.filter(author=current_conflict).update(author=self.author)
                     current_conflict.delete()
+
+                    # 統合によりauthorが変わった曲それぞれの編集履歴一覧にも記録する（#1034）。
+                    # この時点ではself.author.nameはまだold_nameのままのためnew_nameを使う。
+                    # 曲ごとにHistory.create_for_song()を呼ぶとN+1になるため、
+                    # bulk_create()でまとめて作成する
+                    if merged_songs:
+                        History.objects.bulk_create([
+                            History(
+                                song=song,
+                                title=f"作者『{conflict_name}』の統合により作者が『{new_name}』に変更",
+                                history_type="edit",
+                                create_time=timezone.now(),
+                                changes=[["種類", "編集前", "編集後"], ["作者", conflict_name, new_name]],
+                                editor=editor,
+                            )
+                            for song in merged_songs
+                        ])
 
                 # 選択された側のAuthorAlias行は、これからauthor自身の名前になるため削除する
                 selected_alias.delete()

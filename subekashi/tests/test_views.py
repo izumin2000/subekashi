@@ -1239,6 +1239,33 @@ class AuthorPrimaryNameSetViewTest(TestCase):
         self.assertEqual(new_alias.author, self.author)
         self.assertEqual(new_alias.alias_type, "past")
 
+    def test_merge_records_history_on_each_reassigned_song(self):
+        # 統合によりauthorが変わる曲それぞれの編集履歴一覧にも記録する（#1034）
+        conflicting = Author.objects.create(name="以前の名義")
+        song1 = Song.objects.create(title="統合対象曲1")
+        song1.authors.add(conflicting)
+        song2 = Song.objects.create(title="統合対象曲2")
+        song2.authors.add(conflicting)
+        unrelated_song = Song.objects.create(title="無関係な曲")
+        unrelated_song.authors.add(self.author)
+
+        self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+            {"name": "以前の名義"},
+        )
+
+        for song in (song1, song2):
+            history = History.get_for_song(song).first()
+            self.assertIsNotNone(history)
+            self.assertEqual(history.history_type, "edit")
+            merge_row = next((row for row in history.changes if row[0] == "作者"), None)
+            self.assertIsNotNone(merge_row)
+            self.assertEqual(merge_row[1], "以前の名義")
+            self.assertEqual(merge_row[2], "以前の名義")
+
+        # マージに関与しない曲の編集履歴は増えない
+        self.assertEqual(History.get_for_song(unrelated_song).count(), 0)
+
     def test_merge_reuses_conflicting_authors_alias_matching_old_name(self):
         # conflicting_authorが既にold_nameと同名の別名を持っている場合、
         # マージ後にその別名をそのまま活かし、重複登録（IntegrityError）を起こさない。
