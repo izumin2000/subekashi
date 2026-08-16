@@ -1260,6 +1260,8 @@ class AuthorPrimaryNameSetViewTest(TestCase):
         )
 
         for song in (song1, song2):
+            # 将来同様の重複バグが再発した際に検知できるよう、件数も明示的に確認する
+            self.assertEqual(History.get_for_song(song).count(), 1)
             history = History.get_for_song(song).first()
             self.assertIsNotNone(history)
             self.assertEqual(history.history_type, "edit")
@@ -1283,6 +1285,8 @@ class AuthorPrimaryNameSetViewTest(TestCase):
             {"name": "以前の名義"},
         )
 
+        # 将来同様の重複バグが再発した際に検知できるよう、件数も明示的に確認する
+        self.assertEqual(History.get_for_song(own_song).count(), 1)
         history = History.get_for_song(own_song).first()
         self.assertIsNotNone(history)
         self.assertEqual(history.history_type, "edit")
@@ -1291,6 +1295,27 @@ class AuthorPrimaryNameSetViewTest(TestCase):
         self.assertIsNotNone(rename_row)
         self.assertEqual(rename_row[1], "現在の名義")
         self.assertEqual(rename_row[2], "以前の名義")
+
+    def test_merge_and_rename_histories_both_created_in_same_request(self):
+        # マージ対象の曲（統合側）と、元々このauthorに紐づく別の曲（改名側）が
+        # 同時に存在するケースで、1回のbulk_create()呼び出しで両方に正しく
+        # 履歴が作成されることを確認する（#1034）
+        conflicting = Author.objects.create(name="以前の名義")
+        merged_song = Song.objects.create(title="統合対象曲")
+        merged_song.authors.add(conflicting)
+        own_song = Song.objects.create(title="元々このauthorの曲")
+        own_song.authors.add(self.author)
+
+        self.client.post(
+            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
+            {"name": "以前の名義"},
+        )
+
+        self.assertEqual(History.get_for_song(merged_song).count(), 1)
+        self.assertEqual(History.get_for_song(merged_song).first().title, "一番有名な名義の変更により作者を統合")
+
+        self.assertEqual(History.get_for_song(own_song).count(), 1)
+        self.assertEqual(History.get_for_song(own_song).first().title, "一番有名な名義の変更により作者を変更")
 
     def test_song_shared_by_both_authors_before_merge_gets_only_one_history(self):
         # あるSongが統合前から既にself.authorとconflicting_author双方に紐づいて

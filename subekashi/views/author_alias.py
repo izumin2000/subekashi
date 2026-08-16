@@ -392,8 +392,10 @@ class AuthorPrimaryNameSetView(View):
         try:
             with transaction.atomic():
                 # 統合（マージ）で新たに加わる曲と区別するため、この時点で既に
-                # このauthorに紐づいている曲を確定させておく（#1034）
-                pre_existing_songs = list(self.author.songs.all())
+                # このauthorに紐づいている曲を確定させておく（#1034）。
+                # History(song=song, ...)へのFK設定とidの突き合わせにしか使わないため、
+                # 曲数が多いauthorでの不要なカラム転送を避けてidのみ取得する
+                pre_existing_songs = list(self.author.songs.only("id"))
 
                 # conflicting_authorについてもTOCTOU対策として再取得してから統合する
                 current_conflict = Author.objects.filter(name=new_name).exclude(pk=self.author.pk).first()
@@ -405,7 +407,9 @@ class AuthorPrimaryNameSetView(View):
                     # 別途新しいHistoryとして記録する（過去の履歴内容自体は改変しない）
                     conflict_name = current_conflict.name
                     merged_author_info = f"id={current_conflict.id}, name={conflict_name}"
-                    merged_songs = list(current_conflict.songs.all())
+                    # add()・History(song=song, ...)・id突き合わせのいずれもidしか
+                    # 使わないため、こちらも同様にidのみ取得する
+                    merged_songs = list(current_conflict.songs.only("id"))
                     merged_song_ids = {song.id for song in merged_songs}
                     self.author.songs.add(*merged_songs)
                     AuthorLink.objects.filter(author=current_conflict).update(author=self.author)
@@ -470,7 +474,11 @@ class AuthorPrimaryNameSetView(View):
                 # 曲それぞれの編集履歴一覧にも記録する（#1034）。マージで新たに加わった
                 # 曲の分（merge_song_histories）と合わせ、1回のbulk_create()でまとめて作成する。
                 # あるSongが統合前から既にself.authorとconflicting_author双方に
-                # 紐づいていた場合、merged_song_ids側にも含まれ二重に記録されてしまうため除外する
+                # 紐づいていた場合、merged_song_ids側にも含まれ二重に記録されてしまうため除外する。
+                # （このケースは実際にはself.author側の紐付け自体は変わらず、共著者としての
+                # conflicting_authorが消えるだけだが、他の統合曲と同じ「作者を統合」の文言で
+                # 記録する仕様としている。曲ごとに異なる文言を出し分けるほどの実益がないための
+                # 意図的な割り切りであり、共著曲を見落としているわけではない）
                 rename_song_histories = [
                     History(
                         song=song,
