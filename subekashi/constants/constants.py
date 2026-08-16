@@ -186,8 +186,7 @@ RECOMEND_ARTICLES = [
         "title": "すべかしDiscordサーバーのご案内",
     },
     {
-        "url_name": "article:anniversary6",
-        "args": [],
+        "url": "https://izumin2000.github.io/anniversary6/",
         "title": "6周年記念グラフィックアート",
     },
 ]

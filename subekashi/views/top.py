@@ -15,7 +15,7 @@ class TopView(View):
     def get(self, request):
         recomend_articles = [
             {
-                "url": reverse(article["url_name"], args=article["args"]),
+                "url": article["url"] if "url" in article else reverse(article["url_name"], args=article["args"]),
                 "title": article["title"],
             }
             for article in RECOMEND_ARTICLES
