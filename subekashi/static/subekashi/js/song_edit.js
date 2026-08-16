@@ -1,5 +1,13 @@
 var imitateIdList = [], songGuesserController, song_id;
 
+// URLの表記揺れを正規化する（重複判定・#url反映で共通利用）
+function normalizeSongUrl(url) {
+    url = url.replace("https://www.google.com/url?q=", "");
+    url = url.replace("https://www.", "https://");
+    url = url.replace("https://twitter.com", "https://x.com");
+    return formatYouTubeURL(url);
+}
+
 // 初期化
 const lyricsEle = document.getElementById("lyrics")
 async function init() {
@@ -9,7 +17,10 @@ async function init() {
     if (allowDupUrl) {
         const urlInputEle = document.getElementById('url');
         const existingUrls = urlInputEle.value ? urlInputEle.value.split(',').filter(Boolean) : [];
-        if (!existingUrls.includes(allowDupUrl)) {
+        // 既存URLも同じ正規化を通してから比較し、表記揺れによる誤った重複追加を防ぐ
+        const normalizedAllowDupUrl = normalizeSongUrl(allowDupUrl);
+        const alreadyExists = existingUrls.some(u => normalizeSongUrl(u) === normalizedAllowDupUrl);
+        if (!alreadyExists) {
             existingUrls.push(allowDupUrl);
         }
         urlInputEle.value = existingUrls.join(',');
@@ -281,10 +292,7 @@ async function checkUrlForm(prefetchedLinks = undefined) {
         }
 
         // URLのフォーマット
-        url = url.replace("https://www.google.com/url?q=", "");
-        url = url.replace("https://www.", "https://");
-        url = url.replace("https://twitter.com", "https://x.com");
-        url = formatYouTubeURL(url);
+        url = normalizeSongUrl(url);
 
         // イテレーションごとに固有のfromキーを使い、ループ間のスロットル干渉を防ぐ
         let links;
