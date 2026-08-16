@@ -6,7 +6,14 @@ async function init() {
     openDeleteDetails();
     song_id = window.location.pathname.split("/")[2];
     const allowDupUrl = new URLSearchParams(window.location.search).get('allow_dup_url');
-    if (allowDupUrl) document.getElementById('url').value = allowDupUrl;
+    if (allowDupUrl) {
+        const urlInputEle = document.getElementById('url');
+        const existingUrls = urlInputEle.value ? urlInputEle.value.split(',').filter(Boolean) : [];
+        if (!existingUrls.includes(allowDupUrl)) {
+            existingUrls.push(allowDupUrl);
+        }
+        urlInputEle.value = existingUrls.join(',');
+    }
 
     const params = new URLSearchParams({ song_id });
     if (titleEle.value) params.append('title', titleEle.value);
