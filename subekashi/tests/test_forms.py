@@ -213,6 +213,49 @@ class AuthorAliasFormTest(TestCase):
         self.assertFalse(form.is_valid())
         self.assertIn("その別名は既に登録されています。", form.errors["name"])
 
+    def test_group_name_can_be_registered_by_another_author(self):
+        # alias_type="group"は、既に別のauthorが同じ名前で登録していても許可する（#1044）
+        other_author = Author.objects.create(name="グループ他メンバー")
+        AuthorAlias.objects.create(name="合作グループA", author=other_author, alias_type="group")
+
+        form = AuthorAliasForm(
+            data=self._make_data(name="合作グループA", alias_type="group"), author=self.author,
+        )
+        self.assertTrue(form.is_valid())
+
+    def test_same_author_cannot_register_same_group_name_twice(self):
+        # 同じauthorによる同じグループ名の重複登録は従来通りブロックする（#1044）
+        AuthorAlias.objects.create(name="合作グループB", author=self.author, alias_type="group")
+
+        form = AuthorAliasForm(
+            data=self._make_data(name="合作グループB", alias_type="group"), author=self.author,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("その別名は既に登録されています。", form.errors["name"])
+
+    def test_group_name_conflicting_with_non_group_alias_is_blocked(self):
+        # グループ名がgroup以外の既存別名と衝突する場合は従来通りブロックする（#1044）
+        other_author = Author.objects.create(name="非グループ登録者")
+        AuthorAlias.objects.create(name="表記揺れ名", author=other_author, alias_type="spell")
+
+        form = AuthorAliasForm(
+            data=self._make_data(name="表記揺れ名", alias_type="group"), author=self.author,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("その別名は既に登録されています。", form.errors["name"])
+
+    def test_non_group_name_conflicting_with_existing_group_alias_is_blocked(self):
+        # 既存のgroup別名と同名で、group以外の種別を新規登録しようとする場合は
+        # 従来通りブロックする（groupの緩和はgroup同士の組み合わせに限定する、#1044）
+        other_author = Author.objects.create(name="グループ登録者")
+        AuthorAlias.objects.create(name="合作グループC", author=other_author, alias_type="group")
+
+        form = AuthorAliasForm(
+            data=self._make_data(name="合作グループC", alias_type="past"), author=self.author,
+        )
+        self.assertFalse(form.is_valid())
+        self.assertIn("その別名は既に登録されています。", form.errors["name"])
+
 
 class AuthorPrimaryNameFormTest(TestCase):
     """AuthorPrimaryNameForm のテスト（#1008）"""
