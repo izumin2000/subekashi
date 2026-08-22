@@ -1,5 +1,6 @@
 from config.settings import (
     DATABASES,
+    ERROR_DISCORD_URL,
     GOOGLE_DRIVE_CLIENT_ID,
     GOOGLE_DRIVE_CLIENT_SECRET,
     GOOGLE_DRIVE_REFRESH_TOKEN,
@@ -7,6 +8,7 @@ from config.settings import (
 )
 from django.core.management.base import BaseCommand
 from datetime import datetime
+from subekashi.lib.discord import send_discord
 from subekashi.lib.google_drive import upload_backup, delete_old_backups
 import os
 import shutil
@@ -37,4 +39,6 @@ class Command(BaseCommand):
                 upload_backup(backup_path, file_name)
             delete_old_backups(self.BACKUP_FOLDER_NUMS)
         except Exception as e:
-            self.stderr.write(self.style.ERROR(f"Google Driveへのバックアップ中にエラーが発生しました：{str(e)}"))
+            message = f"Google Driveへのバックアップ中にエラーが発生しました：{str(e)}"
+            self.stderr.write(self.style.ERROR(message))
+            send_discord(ERROR_DISCORD_URL, message)

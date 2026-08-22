@@ -244,12 +244,13 @@ class BackupCommandTest(TestCase):
     @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_REFRESH_TOKEN", "refresh-token")
     @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_SECRET", "client-secret")
     @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_ID", "client-id")
+    @patch("subekashi.management.commands.backup.send_discord")
     @patch("subekashi.management.commands.backup.delete_old_backups")
     @patch("subekashi.management.commands.backup.upload_backup")
     @patch("subekashi.management.commands.backup.shutil.copy2")
     @patch("subekashi.management.commands.backup.datetime")
     def test_reports_error_and_skips_pruning_when_upload_fails(
-        self, mock_datetime, mock_copy2, mock_upload, mock_delete, *_
+        self, mock_datetime, mock_copy2, mock_upload, mock_delete, mock_send_discord, *_
     ):
         mock_datetime.now.return_value = datetime(2026, 1, 1, 12, 0, 0)
         mock_upload.side_effect = Exception("アップロード失敗")
@@ -258,3 +259,4 @@ class BackupCommandTest(TestCase):
 
         self.assertIn("Google Driveへのバックアップ中にエラーが発生しました", err)
         mock_delete.assert_not_called()
+        mock_send_discord.assert_called_once()
