@@ -4,7 +4,9 @@
 delete: is_removedをfalseのままにする--keep-linksオプションを検証する。
 youtube: DBロック対策で処理方式を変更した後の挙動（id指定・全件処理・リンク無しスキップ・動画削除時の扱い）を検証する。
 detect_primary_name_duplicates: 一番有名な名義の重複候補検出レポート（#1008）を検証する。
+backup: バックアップ先をサーバーストレージからGoogle Driveに変更した挙動（#1050）を検証する。
 """
+from datetime import datetime
 from io import StringIO
 from unittest.mock import patch
 
@@ -182,3 +184,77 @@ class DetectPrimaryNameDuplicatesCommandTest(TestCase):
         self.assertTrue(Author.objects.filter(pk=duplicate.pk).exists())
         self.assertTrue(AuthorAlias.objects.filter(name="以前の名義6").exists())
         self.assertTrue(Song.objects.filter(pk=song.pk, authors=duplicate).exists())
+
+
+class BackupCommandTest(TestCase):
+    """backup コマンドのテスト（バックアップ先をGoogle Driveに変更、#1050）"""
+
+    def _run(self):
+        out = StringIO()
+        err = StringIO()
+        call_command("backup", stdout=out, stderr=err)
+        return out.getvalue(), err.getvalue()
+
+    @patch("subekashi.management.commands.backup.delete_old_backups")
+    @patch("subekashi.management.commands.backup.upload_backup")
+    @patch("subekashi.management.commands.backup.datetime")
+    def test_skips_when_not_scheduled_hour(self, mock_datetime, mock_upload, mock_delete):
+        # 6時間おき（0, 6, 12, 18時）以外は何もしない
+        mock_datetime.now.return_value = datetime(2026, 1, 1, 1, 0, 0)
+
+        self._run()
+
+        mock_upload.assert_not_called()
+        mock_delete.assert_not_called()
+
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_ID", "")
+    @patch("subekashi.management.commands.backup.delete_old_backups")
+    @patch("subekashi.management.commands.backup.upload_backup")
+    @patch("subekashi.management.commands.backup.datetime")
+    def test_skips_when_drive_credentials_missing(self, mock_datetime, mock_upload, mock_delete):
+        mock_datetime.now.return_value = datetime(2026, 1, 1, 0, 0, 0)
+
+        _, err = self._run()
+
+        self.assertIn("Google Driveの認証情報が設定されていません", err)
+        mock_upload.assert_not_called()
+        mock_delete.assert_not_called()
+
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_FOLDER_ID", "folder-id")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_REFRESH_TOKEN", "refresh-token")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_SECRET", "client-secret")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_ID", "client-id")
+    @patch("subekashi.management.commands.backup.delete_old_backups")
+    @patch("subekashi.management.commands.backup.upload_backup")
+    @patch("subekashi.management.commands.backup.shutil.copy2")
+    @patch("subekashi.management.commands.backup.datetime")
+    def test_uploads_to_drive_and_prunes_old_backups_on_scheduled_hour(
+        self, mock_datetime, mock_copy2, mock_upload, mock_delete, *_
+    ):
+        mock_datetime.now.return_value = datetime(2026, 1, 1, 6, 0, 0)
+
+        self._run()
+
+        mock_copy2.assert_called_once()
+        mock_upload.assert_called_once()
+        self.assertEqual(mock_upload.call_args.args[1], "2026-01-01-06.sqlite3")
+        mock_delete.assert_called_once_with(50)
+
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_FOLDER_ID", "folder-id")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_REFRESH_TOKEN", "refresh-token")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_SECRET", "client-secret")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_ID", "client-id")
+    @patch("subekashi.management.commands.backup.delete_old_backups")
+    @patch("subekashi.management.commands.backup.upload_backup")
+    @patch("subekashi.management.commands.backup.shutil.copy2")
+    @patch("subekashi.management.commands.backup.datetime")
+    def test_reports_error_and_skips_pruning_when_upload_fails(
+        self, mock_datetime, mock_copy2, mock_upload, mock_delete, *_
+    ):
+        mock_datetime.now.return_value = datetime(2026, 1, 1, 12, 0, 0)
+        mock_upload.side_effect = Exception("アップロード失敗")
+
+        _, err = self._run()
+
+        self.assertIn("Google Driveへのバックアップ中にエラーが発生しました", err)
+        mock_delete.assert_not_called()
