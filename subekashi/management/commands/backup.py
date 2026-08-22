@@ -1,5 +1,5 @@
-from config.settings import (
-    DATABASES,
+from config.settings import DATABASES
+from config.local_settings import (
     ERROR_DISCORD_URL,
     GOOGLE_DRIVE_CLIENT_ID,
     GOOGLE_DRIVE_CLIENT_SECRET,
@@ -37,8 +37,15 @@ class Command(BaseCommand):
                 backup_path = os.path.join(tmp_dir, file_name)
                 shutil.copy2(db_path, backup_path)
                 upload_backup(backup_path, file_name)
-            delete_old_backups(self.BACKUP_FOLDER_NUMS)
         except Exception as e:
             message = f"Google Driveへのバックアップ中にエラーが発生しました：{str(e)}"
+            self.stderr.write(self.style.ERROR(message))
+            send_discord(ERROR_DISCORD_URL, message)
+            return
+
+        try:
+            delete_old_backups(self.BACKUP_FOLDER_NUMS)
+        except Exception as e:
+            message = f"Google Driveの古いバックアップの削除中にエラーが発生しました：{str(e)}"
             self.stderr.write(self.style.ERROR(message))
             send_discord(ERROR_DISCORD_URL, message)

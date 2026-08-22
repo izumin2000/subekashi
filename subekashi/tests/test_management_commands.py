@@ -260,3 +260,26 @@ class BackupCommandTest(TestCase):
         self.assertIn("Google Driveへのバックアップ中にエラーが発生しました", err)
         mock_delete.assert_not_called()
         mock_send_discord.assert_called_once()
+
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_FOLDER_ID", "folder-id")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_REFRESH_TOKEN", "refresh-token")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_SECRET", "client-secret")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_ID", "client-id")
+    @patch("subekashi.management.commands.backup.send_discord")
+    @patch("subekashi.management.commands.backup.delete_old_backups")
+    @patch("subekashi.management.commands.backup.upload_backup")
+    @patch("subekashi.management.commands.backup.shutil.copy2")
+    @patch("subekashi.management.commands.backup.datetime")
+    def test_reports_cleanup_error_separately_when_upload_succeeds_but_pruning_fails(
+        self, mock_datetime, mock_copy2, mock_upload, mock_delete, mock_send_discord, *_
+    ):
+        # アップロード自体は成功しているので、削除失敗と混同しないメッセージになること
+        mock_datetime.now.return_value = datetime(2026, 1, 1, 18, 0, 0)
+        mock_delete.side_effect = Exception("削除失敗")
+
+        _, err = self._run()
+
+        mock_upload.assert_called_once()
+        self.assertIn("Google Driveの古いバックアップの削除中にエラーが発生しました", err)
+        self.assertNotIn("Google Driveへのバックアップ中にエラーが発生しました", err)
+        mock_send_discord.assert_called_once()

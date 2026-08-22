@@ -85,3 +85,24 @@ class DeleteOldBackupsTest(SimpleTestCase):
         self.assertEqual(delete_call.call_count, 4)
         deleted_ids = {call.kwargs["fileId"] for call in delete_call.call_args_list}
         self.assertEqual(deleted_ids, {f"id-file-{i}" for i in range(4)})
+
+    @patch("subekashi.lib.google_drive.get_drive_service")
+    def test_combines_results_across_multiple_pages(self, mock_get_service):
+        # デフォルトpageSize(100件)を超えるファイル数でも、全ページを合算して保持件数を判定すること
+        page1 = {
+            "nextPageToken": "token-2",
+            "files": [{"id": f"id-file-{i}", "name": f"file-{i:03d}"} for i in range(100)],
+        }
+        page2 = {
+            "files": [{"id": f"id-file-{i}", "name": f"file-{i:03d}"} for i in range(100, 105)],
+        }
+        mock_service = MagicMock()
+        mock_service.files.return_value.list.return_value.execute.side_effect = [page1, page2]
+        mock_get_service.return_value = mock_service
+
+        delete_old_backups(50)
+
+        delete_call = mock_service.files.return_value.delete
+        self.assertEqual(delete_call.call_count, 55)
+        deleted_ids = {call.kwargs["fileId"] for call in delete_call.call_args_list}
+        self.assertEqual(deleted_ids, {f"id-file-{i}" for i in range(55)})

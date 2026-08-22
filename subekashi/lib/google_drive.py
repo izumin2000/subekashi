@@ -1,7 +1,7 @@
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
-from config.settings import (
+from config.local_settings import (
     GOOGLE_DRIVE_CLIENT_ID,
     GOOGLE_DRIVE_CLIENT_SECRET,
     GOOGLE_DRIVE_REFRESH_TOKEN,
@@ -36,8 +36,17 @@ def upload_backup(file_path, file_name):
 def delete_old_backups(keep_nums):
     service = get_drive_service()
     query = f"'{GOOGLE_DRIVE_FOLDER_ID}' in parents and trashed = false"
-    response = service.files().list(q=query, orderBy="name", fields="files(id, name)").execute()
-    files = response.get("files", [])
+
+    files = []
+    page_token = None
+    while True:
+        response = service.files().list(
+            q=query, orderBy="name", fields="nextPageToken, files(id, name)", pageToken=page_token
+        ).execute()
+        files.extend(response.get("files", []))
+        page_token = response.get("nextPageToken")
+        if not page_token:
+            break
 
     for file in files[:len(files) - keep_nums]:
         service.files().delete(fileId=file["id"]).execute()
