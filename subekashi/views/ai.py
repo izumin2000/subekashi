@@ -7,7 +7,7 @@ class AiView(View):
     def get(self, request):
         context = {
             "metatitle": "歌詞生成",
-            "show_janome_notice": request.COOKIES.get("show_janome_notice", "True") == "True",
+            "show_janome_notice": request.COOKIES.get("show_janome_notice", "on") == "on",
             "bestInsL": Ai.get_high_scored_model(),
         }
         return render(request, "subekashi/ai.html", context)

@@ -13,7 +13,9 @@
 
     {% if show_janome_notice %}
         <div class="notice-wrapper" id="janome-notice">
-            <i id="janome-notice-close" class="fas fa-times" onclick="closeJanomeNotice()" aria-label="閉じる"></i>
+            <i id="janome-notice-close" class="fas fa-times" role="button" tabindex="0" aria-label="閉じる"
+               onclick="closeJanomeNotice()"
+               onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); closeJanomeNotice(); }"></i>
             <p>全て蛇の目の所為です。は歌詞の学習を行わない旧世代歌詞作成モデルです</p>
             <a href="{% url 'article:default_article' 'howToJanome' %}">詳しく</a>
         </div>
@@ -29,7 +31,7 @@
 {% block js %}
 <script>
     function closeJanomeNotice(){
-        setCookie("show_janome_notice", "False");
+        setCookie("show_janome_notice", "off");
         document.getElementById("janome-notice").remove();
     }
 </script>

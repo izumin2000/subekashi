@@ -2037,10 +2037,10 @@ class AiViewTest(TestCase):
 
     def test_show_janome_notice_false_when_cookie_set(self):
         # base.js の setCookie() は JSON.stringify() で保存するため、実際に送信される
-        # Cookie値は show_janome_notice="False" のようにクォート付きになる。
+        # Cookie値は show_janome_notice="off" のようにクォート付きになる。
         # Djangoの parse_cookie() はRFC 6265のquoted cookie-valueとしてクォートを
-        # 自動的に取り除くため、request.COOKIES側ではクォートなしの"False"として
+        # 自動的に取り除くため、request.COOKIES側ではクォートなしの"off"として
         # 受け取れることをここで確認する。
-        response = self.client.get(reverse("subekashi:ai"), HTTP_COOKIE='show_janome_notice="False"')
+        response = self.client.get(reverse("subekashi:ai"), HTTP_COOKIE='show_janome_notice="off"')
         self.assertFalse(response.context["show_janome_notice"])
         self.assertNotContains(response, "id=\"janome-notice\"")
