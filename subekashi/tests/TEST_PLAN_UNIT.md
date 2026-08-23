@@ -693,6 +693,14 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `is_questionable=True` の曲 | GETリクエスト | カードHTMLに `song-card-lyrics` が含まれない |
 | `is_questionable=False` の曲 | GETリクエスト | カードHTMLに `song-card-lyrics` が含まれる |
 
+#### 7-12. `AiView` (`/ai/`)
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 正常アクセス | GETリクエスト | HTTP 200 |
+| `show_janome_notice` Cookie未指定（デフォルトTrue） | Cookie未指定 | 旧世代モデルの案内（`#janome-notice`）が表示される |
+| `show_janome_notice=False` Cookie指定 | `show_janome_notice=False` | `#janome-notice`が表示されない |
+
 ---
 
 ### 8. REST API ビュー

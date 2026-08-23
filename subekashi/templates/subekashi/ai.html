@@ -6,17 +6,33 @@
 
 {% block content %}
 <section id="ai-section">
-    <h1>正常に狂うのです。</h1>
+    <h1>全て蛇の目の所為です。<a href="{% url 'article:default_article' 'howToJanome' %}"><i class="fas fa-info-circle"></i></a></h1>
     <form action="{% url 'subekashi:ai_result' %}">{% csrf_token %}
         <input type="submit" value="生成">
-        <p>総学習量: {{ WORD_COUNT }}文字({{ SONG_COUNT }}曲)</p>
-        <p>最終更新: {{ GENE_DATE }}</p>
-        <p>対象: 全すべあな界隈曲</p>
     </form>
+
+    {% if show_janome_notice %}
+        <div class="notice-wrapper" id="janome-notice">
+            <i id="janome-notice-close" class="fas fa-times" role="button" tabindex="0" aria-label="閉じる"
+               onclick="closeJanomeNotice()"
+               onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); closeJanomeNotice(); }"></i>
+            <p>全て蛇の目の所為です。は歌詞の学習を行わない旧世代歌詞作成モデルです</p>
+            <a href="{% url 'article:default_article' 'howToJanome' %}">詳しく</a>
+        </div>
+    {% endif %}
 
     <h1>最高評価の歌詞</h1>
     {% for bestIns in bestInsL  %}
         <p class="lyric">{{ bestIns.lyrics }}</p>
     {% endfor %}
 </section>
+{% endblock %}
+
+{% block js %}
+<script>
+    function closeJanomeNotice(){
+        setCookie("show_janome_notice", "off");
+        document.getElementById("janome-notice").remove();
+    }
+</script>
 {% endblock %}
