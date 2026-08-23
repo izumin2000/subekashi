@@ -78,6 +78,12 @@ ALLOW_MEDIAS = [
         "icon": "<i class='fab fa-soundcloud'></i>",
     },
     {
+        "id": "vimesis",
+        "name": "Vimesis",
+        "regex": r"(^|.)vimesis.com",
+        "icon": "<i class='fas fa-address-book'></i>",
+    },
+    {
         "id": "scratch",
         "name": "Scratch",
         "regex": r"scratch.mit.edu",
