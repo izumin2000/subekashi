@@ -76,6 +76,7 @@
 | テストケース | 入力 | 期待結果 |
 | --- | --- | --- |
 | Bluesky URL | `https://bsky.app/profile/example.bsky.social` | `result["id"] == "bluesky"` |
+| Vimesis URL | `https://main.vimesis.com/channel/@subekashi` | `result["id"] == "vimesis"` |
 
 ---
 
