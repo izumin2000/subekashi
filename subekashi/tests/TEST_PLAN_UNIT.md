@@ -77,8 +77,16 @@
 | --- | --- | --- |
 | Bluesky URL | `https://bsky.app/profile/example.bsky.social` | `result["id"] == "bluesky"` |
 | Vimesis URL | `https://main.vimesis.com/channel/@subekashi` | `result["id"] == "vimesis"` |
+| note URL | `https://note.com/articles/abc123` | `result["id"] == "note"` |
 | ドメイン内の`.`が未エスケープだと誤マッチする文字列（Vimesis） | `https://vimesisXcom.example.net/` | `False`（Issue #1056） |
 | ドメイン内の`.`が未エスケープだと誤マッチする文字列（YouTube） | `https://youtuXbe.example.net/` | `False`（Issue #1056） |
+| ドメイン内の`.`が未エスケープだと誤マッチする文字列（X） | `https://xXcom.example.net/` | `False`（Issue #1056） |
+| ドメイン内の`.`が未エスケープだと誤マッチする文字列（ニコニコ動画） | `https://nicovideoXjp.example.net/` | `False`（Issue #1056） |
+| ドメイン内の`.`が未エスケープだと誤マッチする文字列（SoundCloud） | `https://soundcloudXcom.example.net/` | `False`（Issue #1056） |
+| ドメイン内の`.`が未エスケープだと誤マッチする文字列（Bandcamp） | `https://bandcampXcom.example.net/` | `False`（Issue #1056） |
+| ドメイン内の`.`が未エスケープだと誤マッチする文字列（ビリビリ動画） | `https://bilibiliXcom.example.net/` | `False`（Issue #1056） |
+| 末尾側の境界チェックがないとなりすませるドメイン（Vimesis） | `https://vimesis.com.attacker.example/` | `False`（Issue #1056 レビュー指摘） |
+| 先頭側の境界チェックがないとなりすませるドメイン（note） | `https://xnote.comevil.net/` | `False`（Issue #1056 レビュー指摘） |
 
 ---
 
@@ -252,6 +260,8 @@
 | `other`（URL未登録） | SongLink なし かつ `is_deleted=True`（非公開/削除済み） | 結果に含まれない |
 | 個別メディアタイプ（例: `youtube`） | 該当URLのSongLinkが紐付いている曲 | 結果に含まれる。URLなしの曲は含まれない |
 | 複数指定（例: `youtube,other`） | URLありの曲・URLなしの曲がそれぞれ存在 | 両方とも結果に含まれる |
+| `vimesis`（DB REGEXP経由の境界チェック確認） | `https://main.vimesis.com/channel/@subekashi` のSongLinkが紐付いている曲 | 結果に含まれる。YouTube曲は含まれない（Issue #1056） |
+| `vimesis`（なりすましドメインの除外確認） | `https://vimesis.com.attacker.example/` のSongLinkが紐付いている曲 | 結果に含まれない（Issue #1056 レビュー指摘） |
 
 #### 3-4. `make_is_lack_annotation()`
 

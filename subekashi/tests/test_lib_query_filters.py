@@ -539,6 +539,27 @@ class FilterByMediatypesTest(TestCase):
         self.assertIn(self.song_with_youtube_link, qs)
         self.assertIn(self.song_without_link, qs)
 
+    def test_vimesis_matches_song_with_vimesis_link(self):
+        # Issue #1056: ドメイン境界チェックを含む正規表現がDBのREGEXP経由でも
+        # 正しく機能することを確認する
+        song_with_vimesis_link = Song.objects.create(title="Vimesis曲")
+        link = SongLink.objects.create(url="https://main.vimesis.com/channel/@subekashi")
+        link.songs.add(song_with_vimesis_link)
+
+        qs = Song.objects.filter(filter_by_mediatypes("vimesis")).distinct()
+        self.assertIn(song_with_vimesis_link, qs)
+        self.assertNotIn(self.song_with_youtube_link, qs)
+
+    def test_vimesis_does_not_match_spoofed_domain(self):
+        # vimesis.com.attacker.example のようなドメインを持つリンクが
+        # vimesisメディアとして誤って絞り込まれないことを確認する
+        spoofed_song = Song.objects.create(title="なりすましドメイン曲")
+        link = SongLink.objects.create(url="https://vimesis.com.attacker.example/")
+        link.songs.add(spoofed_song)
+
+        qs = Song.objects.filter(filter_by_mediatypes("vimesis")).distinct()
+        self.assertNotIn(spoofed_song, qs)
+
 
 class MakeIsLackAnnotationTest(TestCase):
     """make_is_lack_annotation() のテスト"""
