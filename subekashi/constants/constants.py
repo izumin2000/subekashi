@@ -52,23 +52,6 @@ ASIDE_PAGES = [
 
 DEFALT_ICON = "<i class='fas fa-globe'></i>"
 
-# 【MySQL移行時の注意】(#1056)
-# ここで定義する各regexはlib/url.py（Pythonのre.search）だけでなく、
-# lib/query_filters.pyのfilter_by_mediatypes()からもDjangoの__regexルックアップ
-# 経由でDBのREGEXP関数に渡される。MySQL移行後は内部的にREGEXP_LIKE()（MySQL 8+）
-# またはREGEXP BINARY（MySQL 5.x/MariaDB）で評価されるが、
-# - \.、[./]、(^|...)、$ などは POSIX ERE/PCRE系のいずれのエンジンでも共通の構文であり、
-#   MySQL移行後もそのまま同じ意味で解釈される
-# - Djangoのregexルックアップ（iregexではない）はSQLite/MySQLいずれでも大文字小文字を
-#   区別する（MySQL側はcollationに関わらずREGEXP_LIKEに'c'オプションまたはBINARYが
-#   付与されるため）ので、SQLiteとMySQLで判定結果がずれることはない
-# - 値は常にバインドパラメータとして渡されるため、MySQL文字列リテラルの
-#   バックスラッシュエスケープ規則（未知のエスケープ列を黙って無視し\.が.になる等）の
-#   影響は受けない
-# という理由から現状の書き方のままMySQLでも同様に動作する想定。
-# ただし移行前には USE_MYSQL=True の設定で
-# `python manage.py test subekashi.tests.test_lib_query_filters subekashi.tests.test_lib_url`
-# を実際のMySQL環境に対して実行し、想定通り動作することを必ず確認すること。
 ALLOW_MEDIAS = [
     {
         "id": "youtube",
