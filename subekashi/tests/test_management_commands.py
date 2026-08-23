@@ -5,15 +5,17 @@ delete: is_removedをfalseのままにする--keep-linksオプションを検証
 youtube: DBロック対策で処理方式を変更した後の挙動（id指定・全件処理・リンク無しスキップ・動画削除時の扱い）を検証する。
 detect_primary_name_duplicates: 一番有名な名義の重複候補検出レポート（#1008）を検証する。
 backup: バックアップ先をサーバーストレージからGoogle Driveに変更した挙動（#1050）を検証する。
+word: word.jsonから模倣単語候補をWordに一括登録する処理（#1053）を検証する。
 """
+import json
 from datetime import datetime
 from io import StringIO
-from unittest.mock import patch
+from unittest.mock import mock_open, patch
 
 from django.core.management import call_command
 from django.test import TestCase
 
-from subekashi.models import Author, AuthorAlias, Song, SongLink
+from subekashi.models import Author, AuthorAlias, Song, SongLink, Word
 
 
 class DeleteCommandTest(TestCase):
@@ -283,3 +285,58 @@ class BackupCommandTest(TestCase):
         self.assertIn("Google Driveの古いバックアップの削除中にエラーが発生しました", err)
         self.assertNotIn("Google Driveへのバックアップ中にエラーが発生しました", err)
         mock_send_discord.assert_called_once()
+
+
+class WordCommandTest(TestCase):
+    """word コマンドのテスト"""
+
+    def test_imports_candidates_from_json(self):
+        data = json.dumps([
+            {"word": "走る", "hinshi": "動詞", "candidates": ["駆ける", "疾走する"]},
+        ])
+        with patch("builtins.open", mock_open(read_data=data)):
+            call_command("word")
+
+        self.assertEqual(Word.objects.count(), 2)
+        self.assertTrue(Word.objects.filter(word="走る", hinshi="動詞", candidate="駆ける").exists())
+        self.assertTrue(Word.objects.filter(word="走る", hinshi="動詞", candidate="疾走する").exists())
+
+    def test_multiple_entries_are_all_imported(self):
+        data = json.dumps([
+            {"word": "走る", "hinshi": "動詞", "candidates": ["駆ける"]},
+            {"word": "犬", "hinshi": "名詞", "candidates": ["猫", "狼"]},
+        ])
+        with patch("builtins.open", mock_open(read_data=data)):
+            call_command("word")
+
+        self.assertEqual(Word.objects.count(), 3)
+
+    def test_entry_without_word_or_hinshi_is_skipped(self):
+        data = json.dumps([
+            {"word": "", "hinshi": "動詞", "candidates": ["駆ける"]},
+            {"word": "走る", "hinshi": "", "candidates": ["駆ける"]},
+        ])
+        with patch("builtins.open", mock_open(read_data=data)):
+            call_command("word")
+
+        self.assertEqual(Word.objects.count(), 0)
+
+    def test_missing_file_does_not_raise(self):
+        with patch("builtins.open", side_effect=OSError):
+            call_command("word")
+
+        self.assertEqual(Word.objects.count(), 0)
+
+    def test_invalid_json_does_not_raise(self):
+        with patch("builtins.open", mock_open(read_data="not a json")):
+            call_command("word")
+
+        self.assertEqual(Word.objects.count(), 0)
+
+    def test_reimport_does_not_create_duplicates(self):
+        data = json.dumps([{"word": "走る", "hinshi": "動詞", "candidates": ["駆ける"]}])
+        with patch("builtins.open", mock_open(read_data=data)):
+            call_command("word")
+            call_command("word")
+
+        self.assertEqual(Word.objects.count(), 1)

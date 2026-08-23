@@ -12,7 +12,7 @@ from django.urls import reverse
 from django.utils import timezone
 from article.models import Article
 from subekashi.forms import AuthorAliasForm
-from subekashi.models import Ad, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song
+from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song, Word
 
 
 STATIC_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
@@ -2044,3 +2044,60 @@ class AiViewTest(TestCase):
         response = self.client.get(reverse("subekashi:ai"), HTTP_COOKIE='show_janome_notice="off"')
         self.assertFalse(response.context["show_janome_notice"])
         self.assertNotContains(response, "id=\"janome-notice\"")
+
+    def test_best_lyric_word_with_candidate_is_rendered_as_clickable_token(self):
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+        Ai.objects.create(lyrics="私は走る", score=5, genetype="model")
+
+        response = self.client.get(reverse("subekashi:ai"))
+
+        self.assertContains(response, 'class="word-token"')
+        self.assertContains(response, 'data-word="走る"')
+
+    def test_best_lyric_word_token_is_marked_as_not_persisted(self):
+        # 最高評価の歌詞での単語入れ替えはDBに保存しない仕様のため、
+        # data-persist="false" が付与されていることを確認する
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+        Ai.objects.create(lyrics="私は走る", score=5, genetype="model")
+
+        response = self.client.get(reverse("subekashi:ai"))
+
+        self.assertContains(response, 'data-persist="false"')
+
+    def test_best_lyric_word_without_candidate_is_not_clickable(self):
+        Ai.objects.create(lyrics="私は走る", score=5, genetype="model")
+
+        response = self.client.get(reverse("subekashi:ai"))
+
+        self.assertNotContains(response, 'class="word-token"')
+
+
+@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+class AiResultViewTest(TestCase):
+    """AiResultView (/ai/result/) のテスト"""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_get_returns_200(self):
+        response = self.client.get(reverse("subekashi:ai_result"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_lyric_word_with_candidate_is_rendered_as_clickable_token(self):
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+        Ai.objects.create(lyrics="私は走る", score=0, genetype="model")
+
+        response = self.client.get(reverse("subekashi:ai_result"))
+
+        self.assertContains(response, 'class="word-token"')
+
+    def test_lyric_word_token_is_marked_as_persisted(self):
+        # 生成結果の単語入れ替えは引き続きDBに保存する仕様のため、
+        # data-persist="true" が付与されていることを確認する
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+        Ai.objects.create(lyrics="私は走る", score=0, genetype="model")
+
+        response = self.client.get(reverse("subekashi:ai_result"))
+
+        self.assertContains(response, 'data-persist="true"')
+        self.assertContains(response, 'data-word="走る"')

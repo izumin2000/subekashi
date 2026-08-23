@@ -700,6 +700,17 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 正常アクセス | GETリクエスト | HTTP 200 |
 | `show_janome_notice` Cookie未指定（デフォルトTrue） | Cookie未指定 | 旧世代モデルの案内（`#janome-notice`）が表示される |
 | `show_janome_notice=False` Cookie指定 | `show_janome_notice=False` | `#janome-notice`が表示されない |
+| Word候補がある単語（#1053） | 該当する`Word`が存在 | `class="word-token"` としてクリック可能に表示される |
+| Word候補が無い単語（#1053） | 該当する`Word`が存在しない | `class="word-token"` が表示されない |
+| 単語入れ替えは非保存（#1053） | 最高評価の歌詞のトークン | `data-persist="false"` が付与される（クリックしてもDBに保存しない） |
+
+#### 7-13. `AiResultView` (`/ai/result/`)（#1053）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 正常アクセス | GETリクエスト | HTTP 200 |
+| Word候補がある単語 | 該当する`Word`が存在 | `class="word-token"` としてクリック可能に表示される |
+| 単語入れ替えは保存対象 | 生成結果のトークン | `data-persist="true"` が付与される（クリックするとDBに保存する） |
 
 ---
 
@@ -722,6 +733,26 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | テストケース | 入力 | 期待結果 |
 | --- | --- | --- |
 | 正常アクセス | GETリクエスト | HTTP 200、`is_open` フィールドを含むJSON |
+
+#### 8-3. `WordCandidatesView` (`/api/word/candidates/`)（#1053）
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| word・hinshi未指定 | パラメータなし | HTTP 400 |
+| 候補が存在する場合 | `?word=走る&hinshi=動詞` | HTTP 200、該当する候補一覧 |
+| 候補が存在しない場合 | 未登録の単語 | HTTP 200、空配列 |
+| 候補が10件超える場合 | 候補15件登録済み | 最大10件に絞られる |
+
+#### 8-4. `AiWordSwapView` (`/api/ai/swap/`)（#1053）
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 正常な入れ替え | 実在するbase_id・token_index・候補 | HTTP 201、新規`Ai`レコード（score=0）が作成される |
+| 元レコードへの影響 | 正常な入れ替え後 | 元の`Ai`レコードの`lyrics`は変更されない |
+| 存在しないbase_id | 未登録のID | HTTP 404 |
+| 範囲外のtoken_index | 歌詞のトークン数を超える値 | HTTP 400 |
+| 置き換え対象外の品詞 | 助詞など`REPLACEABLE_HINSHIS`外のトークン | HTTP 400 |
+| Wordに存在しない候補 | 実在しない候補語 | HTTP 400、`Ai`レコードは作成されない |
 
 ---
 
@@ -888,6 +919,17 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | authorの削除 | `create_for_author()`後に`author.delete()` | `history.author`が`None`になる（`on_delete=SET_NULL`、Historyレコード自体は残る） |
 | `get_for_author(author)` | 複数authorのHistoryが存在する状態で対象authorを指定 | 対象authorのHistoryのみが`-create_time`順で返される |
 
+#### 11-7. `Word` モデル（#1053）
+
+| テストケース | 操作 | 期待結果 |
+| --- | --- | --- |
+| `__str__` | `Word(word="走る", hinshi="動詞", candidate="駆ける")` | `"走る(動詞) -> 駆ける"` を返す |
+| `(word, hinshi, candidate)` のユニーク制約 | 同じ組み合わせで2件作成 | `IntegrityError` が発生 |
+| `get_candidates(word, hinshi)` | 一致する候補が複数件登録済み | 候補一覧を返す |
+| `get_candidates(word, hinshi)`（品詞不一致） | 別の品詞で登録された候補のみ存在 | 空リストを返す |
+| `get_candidates(word, hinshi)`（自分自身を除外） | 候補に自分自身と同じ表記の単語が含まれる | 自分自身は結果から除外される |
+| `get_candidates(word, hinshi, limit=10)` | 候補が11件以上登録済み | 最大10件に絞られる |
+
 ---
 
 ### 12. `article` アプリ
@@ -1001,6 +1043,17 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | 実行対象の時刻・認証情報あり | `now.hour`が6の倍数（0, 6, 12, 18時） | DBファイルがコピーされ、日時ファイル名でDriveにアップロードされた後、古いバックアップの削除（50件保持）が行われる |
 | アップロード失敗時 | `upload_backup`が例外を送出 | エラーメッセージを出力し、古いバックアップの削除は行われない。`ERROR_DISCORD_URL`宛にDiscord通知を送る |
 
+#### 14-5. `word` コマンド（`word.json`から模倣単語候補を`Word`に一括登録、#1053）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 正常なJSON | `[{"word":..., "hinshi":..., "candidates":[...]}]` | 各候補ごとに`Word`レコードが作成される |
+| 複数エントリ | 複数の単語エントリを含むJSON | 全エントリ分の候補がまとめて登録される |
+| word/hinshiが空のエントリ | `word`または`hinshi`が空文字 | そのエントリはスキップされる |
+| ファイルが存在しない場合 | `word.json`が無い | 例外を投げず、`CONST_ERROR`を出力（`python manage.py const`実行を促す） |
+| 不正なJSON | パース不可能な内容 | 例外を投げず、`CONST_ERROR`を出力 |
+| 再実行時の重複防止 | 同じ内容で2回実行 | `ignore_conflicts=True`によりレコードは重複作成されない |
+
 ---
 
 ### 15. `templatetags/song_card.py` — テンプレートタグ
@@ -1069,6 +1122,31 @@ Google Drive APIはモック化する。
 | 保持件数ちょうど | ファイル数 == `keep_nums` | 削除されない |
 | 保持件数を1件超過 | ファイル数 == `keep_nums + 1` | 最も古い1件のみ削除される |
 | 保持件数を複数件超過 | ファイル数 > `keep_nums + 1` | 超過分がすべて（古い順に）削除される |
+
+---
+
+### 18. `lib/lyric_tokenizer.py` — 歌詞の単語分割（#1053）
+
+**テストファイル**: `tests/test_lib_lyric_tokenizer.py`
+
+#### 18-1. `tokenize_lyrics_with_index(lyrics)`
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 単語分割 | `"私は走る"` | `surface`が`["私", "は", "走る"]`に分割される |
+| 連番index付与 | `"私は走る"` | 各トークンに`0, 1, 2`の`index`が付与される |
+| 品詞の大分類 | `"私は走る"` | `私`→`名詞`, `は`→`助詞`, `走る`→`動詞` |
+
+#### 18-2. `tokenize_ai_instances(ai_queryset)`
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 候補が存在する単語 | 該当する`Word`が登録済み | `is_replaceable=True` |
+| 候補が存在しない単語 | `Word`未登録 | `is_replaceable=False` |
+| 置き換え対象外の品詞 | 助詞など`REPLACEABLE_HINSHIS`外 | 同表記の`Word`が存在しても`is_replaceable=False` |
+| 品詞をまたいだ候補の誤判定防止 | 別品詞で同じ表記の`Word`のみ存在 | `is_replaceable=False`（品詞の組み合わせで厳密一致） |
+| 結果の`id`・`lyrics` | `Ai`インスタンスを渡す | 各要素に`id`・`lyrics`が含まれる |
+| 空のqueryset | `Ai.objects.none()` | 空リストを返す |
 
 ---
 

@@ -23,12 +23,13 @@
 
     <h1>最高評価の歌詞</h1>
     {% for bestIns in bestInsL  %}
-        <p class="lyric">{{ bestIns.lyrics }}</p>
+        {% include "subekashi/components/lyric_tokens.html" with item=bestIns persist=False %}
     {% endfor %}
 </section>
 {% endblock %}
 
 {% block js %}
+<script defer src="{% static 'subekashi/js/word_swap.js' %}"></script>
 <script>
     function closeJanomeNotice(){
         setCookie("show_janome_notice", "off");

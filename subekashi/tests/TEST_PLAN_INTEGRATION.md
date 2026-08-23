@@ -506,6 +506,35 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 
 ---
 
+### 12. 生成歌詞の単語クリック入れ替えフロー（#1053）
+
+**テストファイル**: `tests/test_views.py`（`AiViewTest` / `AiResultViewTest`）、`tests/test_api.py`（`WordCandidatesViewTest` / `AiWordSwapViewTest`）
+
+`ai/`・`ai/result/`の表示（歌詞の単語分割・クリック可否の判定） → 候補取得API → 入れ替えPOSTによる新規`Ai`作成までの一連の流れを、HTTPリクエスト単位で連携させて検証する。ブラウザ側のクリック操作・ポップアップ表示（`word_swap.js`）自体はDjangoテストの対象外のため、実サーバー起動 + `curl`による手動確認で代替した（本PR作成時に実施済み）。
+
+#### 12-1. 表示から候補取得、入れ替え保存までの一連の流れ
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `Ai(lyrics="私は走る", score=5, genetype="model")`、`Word(word="走る", hinshi="動詞", candidate="駆ける")`が存在する |
+| 操作1 | `GET /ai/` |
+| 検証1 | レスポンスに`走る`が`class="word-token"`（クリック可能）として含まれる |
+| 操作2 | `GET /api/word/candidates/?word=走る&hinshi=動詞` |
+| 検証2 | `{"candidates": ["駆ける"]}` が返る |
+| 操作3 | `POST /api/ai/swap/` に `{"base_id": <ai.id>, "token_index": 2, "candidate": "駆ける"}` |
+| 検証3 | HTTP 201、`lyrics="私は駆ける"`, `score=0` の新規`Ai`レコードが作成される |
+| 検証4 | 元の`Ai(lyrics="私は走る")`は変更されない |
+
+#### 12-2. 不正な入れ替えリクエストの拒否
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | 12-1と同じ |
+| 操作 | `POST /api/ai/swap/` に `Word`に存在しない`candidate`を指定 |
+| 検証 | HTTP 400、`Ai`レコードは作成されない（`Ai.objects.count()`が変化しない） |
+
+---
+
 ## テスト実装の方針
 
 ### ディレクトリ構成（案）

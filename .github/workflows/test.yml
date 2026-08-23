@@ -53,6 +53,7 @@ jobs:
           echo 'SEND_DISCORD_AI_RESULT = True' > subekashi/constants/dynamic/ai.py
           echo '{"VERSION": "dev"}' > subekashi/constants/dynamic/version.json
           touch subekashi/constants/dynamic/gpt.txt
+          echo '[]' > subekashi/constants/dynamic/word.json
 
       - name: Run tests
         run: python manage.py test subekashi.tests article.tests --verbosity=2

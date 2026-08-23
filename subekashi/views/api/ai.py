@@ -1,7 +1,12 @@
 
-from subekashi.models import Ai
-from rest_framework import viewsets, serializers
-from ...serializer import AiSerializer
+from django.shortcuts import get_object_or_404
+from rest_framework import viewsets, serializers, status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
+from subekashi.models import Ai, Word
+from subekashi.lib.lyric_tokenizer import tokenize_lyrics_with_index, REPLACEABLE_HINSHIS
+from ...serializer import AiSerializer, AiWordSwapSerializer
 
 class AiAPI(viewsets.ModelViewSet):
     queryset = Ai.objects.all()
@@ -28,3 +33,52 @@ class AiAPI(viewsets.ModelViewSet):
         headers = viewsets.ModelViewSet.default_response_headers.fget(self)
         headers["Access-Control-Allow-Origin"] = "*"
         return headers
+
+
+class AiWordSwapThrottle(UserRateThrottle):
+    rate = '30/minute'
+
+
+class AiWordSwapView(APIView):
+    """
+    生成歌詞（Aiレコード）の単語1つを模倣単語候補に入れ替え、
+    新しいAiレコード（score=0）として保存する。
+    """
+    throttle_classes = [AiWordSwapThrottle]
+
+    def post(self, request, *args, **kwargs):
+        serializer = AiWordSwapSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        base_id = serializer.validated_data['base_id']
+        token_index = serializer.validated_data['token_index']
+        candidate = serializer.validated_data['candidate']
+
+        base = get_object_or_404(Ai, pk=base_id)
+        tokens = tokenize_lyrics_with_index(base.lyrics)
+
+        if token_index >= len(tokens):
+            return Response({'detail': '指定された単語が見つかりません。'}, status=status.HTTP_400_BAD_REQUEST)
+
+        token = tokens[token_index]
+        if token['hinshi'] not in REPLACEABLE_HINSHIS:
+            return Response({'detail': 'この単語は入れ替えられません。'}, status=status.HTTP_400_BAD_REQUEST)
+
+        valid_candidates = Word.get_candidates(token['surface'], token['hinshi'], limit=10)
+        if candidate not in valid_candidates:
+            return Response({'detail': '候補として存在しない単語です。'}, status=status.HTTP_400_BAD_REQUEST)
+
+        new_lyrics = ''.join(
+            candidate if i == token_index else t['surface']
+            for i, t in enumerate(tokens)
+        )
+
+        if not (0 < len(new_lyrics) <= 100):
+            return Response({'detail': '入れ替え後の歌詞が長すぎます。'}, status=status.HTTP_400_BAD_REQUEST)
+
+        new_ai = Ai.objects.create(lyrics=new_lyrics, score=0, genetype=base.genetype)
+
+        return Response(
+            {'id': new_ai.id, 'lyrics': new_ai.lyrics},
+            status=status.HTTP_201_CREATED,
+            headers={"Access-Control-Allow-Origin": "*"},
+        )

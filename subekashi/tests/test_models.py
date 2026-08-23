@@ -6,7 +6,7 @@ Song, Author, AuthorAlias, SongLink の CRUD・制約・メソッドを検証す
 from django.db import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
-from subekashi.models import Author, AuthorAlias, Contact, Editor, History, Song, SongLink
+from subekashi.models import Author, AuthorAlias, Contact, Editor, History, Song, SongLink, Word
 from subekashi.models.author import EffectiveAlias, TransitiveAlias
 
 
@@ -577,3 +577,47 @@ class HistoryModelTest(TestCase):
         results = list(History.get_for_author(self.author))
 
         self.assertEqual(results, [newer, older])
+
+
+class WordModelTest(TestCase):
+    """Word モデルのテスト"""
+
+    def test_str_returns_word_hinshi_candidate(self):
+        word = Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+        self.assertEqual(str(word), "走る(動詞) -> 駆ける")
+
+    def test_unique_constraint(self):
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+        with self.assertRaises(IntegrityError):
+            Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+
+    def test_get_candidates_returns_matching_words(self):
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+        Word.objects.create(word="走る", hinshi="動詞", candidate="疾走する")
+
+        candidates = Word.get_candidates("走る", "動詞")
+
+        self.assertCountEqual(candidates, ["駆ける", "疾走する"])
+
+    def test_get_candidates_excludes_different_hinshi(self):
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+
+        candidates = Word.get_candidates("走る", "名詞")
+
+        self.assertEqual(candidates, [])
+
+    def test_get_candidates_excludes_itself(self):
+        Word.objects.create(word="走る", hinshi="動詞", candidate="走る")
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+
+        candidates = Word.get_candidates("走る", "動詞")
+
+        self.assertEqual(candidates, ["駆ける"])
+
+    def test_get_candidates_limits_result_count(self):
+        for i in range(15):
+            Word.objects.create(word="走る", hinshi="動詞", candidate=f"候補{i}")
+
+        candidates = Word.get_candidates("走る", "動詞", limit=10)
+
+        self.assertEqual(len(candidates), 10)

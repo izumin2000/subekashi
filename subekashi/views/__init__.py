@@ -3,7 +3,8 @@ from subekashi.views.api.ad import AdAPI
 from subekashi.views.ad_complete import AdCompleteView
 from subekashi.views.ai import AiView
 from subekashi.views.ai_result import AiResultView
-from subekashi.views.api.ai import AiAPI
+from subekashi.views.api.ai import AiAPI, AiWordSwapView
+from subekashi.views.api.word import WordCandidatesView
 from subekashi.views.author import AuthorView
 from subekashi.views.author_alias import (
     AuthorAliasesView,
