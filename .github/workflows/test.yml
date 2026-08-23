@@ -50,7 +50,7 @@ jobs:
           EOF
           echo 'REJECT_LIST = []' > subekashi/constants/dynamic/reject.py
           echo 'BAN_LIST = []'    > subekashi/constants/dynamic/ban.py
-          echo 'GENEINFO = {}' > subekashi/constants/dynamic/ai.py
+          echo 'SEND_DISCORD_AI_RESULT = True' > subekashi/constants/dynamic/ai.py
           echo '{"VERSION": "dev"}' > subekashi/constants/dynamic/version.json
           touch subekashi/constants/dynamic/gpt.txt
 
