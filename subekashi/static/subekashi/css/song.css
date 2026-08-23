@@ -50,18 +50,17 @@
     width: fit-content;
 }
 
-.song-name {
-    font-size: 12px;
-    text-decoration: underline 2px #fff;
-}
-
 .song-url img {
     height: 22px;
     width: auto;
 }
 
 #song-info i, #song-info img, .fa-align-center {
-    margin-right: 10px;
+    margin-right: 5px;
+}
+
+.icon-p {
+    margin: 0;
 }
 
 #special-tag, #tags a {
