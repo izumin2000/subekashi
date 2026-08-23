@@ -2017,3 +2017,26 @@ class AdViewTest(TestCase):
         self.assertRedirects(response, reverse("subekashi:ad_complete"))
         adIns = Ad.objects.get(url="https://youtu.be/bbbbbbbbbbb")
         self.assertEqual(adIns.dup, 1)
+
+
+@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+class AiViewTest(TestCase):
+    """AiView (/ai/) のテスト"""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_get_returns_200(self):
+        response = self.client.get(reverse("subekashi:ai"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_show_janome_notice_default_true(self):
+        response = self.client.get(reverse("subekashi:ai"))
+        self.assertTrue(response.context["show_janome_notice"])
+        self.assertContains(response, "id=\"janome-notice\"")
+
+    def test_show_janome_notice_false_when_cookie_set(self):
+        self.client.cookies["show_janome_notice"] = "False"
+        response = self.client.get(reverse("subekashi:ai"))
+        self.assertFalse(response.context["show_janome_notice"])
+        self.assertNotContains(response, "id=\"janome-notice\"")

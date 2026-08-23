@@ -10,6 +10,7 @@ class AiView(View):
     def get(self, request):
         context = {
             "metatitle": "歌詞生成",
+            "show_janome_notice": request.COOKIES.get("show_janome_notice", "True") == "True",
         }
 
         try:
