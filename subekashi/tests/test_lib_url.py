@@ -215,6 +215,53 @@ class GetAllowMediaTest(SimpleTestCase):
         self.assertIsNot(result, False)
         self.assertEqual(result["id"], "vimesis")
 
+    def test_vimesis_dot_not_treated_as_wildcard(self):
+        # Issue #1056: 正規表現のドットが未エスケープだと "vimesisXcom" のような
+        # 文字列にも誤マッチしてしまうため、エスケープ後は許可されないことを確認する
+        result = get_allow_media("https://vimesisXcom.example.net/")
+        self.assertFalse(result)
+
+    def test_youtube_dot_not_treated_as_wildcard(self):
+        result = get_allow_media("https://youtuXbe.example.net/")
+        self.assertFalse(result)
+
+    def test_x_dot_not_treated_as_wildcard(self):
+        result = get_allow_media("https://xXcom.example.net/")
+        self.assertFalse(result)
+
+    def test_nicovideo_dot_not_treated_as_wildcard(self):
+        result = get_allow_media("https://nicovideoXjp.example.net/")
+        self.assertFalse(result)
+
+    def test_soundcloud_dot_not_treated_as_wildcard(self):
+        result = get_allow_media("https://soundcloudXcom.example.net/")
+        self.assertFalse(result)
+
+    def test_bandcamp_dot_not_treated_as_wildcard(self):
+        result = get_allow_media("https://bandcampXcom.example.net/")
+        self.assertFalse(result)
+
+    def test_bilibili_dot_not_treated_as_wildcard(self):
+        result = get_allow_media("https://bilibiliXcom.example.net/")
+        self.assertFalse(result)
+
+    def test_vimesis_domain_suffix_spoofing_returns_false(self):
+        # 末尾側に境界チェックがないと vimesis.com.attacker.example のような
+        # なりすましドメインにも誤マッチしてしまうため、拒否されることを確認する
+        result = get_allow_media("https://vimesis.com.attacker.example/")
+        self.assertFalse(result)
+
+    def test_note_domain_prefix_spoofing_returns_false(self):
+        # note のように元々先頭側の境界チェックがなかったエントリでも
+        # xnote.comevil.net のような部分一致で誤マッチしないことを確認する
+        result = get_allow_media("https://xnote.comevil.net/")
+        self.assertFalse(result)
+
+    def test_note_url_returns_note_media(self):
+        result = get_allow_media("https://note.com/articles/abc123")
+        self.assertIsNot(result, False)
+        self.assertEqual(result["id"], "note")
+
 
 class GetAllMediaTest(SimpleTestCase):
     """get_all_media() のテスト（SEND_DISCORD=False のため外部送信なし）"""
