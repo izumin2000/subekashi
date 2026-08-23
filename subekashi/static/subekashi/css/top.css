@@ -100,9 +100,11 @@ h2 {
     margin-bottom: 20px;
 }
 
-#subekashi-links i {
+#subekashi-links p {
+    display: inline-block;
     font-size: 32px;
-    margin: 0 15px;
+    margin: 0 10px;
+    white-space: nowrap;
 }
 
 #imicom {

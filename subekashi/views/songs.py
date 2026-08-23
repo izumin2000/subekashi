@@ -27,7 +27,7 @@ COOKIE_FORMS = {
 BOOL_FORMS = ["is_subeana", "is_joke", "is_lack", "is_draft", "is_original", "is_inst", "is_deleted", "is_questionable"]
 
 # 折りたたまれていないメディアタイプ
-DISPLAY_MEDIA_INDEX = 5
+DISPLAY_MEDIA_INDEX = 6
 
 
 class SongsView(View):

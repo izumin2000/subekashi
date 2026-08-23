@@ -210,6 +210,11 @@ class GetAllowMediaTest(SimpleTestCase):
         self.assertIsNot(result, False)
         self.assertEqual(result["id"], "bluesky")
 
+    def test_vimesis_url_returns_vimesis_media(self):
+        result = get_allow_media("https://main.vimesis.com/channel/@subekashi")
+        self.assertIsNot(result, False)
+        self.assertEqual(result["id"], "vimesis")
+
 
 class GetAllMediaTest(SimpleTestCase):
     """get_all_media() のテスト（SEND_DISCORD=False のため外部送信なし）"""

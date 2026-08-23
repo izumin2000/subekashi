@@ -768,6 +768,12 @@ details h3 {
     background: black;
 }
 
+.icon-p {
+    font-size: 12px;
+    text-decoration: underline 2px #fff;
+    margin-left: 5px;
+}
+
 /* フォーム */
 .form-col {
     display: flex;
