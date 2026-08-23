@@ -215,6 +215,16 @@ class GetAllowMediaTest(SimpleTestCase):
         self.assertIsNot(result, False)
         self.assertEqual(result["id"], "vimesis")
 
+    def test_vimesis_dot_not_treated_as_wildcard(self):
+        # Issue #1056: 正規表現のドットが未エスケープだと "vimesisXcom" のような
+        # 文字列にも誤マッチしてしまうため、エスケープ後は許可されないことを確認する
+        result = get_allow_media("https://vimesisXcom.example.net/")
+        self.assertFalse(result)
+
+    def test_youtube_dot_not_treated_as_wildcard(self):
+        result = get_allow_media("https://youtuXbe.example.net/")
+        self.assertFalse(result)
+
 
 class GetAllMediaTest(SimpleTestCase):
     """get_all_media() のテスト（SEND_DISCORD=False のため外部送信なし）"""

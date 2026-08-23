@@ -77,6 +77,8 @@
 | --- | --- | --- |
 | Bluesky URL | `https://bsky.app/profile/example.bsky.social` | `result["id"] == "bluesky"` |
 | Vimesis URL | `https://main.vimesis.com/channel/@subekashi` | `result["id"] == "vimesis"` |
+| ドメイン内の`.`が未エスケープだと誤マッチする文字列（Vimesis） | `https://vimesisXcom.example.net/` | `False`（Issue #1056） |
+| ドメイン内の`.`が未エスケープだと誤マッチする文字列（YouTube） | `https://youtuXbe.example.net/` | `False`（Issue #1056） |
 
 ---
 
