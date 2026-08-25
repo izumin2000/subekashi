@@ -928,7 +928,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `get_candidates(word, hinshi)` | 一致する候補が複数件登録済み | 候補一覧を返す |
 | `get_candidates(word, hinshi)`（品詞不一致） | 別の品詞で登録された候補のみ存在 | 空リストを返す |
 | `get_candidates(word, hinshi, limit=10)` | 候補が11件以上登録済み | 最大10件に絞られる |
-| `get_candidates(word, hinshi)`（ランダム性） | 候補が20件登録済みで20回呼び出す | 毎回同じ組み合わせにはならない（`order_by('?')`によるランダム抽出） |
+| `get_candidates(word, hinshi)`（ランダム性） | 候補が20件登録済みで20回呼び出す | 毎回同じ組み合わせにはならない（DB側の`ORDER BY RANDOM()`は使わず、word・hinshiで絞り込んだ結果をPython側の`random.shuffle()`でランダム化） |
 | `is_valid_candidate(word, hinshi, candidate)` | 実在する組み合わせ | `True` を返す |
 | `is_valid_candidate(word, hinshi, candidate)` | 存在しない候補 | `False` を返す |
 | `is_valid_candidate(word, hinshi, candidate)` | 品詞が一致しない | `False` を返す |

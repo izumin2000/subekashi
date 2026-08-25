@@ -1,3 +1,5 @@
+import random
+
 from django.db import models
 
 
@@ -21,12 +23,16 @@ class Word(models.Model):
 
     @classmethod
     def get_candidates(cls, word, hinshi, limit=10):
-        return list(
+        # order_by('?')（SQLの ORDER BY RANDOM()）はDB側でのフルソートになり、
+        # 1単語あたりの候補数が多い場合にコストが増えるため使わない。
+        # word・hinshiで絞り込んだ（インデックス使用）結果をPython側でシャッフルする
+        candidates = list(
             cls.objects.filter(word=word, hinshi=hinshi)
             .exclude(candidate=word)
-            .order_by('?')
-            .values_list('candidate', flat=True)[:limit]
+            .values_list('candidate', flat=True)
         )
+        random.shuffle(candidates)
+        return candidates[:limit]
 
     @classmethod
     def is_valid_candidate(cls, word, hinshi, candidate):
