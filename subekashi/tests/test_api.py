@@ -198,7 +198,7 @@ class AiWordSwapViewTest(TestCase):
         new_ai = Ai.objects.get(pk=new_id)
         self.assertEqual(new_ai.lyrics, "私は駆ける")
         self.assertEqual(new_ai.score, 0)
-        self.assertEqual(new_ai.genetype, "model")
+        self.assertEqual(new_ai.genetype, "janome")
 
     def test_original_ai_record_is_unchanged(self):
         self.client.post(
@@ -269,3 +269,20 @@ class AiWordSwapViewTest(TestCase):
 
         self.assertEqual(Ai.objects.count(), count_after_first)
         self.assertEqual(first.json()["id"], second.json()["id"])
+
+    def test_existing_record_with_different_genetype_is_not_reused(self):
+        # lyricsが同じでもgenetypeが違う既存レコード（例: model起源のたまたま
+        # 同じ文字列）を誤って返さず、janome genetypeの新規レコードを作成する
+        Ai.objects.create(lyrics="私は駆ける", score=5, genetype="model")
+
+        response = self.client.post(
+            "/api/ai/swap/",
+            data={"base_id": self.base.id, "token_index": 2, "candidate": "駆ける"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        new_ai = Ai.objects.get(pk=response.json()["id"])
+        self.assertEqual(new_ai.genetype, "janome")
+        self.assertEqual(new_ai.score, 0)
+        self.assertEqual(Ai.objects.filter(lyrics="私は駆ける").count(), 2)

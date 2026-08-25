@@ -744,13 +744,14 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 | テストケース | 入力 | 期待結果 |
 | --- | --- | --- |
-| 正常な入れ替え | 実在するbase_id・token_index・候補 | HTTP 201、新規`Ai`レコード（score=0）が作成される |
+| 正常な入れ替え | 実在するbase_id・token_index・候補 | HTTP 201、新規`Ai`レコード（`score=0`, `genetype="janome"`）が作成される |
 | 元レコードへの影響 | 正常な入れ替え後 | 元の`Ai`レコードの`lyrics`は変更されない |
 | 存在しないbase_id | 未登録のID | HTTP 404 |
 | 範囲外のtoken_index | 歌詞のトークン数を超える値 | HTTP 400 |
 | 置き換え対象外の品詞 | 助詞など`REPLACEABLE_HINSHIS`外のトークン | HTTP 400 |
 | Wordに存在しない候補 | 実在しない候補語 | HTTP 400、`Ai`レコードは作成されない |
 | 同じ入れ替え結果の重複防止 | 同一の`base_id`・`token_index`・`candidate`で2回POST | 2回目は新規`Ai`レコードを作成せず、既存レコードのidを返す |
+| 重複判定はgenetypeも考慮 | `lyrics`は同じだが`genetype="model"`の既存`Ai`が存在 | 既存レコードを誤って再利用せず、`genetype="janome"`の新規レコードを作成する |
 
 ---
 
@@ -923,15 +924,16 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | `__str__` | `Word(word="走る", hinshi="動詞", candidate="駆ける")` | `"走る(動詞) -> 駆ける"` を返す |
 | `(word, hinshi, candidate)` のユニーク制約 | 同じ組み合わせで2件作成 | `IntegrityError` が発生 |
+| `word != candidate` の CheckConstraint | `word`と`candidate`が同じ値で作成 | `IntegrityError` が発生（自己参照行の作成を防止） |
 | `get_candidates(word, hinshi)` | 一致する候補が複数件登録済み | 候補一覧を返す |
 | `get_candidates(word, hinshi)`（品詞不一致） | 別の品詞で登録された候補のみ存在 | 空リストを返す |
-| `get_candidates(word, hinshi)`（自分自身を除外） | 候補に自分自身と同じ表記の単語が含まれる | 自分自身は結果から除外される |
 | `get_candidates(word, hinshi, limit=10)` | 候補が11件以上登録済み | 最大10件に絞られる |
 | `get_candidates(word, hinshi)`（ランダム性） | 候補が20件登録済みで20回呼び出す | 毎回同じ組み合わせにはならない（`order_by('?')`によるランダム抽出） |
 | `is_valid_candidate(word, hinshi, candidate)` | 実在する組み合わせ | `True` を返す |
 | `is_valid_candidate(word, hinshi, candidate)` | 存在しない候補 | `False` を返す |
 | `is_valid_candidate(word, hinshi, candidate)` | 品詞が一致しない | `False` を返す |
 | `is_valid_candidate(word, hinshi, candidate)` | `get_candidates()`の表示上限（10件）を超える候補 | 実在すれば `True` を返す（表示件数の制限を受けない） |
+| `is_valid_candidate(word, hinshi, candidate)`（自己参照） | `word == candidate` | DB上の実在有無に関わらず `False` を返す |
 
 ---
 
@@ -1056,6 +1058,7 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | ファイルが存在しない場合 | `word.json`が無い | 例外を投げず、`CONST_ERROR`を出力（`python manage.py const`実行を促す） |
 | 不正なJSON | パース不可能な内容 | 例外を投げず、`CONST_ERROR`を出力 |
 | 再実行時の重複防止 | 同じ内容で2回実行 | `ignore_conflicts=True`によりレコードは重複作成されない |
+| 完了メッセージの件数精度 | 同じ内容で2回実行 | 1回目は「新規Word候補数：1」、2回目（重複のみ）は「新規Word候補数：0」と、`count()`差分に基づく実際の新規作成数が表示される |
 | `candidates`がlist以外 | `candidates`が文字列など | そのエントリは丸ごとスキップされる（文字列を1文字ずつ`Word`化してしまう事故を防止） |
 | `candidates`内に文字列以外の要素 | `candidates`に数値・`null`が混在 | 文字列の要素のみ`Word`として登録され、それ以外は無視される |
 | トップレベルがlist以外 | JSONのトップレベルが`dict`など | 例外を投げず、`CONST_ERROR`を出力（`entry.get()`によるAttributeErrorを防止） |

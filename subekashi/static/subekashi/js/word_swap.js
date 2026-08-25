@@ -11,26 +11,34 @@
 
     async function fetchCandidates(word, hinshi) {
         const params = new URLSearchParams({ word: word, hinshi: hinshi });
-        const res = await fetch(baseURL() + "/api/word/candidates/?" + params.toString());
-        if (!res.ok) return [];
-        const data = await res.json();
-        return data.candidates || [];
+        try {
+            const res = await fetch(baseURL() + "/api/word/candidates/?" + params.toString());
+            if (!res.ok) return [];
+            const data = await res.json();
+            return data.candidates || [];
+        } catch (e) {
+            return null;
+        }
     }
 
     async function postSwap(baseId, tokenIndex, candidate) {
         const csrf = await getCSRF();
-        return fetch(baseURL() + "/api/ai/swap/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": csrf
-            },
-            body: JSON.stringify({
-                base_id: baseId,
-                token_index: tokenIndex,
-                candidate: candidate
-            })
-        });
+        try {
+            return await fetch(baseURL() + "/api/ai/swap/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrf
+                },
+                body: JSON.stringify({
+                    base_id: baseId,
+                    token_index: tokenIndex,
+                    candidate: candidate
+                })
+            });
+        } catch (e) {
+            return null;
+        }
     }
 
     function openCandidatePopup(tokenEle, candidates) {
@@ -52,7 +60,7 @@
                     candidate
                 );
                 closeActivePopup();
-                if (res.ok) {
+                if (res && res.ok) {
                     tokenEle.textContent = candidate;
                     tokenEle.classList.add("word-token-swapped");
                     showToast("ok", "入れ替えた歌詞を保存しました。");
@@ -78,6 +86,11 @@
         const word = tokenEle.dataset.word;
         const hinshi = tokenEle.dataset.hinshi;
         const candidates = await fetchCandidates(word, hinshi);
+
+        if (candidates === null) {
+            showToast("error", "通信エラーが発生しました。");
+            return;
+        }
 
         if (candidates.length === 0) {
             showToast("info", "入れ替え候補が見つかりませんでした。");

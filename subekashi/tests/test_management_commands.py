@@ -341,6 +341,19 @@ class WordCommandTest(TestCase):
 
         self.assertEqual(Word.objects.count(), 1)
 
+    def test_completion_message_reports_actual_new_count(self):
+        # bulk_create(ignore_conflicts=True)は登録を試みた件数を返すため、
+        # 実際にDBのcount()差分から新規作成数を算出していることを確認する
+        data = json.dumps([{"word": "走る", "hinshi": "動詞", "candidates": ["駆ける"]}])
+        out = StringIO()
+        with patch("builtins.open", mock_open(read_data=data)):
+            call_command("word", stdout=out)
+            self.assertIn("新規Word候補数：1", out.getvalue())
+
+            out2 = StringIO()
+            call_command("word", stdout=out2)
+            self.assertIn("新規Word候補数：0", out2.getvalue())
+
     def test_candidates_as_string_is_skipped(self):
         # candidatesが文字列だと1文字ずつイテレートされてしまうため、
         # listでないエントリは丸ごとスキップする

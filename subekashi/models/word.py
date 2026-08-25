@@ -10,6 +10,7 @@ class Word(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['word', 'hinshi', 'candidate'], name='unique_word_hinshi_candidate'),
+            models.CheckConstraint(check=~models.Q(word=models.F('candidate')), name='word_not_equal_candidate'),
         ]
         indexes = [
             models.Index(fields=['word', 'hinshi']),
@@ -29,4 +30,6 @@ class Word(models.Model):
 
     @classmethod
     def is_valid_candidate(cls, word, hinshi, candidate):
+        if word == candidate:
+            return False
         return cls.objects.filter(word=word, hinshi=hinshi, candidate=candidate).exists()

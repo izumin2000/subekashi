@@ -36,5 +36,7 @@ class Command(BaseCommand):
                 if candidate and isinstance(candidate, str):
                     words.append(Word(word=word, hinshi=hinshi, candidate=candidate))
 
+        count_before = Word.objects.count()
         Word.objects.bulk_create(words, ignore_conflicts=True)
-        self.stdout.write(self.style.SUCCESS(f"新規Word候補数：{len(words)}"))
+        created_count = Word.objects.count() - count_before
+        self.stdout.write(self.style.SUCCESS(f"新規Word候補数：{created_count}"))

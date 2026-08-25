@@ -606,14 +606,6 @@ class WordModelTest(TestCase):
 
         self.assertEqual(candidates, [])
 
-    def test_get_candidates_excludes_itself(self):
-        Word.objects.create(word="走る", hinshi="動詞", candidate="走る")
-        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
-
-        candidates = Word.get_candidates("走る", "動詞")
-
-        self.assertEqual(candidates, ["駆ける"])
-
     def test_get_candidates_limits_result_count(self):
         for i in range(15):
             Word.objects.create(word="走る", hinshi="動詞", candidate=f"候補{i}")
@@ -653,3 +645,11 @@ class WordModelTest(TestCase):
         Word.objects.create(word="走る", hinshi="動詞", candidate="11番目")
 
         self.assertTrue(Word.is_valid_candidate("走る", "動詞", "11番目"))
+
+    def test_is_valid_candidate_false_for_self_reference(self):
+        # word == candidate（自己参照）は、DB上に存在するか否かに関わらず無効
+        self.assertFalse(Word.is_valid_candidate("走る", "動詞", "走る"))
+
+    def test_word_equal_candidate_raises_integrity_error(self):
+        with self.assertRaises(IntegrityError):
+            Word.objects.create(word="走る", hinshi="動詞", candidate="走る")
