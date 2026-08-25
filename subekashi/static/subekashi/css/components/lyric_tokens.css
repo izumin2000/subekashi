@@ -1,5 +1,8 @@
-.word-token {
+.word-token-wrap {
     position: relative;
+}
+
+.word-token {
     cursor: pointer;
     border-bottom: 2px dotted #09F;
 }

@@ -71,7 +71,8 @@ class AiWordSwapView(APIView):
             for i, t in enumerate(tokens)
         )
 
-        if not (0 < len(new_lyrics) <= 100):
+        lyrics_max_length = Ai._meta.get_field('lyrics').max_length
+        if not (0 < len(new_lyrics) <= lyrics_max_length):
             return Response({'detail': '入れ替え後の歌詞が長すぎます。'}, status=status.HTTP_400_BAD_REQUEST)
 
         new_ai = Ai.objects.create(lyrics=new_lyrics, score=0, genetype=base.genetype)

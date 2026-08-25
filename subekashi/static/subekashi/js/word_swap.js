@@ -72,12 +72,14 @@
             popup.appendChild(btn);
         });
 
-        tokenEle.appendChild(popup);
+        // role="button"を持つtokenEleの子要素にせず、兄弟要素として
+        // 挿入する（インタラクティブ要素の入れ子を避けるため）
+        tokenEle.parentElement.appendChild(popup);
         activePopup = popup;
     }
 
     async function onWordTokenActivate(tokenEle) {
-        if (activePopup && tokenEle.contains(activePopup)) {
+        if (activePopup && activePopup.parentElement === tokenEle.parentElement) {
             closeActivePopup();
             return;
         }

@@ -340,3 +340,20 @@ class WordCommandTest(TestCase):
             call_command("word")
 
         self.assertEqual(Word.objects.count(), 1)
+
+    def test_candidates_as_string_is_skipped(self):
+        # candidatesが文字列だと1文字ずつイテレートされてしまうため、
+        # listでないエントリは丸ごとスキップする
+        data = json.dumps([{"word": "走る", "hinshi": "動詞", "candidates": "駆ける"}])
+        with patch("builtins.open", mock_open(read_data=data)):
+            call_command("word")
+
+        self.assertEqual(Word.objects.count(), 0)
+
+    def test_non_string_candidate_in_list_is_skipped(self):
+        data = json.dumps([{"word": "走る", "hinshi": "動詞", "candidates": ["駆ける", 123, None]}])
+        with patch("builtins.open", mock_open(read_data=data)):
+            call_command("word")
+
+        self.assertEqual(Word.objects.count(), 1)
+        self.assertTrue(Word.objects.filter(candidate="駆ける").exists())

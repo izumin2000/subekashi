@@ -1058,6 +1058,8 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | ファイルが存在しない場合 | `word.json`が無い | 例外を投げず、`CONST_ERROR`を出力（`python manage.py const`実行を促す） |
 | 不正なJSON | パース不可能な内容 | 例外を投げず、`CONST_ERROR`を出力 |
 | 再実行時の重複防止 | 同じ内容で2回実行 | `ignore_conflicts=True`によりレコードは重複作成されない |
+| `candidates`がlist以外 | `candidates`が文字列など | そのエントリは丸ごとスキップされる（文字列を1文字ずつ`Word`化してしまう事故を防止） |
+| `candidates`内に文字列以外の要素 | `candidates`に数値・`null`が混在 | 文字列の要素のみ`Word`として登録され、それ以外は無視される |
 
 ---
 

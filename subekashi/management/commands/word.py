@@ -13,9 +13,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         word_path = os.path.join(BASE_DIR, 'subekashi/constants/dynamic/word.json')
         try:
-            file = open(word_path, 'r', encoding='utf-8')
-            entries = json.load(file)
-            file.close()
+            with open(word_path, 'r', encoding='utf-8') as file:
+                entries = json.load(file)
         except (OSError, json.JSONDecodeError):
             self.stdout.write(self.style.ERROR(CONST_ERROR))
             return
@@ -24,10 +23,11 @@ class Command(BaseCommand):
         for entry in entries:
             word = entry.get('word', '')
             hinshi = entry.get('hinshi', '')
-            if not word or not hinshi:
+            candidates = entry.get('candidates', [])
+            if not word or not hinshi or not isinstance(candidates, list):
                 continue
-            for candidate in entry.get('candidates', []):
-                if candidate:
+            for candidate in candidates:
+                if candidate and isinstance(candidate, str):
                     words.append(Word(word=word, hinshi=hinshi, candidate=candidate))
 
         Word.objects.bulk_create(words, ignore_conflicts=True)
