@@ -1,0 +1,15 @@
+<p class="lyric" data-ai-id="{{ item.id }}">
+    {% for token in item.tokens %}
+        {% if token.is_replaceable %}
+            <span class="word-token-wrap">
+                <span class="word-token" role="button" tabindex="0"
+                      data-ai-id="{{ item.id }}"
+                      data-token-index="{{ token.index }}"
+                      data-word="{{ token.surface }}"
+                      data-hinshi="{{ token.hinshi }}">{{ token.surface }}</span>
+            </span>
+        {% else %}
+            <span class="word-token-fixed">{{ token.surface }}</span>
+        {% endif %}
+    {% endfor %}
+</p>

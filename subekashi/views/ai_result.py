@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.views import View
 from subekashi.models import Ai
 from subekashi.lib.discord import send_discord
+from subekashi.lib.lyric_tokenizer import tokenize_ai_instances
 from config.local_settings import ERROR_DISCORD_URL
 
 
@@ -21,5 +22,5 @@ class AiResultView(View):
             if SEND_DISCORD_AI_RESULT:
                 send_discord(ERROR_DISCORD_URL, "aiInsのデータがありません。")
             aiIns = Ai.get_all_model()
-        context["aiInsL"] = aiIns.order_by('?')[:25]
+        context["aiInsL"] = tokenize_ai_instances(aiIns.order_by('?')[:25])
         return render(request, "subekashi/ai_result.html", context)

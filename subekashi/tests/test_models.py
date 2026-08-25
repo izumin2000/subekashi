@@ -6,7 +6,7 @@ Song, Author, AuthorAlias, SongLink の CRUD・制約・メソッドを検証す
 from django.db import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
-from subekashi.models import Author, AuthorAlias, Contact, Editor, History, Song, SongLink
+from subekashi.models import Author, AuthorAlias, Contact, Editor, History, Song, SongLink, Word
 from subekashi.models.author import EffectiveAlias, TransitiveAlias
 
 
@@ -577,3 +577,79 @@ class HistoryModelTest(TestCase):
         results = list(History.get_for_author(self.author))
 
         self.assertEqual(results, [newer, older])
+
+
+class WordModelTest(TestCase):
+    """Word モデルのテスト"""
+
+    def test_str_returns_word_hinshi_candidate(self):
+        word = Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+        self.assertEqual(str(word), "走る(動詞) -> 駆ける")
+
+    def test_unique_constraint(self):
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+        with self.assertRaises(IntegrityError):
+            Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+
+    def test_get_candidates_returns_matching_words(self):
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+        Word.objects.create(word="走る", hinshi="動詞", candidate="疾走する")
+
+        candidates = Word.get_candidates("走る", "動詞")
+
+        self.assertCountEqual(candidates, ["駆ける", "疾走する"])
+
+    def test_get_candidates_excludes_different_hinshi(self):
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+
+        candidates = Word.get_candidates("走る", "名詞")
+
+        self.assertEqual(candidates, [])
+
+    def test_get_candidates_limits_result_count(self):
+        for i in range(15):
+            Word.objects.create(word="走る", hinshi="動詞", candidate=f"候補{i}")
+
+        candidates = Word.get_candidates("走る", "動詞", limit=10)
+
+        self.assertEqual(len(candidates), 10)
+
+    def test_get_candidates_is_randomized(self):
+        # 表示件数(10件)を超える候補がある場合、毎回異なる組み合わせが返る
+        for i in range(20):
+            Word.objects.create(word="走る", hinshi="動詞", candidate=f"候補{i}")
+
+        results = {tuple(Word.get_candidates("走る", "動詞", limit=10)) for _ in range(20)}
+
+        self.assertGreater(len(results), 1)
+
+    def test_is_valid_candidate_true_for_existing_combination(self):
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+
+        self.assertTrue(Word.is_valid_candidate("走る", "動詞", "駆ける"))
+
+    def test_is_valid_candidate_false_for_unknown_candidate(self):
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+
+        self.assertFalse(Word.is_valid_candidate("走る", "動詞", "でっちあげ"))
+
+    def test_is_valid_candidate_false_for_wrong_hinshi(self):
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+
+        self.assertFalse(Word.is_valid_candidate("走る", "名詞", "駆ける"))
+
+    def test_is_valid_candidate_true_beyond_display_limit(self):
+        # get_candidates()の表示上限(10件)を超えた候補でも、実在すれば有効と判定する
+        for i in range(10):
+            Word.objects.create(word="走る", hinshi="動詞", candidate=f"候補{i}")
+        Word.objects.create(word="走る", hinshi="動詞", candidate="11番目")
+
+        self.assertTrue(Word.is_valid_candidate("走る", "動詞", "11番目"))
+
+    def test_is_valid_candidate_false_for_self_reference(self):
+        # word == candidate（自己参照）は、DB上に存在するか否かに関わらず無効
+        self.assertFalse(Word.is_valid_candidate("走る", "動詞", "走る"))
+
+    def test_word_equal_candidate_raises_integrity_error(self):
+        with self.assertRaises(IntegrityError):
+            Word.objects.create(word="走る", hinshi="動詞", candidate="走る")

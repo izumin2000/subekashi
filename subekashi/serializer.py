@@ -61,3 +61,9 @@ class AdSerializer(serializers.ModelSerializer):
 class IsOpenSerializer(serializers.Serializer):
     ip = serializers.CharField()
     is_open = serializers.BooleanField(required=False)
+
+
+class AiWordSwapSerializer(serializers.Serializer):
+    base_id = serializers.IntegerField()
+    token_index = serializers.IntegerField(min_value=0)
+    candidate = serializers.CharField(max_length=100)

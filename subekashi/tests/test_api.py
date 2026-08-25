@@ -8,7 +8,7 @@ import json
 from unittest.mock import patch
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
-from subekashi.models import Author, Song, SongLink
+from subekashi.models import Ai, Author, Song, SongLink, Word
 
 
 STATIC_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
@@ -139,3 +139,150 @@ class EditorIsOpenViewTest(TestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 400)
+
+
+@patch("subekashi.views.api.word.WordCandidatesView.throttle_classes", [])
+class WordCandidatesViewTest(TestCase):
+    """WordCandidatesView GET /api/word/candidates/ のテスト"""
+
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_missing_params_returns_400(self):
+        response = self.client.get("/api/word/candidates/")
+        self.assertEqual(response.status_code, 400)
+
+    def test_returns_matching_candidates(self):
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+        Word.objects.create(word="走る", hinshi="動詞", candidate="疾走する")
+
+        response = self.client.get("/api/word/candidates/", {"word": "走る", "hinshi": "動詞"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertCountEqual(response.json()["candidates"], ["駆ける", "疾走する"])
+
+    def test_no_matching_word_returns_empty_list(self):
+        response = self.client.get("/api/word/candidates/", {"word": "存在しない単語", "hinshi": "動詞"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["candidates"], [])
+
+    def test_limits_to_ten_candidates(self):
+        for i in range(15):
+            Word.objects.create(word="走る", hinshi="動詞", candidate=f"候補{i}")
+
+        response = self.client.get("/api/word/candidates/", {"word": "走る", "hinshi": "動詞"})
+
+        self.assertEqual(len(response.json()["candidates"]), 10)
+
+
+@patch("subekashi.views.api.ai.AiWordSwapView.throttle_classes", [])
+class AiWordSwapViewTest(TestCase):
+    """AiWordSwapView POST /api/ai/swap/ のテスト"""
+
+    def setUp(self):
+        self.client = APIClient()
+        # 「私は走る」 -> 私(名詞,index0) は(助詞,index1) 走る(動詞,index2)
+        self.base = Ai.objects.create(lyrics="私は走る", score=5, genetype="model")
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+
+    def test_valid_swap_creates_new_ai_record(self):
+        response = self.client.post(
+            "/api/ai/swap/",
+            data={"base_id": self.base.id, "token_index": 2, "candidate": "駆ける"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        new_id = response.json()["id"]
+        new_ai = Ai.objects.get(pk=new_id)
+        self.assertEqual(new_ai.lyrics, "私は駆ける")
+        self.assertEqual(new_ai.score, 0)
+        self.assertEqual(new_ai.genetype, "janome")
+
+    def test_original_ai_record_is_unchanged(self):
+        self.client.post(
+            "/api/ai/swap/",
+            data={"base_id": self.base.id, "token_index": 2, "candidate": "駆ける"},
+            format="json",
+        )
+
+        self.base.refresh_from_db()
+        self.assertEqual(self.base.lyrics, "私は走る")
+
+    def test_nonexistent_base_id_returns_404(self):
+        response = self.client.post(
+            "/api/ai/swap/",
+            data={"base_id": 999999, "token_index": 2, "candidate": "駆ける"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_out_of_range_token_index_returns_400(self):
+        response = self.client.post(
+            "/api/ai/swap/",
+            data={"base_id": self.base.id, "token_index": 99, "candidate": "駆ける"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_non_replaceable_token_returns_400(self):
+        # index1 は助詞「は」で置き換え対象外
+        response = self.client.post(
+            "/api/ai/swap/",
+            data={"base_id": self.base.id, "token_index": 1, "candidate": "が"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_candidate_not_in_word_table_returns_400(self):
+        response = self.client.post(
+            "/api/ai/swap/",
+            data={"base_id": self.base.id, "token_index": 2, "candidate": "でっちあげ候補"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_candidate_not_created_when_invalid(self):
+        count_before = Ai.objects.count()
+        self.client.post(
+            "/api/ai/swap/",
+            data={"base_id": self.base.id, "token_index": 2, "candidate": "でっちあげ候補"},
+            format="json",
+        )
+        self.assertEqual(Ai.objects.count(), count_before)
+
+    def test_duplicate_swap_does_not_create_new_record(self):
+        # 同じ入れ替え結果が既に存在する場合は、重複作成せず既存レコードを返す
+        first = self.client.post(
+            "/api/ai/swap/",
+            data={"base_id": self.base.id, "token_index": 2, "candidate": "駆ける"},
+            format="json",
+        )
+        count_after_first = Ai.objects.count()
+
+        second = self.client.post(
+            "/api/ai/swap/",
+            data={"base_id": self.base.id, "token_index": 2, "candidate": "駆ける"},
+            format="json",
+        )
+
+        self.assertEqual(Ai.objects.count(), count_after_first)
+        self.assertEqual(first.json()["id"], second.json()["id"])
+
+    def test_existing_record_with_different_genetype_is_not_reused(self):
+        # lyricsが同じでもgenetypeが違う既存レコード（例: model起源のたまたま
+        # 同じ文字列）を誤って返さず、janome genetypeの新規レコードを作成する
+        Ai.objects.create(lyrics="私は駆ける", score=5, genetype="model")
+
+        response = self.client.post(
+            "/api/ai/swap/",
+            data={"base_id": self.base.id, "token_index": 2, "candidate": "駆ける"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201)
+        new_ai = Ai.objects.get(pk=response.json()["id"])
+        self.assertEqual(new_ai.genetype, "janome")
+        self.assertEqual(new_ai.score, 0)
+        self.assertEqual(Ai.objects.filter(lyrics="私は駆ける").count(), 2)

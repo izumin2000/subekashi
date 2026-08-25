@@ -5,15 +5,17 @@ delete: is_removedをfalseのままにする--keep-linksオプションを検証
 youtube: DBロック対策で処理方式を変更した後の挙動（id指定・全件処理・リンク無しスキップ・動画削除時の扱い）を検証する。
 detect_primary_name_duplicates: 一番有名な名義の重複候補検出レポート（#1008）を検証する。
 backup: バックアップ先をサーバーストレージからGoogle Driveに変更した挙動（#1050）を検証する。
+word: word.jsonから模倣単語候補をWordに一括登録する処理（#1053）を検証する。
 """
+import json
 from datetime import datetime
 from io import StringIO
-from unittest.mock import patch
+from unittest.mock import mock_open, patch
 
 from django.core.management import call_command
 from django.test import TestCase
 
-from subekashi.models import Author, AuthorAlias, Song, SongLink
+from subekashi.models import Author, AuthorAlias, Song, SongLink, Word
 
 
 class DeleteCommandTest(TestCase):
@@ -283,3 +285,105 @@ class BackupCommandTest(TestCase):
         self.assertIn("Google Driveの古いバックアップの削除中にエラーが発生しました", err)
         self.assertNotIn("Google Driveへのバックアップ中にエラーが発生しました", err)
         mock_send_discord.assert_called_once()
+
+
+class WordCommandTest(TestCase):
+    """word コマンドのテスト"""
+
+    def test_imports_candidates_from_json(self):
+        data = json.dumps([
+            {"word": "走る", "hinshi": "動詞", "candidates": ["駆ける", "疾走する"]},
+        ])
+        with patch("builtins.open", mock_open(read_data=data)):
+            call_command("word")
+
+        self.assertEqual(Word.objects.count(), 2)
+        self.assertTrue(Word.objects.filter(word="走る", hinshi="動詞", candidate="駆ける").exists())
+        self.assertTrue(Word.objects.filter(word="走る", hinshi="動詞", candidate="疾走する").exists())
+
+    def test_multiple_entries_are_all_imported(self):
+        data = json.dumps([
+            {"word": "走る", "hinshi": "動詞", "candidates": ["駆ける"]},
+            {"word": "犬", "hinshi": "名詞", "candidates": ["猫", "狼"]},
+        ])
+        with patch("builtins.open", mock_open(read_data=data)):
+            call_command("word")
+
+        self.assertEqual(Word.objects.count(), 3)
+
+    def test_entry_without_word_or_hinshi_is_skipped(self):
+        data = json.dumps([
+            {"word": "", "hinshi": "動詞", "candidates": ["駆ける"]},
+            {"word": "走る", "hinshi": "", "candidates": ["駆ける"]},
+        ])
+        with patch("builtins.open", mock_open(read_data=data)):
+            call_command("word")
+
+        self.assertEqual(Word.objects.count(), 0)
+
+    def test_missing_file_does_not_raise(self):
+        with patch("builtins.open", side_effect=OSError):
+            call_command("word")
+
+        self.assertEqual(Word.objects.count(), 0)
+
+    def test_invalid_json_does_not_raise(self):
+        with patch("builtins.open", mock_open(read_data="not a json")):
+            call_command("word")
+
+        self.assertEqual(Word.objects.count(), 0)
+
+    def test_reimport_does_not_create_duplicates(self):
+        data = json.dumps([{"word": "走る", "hinshi": "動詞", "candidates": ["駆ける"]}])
+        with patch("builtins.open", mock_open(read_data=data)):
+            call_command("word")
+            call_command("word")
+
+        self.assertEqual(Word.objects.count(), 1)
+
+    def test_completion_message_reports_actual_new_count(self):
+        # bulk_create(ignore_conflicts=True)は登録を試みた件数を返すため、
+        # 実際にDBのcount()差分から新規作成数を算出していることを確認する
+        data = json.dumps([{"word": "走る", "hinshi": "動詞", "candidates": ["駆ける"]}])
+        out = StringIO()
+        with patch("builtins.open", mock_open(read_data=data)):
+            call_command("word", stdout=out)
+            self.assertIn("新規Word候補数：1", out.getvalue())
+
+            out2 = StringIO()
+            call_command("word", stdout=out2)
+            self.assertIn("新規Word候補数：0", out2.getvalue())
+
+    def test_candidates_as_string_is_skipped(self):
+        # candidatesが文字列だと1文字ずつイテレートされてしまうため、
+        # listでないエントリは丸ごとスキップする
+        data = json.dumps([{"word": "走る", "hinshi": "動詞", "candidates": "駆ける"}])
+        with patch("builtins.open", mock_open(read_data=data)):
+            call_command("word")
+
+        self.assertEqual(Word.objects.count(), 0)
+
+    def test_non_string_candidate_in_list_is_skipped(self):
+        data = json.dumps([{"word": "走る", "hinshi": "動詞", "candidates": ["駆ける", 123, None]}])
+        with patch("builtins.open", mock_open(read_data=data)):
+            call_command("word")
+
+        self.assertEqual(Word.objects.count(), 1)
+        self.assertTrue(Word.objects.filter(candidate="駆ける").exists())
+
+    def test_top_level_object_does_not_raise(self):
+        # トップレベルがlistでない（例: dict）場合、for文でdictのキーが
+        # 渡ってentry.get()がAttributeErrorになるのを防ぐ
+        data = json.dumps({"word": "走る", "hinshi": "動詞", "candidates": ["駆ける"]})
+        with patch("builtins.open", mock_open(read_data=data)):
+            call_command("word")
+
+        self.assertEqual(Word.objects.count(), 0)
+
+    def test_non_dict_entry_in_list_is_skipped(self):
+        data = json.dumps(["走る", {"word": "犬", "hinshi": "名詞", "candidates": ["猫"]}])
+        with patch("builtins.open", mock_open(read_data=data)):
+            call_command("word")
+
+        self.assertEqual(Word.objects.count(), 1)
+        self.assertTrue(Word.objects.filter(word="犬", candidate="猫").exists())

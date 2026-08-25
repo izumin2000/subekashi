@@ -12,7 +12,7 @@ from django.urls import reverse
 from django.utils import timezone
 from article.models import Article
 from subekashi.forms import AuthorAliasForm
-from subekashi.models import Ad, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song
+from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song, Word
 
 
 STATIC_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
@@ -2044,3 +2044,35 @@ class AiViewTest(TestCase):
         response = self.client.get(reverse("subekashi:ai"), HTTP_COOKIE='show_janome_notice="off"')
         self.assertFalse(response.context["show_janome_notice"])
         self.assertNotContains(response, "id=\"janome-notice\"")
+
+    def test_best_lyric_is_plain_text_even_with_matching_word_candidate(self):
+        # 方針転換（#1053）により、最高評価の歌詞では単語入れ替え機能を提供しない。
+        # Word候補が存在していてもクリック可能なトークンにはならない
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+        Ai.objects.create(lyrics="私は走る", score=5, genetype="model")
+
+        response = self.client.get(reverse("subekashi:ai"))
+
+        self.assertNotContains(response, 'class="word-token"')
+        self.assertContains(response, "私は走る")
+
+
+@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+class AiResultViewTest(TestCase):
+    """AiResultView (/ai/result/) のテスト"""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_get_returns_200(self):
+        response = self.client.get(reverse("subekashi:ai_result"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_lyric_word_with_candidate_is_rendered_as_clickable_token(self):
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+        Ai.objects.create(lyrics="私は走る", score=0, genetype="model")
+
+        response = self.client.get(reverse("subekashi:ai_result"))
+
+        self.assertContains(response, 'class="word-token"')
+        self.assertContains(response, 'data-word="走る"')

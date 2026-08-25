@@ -9,7 +9,7 @@
     <h1>歌詞の生成結果</h1>
     {% for aiIns in aiInsL  %}
         <div class="ai-ins">
-            <p class="lyric">{{ aiIns.lyrics }}</p>
+            {% include "subekashi/components/lyric_tokens.html" with item=aiIns %}
             <div class="evaluation">
                 <input type="radio" id="{{ aiIns.id }}1" class="score" name="radio{{ aiIns.id }}" oninput="setScore('{{ aiIns.id }}', 1)">
                 <label for="{{ aiIns.id }}1">悪い</label>
@@ -32,5 +32,6 @@
 {% endblock %}
 
 {% block js %}
+    <script defer src="{% static 'subekashi/js/word_swap.js' %}"></script>
     <script defer src="{% static 'subekashi/js/ai_result.js' %}" rel="stylesheet"></script>
 {% endblock %}
