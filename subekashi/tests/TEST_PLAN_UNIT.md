@@ -929,6 +929,11 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `get_candidates(word, hinshi)`（品詞不一致） | 別の品詞で登録された候補のみ存在 | 空リストを返す |
 | `get_candidates(word, hinshi)`（自分自身を除外） | 候補に自分自身と同じ表記の単語が含まれる | 自分自身は結果から除外される |
 | `get_candidates(word, hinshi, limit=10)` | 候補が11件以上登録済み | 最大10件に絞られる |
+| `get_candidates(word, hinshi)`（ランダム性） | 候補が20件登録済みで20回呼び出す | 毎回同じ組み合わせにはならない（`order_by('?')`によるランダム抽出） |
+| `is_valid_candidate(word, hinshi, candidate)` | 実在する組み合わせ | `True` を返す |
+| `is_valid_candidate(word, hinshi, candidate)` | 存在しない候補 | `False` を返す |
+| `is_valid_candidate(word, hinshi, candidate)` | 品詞が一致しない | `False` を返す |
+| `is_valid_candidate(word, hinshi, candidate)` | `get_candidates()`の表示上限（10件）を超える候補 | 実在すれば `True` を返す（表示件数の制限を受けない） |
 
 ---
 

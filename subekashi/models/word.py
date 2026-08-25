@@ -23,5 +23,10 @@ class Word(models.Model):
         return list(
             cls.objects.filter(word=word, hinshi=hinshi)
             .exclude(candidate=word)
+            .order_by('?')
             .values_list('candidate', flat=True)[:limit]
         )
+
+    @classmethod
+    def is_valid_candidate(cls, word, hinshi, candidate):
+        return cls.objects.filter(word=word, hinshi=hinshi, candidate=candidate).exists()

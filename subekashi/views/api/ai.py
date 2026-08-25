@@ -63,8 +63,7 @@ class AiWordSwapView(APIView):
         if token['hinshi'] not in REPLACEABLE_HINSHIS:
             return Response({'detail': 'この単語は入れ替えられません。'}, status=status.HTTP_400_BAD_REQUEST)
 
-        valid_candidates = Word.get_candidates(token['surface'], token['hinshi'], limit=10)
-        if candidate not in valid_candidates:
+        if not Word.is_valid_candidate(token['surface'], token['hinshi'], candidate):
             return Response({'detail': '候補として存在しない単語です。'}, status=status.HTTP_400_BAD_REQUEST)
 
         new_lyrics = ''.join(

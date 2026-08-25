@@ -621,3 +621,35 @@ class WordModelTest(TestCase):
         candidates = Word.get_candidates("走る", "動詞", limit=10)
 
         self.assertEqual(len(candidates), 10)
+
+    def test_get_candidates_is_randomized(self):
+        # 表示件数(10件)を超える候補がある場合、毎回異なる組み合わせが返る
+        for i in range(20):
+            Word.objects.create(word="走る", hinshi="動詞", candidate=f"候補{i}")
+
+        results = {tuple(Word.get_candidates("走る", "動詞", limit=10)) for _ in range(20)}
+
+        self.assertGreater(len(results), 1)
+
+    def test_is_valid_candidate_true_for_existing_combination(self):
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+
+        self.assertTrue(Word.is_valid_candidate("走る", "動詞", "駆ける"))
+
+    def test_is_valid_candidate_false_for_unknown_candidate(self):
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+
+        self.assertFalse(Word.is_valid_candidate("走る", "動詞", "でっちあげ"))
+
+    def test_is_valid_candidate_false_for_wrong_hinshi(self):
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+
+        self.assertFalse(Word.is_valid_candidate("走る", "名詞", "駆ける"))
+
+    def test_is_valid_candidate_true_beyond_display_limit(self):
+        # get_candidates()の表示上限(10件)を超えた候補でも、実在すれば有効と判定する
+        for i in range(10):
+            Word.objects.create(word="走る", hinshi="動詞", candidate=f"候補{i}")
+        Word.objects.create(word="走る", hinshi="動詞", candidate="11番目")
+
+        self.assertTrue(Word.is_valid_candidate("走る", "動詞", "11番目"))
