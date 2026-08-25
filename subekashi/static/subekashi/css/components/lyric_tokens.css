@@ -7,10 +7,14 @@
     border-bottom: 2px dotted #09F;
 }
 
-.word-token:hover,
+.word-token:hover {
+    background-color: #234;
+}
+
 .word-token:focus {
     background-color: #234;
-    outline: none;
+    outline: 2px solid #09F;
+    outline-offset: 2px;
 }
 
 .word-token-swapped {

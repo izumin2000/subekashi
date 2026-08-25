@@ -700,9 +700,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 正常アクセス | GETリクエスト | HTTP 200 |
 | `show_janome_notice` Cookie未指定（デフォルトTrue） | Cookie未指定 | 旧世代モデルの案内（`#janome-notice`）が表示される |
 | `show_janome_notice=False` Cookie指定 | `show_janome_notice=False` | `#janome-notice`が表示されない |
-| Word候補がある単語（#1053） | 該当する`Word`が存在 | `class="word-token"` としてクリック可能に表示される |
-| Word候補が無い単語（#1053） | 該当する`Word`が存在しない | `class="word-token"` が表示されない |
-| 単語入れ替えは非保存（#1053） | 最高評価の歌詞のトークン | `data-persist="false"` が付与される（クリックしてもDBに保存しない） |
+| 単語入れ替え機能は提供しない（方針転換、#1053） | Word候補が存在する単語を含む歌詞 | `class="word-token"` は表示されず、歌詞はプレーンテキストのまま表示される |
 
 #### 7-13. `AiResultView` (`/ai/result/`)（#1053）
 
@@ -710,7 +708,6 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | 正常アクセス | GETリクエスト | HTTP 200 |
 | Word候補がある単語 | 該当する`Word`が存在 | `class="word-token"` としてクリック可能に表示される |
-| 単語入れ替えは保存対象 | 生成結果のトークン | `data-persist="true"` が付与される（クリックするとDBに保存する） |
 
 ---
 
@@ -753,6 +750,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 範囲外のtoken_index | 歌詞のトークン数を超える値 | HTTP 400 |
 | 置き換え対象外の品詞 | 助詞など`REPLACEABLE_HINSHIS`外のトークン | HTTP 400 |
 | Wordに存在しない候補 | 実在しない候補語 | HTTP 400、`Ai`レコードは作成されない |
+| 同じ入れ替え結果の重複防止 | 同一の`base_id`・`token_index`・`candidate`で2回POST | 2回目は新規`Ai`レコードを作成せず、既存レコードのidを返す |
 
 ---
 
@@ -1060,6 +1058,8 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | 再実行時の重複防止 | 同じ内容で2回実行 | `ignore_conflicts=True`によりレコードは重複作成されない |
 | `candidates`がlist以外 | `candidates`が文字列など | そのエントリは丸ごとスキップされる（文字列を1文字ずつ`Word`化してしまう事故を防止） |
 | `candidates`内に文字列以外の要素 | `candidates`に数値・`null`が混在 | 文字列の要素のみ`Word`として登録され、それ以外は無視される |
+| トップレベルがlist以外 | JSONのトップレベルが`dict`など | 例外を投げず、`CONST_ERROR`を出力（`entry.get()`によるAttributeErrorを防止） |
+| リスト内にdict以外の要素 | 文字列など`dict`でない要素を含むlist | その要素はスキップされ、他の正常なエントリのみ登録される |
 
 ---
 

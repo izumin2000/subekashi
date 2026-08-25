@@ -1,4 +1,4 @@
-// 生成歌詞の単語クリック入れ替え機能（ai.html / ai_result.html 共通）
+// 生成結果（ai_result.html）の単語クリック入れ替え機能
 (function () {
     let activePopup = null;
 
@@ -45,15 +45,6 @@
             btn.textContent = candidate;
             btn.addEventListener("click", async function (event) {
                 event.stopPropagation();
-
-                // 最高評価の歌詞（persist=false）は保存せずその場のプレビューのみ
-                if (tokenEle.dataset.persist !== "true") {
-                    closeActivePopup();
-                    tokenEle.textContent = candidate;
-                    tokenEle.classList.add("word-token-swapped");
-                    showToast("info", "入れ替えました（保存はされません）。");
-                    return;
-                }
 
                 const res = await postSwap(
                     tokenEle.dataset.aiId,

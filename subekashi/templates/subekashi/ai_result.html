@@ -9,7 +9,7 @@
     <h1>歌詞の生成結果</h1>
     {% for aiIns in aiInsL  %}
         <div class="ai-ins">
-            {% include "subekashi/components/lyric_tokens.html" with item=aiIns persist=True %}
+            {% include "subekashi/components/lyric_tokens.html" with item=aiIns %}
             <div class="evaluation">
                 <input type="radio" id="{{ aiIns.id }}1" class="score" name="radio{{ aiIns.id }}" oninput="setScore('{{ aiIns.id }}', 1)">
                 <label for="{{ aiIns.id }}1">悪い</label>

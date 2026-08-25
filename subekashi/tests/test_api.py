@@ -251,3 +251,21 @@ class AiWordSwapViewTest(TestCase):
             format="json",
         )
         self.assertEqual(Ai.objects.count(), count_before)
+
+    def test_duplicate_swap_does_not_create_new_record(self):
+        # 同じ入れ替え結果が既に存在する場合は、重複作成せず既存レコードを返す
+        first = self.client.post(
+            "/api/ai/swap/",
+            data={"base_id": self.base.id, "token_index": 2, "candidate": "駆ける"},
+            format="json",
+        )
+        count_after_first = Ai.objects.count()
+
+        second = self.client.post(
+            "/api/ai/swap/",
+            data={"base_id": self.base.id, "token_index": 2, "candidate": "駆ける"},
+            format="json",
+        )
+
+        self.assertEqual(Ai.objects.count(), count_after_first)
+        self.assertEqual(first.json()["id"], second.json()["id"])

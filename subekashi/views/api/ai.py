@@ -75,7 +75,11 @@ class AiWordSwapView(APIView):
         if not (0 < len(new_lyrics) <= lyrics_max_length):
             return Response({'detail': '入れ替え後の歌詞が長すぎます。'}, status=status.HTTP_400_BAD_REQUEST)
 
-        new_ai = Ai.objects.create(lyrics=new_lyrics, score=0, genetype=base.genetype)
+        # 同じ入れ替え結果が既に存在する場合は重複作成せず、既存のAiレコードを返す
+        new_ai, _ = Ai.objects.get_or_create(
+            lyrics=new_lyrics,
+            defaults={'score': 0, 'genetype': base.genetype},
+        )
 
         return Response(
             {'id': new_ai.id, 'lyrics': new_ai.lyrics},

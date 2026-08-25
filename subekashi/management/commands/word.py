@@ -19,8 +19,14 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(CONST_ERROR))
             return
 
+        if not isinstance(entries, list):
+            self.stdout.write(self.style.ERROR(CONST_ERROR))
+            return
+
         words = []
         for entry in entries:
+            if not isinstance(entry, dict):
+                continue
             word = entry.get('word', '')
             hinshi = entry.get('hinshi', '')
             candidates = entry.get('candidates', [])

@@ -2045,31 +2045,16 @@ class AiViewTest(TestCase):
         self.assertFalse(response.context["show_janome_notice"])
         self.assertNotContains(response, "id=\"janome-notice\"")
 
-    def test_best_lyric_word_with_candidate_is_rendered_as_clickable_token(self):
+    def test_best_lyric_is_plain_text_even_with_matching_word_candidate(self):
+        # 方針転換（#1053）により、最高評価の歌詞では単語入れ替え機能を提供しない。
+        # Word候補が存在していてもクリック可能なトークンにはならない
         Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
-        Ai.objects.create(lyrics="私は走る", score=5, genetype="model")
-
-        response = self.client.get(reverse("subekashi:ai"))
-
-        self.assertContains(response, 'class="word-token"')
-        self.assertContains(response, 'data-word="走る"')
-
-    def test_best_lyric_word_token_is_marked_as_not_persisted(self):
-        # 最高評価の歌詞での単語入れ替えはDBに保存しない仕様のため、
-        # data-persist="false" が付与されていることを確認する
-        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
-        Ai.objects.create(lyrics="私は走る", score=5, genetype="model")
-
-        response = self.client.get(reverse("subekashi:ai"))
-
-        self.assertContains(response, 'data-persist="false"')
-
-    def test_best_lyric_word_without_candidate_is_not_clickable(self):
         Ai.objects.create(lyrics="私は走る", score=5, genetype="model")
 
         response = self.client.get(reverse("subekashi:ai"))
 
         self.assertNotContains(response, 'class="word-token"')
+        self.assertContains(response, "私は走る")
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
@@ -2090,14 +2075,4 @@ class AiResultViewTest(TestCase):
         response = self.client.get(reverse("subekashi:ai_result"))
 
         self.assertContains(response, 'class="word-token"')
-
-    def test_lyric_word_token_is_marked_as_persisted(self):
-        # 生成結果の単語入れ替えは引き続きDBに保存する仕様のため、
-        # data-persist="true" が付与されていることを確認する
-        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
-        Ai.objects.create(lyrics="私は走る", score=0, genetype="model")
-
-        response = self.client.get(reverse("subekashi:ai_result"))
-
-        self.assertContains(response, 'data-persist="true"')
         self.assertContains(response, 'data-word="走る"')
