@@ -3,7 +3,10 @@ from subekashi.models import Word
 
 _tokenizer = Tokenizer()
 
-REPLACEABLE_HINSHIS = ("名詞", "動詞", "形容詞")
+# SubeteJanomeNoSeidesu側のREPLACEABLE_HINSHISと合わせている。
+# 一致していないと、外部リポジトリが計算した副詞・連体詞のWord候補が
+# subekashi側で一切使われず無駄になる
+REPLACEABLE_HINSHIS = ("名詞", "動詞", "形容詞", "副詞", "連体詞")
 
 
 def _tokenize_text(text):

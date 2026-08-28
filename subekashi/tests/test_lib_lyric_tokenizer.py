@@ -86,3 +86,14 @@ class TokenizeAiInstancesTest(TestCase):
         result = tokenize_ai_instances(Ai.objects.none())
 
         self.assertEqual(result, [])
+
+    def test_adverb_with_existing_candidate_is_replaceable(self):
+        # 副詞・連体詞はSubeteJanomeNoSeidesu側の対象品詞拡張に合わせて
+        # subekashi側でも対象に追加した（#1048/#1053）
+        Word.objects.create(word="とても", hinshi="副詞", candidate="かなり")
+        ai = Ai.objects.create(lyrics="とても嬉しい", score=5, genetype="model")
+
+        result = tokenize_ai_instances(Ai.objects.filter(pk=ai.pk))
+
+        tokens = {t["surface"]: t for t in result[0]["tokens"]}
+        self.assertTrue(tokens["とても"]["is_replaceable"])

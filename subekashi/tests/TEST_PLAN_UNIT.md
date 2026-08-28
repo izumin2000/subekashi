@@ -1157,6 +1157,7 @@ Google Drive APIはモック化する。
 | 品詞をまたいだ候補の誤判定防止 | 別品詞で同じ表記の`Word`のみ存在 | `is_replaceable=False`（品詞の組み合わせで厳密一致） |
 | 結果の`id`・`lyrics` | `Ai`インスタンスを渡す | 各要素に`id`・`lyrics`が含まれる |
 | 空のqueryset | `Ai.objects.none()` | 空リストを返す |
+| 副詞は置き換え対象（SubeteJanomeNoSeidesu側との整合、#1048） | 副詞に該当する`Word`が登録済み | `is_replaceable=True` |
 
 ---
 
