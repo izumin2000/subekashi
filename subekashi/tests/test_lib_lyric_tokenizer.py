@@ -97,3 +97,13 @@ class TokenizeAiInstancesTest(TestCase):
 
         tokens = {t["surface"]: t for t in result[0]["tokens"]}
         self.assertTrue(tokens["とても"]["is_replaceable"])
+
+    def test_adnominal_with_existing_candidate_is_replaceable(self):
+        # 連体詞（例:「この」）も副詞と同様に今回対象品詞へ追加した
+        Word.objects.create(word="この", hinshi="連体詞", candidate="あの")
+        ai = Ai.objects.create(lyrics="この歌", score=5, genetype="model")
+
+        result = tokenize_ai_instances(Ai.objects.filter(pk=ai.pk))
+
+        tokens = {t["surface"]: t for t in result[0]["tokens"]}
+        self.assertTrue(tokens["この"]["is_replaceable"])
