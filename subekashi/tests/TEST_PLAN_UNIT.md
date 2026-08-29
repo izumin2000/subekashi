@@ -417,6 +417,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | ニュース欄のリンク付与（#961） | `tag="release"`の記事 | `DefaultArticleView`へのURLでタイトル全体が`<a>`タグにくくられる |
 | ニュース欄のリンク付与（#961） | `handle_as_news=True`の記事（`tag`は`news`以外） | `DefaultArticleView`へのURLでタイトル全体が`<a>`タグにくくられる |
 | ニュース欄のリンク付与（#961） | `tag="news"`かつ`handle_as_news=True`の記事 | `handle_as_news`が優先され、リンクが付与される |
+| 作成された歌詞の表示 | `genetype="janome", score=5`のAiレコードが存在 | 「作成された歌詞」欄に表示される |
+| レガシーgenetype="model"は対象外（GPTインポート廃止） | `genetype="model", score=5`のレコードが存在 | 「作成された歌詞」欄に表示されない（`get_top_scored()`も`genetype="janome"`のみ対象） |
 
 #### 7-2. `SongsView` (`/songs/`)
 
@@ -1185,6 +1187,7 @@ Google Drive APIはモック化する。
 | 候補が存在しない単語 | `Word`未登録 | `is_replaceable=False` |
 | 置き換え対象外の品詞 | 助詞など`REPLACEABLE_HINSHIS`外 | 同表記の`Word`が存在しても`is_replaceable=False` |
 | 品詞をまたいだ候補の誤判定防止 | 別品詞で同じ表記の`Word`のみ存在 | `is_replaceable=False`（品詞の組み合わせで厳密一致） |
+| katsuyou不一致でもis_replaceableはTrue（既知の許容範囲） | `(word, hinshi)`は一致するがkatsuyouが異なる`Word`のみ存在 | `is_replaceable=True`になる一方、`Word.get_candidates()`は空リストを返す（`word_swap.js`側で「候補が見つかりません」として吸収） |
 | 結果の`id`・`lyrics` | `Ai`インスタンスを渡す | 各要素に`id`・`lyrics`が含まれる |
 | 空のqueryset | `Ai.objects.none()` | 空リストを返す |
 | 副詞は置き換え対象（SubeteJanomeNoSeidesu側との整合、#1048） | 副詞に該当する`Word`が登録済み | `is_replaceable=True` |

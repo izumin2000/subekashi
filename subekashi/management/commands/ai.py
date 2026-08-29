@@ -43,7 +43,7 @@ class Command(BaseCommand):
             return candidates_cache[key]
 
         # 既存のAiレコードおよび今回の実行内での重複を避ける
-        existing_lyrics = set(Ai.objects.filter(genetype="janome").values_list('lyrics', flat=True))
+        existing_lyrics = set(Ai.objects.filter(genetype=Ai.GENETYPE_JANOME).values_list('lyrics', flat=True))
 
         MIN_LYRICS_LENGTH = 7
         MAX_LYRICS_LENGTH = 20
@@ -82,14 +82,17 @@ class Command(BaseCommand):
                 if not (MIN_LYRICS_LENGTH <= len(new_lyrics) <= MAX_LYRICS_LENGTH):
                     continue
                 if new_lyrics in existing_lyrics:
-                    break
+                    # この行・候補の組み合わせは重複するが、同じ曲の別の行なら
+                    # 重複しないユニークな結果を作れる可能性があるため、
+                    # 曲ごと諦めず次の行を試す
+                    continue
 
                 existing_lyrics.add(new_lyrics)
                 new_lyrics_list.append(new_lyrics)
                 break
 
         Ai.objects.bulk_create([
-            Ai(lyrics=lyrics, genetype="janome", score=0) for lyrics in new_lyrics_list
+            Ai(lyrics=lyrics, genetype=Ai.GENETYPE_JANOME, score=0) for lyrics in new_lyrics_list
         ])
 
         self.stdout.write(self.style.SUCCESS(

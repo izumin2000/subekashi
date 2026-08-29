@@ -39,10 +39,6 @@ class AiWordSwapThrottle(UserRateThrottle):
     rate = '30/minute'
 
 
-# 単語入れ替えで作成されたAiレコードのgenetype。GPT等の他作成方式（"model"）とは区別する
-SWAP_GENETYPE = 'janome'
-
-
 class AiWordSwapView(APIView):
     """
     作成歌詞（Aiレコード）の単語1つを模倣単語候補に入れ替え、
@@ -82,7 +78,7 @@ class AiWordSwapView(APIView):
         # 同じ入れ替え結果（かつ同じgenetype）が既に存在する場合は重複作成せず、既存のAiレコードを返す
         new_ai, _ = Ai.objects.get_or_create(
             lyrics=new_lyrics,
-            genetype=SWAP_GENETYPE,
+            genetype=Ai.GENETYPE_JANOME,
             defaults={'score': 0},
         )
 

@@ -29,6 +29,22 @@ class TopViewTest(TestCase):
         response = self.client.get(reverse("subekashi:top"))
         self.assertEqual(response.status_code, 200)
 
+    def test_created_lyrics_shows_high_scored_janome(self):
+        Ai.objects.create(lyrics="作成された歌詞サンプル", score=5, genetype="janome")
+
+        response = self.client.get(reverse("subekashi:top"))
+
+        self.assertContains(response, "作成された歌詞サンプル")
+
+    def test_created_lyrics_excludes_legacy_model_genetype(self):
+        # レガシーのGPTインポート（genetype="model"）は廃止されたため、
+        # スコア5であっても「作成された歌詞」には表示されない
+        Ai.objects.create(lyrics="レガシー歌詞", score=5, genetype="model")
+
+        response = self.client.get(reverse("subekashi:top"))
+
+        self.assertNotContains(response, "レガシー歌詞")
+
     def test_news_tag_article_has_no_link(self):
         """tag=newsかつhandle_as_news=Falseの記事はリンクされずタイトルのみ表示される"""
         Article.objects.create(

@@ -132,3 +132,20 @@ class TokenizeAiInstancesTest(TestCase):
 
         tokens = {t["surface"]: t for t in result[0]["tokens"]}
         self.assertTrue(tokens["この"]["is_replaceable"])
+
+    def test_replaceable_ignores_katsuyou_mismatch(self):
+        # is_replaceableは(surface, hinshi)のみで判定しkatsuyouを見ないため、
+        # 同じ表記・品詞でも活用形が異なるWordが存在すればクリック可能と
+        # 判定される。一方でWord.get_candidates()は(hinshi, katsuyou)まで
+        # 一致させて候補を絞り込むため、この場合は候補0件になり得る
+        # （既知の許容範囲。word_swap.js側で「候補が見つかりません」として
+        # 吸収される）
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="連用形", candidate="駆け")
+        ai = Ai.objects.create(lyrics="私は走る", score=5, genetype="model")
+
+        result = tokenize_ai_instances(Ai.objects.filter(pk=ai.pk))
+
+        tokens = {t["surface"]: t for t in result[0]["tokens"]}
+        self.assertTrue(tokens["走る"]["is_replaceable"])
+        self.assertEqual(tokens["走る"]["katsuyou"], "基本形")
+        self.assertEqual(Word.get_candidates("走る", "動詞", "基本形"), [])
