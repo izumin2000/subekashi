@@ -1,4 +1,4 @@
-// 生成結果（ai_result.html）の単語クリック入れ替え機能
+// 作成結果（ai_result.html）の単語クリック入れ替え機能
 (function () {
     let activePopup = null;
 
@@ -9,8 +9,8 @@
         }
     }
 
-    async function fetchCandidates(word, hinshi) {
-        const params = new URLSearchParams({ word: word, hinshi: hinshi });
+    async function fetchCandidates(word, hinshi, katsuyou) {
+        const params = new URLSearchParams({ word: word, hinshi: hinshi, katsuyou: katsuyou });
         try {
             const res = await fetch(baseURL() + "/api/word/candidates/?" + params.toString());
             if (!res.ok) return [];
@@ -85,7 +85,8 @@
 
         const word = tokenEle.dataset.word;
         const hinshi = tokenEle.dataset.hinshi;
-        const candidates = await fetchCandidates(word, hinshi);
+        const katsuyou = tokenEle.dataset.katsuyou;
+        const candidates = await fetchCandidates(word, hinshi, katsuyou);
 
         if (candidates === null) {
             showToast("error", "通信エラーが発生しました。");

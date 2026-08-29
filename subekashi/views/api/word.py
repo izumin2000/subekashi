@@ -18,10 +18,13 @@ class WordCandidatesView(APIView):
     def get(self, request, *args, **kwargs):
         word = request.query_params.get('word', '')
         hinshi = request.query_params.get('hinshi', '')
+        # katsuyouは副詞・連体詞では空文字列が正当な値のため、
+        # word・hinshiのように未指定チェックの対象にはしない
+        katsuyou = request.query_params.get('katsuyou', '')
         if not word or not hinshi:
             return Response({'detail': 'wordとhinshiは必須です。'}, status=status.HTTP_400_BAD_REQUEST)
 
-        candidates = Word.get_candidates(word, hinshi, limit=10)
+        candidates = Word.get_candidates(word, hinshi, katsuyou, limit=10)
         return Response(
             {'candidates': candidates},
             headers={"Access-Control-Allow-Origin": "*"},

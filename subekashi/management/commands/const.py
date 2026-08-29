@@ -8,9 +8,7 @@ class Command(BaseCommand):
     
     def handle(self, *args, **options) :
         CONST_INFO = {
-            'ai.py': 'SEND_DISCORD_AI_RESULT = True',
             'ban.py': 'BAN_LIST = []',
-            'gpt.txt': '',
             'word.json': '[]',
             'version.json': '{\n\t"VERSION": "dev"\n}',
             'reject.py': 'REJECT_LIST = []',

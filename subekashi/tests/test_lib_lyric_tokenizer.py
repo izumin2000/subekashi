@@ -31,6 +31,31 @@ class TokenizeLyricsWithIndexTest(TestCase):
         self.assertEqual(by_surface["は"], "助詞")
         self.assertEqual(by_surface["走る"], "動詞")
 
+    def test_katsuyou_is_infl_form_for_verb(self):
+        # SubeteJanomeNoSeidesu側のtokenizer_janome()と規約を合わせる必要がある
+        tokens = tokenize_lyrics_with_index("私は走る")
+
+        by_surface = {t["surface"]: t["katsuyou"] for t in tokens}
+        self.assertEqual(by_surface["走る"], "基本形")
+
+    def test_katsuyou_is_infl_form_for_adjective(self):
+        tokens = tokenize_lyrics_with_index("とても嬉しい")
+
+        by_surface = {t["surface"]: t["katsuyou"] for t in tokens}
+        self.assertEqual(by_surface["嬉しい"], "基本形")
+
+    def test_katsuyou_is_full_part_of_speech_for_noun(self):
+        tokens = tokenize_lyrics_with_index("犬")
+
+        by_surface = {t["surface"]: t["katsuyou"] for t in tokens}
+        self.assertEqual(by_surface["犬"], "名詞,一般,*,*")
+
+    def test_katsuyou_is_empty_for_adverb_and_others(self):
+        tokens = tokenize_lyrics_with_index("私は走る")
+
+        by_surface = {t["surface"]: t["katsuyou"] for t in tokens}
+        self.assertEqual(by_surface["は"], "")
+
 
 class TokenizeAiInstancesTest(TestCase):
     """tokenize_ai_instances() のテスト"""

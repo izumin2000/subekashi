@@ -39,13 +39,13 @@ class AiWordSwapThrottle(UserRateThrottle):
     rate = '30/minute'
 
 
-# 単語入れ替えで生成されたAiレコードのgenetype。GPT等の他生成方式（"model"）とは区別する
+# 単語入れ替えで作成されたAiレコードのgenetype。GPT等の他作成方式（"model"）とは区別する
 SWAP_GENETYPE = 'janome'
 
 
 class AiWordSwapView(APIView):
     """
-    生成歌詞（Aiレコード）の単語1つを模倣単語候補に入れ替え、
+    作成歌詞（Aiレコード）の単語1つを模倣単語候補に入れ替え、
     新しいAiレコード（score=0）として保存する。
     """
     throttle_classes = [AiWordSwapThrottle]
@@ -67,7 +67,7 @@ class AiWordSwapView(APIView):
         if token['hinshi'] not in REPLACEABLE_HINSHIS:
             return Response({'detail': 'この単語は入れ替えられません。'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not Word.is_valid_candidate(token['surface'], token['hinshi'], candidate):
+        if not Word.is_valid_candidate(token['surface'], token['hinshi'], token['katsuyou'], candidate):
             return Response({'detail': '候補として存在しない単語です。'}, status=status.HTTP_400_BAD_REQUEST)
 
         new_lyrics = ''.join(
