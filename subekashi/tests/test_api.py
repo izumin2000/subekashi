@@ -153,25 +153,43 @@ class WordCandidatesViewTest(TestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_returns_matching_candidates(self):
-        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
-        Word.objects.create(word="走る", hinshi="動詞", candidate="疾走する")
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="駆ける")
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="疾走する")
 
-        response = self.client.get("/api/word/candidates/", {"word": "走る", "hinshi": "動詞"})
+        response = self.client.get("/api/word/candidates/", {"word": "走る", "hinshi": "動詞", "katsuyou": "基本形"})
 
         self.assertEqual(response.status_code, 200)
         self.assertCountEqual(response.json()["candidates"], ["駆ける", "疾走する"])
 
     def test_no_matching_word_returns_empty_list(self):
-        response = self.client.get("/api/word/candidates/", {"word": "存在しない単語", "hinshi": "動詞"})
+        response = self.client.get("/api/word/candidates/", {"word": "存在しない単語", "hinshi": "動詞", "katsuyou": "基本形"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["candidates"], [])
+
+    def test_returns_candidates_from_other_words_with_same_hinshi(self):
+        # wordがword.json由来のデータに存在しなくても、hinshi・katsuyouが一致する
+        # 他のwordの候補を横断的に返す
+        Word.objects.create(word="歩く", hinshi="動詞", katsuyou="基本形", candidate="進む")
+
+        response = self.client.get("/api/word/candidates/", {"word": "走る", "hinshi": "動詞", "katsuyou": "基本形"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["candidates"], ["進む"])
+
+    def test_excludes_candidates_with_different_katsuyou(self):
+        Word.objects.create(word="読ん", hinshi="動詞", katsuyou="連用タ接続", candidate="話し")
+
+        response = self.client.get("/api/word/candidates/", {"word": "読む", "hinshi": "動詞", "katsuyou": "基本形"})
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["candidates"], [])
 
     def test_limits_to_ten_candidates(self):
         for i in range(15):
-            Word.objects.create(word="走る", hinshi="動詞", candidate=f"候補{i}")
+            Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate=f"候補{i}")
 
-        response = self.client.get("/api/word/candidates/", {"word": "走る", "hinshi": "動詞"})
+        response = self.client.get("/api/word/candidates/", {"word": "走る", "hinshi": "動詞", "katsuyou": "基本形"})
 
         self.assertEqual(len(response.json()["candidates"]), 10)
 
@@ -182,9 +200,9 @@ class AiWordSwapViewTest(TestCase):
 
     def setUp(self):
         self.client = APIClient()
-        # 「私は走る」 -> 私(名詞,index0) は(助詞,index1) 走る(動詞,index2)
+        # 「私は走る」 -> 私(名詞,index0) は(助詞,index1) 走る(動詞,基本形,index2)
         self.base = Ai.objects.create(lyrics="私は走る", score=5, genetype="model")
-        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="駆ける")
 
     def test_valid_swap_creates_new_ai_record(self):
         response = self.client.post(
@@ -239,6 +257,17 @@ class AiWordSwapViewTest(TestCase):
         response = self.client.post(
             "/api/ai/swap/",
             data={"base_id": self.base.id, "token_index": 2, "candidate": "でっちあげ候補"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_candidate_with_different_katsuyou_returns_400(self):
+        # hinshiは一致するが活用形（katsuyou）が違う候補は、文法が破綻するため拒否する
+        Word.objects.create(word="読ん", hinshi="動詞", katsuyou="連用タ接続", candidate="話し")
+
+        response = self.client.post(
+            "/api/ai/swap/",
+            data={"base_id": self.base.id, "token_index": 2, "candidate": "話し"},
             format="json",
         )
         self.assertEqual(response.status_code, 400)

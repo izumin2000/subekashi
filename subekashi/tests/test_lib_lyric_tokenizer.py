@@ -31,6 +31,31 @@ class TokenizeLyricsWithIndexTest(TestCase):
         self.assertEqual(by_surface["は"], "助詞")
         self.assertEqual(by_surface["走る"], "動詞")
 
+    def test_katsuyou_is_infl_form_for_verb(self):
+        # SubeteJanomeNoSeidesu側のtokenizer_janome()と規約を合わせる必要がある
+        tokens = tokenize_lyrics_with_index("私は走る")
+
+        by_surface = {t["surface"]: t["katsuyou"] for t in tokens}
+        self.assertEqual(by_surface["走る"], "基本形")
+
+    def test_katsuyou_is_infl_form_for_adjective(self):
+        tokens = tokenize_lyrics_with_index("とても嬉しい")
+
+        by_surface = {t["surface"]: t["katsuyou"] for t in tokens}
+        self.assertEqual(by_surface["嬉しい"], "基本形")
+
+    def test_katsuyou_is_full_part_of_speech_for_noun(self):
+        tokens = tokenize_lyrics_with_index("犬")
+
+        by_surface = {t["surface"]: t["katsuyou"] for t in tokens}
+        self.assertEqual(by_surface["犬"], "名詞,一般,*,*")
+
+    def test_katsuyou_is_empty_for_adverb_and_others(self):
+        tokens = tokenize_lyrics_with_index("私は走る")
+
+        by_surface = {t["surface"]: t["katsuyou"] for t in tokens}
+        self.assertEqual(by_surface["は"], "")
+
 
 class TokenizeAiInstancesTest(TestCase):
     """tokenize_ai_instances() のテスト"""
@@ -86,3 +111,41 @@ class TokenizeAiInstancesTest(TestCase):
         result = tokenize_ai_instances(Ai.objects.none())
 
         self.assertEqual(result, [])
+
+    def test_adverb_with_existing_candidate_is_replaceable(self):
+        # 副詞・連体詞はSubeteJanomeNoSeidesu側の対象品詞拡張に合わせて
+        # subekashi側でも対象に追加した（#1048/#1053）
+        Word.objects.create(word="とても", hinshi="副詞", candidate="かなり")
+        ai = Ai.objects.create(lyrics="とても嬉しい", score=5, genetype="model")
+
+        result = tokenize_ai_instances(Ai.objects.filter(pk=ai.pk))
+
+        tokens = {t["surface"]: t for t in result[0]["tokens"]}
+        self.assertTrue(tokens["とても"]["is_replaceable"])
+
+    def test_adnominal_with_existing_candidate_is_replaceable(self):
+        # 連体詞（例:「この」）も副詞と同様に今回対象品詞へ追加した
+        Word.objects.create(word="この", hinshi="連体詞", candidate="あの")
+        ai = Ai.objects.create(lyrics="この歌", score=5, genetype="model")
+
+        result = tokenize_ai_instances(Ai.objects.filter(pk=ai.pk))
+
+        tokens = {t["surface"]: t for t in result[0]["tokens"]}
+        self.assertTrue(tokens["この"]["is_replaceable"])
+
+    def test_replaceable_ignores_katsuyou_mismatch(self):
+        # is_replaceableは(surface, hinshi)のみで判定しkatsuyouを見ないため、
+        # 同じ表記・品詞でも活用形が異なるWordが存在すればクリック可能と
+        # 判定される。一方でWord.get_candidates()は(hinshi, katsuyou)まで
+        # 一致させて候補を絞り込むため、この場合は候補0件になり得る
+        # （既知の許容範囲。word_swap.js側で「候補が見つかりません」として
+        # 吸収される）
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="連用形", candidate="駆け")
+        ai = Ai.objects.create(lyrics="私は走る", score=5, genetype="model")
+
+        result = tokenize_ai_instances(Ai.objects.filter(pk=ai.pk))
+
+        tokens = {t["surface"]: t for t in result[0]["tokens"]}
+        self.assertTrue(tokens["走る"]["is_replaceable"])
+        self.assertEqual(tokens["走る"]["katsuyou"], "基本形")
+        self.assertEqual(Word.get_candidates("走る", "動詞", "基本形"), [])

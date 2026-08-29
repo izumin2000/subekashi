@@ -3,14 +3,26 @@ from subekashi.models import Word
 
 _tokenizer = Tokenizer()
 
-REPLACEABLE_HINSHIS = ("名詞", "動詞", "形容詞")
+# SubeteJanomeNoSeidesu側のREPLACEABLE_HINSHISと合わせている。
+# 一致していないと、外部リポジトリが計算した副詞・連体詞のWord候補が
+# subekashi側で一切使われず無駄になる
+REPLACEABLE_HINSHIS = ("名詞", "動詞", "形容詞", "副詞", "連体詞")
 
 
 def _tokenize_text(text):
+    # katsuyouの計算規約はSubeteJanomeNoSeidesu側のtokenizer_janome()と合わせている。
+    # 一致していないと、Wordテーブルのkatsuyouと突き合わせても一致せず、
+    # 候補が一切ヒットしなくなる
     tokens = []
     for tok in _tokenizer.tokenize(text):
         hinshi = tok.part_of_speech.split(",")[0]
-        tokens.append({"surface": tok.surface, "hinshi": hinshi})
+        if hinshi in ("動詞", "形容詞"):
+            katsuyou = tok.infl_form
+        elif hinshi == "名詞":
+            katsuyou = tok.part_of_speech
+        else:
+            katsuyou = ""
+        tokens.append({"surface": tok.surface, "hinshi": hinshi, "katsuyou": katsuyou})
     return tokens
 
 

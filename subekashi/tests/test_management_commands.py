@@ -6,6 +6,7 @@ youtube: DBロック対策で処理方式を変更した後の挙動（id指定�
 detect_primary_name_duplicates: 一番有名な名義の重複候補検出レポート（#1008）を検証する。
 backup: バックアップ先をサーバーストレージからGoogle Driveに変更した挙動（#1050）を検証する。
 word: word.jsonから模倣単語候補をWordに一括登録する処理（#1053）を検証する。
+ai: Song.lyricsの単語をランダムに入れ替えてgenetype="janome"のAiレコードをシードする処理を検証する。
 """
 import json
 from datetime import datetime
@@ -15,7 +16,7 @@ from unittest.mock import mock_open, patch
 from django.core.management import call_command
 from django.test import TestCase
 
-from subekashi.models import Author, AuthorAlias, Song, SongLink, Word
+from subekashi.models import Ai, Author, AuthorAlias, Song, SongLink, Word
 
 
 class DeleteCommandTest(TestCase):
@@ -301,6 +302,27 @@ class WordCommandTest(TestCase):
         self.assertTrue(Word.objects.filter(word="走る", hinshi="動詞", candidate="駆ける").exists())
         self.assertTrue(Word.objects.filter(word="走る", hinshi="動詞", candidate="疾走する").exists())
 
+    def test_imports_katsuyou_from_json(self):
+        data = json.dumps([
+            {"word": "走る", "hinshi": "動詞", "katsuyou": "基本形", "candidates": ["駆ける"]},
+        ])
+        with patch("builtins.open", mock_open(read_data=data)):
+            call_command("word")
+
+        word = Word.objects.get(word="走る", hinshi="動詞", candidate="駆ける")
+        self.assertEqual(word.katsuyou, "基本形")
+
+    def test_missing_katsuyou_defaults_to_empty_string(self):
+        # 旧形式（katsuyou未対応）のword.jsonでも例外にならないようにする
+        data = json.dumps([
+            {"word": "走る", "hinshi": "動詞", "candidates": ["駆ける"]},
+        ])
+        with patch("builtins.open", mock_open(read_data=data)):
+            call_command("word")
+
+        word = Word.objects.get(word="走る", hinshi="動詞", candidate="駆ける")
+        self.assertEqual(word.katsuyou, "")
+
     def test_multiple_entries_are_all_imported(self):
         data = json.dumps([
             {"word": "走る", "hinshi": "動詞", "candidates": ["駆ける"]},
@@ -387,3 +409,98 @@ class WordCommandTest(TestCase):
 
         self.assertEqual(Word.objects.count(), 1)
         self.assertTrue(Word.objects.filter(word="犬", candidate="猫").exists())
+
+
+class AiCommandTest(TestCase):
+    """ai コマンドのテスト（Song.lyricsからjanome Aiレコードをシードする、#1053）"""
+
+    def test_creates_janome_ai_record_from_song_lyrics(self):
+        # 「今日も一人で私は走る」(10文字) -> 「今日も一人で私は駆ける」(11文字)
+        # 作成物は7文字以上20文字以下のみ対象とするため、判定に影響しない長さにしている
+        Song.objects.create(title="曲1", lyrics="今日も一人で私は走る", is_joke=False, is_questionable=False)
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="駆ける")
+
+        call_command("ai")
+
+        ai = Ai.objects.get(genetype="janome")
+        self.assertEqual(ai.lyrics, "今日も一人で私は駆ける")
+        self.assertEqual(ai.score, 0)
+
+    def test_excludes_joke_songs(self):
+        Song.objects.create(title="ネタ曲", lyrics="今日も一人で私は走る", is_joke=True, is_questionable=False)
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="駆ける")
+
+        call_command("ai")
+
+        self.assertEqual(Ai.objects.filter(genetype="janome").count(), 0)
+
+    def test_excludes_questionable_songs(self):
+        Song.objects.create(title="界隈曲", lyrics="今日も一人で私は走る", is_joke=False, is_questionable=True)
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="駆ける")
+
+        call_command("ai")
+
+        self.assertEqual(Ai.objects.filter(genetype="janome").count(), 0)
+
+    def test_song_without_eligible_token_is_skipped_without_error(self):
+        # Word候補が1件も無いため、置き換え可能なトークンが存在しない
+        Song.objects.create(title="曲1", lyrics="ありがとう", is_joke=False, is_questionable=False)
+
+        call_command("ai")
+
+        self.assertEqual(Ai.objects.filter(genetype="janome").count(), 0)
+
+    def test_excludes_result_shorter_than_seven_characters(self):
+        # 「私は走る」(5文字) -> 「私は駆ける」(5文字)、7文字未満のため対象外
+        Song.objects.create(title="曲1", lyrics="私は走る", is_joke=False, is_questionable=False)
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="駆ける")
+
+        call_command("ai")
+
+        self.assertEqual(Ai.objects.filter(genetype="janome").count(), 0)
+
+    def test_excludes_result_longer_than_twenty_characters(self):
+        # 「今日もまた一人でとても寂しく悲しく私は走る」(21文字)
+        # -> 「...駆ける」(22文字)、20文字超のため対象外
+        Song.objects.create(
+            title="曲1",
+            lyrics="今日もまた一人でとても寂しく悲しく私は走る",
+            is_joke=False,
+            is_questionable=False,
+        )
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="駆ける")
+
+        call_command("ai")
+
+        self.assertEqual(Ai.objects.filter(genetype="janome").count(), 0)
+
+    def test_count_option_limits_created_records(self):
+        Song.objects.create(title="曲1", lyrics="今日も一人で私は走る", is_joke=False, is_questionable=False)
+        Song.objects.create(title="曲2", lyrics="今日も一人で私は歩く", is_joke=False, is_questionable=False)
+        Song.objects.create(title="曲3", lyrics="今日も一人で私は飛ぶ", is_joke=False, is_questionable=False)
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="駆ける")
+        Word.objects.create(word="歩く", hinshi="動詞", katsuyou="基本形", candidate="進む")
+        Word.objects.create(word="飛ぶ", hinshi="動詞", katsuyou="基本形", candidate="跳ねる")
+
+        call_command("ai", "--count", "1")
+
+        self.assertEqual(Ai.objects.filter(genetype="janome").count(), 1)
+
+    def test_rerun_does_not_create_duplicate_ai_record(self):
+        # 対象が1曲・候補が1件のみのため、入れ替え結果は毎回同じになる
+        Song.objects.create(title="曲1", lyrics="今日も一人で私は走る", is_joke=False, is_questionable=False)
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="駆ける")
+
+        call_command("ai")
+        call_command("ai")
+
+        self.assertEqual(Ai.objects.filter(genetype="janome").count(), 1)
+
+    def test_completion_message_reports_created_count(self):
+        Song.objects.create(title="曲1", lyrics="今日も一人で私は走る", is_joke=False, is_questionable=False)
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="駆ける")
+
+        out = StringIO()
+        call_command("ai", stdout=out)
+
+        self.assertIn("新規Aiレコード数：1件（対象1曲中）", out.getvalue())

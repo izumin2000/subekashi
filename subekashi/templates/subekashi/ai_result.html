@@ -6,7 +6,7 @@
 
 {% block content %}
 <section>
-    <h1>歌詞の生成結果</h1>
+    <h1>歌詞の作成結果</h1>
     {% for aiIns in aiInsL  %}
         <div class="ai-ins">
             {% include "subekashi/components/lyric_tokens.html" with item=aiIns %}
@@ -26,7 +26,7 @@
     {% endfor %}
     <div class="dummybuttons ai-result-form">
         <div class="dummybutton" id="copy" onclick="copyBest()"><p>最高の行をコピー</p></div>
-        <input class="dummybutton" type="submit" value="再生成" onclick="location.reload()"></input>
+        <input class="dummybutton" type="submit" value="再作成" onclick="regenerate()"></input>
     <p id="copy-message"></p>
 </section>
 {% endblock %}

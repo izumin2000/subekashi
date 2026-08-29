@@ -1,26 +1,19 @@
 from django.shortcuts import render
 from django.views import View
 from subekashi.models import Ai
-from subekashi.lib.discord import send_discord
 from subekashi.lib.lyric_tokenizer import tokenize_ai_instances
-from config.local_settings import ERROR_DISCORD_URL
 
 
 class AiResultView(View):
     def get(self, request):
         context = {
-            "metatitle": "歌詞の生成結果",
+            "metatitle": "歌詞の作成結果",
         }
 
-        aiIns = Ai.get_unscored_model()
+        aiIns = Ai.get_unscored_janome()
         if not aiIns.exists():
-            try:
-                from subekashi.constants.dynamic.ai import SEND_DISCORD_AI_RESULT
-            except ImportError:
-                SEND_DISCORD_AI_RESULT = True
-
-            if SEND_DISCORD_AI_RESULT:
-                send_discord(ERROR_DISCORD_URL, "aiInsのデータがありません。")
-            aiIns = Ai.get_all_model()
+            # 未評価のjanomeレコードが尽きても、単語入れ替えの元になる歌詞が
+            # 表示され続けるよう、評価済みも含めた全janomeレコードにフォールバックする
+            aiIns = Ai.get_all_janome()
         context["aiInsL"] = tokenize_ai_instances(aiIns.order_by('?')[:25])
         return render(request, "subekashi/ai_result.html", context)

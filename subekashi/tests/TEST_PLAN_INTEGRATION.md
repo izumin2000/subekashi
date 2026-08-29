@@ -506,17 +506,17 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 
 ---
 
-### 12. 生成結果の単語クリック入れ替えフロー（#1053）
+### 12. 作成結果の単語クリック入れ替えフロー（#1053）
 
 **テストファイル**: `tests/test_views.py`（`AiViewTest` / `AiResultViewTest`）、`tests/test_api.py`（`WordCandidatesViewTest` / `AiWordSwapViewTest`）
 
-単語クリック入れ替え機能は `ai/result/`（生成結果）にのみ提供する（方針転換により`ai/`＝最高評価の歌詞では提供しない）。`ai/result/`の表示（歌詞の単語分割・クリック可否の判定） → 候補取得API → 入れ替えPOSTによる新規`Ai`作成までの一連の流れを、HTTPリクエスト単位で連携させて検証する。ブラウザ側のクリック操作・ポップアップ表示（`word_swap.js`）自体はDjangoテストの対象外のため、実サーバー起動 + `curl`/Playwrightによる手動確認で代替した（本PR作成時に実施済み）。
+単語クリック入れ替え機能は `ai/result/`（作成結果）にのみ提供する（方針転換により`ai/`＝最高評価の歌詞では提供しない）。`ai/result/`の表示（歌詞の単語分割・クリック可否の判定） → 候補取得API → 入れ替えPOSTによる新規`Ai`作成までの一連の流れを、HTTPリクエスト単位で連携させて検証する。ブラウザ側のクリック操作・ポップアップ表示（`word_swap.js`）自体はDjangoテストの対象外のため、実サーバー起動 + `curl`/Playwrightによる手動確認で代替した（本PR作成時に実施済み）。
 
 #### 12-1. 表示から候補取得、入れ替え保存までの一連の流れ
 
 | 項目 | 内容 |
 | --- | --- |
-| 前提 | `Ai(lyrics="私は走る", score=0, genetype="model")`、`Word(word="走る", hinshi="動詞", candidate="駆ける")`が存在する |
+| 前提 | `Ai(lyrics="私は走る", score=0, genetype="janome")`、`Word(word="走る", hinshi="動詞", candidate="駆ける")`が存在する |
 | 操作1 | `GET /ai/result/` |
 | 検証1 | レスポンスに`走る`が`class="word-token"`（クリック可能）として含まれる |
 | 操作2 | `GET /api/word/candidates/?word=走る&hinshi=動詞` |
@@ -537,7 +537,7 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 
 | 項目 | 内容 |
 | --- | --- |
-| 前提 | `Ai(lyrics="私は走る", score=5, genetype="model")`、`Word(word="走る", hinshi="動詞", candidate="駆ける")`が存在する |
+| 前提 | `Ai(lyrics="私は走る", score=5, genetype="janome")`、`Word(word="走る", hinshi="動詞", candidate="駆ける")`が存在する |
 | 操作 | `GET /ai/` |
 | 検証 | Word候補が存在していても`class="word-token"`は含まれず、歌詞はプレーンテキストで表示される |
 

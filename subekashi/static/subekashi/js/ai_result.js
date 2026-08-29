@@ -18,6 +18,17 @@ async function setScore(id, score) {
     )
 }
 
+// 再作成（reload()だけだとブラウザのスクロール位置復元機能により
+// スクロール位置が保持されてしまうことがあるため、明示的に無効化してから
+// ページ上部に戻す）
+function regenerate() {
+    if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
+    location.reload();
+}
+
 // 最高の行をコピー
 function copyBest() {
     // コピーするテキストを抽選
@@ -47,4 +58,4 @@ function copyBest() {
     showToast("ok", "コピーしました。");
 }
 
-showToast("ok", "歌詞を生成しました。");
+showToast("ok", "歌詞を作成しました。");

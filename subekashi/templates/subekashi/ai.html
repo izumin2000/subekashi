@@ -8,7 +8,7 @@
 <section id="ai-section">
     <h1>全て蛇の目の所為です。<a href="{% url 'article:default_article' 'howToJanome' %}"><i class="fas fa-info-circle"></i></a></h1>
     <form action="{% url 'subekashi:ai_result' %}">{% csrf_token %}
-        <input type="submit" value="生成">
+        <input type="submit" value="作成">
     </form>
 
     {% if show_janome_notice %}

@@ -29,12 +29,13 @@ class Command(BaseCommand):
                 continue
             word = entry.get('word', '')
             hinshi = entry.get('hinshi', '')
+            katsuyou = entry.get('katsuyou') or ''
             candidates = entry.get('candidates', [])
             if not word or not hinshi or not isinstance(candidates, list):
                 continue
             for candidate in candidates:
                 if candidate and isinstance(candidate, str):
-                    words.append(Word(word=word, hinshi=hinshi, candidate=candidate))
+                    words.append(Word(word=word, hinshi=hinshi, katsuyou=katsuyou, candidate=candidate))
 
         count_before = Word.objects.count()
         Word.objects.bulk_create(words, ignore_conflicts=True)
