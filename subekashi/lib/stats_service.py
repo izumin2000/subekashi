@@ -89,17 +89,29 @@ def _clean_base(qs):
     return Song.objects.filter(id__in=qs.values("id"))
 
 
-def compute_common_stats(qs):
-    """総合統計ページ・authorごとの統計ページ共通の統計を返す"""
+def compute_base_stats(qs):
+    """総合統計ページ・authorごとの統計ページ共通の統計を返す（total_authorsは含まない）
+
+    total_authorsの算出（compute_unique_author_count）はAuthorテーブル起点の
+    追加クエリが必要になるため、それを使わないauthorごとの統計ページ
+    （合作人数として別途算出するため総作者数自体は表示しない）で無駄なクエリが
+    発行されないよう、compute_common_statsから切り出した
+    """
     base = _clean_base(qs)
     aggregates = base.aggregate(song_count=Count("id", distinct=True), v=Sum("view"), l=Sum("like"))
     return {
         "song_count": aggregates["song_count"] or 0,
         "total_view": aggregates["v"] or 0,
         "total_like": aggregates["l"] or 0,
-        "total_authors": compute_unique_author_count(qs),
         "total_imitateds": base.annotate(c=Count("imitateds", distinct=True)).aggregate(s=Sum("c"))["s"] or 0,
     }
+
+
+def compute_common_stats(qs):
+    """総合統計ページ・stats管理コマンドのみ: total_authorsを含む共通統計を返す"""
+    stats = compute_base_stats(qs)
+    stats["total_authors"] = compute_unique_author_count(qs)
+    return stats
 
 
 def build_stats_items(stats, items):

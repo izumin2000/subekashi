@@ -12,6 +12,7 @@ from subekashi.lib.stats_service import (
     apply_songrange_filter,
     apply_upload_time_filter,
     build_stats_items,
+    compute_base_stats,
     compute_collaborator_count,
     compute_common_stats,
     compute_total_imitates,
@@ -220,14 +221,13 @@ class ApplyUploadTimeFilterTest(TestCase):
         self.assertNotIn(self.song_no_upload, result)
 
 
-class ComputeCommonStatsTest(TestCase):
+class ComputeBaseStatsTest(TestCase):
     def test_empty_queryset(self):
-        stats = compute_common_stats(Song.objects.none())
+        stats = compute_base_stats(Song.objects.none())
         self.assertEqual(stats, {
             "song_count": 0,
             "total_view": 0,
             "total_like": 0,
-            "total_authors": 0,
             "total_imitateds": 0,
         })
 
@@ -235,12 +235,28 @@ class ComputeCommonStatsTest(TestCase):
         Song.objects.create(title="曲1", view=100, like=10)
         Song.objects.create(title="曲2", view=None, like=None)
 
-        stats = compute_common_stats(Song.objects.all())
+        stats = compute_base_stats(Song.objects.all())
 
         self.assertEqual(stats["song_count"], 2)
         self.assertEqual(stats["total_view"], 100)
         self.assertEqual(stats["total_like"], 10)
 
+    def test_total_imitateds_counts_songs_that_imitate_this_song(self):
+        original = Song.objects.create(title="原曲")
+        imitate_1 = Song.objects.create(title="模倣曲1")
+        imitate_2 = Song.objects.create(title="模倣曲2")
+        imitate_1.imitates.add(original)
+        imitate_2.imitates.add(original)
+
+        stats = compute_base_stats(Song.objects.filter(pk=original.pk))
+
+        self.assertEqual(stats["total_imitateds"], 2)
+
+
+class ComputeCommonStatsTest(TestCase):
+    # 総合統計ページ・stats管理コマンド専用: compute_base_statsにtotal_authorsを
+    # 加えたもの（コードレビュー指摘対応: authorごとの統計ページではtotal_authorsを
+    # 使わないため、compute_base_statsとして無駄なクエリが発行されないよう分離した）
     def test_total_authors_counts_unique_authors_across_songs(self):
         # 同じ作者が複数曲に関わっていても重複せず1人として数える
         author_a = Author.objects.create(name="作者A")
@@ -252,17 +268,6 @@ class ComputeCommonStatsTest(TestCase):
         stats = compute_common_stats(Song.objects.all())
 
         self.assertEqual(stats["total_authors"], 2)
-
-    def test_total_imitateds_counts_songs_that_imitate_this_song(self):
-        original = Song.objects.create(title="原曲")
-        imitate_1 = Song.objects.create(title="模倣曲1")
-        imitate_2 = Song.objects.create(title="模倣曲2")
-        imitate_1.imitates.add(original)
-        imitate_2.imitates.add(original)
-
-        stats = compute_common_stats(Song.objects.filter(pk=original.pk))
-
-        self.assertEqual(stats["total_imitateds"], 2)
 
     def test_authors_and_imitateds_do_not_inflate_each_other(self):
         # 複数作者(ユニーク集計)かつ複数の模倣曲(Count集計)を同時に持つ曲で、

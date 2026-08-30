@@ -1348,15 +1348,19 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 | --- | --- |
 | 呼び出し直後の値 | timezone-aware、`timezone.now()`呼び出し前後の時刻範囲内に収まる |
 
-#### 19-2. `compute_common_stats(qs)`
+#### 19-2. `compute_base_stats(qs)` / `compute_common_stats(qs)`
 
-| テストケース | 前提条件 | 期待結果 |
-| --- | --- | --- |
-| 空のqueryset | 曲が0件 | 全フィールドが0 |
-| view/likeがNullな曲を含む | 一部の曲の`view`・`like`が`None` | `Sum`が`None`にならず0として扱われる |
-| 同じ作者が複数曲に関わる | 作者Aが2曲、作者Bが1曲（Aと共作） | `total_authors`は重複を除いた人数（2）になる（`compute_unique_author_count`を内部で使用、#334で`song.authors`の総和から変更） |
-| 模倣されている曲 | 2曲がある曲を模倣 | `total_imitateds`がその曲について2になる |
-| 作者数と模倣曲数の相互干渉防止（回帰） | 複数作者かつ複数の模倣曲を同時に持つ曲 | `total_authors`（Authorテーブル起点のユニーク集計）と`total_imitateds`（Songテーブル起点のCount集計）が互いに水増しされず、それぞれ正しい値になる |
+`compute_base_stats`はsong_count/total_view/total_like/total_imitateds（total_authorsを含まない）を返す。`compute_common_stats`はそれに`total_authors`（`compute_unique_author_count`によるAuthor起点の追加クエリ）を加えたもので、総合統計ページ・stats管理コマンドのみが使う。authorごとの統計ページはtotal_authorsを画面に表示しない（合作人数を別途算出するため）ため`compute_base_stats`を使い、無駄なクエリが発行されないようにしている（コードレビュー指摘対応）。
+
+| テストケース | 対象 | 前提条件 | 期待結果 |
+| --- | --- | --- | --- |
+| 空のqueryset | `compute_base_stats` | 曲が0件 | 全フィールドが0 |
+| view/likeがNullな曲を含む | `compute_base_stats` | 一部の曲の`view`・`like`が`None` | `Sum`が`None`にならず0として扱われる |
+| 模倣されている曲 | `compute_base_stats` | 2曲がある曲を模倣 | `total_imitateds`がその曲について2になる |
+| 同じ作者が複数曲に関わる | `compute_common_stats` | 作者Aが2曲、作者Bが1曲（Aと共作） | `total_authors`は重複を除いた人数（2）になる（`compute_unique_author_count`を内部で使用、#334で`song.authors`の総和から変更） |
+| 作者数と模倣曲数の相互干渉防止（回帰） | `compute_common_stats` | 複数作者かつ複数の模倣曲を同時に持つ曲 | `total_authors`（Authorテーブル起点のユニーク集計）と`total_imitateds`（Songテーブル起点のCount集計）が互いに水増しされず、それぞれ正しい値になる |
+
+`AuthorStatsView`側では、`compute_base_stats`への変更によりtotal_authors算出クエリが発行されなくなったことをクエリ数のアサーション（`test_does_not_issue_unused_total_authors_query`、`tests/test_views.py`）で回帰防止している。
 
 #### 19-2-1. `build_stats_items(stats, items)`（#334、コードレビュー指摘対応）
 

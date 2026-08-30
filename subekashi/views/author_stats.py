@@ -4,8 +4,8 @@ from subekashi.lib.stats_service import (
     apply_songrange_filter,
     apply_upload_time_filter,
     build_stats_items,
+    compute_base_stats,
     compute_collaborator_count,
-    compute_common_stats,
     compute_total_imitates,
     compute_unique_collaborator_count,
     resolve_songrange,
@@ -29,7 +29,7 @@ class AuthorStatsView(View):
 
         qs = apply_upload_time_filter(songrange_qs, year, month)
 
-        stats = compute_common_stats(qs)
+        stats = compute_base_stats(qs)
 
         stats_items = build_stats_items(stats, [
             {"icon": "fas fa-list-ol", "label": "曲数", "value": stats["song_count"]},

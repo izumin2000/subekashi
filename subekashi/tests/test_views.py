@@ -870,6 +870,15 @@ class AuthorStatsViewTest(TestCase):
         self.assertEqual(response.context["year"], "2025")
         self.assertEqual(response.context["month"], "all")
 
+    def test_does_not_issue_unused_total_authors_query(self):
+        # コードレビュー指摘対応: 画面に表示しないtotal_authors算出のための
+        # 追加クエリ（Author起点のcompute_unique_author_count）が発行されないこと
+        # の回帰防止テスト。クエリ数が増えた場合はこの値を更新しつつ、原因を確認すること
+        Song.objects.create(title="曲").authors.add(self.author)
+
+        with self.assertNumQueries(10):
+            self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
+
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
 class AuthorAliasesViewTest(TestCase):
