@@ -8,9 +8,6 @@ wordcloud.py
 sitemap.xml
 .env
 sandbox
-backups/*
-!backups/
-!backups/.gitkeep
 private/*
 dynamic/*
 subekashi/constants/dynamic/*
