@@ -211,6 +211,7 @@ python manage.py runserver
 - YouTube関連のフィルタ（view, like, upload_time）やソートを使用する場合、`mediatypes`を指定しない限り、自動的にYouTube動画のみに絞り込まれます
 - view関連のフィルタまたはソートを使用する場合、view >= 1 の曲のみが対象となります
 - like関連のフィルタまたはソートを使用する場合、like >= 1 の曲のみが対象となります
+- sort=upload_time / sort=-upload_time を使用する場合、upload_time が null の曲は結果から除外されます
 - view、likeの値は1以上の整数のみ受け付けます。0以下の値を指定するとバリデーションエラーが発生します
 - バリデーションエラーが発生した場合、400 Bad Requestと共にエラーメッセージが返されます
 
