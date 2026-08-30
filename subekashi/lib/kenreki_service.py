@@ -18,8 +18,8 @@ def _triangular(n):
 
 MAX_TOTAL_POINTS = _triangular(len(VIEW_THRESHOLDS)) + _triangular(len(LIKE_THRESHOLDS))
 
-WHITE_KEY_WIDTH = 24
-BLACK_KEY_WIDTH = 16
+WHITE_KEY_WIDTH = 12
+BLACK_KEY_WIDTH = 8
 # 1オクターブ内の白鍵(C~B、7音)のうち直後に黒鍵を持つもの（E-F、B-C間には黒鍵が無い）
 OCTAVE_HAS_BLACK_AFTER = [True, True, False, True, True, True, False]
 
@@ -43,15 +43,17 @@ def compute_kenreki(total_view, total_like):
     key_count = min(MAX_KEYS, points // POINTS_PER_KEY)
 
     overflow_color = None
+    overflow_ratio = None
     if points > KENREKI_CAP_POINTS:
-        ratio = min(1.0, (points - KENREKI_CAP_POINTS) / (MAX_TOTAL_POINTS - KENREKI_CAP_POINTS))
-        hue = round(ratio * 270)
+        overflow_ratio = min(1.0, (points - KENREKI_CAP_POINTS) / (MAX_TOTAL_POINTS - KENREKI_CAP_POINTS))
+        hue = round(overflow_ratio * 270)
         overflow_color = f"hsl({hue}, 75%, 45%)"
 
     return {
         "points": points,
         "key_count": key_count,
         "overflow_color": overflow_color,
+        "overflow_ratio": overflow_ratio,
     }
 
 

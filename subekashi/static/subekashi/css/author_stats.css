@@ -1,44 +1,48 @@
 /* フィルターUI・統計一覧の共通スタイルはcommon.cssを参照 */
 
 .kenreki {
-    margin: 20px 0;
-    text-align: center;
+    margin-top: 30px;
 }
 
-.kenreki-label {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 10px;
+.kenreki-spectrum {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+    height: 8px;
+    margin: 0 auto 20px auto;
+    border-radius: 4px;
+    background: linear-gradient(to right, hsl(0, 75%, 45%), hsl(270, 75%, 45%));
 }
 
-.kenreki-label i {
-    font-size: 1.2em;
-}
-
-.kenreki-value {
-    font-size: 1.2em;
-    font-weight: bold;
+.kenreki-spectrum-marker {
+    position: absolute;
+    top: 100%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    line-height: 1;
+    color: #fff;
 }
 
 .kenreki-keyboard-scroll {
+    position: relative;
+    left: 50%;
+    width: 100vw;
+    margin-left: -50vw;
     overflow-x: auto;
-    padding: 10px;
     background-color: #000;
-    border: 1px solid #fff;
-    border-radius: 6px;
+    border-top: 1px solid #fff;
+    border-bottom: 1px solid #fff;
 }
 
 .kenreki-keyboard {
     position: relative;
     display: flex;
-    height: 80px;
+    height: 40px;
     margin: 0 auto;
 }
 
 .kenreki-white-key {
-    flex: 0 0 24px;
+    flex: 0 0 12px;
     height: 100%;
     background-color: #dcdcdc;
     border-right: 1px solid #404040;
@@ -48,7 +52,7 @@
 .kenreki-black-key {
     position: absolute;
     top: 0;
-    width: 16px;
+    width: 8px;
     height: 60%;
     background-color: #606060;
     z-index: 2;

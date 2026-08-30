@@ -557,11 +557,18 @@ class AuthorViewTest(TestCase):
         response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
         self.assertContains(response, "fa-chart-line")
 
-    def test_stats_summary_shows_total_view(self):
+    def test_stats_summary_shows_kenreki(self):
+        # view=1234は1,20,50,100,200,500,1000の7段階に到達 -> triangular(7)=28pt -> 28//2=14鍵
         Song.objects.filter(title="作者ビューテスト曲").update(view=1234)
         response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
         self.assertContains(response, 'id="author-stats-summary"')
-        self.assertEqual(response.context["total_view"], 1234)
+        self.assertEqual(response.context["kenreki"]["key_count"], 14)
+
+    def test_stats_summary_hidden_when_author_has_no_songs(self):
+        no_song_author = Author.objects.create(name="曲の無い作者")
+        response = self.client.get(reverse("subekashi:author", args=[no_song_author.id]))
+        self.assertIsNone(response.context["kenreki"])
+        self.assertNotContains(response, 'id="author-stats-summary"')
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)

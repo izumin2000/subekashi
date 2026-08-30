@@ -41,6 +41,7 @@ class ComputeKenrekiTest(TestCase):
         self.assertEqual(result["points"], 0)
         self.assertEqual(result["key_count"], 0)
         self.assertIsNone(result["overflow_color"])
+        self.assertIsNone(result["overflow_ratio"])
 
     def test_combines_view_and_like_points(self):
         # view=20 -> 3pt, like=2 -> 1+2=3pt, 合計6pt / 2pt = 3本
@@ -55,6 +56,7 @@ class ComputeKenrekiTest(TestCase):
         self.assertEqual(result["points"], KENREKI_CAP_POINTS)
         self.assertEqual(result["key_count"], 100)
         self.assertIsNone(result["overflow_color"])
+        self.assertIsNone(result["overflow_ratio"])
 
     def test_points_above_cap_starts_overflow_color_near_red(self):
         # view 20段階目(2000万)=210pt > 200pt(cap) だが超過幅は小さいため赤に近い色になる
@@ -63,11 +65,13 @@ class ComputeKenrekiTest(TestCase):
         self.assertEqual(result["key_count"], 100)
         self.assertIsNotNone(result["overflow_color"])
         self.assertTrue(result["overflow_color"].startswith("hsl(10,"))
+        self.assertAlmostEqual(result["overflow_ratio"], 10 / 284)
 
     def test_max_possible_points_reaches_full_purple(self):
         result = compute_kenreki(10 ** 12, 10 ** 12)
         self.assertEqual(result["points"], MAX_TOTAL_POINTS)
         self.assertEqual(result["overflow_color"], "hsl(270, 75%, 45%)")
+        self.assertEqual(result["overflow_ratio"], 1.0)
 
     def test_key_count_capped_at_100(self):
         result = compute_kenreki(10 ** 12, 10 ** 12)
@@ -96,7 +100,7 @@ class BuildKeyboardGeometryTest(TestCase):
 
     def test_width_matches_white_key_count(self):
         geometry = build_keyboard_geometry(10)
-        self.assertEqual(geometry["width"], 10 * 24)
+        self.assertEqual(geometry["width"], 10 * 12)
 
     def test_white_keys_is_iterable_of_key_count_length(self):
         geometry = build_keyboard_geometry(10)

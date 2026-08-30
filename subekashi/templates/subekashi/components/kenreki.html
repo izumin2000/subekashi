@@ -1,7 +1,10 @@
-{% load humanize %}
 {% if kenreki %}
 <div class="kenreki">
-    <p class="kenreki-label"><i class="fas fa-music"></i><span class="icon-p">鍵歴</span><span class="kenreki-value">{{ kenreki.key_count|intcomma:False }}鍵</span></p>
+    {% if kenreki.overflow_ratio is not None %}
+        <div class="kenreki-spectrum">
+            <div class="kenreki-spectrum-marker" style="left: {% widthratio kenreki.overflow_ratio 1 100 %}%;">&#9650;</div>
+        </div>
+    {% endif %}
     <div class="kenreki-keyboard-scroll">
         <div class="kenreki-keyboard" style="width: {{ kenreki.geometry.width }}px;">
             {% for _ in kenreki.geometry.white_keys %}
