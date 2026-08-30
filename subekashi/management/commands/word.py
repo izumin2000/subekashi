@@ -34,7 +34,12 @@ class Command(BaseCommand):
             if not word or not hinshi or not isinstance(candidates, list):
                 continue
             for candidate in candidates:
-                if candidate and isinstance(candidate, str):
+                if candidate and isinstance(candidate, str) and candidate != word:
+                    # word == candidateの自己参照はWordモデルのCheckConstraintで
+                    # 弾かれるが、bulk_create(ignore_conflicts=True)がCHECK制約
+                    # 違反をスキップするかどうかはDBバックエンド依存（SQLiteは
+                    # スキップするが、PostgreSQLはbulk_create全体が失敗し得る）
+                    # ため、ここで明示的にフィルタしてDB非依存にする
                     words.append(Word(word=word, hinshi=hinshi, katsuyou=katsuyou, candidate=candidate))
 
         count_before = Word.objects.count()

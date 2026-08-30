@@ -1085,6 +1085,7 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | 完了メッセージの件数精度 | 同じ内容で2回実行 | 1回目は「新規Word候補数：1」、2回目（重複のみ）は「新規Word候補数：0」と、`count()`差分に基づく実際の新規作成数が表示される |
 | `candidates`がlist以外 | `candidates`が文字列など | そのエントリは丸ごとスキップされる（文字列を1文字ずつ`Word`化してしまう事故を防止） |
 | `candidates`内に文字列以外の要素 | `candidates`に数値・`null`が混在 | 文字列の要素のみ`Word`として登録され、それ以外は無視される |
+| 自己参照エントリの除外 | `candidates`に`word`と同じ文字列が混在 | `CheckConstraint`のDB任せにせず、コマンド側で明示的に除外する（`bulk_create(ignore_conflicts=True)`のCHECK制約違反時の挙動がDBバックエンド依存のため） |
 | トップレベルがlist以外 | JSONのトップレベルが`dict`など | 例外を投げず、`CONST_ERROR`を出力（`entry.get()`によるAttributeErrorを防止） |
 | リスト内にdict以外の要素 | 文字列など`dict`でない要素を含むlist | その要素はスキップされ、他の正常なエントリのみ登録される |
 

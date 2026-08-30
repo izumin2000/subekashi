@@ -13,7 +13,10 @@
         const params = new URLSearchParams({ word: word, hinshi: hinshi, katsuyou: katsuyou });
         try {
             const res = await fetch(baseURL() + "/api/word/candidates/?" + params.toString());
-            if (!res.ok) return [];
+            // res.ok=falseは候補が0件（正常系のレスポンス）とは別物で、
+            // スロットル（429）やサーバーエラーの可能性があるため、
+            // 呼び出し元が「候補なし」と誤解しないようnull（通信エラー扱い）を返す
+            if (!res.ok) return null;
             const data = await res.json();
             return data.candidates || [];
         } catch (e) {

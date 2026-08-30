@@ -393,6 +393,19 @@ class WordCommandTest(TestCase):
         self.assertEqual(Word.objects.count(), 1)
         self.assertTrue(Word.objects.filter(candidate="駆ける").exists())
 
+    def test_self_referential_candidate_is_skipped(self):
+        # word == candidateの自己参照エントリはWordモデルのCheckConstraintで
+        # 弾かれるが、bulk_create(ignore_conflicts=True)がCHECK制約違反を
+        # スキップするかどうかはDBバックエンド依存のため、コマンド側で
+        # 明示的にフィルタしていることを確認する（#940, PR #1068）
+        data = json.dumps([{"word": "走る", "hinshi": "動詞", "candidates": ["走る", "駆ける"]}])
+        with patch("builtins.open", mock_open(read_data=data)):
+            call_command("word")
+
+        self.assertEqual(Word.objects.count(), 1)
+        self.assertTrue(Word.objects.filter(candidate="駆ける").exists())
+        self.assertFalse(Word.objects.filter(word="走る", candidate="走る").exists())
+
     def test_top_level_object_does_not_raise(self):
         # トップレベルがlistでない（例: dict）場合、for文でdictのキーが
         # 渡ってentry.get()がAttributeErrorになるのを防ぐ
