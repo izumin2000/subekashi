@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.views import View
+from subekashi.lib.kenreki_service import build_keyboard_geometry, compute_kenreki
 from subekashi.lib.stats_service import (
     apply_songrange_filter,
     apply_upload_time_filter,
@@ -8,6 +9,7 @@ from subekashi.lib.stats_service import (
     compute_collaborator_count,
     compute_total_imitates,
     compute_unique_collaborator_count,
+    compute_view_like_totals,
     resolve_songrange,
     resolve_year_month,
 )
@@ -22,6 +24,15 @@ class AuthorStatsView(View):
         author_name = author_obj.name
 
         author_songs = Song.objects.filter(authors__id=author_id).distinct()
+
+        # 鍵歴（実績鍵盤）はsongrange/year/monthの絞り込みの影響を受けない、
+        # authorの全期間・全曲を通じた累積実績として算出する
+        kenreki_source_stats = compute_view_like_totals(author_songs)
+        kenreki = None
+        if kenreki_source_stats["song_count"] > 0:
+            kenreki = compute_kenreki(kenreki_source_stats["total_view"], kenreki_source_stats["total_like"])
+            kenreki["geometry"] = build_keyboard_geometry(kenreki["key_count"], kenreki["overflow_color"])
+
         songrange, show_all_songrange = resolve_songrange(request, author_songs)
         songrange_qs = apply_songrange_filter(author_songs, songrange)
         # 選択肢は対象author自身・選択中のsongrangeで実際に0件にならない年のみに絞る
@@ -52,6 +63,7 @@ class AuthorStatsView(View):
             "year_choices": year_choices,
             "month_choices": month_choices,
             "stats_items": stats_items,
+            "kenreki": kenreki,
             "description": f"{author_name}の統計情報。",
         }
         return render(request, "subekashi/author_stats.html", context)

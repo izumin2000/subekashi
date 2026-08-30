@@ -874,10 +874,47 @@ class AuthorStatsViewTest(TestCase):
         # コードレビュー指摘対応: 画面に表示しないtotal_authors算出のための
         # 追加クエリ（Author起点のcompute_unique_author_count）が発行されないこと
         # の回帰防止テスト。クエリ数が増えた場合はこの値を更新しつつ、原因を確認すること
+        # （鍵歴算出用のcompute_view_like_totals分1クエリを含む）
         Song.objects.create(title="曲").authors.add(self.author)
 
-        with self.assertNumQueries(10):
+        with self.assertNumQueries(11):
             self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
+
+    def test_kenreki_hidden_when_author_has_no_songs(self):
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
+        self.assertIsNone(response.context["kenreki"])
+
+    def test_kenreki_present_when_author_has_songs(self):
+        Song.objects.create(title="曲", view=1, like=0).authors.add(self.author)
+
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
+
+        self.assertIsNotNone(response.context["kenreki"])
+        self.assertEqual(response.context["kenreki"]["key_count"], 0)
+
+    def test_kenreki_key_count_reflects_total_view_and_like(self):
+        # view=20(3pt)+like=2(1+2=3pt)=合計6pt / 2pt = 3鍵
+        Song.objects.create(title="曲", view=20, like=2).authors.add(self.author)
+
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
+
+        self.assertEqual(response.context["kenreki"]["key_count"], 3)
+
+    def test_kenreki_not_affected_by_songrange_year_month_filters(self):
+        # 鍵歴はauthorの全期間・全songrangeの累積実績（絞り込みの影響を受けない）
+        Song.objects.create(
+            title="2020年のsubeana曲", view=1000, like=0, is_subeana=True,
+            upload_time=datetime(2020, 1, 1, tzinfo=dt_timezone.utc),
+        ).authors.add(self.author)
+
+        unfiltered = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
+        filtered = self.client.get(
+            reverse("subekashi:author_stats", args=[self.author.id]),
+            {"songrange": "xx", "year": "2024"},
+        )
+
+        self.assertEqual(unfiltered.context["kenreki"]["key_count"], filtered.context["kenreki"]["key_count"])
+        self.assertGreater(filtered.context["kenreki"]["key_count"], 0)
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)

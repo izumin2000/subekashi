@@ -7,6 +7,7 @@
 {% block content %}
 <section>
     <h1>{{ author }}の統計</h1>
+    {% include "subekashi/components/kenreki.html" %}
     {% include "subekashi/components/stats_filter.html" %}
     {% include "subekashi/components/stats_summary.html" %}
 </section>

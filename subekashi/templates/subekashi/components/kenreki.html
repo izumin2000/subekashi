@@ -1,0 +1,16 @@
+{% load humanize %}
+{% if kenreki %}
+<div class="kenreki">
+    <p class="kenreki-label"><i class="fas fa-music"></i><span class="icon-p">鍵歴</span><span class="kenreki-value">{{ kenreki.key_count|intcomma:False }}鍵</span></p>
+    <div class="kenreki-keyboard-scroll">
+        <div class="kenreki-keyboard" style="width: {{ kenreki.geometry.width }}px;">
+            {% for _ in kenreki.geometry.white_keys %}
+                <div class="kenreki-white-key"></div>
+            {% endfor %}
+            {% for black_key in kenreki.geometry.black_keys %}
+                <div class="kenreki-black-key" style="left: {{ black_key.left }}px;{% if black_key.color %} background-color: {{ black_key.color }};{% endif %}"></div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}

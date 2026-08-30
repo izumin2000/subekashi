@@ -89,6 +89,21 @@ def _clean_base(qs):
     return Song.objects.filter(id__in=qs.values("id"))
 
 
+def compute_view_like_totals(qs):
+    """曲数・総再生回数・総高評価数のみを返す（total_authors/total_imitatedsを含まない最小構成）
+
+    鍵歴（実績鍵盤）の算出等、view/likeの合計だけが必要な呼び出し元で
+    不要な追加集計クエリが発行されないよう、compute_base_statsから切り出した
+    """
+    base = _clean_base(qs)
+    aggregates = base.aggregate(song_count=Count("id", distinct=True), v=Sum("view"), l=Sum("like"))
+    return {
+        "song_count": aggregates["song_count"] or 0,
+        "total_view": aggregates["v"] or 0,
+        "total_like": aggregates["l"] or 0,
+    }
+
+
 def compute_base_stats(qs):
     """総合統計ページ・authorごとの統計ページ共通の統計を返す（total_authorsは含まない）
 
@@ -97,14 +112,10 @@ def compute_base_stats(qs):
     （合作人数として別途算出するため総作者数自体は表示しない）で無駄なクエリが
     発行されないよう、compute_common_statsから切り出した
     """
+    stats = compute_view_like_totals(qs)
     base = _clean_base(qs)
-    aggregates = base.aggregate(song_count=Count("id", distinct=True), v=Sum("view"), l=Sum("like"))
-    return {
-        "song_count": aggregates["song_count"] or 0,
-        "total_view": aggregates["v"] or 0,
-        "total_like": aggregates["l"] or 0,
-        "total_imitateds": base.annotate(c=Count("imitateds", distinct=True)).aggregate(s=Sum("c"))["s"] or 0,
-    }
+    stats["total_imitateds"] = base.annotate(c=Count("imitateds", distinct=True)).aggregate(s=Sum("c"))["s"] or 0
+    return stats
 
 
 def compute_common_stats(qs):

@@ -18,6 +18,7 @@ from subekashi.lib.stats_service import (
     compute_total_imitates,
     compute_unique_author_count,
     compute_unique_collaborator_count,
+    compute_view_like_totals,
     filter_monthly_series_by_year_month,
     get_month_choices,
     get_songrange_availability,
@@ -219,6 +220,24 @@ class ApplyUploadTimeFilterTest(TestCase):
     def test_upload_time_none_excluded_when_only_month_specified(self):
         result = apply_upload_time_filter(Song.objects.all(), "all", "1")
         self.assertNotIn(self.song_no_upload, result)
+
+
+class ComputeViewLikeTotalsTest(TestCase):
+    # compute_base_statsからtotal_imitatedsの追加集計クエリも省いた最小構成
+    # （鍵歴の算出等、view/likeの合計だけが必要な場面での無駄クエリ防止）
+    def test_empty_queryset(self):
+        stats = compute_view_like_totals(Song.objects.none())
+        self.assertEqual(stats, {"song_count": 0, "total_view": 0, "total_like": 0})
+
+    def test_sums_view_and_like_treating_null_as_zero(self):
+        Song.objects.create(title="曲1", view=100, like=10)
+        Song.objects.create(title="曲2", view=None, like=None)
+
+        stats = compute_view_like_totals(Song.objects.all())
+
+        self.assertEqual(stats["song_count"], 2)
+        self.assertEqual(stats["total_view"], 100)
+        self.assertEqual(stats["total_like"], 10)
 
 
 class ComputeBaseStatsTest(TestCase):

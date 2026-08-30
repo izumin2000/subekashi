@@ -1,1 +1,55 @@
 /* フィルターUI・統計一覧の共通スタイルはcommon.cssを参照 */
+
+.kenreki {
+    margin: 20px 0;
+    text-align: center;
+}
+
+.kenreki-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.kenreki-label i {
+    font-size: 1.2em;
+}
+
+.kenreki-value {
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.kenreki-keyboard-scroll {
+    overflow-x: auto;
+    padding: 10px;
+    background-color: #000;
+    border: 1px solid #fff;
+    border-radius: 6px;
+}
+
+.kenreki-keyboard {
+    position: relative;
+    display: flex;
+    height: 80px;
+    margin: 0 auto;
+}
+
+.kenreki-white-key {
+    flex: 0 0 24px;
+    height: 100%;
+    background-color: #dcdcdc;
+    border-right: 1px solid #404040;
+    box-sizing: border-box;
+}
+
+.kenreki-black-key {
+    position: absolute;
+    top: 0;
+    width: 16px;
+    height: 60%;
+    background-color: #606060;
+    z-index: 2;
+}
