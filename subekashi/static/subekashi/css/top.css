@@ -115,9 +115,17 @@ h2 {
     height: auto;
 }
 
-#subeana, #special-thanks-links a {
+#subeana {
     text-decoration: none;
     font-size: min(36px, 8.5vw);
+}
+
+#special-thanks-links a {
+    display: inline-block;
+    text-decoration: none;
+    font-size: min(36px, 8.5vw);
+    margin: 0 10px;
+    white-space: nowrap;
 }
 
 #credit {

@@ -329,6 +329,8 @@ PRにはClaude Code Actionsを使用しております。
 
 - [亦組](https://github.com/h-u-t-e-i)
 
+- [忌み名。](https://x.com/imina_371_)
+
 ## クレジット
 本ソフトでは表示フォントに「源全角ゴ改」(<https://drive.google.com/drive/folders/19WidrJoCmI5qLJV-eR_ydURIwxB2-DS>) を使用しています。
 Licensed under SIL Open Font License 1.1 <http://scripts.sil.org/OFL>
