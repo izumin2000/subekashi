@@ -1315,7 +1315,7 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 
 #### 19-1-3. `now_local()`（#334、コードレビュー指摘対応）
 
-`stats`コマンド内で`datetime.now()`（サーバーOSのタイムゾーン設定に依存）と`timezone.localtime()`（Djangoの設定タイムゾーン基準）が混在していたことによるタイムゾーン不整合の修正で追加。`timezone.localtime(timezone.now())`のラッパーで、Djangoの`TIME_ZONE`設定を常に使う。
+`stats`コマンド内で`datetime.now()`（サーバーOSのタイムゾーン設定に依存）と`timezone.localtime()`（Djangoの設定タイムゾーン基準）が混在していたことによるタイムゾーン不整合の修正で追加。`timezone.localtime(timezone.now())`のラッパーで、Djangoの`TIME_ZONE`設定を常に使う。`get_year_choices()`/`get_month_choices()`・`StatsView`/`AuthorStatsView`の`current_year`計算でも、同種のズレ防止のため`timezone.now()`の代わりにこちらを使う（コードレビュー指摘対応）。
 
 | テストケース | 期待結果 |
 | --- | --- |
@@ -1354,13 +1354,18 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 
 #### 19-4. `get_year_choices()` / `get_month_choices(year, current_year)`
 
+年・月の判定はいずれも`now_local()`経由で行い、`timezone.now()`の生の`.year`/`.month`（UTC基準）は使わない。DBの`upload_time`（UTC保存）も`timezone.localtime()`で変換してから年を判定する（コードレビュー指摘対応: UTC/JSTの境界（UTC 15:00〜23:59台）でズレるバグの修正）。
+
 | テストケース | 前提条件 | 期待結果 |
 | --- | --- | --- |
 | 曲が0件 | DBが空 | `get_year_choices()`は空リスト |
 | `upload_time`を持つ曲が0件 | 全曲`upload_time=None` | `get_year_choices()`は空リスト |
 | 曲が存在 | 最古の`upload_time`年〜今年 | その範囲のリストを返す |
+| 最古年の判定はローカルタイムゾーン基準（回帰） | `upload_time`がUTC 2019-12-31 20:00（JST 2020-01-01 05:00） | 開始年が2020になる（2019にならない） |
+| 現在年の判定は`now_local()`基準（回帰） | `now_local()`をJST 2027-01-01 00:30にモック | `get_year_choices()`の終端が2027になる |
 | 選択年が今年 | `year == current_year` | 1月〜現在月のリスト |
 | 選択年が今年以外 | `year != current_year` | 1〜12月のリスト |
+| 現在月の判定は`now_local()`基準（回帰） | `now_local()`をJST 2027-01-01 00:30にモック | `get_month_choices(2027, 2027)`が`[1]`になる |
 
 #### 19-5. `next_year_month(year, month)` / `month_start(year, month)`
 

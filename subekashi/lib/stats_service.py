@@ -69,10 +69,11 @@ def _by_ids(qs):
 def compute_common_stats(qs):
     """総合統計ページ・authorごとの統計ページ共通の統計を返す"""
     base, song_ids = _by_ids(qs)
+    view_like = base.aggregate(v=Sum("view"), l=Sum("like"))
     return {
         "song_count": len(song_ids),
-        "total_view": base.aggregate(v=Sum("view"))["v"] or 0,
-        "total_like": base.aggregate(l=Sum("like"))["l"] or 0,
+        "total_view": view_like["v"] or 0,
+        "total_like": view_like["l"] or 0,
         "total_authors": compute_unique_author_count(qs),
         "total_imitateds": base.annotate(c=Count("imitateds", distinct=True)).aggregate(s=Sum("c"))["s"] or 0,
     }
@@ -103,17 +104,21 @@ def compute_unique_collaborator_count(qs, author_id):
 
 
 def get_year_choices():
-    """upload_timeが最小の年〜今年のリストを返す（upload_time付きの曲が1件もなければ空リスト）"""
+    """upload_timeが最小の年〜今年のリストを返す（upload_time付きの曲が1件もなければ空リスト）
+
+    DBにはUTCで保存されているため、年の判定はローカルタイムゾーンに変換してから行う
+    """
     first = Song.objects.exclude(upload_time__isnull=True).order_by("upload_time").first()
     if first is None:
         return []
-    return list(range(first.upload_time.year, timezone.now().year + 1))
+    first_year = timezone.localtime(first.upload_time).year
+    return list(range(first_year, now_local().year + 1))
 
 
 def get_month_choices(year, current_year):
     """yearが今年ならその年の1月〜現在月、それ以外なら1〜12月のリストを返す"""
     if year == current_year:
-        return list(range(1, timezone.now().month + 1))
+        return list(range(1, now_local().month + 1))
     return list(range(1, 13))
 
 

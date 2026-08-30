@@ -4,6 +4,7 @@ lib/stats_service.py のテスト
 統計ページ(総合/authorごと)・stats管理コマンドが共通で使う集計ロジックを対象とする。
 """
 from datetime import datetime, timezone as dt_timezone
+from unittest.mock import patch
 from django.test import TestCase
 from django.utils import timezone
 from subekashi.models import Author, Song
@@ -249,19 +250,46 @@ class GetYearChoicesTest(TestCase):
         Song.objects.create(title="古い曲", upload_time=datetime(2020, 1, 1, tzinfo=dt_timezone.utc))
         Song.objects.create(title="新しい曲", upload_time=timezone.now())
 
-        current_year = timezone.now().year
+        current_year = now_local().year
         self.assertEqual(get_year_choices(), list(range(2020, current_year + 1)))
+
+    def test_min_upload_time_year_uses_local_timezone_not_utc(self):
+        # UTC 2019-12-31 20:00 = JST 2020-01-01 05:00（コードレビュー指摘対応の回帰テスト）
+        # ローカルタイムゾーンに変換せずupload_time.yearを直接使うと2019年始まりになってしまう
+        Song.objects.create(title="曲", upload_time=datetime(2019, 12, 31, 20, 0, tzinfo=dt_timezone.utc))
+
+        current_year = now_local().year
+        self.assertEqual(get_year_choices(), list(range(2020, current_year + 1)))
+
+    @patch("subekashi.lib.stats_service.now_local")
+    def test_current_year_end_uses_now_local_not_raw_utc(self, mock_now_local):
+        # timezone.now()の生の.yearをそのまま使うとUTC/JSTの境界でズレるバグの
+        # 再発防止（コードレビュー指摘対応）。now_local()を経由することを確認する
+        mock_now_local.return_value = timezone.make_aware(datetime(2027, 1, 1, 0, 30))
+        Song.objects.create(title="曲", upload_time=timezone.make_aware(datetime(2020, 6, 1)))
+
+        self.assertEqual(get_year_choices(), list(range(2020, 2028)))
+        mock_now_local.assert_called()
 
 
 class GetMonthChoicesTest(TestCase):
     def test_current_year_limits_to_current_month(self):
-        current_year = timezone.now().year
-        current_month = timezone.now().month
+        current_year = now_local().year
+        current_month = now_local().month
         self.assertEqual(get_month_choices(current_year, current_year), list(range(1, current_month + 1)))
 
     def test_past_year_returns_all_twelve_months(self):
-        current_year = timezone.now().year
+        current_year = now_local().year
         self.assertEqual(get_month_choices(current_year - 1, current_year), list(range(1, 13)))
+
+    @patch("subekashi.lib.stats_service.now_local")
+    def test_current_year_cutoff_uses_now_local_not_raw_utc(self, mock_now_local):
+        # timezone.now()の生の.monthをそのまま使うとUTC/JSTの境界でズレるバグの
+        # 再発防止（コードレビュー指摘対応）
+        mock_now_local.return_value = timezone.make_aware(datetime(2027, 1, 1, 0, 30))
+
+        self.assertEqual(get_month_choices(2027, 2027), [1])
+        mock_now_local.assert_called()
 
 
 class NextYearMonthTest(TestCase):

@@ -1,5 +1,4 @@
 from django.shortcuts import render
-from django.utils import timezone
 from django.views import View
 from subekashi.lib.stats_service import (
     apply_songrange_filter,
@@ -8,6 +7,7 @@ from subekashi.lib.stats_service import (
     get_month_choices,
     get_songrange_availability,
     get_year_choices,
+    now_local,
     parse_int_or_none,
 )
 from subekashi.models import Song, Stats
@@ -28,20 +28,21 @@ class StatsView(View):
             # UI上選べない選択肢は表示・適用しない（実在する方に強制する）
             songrange = 'subeana' if has_subeana else 'xx'
 
-        current_year = timezone.now().year
+        current_year = now_local().year
         year_choices = get_year_choices()
 
         year = request.GET.get('year', 'all')
-        if year != 'all':
-            year_int = parse_int_or_none(year)
-            # ゼロ埋め等の非正規な文字列表現でもint変換後の値で選択肢と照合・正規化する
-            year = str(year_int) if year_int in year_choices else 'all'
+        year_int = parse_int_or_none(year)
+        # ゼロ埋め等の非正規な文字列表現でもint変換後の値で選択肢と照合・正規化する
+        if year_int not in year_choices:
+            year, year_int = 'all', None
+        else:
+            year = str(year_int)
 
-        month_choices = get_month_choices(int(year), current_year) if year != 'all' else list(range(1, 13))
+        month_choices = get_month_choices(year_int, current_year) if year_int is not None else list(range(1, 13))
         month = request.GET.get('month', 'all')
-        if month != 'all':
-            month_int = parse_int_or_none(month)
-            month = str(month_int) if month_int in month_choices else 'all'
+        month_int = parse_int_or_none(month)
+        month = str(month_int) if month_int in month_choices else 'all'
 
         qs = apply_songrange_filter(Song.objects.all(), songrange)
         qs = apply_upload_time_filter(qs, year, month)
