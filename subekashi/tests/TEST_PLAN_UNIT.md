@@ -732,6 +732,9 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | songrangeラジオグループの表示 | is_subeana=True/Falseの曲がそれぞれ存在 | 全て/すべあな界隈曲のみ/以外の3択が表示される |
 | songrangeラジオグループの非表示 | is_subeana=Trueの曲のみ存在 | ラジオグループ自体（3つとも）が表示されない（選んでも結果が変わらないため） |
 | songrangeの自動解決 | is_subeana=Trueの曲のみ存在、songrange未指定 | ラジオグループが非表示になる代わりに`songrange`が自動的に"subeana"に解決され、絞り込み結果自体は正しい |
+| 数値でないyear（回帰、コードレビュー指摘対応） | `?year=abc` | 500エラーにならずHTTP 200、`year`は"all"にフォールバックする |
+| 数値でないmonth（回帰、コードレビュー指摘対応） | `?month=abc` | 500エラーにならずHTTP 200、`month`は"all"にフォールバックする |
+| 小数文字列のmonth（回帰、コードレビュー指摘対応） | `?month=1.5` | 500エラーにならずHTTP 200、`month`は"all"にフォールバックする |
 | メニューからの導線 | トップページのGET | `/stats/`へのリンクが記事とお問い合わせの間に含まれる |
 
 #### 7-15. `AuthorStatsView` (`/authors/<id>/stats/`)（#334）
@@ -740,6 +743,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | 存在する作者ID | 有効なauthor_id | HTTP 200 |
 | 存在しない作者ID | 無効なauthor_id | HTTP 404 |
+| 数値でないyear（回帰、コードレビュー指摘対応） | `?year=abc` | 500エラーにならずHTTP 200、`year`は"all"にフォールバックする |
+| 数値でないmonth（回帰、コードレビュー指摘対応） | `?month=abc` | 500エラーにならずHTTP 200、`month`は"all"にフォールバックする |
 | 対象authorの曲のみ集計 | 他authorの曲も存在 | 対象author以外の曲は集計対象に含まれない |
 | 合作人数(重複あり)・合作人数(重複なし)は本人を除く | 対象authorと共作者1名の曲が存在 | 「合作人数(重複あり)」「合作人数(重複なし)」がともに1になる（本人はカウントしない）。総合統計ページの「総作者数」は表示されない |
 | songrangeラジオグループは対象author自身の曲を基準に判定 | サイト全体にはxx曲が存在するが、対象author自身はsubeana曲しか持たない | サイト全体の状況に関わらず、対象author基準でラジオグループ自体が非表示になり`songrange`が"subeana"に解決される |
@@ -1133,7 +1138,7 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 
 #### 14-6. `stats` コマンド（月次統計(Stats)の集計・保存、#334）
 
-`post_time`ではなく`upload_time`（YouTubeへのアップロード日時）基準で月を判定する。`upload_time=None`の曲は集計期間の起点判定・各月の集計いずれからも除外される。
+`post_time`ではなく`upload_time`（YouTubeへのアップロード日時）基準で月を判定する。`upload_time=None`の曲は集計期間の起点判定・各月の集計いずれからも除外される。「現在時刻」の取得は`now_local()`（`timezone.localtime(timezone.now())`のラッパー）に統一し、サーバーOSのタイムゾーン設定に依存する素の`datetime.now()`は使わない（コードレビュー指摘対応）。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
@@ -1279,6 +1284,26 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 | subeanaのみ存在 | is_subeana=Trueの曲のみ | `(True, False)` |
 | xxのみ存在 | is_subeana=Falseの曲のみ | `(False, True)` |
 | どちらも存在しない | 曲が0件 | `(False, False)` |
+
+#### 19-1-2. `parse_int_or_none(value)`（#334、コードレビュー指摘対応）
+
+`?year=abc`のような数値変換できないGETパラメータを渡された際に`int()`が`ValueError`を送出し500エラーになる不具合の修正で追加。ビュー側のyear/monthバリデーションで使用する。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 数値文字列 | `"2024"` | `2024` |
+| 数値でない文字列 | `"abc"` | `None` |
+| 小数文字列 | `"1.5"` | `None` |
+| `None` | `None` | `None` |
+| 空文字列 | `""` | `None` |
+
+#### 19-1-3. `now_local()`（#334、コードレビュー指摘対応）
+
+`stats`コマンド内で`datetime.now()`（サーバーOSのタイムゾーン設定に依存）と`timezone.localtime()`（Djangoの設定タイムゾーン基準）が混在していたことによるタイムゾーン不整合の修正で追加。`timezone.localtime(timezone.now())`のラッパーで、Djangoの`TIME_ZONE`設定を常に使う。
+
+| テストケース | 期待結果 |
+| --- | --- |
+| 呼び出し直後の値 | timezone-aware、`timezone.now()`呼び出し前後の時刻範囲内に収まる |
 
 #### 19-2. `compute_common_stats(qs)`
 

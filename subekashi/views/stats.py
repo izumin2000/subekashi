@@ -8,6 +8,7 @@ from subekashi.lib.stats_service import (
     get_month_choices,
     get_songrange_availability,
     get_year_choices,
+    parse_int_or_none,
 )
 from subekashi.models import Song, Stats
 
@@ -29,12 +30,12 @@ class StatsView(View):
         year_choices = get_year_choices()
 
         year = request.GET.get('year', 'all')
-        if year != 'all' and int(year) not in year_choices:
+        if year != 'all' and parse_int_or_none(year) not in year_choices:
             year = 'all'
 
         month_choices = get_month_choices(int(year), current_year) if year != 'all' else list(range(1, 13))
         month = request.GET.get('month', 'all')
-        if month != 'all' and int(month) not in month_choices:
+        if month != 'all' and parse_int_or_none(month) not in month_choices:
             month = 'all'
 
         qs = apply_songrange_filter(Song.objects.all(), songrange)

@@ -1,10 +1,10 @@
-from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from subekashi.lib.stats_service import (
     compute_common_stats,
     month_start,
     next_year_month,
+    now_local,
 )
 from subekashi.models import Song, Stats
 
@@ -20,7 +20,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        now = datetime.now()
+        now = now_local()
         if now.day != 1 and not options['force']:
             return
 

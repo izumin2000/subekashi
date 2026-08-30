@@ -216,35 +216,35 @@ class StatsCommandTest(TestCase):
         call_command("stats", *extra_args, stdout=out, stderr=err)
         return out.getvalue(), err.getvalue()
 
-    @patch("subekashi.management.commands.stats.datetime")
-    def test_skips_when_not_first_of_month(self, mock_datetime):
-        mock_datetime.now.return_value = datetime(2026, 1, 15, 0, 0, 0)
+    @patch("subekashi.management.commands.stats.now_local")
+    def test_skips_when_not_first_of_month(self, mock_now_local):
+        mock_now_local.return_value = timezone_aware(2026, 1, 15)
         Song.objects.create(title="曲", upload_time=timezone.make_aware(datetime(2025, 1, 1)))
 
         self._run()
 
         self.assertEqual(Stats.objects.count(), 0)
 
-    @patch("subekashi.management.commands.stats.datetime")
-    def test_no_songs_does_nothing(self, mock_datetime):
-        mock_datetime.now.return_value = datetime(2026, 1, 1, 0, 0, 0)
+    @patch("subekashi.management.commands.stats.now_local")
+    def test_no_songs_does_nothing(self, mock_now_local):
+        mock_now_local.return_value = timezone_aware(2026, 1, 1)
 
         self._run()
 
         self.assertEqual(Stats.objects.count(), 0)
 
-    @patch("subekashi.management.commands.stats.datetime")
-    def test_no_songs_with_upload_time_does_nothing(self, mock_datetime):
-        mock_datetime.now.return_value = datetime(2026, 1, 1, 0, 0, 0)
+    @patch("subekashi.management.commands.stats.now_local")
+    def test_no_songs_with_upload_time_does_nothing(self, mock_now_local):
+        mock_now_local.return_value = timezone_aware(2026, 1, 1)
         Song.objects.create(title="曲", upload_time=None)
 
         self._run()
 
         self.assertEqual(Stats.objects.count(), 0)
 
-    @patch("subekashi.management.commands.stats.datetime")
-    def test_runs_on_first_of_month_and_creates_stats_for_each_month(self, mock_datetime):
-        mock_datetime.now.return_value = datetime(2026, 3, 1, 0, 0, 0)
+    @patch("subekashi.management.commands.stats.now_local")
+    def test_runs_on_first_of_month_and_creates_stats_for_each_month(self, mock_now_local):
+        mock_now_local.return_value = timezone_aware(2026, 3, 1)
         Song.objects.create(title="1月の曲", upload_time=timezone_aware(2026, 1, 15), view=10)
         Song.objects.create(title="3月の曲", upload_time=timezone_aware(2026, 3, 15), view=20)
 
@@ -261,18 +261,18 @@ class StatsCommandTest(TestCase):
         self.assertEqual(mar.song_count, 2)
         self.assertEqual(mar.total_view, 30)
 
-    @patch("subekashi.management.commands.stats.datetime")
-    def test_force_bypasses_day_guard(self, mock_datetime):
-        mock_datetime.now.return_value = datetime(2026, 3, 15, 0, 0, 0)
+    @patch("subekashi.management.commands.stats.now_local")
+    def test_force_bypasses_day_guard(self, mock_now_local):
+        mock_now_local.return_value = timezone_aware(2026, 3, 15)
         Song.objects.create(title="曲", upload_time=timezone_aware(2026, 3, 1))
 
         self._run("--force")
 
         self.assertEqual(Stats.objects.count(), 1)
 
-    @patch("subekashi.management.commands.stats.datetime")
-    def test_rerun_updates_existing_month_instead_of_duplicating(self, mock_datetime):
-        mock_datetime.now.return_value = datetime(2026, 1, 1, 0, 0, 0)
+    @patch("subekashi.management.commands.stats.now_local")
+    def test_rerun_updates_existing_month_instead_of_duplicating(self, mock_now_local):
+        mock_now_local.return_value = timezone_aware(2026, 1, 1)
         Song.objects.create(title="曲", upload_time=timezone_aware(2026, 1, 1), view=1)
 
         self._run()
@@ -281,6 +281,18 @@ class StatsCommandTest(TestCase):
 
         self.assertEqual(Stats.objects.filter(year=2026, month=1).count(), 1)
         self.assertEqual(Stats.objects.get(year=2026, month=1).song_count, 2)
+
+    @patch("subekashi.management.commands.stats.now_local")
+    def test_now_local_uses_django_timezone_not_os_timezone(self, mock_now_local):
+        # now_local()はtimezone.localtime(timezone.now())のラッパーであり、
+        # サーバーOSのタイムゾーン設定に依存しないことの回帰確認（レビュー指摘対応）
+        mock_now_local.return_value = timezone_aware(2026, 1, 1)
+        Song.objects.create(title="曲", upload_time=timezone_aware(2026, 1, 1))
+
+        self._run()
+
+        mock_now_local.assert_called_once()
+        self.assertEqual(Stats.objects.count(), 1)
 
 
 class WordCommandTest(TestCase):

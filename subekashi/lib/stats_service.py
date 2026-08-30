@@ -4,6 +4,26 @@ from django.utils import timezone
 from subekashi.models import Author, Song
 
 
+def parse_int_or_none(value):
+    """valueをintに変換できればその値を、できなければNoneを返す
+
+    GETパラメータ(year/month)はint変換できない任意の文字列になり得るため、
+    ValueError/TypeErrorで500にならないようビュー側のバリデーションで使う
+    """
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def now_local():
+    """現在時刻をDjangoの設定タイムゾーン(Asia/Tokyo)に変換して返す
+
+    サーバーOSのタイムゾーン設定に依存する素のdatetime.now()は使わない
+    """
+    return timezone.localtime(timezone.now())
+
+
 def apply_songrange_filter(qs, songrange):
     """songrange(all/subeana/xx)の設定に応じてis_subeanaで絞り込んだQuerySetを返す"""
     if songrange == "subeana":

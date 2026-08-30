@@ -20,7 +20,37 @@ from subekashi.lib.stats_service import (
     get_year_choices,
     month_start,
     next_year_month,
+    now_local,
+    parse_int_or_none,
 )
+
+
+class ParseIntOrNoneTest(TestCase):
+    def test_valid_int_string(self):
+        self.assertEqual(parse_int_or_none("2024"), 2024)
+
+    def test_non_numeric_string_returns_none(self):
+        self.assertIsNone(parse_int_or_none("abc"))
+
+    def test_float_string_returns_none(self):
+        self.assertIsNone(parse_int_or_none("1.5"))
+
+    def test_none_input_returns_none(self):
+        self.assertIsNone(parse_int_or_none(None))
+
+    def test_empty_string_returns_none(self):
+        self.assertIsNone(parse_int_or_none(""))
+
+
+class NowLocalTest(TestCase):
+    def test_returns_aware_datetime_close_to_now(self):
+        before = timezone.now()
+        result = now_local()
+        after = timezone.now()
+
+        self.assertTrue(timezone.is_aware(result))
+        self.assertGreaterEqual(result, before)
+        self.assertLessEqual(result, after)
 
 
 class ApplySongrangeFilterTest(TestCase):

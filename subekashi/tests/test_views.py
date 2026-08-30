@@ -619,6 +619,24 @@ class StatsViewTest(TestCase):
         response = self.client.get(reverse("subekashi:stats"))
         self.assertContains(response, 'id="stats-month"')
 
+    def test_non_numeric_year_falls_back_to_all_instead_of_500(self):
+        Song.objects.create(title="曲")
+        response = self.client.get(reverse("subekashi:stats"), {"year": "abc"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["year"], "all")
+
+    def test_non_numeric_month_falls_back_to_all_instead_of_500(self):
+        Song.objects.create(title="曲")
+        response = self.client.get(reverse("subekashi:stats"), {"month": "abc"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["month"], "all")
+
+    def test_float_like_month_falls_back_to_all_instead_of_500(self):
+        Song.objects.create(title="曲")
+        response = self.client.get(reverse("subekashi:stats"), {"month": "1.5"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["month"], "all")
+
     def test_menu_contains_stats_link(self):
         response = self.client.get(reverse("subekashi:top"))
         self.assertContains(response, reverse("subekashi:stats"))
@@ -662,6 +680,16 @@ class AuthorStatsViewTest(TestCase):
     def test_nonexistent_author_returns_404(self):
         response = self.client.get(reverse("subekashi:author_stats", args=[99999]))
         self.assertEqual(response.status_code, 404)
+
+    def test_non_numeric_year_falls_back_to_all_instead_of_500(self):
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]), {"year": "abc"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["year"], "all")
+
+    def test_non_numeric_month_falls_back_to_all_instead_of_500(self):
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]), {"month": "abc"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["month"], "all")
 
     def test_only_counts_songs_of_this_author(self):
         other_author = Author.objects.create(name="別の作者")
