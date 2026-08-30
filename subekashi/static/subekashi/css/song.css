@@ -80,10 +80,6 @@ details {
     margin: 10px 0 15px 0;
 }
 
-.imitate {
-    transform: rotate(180deg);
-}
-
 #lyrics-wrapper {
     line-height: 50px;
     margin-top: 75px;

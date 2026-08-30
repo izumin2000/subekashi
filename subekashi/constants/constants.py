@@ -39,6 +39,11 @@ ASIDE_PAGES = [
         "icon": "fas fa-book"
     },
     {
+        "url": "subekashi:stats",
+        "name": "統計",
+        "icon": "fas fa-chart-line"
+    },
+    {
         "url": "subekashi:contact",
         "name": "お問い合わせ",
         "icon": "fas fa-envelope"

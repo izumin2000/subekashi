@@ -6,7 +6,7 @@ Song, Author, AuthorAlias, SongLink の CRUD・制約・メソッドを検証す
 from django.db import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
-from subekashi.models import Ai, Author, AuthorAlias, Contact, Editor, History, Song, SongLink, Word
+from subekashi.models import Ai, Author, AuthorAlias, Contact, Editor, History, Song, SongLink, Stats, Word
 from subekashi.models.author import EffectiveAlias, TransitiveAlias
 
 
@@ -734,3 +734,58 @@ class WordModelTest(TestCase):
     def test_word_equal_candidate_raises_integrity_error(self):
         with self.assertRaises(IntegrityError):
             Word.objects.create(word="走る", hinshi="動詞", candidate="走る")
+
+
+class StatsModelTest(TestCase):
+    """Stats モデルのテスト"""
+
+    def test_create_stats(self):
+        stats = Stats.objects.create(year=2026, month=1, song_count=10, total_view=100)
+        self.assertEqual(stats.year, 2026)
+        self.assertEqual(stats.month, 1)
+        self.assertEqual(stats.song_count, 10)
+        self.assertEqual(stats.total_view, 100)
+
+    def test_default_values(self):
+        stats = Stats.objects.create(year=2026, month=1)
+        self.assertEqual(stats.song_count, 0)
+        self.assertEqual(stats.total_view, 0)
+        self.assertEqual(stats.total_like, 0)
+        self.assertEqual(stats.total_authors, 0)
+        self.assertEqual(stats.total_imitateds, 0)
+
+    def test_str(self):
+        stats = Stats.objects.create(year=2026, month=3)
+        self.assertEqual(str(stats), "2026-03 (all)")
+
+    def test_songrange_defaults_to_all(self):
+        stats = Stats.objects.create(year=2026, month=1)
+        self.assertEqual(stats.songrange, "all")
+
+    def test_year_month_songrange_unique_constraint(self):
+        Stats.objects.create(year=2026, month=1, songrange="all")
+        with self.assertRaises(IntegrityError):
+            Stats.objects.create(year=2026, month=1, songrange="all")
+
+    def test_year_month_allows_different_songrange(self):
+        Stats.objects.create(year=2026, month=1, songrange="all")
+        Stats.objects.create(year=2026, month=1, songrange="subeana")
+        self.assertEqual(Stats.objects.filter(year=2026, month=1).count(), 2)
+
+    def test_get_monthly_series_ordered(self):
+        Stats.objects.create(year=2026, month=3)
+        Stats.objects.create(year=2025, month=12)
+        Stats.objects.create(year=2026, month=1)
+
+        series = list(Stats.get_monthly_series())
+
+        self.assertEqual([(s.year, s.month) for s in series], [(2025, 12), (2026, 1), (2026, 3)])
+
+    def test_get_monthly_series_filters_by_songrange(self):
+        Stats.objects.create(year=2026, month=1, songrange="all")
+        Stats.objects.create(year=2026, month=1, songrange="subeana")
+
+        series = list(Stats.get_monthly_series("subeana"))
+
+        self.assertEqual(len(series), 1)
+        self.assertEqual(series[0].songrange, "subeana")

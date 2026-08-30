@@ -1,3 +1,4 @@
+from django.db.models import Sum
 from django.shortcuts import render
 from django.views import View
 from subekashi.models import Author, Song
@@ -23,6 +24,7 @@ class AuthorView(View):
             "author_id": author_obj.id,
             "songInsL": songInsL,
             "alias_count": len(author_obj.get_transitive_aliases()),
+            "total_view": songInsL.aggregate(v=Sum("view"))["v"] or 0,
             "description": f"{author_name}の曲一覧：{titles}",
         }
         return render(request, "subekashi/author.html", context)

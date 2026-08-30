@@ -4,6 +4,7 @@
 各ページの基本的なアクセス可否・ステータスコード・リダイレクト先を検証する。
 ManifestStaticFilesStorage はテストに不要なため StaticFilesStorage に差し替える。
 """
+from datetime import datetime, timezone as dt_timezone
 from unittest.mock import patch
 from django.db import connection
 from django.test import TestCase, Client, override_settings
@@ -12,7 +13,7 @@ from django.urls import reverse
 from django.utils import timezone
 from article.models import Article
 from subekashi.forms import AuthorAliasForm
-from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song, Word
+from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song, Stats, Word
 
 
 STATIC_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
@@ -546,6 +547,337 @@ class AuthorViewTest(TestCase):
         response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
 
         self.assertContains(response, "2件の別名")
+
+    def test_stats_link_present(self):
+        # 統計ページへのdummybuttonが別名ボタンの右に追加される（#334）
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
+        self.assertContains(response, reverse("subekashi:author_stats", args=[self.author.id]))
+
+    def test_stats_link_has_icon(self):
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
+        self.assertContains(response, "fa-chart-line")
+
+    def test_stats_summary_shows_total_view(self):
+        Song.objects.filter(title="作者ビューテスト曲").update(view=1234)
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
+        self.assertContains(response, 'id="author-stats-summary"')
+        self.assertEqual(response.context["total_view"], 1234)
+
+
+@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+class StatsViewTest(TestCase):
+    """StatsView (/stats/) のテスト"""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_get_returns_200(self):
+        response = self.client.get(reverse("subekashi:stats"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_no_songs_hides_all_stat_items(self):
+        response = self.client.get(reverse("subekashi:stats"))
+        self.assertNotContains(response, "stat-item")
+
+    def test_zero_metric_still_shown_when_songs_exist(self):
+        # 曲が1件以上あれば、他の指標(総高評価数等)がたまたま0でも
+        # 「データなし」ではなく実際の値として表示する（コードレビュー指摘対応の仕様変更）
+        Song.objects.create(title="曲", view=100, like=0)
+
+        response = self.client.get(reverse("subekashi:stats"))
+
+        stats_items = {item["label"]: item["value"] for item in response.context["stats_items"]}
+        self.assertEqual(stats_items["総高評価数"], 0)
+        self.assertContains(response, "stat-item")
+
+    @staticmethod
+    def _song_count(response):
+        return next(item["value"] for item in response.context["stats_items"] if item["label"] == "曲数")
+
+    def test_song_count_reflects_songrange_filter(self):
+        Song.objects.create(title="すべあな曲", is_subeana=True)
+        Song.objects.create(title="界隈外曲", is_subeana=False)
+
+        response_all = self.client.get(reverse("subekashi:stats"), {"songrange": "all"})
+        response_subeana = self.client.get(reverse("subekashi:stats"), {"songrange": "subeana"})
+
+        self.assertEqual(self._song_count(response_all), 2)
+        self.assertEqual(self._song_count(response_subeana), 1)
+
+    def test_year_filter_narrows_results(self):
+        Song.objects.create(title="2024年曲", upload_time=datetime(2024, 1, 1, tzinfo=dt_timezone.utc))
+        Song.objects.create(title="2025年曲", upload_time=datetime(2025, 1, 1, tzinfo=dt_timezone.utc))
+
+        response = self.client.get(reverse("subekashi:stats"), {"year": "2024"})
+
+        self.assertEqual(self._song_count(response), 1)
+
+    def test_unknown_songrange_falls_back_to_all(self):
+        Song.objects.create(title="曲")
+        response = self.client.get(reverse("subekashi:stats"), {"songrange": "invalid"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self._song_count(response), 1)
+
+    def test_month_filter_narrows_results_across_years_without_year_filter(self):
+        Song.objects.create(title="2024年1月曲", upload_time=datetime(2024, 1, 1, tzinfo=dt_timezone.utc))
+        Song.objects.create(title="2025年6月曲", upload_time=datetime(2025, 6, 1, tzinfo=dt_timezone.utc))
+
+        response = self.client.get(reverse("subekashi:stats"), {"month": "1"})
+
+        self.assertEqual(self._song_count(response), 1)
+
+    def test_month_select_shown_even_when_year_is_all(self):
+        response = self.client.get(reverse("subekashi:stats"))
+        self.assertContains(response, 'id="stats-month"')
+
+    def test_non_numeric_year_falls_back_to_all_instead_of_500(self):
+        Song.objects.create(title="曲")
+        response = self.client.get(reverse("subekashi:stats"), {"year": "abc"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["year"], "all")
+
+    def test_non_numeric_month_falls_back_to_all_instead_of_500(self):
+        Song.objects.create(title="曲")
+        response = self.client.get(reverse("subekashi:stats"), {"month": "abc"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["month"], "all")
+
+    def test_float_like_month_falls_back_to_all_instead_of_500(self):
+        Song.objects.create(title="曲")
+        response = self.client.get(reverse("subekashi:stats"), {"month": "1.5"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["month"], "all")
+
+    def test_menu_contains_stats_link(self):
+        response = self.client.get(reverse("subekashi:top"))
+        self.assertContains(response, reverse("subekashi:stats"))
+
+    def test_songrange_radio_group_shown_when_both_songranges_exist(self):
+        Song.objects.create(title="すべあな曲", is_subeana=True)
+        Song.objects.create(title="界隈外曲", is_subeana=False)
+
+        response = self.client.get(reverse("subekashi:stats"))
+
+        self.assertContains(response, 'id="songrange-all"')
+        self.assertContains(response, 'id="songrange-subeana"')
+        self.assertContains(response, 'id="songrange-xx"')
+
+    def test_year_choices_scoped_to_selected_songrange(self):
+        # songrange=subeanaを選んでいる間は、xx曲しか無い年を選択肢に出さない
+        # （0件になり得る組み合わせを避けるため、コードレビュー指摘対応）
+        Song.objects.create(title="xx曲(2020年)", is_subeana=False, upload_time=datetime(2020, 1, 1, tzinfo=dt_timezone.utc))
+        Song.objects.create(title="すべあな曲(2024年)", is_subeana=True, upload_time=datetime(2024, 1, 1, tzinfo=dt_timezone.utc))
+
+        response = self.client.get(reverse("subekashi:stats"), {"songrange": "subeana"})
+
+        self.assertNotIn(2020, response.context["year_choices"])
+        self.assertIn(2024, response.context["year_choices"])
+
+    def test_songrange_radio_group_hidden_when_only_one_songrange_exists(self):
+        # is_subeana=Falseの曲が無い場合、選んでも意味のある違いが出ないため
+        # ラジオグループ自体（全て/すべあな界隈曲のみ/以外の3つとも）を非表示にする。
+        # songrangeはcontext上では"subeana"に解決される
+        Song.objects.create(title="すべあな曲", is_subeana=True)
+
+        response = self.client.get(reverse("subekashi:stats"))
+
+        self.assertEqual(response.context["songrange"], "subeana")
+        self.assertNotContains(response, 'id="songrange-all"')
+        self.assertNotContains(response, 'id="songrange-subeana"')
+        self.assertNotContains(response, 'id="songrange-xx"')
+
+    def test_explicit_songrange_is_overridden_when_only_one_songrange_exists(self):
+        # 選択肢が非表示のカテゴリを?songrange=xxのように明示指定しても、
+        # 常に0件になる意味の無い絞り込みを許さず実在する方に強制する（レビュー指摘対応）
+        Song.objects.create(title="すべあな曲", is_subeana=True)
+
+        response = self.client.get(reverse("subekashi:stats"), {"songrange": "xx"})
+
+        self.assertEqual(response.context["songrange"], "subeana")
+        self.assertEqual(self._song_count(response), 1)
+
+    def test_zero_padded_year_is_normalized_for_select_state(self):
+        # URL直打ちのゼロ埋め等でも、テンプレート上の選択状態比較に使う
+        # context["year"]は正規化された文字列になる（レビュー指摘対応）
+        Song.objects.create(title="曲", upload_time=datetime(2024, 1, 1, tzinfo=dt_timezone.utc))
+
+        response = self.client.get(reverse("subekashi:stats"), {"year": "02024"})
+
+        self.assertEqual(response.context["year"], "2024")
+        self.assertContains(response, 'value="2024" selected')
+
+    def test_monthly_stats_reflects_songrange_filter(self):
+        # グラフがsongrangeフィルターの影響を受けるようにした仕様変更の回帰テスト
+        Stats.objects.create(year=2024, month=1, songrange="all", song_count=10)
+        Stats.objects.create(year=2024, month=1, songrange="subeana", song_count=6)
+        Stats.objects.create(year=2024, month=1, songrange="xx", song_count=4)
+        Song.objects.create(title="すべあな曲", is_subeana=True)
+        Song.objects.create(title="界隈外曲", is_subeana=False)
+
+        response = self.client.get(reverse("subekashi:stats"), {"songrange": "subeana"})
+
+        monthly_stats = response.context["monthly_stats"]
+        self.assertEqual(len(monthly_stats), 1)
+        self.assertEqual(monthly_stats[0]["song_count"], 6)
+
+    def test_monthly_stats_reflects_year_filter(self):
+        Stats.objects.create(year=2024, month=1, songrange="all", song_count=5)
+        Stats.objects.create(year=2025, month=1, songrange="all", song_count=9)
+        # is_subeana両方の曲を用意し、songrangeが"all"以外に自動解決されないようにする
+        Song.objects.create(title="曲", upload_time=datetime(2024, 6, 1, tzinfo=dt_timezone.utc), is_subeana=True)
+        Song.objects.create(title="界隈外曲", is_subeana=False)
+
+        response = self.client.get(reverse("subekashi:stats"), {"year": "2024"})
+
+        monthly_stats = response.context["monthly_stats"]
+        self.assertEqual(len(monthly_stats), 1)
+        self.assertEqual(monthly_stats[0]["year"], 2024)
+
+    def test_monthly_stats_reflects_month_only_filter_without_year(self):
+        # ?month=1のようにyearを指定せずmonthだけ選んだ場合も、統計カードと
+        # 同様にグラフ側も年をまたいだ該当月だけに絞り込む
+        # （コードレビュー指摘対応: 以前はyear="all"だとmonth条件が無視され、
+        # カードとグラフの表示内容が食い違っていたバグの回帰テスト）
+        Stats.objects.create(year=2024, month=1, songrange="all", song_count=3)
+        Stats.objects.create(year=2024, month=6, songrange="all", song_count=5)
+        Stats.objects.create(year=2025, month=1, songrange="all", song_count=8)
+        Song.objects.create(title="曲", upload_time=datetime(2024, 1, 1, tzinfo=dt_timezone.utc), is_subeana=True)
+        Song.objects.create(title="界隈外曲", is_subeana=False)
+
+        response = self.client.get(reverse("subekashi:stats"), {"month": "1"})
+
+        monthly_stats = response.context["monthly_stats"]
+        self.assertEqual({(row["year"], row["month"]) for row in monthly_stats}, {(2024, 1), (2025, 1)})
+
+    def test_monthly_stats_includes_delta_computed_from_full_history_before_year_filter(self):
+        # 累積値の差分は絞り込み前の全期間から計算されるため、yearで絞り込んでも
+        # 前月との差分が正しく計算される（"月ごと"モード用、レビュー指摘対応）
+        Stats.objects.create(year=2024, month=12, songrange="all", song_count=5)
+        Stats.objects.create(year=2025, month=1, songrange="all", song_count=8)
+        Song.objects.create(title="曲", upload_time=datetime(2025, 1, 1, tzinfo=dt_timezone.utc), is_subeana=True)
+        Song.objects.create(title="界隈外曲", is_subeana=False)
+
+        response = self.client.get(reverse("subekashi:stats"), {"year": "2025"})
+
+        monthly_stats = response.context["monthly_stats"]
+        self.assertEqual(len(monthly_stats), 1)
+        self.assertEqual(monthly_stats[0]["song_count_delta"], 3)
+
+
+@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+class AuthorStatsViewTest(TestCase):
+    """AuthorStatsView (/authors/<id>/stats/) のテスト"""
+
+    def setUp(self):
+        self.client = Client()
+        self.author = Author.objects.create(name="統計テスト作者")
+
+    def test_existing_author_returns_200(self):
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_nonexistent_author_returns_404(self):
+        response = self.client.get(reverse("subekashi:author_stats", args=[99999]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_non_numeric_year_falls_back_to_all_instead_of_500(self):
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]), {"year": "abc"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["year"], "all")
+
+    def test_non_numeric_month_falls_back_to_all_instead_of_500(self):
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]), {"month": "abc"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["month"], "all")
+
+    def test_only_counts_songs_of_this_author(self):
+        other_author = Author.objects.create(name="別の作者")
+        Song.objects.create(title="他author曲").authors.add(other_author)
+        Song.objects.create(title="この作者の曲").authors.add(self.author)
+
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
+
+        song_count = next(item["value"] for item in response.context["stats_items"] if item["label"] == "曲数")
+        self.assertEqual(song_count, 1)
+
+    def test_collaborator_counts_exclude_self(self):
+        other_author = Author.objects.create(name="共作者")
+        song = Song.objects.create(title="共作曲")
+        song.authors.add(self.author, other_author)
+
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
+
+        stats_items = {item["label"]: item["value"] for item in response.context["stats_items"]}
+        self.assertEqual(stats_items["合作人数(重複あり)"], 1)
+        self.assertEqual(stats_items["合作人数(重複なし)"], 1)
+        self.assertNotIn("総作者数", stats_items)
+
+    def test_songrange_radio_group_hidden_when_author_has_only_one_songrange(self):
+        # サイト全体にはxx曲が存在しても、この作者自身にはsubeana曲しかないため
+        # ラジオグループ自体（全て/すべあな界隈曲のみ/以外の3つとも）が不要
+        Song.objects.create(title="すべあな曲", is_subeana=True).authors.add(self.author)
+        Song.objects.create(title="他作者の界隈外曲", is_subeana=False)
+
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
+
+        self.assertNotContains(response, 'id="songrange-all"')
+        self.assertNotContains(response, 'id="songrange-subeana"')
+        self.assertNotContains(response, 'id="songrange-xx"')
+        self.assertEqual(response.context["songrange"], "subeana")
+
+    def test_year_choices_scoped_to_this_author_only(self):
+        # サイト全体には別年の曲があっても、この作者自身が投稿していない年は
+        # 選択肢に出さない（コードレビュー指摘対応）
+        other_author = Author.objects.create(name="別の作者")
+        Song.objects.create(title="他authorの曲", upload_time=datetime(2020, 1, 1, tzinfo=dt_timezone.utc)).authors.add(other_author)
+        Song.objects.create(title="この作者の曲", upload_time=datetime(2024, 1, 1, tzinfo=dt_timezone.utc)).authors.add(self.author)
+
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
+
+        self.assertNotIn(2020, response.context["year_choices"])
+        self.assertIn(2024, response.context["year_choices"])
+
+    def test_month_choices_scoped_to_this_author_only(self):
+        # この作者が実際に投稿していない月は選択肢に出さない
+        # （選んでも0件になる組み合わせを避けるため、コードレビュー指摘対応）
+        other_author = Author.objects.create(name="別の作者")
+        Song.objects.create(title="他authorの3月の曲", upload_time=datetime(2024, 3, 1, tzinfo=dt_timezone.utc)).authors.add(other_author)
+        Song.objects.create(title="この作者の6月の曲", upload_time=datetime(2024, 6, 1, tzinfo=dt_timezone.utc)).authors.add(self.author)
+
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]), {"year": "2024"})
+
+        self.assertEqual(response.context["month_choices"], [6])
+
+    def test_year_choices_exclude_gap_years_with_no_songs(self):
+        # 2020年・2024年にしか投稿が無い場合、間の2021〜2023年は選択肢に出ない
+        # （最古年〜今年の連続レンジではなく実データに基づく、コードレビュー指摘対応）
+        Song.objects.create(title="2020年の曲", upload_time=datetime(2020, 1, 1, tzinfo=dt_timezone.utc)).authors.add(self.author)
+        Song.objects.create(title="2024年の曲", upload_time=datetime(2024, 1, 1, tzinfo=dt_timezone.utc)).authors.add(self.author)
+
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
+
+        self.assertEqual(response.context["year_choices"], [2020, 2024])
+
+    def test_month_resets_to_all_when_new_year_has_no_data_for_that_month(self):
+        # 年を変更した際、切り替え先の年にその月のデータが無ければmonthは
+        # "all"に自動的にフォールバックする（不正な組み合わせのまま残らない）
+        Song.objects.create(title="2024年6月の曲", upload_time=datetime(2024, 6, 1, tzinfo=dt_timezone.utc)).authors.add(self.author)
+        Song.objects.create(title="2025年3月の曲", upload_time=datetime(2025, 3, 1, tzinfo=dt_timezone.utc)).authors.add(self.author)
+
+        # 2024年・6月を選んでいた状態から、年だけ2025年に切り替えたケースを想定
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]), {"year": "2025", "month": "6"})
+
+        self.assertEqual(response.context["year"], "2025")
+        self.assertEqual(response.context["month"], "all")
+
+    def test_does_not_issue_unused_total_authors_query(self):
+        # コードレビュー指摘対応: 画面に表示しないtotal_authors算出のための
+        # 追加クエリ（Author起点のcompute_unique_author_count）が発行されないこと
+        # の回帰防止テスト。クエリ数が増えた場合はこの値を更新しつつ、原因を確認すること
+        Song.objects.create(title="曲").authors.add(self.author)
+
+        with self.assertNumQueries(10):
+            self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)

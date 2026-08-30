@@ -507,6 +507,9 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 逆方向の別名あり (#992) | 他authorが自分のnameと一致する別名を保持 | 「1件の別名」が表示される（正方向＋逆方向の合計） |
 | 推移的な件数 (#1007) | `past`で1ホップ先の別名がさらに`spell`の別名を持つ（2ホップ） | 「2件の別名」が表示される（`get_transitive_aliases()`の件数に合わせる） |
 | 別名ボタンのアイコン (#1024) | 正常アクセス | `fa-people-arrows`アイコンが含まれる |
+| 統計ボタンのリンク (#334) | 正常アクセス | `/authors/<id>/stats/` へのリンクが含まれる |
+| 統計ボタンのアイコン (#334) | 正常アクセス | `fa-chart-line`アイコンが含まれる |
+| 統計ボタン下のメッセージ (#334) | 曲にview=1234を設定 | 総再生回数(`context["total_view"]`、1234）が正しく渡される |
 
 #### 7-8-1. `AuthorAliasesView` (`/authors/<id>/aliases`)（#992、#1007、#1024）
 
@@ -714,6 +717,49 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | レガシーgenetype="model"は対象外（GPTインポート廃止） | `genetype="model", score=0`のレコードが存在 | 作成結果キューに表示されない（`genetype="janome"`のみ対象） |
 | 未評価janomeが0件の場合のフォールバック | 未評価のjanomeレコードが無く、評価済みjanomeレコードのみ存在 | 評価済みのjanomeレコードが表示される（単語入れ替えの元歌詞が途絶えないようにするため） |
 | フォールバック時もレガシーgenetype="model"は対象外 | 未評価janomeが0件で、評価済みの`genetype="model"`レコードが存在 | フォールバックしても表示されない |
+
+#### 7-14. `StatsView` (`/stats/`)（#334）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 正常アクセス | GETリクエスト | HTTP 200 |
+| 曲が0件 | DBが空 | stat項目が1つも表示されない（song_count=0＝データなしとして全体を非表示） |
+| 曲は存在し他の指標が0（回帰、コードレビュー指摘対応の仕様変更） | 曲が1件以上存在するがtotal_like等が0 | 「データなし」ではなく実際の値としてそのカードも表示される（`song_count`が0の時だけ全体を非表示にし、それ以外は個々の値が0でも表示する） |
+| songrangeによる絞り込み | `?songrange=subeana` | is_subeana=Trueの曲のみが集計される |
+| 不正なsongrange | `?songrange=invalid` | "all"にフォールバックする |
+| yearによる絞り込み | `?year=2024` | upload_time年が2024の曲のみが集計される |
+| yearが"all"でもmonthのみで絞り込み | `?month=1` | 年をまたいで該当月の曲のみが集計される（#334で年月セレクトを独立表示に変更） |
+| 月セレクトの常時表示 | yearを指定しない（"全ての年"） | 月セレクト(`#stats-month`)が非表示にならず常に表示される（#334で仕様変更） |
+| songrangeラジオグループの表示 | is_subeana=True/Falseの曲がそれぞれ存在 | 全て/すべあな界隈曲のみ/以外の3択が表示される |
+| songrangeラジオグループの非表示 | is_subeana=Trueの曲のみ存在 | ラジオグループ自体（3つとも）が表示されない（選んでも結果が変わらないため） |
+| songrangeの自動解決 | is_subeana=Trueの曲のみ存在、songrange未指定 | ラジオグループが非表示になる代わりに`songrange`が自動的に"subeana"に解決され、絞り込み結果自体は正しい |
+| 明示指定されたsongrangeも実在する方に強制（回帰、コードレビュー指摘対応） | is_subeana=Trueの曲のみ存在、`?songrange=xx`を明示指定 | ラジオグループが非表示のカテゴリを明示指定しても常に0件になる絞り込みは許さず、`songrange`は"subeana"に上書きされる |
+| 数値でないyear（回帰、コードレビュー指摘対応） | `?year=abc` | 500エラーにならずHTTP 200、`year`は"all"にフォールバックする |
+| 数値でないmonth（回帰、コードレビュー指摘対応） | `?month=abc` | 500エラーにならずHTTP 200、`month`は"all"にフォールバックする |
+| 小数文字列のmonth（回帰、コードレビュー指摘対応） | `?month=1.5` | 500エラーにならずHTTP 200、`month`は"all"にフォールバックする |
+| ゼロ埋め等のyearの正規化（回帰、コードレビュー指摘対応） | `?year=02024` | `context["year"]`が正規化された"2024"になり、年セレクトの選択状態も正しく一致する |
+| グラフがsongrangeフィルターに連動（コードレビュー指摘対応の仕様変更） | `?songrange=subeana`、`Stats`にall/subeana/xxそれぞれのレコードが存在 | `context["monthly_stats"]`がsongrange="subeana"のレコードのみになる |
+| グラフがyearフィルターに連動（コードレビュー指摘対応の仕様変更） | `?year=2024`、複数年の`Stats`レコードが存在 | `context["monthly_stats"]`が2024年の月のみになる |
+| グラフがyear未指定のmonthのみフィルターにも連動（回帰、コードレビュー指摘対応） | `?month=1`（yearは指定しない）、複数年の`Stats`レコードが存在 | 統計カードと同様、`context["monthly_stats"]`も年をまたいだ該当月のみになる（以前はグラフ側だけmonth条件が無視されていた） |
+| グラフの差分は絞り込み前の全期間から計算（回帰） | `?year=2025`指定、2024年12月と2025年1月の`Stats`が存在 | 表示範囲を2025年のみに絞り込んでも、`song_count_delta`は2024年12月との差分として正しく計算される |
+| year選択肢は選択中のsongrangeに連動（回帰、コードレビュー指摘対応） | `?songrange=subeana`、xx曲のみの年とsubeana曲のみの年が混在 | `year_choices`にxx曲のみの年が含まれず、選択しても0件になる組み合わせを避けられる |
+| メニューからの導線 | トップページのGET | `/stats/`へのリンクが記事とお問い合わせの間に含まれる |
+
+#### 7-15. `AuthorStatsView` (`/authors/<id>/stats/`)（#334）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 存在する作者ID | 有効なauthor_id | HTTP 200 |
+| 存在しない作者ID | 無効なauthor_id | HTTP 404 |
+| 数値でないyear（回帰、コードレビュー指摘対応） | `?year=abc` | 500エラーにならずHTTP 200、`year`は"all"にフォールバックする |
+| 数値でないmonth（回帰、コードレビュー指摘対応） | `?month=abc` | 500エラーにならずHTTP 200、`month`は"all"にフォールバックする |
+| 対象authorの曲のみ集計 | 他authorの曲も存在 | 対象author以外の曲は集計対象に含まれない |
+| 合作人数(重複あり)・合作人数(重複なし)は本人を除く | 対象authorと共作者1名の曲が存在 | 「合作人数(重複あり)」「合作人数(重複なし)」がともに1になる（本人はカウントしない）。総合統計ページの「総作者数」は表示されない |
+| songrangeラジオグループは対象author自身の曲を基準に判定 | サイト全体にはxx曲が存在するが、対象author自身はsubeana曲しか持たない | サイト全体の状況に関わらず、対象author基準でラジオグループ自体が非表示になり`songrange`が"subeana"に解決される |
+| year選択肢は対象author自身の投稿年のみ（回帰、コードレビュー指摘対応） | サイト全体には別年の曲があるが、対象author自身はある年にしか投稿していない | `year_choices`に対象author自身が投稿していない年が含まれない |
+| month選択肢は対象author自身が実際に投稿した月のみ（回帰、コードレビュー指摘対応） | 対象authorがある年の6月にのみ投稿している | その年を選択した際の`month_choices`が`[6]`のみになる（投稿していない月は選択肢に出ない） |
+| year選択肢は投稿の無い間の年を除く（回帰、コードレビュー指摘対応） | 対象authorが2020年・2024年にのみ投稿（2021〜2023年は無し） | `year_choices`が`[2020, 2024]`になる（連続レンジにはならない） |
+| 年変更でその年に存在しない月を選んでいた場合はmonthが自動的に"all"に戻る（回帰） | `?year=2025&month=6`（2025年に6月の投稿が無い） | `month`が`"all"`にフォールバックする（`year`自体は`"2025"`のまま） |
 
 ---
 
@@ -960,6 +1006,20 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | ユニーク制約はgenetype="janome"のみ対象 | 同じ`lyrics`だが`genetype`が異なる（例:`"model"`と`"janome"`） | `IntegrityError` は発生しない |
 | `bulk_create(ignore_conflicts=True)`との組み合わせ | 既存の`genetype="janome"`レコードと同じ`lyrics`を含む複数件を`bulk_create` | 例外を投げず、重複する1件だけがスキップされ、他の正当な行は作成される |
 
+#### 11-9. `Stats` モデル（月次統計、#334）
+
+グラフが総合統計ページのsongrangeフィルターの影響を受けるように仕様変更（コードレビュー指摘対応）したため、`songrange`（all/subeana/xx）フィールドを追加し、月ごとに3件（songrangeの種類分）保存する構成に変更した。
+
+| テストケース | 操作 | 期待結果 |
+| --- | --- | --- |
+| デフォルト値 | `year`・`month`のみ指定して作成 | 各集計フィールドが`0`になる |
+| `songrange`のデフォルト値 | `year`・`month`のみ指定して作成 | `songrange`が`"all"`になる |
+| `(year, month, songrange)`のユニーク制約 | 同じ`year`・`month`・`songrange`で2件作成 | `IntegrityError`が発生 |
+| `songrange`が異なれば同じ`(year, month)`でも作成可能 | `songrange="all"`と`songrange="subeana"`で同じ`(year, month)` | 2件とも作成できる |
+| `__str__` | `year=2026, month=3, songrange="all"` | `"2026-03 (all)"` |
+| `get_monthly_series()`の並び順 | 複数月のレコードを順不同で作成 | `year`, `month`昇順で返る |
+| `get_monthly_series(songrange)`の絞り込み | `songrange="all"`と`songrange="subeana"`のレコードが混在 | 指定した`songrange`のレコードのみ返る |
+
 ---
 
 ### 12. `article` アプリ
@@ -1093,6 +1153,21 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | 実行中の並行作成との競合耐性 | `existing_lyrics`のスナップショット取得後に、DB制約`unique_janome_lyrics`に抵触するlyricsが（別プロセス等により）先に存在する状況 | `ignore_conflicts=True`により、その1件だけがスキップされ、他の正当な新規レコードの`bulk_create`は失敗しない |
 | 完了メッセージ | 正常なシード後 | 「新規Aiレコード数：N件（対象M曲中）」の形式で実際の件数を表示する |
 
+#### 14-6. `stats` コマンド（月次統計(Stats)の集計・保存、#334）
+
+`post_time`ではなく`upload_time`（YouTubeへのアップロード日時）基準で月を判定する。`upload_time=None`の曲は集計期間の起点判定・各月の集計いずれからも除外される。「現在時刻」の取得は`now_local()`（`timezone.localtime(timezone.now())`のラッパー）に統一し、サーバーOSのタイムゾーン設定に依存する素の`datetime.now()`は使わない（コードレビュー指摘対応）。総合統計ページのグラフがsongrangeフィルターの影響を受けるよう仕様変更したため、各月ごとにsongrange(all/subeana/xx)ごとの3件を集計・保存する（コードレビュー指摘対応）。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 1日以外はスキップ | `now.day != 1`、`--force`なし | `Stats`は作成されない |
+| 1日なら実行 | `now.day == 1` | `upload_time`が最古のSongの月〜今月まで、月ごとにall/subeana/xxの3件`Stats`が作成される |
+| `--force`で日付ガードを無視 | `now.day != 1`、`--force`あり | `Stats`が作成される（デプロイ時の手動バックフィル用） |
+| Songが1件も無い場合 | DBが空 | 何もせず終了する |
+| `upload_time`を持つSongが1件も無い場合 | 全曲`upload_time=None` | 何もせず終了する |
+| 各月の値は累積値 | 1月・3月にそれぞれ`upload_time`を持つSongが存在する状態で今月=3月として実行 | 1月分は1月時点までの曲のみ、3月分は3月時点までの全曲を対象に集計される |
+| songrangeごとに正しく振り分けられる | is_subeana=True/Falseの曲が混在 | `songrange="subeana"`/`"xx"`のレコードがそれぞれの曲数のみを集計する |
+| 再実行時は上書き更新 | 既存の月・songrangeに対して再実行 | `update_or_create`により重複作成されず、値が最新の集計に更新される |
+
 ---
 
 ### 15. `templatetags/song_card.py` — テンプレートタグ
@@ -1192,6 +1267,169 @@ Google Drive APIはモック化する。
 | 空のqueryset | `Ai.objects.none()` | 空リストを返す |
 | 副詞は置き換え対象（SubeteJanomeNoSeidesu側との整合、#1048） | 副詞に該当する`Word`が登録済み | `is_replaceable=True` |
 | 連体詞は置き換え対象（SubeteJanomeNoSeidesu側との整合、#1048） | 連体詞に該当する`Word`が登録済み | `is_replaceable=True` |
+
+---
+
+### 19. `lib/stats_service.py` — 統計集計ユーティリティ（#334）
+
+**テストファイル**: `tests/test_lib_stats_service.py`
+
+総合統計ページ・authorごとの統計ページ・`stats`管理コマンドが共通で使う集計ロジック。
+
+#### 19-1. `apply_songrange_filter(qs, songrange)` / `apply_upload_time_filter(qs, year, month)`
+
+`apply_upload_time_filter`は`post_time`ではなく`upload_time`（YouTubeへのアップロード日時）基準で絞り込む（#334）。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| `songrange="all"` | 任意のqs | 絞り込まれない |
+| `songrange="subeana"` | 任意のqs | `is_subeana=True`のみ |
+| `songrange="xx"` | 任意のqs | `is_subeana=False`のみ |
+| `year="all"` | 任意のqs | 絞り込まれない |
+| `year`のみ指定 | `year="2024"`, `month="all"` | `upload_time`の年のみで絞り込み |
+| `year`・`month`両方指定 | `year="2024"`, `month="6"` | `upload_time`の年月両方で絞り込み |
+| `year="all"`でも`month`のみ指定 | `year="all"`, `month="1"` | yearと独立してmonthのみで絞り込み、年をまたいだ該当月の曲が全て対象になる（#334で年月セレクトの独立表示に変更） |
+| `upload_time=None`の曲 | `year`を指定 | 対象外になる（SQLのNULL比較により除外） |
+| `upload_time=None`の曲 | `year="all"`で`month`のみ指定 | 対象外になる |
+
+#### 19-1-1. `get_songrange_availability(qs)`（#334）
+
+is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両方存在しない場合、"全て"の選択肢を非表示にする判定に使う。
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| 両方存在 | is_subeana=True/Falseの曲がそれぞれ1件以上 | `(True, True)` |
+| subeanaのみ存在 | is_subeana=Trueの曲のみ | `(True, False)` |
+| xxのみ存在 | is_subeana=Falseの曲のみ | `(False, True)` |
+| どちらも存在しない | 曲が0件 | `(False, False)` |
+
+#### 19-1-1-1. `resolve_songrange(request, base_qs)`（#334、コードレビュー指摘対応）
+
+`StatsView`/`AuthorStatsView`でほぼ同一だったsongrangeのGETパラメータ検証・正規化ロジック（不正値のフォールバック・選択肢が1つしかない場合の強制解決）を共通化したもの。
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| 両方存在する場合はそのまま | is_subeana=True/Falseの曲がそれぞれ存在、songrange未指定 | `("all", True)` |
+| 不正な値は"all"にフォールバック | `?songrange=invalid` | `"all"` |
+| 片方しか無い場合は強制解決 | is_subeana=Trueの曲のみ存在、songrange未指定 | `("subeana", False)` |
+| 片方しか無い場合は明示指定も上書き | is_subeana=Trueの曲のみ存在、`?songrange=xx` | `"subeana"`に上書きされる |
+
+`compute_common_stats`/`compute_unique_author_count`/`compute_total_imitates`/`compute_collaborator_count`/`compute_unique_collaborator_count`は絞り込み済みのQuerySet`qs`をそのまま受け取る。内部の`_clean_base(qs)`が`Song.objects.filter(id__in=qs.values("id"))`としてid一覧をサブクエリ化した上でM2Mの`annotate(Count(...))`を重ねるため、`qs`側に既に乗っているJOINとのfan-outを避けつつ、idをPythonリストへ列挙しない（曲数が増えてもSQLiteのバインド変数上限に触れない、コードレビュー指摘対応）。
+
+#### 19-1-1-2. `resolve_year_month(request, year_choice_qs=None)`（#334、コードレビュー指摘対応）
+
+`StatsView`/`AuthorStatsView`でほぼ同一だったyear/monthのGETパラメータ検証・正規化ロジック（`parse_int_or_none`によるバリデーション、ゼロ埋め等の正規化、選択肢`year_choices`/`month_choices`の算出）を共通化したもの。`year_choice_qs`を渡すことで、author自身の曲・選択中のsongrangeなど実際に選択可能な年・月のみに`year_choices`/`month_choices`を絞り込める（省略時はサイト全体が対象、コードレビュー指摘対応: 選択肢に「選んでも0件になる年/月」が含まれてしまう問題の修正）。
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| デフォルト（曲が0件） | GETパラメータ無し、DBが空 | `("all", "all", [], [])` |
+| ゼロ埋めの正規化 | `?year=02024`、該当する曲が存在 | `year`が`"2024"`に正規化される |
+| 数値でないyear | `?year=abc` | `year`は`"all"`にフォールバックする |
+| month_choicesも実データに連動（コードレビュー指摘対応） | 3月に曲が存在、他の月は存在しない | `month_choices`が`[3]`になる |
+| `year_choice_qs`で選択肢を絞り込める | 範囲外の曲と範囲内の曲が混在 | `year_choices`が範囲内の曲の年のみになる |
+
+#### 19-1-2. `parse_int_or_none(value)`（#334、コードレビュー指摘対応）
+
+`?year=abc`のような数値変換できないGETパラメータを渡された際に`int()`が`ValueError`を送出し500エラーになる不具合の修正で追加。ビュー側のyear/monthバリデーションで使用する。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 数値文字列 | `"2024"` | `2024` |
+| 数値でない文字列 | `"abc"` | `None` |
+| 小数文字列 | `"1.5"` | `None` |
+| `None` | `None` | `None` |
+| 空文字列 | `""` | `None` |
+
+#### 19-1-3. `now_local()`（#334、コードレビュー指摘対応）
+
+`stats`コマンド内で`datetime.now()`（サーバーOSのタイムゾーン設定に依存）と`timezone.localtime()`（Djangoの設定タイムゾーン基準）が混在していたことによるタイムゾーン不整合の修正で追加。`timezone.localtime(timezone.now())`のラッパーで、Djangoの`TIME_ZONE`設定を常に使う。`get_year_choices()`/`get_month_choices()`・`StatsView`/`AuthorStatsView`の`current_year`計算でも、同種のズレ防止のため`timezone.now()`の代わりにこちらを使う（コードレビュー指摘対応）。
+
+| テストケース | 期待結果 |
+| --- | --- |
+| 呼び出し直後の値 | timezone-aware、`timezone.now()`呼び出し前後の時刻範囲内に収まる |
+
+#### 19-2. `compute_base_stats(qs)` / `compute_common_stats(qs)`
+
+`compute_base_stats`はsong_count/total_view/total_like/total_imitateds（total_authorsを含まない）を返す。`compute_common_stats`はそれに`total_authors`（`compute_unique_author_count`によるAuthor起点の追加クエリ）を加えたもので、総合統計ページ・stats管理コマンドのみが使う。authorごとの統計ページはtotal_authorsを画面に表示しない（合作人数を別途算出するため）ため`compute_base_stats`を使い、無駄なクエリが発行されないようにしている（コードレビュー指摘対応）。
+
+| テストケース | 対象 | 前提条件 | 期待結果 |
+| --- | --- | --- | --- |
+| 空のqueryset | `compute_base_stats` | 曲が0件 | 全フィールドが0 |
+| view/likeがNullな曲を含む | `compute_base_stats` | 一部の曲の`view`・`like`が`None` | `Sum`が`None`にならず0として扱われる |
+| 模倣されている曲 | `compute_base_stats` | 2曲がある曲を模倣 | `total_imitateds`がその曲について2になる |
+| 同じ作者が複数曲に関わる | `compute_common_stats` | 作者Aが2曲、作者Bが1曲（Aと共作） | `total_authors`は重複を除いた人数（2）になる（`compute_unique_author_count`を内部で使用、#334で`song.authors`の総和から変更） |
+| 作者数と模倣曲数の相互干渉防止（回帰） | `compute_common_stats` | 複数作者かつ複数の模倣曲を同時に持つ曲 | `total_authors`（Authorテーブル起点のユニーク集計）と`total_imitateds`（Songテーブル起点のCount集計）が互いに水増しされず、それぞれ正しい値になる |
+
+`AuthorStatsView`側では、`compute_base_stats`への変更によりtotal_authors算出クエリが発行されなくなったことをクエリ数のアサーション（`test_does_not_issue_unused_total_authors_query`、`tests/test_views.py`）で回帰防止している。
+
+#### 19-2-1. `build_stats_items(stats, items)`（#334、コードレビュー指摘対応）
+
+`{% if item.value %}`による0/None非表示が「曲が0件（データなし）」と「曲は存在するが特定の指標だけ0（実際の値）」を区別していなかった問題の修正で追加。`stats["song_count"]`が0の場合のみ空リスト（統計カード全体を非表示）を返し、それ以外は`items`をそのまま返す（個々の値が0でもテンプレート側では表示する）。
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| song_countが0 | `stats["song_count"] == 0` | 空リストを返す |
+| song_countが0以外 | `stats["song_count"] >= 1`、`items`内に値0の項目を含む | `items`をそのまま返す（値0の項目も含めて） |
+
+#### 19-3. `compute_unique_author_count(qs)` / `compute_total_imitates(qs)`
+
+`compute_unique_author_count`は`compute_common_stats`内部で`total_authors`の算出にも使われる。
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| 同一作者が複数曲を持つ | 2曲が同じ作者 | ユニーク作者数は1 |
+| 空のqueryset | 曲が0件 | 0 |
+| 複数の原曲を模倣 | 1曲が2曲を模倣 | `compute_total_imitates`が2 |
+
+#### 19-3-1. `compute_collaborator_count(qs, author_id)` / `compute_unique_collaborator_count(qs, author_id)`（authorごとの統計ページのみ、#334）
+
+「合作人数(重複あり)」「合作人数(重複なし)」の算出に使用。いずれも`author_id`本人を除いて数える。
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| 本人以外の作者数の総和（重複あり） | 本人+他2名の曲、本人のみの曲、本人+他1名の曲 | `compute_collaborator_count`が3（2+0+1） |
+| 本人のみの曲だけ | 共作者なし | `compute_collaborator_count`が0 |
+| 本人以外のユニーク数 | 上記と同じ前提 | `compute_unique_collaborator_count`が2（重複する共作者は1人として数える） |
+| 本人のみの曲だけ | 共作者なし | `compute_unique_collaborator_count`が0 |
+
+#### 19-4. `get_year_choices(qs=None)` / `get_month_choices(qs, year=None)`
+
+いずれも単純な日付計算（最古年〜今年の連続レンジ、1〜12月 or 1〜現在月）ではなく、`qs`内で実際に`upload_time`が存在する年・月のみを返すデータ駆動の実装（コードレビュー指摘対応: 間の年/その年に投稿の無い月も連続レンジ・固定リストとして選択肢に出てしまい、選ぶと0件になる問題の修正。特にauthorページで顕著）。`ExtractYear`/`ExtractMonth`はDjangoのタイムゾーン設定に従って変換されるため、DBがUTC保存でもローカルタイムゾーン基準で年月が判定される。
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| 曲が0件 | DBが空 | `get_year_choices()`は空リスト |
+| `upload_time`を持つ曲が0件 | 全曲`upload_time=None` | `get_year_choices()`は空リスト |
+| 投稿の無い間の年は選択肢に出ない（コードレビュー指摘対応） | 2020年・2024年にのみ曲が存在（2021〜2023年は無し） | `[2020, 2024]`（連続レンジの`[2020, 2021, ..., 2024]`にはならない） |
+| `qs`引数で範囲を絞り込める（コードレビュー指摘対応） | 範囲外の曲と範囲内の曲が混在 | 範囲外の曲の年は無視され、範囲内の曲が実際に存在する年のみ返る |
+| 年の判定はローカルタイムゾーン基準（回帰） | `upload_time`がUTC 2019-12-31 20:00（JST 2020-01-01 05:00） | `[2020]`になる（`[2019]`にならない） |
+| yearを指定すると実際に曲が存在する月のみ返す（コードレビュー指摘対応） | 1月・6月に曲があり、他は無い年を指定 | `[1, 6]` |
+| yearを指定しない場合は年を問わず全期間が対象 | 年をまたいで複数の月に曲が存在 | 年に関わらず該当する月のリストを返す |
+| 曲が存在しない年を指定 | その年には曲が無い | 空リスト |
+| `qs`で範囲を絞り込める | 範囲外の曲と範囲内の曲が混在 | 範囲外の曲の月は無視される |
+
+#### 19-5. `next_year_month(year, month)` / `month_start(year, month)`
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 通常の月送り | `(2026, 3)` | `(2026, 4)` |
+| 12月からの繰り上げ | `(2026, 12)` | `(2027, 1)` |
+| タイムゾーン付きdatetime | `(2026, 3)` | ローカルタイムゾーンで2026年3月1日を指すaware datetimeを返す |
+
+#### 19-6. `with_monthly_deltas(rows)` / `filter_monthly_series_by_year_month(rows, year, month)`（#334、コードレビュー指摘対応）
+
+総合統計ページのグラフをsongrange/year/monthフィルターに連動させる仕様変更で追加。`with_monthly_deltas`は累積値の行リストから各フィールドの単月差分(`<field>_delta`)を計算し、`filter_monthly_series_by_year_month`は表示するyear/monthの行に絞り込む。差分計算は絞り込み前の全期間に対して行ってから絞り込むため、表示範囲を狭めても差分値はずれない。`filter_monthly_series_by_year_month`は`apply_upload_time_filter`と同様、yearとmonthを独立して適用する（コードレビュー指摘対応: 以前はyear="all"だとmonth条件がまるごと無視され、統計カード（`apply_upload_time_filter`基準）とグラフ（このフィルタ基準）で表示内容が食い違うバグがあった）。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 先頭行の差分 | 1件のみの行リスト | 累積値そのものが差分になる |
+| 2件目以降の差分 | 2件の行リスト | 直前の行との差分になる |
+| 累積値は保持される | 任意の行リスト | 元の`<field>`キー（累積値）はそのまま残る |
+| 空リスト | `[]` | `[]` |
+| `year="all"` | 任意の行リスト | 絞り込まれない |
+| `year`のみ指定 | 複数年の行リスト | 該当年の行のみ |
+| `year`・`month`両方指定 | 複数年月の行リスト | 該当年月の行のみ |
+| `year="all"`でも`month`のみ指定（回帰、コードレビュー指摘対応） | 複数年の行リスト、`month`のみ指定 | yearに関わらず該当月の行が年をまたいで全て残る |
 
 ---
 

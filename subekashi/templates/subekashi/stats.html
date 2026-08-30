@@ -1,0 +1,43 @@
+{% extends "subekashi/base/base.html" %}
+
+
+{% load static %}
+{% block css %}{% static 'subekashi/css/stats.css'%}{% endblock %}
+
+{% block content %}
+<section>
+    <h1>統計</h1>
+    {% include "subekashi/components/stats_filter.html" %}
+    {% include "subekashi/components/stats_summary.html" %}
+
+    {% if monthly_stats %}
+        <div class="range-radio-group">
+            <input type="radio" id="chart-mode-monthly" name="chart-mode" value="monthly" checked>
+            <label for="chart-mode-monthly">月ごと</label>
+            <input type="radio" id="chart-mode-cumulative" name="chart-mode" value="cumulative">
+            <label for="chart-mode-cumulative">累積</label>
+        </div>
+        <div class="range-radio-group">
+            <input type="radio" id="chart-series-song_count" name="chart-series" value="song_count" checked>
+            <label for="chart-series-song_count">曲数</label>
+            <input type="radio" id="chart-series-total_view" name="chart-series" value="total_view">
+            <label for="chart-series-total_view">総再生回数</label>
+            <input type="radio" id="chart-series-total_like" name="chart-series" value="total_like">
+            <label for="chart-series-total_like">総高評価数</label>
+            <input type="radio" id="chart-series-total_authors" name="chart-series" value="total_authors">
+            <label for="chart-series-total_authors">総作者数</label>
+            <input type="radio" id="chart-series-total_imitateds" name="chart-series" value="total_imitateds">
+            <label for="chart-series-total_imitateds">総模倣曲関係数</label>
+        </div>
+        <div id="stats-chart-wrapper">
+            <canvas id="stats-chart"></canvas>
+        </div>
+        {{ monthly_stats|json_script:"monthly-stats-data" }}
+    {% endif %}
+</section>
+{% endblock %}
+
+{% block js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" integrity="sha384-NrKB+u6Ts6AtkIhwPixiKTzgSKNblyhlk0Sohlgar9UHUBzai/sgnNNWWd291xqt" crossorigin="anonymous"></script>
+<script src="{% static 'subekashi/js/stats.js' %}"></script>
+{% endblock %}
