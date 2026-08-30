@@ -956,6 +956,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | `genetype="janome"`のlyricsユニーク制約 | 同じ`lyrics`・`genetype="janome"`で2件作成 | `IntegrityError` が発生（部分インデックス、MySQL移行時は要注意） |
 | ユニーク制約はgenetype="janome"のみ対象 | 同じ`lyrics`だが`genetype`が異なる（例:`"model"`と`"janome"`） | `IntegrityError` は発生しない |
+| `bulk_create(ignore_conflicts=True)`との組み合わせ | 既存の`genetype="janome"`レコードと同じ`lyrics`を含む複数件を`bulk_create` | 例外を投げず、重複する1件だけがスキップされ、他の正当な行は作成される |
 
 ---
 
@@ -1101,6 +1102,7 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | 20文字超の結果は対象外 | 入れ替え後の歌詞が20文字超 | Aiレコードは作成されない |
 | `--count`オプション | 対象Songが複数あり`--count 1`を指定 | 作成されるAiレコードは1件に絞られる |
 | 再実行時の重複防止 | 同じ入れ替え結果になる状況で2回実行 | 既存レコードおよび今回の実行内の重複を除外し、`bulk_create`によりAiレコードは重複作成されない |
+| 実行中の並行作成との競合耐性 | `existing_lyrics`のスナップショット取得後に、DB制約`unique_janome_lyrics`に抵触するlyricsが（別プロセス等により）先に存在する状況 | `ignore_conflicts=True`により、その1件だけがスキップされ、他の正当な新規レコードの`bulk_create`は失敗しない |
 | 完了メッセージ | 正常なシード後 | 「新規Aiレコード数：N件（対象M曲中）」の形式で実際の件数を表示する |
 
 ---

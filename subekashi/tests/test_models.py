@@ -599,6 +599,25 @@ class AiModelTest(TestCase):
         except IntegrityError:
             self.fail("genetypeが異なる場合はIntegrityErrorが発生してはならない")
 
+    def test_bulk_create_with_ignore_conflicts_skips_duplicate_janome_lyrics(self):
+        # manage.py aiは実行中の別プロセスとの競合に備えてignore_conflicts=True
+        # でbulk_createしている（PR #1068のレビュー対応）。unique_janome_lyrics
+        # 制約に抵触する行があっても、bulk_create全体が失敗せず、その1件だけが
+        # スキップされ他の正当な行は作成されることを確認する
+        Ai.objects.create(lyrics="既に存在する歌詞", score=3, genetype="janome")
+
+        Ai.objects.bulk_create(
+            [
+                Ai(lyrics="既に存在する歌詞", score=0, genetype="janome"),
+                Ai(lyrics="新しい歌詞", score=0, genetype="janome"),
+            ],
+            ignore_conflicts=True,
+        )
+
+        self.assertEqual(Ai.objects.filter(lyrics="既に存在する歌詞", genetype="janome").count(), 1)
+        self.assertEqual(Ai.objects.get(lyrics="既に存在する歌詞", genetype="janome").score, 3)
+        self.assertTrue(Ai.objects.filter(lyrics="新しい歌詞", genetype="janome").exists())
+
 
 class WordModelTest(TestCase):
     """Word モデルのテスト"""

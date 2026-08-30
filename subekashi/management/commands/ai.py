@@ -94,10 +94,18 @@ class Command(BaseCommand):
                 new_lyrics_list.append(new_lyrics)
                 break
 
-        Ai.objects.bulk_create([
-            Ai(lyrics=lyrics, genetype=Ai.GENETYPE_JANOME, score=0) for lyrics in new_lyrics_list
-        ])
+        # existing_lyricsは実行開始時点のスナップショットのため、実行中に
+        # 別プロセス（AiWordSwapViewや並行実行のmanage.py ai）が同じlyricsを
+        # 先に作成する可能性がある。ignore_conflicts=Trueが無いと、
+        # unique_janome_lyrics制約違反でbulk_create全体が失敗し、他の
+        # 正当な新規レコードもまとめて失われるため、manage.py wordと同様に指定する
+        count_before = Ai.objects.filter(genetype=Ai.GENETYPE_JANOME).count()
+        Ai.objects.bulk_create(
+            [Ai(lyrics=lyrics, genetype=Ai.GENETYPE_JANOME, score=0) for lyrics in new_lyrics_list],
+            ignore_conflicts=True,
+        )
+        created_count = Ai.objects.filter(genetype=Ai.GENETYPE_JANOME).count() - count_before
 
         self.stdout.write(self.style.SUCCESS(
-            f"新規Aiレコード数：{len(new_lyrics_list)}件（対象{len(lyrics_list)}曲中）"
+            f"新規Aiレコード数：{created_count}件（対象{len(lyrics_list)}曲中）"
         ))

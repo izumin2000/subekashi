@@ -64,8 +64,24 @@
                 );
                 closeActivePopup();
                 if (res && res.ok) {
+                    const data = await res.json();
                     tokenEle.textContent = candidate;
                     tokenEle.classList.add("word-token-swapped");
+
+                    // サーバーは常にbase_idの歌詞をトークナイズし直して
+                    // token_indexの単語だけを差し替えるため、同じ行の
+                    // 他のトークンがdata-ai-idを更新しないまま元のbase_idを
+                    // 使い続けると、続けて別の単語を入れ替えたときに今回の
+                    // 変更が失われる。同じ行の全トークンを新しいAiレコードの
+                    // idに揃えて、以降の入れ替えがこの結果を土台にするようにする
+                    const lyricEle = tokenEle.closest(".lyric");
+                    if (lyricEle) {
+                        lyricEle.dataset.aiId = data.id;
+                        lyricEle.querySelectorAll(".word-token").forEach(function (el) {
+                            el.dataset.aiId = data.id;
+                        });
+                    }
+
                     showToast("ok", "入れ替えた歌詞を保存しました。");
                 } else {
                     showToast("error", "入れ替えに失敗しました。");
