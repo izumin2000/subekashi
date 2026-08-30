@@ -1,11 +1,11 @@
-{% load number_format %}
+{% load humanize %}
 <div class="stats-list">
     {% for item in stats_items %}
         {% if item.value is not None %}
             <div class="stat-item">
                 <i class="{{ item.icon }}"></i>
                 <p class="icon-p">{{ item.label }}</p>
-                <p class="stat-value">{{ item.value|intcomma }}</p>
+                <p class="stat-value">{{ item.value|intcomma:False }}</p>
             </div>
         {% endif %}
     {% endfor %}

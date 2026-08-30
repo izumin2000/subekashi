@@ -3,7 +3,7 @@
 
 {% load static %}
 {% load song_card %}
-{% load number_format %}
+{% load humanize %}
 {% block css %}{% static 'subekashi/css/author.css'%}{% endblock %}
 
 {% block content %}
@@ -20,7 +20,7 @@
             <a href="{% url 'subekashi:author_stats' author_id %}">
                 <div class="dummybutton black-dummybutton"><i class="fas fa-chart-line"></i><p>統計</p></div>
             </a>
-            <p id="author-stats-summary"><i class="fas fa-play"></i> {{ total_view|intcomma }}</p>
+            <p id="author-stats-summary"><i class="fas fa-play"></i> {{ total_view|intcomma:False }}</p>
         </div>
     </div>
     {% for songIns in songInsL %}
