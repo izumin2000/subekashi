@@ -480,3 +480,11 @@ class FilterMonthlySeriesByYearMonthTest(TestCase):
     def test_year_and_month_filters_by_both(self):
         result = filter_monthly_series_by_year_month(self.rows, "2025", "6")
         self.assertEqual(result, [{"year": 2025, "month": 6}])
+
+    def test_month_only_filters_across_all_years(self):
+        # apply_upload_time_filterと同様、yearが"all"でもmonthだけで独立して
+        # 絞り込める必要がある（コードレビュー指摘対応: 統計カードとグラフで
+        # 挙動が食い違っていたバグの回帰テスト）
+        rows = self.rows + [{"year": 2023, "month": 6}]
+        result = filter_monthly_series_by_year_month(rows, "all", "6")
+        self.assertEqual(result, [{"year": 2025, "month": 6}, {"year": 2023, "month": 6}])

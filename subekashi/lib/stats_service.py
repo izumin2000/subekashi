@@ -208,11 +208,15 @@ def with_monthly_deltas(rows):
 
 
 def filter_monthly_series_by_year_month(rows, year, month):
-    """year("all"または数値文字列)/month("all"または数値文字列)で表示する行を絞り込む"""
+    """year("all"または数値文字列)/month("all"または数値文字列)で表示する行を絞り込む
+
+    apply_upload_time_filterと同様、yearとmonthは独立して指定できる
+    （yearが"all"でもmonthだけで絞り込める）
+    """
     if year and year != "all":
         rows = [row for row in rows if row["year"] == int(year)]
-        if month and month != "all":
-            rows = [row for row in rows if row["month"] == int(month)]
+    if month and month != "all":
+        rows = [row for row in rows if row["month"] == int(month)]
     return rows
 
 
