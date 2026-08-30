@@ -53,7 +53,7 @@
     {% endif %}
 
     {% if aiInsL and request.COOKIES.is_shown_ai != "off" %}
-        <h1>生成された歌詞</h1>
+        <h1>作成された歌詞</h1>
         {% for aiIns in aiInsL %}
             <p class="lyrics">{{ aiIns.lyrics }}</p>
         {% endfor %}

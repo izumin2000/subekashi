@@ -6,7 +6,7 @@ Song, Author, AuthorAlias, SongLink の CRUD・制約・メソッドを検証す
 from django.db import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
-from subekashi.models import Author, AuthorAlias, Contact, Editor, History, Song, SongLink
+from subekashi.models import Ai, Author, AuthorAlias, Contact, Editor, History, Song, SongLink, Word
 from subekashi.models.author import EffectiveAlias, TransitiveAlias
 
 
@@ -577,3 +577,160 @@ class HistoryModelTest(TestCase):
         results = list(History.get_for_author(self.author))
 
         self.assertEqual(results, [newer, older])
+
+
+class AiModelTest(TestCase):
+    """Ai モデルのテスト"""
+
+    def test_duplicate_janome_lyrics_raises_integrity_error(self):
+        # genetype="janome"は(lyrics)がユニーク（#593、MySQL移行時は要注意）
+        Ai.objects.create(lyrics="私は走る", score=0, genetype="janome")
+
+        with self.assertRaises(IntegrityError):
+            Ai.objects.create(lyrics="私は走る", score=0, genetype="janome")
+
+    def test_duplicate_lyrics_with_different_genetype_is_allowed(self):
+        # ユニーク制約はgenetype="janome"のみが対象。他genetype（レガシーの
+        # "model"等）とは重複してもよい
+        Ai.objects.create(lyrics="私は走る", score=0, genetype="model")
+
+        try:
+            Ai.objects.create(lyrics="私は走る", score=0, genetype="janome")
+        except IntegrityError:
+            self.fail("genetypeが異なる場合はIntegrityErrorが発生してはならない")
+
+    def test_bulk_create_with_ignore_conflicts_skips_duplicate_janome_lyrics(self):
+        # manage.py aiは実行中の別プロセスとの競合に備えてignore_conflicts=True
+        # でbulk_createしている（PR #1068のレビュー対応）。unique_janome_lyrics
+        # 制約に抵触する行があっても、bulk_create全体が失敗せず、その1件だけが
+        # スキップされ他の正当な行は作成されることを確認する
+        Ai.objects.create(lyrics="既に存在する歌詞", score=3, genetype="janome")
+
+        Ai.objects.bulk_create(
+            [
+                Ai(lyrics="既に存在する歌詞", score=0, genetype="janome"),
+                Ai(lyrics="新しい歌詞", score=0, genetype="janome"),
+            ],
+            ignore_conflicts=True,
+        )
+
+        self.assertEqual(Ai.objects.filter(lyrics="既に存在する歌詞", genetype="janome").count(), 1)
+        self.assertEqual(Ai.objects.get(lyrics="既に存在する歌詞", genetype="janome").score, 3)
+        self.assertTrue(Ai.objects.filter(lyrics="新しい歌詞", genetype="janome").exists())
+
+
+class WordModelTest(TestCase):
+    """Word モデルのテスト"""
+
+    def test_str_returns_word_hinshi_candidate(self):
+        word = Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+        self.assertEqual(str(word), "走る(動詞) -> 駆ける")
+
+    def test_unique_constraint(self):
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+        with self.assertRaises(IntegrityError):
+            Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+
+    def test_get_candidates_returns_matching_words(self):
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="駆ける")
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="疾走する")
+
+        candidates = Word.get_candidates("走る", "動詞", "基本形")
+
+        self.assertCountEqual(candidates, ["駆ける", "疾走する"])
+
+    def test_get_candidates_excludes_different_hinshi(self):
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="駆ける")
+
+        candidates = Word.get_candidates("走る", "名詞", "基本形")
+
+        self.assertEqual(candidates, [])
+
+    def test_get_candidates_excludes_different_katsuyou(self):
+        # hinshiが一致していても、katsuyou（活用形）が違う候補は文法が
+        # 破綻するため除外する
+        Word.objects.create(word="読む", hinshi="動詞", katsuyou="基本形", candidate="話す")
+        Word.objects.create(word="読ん", hinshi="動詞", katsuyou="連用タ接続", candidate="話し")
+
+        candidates = Word.get_candidates("読む", "動詞", "基本形")
+
+        self.assertEqual(candidates, ["話す"])
+
+    def test_get_candidates_includes_other_words_with_same_hinshi_and_katsuyou(self):
+        # wordが一致しなくても、hinshi・katsuyouが一致すれば候補プールに含める
+        # （SubeteJanomeNoSeidesu由来のword.jsonに元の単語が無くても候補を出せるようにするため）
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="駆ける")
+        Word.objects.create(word="歩く", hinshi="動詞", katsuyou="基本形", candidate="進む")
+
+        candidates = Word.get_candidates("走る", "動詞", "基本形")
+
+        self.assertCountEqual(candidates, ["駆ける", "進む"])
+
+    def test_get_candidates_deduplicates_candidate_values(self):
+        # 異なるwordから同じcandidate文字列が出てくる場合は重複排除する
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="駆ける")
+        Word.objects.create(word="歩く", hinshi="動詞", katsuyou="基本形", candidate="駆ける")
+
+        candidates = Word.get_candidates("走る", "動詞", "基本形")
+
+        self.assertEqual(candidates, ["駆ける"])
+
+    def test_get_candidates_limits_result_count(self):
+        for i in range(15):
+            Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate=f"候補{i}")
+
+        candidates = Word.get_candidates("走る", "動詞", "基本形", limit=10)
+
+        self.assertEqual(len(candidates), 10)
+
+    def test_get_candidates_is_randomized(self):
+        # 表示件数(10件)を超える候補がある場合、毎回異なる組み合わせが返る
+        for i in range(20):
+            Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate=f"候補{i}")
+
+        results = {tuple(Word.get_candidates("走る", "動詞", "基本形", limit=10)) for _ in range(20)}
+
+        self.assertGreater(len(results), 1)
+
+    def test_is_valid_candidate_true_for_existing_combination(self):
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="駆ける")
+
+        self.assertTrue(Word.is_valid_candidate("走る", "動詞", "基本形", "駆ける"))
+
+    def test_is_valid_candidate_false_for_unknown_candidate(self):
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="駆ける")
+
+        self.assertFalse(Word.is_valid_candidate("走る", "動詞", "基本形", "でっちあげ"))
+
+    def test_is_valid_candidate_false_for_wrong_hinshi(self):
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="駆ける")
+
+        self.assertFalse(Word.is_valid_candidate("走る", "名詞", "基本形", "駆ける"))
+
+    def test_is_valid_candidate_false_for_wrong_katsuyou(self):
+        # hinshiは一致していても、katsuyouが違う候補は無効
+        Word.objects.create(word="読ん", hinshi="動詞", katsuyou="連用タ接続", candidate="話し")
+
+        self.assertFalse(Word.is_valid_candidate("読む", "動詞", "基本形", "話し"))
+
+    def test_is_valid_candidate_true_for_other_word_with_same_hinshi_and_katsuyou(self):
+        # 元のwordが違っても、hinshi・katsuyouが一致すれば有効な候補として扱う
+        Word.objects.create(word="歩く", hinshi="動詞", katsuyou="基本形", candidate="駆ける")
+
+        self.assertTrue(Word.is_valid_candidate("走る", "動詞", "基本形", "駆ける"))
+
+    def test_is_valid_candidate_true_beyond_display_limit(self):
+        # get_candidates()の表示上限(10件)を超えた候補でも、実在すれば有効と判定する
+        for i in range(10):
+            Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate=f"候補{i}")
+        Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="11番目")
+
+        self.assertTrue(Word.is_valid_candidate("走る", "動詞", "基本形", "11番目"))
+
+    def test_is_valid_candidate_false_for_self_reference(self):
+        # word == candidate（自己参照）は、DB上に存在するか否かに関わらず無効
+        self.assertFalse(Word.is_valid_candidate("走る", "動詞", "基本形", "走る"))
+
+    def test_word_equal_candidate_raises_integrity_error(self):
+        with self.assertRaises(IntegrityError):
+            Word.objects.create(word="走る", hinshi="動詞", candidate="走る")

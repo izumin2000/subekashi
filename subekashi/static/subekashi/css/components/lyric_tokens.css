@@ -1,0 +1,55 @@
+.word-token-wrap {
+    position: relative;
+}
+
+.word-token {
+    cursor: pointer;
+    border-bottom: 2px dotted #09F;
+}
+
+.word-token:hover {
+    background-color: #234;
+}
+
+.word-token:focus {
+    background-color: #234;
+    outline: 2px solid #09F;
+    outline-offset: 2px;
+}
+
+.word-token-swapped {
+    border-bottom-color: #090;
+}
+
+.word-candidate-popup {
+    position: absolute;
+    left: 0;
+    top: 100%;
+    z-index: 10;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: max-content;
+    max-width: min(280px, 90vw);
+    background-color: #333;
+    padding: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.word-candidate-popup button {
+    background: none;
+    border: none;
+    width: auto;
+    height: auto;
+    margin: 0;
+    color: #fff;
+    padding: 4px 10px;
+    white-space: nowrap;
+    cursor: pointer;
+    font-size: inherit;
+}
+
+.word-candidate-popup button:hover,
+.word-candidate-popup button:focus {
+    background-color: #555;
+}

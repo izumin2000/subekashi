@@ -417,6 +417,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | ニュース欄のリンク付与（#961） | `tag="release"`の記事 | `DefaultArticleView`へのURLでタイトル全体が`<a>`タグにくくられる |
 | ニュース欄のリンク付与（#961） | `handle_as_news=True`の記事（`tag`は`news`以外） | `DefaultArticleView`へのURLでタイトル全体が`<a>`タグにくくられる |
 | ニュース欄のリンク付与（#961） | `tag="news"`かつ`handle_as_news=True`の記事 | `handle_as_news`が優先され、リンクが付与される |
+| 作成された歌詞の表示 | `genetype="janome", score=5`のAiレコードが存在 | 「作成された歌詞」欄に表示される |
+| レガシーgenetype="model"は対象外（GPTインポート廃止） | `genetype="model", score=5`のレコードが存在 | 「作成された歌詞」欄に表示されない（`get_top_scored()`も`genetype="janome"`のみ対象） |
 
 #### 7-2. `SongsView` (`/songs/`)
 
@@ -693,6 +695,26 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `is_questionable=True` の曲 | GETリクエスト | カードHTMLに `song-card-lyrics` が含まれない |
 | `is_questionable=False` の曲 | GETリクエスト | カードHTMLに `song-card-lyrics` が含まれる |
 
+#### 7-12. `AiView` (`/ai/`)
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 正常アクセス | GETリクエスト | HTTP 200 |
+| `show_janome_notice` Cookie未指定（デフォルトTrue） | Cookie未指定 | janomeによる作成についての案内（`#janome-notice`）が表示される |
+| `show_janome_notice=False` Cookie指定 | `show_janome_notice=False` | `#janome-notice`が表示されない |
+| 単語入れ替え機能は提供しない（方針転換、#1053） | Word候補が存在する単語を含む歌詞 | `class="word-token"` は表示されず、歌詞はプレーンテキストのまま表示される |
+| レガシーgenetype="model"は対象外（GPTインポート廃止） | `genetype="model", score=5`のレコードが存在 | 最高評価の歌詞に表示されない（`genetype="janome"`のみ対象） |
+
+#### 7-13. `AiResultView` (`/ai/result/`)（#1053）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 正常アクセス | GETリクエスト | HTTP 200 |
+| Word候補がある単語 | 該当する`Word`が存在 | `class="word-token"` としてクリック可能に表示される |
+| レガシーgenetype="model"は対象外（GPTインポート廃止） | `genetype="model", score=0`のレコードが存在 | 作成結果キューに表示されない（`genetype="janome"`のみ対象） |
+| 未評価janomeが0件の場合のフォールバック | 未評価のjanomeレコードが無く、評価済みjanomeレコードのみ存在 | 評価済みのjanomeレコードが表示される（単語入れ替えの元歌詞が途絶えないようにするため） |
+| フォールバック時もレガシーgenetype="model"は対象外 | 未評価janomeが0件で、評価済みの`genetype="model"`レコードが存在 | フォールバックしても表示されない |
+
 ---
 
 ### 8. REST API ビュー
@@ -714,6 +736,33 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | テストケース | 入力 | 期待結果 |
 | --- | --- | --- |
 | 正常アクセス | GETリクエスト | HTTP 200、`is_open` フィールドを含むJSON |
+
+#### 8-3. `WordCandidatesView` (`/api/word/candidates/`)（#1053）
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| word・hinshi未指定 | パラメータなし | HTTP 400 |
+| 候補が存在する場合 | `?word=走る&hinshi=動詞&katsuyou=基本形` | HTTP 200、該当する候補一覧 |
+| 候補が存在しない場合 | 未登録の単語 | HTTP 200、空配列 |
+| 活用形が異なる場合 | hinshiは一致するがkatsuyouが異なる候補のみ存在 | HTTP 200、空配列 |
+| 候補が10件超える場合 | 候補15件登録済み | 最大10件に絞られる |
+
+#### 8-4. `AiWordSwapView` (`/api/ai/swap/`)（#1053）
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 正常な入れ替え | 実在するbase_id・token_index・候補 | HTTP 201、新規`Ai`レコード（`score=0`, `genetype="janome"`）が作成される |
+| 元レコードへの影響 | 正常な入れ替え後 | 元の`Ai`レコードの`lyrics`は変更されない |
+| 存在しないbase_id | 未登録のID | HTTP 404 |
+| レガシーgenetype="model"のbaseは対象外 | `genetype="model"`のAiレコードをbase_idに指定 | HTTP 404（単語入れ替えはgenetype="janome"のAiレコードからのみ許可） |
+| 範囲外のtoken_index | 歌詞のトークン数を超える値 | HTTP 400 |
+| 置き換え対象外の品詞 | 助詞など`REPLACEABLE_HINSHIS`外のトークン | HTTP 400 |
+| Wordに存在しない候補 | 実在しない候補語 | HTTP 400、`Ai`レコードは作成されない |
+| 活用形が異なる候補 | hinshiは一致するがkatsuyouが異なる候補 | HTTP 400（文法破綻を防ぐため。katsuyouはクライアント入力を信用せず、base_idの歌詞をサーバー側で再トークナイズして取得） |
+| 同じ入れ替え結果の重複防止 | 同一の`base_id`・`token_index`・`candidate`で2回POST | 2回目は新規`Ai`レコードを作成せず、既存レコードのidを返す |
+| 重複判定はgenetypeも考慮 | `lyrics`は同じだが`genetype="model"`の既存`Ai`が存在 | 既存レコードを誤って再利用せず、`genetype="janome"`の新規レコードを作成する |
+| レスポンスステータスの正確性 | 同一の`base_id`・`token_index`・`candidate`で2回POST | 1回目はHTTP 201（新規作成）、2回目はHTTP 200（既存レコードの再利用） |
+| レスポンスに再トークナイズ済みのtokensを含める | 正常な入れ替え後 | 入れ替え後の歌詞を実際に再トークナイズした`surface`・`hinshi`・`katsuyou`・`index`・`is_replaceable`を含む。janomeは文脈依存のトークナイザのため、クライアント側が古い`token_index`を使い回すと同じ行での連続入れ替え時にズレる可能性があり、それを防ぐためクライアント側でその行のDOMを丸ごと作り直せるようにする |
 
 ---
 
@@ -880,6 +929,37 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | authorの削除 | `create_for_author()`後に`author.delete()` | `history.author`が`None`になる（`on_delete=SET_NULL`、Historyレコード自体は残る） |
 | `get_for_author(author)` | 複数authorのHistoryが存在する状態で対象authorを指定 | 対象authorのHistoryのみが`-create_time`順で返される |
 
+#### 11-7. `Word` モデル（#1053）
+
+| テストケース | 操作 | 期待結果 |
+| --- | --- | --- |
+| `__str__` | `Word(word="走る", hinshi="動詞", candidate="駆ける")` | `"走る(動詞) -> 駆ける"` を返す |
+| `(word, hinshi, katsuyou, candidate)` のユニーク制約 | 同じ組み合わせで2件作成 | `IntegrityError` が発生 |
+| `word != candidate` の CheckConstraint | `word`と`candidate`が同じ値で作成 | `IntegrityError` が発生（自己参照行の作成を防止） |
+| `get_candidates(word, hinshi, katsuyou)` | 一致する候補が複数件登録済み | 候補一覧を返す |
+| `get_candidates(word, hinshi, katsuyou)`（品詞不一致） | 別の品詞で登録された候補のみ存在 | 空リストを返す |
+| `get_candidates(word, hinshi, katsuyou)`（活用形不一致） | 同じhinshiだがkatsuyouが異なる候補のみ存在 | 空リストを返す（文法破綻を防ぐため） |
+| `get_candidates(word, hinshi, katsuyou)`（品詞・活用形ベース） | `word`が異なる他のWordの候補（同じhinshi・katsuyou） | wordを問わず候補プールに含めて返す |
+| `get_candidates(word, hinshi, katsuyou)`（重複排除） | 異なるwordから同じcandidate文字列が存在 | 重複排除して返す |
+| `get_candidates(word, hinshi, katsuyou, limit=10)` | 候補が11件以上登録済み | 最大10件に絞られる |
+| `get_candidates(word, hinshi, katsuyou)`（ランダム性） | 候補が20件登録済みで20回呼び出す | 毎回同じ組み合わせにはならない（DB側の`ORDER BY RANDOM()`は使わず、hinshi・katsuyouで絞り込んだ結果をPython側の`random.shuffle()`でランダム化） |
+| `get_candidates(word, hinshi, katsuyou)`（候補プールの上限） | distinct候補が`CANDIDATE_POOL_SIZE`（200件）を超えて登録済み | 全件をメモリに読み込まず、事前に打ち切ってから絞り込む（大きなhinshi・katsuyouの組み合わせでの性能懸念に対応） |
+| `is_valid_candidate(word, hinshi, katsuyou, candidate)` | 実在する組み合わせ | `True` を返す |
+| `is_valid_candidate(word, hinshi, katsuyou, candidate)` | 存在しない候補 | `False` を返す |
+| `is_valid_candidate(word, hinshi, katsuyou, candidate)` | 品詞が一致しない | `False` を返す |
+| `is_valid_candidate(word, hinshi, katsuyou, candidate)` | 品詞は一致するが活用形が異なる | `False` を返す（文法破綻を防ぐため） |
+| `is_valid_candidate(word, hinshi, katsuyou, candidate)`（品詞・活用形ベース） | `word`は異なるが`hinshi`・`katsuyou`が一致する候補 | `True` を返す |
+| `is_valid_candidate(word, hinshi, katsuyou, candidate)` | `get_candidates()`の表示上限（10件）を超える候補 | 実在すれば `True` を返す（表示件数の制限を受けない） |
+| `is_valid_candidate(word, hinshi, katsuyou, candidate)`（自己参照） | `word == candidate` | DB上の実在有無に関わらず `False` を返す |
+
+#### 11-8. `Ai` モデル（#593）
+
+| テストケース | 操作 | 期待結果 |
+| --- | --- | --- |
+| `genetype="janome"`のlyricsユニーク制約 | 同じ`lyrics`・`genetype="janome"`で2件作成 | `IntegrityError` が発生（部分インデックス、MySQL移行時は要注意） |
+| ユニーク制約はgenetype="janome"のみ対象 | 同じ`lyrics`だが`genetype`が異なる（例:`"model"`と`"janome"`） | `IntegrityError` は発生しない |
+| `bulk_create(ignore_conflicts=True)`との組み合わせ | 既存の`genetype="janome"`レコードと同じ`lyrics`を含む複数件を`bulk_create` | 例外を投げず、重複する1件だけがスキップされ、他の正当な行は作成される |
+
 ---
 
 ### 12. `article` アプリ
@@ -993,6 +1073,40 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | 実行対象の時刻・認証情報あり | `now.hour`が6の倍数（0, 6, 12, 18時） | DBファイルがコピーされ、日時ファイル名でDriveにアップロードされた後、古いバックアップの削除（50件保持）が行われる |
 | アップロード失敗時 | `upload_backup`が例外を送出 | エラーメッセージを出力し、古いバックアップの削除は行われない。`ERROR_DISCORD_URL`宛にDiscord通知を送る |
 
+#### 14-5. `word` コマンド（`word.json`から模倣単語候補を`Word`に一括登録、#1053）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 正常なJSON | `[{"word":..., "hinshi":..., "candidates":[...]}]` | 各候補ごとに`Word`レコードが作成される |
+| katsuyouの取り込み | エントリに`"katsuyou": "基本形"`を含む | `Word.katsuyou`に値が保存される |
+| katsuyou未指定（旧形式） | エントリに`katsuyou`キーが無い | `Word.katsuyou`は空文字列になる（例外にならない） |
+| 複数エントリ | 複数の単語エントリを含むJSON | 全エントリ分の候補がまとめて登録される |
+| word/hinshiが空のエントリ | `word`または`hinshi`が空文字 | そのエントリはスキップされる |
+| ファイルが存在しない場合 | `word.json`が無い | 例外を投げず、`CONST_ERROR`を出力（`python manage.py const`実行を促す） |
+| 不正なJSON | パース不可能な内容 | 例外を投げず、`CONST_ERROR`を出力 |
+| 再実行時の重複防止 | 同じ内容で2回実行 | `ignore_conflicts=True`によりレコードは重複作成されない |
+| 完了メッセージの件数精度 | 同じ内容で2回実行 | 1回目は「新規Word候補数：1」、2回目（重複のみ）は「新規Word候補数：0」と、`count()`差分に基づく実際の新規作成数が表示される |
+| `candidates`がlist以外 | `candidates`が文字列など | そのエントリは丸ごとスキップされる（文字列を1文字ずつ`Word`化してしまう事故を防止） |
+| `candidates`内に文字列以外の要素 | `candidates`に数値・`null`が混在 | 文字列の要素のみ`Word`として登録され、それ以外は無視される |
+| 自己参照エントリの除外 | `candidates`に`word`と同じ文字列が混在 | `CheckConstraint`のDB任せにせず、コマンド側で明示的に除外する（`bulk_create(ignore_conflicts=True)`のCHECK制約違反時の挙動がDBバックエンド依存のため） |
+| トップレベルがlist以外 | JSONのトップレベルが`dict`など | 例外を投げず、`CONST_ERROR`を出力（`entry.get()`によるAttributeErrorを防止） |
+| リスト内にdict以外の要素 | 文字列など`dict`でない要素を含むlist | その要素はスキップされ、他の正常なエントリのみ登録される |
+
+#### 14-6. `ai` コマンド（`Song.lyrics`の単語入れ替えでgenetype="janome"のAiレコードをシード、#1053）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 正常なシード | 対象Songと一致するWord候補が存在 | `genetype="janome", score=0`のAiレコードが単語入れ替え済みの歌詞で作成される |
+| ネタ動画（is_joke）は対象外 | `is_joke=True`のSongのみ存在 | Aiレコードは作成されない |
+| 界隈曲か疑わしい曲（is_questionable）は対象外 | `is_questionable=True`のSongのみ存在 | Aiレコードは作成されない |
+| 置き換え可能なトークンが無いSong | 該当するWord候補が1件も無い | 例外を投げずスキップされ、Aiレコードは作成されない |
+| 7文字未満の結果は対象外 | 入れ替え後の歌詞が7文字未満 | Aiレコードは作成されない |
+| 20文字超の結果は対象外 | 入れ替え後の歌詞が20文字超 | Aiレコードは作成されない |
+| `--count`オプション | 対象Songが複数あり`--count 1`を指定 | 作成されるAiレコードは1件に絞られる |
+| 再実行時の重複防止 | 同じ入れ替え結果になる状況で2回実行 | 既存レコードおよび今回の実行内の重複を除外し、`bulk_create`によりAiレコードは重複作成されない |
+| 実行中の並行作成との競合耐性 | `existing_lyrics`のスナップショット取得後に、DB制約`unique_janome_lyrics`に抵触するlyricsが（別プロセス等により）先に存在する状況 | `ignore_conflicts=True`により、その1件だけがスキップされ、他の正当な新規レコードの`bulk_create`は失敗しない |
+| 完了メッセージ | 正常なシード後 | 「新規Aiレコード数：N件（対象M曲中）」の形式で実際の件数を表示する |
+
 ---
 
 ### 15. `templatetags/song_card.py` — テンプレートタグ
@@ -1061,6 +1175,37 @@ Google Drive APIはモック化する。
 | 保持件数ちょうど | ファイル数 == `keep_nums` | 削除されない |
 | 保持件数を1件超過 | ファイル数 == `keep_nums + 1` | 最も古い1件のみ削除される |
 | 保持件数を複数件超過 | ファイル数 > `keep_nums + 1` | 超過分がすべて（古い順に）削除される |
+
+---
+
+### 18. `lib/lyric_tokenizer.py` — 歌詞の単語分割（#1053）
+
+**テストファイル**: `tests/test_lib_lyric_tokenizer.py`
+
+#### 18-1. `tokenize_lyrics_with_index(lyrics)`
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 単語分割 | `"私は走る"` | `surface`が`["私", "は", "走る"]`に分割される |
+| 連番index付与 | `"私は走る"` | 各トークンに`0, 1, 2`の`index`が付与される |
+| 品詞の大分類 | `"私は走る"` | `私`→`名詞`, `は`→`助詞`, `走る`→`動詞` |
+| 動詞・形容詞のkatsuyou | `"私は走る"`, `"とても嬉しい"` | 活用形（`infl_form`）を返す（例:「基本形」）。SubeteJanomeNoSeidesu側の規約と一致させる必要がある |
+| 名詞のkatsuyou | `"犬"` | 品詞細分類のフル文字列（`part_of_speech`）を返す（例:「名詞,一般,\*,\*」） |
+| それ以外のkatsuyou | `"私は走る"`の`は` | 空文字列を返す |
+
+#### 18-2. `tokenize_ai_instances(ai_queryset)`
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 候補が存在する単語 | 該当する`Word`が登録済み | `is_replaceable=True` |
+| 候補が存在しない単語 | `Word`未登録 | `is_replaceable=False` |
+| 置き換え対象外の品詞 | 助詞など`REPLACEABLE_HINSHIS`外 | 同表記の`Word`が存在しても`is_replaceable=False` |
+| 品詞をまたいだ候補の誤判定防止 | 別品詞で同じ表記の`Word`のみ存在 | `is_replaceable=False`（品詞の組み合わせで厳密一致） |
+| katsuyou不一致でもis_replaceableはTrue（既知の許容範囲） | `(word, hinshi)`は一致するがkatsuyouが異なる`Word`のみ存在 | `is_replaceable=True`になる一方、`Word.get_candidates()`は空リストを返す（`word_swap.js`側で「候補が見つかりません」として吸収） |
+| 結果の`id`・`lyrics` | `Ai`インスタンスを渡す | 各要素に`id`・`lyrics`が含まれる |
+| 空のqueryset | `Ai.objects.none()` | 空リストを返す |
+| 副詞は置き換え対象（SubeteJanomeNoSeidesu側との整合、#1048） | 副詞に該当する`Word`が登録済み | `is_replaceable=True` |
+| 連体詞は置き換え対象（SubeteJanomeNoSeidesu側との整合、#1048） | 連体詞に該当する`Word`が登録済み | `is_replaceable=True` |
 
 ---
 

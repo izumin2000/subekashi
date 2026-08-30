@@ -12,7 +12,7 @@ from django.urls import reverse
 from django.utils import timezone
 from article.models import Article
 from subekashi.forms import AuthorAliasForm
-from subekashi.models import Ad, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song
+from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song, Word
 
 
 STATIC_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
@@ -28,6 +28,22 @@ class TopViewTest(TestCase):
     def test_get_returns_200(self):
         response = self.client.get(reverse("subekashi:top"))
         self.assertEqual(response.status_code, 200)
+
+    def test_created_lyrics_shows_high_scored_janome(self):
+        Ai.objects.create(lyrics="作成された歌詞サンプル", score=5, genetype="janome")
+
+        response = self.client.get(reverse("subekashi:top"))
+
+        self.assertContains(response, "作成された歌詞サンプル")
+
+    def test_created_lyrics_excludes_legacy_model_genetype(self):
+        # レガシーのGPTインポート（genetype="model"）は廃止されたため、
+        # スコア5であっても「作成された歌詞」には表示されない
+        Ai.objects.create(lyrics="レガシー歌詞", score=5, genetype="model")
+
+        response = self.client.get(reverse("subekashi:top"))
+
+        self.assertNotContains(response, "レガシー歌詞")
 
     def test_news_tag_article_has_no_link(self):
         """tag=newsかつhandle_as_news=Falseの記事はリンクされずタイトルのみ表示される"""
@@ -2017,3 +2033,100 @@ class AdViewTest(TestCase):
         self.assertRedirects(response, reverse("subekashi:ad_complete"))
         adIns = Ad.objects.get(url="https://youtu.be/bbbbbbbbbbb")
         self.assertEqual(adIns.dup, 1)
+
+
+@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+class AiViewTest(TestCase):
+    """AiView (/ai/) のテスト"""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_get_returns_200(self):
+        response = self.client.get(reverse("subekashi:ai"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_show_janome_notice_default_true(self):
+        response = self.client.get(reverse("subekashi:ai"))
+        self.assertTrue(response.context["show_janome_notice"])
+        self.assertContains(response, "id=\"janome-notice\"")
+
+    def test_show_janome_notice_false_when_cookie_set(self):
+        # base.js の setCookie() は JSON.stringify() で保存するため、実際に送信される
+        # Cookie値は show_janome_notice="off" のようにクォート付きになる。
+        # Djangoの parse_cookie() はRFC 6265のquoted cookie-valueとしてクォートを
+        # 自動的に取り除くため、request.COOKIES側ではクォートなしの"off"として
+        # 受け取れることをここで確認する。
+        response = self.client.get(reverse("subekashi:ai"), HTTP_COOKIE='show_janome_notice="off"')
+        self.assertFalse(response.context["show_janome_notice"])
+        self.assertNotContains(response, "id=\"janome-notice\"")
+
+    def test_best_lyric_is_plain_text_even_with_matching_word_candidate(self):
+        # 方針転換（#1053）により、最高評価の歌詞では単語入れ替え機能を提供しない。
+        # Word候補が存在していてもクリック可能なトークンにはならない
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+        Ai.objects.create(lyrics="私は走る", score=5, genetype="janome")
+
+        response = self.client.get(reverse("subekashi:ai"))
+
+        self.assertNotContains(response, 'class="word-token"')
+        self.assertContains(response, "私は走る")
+
+    def test_legacy_model_genetype_is_excluded_from_best_lyrics(self):
+        # レガシーのGPTインポート（genetype="model"）は廃止されたため、
+        # スコア5であっても最高評価の歌詞には表示されない
+        Ai.objects.create(lyrics="レガシー歌詞", score=5, genetype="model")
+
+        response = self.client.get(reverse("subekashi:ai"))
+
+        self.assertNotContains(response, "レガシー歌詞")
+
+
+@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+class AiResultViewTest(TestCase):
+    """AiResultView (/ai/result/) のテスト"""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_get_returns_200(self):
+        response = self.client.get(reverse("subekashi:ai_result"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_lyric_word_with_candidate_is_rendered_as_clickable_token(self):
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+        Ai.objects.create(lyrics="私は走る", score=0, genetype="janome")
+
+        response = self.client.get(reverse("subekashi:ai_result"))
+
+        self.assertContains(response, 'class="word-token"')
+        self.assertContains(response, 'data-word="走る"')
+
+    def test_legacy_model_genetype_is_excluded_from_result_queue(self):
+        # レガシーのGPTインポート（genetype="model"）は廃止されたため、
+        # 未評価（score=0）であっても作成結果キューには表示されない
+        Ai.objects.create(lyrics="レガシー歌詞", score=0, genetype="model")
+
+        response = self.client.get(reverse("subekashi:ai_result"))
+
+        self.assertNotContains(response, "レガシー歌詞")
+
+    def test_falls_back_to_scored_janome_when_none_unscored(self):
+        # 未評価のjanomeレコードが1件も無くても、単語入れ替えの元になる歌詞が
+        # 途絶えないよう、評価済みのjanomeレコードにフォールバックして表示する。
+        # janomeはトークンごとに別々の<span>に分割して描画するため、複数語の
+        # 文字列だとテンプレート上で分断され、そのままの形では現れない。
+        # そのため単一トークンになる語（りんご）を使って検証する。
+        Ai.objects.create(lyrics="りんご", score=3, genetype="janome")
+
+        response = self.client.get(reverse("subekashi:ai_result"))
+
+        self.assertContains(response, "りんご")
+
+    def test_fallback_still_excludes_legacy_model_genetype(self):
+        # フォールバック時であっても、レガシーのgenetype="model"は対象に含めない
+        Ai.objects.create(lyrics="レガシー歌詞", score=5, genetype="model")
+
+        response = self.client.get(reverse("subekashi:ai_result"))
+
+        self.assertNotContains(response, "レガシー歌詞")

@@ -6,10 +6,10 @@
 
 {% block content %}
 <section>
-    <h1>歌詞の生成結果</h1>
+    <h1>歌詞の作成結果</h1>
     {% for aiIns in aiInsL  %}
         <div class="ai-ins">
-            <p class="lyric">{{ aiIns.lyrics }}</p>
+            {% include "subekashi/components/lyric_tokens.html" with item=aiIns %}
             <div class="evaluation">
                 <input type="radio" id="{{ aiIns.id }}1" class="score" name="radio{{ aiIns.id }}" oninput="setScore('{{ aiIns.id }}', 1)">
                 <label for="{{ aiIns.id }}1">悪い</label>
@@ -26,11 +26,12 @@
     {% endfor %}
     <div class="dummybuttons ai-result-form">
         <div class="dummybutton" id="copy" onclick="copyBest()"><p>最高の行をコピー</p></div>
-        <input class="dummybutton" type="submit" value="再生成" onclick="location.reload()"></input>
+        <input class="dummybutton" type="submit" value="再作成" onclick="regenerate()"></input>
     <p id="copy-message"></p>
 </section>
 {% endblock %}
 
 {% block js %}
+    <script defer src="{% static 'subekashi/js/word_swap.js' %}"></script>
     <script defer src="{% static 'subekashi/js/ai_result.js' %}" rel="stylesheet"></script>
 {% endblock %}

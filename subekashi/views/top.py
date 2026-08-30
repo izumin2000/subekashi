@@ -58,7 +58,7 @@ class TopView(View):
                 lackInsL = random.sample(lackInsL, min(lack_count, len(lackInsL)))
                 context["lackInsL"] = lackInsL
 
-        # 生成された歌詞の表示設定
+        # 作成された歌詞の表示設定
         is_ai_shown = request.COOKIES.get("is_shown_ai", "on") == "on"
         if is_ai_shown:
             aiInsL = list(Ai.get_top_scored())[::-1]

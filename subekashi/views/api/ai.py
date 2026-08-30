@@ -1,7 +1,12 @@
 
-from subekashi.models import Ai
-from rest_framework import viewsets, serializers
-from ...serializer import AiSerializer
+from django.shortcuts import get_object_or_404
+from rest_framework import viewsets, serializers, status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
+from subekashi.models import Ai, Word
+from subekashi.lib.lyric_tokenizer import tokenize_ai_instances, tokenize_lyrics_with_index, REPLACEABLE_HINSHIS
+from ...serializer import AiSerializer, AiWordSwapSerializer
 
 class AiAPI(viewsets.ModelViewSet):
     queryset = Ai.objects.all()
@@ -28,3 +33,69 @@ class AiAPI(viewsets.ModelViewSet):
         headers = viewsets.ModelViewSet.default_response_headers.fget(self)
         headers["Access-Control-Allow-Origin"] = "*"
         return headers
+
+
+class AiWordSwapThrottle(UserRateThrottle):
+    rate = '30/minute'
+
+
+class AiWordSwapView(APIView):
+    """
+    作成歌詞（Aiレコード）の単語1つを模倣単語候補に入れ替え、
+    新しいAiレコード（score=0）として保存する。
+    """
+    throttle_classes = [AiWordSwapThrottle]
+
+    def post(self, request, *args, **kwargs):
+        serializer = AiWordSwapSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        base_id = serializer.validated_data['base_id']
+        token_index = serializer.validated_data['token_index']
+        candidate = serializer.validated_data['candidate']
+
+        # base自体もgenetype="janome"のみを対象にする。これが無いと、UI上は
+        # 入れ替えボタンを出していない最高評価の歌詞や、廃止済みのレガシー
+        # genetype="model"レコードに対しても、base_idさえ分かればAPIから
+        # 直接入れ替えできてしまう
+        base = get_object_or_404(Ai, pk=base_id, genetype=Ai.GENETYPE_JANOME)
+        tokens = tokenize_lyrics_with_index(base.lyrics)
+
+        if token_index >= len(tokens):
+            return Response({'detail': '指定された単語が見つかりません。'}, status=status.HTTP_400_BAD_REQUEST)
+
+        token = tokens[token_index]
+        if token['hinshi'] not in REPLACEABLE_HINSHIS:
+            return Response({'detail': 'この単語は入れ替えられません。'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not Word.is_valid_candidate(token['surface'], token['hinshi'], token['katsuyou'], candidate):
+            return Response({'detail': '候補として存在しない単語です。'}, status=status.HTTP_400_BAD_REQUEST)
+
+        new_lyrics = ''.join(
+            candidate if i == token_index else t['surface']
+            for i, t in enumerate(tokens)
+        )
+
+        lyrics_max_length = Ai._meta.get_field('lyrics').max_length
+        if not (0 < len(new_lyrics) <= lyrics_max_length):
+            return Response({'detail': '入れ替え後の歌詞が長すぎます。'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 同じ入れ替え結果（かつ同じgenetype）が既に存在する場合は重複作成せず、既存のAiレコードを返す
+        new_ai, created = Ai.objects.get_or_create(
+            lyrics=new_lyrics,
+            genetype=Ai.GENETYPE_JANOME,
+            defaults={'score': 0},
+        )
+
+        # janomeは文脈依存の統計的トークナイザのため、候補語を入れた新しい歌詞を
+        # 再トークナイズすると、周辺のトークン境界が元の歌詞と変わる可能性が
+        # 理論上ある。クライアント側が古いtoken_indexのまま同じ行で続けて
+        # 入れ替えようとして意図しない単語を壊さないよう、入れ替え後の
+        # 歌詞を実際に再トークナイズした結果をレスポンスに含め、
+        # クライアント側でその行の表示を丸ごと作り直せるようにする
+        new_tokens = tokenize_ai_instances(Ai.objects.filter(pk=new_ai.pk))[0]['tokens']
+
+        return Response(
+            {'id': new_ai.id, 'lyrics': new_ai.lyrics, 'tokens': new_tokens},
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+            headers={"Access-Control-Allow-Origin": "*"},
+        )

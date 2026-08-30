@@ -6,3 +6,4 @@ from .history import History
 from .contact import Contact
 from .ai import Ai
 from .ad import Ad
+from .word import Word

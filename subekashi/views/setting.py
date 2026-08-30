@@ -102,7 +102,7 @@ class SettingView(View):
                     ]
                 },
                 {
-                    'label': '生成された歌詞の表示',
+                    'label': '作成された歌詞の表示',
                     'id': 'is_shown_ai',
                     'options': [
                         {'value': 'on', 'text': '表示', 'selected': is_shown_ai == 'on'},
