@@ -325,6 +325,10 @@ PRにはClaude Code Actionsを使用しております。
 
 - [全て歌詞の所為です。 X サブ](https://x.com/lyricsokiba)
 
+## スペシャルサンクス
+
+- [亦組](https://github.com/h-u-t-e-i)
+
 ## クレジット
 本ソフトでは表示フォントに「源全角ゴ改」(<https://drive.google.com/drive/folders/19WidrJoCmI5qLJV-eR_ydURIwxB2-DS>) を使用しています。
 Licensed under SIL Open Font License 1.1 <http://scripts.sil.org/OFL>
