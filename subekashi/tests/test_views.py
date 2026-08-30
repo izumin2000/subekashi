@@ -651,6 +651,17 @@ class StatsViewTest(TestCase):
         self.assertContains(response, 'id="songrange-subeana"')
         self.assertContains(response, 'id="songrange-xx"')
 
+    def test_year_choices_scoped_to_selected_songrange(self):
+        # songrange=subeanaを選んでいる間は、xx曲しか無い年を選択肢に出さない
+        # （0件になり得る組み合わせを避けるため、コードレビュー指摘対応）
+        Song.objects.create(title="xx曲(2020年)", is_subeana=False, upload_time=datetime(2020, 1, 1, tzinfo=dt_timezone.utc))
+        Song.objects.create(title="すべあな曲(2024年)", is_subeana=True, upload_time=datetime(2024, 1, 1, tzinfo=dt_timezone.utc))
+
+        response = self.client.get(reverse("subekashi:stats"), {"songrange": "subeana"})
+
+        self.assertNotIn(2020, response.context["year_choices"])
+        self.assertIn(2024, response.context["year_choices"])
+
     def test_songrange_radio_group_hidden_when_only_one_songrange_exists(self):
         # is_subeana=Falseの曲が無い場合、選んでも意味のある違いが出ないため
         # ラジオグループ自体（全て/すべあな界隈曲のみ/以外の3つとも）を非表示にする。
@@ -786,6 +797,18 @@ class AuthorStatsViewTest(TestCase):
         self.assertNotContains(response, 'id="songrange-subeana"')
         self.assertNotContains(response, 'id="songrange-xx"')
         self.assertEqual(response.context["songrange"], "subeana")
+
+    def test_year_choices_scoped_to_this_author_only(self):
+        # サイト全体には別年の曲があっても、この作者自身が投稿していない年は
+        # 選択肢に出さない（コードレビュー指摘対応）
+        other_author = Author.objects.create(name="別の作者")
+        Song.objects.create(title="他authorの曲", upload_time=datetime(2020, 1, 1, tzinfo=dt_timezone.utc)).authors.add(other_author)
+        Song.objects.create(title="この作者の曲", upload_time=datetime(2024, 1, 1, tzinfo=dt_timezone.utc)).authors.add(self.author)
+
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
+
+        self.assertNotIn(2020, response.context["year_choices"])
+        self.assertIn(2024, response.context["year_choices"])
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)

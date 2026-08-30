@@ -174,6 +174,18 @@ class ResolveYearMonthTest(TestCase):
 
         self.assertEqual(year, "all")
 
+    def test_year_choices_scoped_to_given_queryset(self):
+        # year_choice_qsを渡すと、その範囲（authorの曲・選択中のsongrange等）で
+        # 実際に選択可能な年のみに絞り込める（コードレビュー指摘対応）
+        Song.objects.create(title="対象外の曲", upload_time=datetime(2020, 1, 1, tzinfo=dt_timezone.utc))
+        target_song = Song.objects.create(title="対象の曲", upload_time=datetime(2024, 1, 1, tzinfo=dt_timezone.utc))
+        request = self.factory.get("/stats/")
+
+        _, _, year_choices, _ = resolve_year_month(request, Song.objects.filter(pk=target_song.pk))
+
+        self.assertNotIn(2020, year_choices)
+        self.assertIn(2024, year_choices)
+
 
 class ApplyUploadTimeFilterTest(TestCase):
     def setUp(self):
@@ -337,6 +349,16 @@ class GetYearChoicesTest(TestCase):
 
         current_year = now_local().year
         self.assertEqual(get_year_choices(), list(range(2020, current_year + 1)))
+
+    def test_scoped_to_given_qs_ignores_songs_outside_it(self):
+        # qsを渡すとその範囲のみで年を判定する（コードレビュー指摘対応）
+        Song.objects.create(title="範囲外の古い曲", upload_time=datetime(2018, 1, 1, tzinfo=dt_timezone.utc))
+        target = Song.objects.create(title="対象の曲", upload_time=datetime(2022, 1, 1, tzinfo=dt_timezone.utc))
+
+        current_year = now_local().year
+        result = get_year_choices(Song.objects.filter(pk=target.pk))
+
+        self.assertEqual(result, list(range(2022, current_year + 1)))
 
     def test_min_upload_time_year_uses_local_timezone_not_utc(self):
         # UTC 2019-12-31 20:00 = JST 2020-01-01 05:00（コードレビュー指摘対応の回帰テスト）

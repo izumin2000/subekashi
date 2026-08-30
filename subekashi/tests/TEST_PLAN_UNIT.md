@@ -740,6 +740,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | グラフがsongrangeフィルターに連動（コードレビュー指摘対応の仕様変更） | `?songrange=subeana`、`Stats`にall/subeana/xxそれぞれのレコードが存在 | `context["monthly_stats"]`がsongrange="subeana"のレコードのみになる |
 | グラフがyearフィルターに連動（コードレビュー指摘対応の仕様変更） | `?year=2024`、複数年の`Stats`レコードが存在 | `context["monthly_stats"]`が2024年の月のみになる |
 | グラフの差分は絞り込み前の全期間から計算（回帰） | `?year=2025`指定、2024年12月と2025年1月の`Stats`が存在 | 表示範囲を2025年のみに絞り込んでも、`song_count_delta`は2024年12月との差分として正しく計算される |
+| year選択肢は選択中のsongrangeに連動（回帰、コードレビュー指摘対応） | `?songrange=subeana`、xx曲のみの年とsubeana曲のみの年が混在 | `year_choices`にxx曲のみの年が含まれず、選択しても0件になる組み合わせを避けられる |
 | メニューからの導線 | トップページのGET | `/stats/`へのリンクが記事とお問い合わせの間に含まれる |
 
 #### 7-15. `AuthorStatsView` (`/authors/<id>/stats/`)（#334）
@@ -753,6 +754,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 対象authorの曲のみ集計 | 他authorの曲も存在 | 対象author以外の曲は集計対象に含まれない |
 | 合作人数(重複あり)・合作人数(重複なし)は本人を除く | 対象authorと共作者1名の曲が存在 | 「合作人数(重複あり)」「合作人数(重複なし)」がともに1になる（本人はカウントしない）。総合統計ページの「総作者数」は表示されない |
 | songrangeラジオグループは対象author自身の曲を基準に判定 | サイト全体にはxx曲が存在するが、対象author自身はsubeana曲しか持たない | サイト全体の状況に関わらず、対象author基準でラジオグループ自体が非表示になり`songrange`が"subeana"に解決される |
+| year選択肢は対象author自身の投稿年のみ（回帰、コードレビュー指摘対応） | サイト全体には別年の曲があるが、対象author自身はある年にしか投稿していない | `year_choices`に対象author自身が投稿していない年が含まれない |
 
 ---
 
@@ -1325,15 +1327,16 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 | 片方しか無い場合は強制解決 | is_subeana=Trueの曲のみ存在、songrange未指定 | `("subeana", False)` |
 | 片方しか無い場合は明示指定も上書き | is_subeana=Trueの曲のみ存在、`?songrange=xx` | `"subeana"`に上書きされる |
 
-#### 19-1-1-2. `resolve_year_month(request)`（#334、コードレビュー指摘対応）
+#### 19-1-1-2. `resolve_year_month(request, year_choice_qs=None)`（#334、コードレビュー指摘対応）
 
-`StatsView`/`AuthorStatsView`でほぼ同一だったyear/monthのGETパラメータ検証・正規化ロジック（`parse_int_or_none`によるバリデーション、ゼロ埋め等の正規化、選択肢`year_choices`/`month_choices`の算出）を共通化したもの。
+`StatsView`/`AuthorStatsView`でほぼ同一だったyear/monthのGETパラメータ検証・正規化ロジック（`parse_int_or_none`によるバリデーション、ゼロ埋め等の正規化、選択肢`year_choices`/`month_choices`の算出）を共通化したもの。`year_choice_qs`を渡すことで、author自身の曲・選択中のsongrangeなど実際に選択可能な年のみに`year_choices`を絞り込める（省略時はサイト全体が対象、コードレビュー指摘対応: 選択肢に「選んでも0件になる年」が含まれてしまう問題の修正）。
 
 | テストケース | 前提条件 | 期待結果 |
 | --- | --- | --- |
 | デフォルト | GETパラメータ無し | `("all", "all", [], list(range(1, 13)))` |
 | ゼロ埋めの正規化 | `?year=02024`、該当する曲が存在 | `year`が`"2024"`に正規化される |
 | 数値でないyear | `?year=abc` | `year`は`"all"`にフォールバックする |
+| `year_choice_qs`で選択肢を絞り込める | 範囲外の曲と範囲内の曲が混在 | `year_choices`が範囲内の曲の年のみになる |
 
 #### 19-1-2. `parse_int_or_none(value)`（#334、コードレビュー指摘対応）
 
@@ -1395,6 +1398,7 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 | 曲が0件 | DBが空 | `get_year_choices()`は空リスト |
 | `upload_time`を持つ曲が0件 | 全曲`upload_time=None` | `get_year_choices()`は空リスト |
 | 曲が存在 | 最古の`upload_time`年〜今年 | その範囲のリストを返す |
+| `qs`引数で範囲を絞り込める（コードレビュー指摘対応） | 範囲外の曲と範囲内の曲が混在 | 範囲外の曲の年は無視され、範囲内の曲の最古年〜今年のみ返る |
 | 最古年の判定はローカルタイムゾーン基準（回帰） | `upload_time`がUTC 2019-12-31 20:00（JST 2020-01-01 05:00） | 開始年が2020になる（2019にならない） |
 | 現在年の判定は`now_local()`基準（回帰） | `now_local()`をJST 2027-01-01 00:30にモック | `get_year_choices()`の終端が2027になる |
 | 選択年が今年 | `year == current_year` | 1月〜現在月のリスト |

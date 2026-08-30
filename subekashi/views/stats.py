@@ -16,10 +16,11 @@ from subekashi.models import Song, Stats
 class StatsView(View):
     def get(self, request):
         songrange, show_all_songrange = resolve_songrange(request, Song.objects.all())
-        year, month, year_choices, month_choices = resolve_year_month(request)
+        songrange_qs = apply_songrange_filter(Song.objects.all(), songrange)
+        # 選択中のsongrangeでは0件になる年は選択肢に出さない
+        year, month, year_choices, month_choices = resolve_year_month(request, songrange_qs)
 
-        qs = apply_songrange_filter(Song.objects.all(), songrange)
-        qs = apply_upload_time_filter(qs, year, month)
+        qs = apply_upload_time_filter(songrange_qs, year, month)
 
         stats = compute_common_stats(get_song_ids(qs))
 

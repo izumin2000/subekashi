@@ -123,12 +123,18 @@ def compute_unique_collaborator_count(song_ids, author_id):
     return Author.objects.filter(songs__id__in=song_ids).exclude(id=author_id).distinct().count()
 
 
-def get_year_choices():
-    """upload_timeが最小の年〜今年のリストを返す（upload_time付きの曲が1件もなければ空リスト）
+def get_year_choices(qs=None):
+    """qs（省略時はSong.objects.all()）のupload_timeが最小の年〜今年のリストを返す
 
+    upload_time付きの曲がqs内に1件もなければ空リスト。qsにauthorやsongrangeの
+    絞り込みを渡せば、その範囲で実際に選択可能な年のみに絞った選択肢になる
+    （例: authorページではその作者自身の投稿年のみ、songrange選択中はその
+    範囲に該当する年のみを候補にできる）。
     DBにはUTCで保存されているため、年の判定はローカルタイムゾーンに変換してから行う
     """
-    first = Song.objects.exclude(upload_time__isnull=True).order_by("upload_time").first()
+    if qs is None:
+        qs = Song.objects.all()
+    first = qs.exclude(upload_time__isnull=True).order_by("upload_time").first()
     if first is None:
         return []
     first_year = timezone.localtime(first.upload_time).year
@@ -142,15 +148,17 @@ def get_month_choices(year, current_year):
     return list(range(1, 13))
 
 
-def resolve_year_month(request):
+def resolve_year_month(request, year_choice_qs=None):
     """GETパラメータのyear/monthを検証・正規化する
 
     総合統計ページ・authorごとの統計ページ共通のロジック。ゼロ埋め等の非正規な
     文字列表現でもint変換後の値で選択肢と照合し、正規化した文字列を返す
-    （テンプレート上の選択状態比較や500エラー防止のため）
+    （テンプレート上の選択状態比較や500エラー防止のため）。
+    year_choice_qsを渡せば、その範囲（author自身の曲・選択中のsongrange等）で
+    実際に選択可能な年のみに選択肢を絞り込める
     """
     current_year = now_local().year
-    year_choices = get_year_choices()
+    year_choices = get_year_choices(year_choice_qs)
 
     year = request.GET.get("year", "all")
     year_int = parse_int_or_none(year)

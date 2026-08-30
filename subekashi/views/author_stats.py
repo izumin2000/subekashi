@@ -23,10 +23,11 @@ class AuthorStatsView(View):
 
         author_songs = Song.objects.filter(authors__id=author_id).distinct()
         songrange, show_all_songrange = resolve_songrange(request, author_songs)
-        year, month, year_choices, month_choices = resolve_year_month(request)
+        songrange_qs = apply_songrange_filter(author_songs, songrange)
+        # 選択肢は対象author自身・選択中のsongrangeで実際に0件にならない年のみに絞る
+        year, month, year_choices, month_choices = resolve_year_month(request, songrange_qs)
 
-        qs = apply_songrange_filter(author_songs, songrange)
-        qs = apply_upload_time_filter(qs, year, month)
+        qs = apply_upload_time_filter(songrange_qs, year, month)
         song_ids = get_song_ids(qs)
 
         stats = compute_common_stats(song_ids)
