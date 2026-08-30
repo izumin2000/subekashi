@@ -230,9 +230,14 @@ class SongFilter(django_filters.FilterSet):
             queryset = queryset.filter(filter_by_mediatypes('youtube'))
 
         # upload_timeソートがある場合、mediatypes=youtubeを明示的に適用
-        upload_time_youtube_applied = has_upload_time_sort(self.data) and 'mediatypes' not in self.data
+        has_upload_time_sort_value = has_upload_time_sort(self.data)
+        upload_time_youtube_applied = has_upload_time_sort_value and 'mediatypes' not in self.data
         if upload_time_youtube_applied:
             queryset = queryset.filter(filter_by_mediatypes('youtube'))
+
+        # upload_timeソートがある場合、upload_time が null の曲を除外
+        if has_upload_time_sort_value:
+            queryset = queryset.filter(upload_time__isnull=False)
 
         # view関連のフィルタまたはソートがある場合、view >= 1 を適用
         if has_view_filter_or_sort(self.data):

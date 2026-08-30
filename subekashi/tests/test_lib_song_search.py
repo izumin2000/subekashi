@@ -187,6 +187,36 @@ class SongSearchSortViewWithFilterTest(TestCase):
         self.assertEqual(views, [300, 200, 100])
 
 
+class SongSearchSortUploadTimeExcludesNullTest(TestCase):
+    """sort=upload_time / sort=-upload_time 使用時に upload_time が null の曲を除外するテスト（issue #1072）"""
+
+    def setUp(self):
+        self.with_time = Song.objects.create(
+            title="共通ワードUpload時刻あり",
+            upload_time=datetime(2024, 1, 1, tzinfo=timezone.utc),
+        )
+        link = SongLink.objects.create(url="https://youtu.be/uploadtimetest01")
+        link.songs.add(self.with_time)
+
+        self.without_time = Song.objects.create(title="共通ワードUpload時刻なし")
+        link2 = SongLink.objects.create(url="https://youtu.be/uploadtimetest02")
+        link2.songs.add(self.without_time)
+
+    def test_sort_upload_time_asc_excludes_null(self):
+        qs, stats = song_search({"keyword": "共通ワード", "sort": "upload_time", "size": "100"})
+        song_ids = [s.id for s in qs]
+        self.assertEqual(stats["count"], 1)
+        self.assertIn(self.with_time.id, song_ids)
+        self.assertNotIn(self.without_time.id, song_ids)
+
+    def test_sort_upload_time_desc_excludes_null(self):
+        qs, stats = song_search({"keyword": "共通ワード", "sort": "-upload_time", "size": "100"})
+        song_ids = [s.id for s in qs]
+        self.assertEqual(stats["count"], 1)
+        self.assertIn(self.with_time.id, song_ids)
+        self.assertNotIn(self.without_time.id, song_ids)
+
+
 class SongSearchSortWithAuthorFilterTest(TestCase):
     """author フィルターと sort の組み合わせテスト（author も distinct() を引き起こす）"""
 
