@@ -7,15 +7,11 @@ from subekashi.lib.stats_service import (
     compute_common_stats,
     compute_total_imitates,
     compute_unique_collaborator_count,
-    get_month_choices,
-    get_songrange_availability,
-    get_year_choices,
-    now_local,
-    parse_int_or_none,
+    get_song_ids,
+    resolve_songrange,
+    resolve_year_month,
 )
 from subekashi.models import Author, Song
-
-SONGRANGE_VALUES = {'all', 'subeana', 'xx'}
 
 
 class AuthorStatsView(View):
@@ -26,45 +22,22 @@ class AuthorStatsView(View):
         author_name = author_obj.name
 
         author_songs = Song.objects.filter(authors__id=author_id).distinct()
-        has_subeana, has_xx = get_songrange_availability(author_songs)
-        show_all_songrange = has_subeana and has_xx
-
-        songrange = request.GET.get('songrange', 'all')
-        if songrange not in SONGRANGE_VALUES:
-            songrange = 'all'
-        if not show_all_songrange:
-            # ラジオグループ自体が非表示のため、URLで明示的に指定された値であっても
-            # UI上選べない選択肢は表示・適用しない（実在する方に強制する）
-            songrange = 'subeana' if has_subeana else 'xx'
-
-        current_year = now_local().year
-        year_choices = get_year_choices()
-
-        year = request.GET.get('year', 'all')
-        year_int = parse_int_or_none(year)
-        # ゼロ埋め等の非正規な文字列表現でもint変換後の値で選択肢と照合・正規化する
-        if year_int not in year_choices:
-            year, year_int = 'all', None
-        else:
-            year = str(year_int)
-
-        month_choices = get_month_choices(year_int, current_year) if year_int is not None else list(range(1, 13))
-        month = request.GET.get('month', 'all')
-        month_int = parse_int_or_none(month)
-        month = str(month_int) if month_int in month_choices else 'all'
+        songrange, show_all_songrange = resolve_songrange(request, author_songs)
+        year, month, year_choices, month_choices = resolve_year_month(request)
 
         qs = apply_songrange_filter(author_songs, songrange)
         qs = apply_upload_time_filter(qs, year, month)
+        song_ids = get_song_ids(qs)
 
-        stats = compute_common_stats(qs)
+        stats = compute_common_stats(song_ids)
 
         stats_items = [
             {"icon": "fas fa-list-ol", "label": "曲数", "value": stats["song_count"]},
             {"icon": "fas fa-play", "label": "総再生回数", "value": stats["total_view"]},
             {"icon": "far fa-thumbs-up", "label": "総高評価数", "value": stats["total_like"]},
-            {"icon": "fas fa-users", "label": "合作人数(重複あり)", "value": compute_collaborator_count(qs, author_id)},
-            {"icon": "fas fa-user-friends", "label": "合作人数(重複なし)", "value": compute_unique_collaborator_count(qs, author_id)},
-            {"icon": "fas fa-sitemap imitate", "label": "総模倣元関係数", "value": compute_total_imitates(qs)},
+            {"icon": "fas fa-users", "label": "合作人数(重複あり)", "value": compute_collaborator_count(song_ids, author_id)},
+            {"icon": "fas fa-user-friends", "label": "合作人数(重複なし)", "value": compute_unique_collaborator_count(song_ids, author_id)},
+            {"icon": "fas fa-sitemap imitate", "label": "総模倣元関係数", "value": compute_total_imitates(song_ids)},
             {"icon": "fas fa-sitemap", "label": "総模倣曲関係数", "value": stats["total_imitateds"]},
         ]
 

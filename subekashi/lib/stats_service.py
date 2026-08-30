@@ -41,6 +41,28 @@ def get_songrange_availability(qs):
     return qs.filter(is_subeana=True).exists(), qs.filter(is_subeana=False).exists()
 
 
+SONGRANGE_VALUES = {"all", "subeana", "xx"}
+
+
+def resolve_songrange(request, base_qs):
+    """GETパラメータのsongrangeを検証・正規化する
+
+    総合統計ページ・authorごとの統計ページ共通のロジック。base_qsに
+    is_subeana=True/Falseの両方が存在しない場合、"全て"は実在する方の結果と
+    一致し選択肢としても表示されないため、実在する方に強制する
+    """
+    has_subeana, has_xx = get_songrange_availability(base_qs)
+    show_all_songrange = has_subeana and has_xx
+
+    songrange = request.GET.get("songrange", "all")
+    if songrange not in SONGRANGE_VALUES:
+        songrange = "all"
+    if not show_all_songrange:
+        songrange = "subeana" if has_subeana else "xx"
+
+    return songrange, show_all_songrange
+
+
 def apply_upload_time_filter(qs, year, month):
     """year("all"または数値文字列)/month("all"または数値文字列)でupload_timeを絞り込んだQuerySetを返す
 
@@ -55,52 +77,50 @@ def apply_upload_time_filter(qs, year, month):
     return qs
 
 
-def _by_ids(qs):
-    """M2Mフィルタ・distinct済みのqsから素のid一覧を経由してクリーンなQuerySetを作り直す
+def get_song_ids(qs):
+    """qsを評価してid一覧を返す
 
-    既にauthors__id等のM2M JOINが乗ったqsに対してさらにCount('authors')等の
-    別M2Mをannotateすると、JOINのfan-outで値が重複・肥大化するため、
-    集計のたびにid一覧経由でSong.objects.filter(id__in=...)を作り直す
+    呼び出し側で複数の集計関数(compute_common_stats等)にこのid一覧を
+    使い回すことで、同じ絞り込み条件のSELECTが重複発行されるのを防ぐ
     """
-    song_ids = list(qs.values_list("id", flat=True))
-    return Song.objects.filter(id__in=song_ids), song_ids
+    return list(qs.values_list("id", flat=True))
 
 
-def compute_common_stats(qs):
+def compute_common_stats(song_ids):
     """総合統計ページ・authorごとの統計ページ共通の統計を返す"""
-    base, song_ids = _by_ids(qs)
+    base = Song.objects.filter(id__in=song_ids)
     view_like = base.aggregate(v=Sum("view"), l=Sum("like"))
     return {
         "song_count": len(song_ids),
         "total_view": view_like["v"] or 0,
         "total_like": view_like["l"] or 0,
-        "total_authors": compute_unique_author_count(qs),
+        "total_authors": compute_unique_author_count(song_ids),
         "total_imitateds": base.annotate(c=Count("imitateds", distinct=True)).aggregate(s=Sum("c"))["s"] or 0,
     }
 
 
-def compute_unique_author_count(qs):
+def compute_unique_author_count(song_ids):
     """範囲内の曲に紐づく重複なしの作者数（総作者数として使用）"""
-    return Author.objects.filter(songs__in=qs).distinct().count()
+    return Author.objects.filter(songs__id__in=song_ids).distinct().count()
 
 
-def compute_total_imitates(qs):
+def compute_total_imitates(song_ids):
     """authorごとの統計ページのみ: 範囲内の各曲が模倣している元曲数の総和"""
-    base, _ = _by_ids(qs)
+    base = Song.objects.filter(id__in=song_ids)
     return base.annotate(c=Count("imitates", distinct=True)).aggregate(s=Sum("c"))["s"] or 0
 
 
-def compute_collaborator_count(qs, author_id):
+def compute_collaborator_count(song_ids, author_id):
     """authorごとの統計ページのみ: 範囲内の各曲について、author_id本人を除いた作者数の総和（合作人数）"""
-    base, _ = _by_ids(qs)
+    base = Song.objects.filter(id__in=song_ids)
     return base.annotate(
         c=Count("authors", filter=~Q(authors__id=author_id), distinct=True)
     ).aggregate(s=Sum("c"))["s"] or 0
 
 
-def compute_unique_collaborator_count(qs, author_id):
+def compute_unique_collaborator_count(song_ids, author_id):
     """authorごとの統計ページのみ: 範囲内の曲に紐づく作者からauthor_id本人を除いたユニーク数（ユニーク合作人数）"""
-    return Author.objects.filter(songs__in=qs).exclude(id=author_id).distinct().count()
+    return Author.objects.filter(songs__id__in=song_ids).exclude(id=author_id).distinct().count()
 
 
 def get_year_choices():
@@ -120,6 +140,31 @@ def get_month_choices(year, current_year):
     if year == current_year:
         return list(range(1, now_local().month + 1))
     return list(range(1, 13))
+
+
+def resolve_year_month(request):
+    """GETパラメータのyear/monthを検証・正規化する
+
+    総合統計ページ・authorごとの統計ページ共通のロジック。ゼロ埋め等の非正規な
+    文字列表現でもint変換後の値で選択肢と照合し、正規化した文字列を返す
+    （テンプレート上の選択状態比較や500エラー防止のため）
+    """
+    current_year = now_local().year
+    year_choices = get_year_choices()
+
+    year = request.GET.get("year", "all")
+    year_int = parse_int_or_none(year)
+    if year_int not in year_choices:
+        year, year_int = "all", None
+    else:
+        year = str(year_int)
+
+    month_choices = get_month_choices(year_int, current_year) if year_int is not None else list(range(1, 13))
+    month = request.GET.get("month", "all")
+    month_int = parse_int_or_none(month)
+    month = str(month_int) if month_int in month_choices else "all"
+
+    return year, month, year_choices, month_choices
 
 
 MONTHLY_STATS_FIELDS = ["song_count", "total_view", "total_like", "total_authors", "total_imitateds"]

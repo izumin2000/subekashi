@@ -1310,6 +1310,31 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 | xxのみ存在 | is_subeana=Falseの曲のみ | `(False, True)` |
 | どちらも存在しない | 曲が0件 | `(False, False)` |
 
+#### 19-1-1-1. `get_song_ids(qs)` / `resolve_songrange(request, base_qs)`（#334、コードレビュー指摘対応）
+
+`AuthorStatsView`で同一の絞り込み条件に対し`compute_common_stats`/`compute_collaborator_count`/`compute_total_imitates`がそれぞれ独立にid一覧取得SELECTを発行していた重複クエリを解消するため、`get_song_ids(qs)`で1回だけ取得しid一覧(`song_ids`)を各集計関数（`compute_common_stats`/`compute_unique_author_count`/`compute_total_imitates`/`compute_collaborator_count`/`compute_unique_collaborator_count`）に渡す形に変更した。
+
+`resolve_songrange`は`StatsView`/`AuthorStatsView`でほぼ同一だったsongrangeのGETパラメータ検証・正規化ロジック（不正値のフォールバック・選択肢が1つしかない場合の強制解決）を共通化したもの。
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| id一覧を返す | 曲が1件存在 | その曲のidを含むリスト |
+| 空のqueryset | 曲が0件 | 空リスト |
+| 両方存在する場合はそのまま | is_subeana=True/Falseの曲がそれぞれ存在、songrange未指定 | `("all", True)` |
+| 不正な値は"all"にフォールバック | `?songrange=invalid` | `"all"` |
+| 片方しか無い場合は強制解決 | is_subeana=Trueの曲のみ存在、songrange未指定 | `("subeana", False)` |
+| 片方しか無い場合は明示指定も上書き | is_subeana=Trueの曲のみ存在、`?songrange=xx` | `"subeana"`に上書きされる |
+
+#### 19-1-1-2. `resolve_year_month(request)`（#334、コードレビュー指摘対応）
+
+`StatsView`/`AuthorStatsView`でほぼ同一だったyear/monthのGETパラメータ検証・正規化ロジック（`parse_int_or_none`によるバリデーション、ゼロ埋め等の正規化、選択肢`year_choices`/`month_choices`の算出）を共通化したもの。
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| デフォルト | GETパラメータ無し | `("all", "all", [], list(range(1, 13)))` |
+| ゼロ埋めの正規化 | `?year=02024`、該当する曲が存在 | `year`が`"2024"`に正規化される |
+| 数値でないyear | `?year=abc` | `year`は`"all"`にフォールバックする |
+
 #### 19-1-2. `parse_int_or_none(value)`（#334、コードレビュー指摘対応）
 
 `?year=abc`のような数値変換できないGETパラメータを渡された際に`int()`が`ValueError`を送出し500エラーになる不具合の修正で追加。ビュー側のyear/monthバリデーションで使用する。
