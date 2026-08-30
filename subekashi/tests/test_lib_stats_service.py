@@ -11,6 +11,7 @@ from subekashi.models import Author, Song
 from subekashi.lib.stats_service import (
     apply_songrange_filter,
     apply_upload_time_filter,
+    build_stats_items,
     compute_collaborator_count,
     compute_common_stats,
     compute_total_imitates,
@@ -279,6 +280,26 @@ class ComputeCommonStatsTest(TestCase):
 
         self.assertEqual(stats["total_authors"], 2)
         self.assertEqual(stats["total_imitateds"], 3)
+
+
+class BuildStatsItemsTest(TestCase):
+    def test_song_count_zero_returns_empty_list(self):
+        # 曲が0件（データなし）なら統計カード全体を非表示にする
+        stats = {"song_count": 0}
+        items = [{"icon": "fas fa-list-ol", "label": "曲数", "value": 0}]
+
+        self.assertEqual(build_stats_items(stats, items), [])
+
+    def test_song_count_nonzero_keeps_zero_valued_items(self):
+        # 曲が1件以上あれば、他の指標が0（実際の値）でも表示する
+        # （コードレビュー指摘対応: 「データなし」と「値が0」の区別）
+        stats = {"song_count": 1}
+        items = [
+            {"icon": "fas fa-list-ol", "label": "曲数", "value": 1},
+            {"icon": "far fa-thumbs-up", "label": "総高評価数", "value": 0},
+        ]
+
+        self.assertEqual(build_stats_items(stats, items), items)
 
 
 class ComputeUniqueAuthorCountTest(TestCase):

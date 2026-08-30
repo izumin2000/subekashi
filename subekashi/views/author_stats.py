@@ -3,6 +3,7 @@ from django.views import View
 from subekashi.lib.stats_service import (
     apply_songrange_filter,
     apply_upload_time_filter,
+    build_stats_items,
     compute_collaborator_count,
     compute_common_stats,
     compute_total_imitates,
@@ -32,7 +33,7 @@ class AuthorStatsView(View):
 
         stats = compute_common_stats(song_ids)
 
-        stats_items = [
+        stats_items = build_stats_items(stats, [
             {"icon": "fas fa-list-ol", "label": "曲数", "value": stats["song_count"]},
             {"icon": "fas fa-play", "label": "総再生回数", "value": stats["total_view"]},
             {"icon": "far fa-thumbs-up", "label": "総高評価数", "value": stats["total_like"]},
@@ -40,7 +41,7 @@ class AuthorStatsView(View):
             {"icon": "fas fa-user-friends", "label": "合作人数(重複なし)", "value": compute_unique_collaborator_count(song_ids, author_id)},
             {"icon": "fas fa-sitemap imitate", "label": "総模倣元関係数", "value": compute_total_imitates(song_ids)},
             {"icon": "fas fa-sitemap", "label": "総模倣曲関係数", "value": stats["total_imitateds"]},
-        ]
+        ])
 
         context = {
             "metatitle": f"{author_name}の統計",

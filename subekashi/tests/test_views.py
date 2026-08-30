@@ -579,6 +579,17 @@ class StatsViewTest(TestCase):
         response = self.client.get(reverse("subekashi:stats"))
         self.assertNotContains(response, "stat-item")
 
+    def test_zero_metric_still_shown_when_songs_exist(self):
+        # 曲が1件以上あれば、他の指標(総高評価数等)がたまたま0でも
+        # 「データなし」ではなく実際の値として表示する（コードレビュー指摘対応の仕様変更）
+        Song.objects.create(title="曲", view=100, like=0)
+
+        response = self.client.get(reverse("subekashi:stats"))
+
+        stats_items = {item["label"]: item["value"] for item in response.context["stats_items"]}
+        self.assertEqual(stats_items["総高評価数"], 0)
+        self.assertContains(response, "stat-item")
+
     @staticmethod
     def _song_count(response):
         return next(item["value"] for item in response.context["stats_items"] if item["label"] == "曲数")

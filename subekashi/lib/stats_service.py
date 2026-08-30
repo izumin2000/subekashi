@@ -99,6 +99,17 @@ def compute_common_stats(song_ids):
     }
 
 
+def build_stats_items(stats, items):
+    """statsのsong_countが0（曲が無い＝データなし）なら統計カード全体を非表示にするため空リストを返す
+
+    song_countが1件以上あれば、他の指標がたまたま0（模倣曲が無い等の実際の値）
+    であってもそのまま表示する。「データなし」と「値が0」を区別するため
+    """
+    if stats["song_count"] == 0:
+        return []
+    return items
+
+
 def compute_unique_author_count(song_ids):
     """範囲内の曲に紐づく重複なしの作者数（総作者数として使用）"""
     return Author.objects.filter(songs__id__in=song_ids).distinct().count()

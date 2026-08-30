@@ -1,7 +1,7 @@
 {% load number_format %}
 <div class="stats-list">
     {% for item in stats_items %}
-        {% if item.value %}
+        {% if item.value is not None %}
             <div class="stat-item">
                 <i class="{{ item.icon }}"></i>
                 <p class="icon-p">{{ item.label }}</p>

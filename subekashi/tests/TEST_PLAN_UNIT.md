@@ -723,7 +723,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | 正常アクセス | GETリクエスト | HTTP 200 |
-| 曲が0件 | DBが空 | stat項目が1つも表示されない（0/nullは非表示） |
+| 曲が0件 | DBが空 | stat項目が1つも表示されない（song_count=0＝データなしとして全体を非表示） |
+| 曲は存在し他の指標が0（回帰、コードレビュー指摘対応の仕様変更） | 曲が1件以上存在するがtotal_like等が0 | 「データなし」ではなく実際の値としてそのカードも表示される（`song_count`が0の時だけ全体を非表示にし、それ以外は個々の値が0でも表示する） |
 | songrangeによる絞り込み | `?songrange=subeana` | is_subeana=Trueの曲のみが集計される |
 | 不正なsongrange | `?songrange=invalid` | "all"にフォールバックする |
 | yearによる絞り込み | `?year=2024` | upload_time年が2024の曲のみが集計される |
@@ -1367,6 +1368,15 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 | 同じ作者が複数曲に関わる | 作者Aが2曲、作者Bが1曲（Aと共作） | `total_authors`は重複を除いた人数（2）になる（`compute_unique_author_count`を内部で使用、#334で`song.authors`の総和から変更） |
 | 模倣されている曲 | 2曲がある曲を模倣 | `total_imitateds`がその曲について2になる |
 | 作者数と模倣曲数の相互干渉防止（回帰） | 複数作者かつ複数の模倣曲を同時に持つ曲 | `total_authors`（Authorテーブル起点のユニーク集計）と`total_imitateds`（Songテーブル起点のCount集計）が互いに水増しされず、それぞれ正しい値になる |
+
+#### 19-2-1. `build_stats_items(stats, items)`（#334、コードレビュー指摘対応）
+
+`{% if item.value %}`による0/None非表示が「曲が0件（データなし）」と「曲は存在するが特定の指標だけ0（実際の値）」を区別していなかった問題の修正で追加。`stats["song_count"]`が0の場合のみ空リスト（統計カード全体を非表示）を返し、それ以外は`items`をそのまま返す（個々の値が0でもテンプレート側では表示する）。
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| song_countが0 | `stats["song_count"] == 0` | 空リストを返す |
+| song_countが0以外 | `stats["song_count"] >= 1`、`items`内に値0の項目を含む | `items`をそのまま返す（値0の項目も含めて） |
 
 #### 19-3. `compute_unique_author_count(qs)` / `compute_total_imitates(qs)`
 
