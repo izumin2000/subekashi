@@ -245,21 +245,29 @@ class StatsCommandTest(TestCase):
     @patch("subekashi.management.commands.stats.now_local")
     def test_runs_on_first_of_month_and_creates_stats_for_each_month(self, mock_now_local):
         mock_now_local.return_value = timezone_aware(2026, 3, 1)
-        Song.objects.create(title="1月の曲", upload_time=timezone_aware(2026, 1, 15), view=10)
-        Song.objects.create(title="3月の曲", upload_time=timezone_aware(2026, 3, 15), view=20)
+        Song.objects.create(title="1月の曲", upload_time=timezone_aware(2026, 1, 15), view=10, is_subeana=True)
+        Song.objects.create(title="3月の曲", upload_time=timezone_aware(2026, 3, 15), view=20, is_subeana=False)
 
         self._run()
 
-        months = list(Stats.objects.order_by("year", "month").values_list("year", "month"))
+        months = sorted(set(Stats.objects.values_list("year", "month")))
         self.assertEqual(months, [(2026, 1), (2026, 2), (2026, 3)])
+        # 月ごとにall/subeana/xxの3件ずつ作成される
+        self.assertEqual(Stats.objects.filter(year=2026, month=1).count(), 3)
 
-        jan = Stats.objects.get(year=2026, month=1)
-        self.assertEqual(jan.song_count, 1)
-        self.assertEqual(jan.total_view, 10)
+        jan_all = Stats.objects.get(year=2026, month=1, songrange="all")
+        self.assertEqual(jan_all.song_count, 1)
+        self.assertEqual(jan_all.total_view, 10)
 
-        mar = Stats.objects.get(year=2026, month=3)
-        self.assertEqual(mar.song_count, 2)
-        self.assertEqual(mar.total_view, 30)
+        mar_all = Stats.objects.get(year=2026, month=3, songrange="all")
+        self.assertEqual(mar_all.song_count, 2)
+        self.assertEqual(mar_all.total_view, 30)
+
+        # is_subeanaで正しく振り分けられていること
+        mar_subeana = Stats.objects.get(year=2026, month=3, songrange="subeana")
+        self.assertEqual(mar_subeana.song_count, 1)
+        mar_xx = Stats.objects.get(year=2026, month=3, songrange="xx")
+        self.assertEqual(mar_xx.song_count, 1)
 
     @patch("subekashi.management.commands.stats.now_local")
     def test_force_bypasses_day_guard(self, mock_now_local):
@@ -268,7 +276,7 @@ class StatsCommandTest(TestCase):
 
         self._run("--force")
 
-        self.assertEqual(Stats.objects.count(), 1)
+        self.assertEqual(Stats.objects.count(), 3)
 
     @patch("subekashi.management.commands.stats.now_local")
     def test_rerun_updates_existing_month_instead_of_duplicating(self, mock_now_local):
@@ -279,8 +287,8 @@ class StatsCommandTest(TestCase):
         Song.objects.create(title="追加曲", upload_time=timezone_aware(2026, 1, 2), view=2)
         self._run("--force")
 
-        self.assertEqual(Stats.objects.filter(year=2026, month=1).count(), 1)
-        self.assertEqual(Stats.objects.get(year=2026, month=1).song_count, 2)
+        self.assertEqual(Stats.objects.filter(year=2026, month=1).count(), 3)
+        self.assertEqual(Stats.objects.get(year=2026, month=1, songrange="all").song_count, 2)
 
     @patch("subekashi.management.commands.stats.now_local")
     def test_now_local_uses_django_timezone_not_os_timezone(self, mock_now_local):
@@ -292,7 +300,7 @@ class StatsCommandTest(TestCase):
         self._run()
 
         mock_now_local.assert_called_once()
-        self.assertEqual(Stats.objects.count(), 1)
+        self.assertEqual(Stats.objects.count(), 3)
 
 
 class WordCommandTest(TestCase):

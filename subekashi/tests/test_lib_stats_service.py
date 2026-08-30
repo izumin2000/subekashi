@@ -16,6 +16,7 @@ from subekashi.lib.stats_service import (
     compute_total_imitates,
     compute_unique_author_count,
     compute_unique_collaborator_count,
+    filter_monthly_series_by_year_month,
     get_month_choices,
     get_songrange_availability,
     get_year_choices,
@@ -23,6 +24,7 @@ from subekashi.lib.stats_service import (
     next_year_month,
     now_local,
     parse_int_or_none,
+    with_monthly_deltas,
 )
 
 
@@ -306,3 +308,49 @@ class MonthStartTest(TestCase):
         self.assertTrue(timezone.is_aware(result))
         local = timezone.localtime(result)
         self.assertEqual((local.year, local.month, local.day), (2026, 3, 1))
+
+
+class WithMonthlyDeltasTest(TestCase):
+    def test_first_row_delta_equals_cumulative_value(self):
+        rows = [{"year": 2026, "month": 1, "song_count": 5, "total_view": 10, "total_like": 1, "total_authors": 2, "total_imitateds": 0}]
+        result = with_monthly_deltas(rows)
+        self.assertEqual(result[0]["song_count_delta"], 5)
+        self.assertEqual(result[0]["total_view_delta"], 10)
+
+    def test_subsequent_row_delta_is_difference_from_previous(self):
+        rows = [
+            {"year": 2026, "month": 1, "song_count": 5, "total_view": 10, "total_like": 1, "total_authors": 2, "total_imitateds": 0},
+            {"year": 2026, "month": 2, "song_count": 8, "total_view": 25, "total_like": 3, "total_authors": 2, "total_imitateds": 1},
+        ]
+        result = with_monthly_deltas(rows)
+        self.assertEqual(result[1]["song_count_delta"], 3)
+        self.assertEqual(result[1]["total_view_delta"], 15)
+        self.assertEqual(result[1]["total_authors_delta"], 0)
+
+    def test_original_cumulative_values_are_preserved(self):
+        rows = [{"year": 2026, "month": 1, "song_count": 5, "total_view": 10, "total_like": 1, "total_authors": 2, "total_imitateds": 0}]
+        result = with_monthly_deltas(rows)
+        self.assertEqual(result[0]["song_count"], 5)
+
+    def test_empty_list_returns_empty_list(self):
+        self.assertEqual(with_monthly_deltas([]), [])
+
+
+class FilterMonthlySeriesByYearMonthTest(TestCase):
+    def setUp(self):
+        self.rows = [
+            {"year": 2024, "month": 12},
+            {"year": 2025, "month": 1},
+            {"year": 2025, "month": 6},
+        ]
+
+    def test_year_all_returns_everything(self):
+        self.assertEqual(filter_monthly_series_by_year_month(self.rows, "all", "all"), self.rows)
+
+    def test_year_only_filters_by_year(self):
+        result = filter_monthly_series_by_year_month(self.rows, "2025", "all")
+        self.assertEqual(result, [{"year": 2025, "month": 1}, {"year": 2025, "month": 6}])
+
+    def test_year_and_month_filters_by_both(self):
+        result = filter_monthly_series_by_year_month(self.rows, "2025", "6")
+        self.assertEqual(result, [{"year": 2025, "month": 6}])

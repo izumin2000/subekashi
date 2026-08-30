@@ -1,12 +1,15 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from subekashi.lib.stats_service import (
+    apply_songrange_filter,
     compute_common_stats,
     month_start,
     next_year_month,
     now_local,
 )
 from subekashi.models import Song, Stats
+
+SONGRANGES = ["all", "subeana", "xx"]
 
 
 class Command(BaseCommand):
@@ -35,12 +38,15 @@ class Command(BaseCommand):
 
         while (year, month) <= (current_year, current_month):
             next_year, next_month = next_year_month(year, month)
-            qs = Song.objects.filter(upload_time__lt=month_start(next_year, next_month))
-            Stats.objects.update_or_create(
-                year=year,
-                month=month,
-                defaults=compute_common_stats(qs),
-            )
+            base_qs = Song.objects.filter(upload_time__lt=month_start(next_year, next_month))
+            for songrange in SONGRANGES:
+                qs = apply_songrange_filter(base_qs, songrange)
+                Stats.objects.update_or_create(
+                    year=year,
+                    month=month,
+                    songrange=songrange,
+                    defaults=compute_common_stats(qs),
+                )
             year, month = next_year, next_month
 
         self.stdout.write(self.style.SUCCESS("月次統計を更新しました。"))

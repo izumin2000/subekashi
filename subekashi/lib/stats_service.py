@@ -122,6 +122,36 @@ def get_month_choices(year, current_year):
     return list(range(1, 13))
 
 
+MONTHLY_STATS_FIELDS = ["song_count", "total_view", "total_like", "total_authors", "total_imitateds"]
+
+
+def with_monthly_deltas(rows):
+    """年月昇順の累積値の行リストに、各フィールドの単月差分(<field>_delta)を追加して返す
+
+    先頭行の差分は直前の月が無いため累積値そのものを使う。累積値と差分を両方
+    保持したまま返すため、後段でyear/monthによる表示範囲の絞り込みを行っても
+    差分値がずれない（絞り込み前の全期間から差分を計算しているため）
+    """
+    result = []
+    prev = None
+    for row in rows:
+        row = dict(row)
+        for field in MONTHLY_STATS_FIELDS:
+            row[f"{field}_delta"] = row[field] if prev is None else row[field] - prev[field]
+        result.append(row)
+        prev = row
+    return result
+
+
+def filter_monthly_series_by_year_month(rows, year, month):
+    """year("all"または数値文字列)/month("all"または数値文字列)で表示する行を絞り込む"""
+    if year and year != "all":
+        rows = [row for row in rows if row["year"] == int(year)]
+        if month and month != "all":
+            rows = [row for row in rows if row["month"] == int(month)]
+    return rows
+
+
 def next_year_month(year, month):
     """(year, month)の次の月を(year, month)タプルで返す"""
     if month == 12:

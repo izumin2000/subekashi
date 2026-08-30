@@ -13,7 +13,7 @@ from django.urls import reverse
 from django.utils import timezone
 from article.models import Article
 from subekashi.forms import AuthorAliasForm
-from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song, Word
+from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song, Stats, Word
 
 
 STATIC_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
@@ -683,6 +683,47 @@ class StatsViewTest(TestCase):
 
         self.assertEqual(response.context["year"], "2024")
         self.assertContains(response, 'value="2024" selected')
+
+    def test_monthly_stats_reflects_songrange_filter(self):
+        # グラフがsongrangeフィルターの影響を受けるようにした仕様変更の回帰テスト
+        Stats.objects.create(year=2024, month=1, songrange="all", song_count=10)
+        Stats.objects.create(year=2024, month=1, songrange="subeana", song_count=6)
+        Stats.objects.create(year=2024, month=1, songrange="xx", song_count=4)
+        Song.objects.create(title="すべあな曲", is_subeana=True)
+        Song.objects.create(title="界隈外曲", is_subeana=False)
+
+        response = self.client.get(reverse("subekashi:stats"), {"songrange": "subeana"})
+
+        monthly_stats = response.context["monthly_stats"]
+        self.assertEqual(len(monthly_stats), 1)
+        self.assertEqual(monthly_stats[0]["song_count"], 6)
+
+    def test_monthly_stats_reflects_year_filter(self):
+        Stats.objects.create(year=2024, month=1, songrange="all", song_count=5)
+        Stats.objects.create(year=2025, month=1, songrange="all", song_count=9)
+        # is_subeana両方の曲を用意し、songrangeが"all"以外に自動解決されないようにする
+        Song.objects.create(title="曲", upload_time=datetime(2024, 6, 1, tzinfo=dt_timezone.utc), is_subeana=True)
+        Song.objects.create(title="界隈外曲", is_subeana=False)
+
+        response = self.client.get(reverse("subekashi:stats"), {"year": "2024"})
+
+        monthly_stats = response.context["monthly_stats"]
+        self.assertEqual(len(monthly_stats), 1)
+        self.assertEqual(monthly_stats[0]["year"], 2024)
+
+    def test_monthly_stats_includes_delta_computed_from_full_history_before_year_filter(self):
+        # 累積値の差分は絞り込み前の全期間から計算されるため、yearで絞り込んでも
+        # 前月との差分が正しく計算される（"月ごと"モード用、レビュー指摘対応）
+        Stats.objects.create(year=2024, month=12, songrange="all", song_count=5)
+        Stats.objects.create(year=2025, month=1, songrange="all", song_count=8)
+        Song.objects.create(title="曲", upload_time=datetime(2025, 1, 1, tzinfo=dt_timezone.utc), is_subeana=True)
+        Song.objects.create(title="界隈外曲", is_subeana=False)
+
+        response = self.client.get(reverse("subekashi:stats"), {"year": "2025"})
+
+        monthly_stats = response.context["monthly_stats"]
+        self.assertEqual(len(monthly_stats), 1)
+        self.assertEqual(monthly_stats[0]["song_count_delta"], 3)
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)

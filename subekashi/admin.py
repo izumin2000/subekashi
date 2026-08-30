@@ -58,7 +58,8 @@ admin.site.register(SongLink, SongLinkAdmin)
 
 
 class StatsAdmin(admin.ModelAdmin):
-    list_display = ('id', 'year', 'month', 'song_count', 'total_view', 'total_like', 'total_authors', 'total_imitateds')
-    ordering = ('-year', '-month')
+    list_display = ('id', 'year', 'month', 'songrange', 'song_count', 'total_view', 'total_like', 'total_authors', 'total_imitateds')
+    list_filter = ('songrange',)
+    ordering = ('-year', '-month', 'songrange')
 
 admin.site.register(Stats, StatsAdmin)

@@ -11,10 +11,6 @@ if (statsChartCanvas) {
         total_imitateds: "総模倣曲関係数",
     };
 
-    function toMonthlyDelta(cumulativeValues) {
-        return cumulativeValues.map((value, i) => (i === 0 ? value : value - cumulativeValues[i - 1]));
-    }
-
     function getSelectedValue(name, fallback) {
         const checked = document.querySelector(`input[name="${name}"]:checked`);
         return checked ? checked.value : fallback;
@@ -25,7 +21,8 @@ if (statsChartCanvas) {
     function renderChart() {
         const seriesKey = getSelectedValue("chart-series", "song_count");
         const chartMode = getSelectedValue("chart-mode", "monthly");
-        const cumulativeValues = monthlyStats.map(row => row[seriesKey]);
+        // 累積値(<key>)と月ごとの差分(<key>_delta)はサーバー側で計算済み
+        const dataKey = chartMode === "monthly" ? `${seriesKey}_delta` : seriesKey;
 
         if (chart) {
             chart.destroy();
@@ -36,7 +33,7 @@ if (statsChartCanvas) {
                 labels: labels,
                 datasets: [{
                     label: SERIES_LABELS[seriesKey],
-                    data: chartMode === "monthly" ? toMonthlyDelta(cumulativeValues) : cumulativeValues,
+                    data: monthlyStats.map(row => row[dataKey]),
                 }],
             },
             options: {

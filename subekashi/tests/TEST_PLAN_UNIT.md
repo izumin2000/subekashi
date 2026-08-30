@@ -737,6 +737,9 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 数値でないmonth（回帰、コードレビュー指摘対応） | `?month=abc` | 500エラーにならずHTTP 200、`month`は"all"にフォールバックする |
 | 小数文字列のmonth（回帰、コードレビュー指摘対応） | `?month=1.5` | 500エラーにならずHTTP 200、`month`は"all"にフォールバックする |
 | ゼロ埋め等のyearの正規化（回帰、コードレビュー指摘対応） | `?year=02024` | `context["year"]`が正規化された"2024"になり、年セレクトの選択状態も正しく一致する |
+| グラフがsongrangeフィルターに連動（コードレビュー指摘対応の仕様変更） | `?songrange=subeana`、`Stats`にall/subeana/xxそれぞれのレコードが存在 | `context["monthly_stats"]`がsongrange="subeana"のレコードのみになる |
+| グラフがyearフィルターに連動（コードレビュー指摘対応の仕様変更） | `?year=2024`、複数年の`Stats`レコードが存在 | `context["monthly_stats"]`が2024年の月のみになる |
+| グラフの差分は絞り込み前の全期間から計算（回帰） | `?year=2025`指定、2024年12月と2025年1月の`Stats`が存在 | 表示範囲を2025年のみに絞り込んでも、`song_count_delta`は2024年12月との差分として正しく計算される |
 | メニューからの導線 | トップページのGET | `/stats/`へのリンクが記事とお問い合わせの間に含まれる |
 
 #### 7-15. `AuthorStatsView` (`/authors/<id>/stats/`)（#334）
@@ -998,12 +1001,17 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 #### 11-9. `Stats` モデル（月次統計、#334）
 
+グラフが総合統計ページのsongrangeフィルターの影響を受けるように仕様変更（コードレビュー指摘対応）したため、`songrange`（all/subeana/xx）フィールドを追加し、月ごとに3件（songrangeの種類分）保存する構成に変更した。
+
 | テストケース | 操作 | 期待結果 |
 | --- | --- | --- |
 | デフォルト値 | `year`・`month`のみ指定して作成 | 各集計フィールドが`0`になる |
-| `(year, month)`のユニーク制約 | 同じ`year`・`month`で2件作成 | `IntegrityError`が発生 |
-| `__str__` | `year=2026, month=3` | `"2026-03"` |
+| `songrange`のデフォルト値 | `year`・`month`のみ指定して作成 | `songrange`が`"all"`になる |
+| `(year, month, songrange)`のユニーク制約 | 同じ`year`・`month`・`songrange`で2件作成 | `IntegrityError`が発生 |
+| `songrange`が異なれば同じ`(year, month)`でも作成可能 | `songrange="all"`と`songrange="subeana"`で同じ`(year, month)` | 2件とも作成できる |
+| `__str__` | `year=2026, month=3, songrange="all"` | `"2026-03 (all)"` |
 | `get_monthly_series()`の並び順 | 複数月のレコードを順不同で作成 | `year`, `month`昇順で返る |
+| `get_monthly_series(songrange)`の絞り込み | `songrange="all"`と`songrange="subeana"`のレコードが混在 | 指定した`songrange`のレコードのみ返る |
 
 ---
 
@@ -1140,17 +1148,18 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 
 #### 14-6. `stats` コマンド（月次統計(Stats)の集計・保存、#334）
 
-`post_time`ではなく`upload_time`（YouTubeへのアップロード日時）基準で月を判定する。`upload_time=None`の曲は集計期間の起点判定・各月の集計いずれからも除外される。「現在時刻」の取得は`now_local()`（`timezone.localtime(timezone.now())`のラッパー）に統一し、サーバーOSのタイムゾーン設定に依存する素の`datetime.now()`は使わない（コードレビュー指摘対応）。
+`post_time`ではなく`upload_time`（YouTubeへのアップロード日時）基準で月を判定する。`upload_time=None`の曲は集計期間の起点判定・各月の集計いずれからも除外される。「現在時刻」の取得は`now_local()`（`timezone.localtime(timezone.now())`のラッパー）に統一し、サーバーOSのタイムゾーン設定に依存する素の`datetime.now()`は使わない（コードレビュー指摘対応）。総合統計ページのグラフがsongrangeフィルターの影響を受けるよう仕様変更したため、各月ごとにsongrange(all/subeana/xx)ごとの3件を集計・保存する（コードレビュー指摘対応）。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | 1日以外はスキップ | `now.day != 1`、`--force`なし | `Stats`は作成されない |
-| 1日なら実行 | `now.day == 1` | `upload_time`が最古のSongの月〜今月まで`Stats`が作成される |
+| 1日なら実行 | `now.day == 1` | `upload_time`が最古のSongの月〜今月まで、月ごとにall/subeana/xxの3件`Stats`が作成される |
 | `--force`で日付ガードを無視 | `now.day != 1`、`--force`あり | `Stats`が作成される（デプロイ時の手動バックフィル用） |
 | Songが1件も無い場合 | DBが空 | 何もせず終了する |
 | `upload_time`を持つSongが1件も無い場合 | 全曲`upload_time=None` | 何もせず終了する |
 | 各月の値は累積値 | 1月・3月にそれぞれ`upload_time`を持つSongが存在する状態で今月=3月として実行 | 1月分は1月時点までの曲のみ、3月分は3月時点までの全曲を対象に集計される |
-| 再実行時は上書き更新 | 既存の月に対して再実行 | `update_or_create`により重複作成されず、値が最新の集計に更新される |
+| songrangeごとに正しく振り分けられる | is_subeana=True/Falseの曲が混在 | `songrange="subeana"`/`"xx"`のレコードがそれぞれの曲数のみを集計する |
+| 再実行時は上書き更新 | 既存の月・songrangeに対して再実行 | `update_or_create`により重複作成されず、値が最新の集計に更新される |
 
 ---
 
@@ -1374,6 +1383,20 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 | 通常の月送り | `(2026, 3)` | `(2026, 4)` |
 | 12月からの繰り上げ | `(2026, 12)` | `(2027, 1)` |
 | タイムゾーン付きdatetime | `(2026, 3)` | ローカルタイムゾーンで2026年3月1日を指すaware datetimeを返す |
+
+#### 19-6. `with_monthly_deltas(rows)` / `filter_monthly_series_by_year_month(rows, year, month)`（#334、コードレビュー指摘対応）
+
+総合統計ページのグラフをsongrange/year/monthフィルターに連動させる仕様変更で追加。`with_monthly_deltas`は累積値の行リストから各フィールドの単月差分(`<field>_delta`)を計算し、`filter_monthly_series_by_year_month`は表示するyear/monthの行に絞り込む。差分計算は絞り込み前の全期間に対して行ってから絞り込むため、表示範囲を狭めても差分値はずれない。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 先頭行の差分 | 1件のみの行リスト | 累積値そのものが差分になる |
+| 2件目以降の差分 | 2件の行リスト | 直前の行との差分になる |
+| 累積値は保持される | 任意の行リスト | 元の`<field>`キー（累積値）はそのまま残る |
+| 空リスト | `[]` | `[]` |
+| `year="all"` | 任意の行リスト | 絞り込まれない |
+| `year`のみ指定 | 複数年の行リスト | 該当年の行のみ |
+| `year`・`month`両方指定 | 複数年月の行リスト | 該当年月の行のみ |
 
 ---
 

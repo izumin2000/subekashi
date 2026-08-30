@@ -756,12 +756,21 @@ class StatsModelTest(TestCase):
 
     def test_str(self):
         stats = Stats.objects.create(year=2026, month=3)
-        self.assertEqual(str(stats), "2026-03")
+        self.assertEqual(str(stats), "2026-03 (all)")
 
-    def test_year_month_unique_constraint(self):
-        Stats.objects.create(year=2026, month=1)
+    def test_songrange_defaults_to_all(self):
+        stats = Stats.objects.create(year=2026, month=1)
+        self.assertEqual(stats.songrange, "all")
+
+    def test_year_month_songrange_unique_constraint(self):
+        Stats.objects.create(year=2026, month=1, songrange="all")
         with self.assertRaises(IntegrityError):
-            Stats.objects.create(year=2026, month=1)
+            Stats.objects.create(year=2026, month=1, songrange="all")
+
+    def test_year_month_allows_different_songrange(self):
+        Stats.objects.create(year=2026, month=1, songrange="all")
+        Stats.objects.create(year=2026, month=1, songrange="subeana")
+        self.assertEqual(Stats.objects.filter(year=2026, month=1).count(), 2)
 
     def test_get_monthly_series_ordered(self):
         Stats.objects.create(year=2026, month=3)
@@ -771,3 +780,12 @@ class StatsModelTest(TestCase):
         series = list(Stats.get_monthly_series())
 
         self.assertEqual([(s.year, s.month) for s in series], [(2025, 12), (2026, 1), (2026, 3)])
+
+    def test_get_monthly_series_filters_by_songrange(self):
+        Stats.objects.create(year=2026, month=1, songrange="all")
+        Stats.objects.create(year=2026, month=1, songrange="subeana")
+
+        series = list(Stats.get_monthly_series("subeana"))
+
+        self.assertEqual(len(series), 1)
+        self.assertEqual(series[0].songrange, "subeana")
