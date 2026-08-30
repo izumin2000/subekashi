@@ -700,7 +700,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | 正常アクセス | GETリクエスト | HTTP 200 |
-| `show_janome_notice` Cookie未指定（デフォルトTrue） | Cookie未指定 | 旧世代モデルの案内（`#janome-notice`）が表示される |
+| `show_janome_notice` Cookie未指定（デフォルトTrue） | Cookie未指定 | janomeによる作成についての案内（`#janome-notice`）が表示される |
 | `show_janome_notice=False` Cookie指定 | `show_janome_notice=False` | `#janome-notice`が表示されない |
 | 単語入れ替え機能は提供しない（方針転換、#1053） | Word候補が存在する単語を含む歌詞 | `class="word-token"` は表示されず、歌詞はプレーンテキストのまま表示される |
 | レガシーgenetype="model"は対象外（GPTインポート廃止） | `genetype="model", score=5`のレコードが存在 | 最高評価の歌詞に表示されない（`genetype="janome"`のみ対象） |

@@ -26,7 +26,7 @@ ASIDE_PAGES = [
     {
         "url": "subekashi:ai",
         "name": "歌詞作成",
-        "icon": "fa fa-robot"
+        "icon": "fas fa-align-center"
     },
     {
         "url": "subekashi:ad",
