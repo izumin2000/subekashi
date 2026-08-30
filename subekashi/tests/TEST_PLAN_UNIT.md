@@ -761,6 +761,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 活用形が異なる候補 | hinshiは一致するがkatsuyouが異なる候補 | HTTP 400（文法破綻を防ぐため。katsuyouはクライアント入力を信用せず、base_idの歌詞をサーバー側で再トークナイズして取得） |
 | 同じ入れ替え結果の重複防止 | 同一の`base_id`・`token_index`・`candidate`で2回POST | 2回目は新規`Ai`レコードを作成せず、既存レコードのidを返す |
 | 重複判定はgenetypeも考慮 | `lyrics`は同じだが`genetype="model"`の既存`Ai`が存在 | 既存レコードを誤って再利用せず、`genetype="janome"`の新規レコードを作成する |
+| レスポンスステータスの正確性 | 同一の`base_id`・`token_index`・`candidate`で2回POST | 1回目はHTTP 201（新規作成）、2回目はHTTP 200（既存レコードの再利用） |
+| レスポンスに再トークナイズ済みのtokensを含める | 正常な入れ替え後 | 入れ替え後の歌詞を実際に再トークナイズした`surface`・`hinshi`・`katsuyou`・`index`・`is_replaceable`を含む。janomeは文脈依存のトークナイザのため、クライアント側が古い`token_index`を使い回すと同じ行での連続入れ替え時にズレる可能性があり、それを防ぐためクライアント側でその行のDOMを丸ごと作り直せるようにする |
 
 ---
 

@@ -218,6 +218,30 @@ class AiWordSwapViewTest(TestCase):
         self.assertEqual(new_ai.score, 0)
         self.assertEqual(new_ai.genetype, "janome")
 
+    def test_response_includes_retokenized_tokens(self):
+        # janomeは文脈依存の統計的トークナイザのため、入れ替え後の歌詞を
+        # クライアント側が古いtoken_indexのまま使い回すとズレる可能性がある。
+        # レスポンスに再トークナイズ済みのtokensを含め、クライアントが
+        # その行の表示を丸ごと作り直せるようにしている
+        # 「駆ける」自身もWord候補を持たせ、再トークナイズ結果が
+        # 使い回しではなく実際に新しい歌詞を解析した結果であることを確認する
+        Word.objects.create(word="駆ける", hinshi="動詞", katsuyou="基本形", candidate="走る")
+
+        response = self.client.post(
+            "/api/ai/swap/",
+            data={"base_id": self.base.id, "token_index": 2, "candidate": "駆ける"},
+            format="json",
+        )
+
+        tokens = response.json()["tokens"]
+        surfaces = [t["surface"] for t in tokens]
+        self.assertEqual(surfaces, ["私", "は", "駆ける"])
+        by_surface = {t["surface"]: t for t in tokens}
+        self.assertTrue(by_surface["駆ける"]["is_replaceable"])
+        self.assertEqual(by_surface["駆ける"]["katsuyou"], "基本形")
+        self.assertEqual(by_surface["駆ける"]["index"], 2)
+        self.assertFalse(by_surface["私"]["is_replaceable"])
+
     def test_original_ai_record_is_unchanged(self):
         self.client.post(
             "/api/ai/swap/",
@@ -312,6 +336,9 @@ class AiWordSwapViewTest(TestCase):
 
         self.assertEqual(Ai.objects.count(), count_after_first)
         self.assertEqual(first.json()["id"], second.json()["id"])
+        # 新規作成時は201、既存レコードの再利用時は200を返す（REST的な正確性のため）
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(second.status_code, 200)
 
     def test_existing_record_with_different_genetype_is_not_reused(self):
         # lyricsが同じでもgenetypeが違う既存レコード（例: model起源のたまたま

@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from subekashi.models import Ai, Word
-from subekashi.lib.lyric_tokenizer import tokenize_lyrics_with_index, REPLACEABLE_HINSHIS
+from subekashi.lib.lyric_tokenizer import tokenize_ai_instances, tokenize_lyrics_with_index, REPLACEABLE_HINSHIS
 from ...serializer import AiSerializer, AiWordSwapSerializer
 
 class AiAPI(viewsets.ModelViewSet):
@@ -80,14 +80,22 @@ class AiWordSwapView(APIView):
             return Response({'detail': '入れ替え後の歌詞が長すぎます。'}, status=status.HTTP_400_BAD_REQUEST)
 
         # 同じ入れ替え結果（かつ同じgenetype）が既に存在する場合は重複作成せず、既存のAiレコードを返す
-        new_ai, _ = Ai.objects.get_or_create(
+        new_ai, created = Ai.objects.get_or_create(
             lyrics=new_lyrics,
             genetype=Ai.GENETYPE_JANOME,
             defaults={'score': 0},
         )
 
+        # janomeは文脈依存の統計的トークナイザのため、候補語を入れた新しい歌詞を
+        # 再トークナイズすると、周辺のトークン境界が元の歌詞と変わる可能性が
+        # 理論上ある。クライアント側が古いtoken_indexのまま同じ行で続けて
+        # 入れ替えようとして意図しない単語を壊さないよう、入れ替え後の
+        # 歌詞を実際に再トークナイズした結果をレスポンスに含め、
+        # クライアント側でその行の表示を丸ごと作り直せるようにする
+        new_tokens = tokenize_ai_instances(Ai.objects.filter(pk=new_ai.pk))[0]['tokens']
+
         return Response(
-            {'id': new_ai.id, 'lyrics': new_ai.lyrics},
-            status=status.HTTP_201_CREATED,
+            {'id': new_ai.id, 'lyrics': new_ai.lyrics, 'tokens': new_tokens},
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
             headers={"Access-Control-Allow-Origin": "*"},
         )
