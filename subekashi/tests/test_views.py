@@ -837,6 +837,39 @@ class AuthorStatsViewTest(TestCase):
         self.assertNotIn(2020, response.context["year_choices"])
         self.assertIn(2024, response.context["year_choices"])
 
+    def test_month_choices_scoped_to_this_author_only(self):
+        # この作者が実際に投稿していない月は選択肢に出さない
+        # （選んでも0件になる組み合わせを避けるため、コードレビュー指摘対応）
+        other_author = Author.objects.create(name="別の作者")
+        Song.objects.create(title="他authorの3月の曲", upload_time=datetime(2024, 3, 1, tzinfo=dt_timezone.utc)).authors.add(other_author)
+        Song.objects.create(title="この作者の6月の曲", upload_time=datetime(2024, 6, 1, tzinfo=dt_timezone.utc)).authors.add(self.author)
+
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]), {"year": "2024"})
+
+        self.assertEqual(response.context["month_choices"], [6])
+
+    def test_year_choices_exclude_gap_years_with_no_songs(self):
+        # 2020年・2024年にしか投稿が無い場合、間の2021〜2023年は選択肢に出ない
+        # （最古年〜今年の連続レンジではなく実データに基づく、コードレビュー指摘対応）
+        Song.objects.create(title="2020年の曲", upload_time=datetime(2020, 1, 1, tzinfo=dt_timezone.utc)).authors.add(self.author)
+        Song.objects.create(title="2024年の曲", upload_time=datetime(2024, 1, 1, tzinfo=dt_timezone.utc)).authors.add(self.author)
+
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
+
+        self.assertEqual(response.context["year_choices"], [2020, 2024])
+
+    def test_month_resets_to_all_when_new_year_has_no_data_for_that_month(self):
+        # 年を変更した際、切り替え先の年にその月のデータが無ければmonthは
+        # "all"に自動的にフォールバックする（不正な組み合わせのまま残らない）
+        Song.objects.create(title="2024年6月の曲", upload_time=datetime(2024, 6, 1, tzinfo=dt_timezone.utc)).authors.add(self.author)
+        Song.objects.create(title="2025年3月の曲", upload_time=datetime(2025, 3, 1, tzinfo=dt_timezone.utc)).authors.add(self.author)
+
+        # 2024年・6月を選んでいた状態から、年だけ2025年に切り替えたケースを想定
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]), {"year": "2025", "month": "6"})
+
+        self.assertEqual(response.context["year"], "2025")
+        self.assertEqual(response.context["month"], "all")
+
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
 class AuthorAliasesViewTest(TestCase):

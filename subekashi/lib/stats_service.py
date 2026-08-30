@@ -1,5 +1,6 @@
 from datetime import datetime
 from django.db.models import Count, Q, Sum
+from django.db.models.functions import ExtractMonth, ExtractYear
 from django.utils import timezone
 from subekashi.models import Author, Song
 
@@ -135,28 +136,35 @@ def compute_unique_collaborator_count(song_ids, author_id):
 
 
 def get_year_choices(qs=None):
-    """qs（省略時はSong.objects.all()）のupload_timeが最小の年〜今年のリストを返す
+    """qs（省略時はSong.objects.all()）内で実際にupload_timeが存在する年のみを昇順で返す
 
-    upload_time付きの曲がqs内に1件もなければ空リスト。qsにauthorやsongrangeの
-    絞り込みを渡せば、その範囲で実際に選択可能な年のみに絞った選択肢になる
-    （例: authorページではその作者自身の投稿年のみ、songrange選択中はその
-    範囲に該当する年のみを候補にできる）。
-    DBにはUTCで保存されているため、年の判定はローカルタイムゾーンに変換してから行う
+    "最古年〜今年"の連続レンジではなく、get_month_choicesと同様に実際に曲が
+    存在する年のみを返す（間の年に投稿が無ければその年は選択肢に出さない。
+    選んでも0件になる組み合わせを避けるため）。qsにauthorやsongrangeの絞り込みを
+    渡せば、その範囲で実際に選択可能な年のみに絞った選択肢になる（例: author
+    ページではその作者自身の投稿年のみ、songrange選択中はその範囲に該当する
+    年のみを候補にできる）。ExtractYearはDjangoのタイムゾーン設定に従って
+    変換されるため、DBがUTC保存でもローカルタイムゾーン基準で年が判定される
     """
     if qs is None:
         qs = Song.objects.all()
-    first = qs.exclude(upload_time__isnull=True).order_by("upload_time").first()
-    if first is None:
-        return []
-    first_year = timezone.localtime(first.upload_time).year
-    return list(range(first_year, now_local().year + 1))
+    years = qs.annotate(year=ExtractYear("upload_time")).values_list("year", flat=True).distinct()
+    return sorted(y for y in years if y is not None)
 
 
-def get_month_choices(year, current_year):
-    """yearが今年ならその年の1月〜現在月、それ以外なら1〜12月のリストを返す"""
-    if year == current_year:
-        return list(range(1, now_local().month + 1))
-    return list(range(1, 13))
+def get_month_choices(qs, year=None):
+    """qs内で実際にupload_timeが存在する月のみを1〜12の昇順で返す
+
+    yearを指定すればその年のみ、Noneなら年を問わず全期間が対象（"全ての年"時、
+    月だけの絞り込みで実際にヒットする月のみを選択肢にする）。曲が存在しない
+    月は選択肢に出さない（選んでも0件になる組み合わせを避けるため）。
+    ExtractMonthはDjangoのタイムゾーン設定に従って変換されるため、DBがUTC
+    保存でもローカルタイムゾーン基準で月が判定される
+    """
+    if year is not None:
+        qs = qs.filter(upload_time__year=year)
+    months = qs.annotate(month=ExtractMonth("upload_time")).values_list("month", flat=True).distinct()
+    return sorted(m for m in months if m is not None)
 
 
 def resolve_year_month(request, year_choice_qs=None):
@@ -166,9 +174,10 @@ def resolve_year_month(request, year_choice_qs=None):
     文字列表現でもint変換後の値で選択肢と照合し、正規化した文字列を返す
     （テンプレート上の選択状態比較や500エラー防止のため）。
     year_choice_qsを渡せば、その範囲（author自身の曲・選択中のsongrange等）で
-    実際に選択可能な年のみに選択肢を絞り込める
+    実際に選択可能な年・月のみに選択肢を絞り込める
     """
-    current_year = now_local().year
+    if year_choice_qs is None:
+        year_choice_qs = Song.objects.all()
     year_choices = get_year_choices(year_choice_qs)
 
     year = request.GET.get("year", "all")
@@ -178,7 +187,7 @@ def resolve_year_month(request, year_choice_qs=None):
     else:
         year = str(year_int)
 
-    month_choices = get_month_choices(year_int, current_year) if year_int is not None else list(range(1, 13))
+    month_choices = get_month_choices(year_choice_qs, year_int)
     month = request.GET.get("month", "all")
     month_int = parse_int_or_none(month)
     month = str(month_int) if month_int in month_choices else "all"

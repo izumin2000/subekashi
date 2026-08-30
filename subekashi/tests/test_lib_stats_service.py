@@ -158,7 +158,16 @@ class ResolveYearMonthTest(TestCase):
         self.assertEqual(year, "all")
         self.assertEqual(month, "all")
         self.assertEqual(year_choices, [])
-        self.assertEqual(month_choices, list(range(1, 13)))
+        self.assertEqual(month_choices, [])
+
+    def test_month_choices_reflect_actual_data_across_all_years(self):
+        # 曲が無い月は選択肢に出さない（コードレビュー指摘対応）
+        Song.objects.create(title="曲", upload_time=datetime(2024, 3, 1, tzinfo=dt_timezone.utc))
+        request = self.factory.get("/stats/")
+
+        _, _, _, month_choices = resolve_year_month(request)
+
+        self.assertEqual(month_choices, [3])
 
     def test_valid_year_normalizes_zero_padded_input(self):
         Song.objects.create(title="曲", upload_time=datetime(2024, 1, 1, tzinfo=dt_timezone.utc))
@@ -357,6 +366,10 @@ class ComputeCollaboratorCountTest(TestCase):
 
 
 class GetYearChoicesTest(TestCase):
+    # get_year_choices(qs)はget_month_choicesと同様、"最古年〜今年"の連続レンジ
+    # ではなく、qs内で実際にupload_timeが存在する年のみを返すデータ駆動な実装
+    # （コードレビュー指摘対応: 間の年に投稿が無くても連続レンジとして選択肢に
+    # 出てしまい、選ぶと0件になる問題の修正）
     def test_no_songs_returns_empty_list(self):
         self.assertEqual(get_year_choices(), [])
 
@@ -364,60 +377,66 @@ class GetYearChoicesTest(TestCase):
         Song.objects.create(title="upload_timeなし", upload_time=None)
         self.assertEqual(get_year_choices(), [])
 
-    def test_returns_range_from_min_upload_time_year_to_current_year(self):
+    def test_returns_only_years_with_songs_not_a_contiguous_range(self):
+        # 2020年と2024年にしか投稿が無ければ、間の2021〜2023年は選択肢に出ない
         Song.objects.create(title="古い曲", upload_time=datetime(2020, 1, 1, tzinfo=dt_timezone.utc))
-        Song.objects.create(title="新しい曲", upload_time=timezone.now())
+        Song.objects.create(title="新しい曲", upload_time=datetime(2024, 1, 1, tzinfo=dt_timezone.utc))
 
-        current_year = now_local().year
-        self.assertEqual(get_year_choices(), list(range(2020, current_year + 1)))
+        self.assertEqual(get_year_choices(), [2020, 2024])
 
     def test_scoped_to_given_qs_ignores_songs_outside_it(self):
         # qsを渡すとその範囲のみで年を判定する（コードレビュー指摘対応）
-        Song.objects.create(title="範囲外の古い曲", upload_time=datetime(2018, 1, 1, tzinfo=dt_timezone.utc))
+        Song.objects.create(title="範囲外の曲", upload_time=datetime(2018, 1, 1, tzinfo=dt_timezone.utc))
         target = Song.objects.create(title="対象の曲", upload_time=datetime(2022, 1, 1, tzinfo=dt_timezone.utc))
 
-        current_year = now_local().year
         result = get_year_choices(Song.objects.filter(pk=target.pk))
 
-        self.assertEqual(result, list(range(2022, current_year + 1)))
+        self.assertEqual(result, [2022])
 
-    def test_min_upload_time_year_uses_local_timezone_not_utc(self):
+    def test_year_uses_local_timezone_not_utc(self):
         # UTC 2019-12-31 20:00 = JST 2020-01-01 05:00（コードレビュー指摘対応の回帰テスト）
-        # ローカルタイムゾーンに変換せずupload_time.yearを直接使うと2019年始まりになってしまう
+        # ローカルタイムゾーンに変換せずupload_time.yearを直接使うと2019年になってしまう
         Song.objects.create(title="曲", upload_time=datetime(2019, 12, 31, 20, 0, tzinfo=dt_timezone.utc))
 
-        current_year = now_local().year
-        self.assertEqual(get_year_choices(), list(range(2020, current_year + 1)))
-
-    @patch("subekashi.lib.stats_service.now_local")
-    def test_current_year_end_uses_now_local_not_raw_utc(self, mock_now_local):
-        # timezone.now()の生の.yearをそのまま使うとUTC/JSTの境界でズレるバグの
-        # 再発防止（コードレビュー指摘対応）。now_local()を経由することを確認する
-        mock_now_local.return_value = timezone.make_aware(datetime(2027, 1, 1, 0, 30))
-        Song.objects.create(title="曲", upload_time=timezone.make_aware(datetime(2020, 6, 1)))
-
-        self.assertEqual(get_year_choices(), list(range(2020, 2028)))
-        mock_now_local.assert_called()
+        self.assertEqual(get_year_choices(), [2020])
 
 
 class GetMonthChoicesTest(TestCase):
-    def test_current_year_limits_to_current_month(self):
-        current_year = now_local().year
-        current_month = now_local().month
-        self.assertEqual(get_month_choices(current_year, current_year), list(range(1, current_month + 1)))
+    # get_month_choices(qs, year)はqs内で実際にupload_timeが存在する月のみを
+    # 返すデータ駆動な実装（コードレビュー指摘対応: authorページの月選択肢が
+    # 単純な日付計算のみで、実際にその作者・年に曲が存在するかを見ていなかった
+    # ため、選んでも0件になる月を選択できてしまっていた問題の修正）
+    def test_year_specified_returns_only_months_with_songs(self):
+        Song.objects.create(title="1月の曲", upload_time=datetime(2024, 1, 15, tzinfo=dt_timezone.utc))
+        Song.objects.create(title="6月の曲", upload_time=datetime(2024, 6, 15, tzinfo=dt_timezone.utc))
+        Song.objects.create(title="他年の曲", upload_time=datetime(2025, 3, 15, tzinfo=dt_timezone.utc))
 
-    def test_past_year_returns_all_twelve_months(self):
-        current_year = now_local().year
-        self.assertEqual(get_month_choices(current_year - 1, current_year), list(range(1, 13)))
+        self.assertEqual(get_month_choices(Song.objects.all(), 2024), [1, 6])
 
-    @patch("subekashi.lib.stats_service.now_local")
-    def test_current_year_cutoff_uses_now_local_not_raw_utc(self, mock_now_local):
-        # timezone.now()の生の.monthをそのまま使うとUTC/JSTの境界でズレるバグの
-        # 再発防止（コードレビュー指摘対応）
-        mock_now_local.return_value = timezone.make_aware(datetime(2027, 1, 1, 0, 30))
+    def test_year_none_returns_months_across_all_years(self):
+        Song.objects.create(title="1月の曲", upload_time=datetime(2024, 1, 15, tzinfo=dt_timezone.utc))
+        Song.objects.create(title="別年の6月の曲", upload_time=datetime(2025, 6, 15, tzinfo=dt_timezone.utc))
 
-        self.assertEqual(get_month_choices(2027, 2027), [1])
-        mock_now_local.assert_called()
+        self.assertEqual(get_month_choices(Song.objects.all(), None), [1, 6])
+
+    def test_year_with_no_songs_returns_empty_list(self):
+        Song.objects.create(title="曲", upload_time=datetime(2024, 1, 15, tzinfo=dt_timezone.utc))
+
+        self.assertEqual(get_month_choices(Song.objects.all(), 2020), [])
+
+    def test_songs_without_upload_time_are_ignored(self):
+        Song.objects.create(title="upload_timeなし", upload_time=None)
+
+        self.assertEqual(get_month_choices(Song.objects.all(), None), [])
+
+    def test_scoped_to_given_qs(self):
+        # authorやsongrangeでスコープされたqsを渡せば、その範囲外の曲の月は無視される
+        target = Song.objects.create(title="対象の曲", upload_time=datetime(2024, 1, 15, tzinfo=dt_timezone.utc))
+        Song.objects.create(title="対象外の曲", upload_time=datetime(2024, 6, 15, tzinfo=dt_timezone.utc))
+
+        result = get_month_choices(Song.objects.filter(pk=target.pk), 2024)
+
+        self.assertEqual(result, [1])
 
 
 class NextYearMonthTest(TestCase):
