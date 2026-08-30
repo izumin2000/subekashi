@@ -754,6 +754,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 正常な入れ替え | 実在するbase_id・token_index・候補 | HTTP 201、新規`Ai`レコード（`score=0`, `genetype="janome"`）が作成される |
 | 元レコードへの影響 | 正常な入れ替え後 | 元の`Ai`レコードの`lyrics`は変更されない |
 | 存在しないbase_id | 未登録のID | HTTP 404 |
+| レガシーgenetype="model"のbaseは対象外 | `genetype="model"`のAiレコードをbase_idに指定 | HTTP 404（単語入れ替えはgenetype="janome"のAiレコードからのみ許可） |
 | 範囲外のtoken_index | 歌詞のトークン数を超える値 | HTTP 400 |
 | 置き換え対象外の品詞 | 助詞など`REPLACEABLE_HINSHIS`外のトークン | HTTP 400 |
 | Wordに存在しない候補 | 実在しない候補語 | HTTP 400、`Ai`レコードは作成されない |
@@ -940,6 +941,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `get_candidates(word, hinshi, katsuyou)`（重複排除） | 異なるwordから同じcandidate文字列が存在 | 重複排除して返す |
 | `get_candidates(word, hinshi, katsuyou, limit=10)` | 候補が11件以上登録済み | 最大10件に絞られる |
 | `get_candidates(word, hinshi, katsuyou)`（ランダム性） | 候補が20件登録済みで20回呼び出す | 毎回同じ組み合わせにはならない（DB側の`ORDER BY RANDOM()`は使わず、hinshi・katsuyouで絞り込んだ結果をPython側の`random.shuffle()`でランダム化） |
+| `get_candidates(word, hinshi, katsuyou)`（候補プールの上限） | distinct候補が`CANDIDATE_POOL_SIZE`（200件）を超えて登録済み | 全件をメモリに読み込まず、事前に打ち切ってから絞り込む（大きなhinshi・katsuyouの組み合わせでの性能懸念に対応） |
 | `is_valid_candidate(word, hinshi, katsuyou, candidate)` | 実在する組み合わせ | `True` を返す |
 | `is_valid_candidate(word, hinshi, katsuyou, candidate)` | 存在しない候補 | `False` を返す |
 | `is_valid_candidate(word, hinshi, katsuyou, candidate)` | 品詞が一致しない | `False` を返す |
@@ -947,6 +949,13 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `is_valid_candidate(word, hinshi, katsuyou, candidate)`（品詞・活用形ベース） | `word`は異なるが`hinshi`・`katsuyou`が一致する候補 | `True` を返す |
 | `is_valid_candidate(word, hinshi, katsuyou, candidate)` | `get_candidates()`の表示上限（10件）を超える候補 | 実在すれば `True` を返す（表示件数の制限を受けない） |
 | `is_valid_candidate(word, hinshi, katsuyou, candidate)`（自己参照） | `word == candidate` | DB上の実在有無に関わらず `False` を返す |
+
+#### 11-8. `Ai` モデル（#593）
+
+| テストケース | 操作 | 期待結果 |
+| --- | --- | --- |
+| `genetype="janome"`のlyricsユニーク制約 | 同じ`lyrics`・`genetype="janome"`で2件作成 | `IntegrityError` が発生（部分インデックス、MySQL移行時は要注意） |
+| ユニーク制約はgenetype="janome"のみ対象 | 同じ`lyrics`だが`genetype`が異なる（例:`"model"`と`"janome"`） | `IntegrityError` は発生しない |
 
 ---
 

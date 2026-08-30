@@ -11,6 +11,28 @@ class Ai(models.Model):
     score = models.IntegerField(default = 0)
     genetype = models.CharField(default = "", max_length = 100)
 
+    class Meta:
+        # 【MySQL移行時の注意】(#593)
+        # 下記のUniqueConstraint(condition=...)は「部分インデックス」であり、
+        # SQLite・PostgreSQLではサポートされるが、MySQLではDjangoが未サポートのため
+        # 実際のDB制約としては作成されない（`python manage.py check`でmodels.W036の
+        # system check warningが出るのみで、例外にはならず静かにスキップされる）。
+        # その場合、AiWordSwapView/manage.py aiのget_or_create()による重複防止は
+        # アプリ層のみの保証となり、ほぼ同時に同じ入れ替え結果がPOSTされた場合の
+        # TOCTOU対策が効かなくなる。詳細はsubekashi/models/author.pyの同種コメントを参照
+        constraints = [
+            # genetype="janome"のみを対象にする（レガシーgenetype="model"等には
+            # 既に(lyrics, genetype)の重複が存在するため、全genetype共通の制約には出来ない）
+            models.UniqueConstraint(
+                fields=["lyrics"],
+                # Metaのネストしたクラス本体からはクラス変数GENETYPE_JANOMEを
+                # 直接参照できない（Pythonの仕様上、入れ子クラスは外側のクラス
+                # スコープを継承しない）ため、リテラル文字列を直接指定する
+                condition=models.Q(genetype="janome"),
+                name="unique_janome_lyrics",
+            ),
+        ]
+
     def __str__(self):
         return self.lyrics
 

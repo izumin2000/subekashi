@@ -66,6 +66,9 @@ class Command(BaseCommand):
                 if not eligible:
                     continue
 
+                # この行に置き換え可能なトークンが複数あっても、ランダムに選んだ
+                # 1つだけを試す（他のトークンでは条件を満たせても再挑戦しない）。
+                # シードデータ生成用の簡易な実装として意図的にこうしている
                 token = random.choice(eligible)
                 candidates = [
                     c for c in get_candidates(token['hinshi'], token['katsuyou'])

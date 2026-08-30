@@ -6,7 +6,7 @@ Song, Author, AuthorAlias, SongLink の CRUD・制約・メソッドを検証す
 from django.db import IntegrityError
 from django.test import TestCase
 from django.utils import timezone
-from subekashi.models import Author, AuthorAlias, Contact, Editor, History, Song, SongLink, Word
+from subekashi.models import Ai, Author, AuthorAlias, Contact, Editor, History, Song, SongLink, Word
 from subekashi.models.author import EffectiveAlias, TransitiveAlias
 
 
@@ -577,6 +577,27 @@ class HistoryModelTest(TestCase):
         results = list(History.get_for_author(self.author))
 
         self.assertEqual(results, [newer, older])
+
+
+class AiModelTest(TestCase):
+    """Ai モデルのテスト"""
+
+    def test_duplicate_janome_lyrics_raises_integrity_error(self):
+        # genetype="janome"は(lyrics)がユニーク（#593、MySQL移行時は要注意）
+        Ai.objects.create(lyrics="私は走る", score=0, genetype="janome")
+
+        with self.assertRaises(IntegrityError):
+            Ai.objects.create(lyrics="私は走る", score=0, genetype="janome")
+
+    def test_duplicate_lyrics_with_different_genetype_is_allowed(self):
+        # ユニーク制約はgenetype="janome"のみが対象。他genetype（レガシーの
+        # "model"等）とは重複してもよい
+        Ai.objects.create(lyrics="私は走る", score=0, genetype="model")
+
+        try:
+            Ai.objects.create(lyrics="私は走る", score=0, genetype="janome")
+        except IntegrityError:
+            self.fail("genetypeが異なる場合はIntegrityErrorが発生してはならない")
 
 
 class WordModelTest(TestCase):

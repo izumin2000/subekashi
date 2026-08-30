@@ -53,7 +53,11 @@ class AiWordSwapView(APIView):
         token_index = serializer.validated_data['token_index']
         candidate = serializer.validated_data['candidate']
 
-        base = get_object_or_404(Ai, pk=base_id)
+        # base自体もgenetype="janome"のみを対象にする。これが無いと、UI上は
+        # 入れ替えボタンを出していない最高評価の歌詞や、廃止済みのレガシー
+        # genetype="model"レコードに対しても、base_idさえ分かればAPIから
+        # 直接入れ替えできてしまう
+        base = get_object_or_404(Ai, pk=base_id, genetype=Ai.GENETYPE_JANOME)
         tokens = tokenize_lyrics_with_index(base.lyrics)
 
         if token_index >= len(tokens):

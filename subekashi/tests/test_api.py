@@ -201,7 +201,7 @@ class AiWordSwapViewTest(TestCase):
     def setUp(self):
         self.client = APIClient()
         # 「私は走る」 -> 私(名詞,index0) は(助詞,index1) 走る(動詞,基本形,index2)
-        self.base = Ai.objects.create(lyrics="私は走る", score=5, genetype="model")
+        self.base = Ai.objects.create(lyrics="私は走る", score=0, genetype="janome")
         Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="駆ける")
 
     def test_valid_swap_creates_new_ai_record(self):
@@ -232,6 +232,20 @@ class AiWordSwapViewTest(TestCase):
         response = self.client.post(
             "/api/ai/swap/",
             data={"base_id": 999999, "token_index": 2, "candidate": "駆ける"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_base_with_legacy_model_genetype_returns_404(self):
+        # 単語入れ替えはgenetype="janome"のAiレコードからのみ許可する。
+        # UI上は最高評価の歌詞（/ai/）やレガシーgenetype="model"のレコードには
+        # 入れ替えボタンを出していないが、base_idが分かればAPIを直叩きされる
+        # 可能性があるため、サーバー側でもgenetypeを検証する
+        legacy_base = Ai.objects.create(lyrics="全て走る所為です", score=5, genetype="model")
+
+        response = self.client.post(
+            "/api/ai/swap/",
+            data={"base_id": legacy_base.id, "token_index": 2, "candidate": "駆ける"},
             format="json",
         )
         self.assertEqual(response.status_code, 404)

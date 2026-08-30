@@ -26,18 +26,26 @@ class Word(models.Model):
     def __str__(self):
         return f"{self.word}({self.hinshi}) -> {self.candidate}"
 
+    # get_candidates()で事前に読み込む候補プールの上限。組み合わせによっては
+    # （例:「名詞,一般」で28,000件超）distinct候補が非常に多くなり、無制限に
+    # 読み込むとメモリ・クエリコストが増えるため、最終的に必要なlimit件より
+    # 十分大きいが無制限ではない件数で打ち切る。ORDER BYを指定していないため
+    # 「常に同じ最初のN件」が対象になり得るが、実用上十分な多様性は確保できる
+    CANDIDATE_POOL_SIZE = 200
+
     @classmethod
     def get_candidates(cls, word, hinshi, katsuyou, limit=10):
         # 元の単語（word）は問わず、品詞（hinshi）・活用形（katsuyou）が一致する
         # 候補を横断的に対象にする。
         # order_by('?')（SQLの ORDER BY RANDOM()）はDB側でのフルソートになり
         # コストが増えるため使わない。hinshi・katsuyouで絞り込んだ（インデックス使用）
-        # 結果をPython側でシャッフルする
+        # 結果をPython側でシャッフルするが、全件読み込むと組み合わせによっては
+        # 数万件になり得るため、CANDIDATE_POOL_SIZE件で打ち切ってから読み込む
         candidates = list(
             cls.objects.filter(hinshi=hinshi, katsuyou=katsuyou)
             .exclude(candidate=word)
             .values_list('candidate', flat=True)
-            .distinct()
+            .distinct()[:cls.CANDIDATE_POOL_SIZE]
         )
         random.shuffle(candidates)
         return candidates[:limit]
