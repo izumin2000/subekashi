@@ -32,20 +32,25 @@ class AuthorStatsView(View):
         songrange = request.GET.get('songrange', 'all')
         if songrange not in SONGRANGE_VALUES:
             songrange = 'all'
-        if songrange == 'all' and not show_all_songrange:
+        if not show_all_songrange:
+            # ラジオグループ自体が非表示のため、URLで明示的に指定された値であっても
+            # UI上選べない選択肢は表示・適用しない（実在する方に強制する）
             songrange = 'subeana' if has_subeana else 'xx'
 
         current_year = timezone.now().year
         year_choices = get_year_choices()
 
         year = request.GET.get('year', 'all')
-        if year != 'all' and parse_int_or_none(year) not in year_choices:
-            year = 'all'
+        if year != 'all':
+            year_int = parse_int_or_none(year)
+            # ゼロ埋め等の非正規な文字列表現でもint変換後の値で選択肢と照合・正規化する
+            year = str(year_int) if year_int in year_choices else 'all'
 
         month_choices = get_month_choices(int(year), current_year) if year != 'all' else list(range(1, 13))
         month = request.GET.get('month', 'all')
-        if month != 'all' and parse_int_or_none(month) not in month_choices:
-            month = 'all'
+        if month != 'all':
+            month_int = parse_int_or_none(month)
+            month = str(month_int) if month_int in month_choices else 'all'
 
         qs = apply_songrange_filter(author_songs, songrange)
         qs = apply_upload_time_filter(qs, year, month)

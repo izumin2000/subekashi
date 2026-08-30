@@ -14,3 +14,9 @@ class IntcommaTest(SimpleTestCase):
 
     def test_zero(self):
         self.assertEqual(intcomma(0), "0")
+
+    def test_none_returns_empty_string(self):
+        self.assertEqual(intcomma(None), "")
+
+    def test_non_numeric_string_returned_unchanged(self):
+        self.assertEqual(intcomma("abc"), "abc")

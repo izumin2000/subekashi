@@ -664,6 +664,26 @@ class StatsViewTest(TestCase):
         self.assertNotContains(response, 'id="songrange-subeana"')
         self.assertNotContains(response, 'id="songrange-xx"')
 
+    def test_explicit_songrange_is_overridden_when_only_one_songrange_exists(self):
+        # 選択肢が非表示のカテゴリを?songrange=xxのように明示指定しても、
+        # 常に0件になる意味の無い絞り込みを許さず実在する方に強制する（レビュー指摘対応）
+        Song.objects.create(title="すべあな曲", is_subeana=True)
+
+        response = self.client.get(reverse("subekashi:stats"), {"songrange": "xx"})
+
+        self.assertEqual(response.context["songrange"], "subeana")
+        self.assertEqual(self._song_count(response), 1)
+
+    def test_zero_padded_year_is_normalized_for_select_state(self):
+        # URL直打ちのゼロ埋め等でも、テンプレート上の選択状態比較に使う
+        # context["year"]は正規化された文字列になる（レビュー指摘対応）
+        Song.objects.create(title="曲", upload_time=datetime(2024, 1, 1, tzinfo=dt_timezone.utc))
+
+        response = self.client.get(reverse("subekashi:stats"), {"year": "02024"})
+
+        self.assertEqual(response.context["year"], "2024")
+        self.assertContains(response, 'value="2024" selected')
+
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
 class AuthorStatsViewTest(TestCase):

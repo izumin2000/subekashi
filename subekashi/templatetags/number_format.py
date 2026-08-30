@@ -5,4 +5,9 @@ register = template.Library()
 
 @register.filter
 def intcomma(value):
-    return f"{value:,}"
+    if value is None:
+        return ""
+    try:
+        return f"{value:,}"
+    except (TypeError, ValueError):
+        return value
