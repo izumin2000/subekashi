@@ -55,3 +55,10 @@ class SongLinkAdmin(admin.ModelAdmin):
     list_filter = ('is_removed', 'allow_dup')
 
 admin.site.register(SongLink, SongLinkAdmin)
+
+
+class StatsAdmin(admin.ModelAdmin):
+    list_display = ('id', 'year', 'month', 'song_count', 'total_view', 'total_like', 'total_authors', 'total_imitateds')
+    ordering = ('-year', '-month')
+
+admin.site.register(Stats, StatsAdmin)

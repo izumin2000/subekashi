@@ -7,3 +7,4 @@ from .contact import Contact
 from .ai import Ai
 from .ad import Ad
 from .word import Word
+from .stats import Stats

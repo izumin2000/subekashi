@@ -4,6 +4,7 @@
 各ページの基本的なアクセス可否・ステータスコード・リダイレクト先を検証する。
 ManifestStaticFilesStorage はテストに不要なため StaticFilesStorage に差し替える。
 """
+from datetime import datetime, timezone as dt_timezone
 from unittest.mock import patch
 from django.db import connection
 from django.test import TestCase, Client, override_settings
@@ -546,6 +547,156 @@ class AuthorViewTest(TestCase):
         response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
 
         self.assertContains(response, "2件の別名")
+
+    def test_stats_link_present(self):
+        # 統計ページへのdummybuttonが別名ボタンの右に追加される（#334）
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
+        self.assertContains(response, reverse("subekashi:author_stats", args=[self.author.id]))
+
+    def test_stats_link_has_icon(self):
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
+        self.assertContains(response, "fa-chart-line")
+
+    def test_stats_summary_shows_total_view(self):
+        Song.objects.filter(title="作者ビューテスト曲").update(view=1234)
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
+        self.assertContains(response, 'id="author-stats-summary"')
+        self.assertEqual(response.context["total_view"], 1234)
+
+
+@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+class StatsViewTest(TestCase):
+    """StatsView (/stats/) のテスト"""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_get_returns_200(self):
+        response = self.client.get(reverse("subekashi:stats"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_no_songs_hides_all_stat_items(self):
+        response = self.client.get(reverse("subekashi:stats"))
+        self.assertNotContains(response, "stat-item")
+
+    @staticmethod
+    def _song_count(response):
+        return next(item["value"] for item in response.context["stats_items"] if item["label"] == "曲数")
+
+    def test_song_count_reflects_songrange_filter(self):
+        Song.objects.create(title="すべあな曲", is_subeana=True)
+        Song.objects.create(title="界隈外曲", is_subeana=False)
+
+        response_all = self.client.get(reverse("subekashi:stats"), {"songrange": "all"})
+        response_subeana = self.client.get(reverse("subekashi:stats"), {"songrange": "subeana"})
+
+        self.assertEqual(self._song_count(response_all), 2)
+        self.assertEqual(self._song_count(response_subeana), 1)
+
+    def test_year_filter_narrows_results(self):
+        Song.objects.create(title="2024年曲", upload_time=datetime(2024, 1, 1, tzinfo=dt_timezone.utc))
+        Song.objects.create(title="2025年曲", upload_time=datetime(2025, 1, 1, tzinfo=dt_timezone.utc))
+
+        response = self.client.get(reverse("subekashi:stats"), {"year": "2024"})
+
+        self.assertEqual(self._song_count(response), 1)
+
+    def test_unknown_songrange_falls_back_to_all(self):
+        Song.objects.create(title="曲")
+        response = self.client.get(reverse("subekashi:stats"), {"songrange": "invalid"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self._song_count(response), 1)
+
+    def test_month_filter_narrows_results_across_years_without_year_filter(self):
+        Song.objects.create(title="2024年1月曲", upload_time=datetime(2024, 1, 1, tzinfo=dt_timezone.utc))
+        Song.objects.create(title="2025年6月曲", upload_time=datetime(2025, 6, 1, tzinfo=dt_timezone.utc))
+
+        response = self.client.get(reverse("subekashi:stats"), {"month": "1"})
+
+        self.assertEqual(self._song_count(response), 1)
+
+    def test_month_select_shown_even_when_year_is_all(self):
+        response = self.client.get(reverse("subekashi:stats"))
+        self.assertContains(response, 'id="stats-month"')
+
+    def test_menu_contains_stats_link(self):
+        response = self.client.get(reverse("subekashi:top"))
+        self.assertContains(response, reverse("subekashi:stats"))
+
+    def test_songrange_radio_group_shown_when_both_songranges_exist(self):
+        Song.objects.create(title="すべあな曲", is_subeana=True)
+        Song.objects.create(title="界隈外曲", is_subeana=False)
+
+        response = self.client.get(reverse("subekashi:stats"))
+
+        self.assertContains(response, 'id="songrange-all"')
+        self.assertContains(response, 'id="songrange-subeana"')
+        self.assertContains(response, 'id="songrange-xx"')
+
+    def test_songrange_radio_group_hidden_when_only_one_songrange_exists(self):
+        # is_subeana=Falseの曲が無い場合、選んでも意味のある違いが出ないため
+        # ラジオグループ自体（全て/すべあな界隈曲のみ/以外の3つとも）を非表示にする。
+        # songrangeはcontext上では"subeana"に解決される
+        Song.objects.create(title="すべあな曲", is_subeana=True)
+
+        response = self.client.get(reverse("subekashi:stats"))
+
+        self.assertEqual(response.context["songrange"], "subeana")
+        self.assertNotContains(response, 'id="songrange-all"')
+        self.assertNotContains(response, 'id="songrange-subeana"')
+        self.assertNotContains(response, 'id="songrange-xx"')
+
+
+@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+class AuthorStatsViewTest(TestCase):
+    """AuthorStatsView (/authors/<id>/stats/) のテスト"""
+
+    def setUp(self):
+        self.client = Client()
+        self.author = Author.objects.create(name="統計テスト作者")
+
+    def test_existing_author_returns_200(self):
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_nonexistent_author_returns_404(self):
+        response = self.client.get(reverse("subekashi:author_stats", args=[99999]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_only_counts_songs_of_this_author(self):
+        other_author = Author.objects.create(name="別の作者")
+        Song.objects.create(title="他author曲").authors.add(other_author)
+        Song.objects.create(title="この作者の曲").authors.add(self.author)
+
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
+
+        song_count = next(item["value"] for item in response.context["stats_items"] if item["label"] == "曲数")
+        self.assertEqual(song_count, 1)
+
+    def test_collaborator_counts_exclude_self(self):
+        other_author = Author.objects.create(name="共作者")
+        song = Song.objects.create(title="共作曲")
+        song.authors.add(self.author, other_author)
+
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
+
+        stats_items = {item["label"]: item["value"] for item in response.context["stats_items"]}
+        self.assertEqual(stats_items["合作人数(重複あり)"], 1)
+        self.assertEqual(stats_items["合作人数(重複なし)"], 1)
+        self.assertNotIn("総作者数", stats_items)
+
+    def test_songrange_radio_group_hidden_when_author_has_only_one_songrange(self):
+        # サイト全体にはxx曲が存在しても、この作者自身にはsubeana曲しかないため
+        # ラジオグループ自体（全て/すべあな界隈曲のみ/以外の3つとも）が不要
+        Song.objects.create(title="すべあな曲", is_subeana=True).authors.add(self.author)
+        Song.objects.create(title="他作者の界隈外曲", is_subeana=False)
+
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
+
+        self.assertNotContains(response, 'id="songrange-all"')
+        self.assertNotContains(response, 'id="songrange-subeana"')
+        self.assertNotContains(response, 'id="songrange-xx"')
+        self.assertEqual(response.context["songrange"], "subeana")
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)

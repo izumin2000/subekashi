@@ -6,6 +6,7 @@ from subekashi.views.ai_result import AiResultView
 from subekashi.views.api.ai import AiAPI, AiWordSwapView
 from subekashi.views.api.word import WordCandidatesView
 from subekashi.views.author import AuthorView
+from subekashi.views.author_stats import AuthorStatsView
 from subekashi.views.author_alias import (
     AuthorAliasesView,
     AuthorAliasNewView,
@@ -22,6 +23,7 @@ from subekashi.views.api.editor import EditorIsOpenView
 from subekashi.views.errors import *
 from subekashi.views.file import *
 from subekashi.views.songs import SongsView
+from subekashi.views.stats import StatsView
 from subekashi.views.setting import SettingView, SaveSettingsView
 from subekashi.views.song import SongView
 from subekashi.views.song_delete import SongDeleteView

@@ -3,6 +3,7 @@
 
 {% load static %}
 {% load song_card %}
+{% load number_format %}
 {% block css %}{% static 'subekashi/css/author.css'%}{% endblock %}
 
 {% block content %}
@@ -14,6 +15,12 @@
                 <div class="dummybutton black-dummybutton"><i class="fas fa-people-arrows"></i><p>別名</p></div>
             </a>
             {% if alias_count >= 1 %}<p id="alias-count">{{ alias_count }}件の別名</p>{% endif %}
+        </div>
+        <div class="dummybutton-with-count">
+            <a href="{% url 'subekashi:author_stats' author_id %}">
+                <div class="dummybutton black-dummybutton"><i class="fas fa-chart-line"></i><p>統計</p></div>
+            </a>
+            <p id="author-stats-summary"><i class="fas fa-play"></i> {{ total_view|intcomma }}</p>
         </div>
     </div>
     {% for songIns in songInsL %}

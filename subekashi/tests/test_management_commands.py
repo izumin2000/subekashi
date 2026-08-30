@@ -6,6 +6,7 @@ youtube: DBロック対策で処理方式を変更した後の挙動（id指定�
 backup: バックアップ先をサーバーストレージからGoogle Driveに変更した挙動（#1050）を検証する。
 word: word.jsonから模倣単語候補をWordに一括登録する処理（#1053）を検証する。
 ai: Song.lyricsの単語をランダムに入れ替えてgenetype="janome"のAiレコードをシードする処理を検証する。
+stats: 月次統計(Stats)を最古のSongの月〜今月まで再計算する処理（#334）を検証する。
 """
 import json
 from datetime import datetime
@@ -14,8 +15,13 @@ from unittest.mock import mock_open, patch
 
 from django.core.management import call_command
 from django.test import TestCase
+from django.utils import timezone
 
-from subekashi.models import Ai, Song, SongLink, Word
+from subekashi.models import Ai, Song, SongLink, Stats, Word
+
+
+def timezone_aware(year, month, day):
+    return timezone.make_aware(datetime(year, month, day))
 
 
 class DeleteCommandTest(TestCase):
@@ -199,6 +205,82 @@ class BackupCommandTest(TestCase):
         self.assertIn("Google Driveの古いバックアップの削除中にエラーが発生しました", err)
         self.assertNotIn("Google Driveへのバックアップ中にエラーが発生しました", err)
         mock_send_discord.assert_called_once()
+
+
+class StatsCommandTest(TestCase):
+    """stats コマンドのテスト（月次統計(Stats)の集計・保存、#334）"""
+
+    def _run(self, *extra_args):
+        out = StringIO()
+        err = StringIO()
+        call_command("stats", *extra_args, stdout=out, stderr=err)
+        return out.getvalue(), err.getvalue()
+
+    @patch("subekashi.management.commands.stats.datetime")
+    def test_skips_when_not_first_of_month(self, mock_datetime):
+        mock_datetime.now.return_value = datetime(2026, 1, 15, 0, 0, 0)
+        Song.objects.create(title="曲", upload_time=timezone.make_aware(datetime(2025, 1, 1)))
+
+        self._run()
+
+        self.assertEqual(Stats.objects.count(), 0)
+
+    @patch("subekashi.management.commands.stats.datetime")
+    def test_no_songs_does_nothing(self, mock_datetime):
+        mock_datetime.now.return_value = datetime(2026, 1, 1, 0, 0, 0)
+
+        self._run()
+
+        self.assertEqual(Stats.objects.count(), 0)
+
+    @patch("subekashi.management.commands.stats.datetime")
+    def test_no_songs_with_upload_time_does_nothing(self, mock_datetime):
+        mock_datetime.now.return_value = datetime(2026, 1, 1, 0, 0, 0)
+        Song.objects.create(title="曲", upload_time=None)
+
+        self._run()
+
+        self.assertEqual(Stats.objects.count(), 0)
+
+    @patch("subekashi.management.commands.stats.datetime")
+    def test_runs_on_first_of_month_and_creates_stats_for_each_month(self, mock_datetime):
+        mock_datetime.now.return_value = datetime(2026, 3, 1, 0, 0, 0)
+        Song.objects.create(title="1月の曲", upload_time=timezone_aware(2026, 1, 15), view=10)
+        Song.objects.create(title="3月の曲", upload_time=timezone_aware(2026, 3, 15), view=20)
+
+        self._run()
+
+        months = list(Stats.objects.order_by("year", "month").values_list("year", "month"))
+        self.assertEqual(months, [(2026, 1), (2026, 2), (2026, 3)])
+
+        jan = Stats.objects.get(year=2026, month=1)
+        self.assertEqual(jan.song_count, 1)
+        self.assertEqual(jan.total_view, 10)
+
+        mar = Stats.objects.get(year=2026, month=3)
+        self.assertEqual(mar.song_count, 2)
+        self.assertEqual(mar.total_view, 30)
+
+    @patch("subekashi.management.commands.stats.datetime")
+    def test_force_bypasses_day_guard(self, mock_datetime):
+        mock_datetime.now.return_value = datetime(2026, 3, 15, 0, 0, 0)
+        Song.objects.create(title="曲", upload_time=timezone_aware(2026, 3, 1))
+
+        self._run("--force")
+
+        self.assertEqual(Stats.objects.count(), 1)
+
+    @patch("subekashi.management.commands.stats.datetime")
+    def test_rerun_updates_existing_month_instead_of_duplicating(self, mock_datetime):
+        mock_datetime.now.return_value = datetime(2026, 1, 1, 0, 0, 0)
+        Song.objects.create(title="曲", upload_time=timezone_aware(2026, 1, 1), view=1)
+
+        self._run()
+        Song.objects.create(title="追加曲", upload_time=timezone_aware(2026, 1, 2), view=2)
+        self._run("--force")
+
+        self.assertEqual(Stats.objects.filter(year=2026, month=1).count(), 1)
+        self.assertEqual(Stats.objects.get(year=2026, month=1).song_count, 2)
 
 
 class WordCommandTest(TestCase):
