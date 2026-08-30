@@ -78,24 +78,26 @@ def apply_upload_time_filter(qs, year, month):
     return qs
 
 
-def get_song_ids(qs):
-    """qsを評価してid一覧を返す
+def _clean_base(qs):
+    """qsのid一覧をサブクエリとして参照するJOIN無しのクリーンなQuerySetを返す
 
-    呼び出し側で複数の集計関数(compute_common_stats等)にこのid一覧を
-    使い回すことで、同じ絞り込み条件のSELECTが重複発行されるのを防ぐ
+    songrange/upload_time等で既にJOINが乗ったqsに対しM2Mのannotate(Count)を
+    直接重ねるとJOINのfan-outで値が狂うため、id一覧をサブクエリ化して
+    作り直したqsを介して集計する。idをPythonリストに列挙しないため、
+    SQLiteのバインド変数上限（曲数が増えてもid__inのIN句が肥大化しない）にも触れない
     """
-    return list(qs.values_list("id", flat=True))
+    return Song.objects.filter(id__in=qs.values("id"))
 
 
-def compute_common_stats(song_ids):
+def compute_common_stats(qs):
     """総合統計ページ・authorごとの統計ページ共通の統計を返す"""
-    base = Song.objects.filter(id__in=song_ids)
-    view_like = base.aggregate(v=Sum("view"), l=Sum("like"))
+    base = _clean_base(qs)
+    aggregates = base.aggregate(song_count=Count("id", distinct=True), v=Sum("view"), l=Sum("like"))
     return {
-        "song_count": len(song_ids),
-        "total_view": view_like["v"] or 0,
-        "total_like": view_like["l"] or 0,
-        "total_authors": compute_unique_author_count(song_ids),
+        "song_count": aggregates["song_count"] or 0,
+        "total_view": aggregates["v"] or 0,
+        "total_like": aggregates["l"] or 0,
+        "total_authors": compute_unique_author_count(qs),
         "total_imitateds": base.annotate(c=Count("imitateds", distinct=True)).aggregate(s=Sum("c"))["s"] or 0,
     }
 
@@ -111,28 +113,28 @@ def build_stats_items(stats, items):
     return items
 
 
-def compute_unique_author_count(song_ids):
+def compute_unique_author_count(qs):
     """範囲内の曲に紐づく重複なしの作者数（総作者数として使用）"""
-    return Author.objects.filter(songs__id__in=song_ids).distinct().count()
+    return Author.objects.filter(songs__in=qs).distinct().count()
 
 
-def compute_total_imitates(song_ids):
+def compute_total_imitates(qs):
     """authorごとの統計ページのみ: 範囲内の各曲が模倣している元曲数の総和"""
-    base = Song.objects.filter(id__in=song_ids)
+    base = _clean_base(qs)
     return base.annotate(c=Count("imitates", distinct=True)).aggregate(s=Sum("c"))["s"] or 0
 
 
-def compute_collaborator_count(song_ids, author_id):
+def compute_collaborator_count(qs, author_id):
     """authorごとの統計ページのみ: 範囲内の各曲について、author_id本人を除いた作者数の総和（合作人数）"""
-    base = Song.objects.filter(id__in=song_ids)
+    base = _clean_base(qs)
     return base.annotate(
         c=Count("authors", filter=~Q(authors__id=author_id), distinct=True)
     ).aggregate(s=Sum("c"))["s"] or 0
 
 
-def compute_unique_collaborator_count(song_ids, author_id):
+def compute_unique_collaborator_count(qs, author_id):
     """authorごとの統計ページのみ: 範囲内の曲に紐づく作者からauthor_id本人を除いたユニーク数（ユニーク合作人数）"""
-    return Author.objects.filter(songs__id__in=song_ids).exclude(id=author_id).distinct().count()
+    return Author.objects.filter(songs__in=qs).exclude(id=author_id).distinct().count()
 
 
 def get_year_choices(qs=None):

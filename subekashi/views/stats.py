@@ -6,7 +6,6 @@ from subekashi.lib.stats_service import (
     build_stats_items,
     compute_common_stats,
     filter_monthly_series_by_year_month,
-    get_song_ids,
     resolve_songrange,
     resolve_year_month,
     with_monthly_deltas,
@@ -23,7 +22,7 @@ class StatsView(View):
 
         qs = apply_upload_time_filter(songrange_qs, year, month)
 
-        stats = compute_common_stats(get_song_ids(qs))
+        stats = compute_common_stats(qs)
 
         stats_items = build_stats_items(stats, [
             {"icon": "fas fa-list-ol", "label": "曲数", "value": stats["song_count"]},

@@ -19,7 +19,6 @@ from subekashi.lib.stats_service import (
     compute_unique_collaborator_count,
     filter_monthly_series_by_year_month,
     get_month_choices,
-    get_song_ids,
     get_songrange_availability,
     get_year_choices,
     month_start,
@@ -94,15 +93,6 @@ class GetSongrangeAvailabilityTest(TestCase):
 
     def test_neither_exists(self):
         self.assertEqual(get_songrange_availability(Song.objects.all()), (False, False))
-
-
-class GetSongIdsTest(TestCase):
-    def test_returns_id_list(self):
-        song = Song.objects.create(title="曲")
-        self.assertEqual(get_song_ids(Song.objects.all()), [song.id])
-
-    def test_empty_queryset_returns_empty_list(self):
-        self.assertEqual(get_song_ids(Song.objects.none()), [])
 
 
 class ResolveSongrangeTest(TestCase):
@@ -232,7 +222,7 @@ class ApplyUploadTimeFilterTest(TestCase):
 
 class ComputeCommonStatsTest(TestCase):
     def test_empty_queryset(self):
-        stats = compute_common_stats(get_song_ids(Song.objects.none()))
+        stats = compute_common_stats(Song.objects.none())
         self.assertEqual(stats, {
             "song_count": 0,
             "total_view": 0,
@@ -245,7 +235,7 @@ class ComputeCommonStatsTest(TestCase):
         Song.objects.create(title="曲1", view=100, like=10)
         Song.objects.create(title="曲2", view=None, like=None)
 
-        stats = compute_common_stats(get_song_ids(Song.objects.all()))
+        stats = compute_common_stats(Song.objects.all())
 
         self.assertEqual(stats["song_count"], 2)
         self.assertEqual(stats["total_view"], 100)
@@ -259,7 +249,7 @@ class ComputeCommonStatsTest(TestCase):
         song.authors.add(author_a, author_b)
         Song.objects.create(title="単独曲").authors.add(author_a)
 
-        stats = compute_common_stats(get_song_ids(Song.objects.all()))
+        stats = compute_common_stats(Song.objects.all())
 
         self.assertEqual(stats["total_authors"], 2)
 
@@ -270,7 +260,7 @@ class ComputeCommonStatsTest(TestCase):
         imitate_1.imitates.add(original)
         imitate_2.imitates.add(original)
 
-        stats = compute_common_stats(get_song_ids(Song.objects.filter(pk=original.pk)))
+        stats = compute_common_stats(Song.objects.filter(pk=original.pk))
 
         self.assertEqual(stats["total_imitateds"], 2)
 
@@ -285,7 +275,7 @@ class ComputeCommonStatsTest(TestCase):
         Song.objects.create(title="模倣曲2").imitates.add(original)
         Song.objects.create(title="模倣曲3").imitates.add(original)
 
-        stats = compute_common_stats(get_song_ids(Song.objects.filter(pk=original.pk)))
+        stats = compute_common_stats(Song.objects.filter(pk=original.pk))
 
         self.assertEqual(stats["total_authors"], 2)
         self.assertEqual(stats["total_imitateds"], 3)
@@ -317,10 +307,10 @@ class ComputeUniqueAuthorCountTest(TestCase):
         Song.objects.create(title="曲1").authors.add(author)
         Song.objects.create(title="曲2").authors.add(author)
 
-        self.assertEqual(compute_unique_author_count(get_song_ids(Song.objects.all())), 1)
+        self.assertEqual(compute_unique_author_count(Song.objects.all()), 1)
 
     def test_empty_queryset_returns_zero(self):
-        self.assertEqual(compute_unique_author_count(get_song_ids(Song.objects.none())), 0)
+        self.assertEqual(compute_unique_author_count(Song.objects.none()), 0)
 
 
 class ComputeTotalImitatesTest(TestCase):
@@ -330,7 +320,7 @@ class ComputeTotalImitatesTest(TestCase):
         imitate = Song.objects.create(title="模倣曲")
         imitate.imitates.add(original_1, original_2)
 
-        self.assertEqual(compute_total_imitates(get_song_ids(Song.objects.filter(pk=imitate.pk))), 2)
+        self.assertEqual(compute_total_imitates(Song.objects.filter(pk=imitate.pk)), 2)
 
 
 class ComputeCollaboratorCountTest(TestCase):
@@ -348,21 +338,21 @@ class ComputeCollaboratorCountTest(TestCase):
         self.song_with_one_other = Song.objects.create(title="曲3")
         self.song_with_one_other.authors.add(self.author_x, self.author_a)
 
-        self.song_ids = get_song_ids(Song.objects.filter(authors__id=self.author_x.id).distinct())
+        self.song_qs = Song.objects.filter(authors__id=self.author_x.id).distinct()
 
     def test_sums_other_authors_per_song_excluding_self(self):
-        self.assertEqual(compute_collaborator_count(self.song_ids, self.author_x.id), 3)
+        self.assertEqual(compute_collaborator_count(self.song_qs, self.author_x.id), 3)
 
     def test_solo_songs_only_returns_zero(self):
-        song_ids = get_song_ids(Song.objects.filter(pk=self.song_solo.pk))
-        self.assertEqual(compute_collaborator_count(song_ids, self.author_x.id), 0)
+        song_qs = Song.objects.filter(pk=self.song_solo.pk)
+        self.assertEqual(compute_collaborator_count(song_qs, self.author_x.id), 0)
 
     def test_unique_counts_distinct_others_excluding_self(self):
-        self.assertEqual(compute_unique_collaborator_count(self.song_ids, self.author_x.id), 2)
+        self.assertEqual(compute_unique_collaborator_count(self.song_qs, self.author_x.id), 2)
 
     def test_unique_solo_songs_only_returns_zero(self):
-        song_ids = get_song_ids(Song.objects.filter(pk=self.song_solo.pk))
-        self.assertEqual(compute_unique_collaborator_count(song_ids, self.author_x.id), 0)
+        song_qs = Song.objects.filter(pk=self.song_solo.pk)
+        self.assertEqual(compute_unique_collaborator_count(song_qs, self.author_x.id), 0)
 
 
 class GetYearChoicesTest(TestCase):

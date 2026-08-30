@@ -3,7 +3,6 @@ from django.utils import timezone
 from subekashi.lib.stats_service import (
     apply_songrange_filter,
     compute_common_stats,
-    get_song_ids,
     month_start,
     next_year_month,
     now_local,
@@ -46,7 +45,7 @@ class Command(BaseCommand):
                     year=year,
                     month=month,
                     songrange=songrange,
-                    defaults=compute_common_stats(get_song_ids(qs)),
+                    defaults=compute_common_stats(qs),
                 )
             year, month = next_year, next_month
 
