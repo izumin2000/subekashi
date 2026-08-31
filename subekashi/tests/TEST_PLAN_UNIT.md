@@ -1456,16 +1456,16 @@ authorごとの統計ページのみに表示する「鍵歴」（総再生回�
 
 #### 20-2. `compute_kenreki(total_view, total_like)`
 
-view側・like側それぞれの`compute_threshold_points`の合計ptを2pt=鍵盤1本として鍵盤数（`key_count`、上限100本）に変換する。100本の上限（`KENREKI_CAP_POINTS`=200pt）を超えたpt分は、到達しうる全段階のpt合計（`MAX_TOTAL_POINTS`）に対する超過度合いを赤(hue=0)〜紫(hue=270)のHSL色相に連続的にマッピングし、`overflow_color`として返す（上限に達していなければ`None`）。
+view側・like側それぞれの`compute_threshold_points`の合計ptを2pt=鍵盤1本として鍵盤数（`key_count`、上限`MAX_KEYS`=88本、現実のピアノの鍵盤数に合わせた値）に変換する。上限（`KENREKI_CAP_POINTS`=176pt）を超えたpt分は、到達しうる全段階のpt合計（`MAX_TOTAL_POINTS`）に対する超過度合いを赤(hue=0)〜紫(hue=270)のHSL色相に連続的にマッピングし、`overflow_color`として返す（上限に達していなければ`None`）。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | view・like共に0 | `(0, 0)` | `points=0`, `key_count=0`, `overflow_color=None` |
 | view・likeの合算 | view=20(3pt)、like=2(1+2=3pt) | `points=6`, `key_count=3` |
-| capちょうど（境界値） | 合計ptがちょうど200pt | `key_count=100`だが`overflow_color=None`（超過ではないため） |
-| capを僅かに超過 | 合計pt=210pt | `key_count=100`、`overflow_color`は赤に近い色相 |
+| capに届かない | 合計pt=171pt(<176pt) | `key_count=85`、`overflow_color=None`（超過ではないため） |
+| capを僅かに超過 | 合計pt=190pt(>176pt) | `key_count=88`（上限）、`overflow_color`は赤に近い色相 |
 | 全段階到達（最大値） | view・likeとも全閾値到達 | `points=MAX_TOTAL_POINTS`、`overflow_color="hsl(270, 75%, 45%)"`（紫） |
-| 鍵盤数の上限 | 任意の巨大なview/like | `key_count`は常に100以下 |
+| 鍵盤数の上限 | 任意の巨大なview/like | `key_count`は常に88以下 |
 
 #### 20-3. `build_keyboard_geometry(key_count, black_key_color=None)`
 

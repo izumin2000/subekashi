@@ -8,7 +8,7 @@ LIKE_THRESHOLDS = [
 ]
 
 POINTS_PER_KEY = 2
-MAX_KEYS = 100
+MAX_KEYS = 88  # 現実のピアノの鍵盤数(88鍵)に合わせる
 KENREKI_CAP_POINTS = POINTS_PER_KEY * MAX_KEYS
 
 
@@ -36,7 +36,7 @@ def compute_threshold_points(value, thresholds):
 def compute_kenreki(total_view, total_like):
     """再生数・高評価数から鍵歴（実績鍵盤）の鍵盤数・オーバーフロー色を算出して返す
 
-    2pt = 鍵盤1本として100本を上限とし、上限を超えた分（points > KENREKI_CAP_POINTS）は
+    2pt = 鍵盤1本としてMAX_KEYS(88)本を上限とし、上限を超えた分（points > KENREKI_CAP_POINTS）は
     黒鍵の色（赤→紫のグラデーション、達成しうる全段階のptの合計に対する到達度で連続的に変化）で表現する
     """
     points = compute_threshold_points(total_view, VIEW_THRESHOLDS) + compute_threshold_points(total_like, LIKE_THRESHOLDS)

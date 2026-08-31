@@ -11,9 +11,9 @@
     {% endfor %}
     {% if kenreki %}
         <div class="stat-item">
-            <i class="fas fa-music"></i>
+            <i class="fas fa-trophy"></i>
             <p class="icon-p">鍵歴</p>
-            <p class="stat-value"{% if kenreki.overflow_color %} style="color: {{ kenreki.overflow_color }};"{% endif %}>{{ kenreki.key_count|intcomma:False }}鍵</p>
+            <p class="stat-value"{% if kenreki.overflow_color %} style="color: {{ kenreki.overflow_color }};"{% endif %}>{{ kenreki.key_count|intcomma:False }}</p>
         </div>
     {% endif %}
 </div>
