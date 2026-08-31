@@ -9,7 +9,7 @@
     align-items: center;
     gap: 8px;
     max-width: 400px;
-    margin: 0 auto 20px auto;
+    margin: 20px auto 0 auto;
 }
 
 .kenreki-spectrum-bound {
@@ -23,7 +23,16 @@
     flex: 1;
     height: 8px;
     border-radius: 4px;
-    background: linear-gradient(to right, hsl(0, 75%, 45%), hsl(270, 75%, 45%));
+    background: linear-gradient(
+        to right,
+        hsl(0, 75%, 45%),
+        hsl(45, 75%, 45%),
+        hsl(90, 75%, 45%),
+        hsl(135, 75%, 45%),
+        hsl(180, 75%, 45%),
+        hsl(225, 75%, 45%),
+        hsl(270, 75%, 45%)
+    );
 }
 
 .kenreki-spectrum-marker {

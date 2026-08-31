@@ -9,6 +9,9 @@ LIKE_THRESHOLDS = [
 
 POINTS_PER_KEY = 2
 MAX_KEYS = 88  # 鍵盤ビジュアルに描画する本数の上限（現実のピアノの鍵盤数に合わせる）
+# オーバーフロー色スペクトルの上限鍵盤数。2026-09時点の実データ最大値(220)に対して
+# 十分な伸びしろを持たせた固定値（DBを都度クエリしない）
+MAX_POSSIBLE_KEY_COUNT = 500
 
 
 def _triangular(n):
@@ -16,7 +19,6 @@ def _triangular(n):
 
 
 MAX_TOTAL_POINTS = _triangular(len(VIEW_THRESHOLDS)) + _triangular(len(LIKE_THRESHOLDS))
-MAX_POSSIBLE_KEY_COUNT = MAX_TOTAL_POINTS // POINTS_PER_KEY
 
 WHITE_KEY_WIDTH = 12
 BLACK_KEY_WIDTH = 8
@@ -38,8 +40,8 @@ def compute_kenreki(total_view, total_like):
 
     key_countは2pt=鍵盤1本として換算した実際の達成数で、MAX_KEYSでカンストさせない
     （鍵盤ビジュアルの描画本数のみMAX_KEYSを上限とし、呼び出し側でmin()して渡す）。
-    key_countがMAX_KEYS(88)以上になった時点で、黒鍵の色（赤→紫のグラデーション、
-    達成しうる最大の鍵盤数(MAX_POSSIBLE_KEY_COUNT)に対する到達度で連続的に変化）を返す
+    key_countがMAX_KEYS(88)以上になった時点で、黒鍵の色（虹色のグラデーション、
+    MAX_POSSIBLE_KEY_COUNTに対する到達度で連続的に変化）を返す
     """
     points = compute_threshold_points(total_view, VIEW_THRESHOLDS) + compute_threshold_points(total_like, LIKE_THRESHOLDS)
     key_count = points // POINTS_PER_KEY
@@ -57,7 +59,7 @@ def compute_kenreki(total_view, total_like):
         "overflow_color": overflow_color,
         "overflow_ratio": overflow_ratio,
         "overflow_lower_bound": MAX_KEYS,
-        "overflow_upper_bound": MAX_POSSIBLE_KEY_COUNT,
+        "overflow_upper_bound": MAX_POSSIBLE_KEY_COUNT if overflow_ratio is not None else None,
     }
 
 

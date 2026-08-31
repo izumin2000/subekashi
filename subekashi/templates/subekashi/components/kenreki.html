@@ -1,15 +1,6 @@
 {% load humanize %}
 {% if kenreki %}
 <div class="kenreki">
-    {% if kenreki.overflow_ratio is not None %}
-        <div class="kenreki-spectrum">
-            <span class="kenreki-spectrum-bound" style="color: hsl(0, 75%, 45%);">{{ kenreki.overflow_lower_bound|intcomma:False }}</span>
-            <div class="kenreki-spectrum-bar">
-                <div class="kenreki-spectrum-marker" style="left: {% widthratio kenreki.overflow_ratio 1 100 %}%;">&#9650;</div>
-            </div>
-            <span class="kenreki-spectrum-bound" style="color: hsl(270, 75%, 45%);">{{ kenreki.overflow_upper_bound|intcomma:False }}</span>
-        </div>
-    {% endif %}
     <div class="kenreki-keyboard-scroll">
         <div class="kenreki-keyboard" style="width: {{ kenreki.geometry.width }}px;">
             {% for _ in kenreki.geometry.white_keys %}
@@ -20,5 +11,14 @@
             {% endfor %}
         </div>
     </div>
+    {% if kenreki.overflow_ratio is not None %}
+        <div class="kenreki-spectrum">
+            <span class="kenreki-spectrum-bound" style="color: hsl(0, 75%, 45%);">{{ kenreki.overflow_lower_bound|intcomma:False }}</span>
+            <div class="kenreki-spectrum-bar">
+                <div class="kenreki-spectrum-marker" style="left: {% widthratio kenreki.overflow_ratio 1 100 %}%;">&#9650;</div>
+            </div>
+            <span class="kenreki-spectrum-bound" style="color: hsl(270, 75%, 45%);">{{ kenreki.overflow_upper_bound|intcomma:False }}</span>
+        </div>
+    {% endif %}
 </div>
 {% endif %}

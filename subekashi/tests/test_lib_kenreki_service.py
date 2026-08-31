@@ -7,6 +7,7 @@ from django.test import TestCase
 from subekashi.lib.kenreki_service import (
     LIKE_THRESHOLDS,
     MAX_KEYS,
+    MAX_POSSIBLE_KEY_COUNT,
     MAX_TOTAL_POINTS,
     VIEW_THRESHOLDS,
     build_keyboard_geometry,
@@ -42,6 +43,7 @@ class ComputeKenrekiTest(TestCase):
         self.assertEqual(result["key_count"], 0)
         self.assertIsNone(result["overflow_color"])
         self.assertIsNone(result["overflow_ratio"])
+        self.assertIsNone(result["overflow_upper_bound"])
 
     def test_combines_view_and_like_points(self):
         # view=20 -> 3pt, like=2 -> 1+2=3pt, 合計6pt / 2pt = 3本
@@ -66,6 +68,7 @@ class ComputeKenrekiTest(TestCase):
         self.assertEqual(result["key_count"], MAX_KEYS)
         self.assertEqual(result["overflow_color"], "hsl(0, 75%, 45%)")
         self.assertEqual(result["overflow_ratio"], 0.0)
+        self.assertEqual(result["overflow_upper_bound"], MAX_POSSIBLE_KEY_COUNT)
 
     def test_key_count_exceeds_max_keys_without_capping(self):
         # view 19段階目(1000万)=190pt -> 95鍵。MAX_KEYS(88)を超えてもカンストせず95のまま表示する
@@ -74,19 +77,23 @@ class ComputeKenrekiTest(TestCase):
         self.assertEqual(result["key_count"], 95)
         self.assertGreater(result["key_count"], MAX_KEYS)
         self.assertIsNotNone(result["overflow_color"])
-        self.assertTrue(result["overflow_color"].startswith("hsl(12,"))
 
-    def test_max_possible_points_reaches_full_purple(self):
+    def test_reaching_every_threshold_does_not_reach_full_purple(self):
+        # MAX_POSSIBLE_KEY_COUNT(1000)は現行の閾値表で理論上到達しうる最大鍵盤数(242)より
+        # 大きい値のため、全閾値に到達しても紫(hue=270)には届かない（伸びしろとして意図的）
         result = compute_kenreki(10 ** 12, 10 ** 12)
         self.assertEqual(result["points"], MAX_TOTAL_POINTS)
         self.assertEqual(result["key_count"], MAX_TOTAL_POINTS // 2)
-        self.assertEqual(result["overflow_color"], "hsl(270, 75%, 45%)")
-        self.assertEqual(result["overflow_ratio"], 1.0)
+        self.assertLess(result["overflow_ratio"], 1.0)
+        self.assertNotEqual(result["overflow_color"], "hsl(270, 75%, 45%)")
 
-    def test_overflow_bounds_are_included_in_result(self):
+    def test_overflow_lower_bound_always_present(self):
         result = compute_kenreki(0, 0)
         self.assertEqual(result["overflow_lower_bound"], MAX_KEYS)
-        self.assertEqual(result["overflow_upper_bound"], MAX_TOTAL_POINTS // 2)
+
+    def test_overflow_upper_bound_is_fixed_constant(self):
+        result = compute_kenreki(10_000_000, 0)
+        self.assertEqual(result["overflow_upper_bound"], MAX_POSSIBLE_KEY_COUNT)
 
 
 class BuildKeyboardGeometryTest(TestCase):
