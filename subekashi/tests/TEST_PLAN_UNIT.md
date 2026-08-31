@@ -1440,7 +1440,10 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 
 **テストファイル**: `tests/test_lib_kenreki_service.py`
 
-authorごとの統計ページのみに表示する「鍵歴」（総再生回数・総高評価数の実績に応じて伸びる鍵盤ビジュアル）の算出ロジック。songrange/year/monthの絞り込みの影響を受けない、authorの全期間・全曲を通じた累積実績（`AuthorStatsView`では`compute_view_like_totals(author_songs)`で取得、`tests/test_views.py`の`test_kenreki_not_affected_by_songrange_year_month_filters`で回帰防止）を入力とする。
+「鍵歴」（総再生回数・総高評価数の実績に応じて伸びる鍵盤）の算出ロジック。総合統計ページ・authorごとの統計ページ両方の`stat-item`として表示するが、鍵盤ビジュアル（`components/kenreki.html`）はauthorごとの統計ページのみに表示する（コードレビュー指摘対応で総合統計ページにも追加、鍵盤は不要とのことでstat-itemのみ）。
+
+- authorごとの統計ページ: songrange/year/monthの絞り込みの影響を受けない、authorの全期間・全曲を通じた累積実績（`AuthorStatsView`では`compute_view_like_totals(author_songs)`で取得、`tests/test_views.py`の`test_kenreki_not_affected_by_songrange_year_month_filters`で回帰防止）
+- 総合統計ページ: 他の統計項目と同様、絞り込みの影響を受ける（`StatsView`では`compute_common_stats(qs)`の`total_view`/`total_like`をそのまま使用、`tests/test_views.py`の`test_kenreki_reflects_songrange_year_month_filters`で回帰防止）
 
 #### 20-1. `compute_threshold_points(value, thresholds)`
 
@@ -1456,16 +1459,17 @@ authorごとの統計ページのみに表示する「鍵歴」（総再生回�
 
 #### 20-2. `compute_kenreki(total_view, total_like)`
 
-view側・like側それぞれの`compute_threshold_points`の合計ptを2pt=鍵盤1本として鍵盤数（`key_count`、上限`MAX_KEYS`=88本、現実のピアノの鍵盤数に合わせた値）に変換する。上限（`KENREKI_CAP_POINTS`=176pt）を超えたpt分は、到達しうる全段階のpt合計（`MAX_TOTAL_POINTS`）に対する超過度合いを赤(hue=0)〜紫(hue=270)のHSL色相に連続的にマッピングし、`overflow_color`として返す（上限に達していなければ`None`）。
+view側・like側それぞれの`compute_threshold_points`の合計ptを2pt=鍵盤1本として鍵盤数（`key_count`）に変換する。`key_count`自体はカンストさせず実際の達成数をそのまま返す（コードレビュー指摘対応: 以前は`MAX_KEYS`でmin()していたが、表示上の数値までカンストして見えてしまう問題があったため、上限は鍵盤ビジュアルの描画本数のみに適用するよう変更。呼び出し側で`min(key_count, MAX_KEYS)`してから`build_keyboard_geometry`に渡す）。`key_count`が`MAX_KEYS`(88、現実のピアノの鍵盤数)以上になった時点で、到達しうる最大の鍵盤数（`MAX_POSSIBLE_KEY_COUNT`=242）に対する超過度合いを赤(hue=0)〜紫(hue=270)のHSL色相に連続的にマッピングし、`overflow_color`として返す（`MAX_KEYS`未満なら`None`）。`overflow_lower_bound`(=`MAX_KEYS`)・`overflow_upper_bound`(=`MAX_POSSIBLE_KEY_COUNT`)も結果に含み、スペクトル表示の目盛りに使う。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | view・like共に0 | `(0, 0)` | `points=0`, `key_count=0`, `overflow_color=None` |
 | view・likeの合算 | view=20(3pt)、like=2(1+2=3pt) | `points=6`, `key_count=3` |
-| capに届かない | 合計pt=171pt(<176pt) | `key_count=85`、`overflow_color=None`（超過ではないため） |
-| capを僅かに超過 | 合計pt=190pt(>176pt) | `key_count=88`（上限）、`overflow_color`は赤に近い色相 |
-| 全段階到達（最大値） | view・likeとも全閾値到達 | `points=MAX_TOTAL_POINTS`、`overflow_color="hsl(270, 75%, 45%)"`（紫） |
-| 鍵盤数の上限 | 任意の巨大なview/like | `key_count`は常に88以下 |
+| MAX_KEYS未満 | 合計pt=174pt | `key_count=87`、`overflow_color=None`（MAX_KEYS未満のため） |
+| MAX_KEYSちょうどで色分岐開始 | 合計pt=177pt | `key_count=88`(=MAX_KEYS)、`overflow_color="hsl(0, 75%, 45%)"`（赤、超過比率0） |
+| MAX_KEYSを超えてもカンストしない | 合計pt=190pt | `key_count=95`（88を超えてそのまま表示される） |
+| 全段階到達（最大値） | view・likeとも全閾値到達 | `points=MAX_TOTAL_POINTS`、`key_count=MAX_TOTAL_POINTS/2`、`overflow_color="hsl(270, 75%, 45%)"`（紫） |
+| スペクトルの下限・上限値 | 任意のview/like | `overflow_lower_bound=MAX_KEYS`、`overflow_upper_bound=MAX_POSSIBLE_KEY_COUNT`が常に結果に含まれる |
 
 #### 20-3. `build_keyboard_geometry(key_count, black_key_color=None)`
 

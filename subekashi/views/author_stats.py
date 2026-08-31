@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.views import View
-from subekashi.lib.kenreki_service import build_keyboard_geometry, compute_kenreki
+from subekashi.lib.kenreki_service import MAX_KEYS, build_keyboard_geometry, compute_kenreki
 from subekashi.lib.stats_service import (
     apply_songrange_filter,
     apply_upload_time_filter,
@@ -31,7 +31,7 @@ class AuthorStatsView(View):
         kenreki = None
         if kenreki_source_stats["song_count"] > 0:
             kenreki = compute_kenreki(kenreki_source_stats["total_view"], kenreki_source_stats["total_like"])
-            kenreki["geometry"] = build_keyboard_geometry(kenreki["key_count"], kenreki["overflow_color"])
+            kenreki["geometry"] = build_keyboard_geometry(min(kenreki["key_count"], MAX_KEYS), kenreki["overflow_color"])
 
         songrange, show_all_songrange = resolve_songrange(request, author_songs)
         songrange_qs = apply_songrange_filter(author_songs, songrange)

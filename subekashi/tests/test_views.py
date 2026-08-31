@@ -770,6 +770,33 @@ class StatsViewTest(TestCase):
         self.assertEqual(len(monthly_stats), 1)
         self.assertEqual(monthly_stats[0]["song_count_delta"], 3)
 
+    def test_kenreki_hidden_when_no_songs(self):
+        response = self.client.get(reverse("subekashi:stats"))
+        self.assertIsNone(response.context["kenreki"])
+
+    def test_kenreki_present_and_has_no_keyboard_visual(self):
+        # 総合統計ページの鍵歴はstat-itemのみで、鍵盤ビジュアル(kenreki-keyboard-scroll)は表示しない
+        Song.objects.create(title="曲", view=20, like=2)
+
+        response = self.client.get(reverse("subekashi:stats"))
+
+        self.assertEqual(response.context["kenreki"]["key_count"], 3)
+        self.assertNotContains(response, "kenreki-keyboard-scroll")
+
+    def test_kenreki_reflects_songrange_year_month_filters(self):
+        # 総合統計ページの鍵歴は他の統計項目と同様、絞り込みの影響を受ける
+        # （authorページの鍵歴は全期間の累積実績で絞り込みの影響を受けないのとは異なる仕様）
+        Song.objects.create(title="2024年の曲", view=20, like=2, upload_time=datetime(2024, 1, 1, tzinfo=dt_timezone.utc))
+        Song.objects.create(title="2025年の曲", view=1000, like=0, upload_time=datetime(2025, 1, 1, tzinfo=dt_timezone.utc))
+
+        unfiltered = self.client.get(reverse("subekashi:stats"))
+        filtered_2024 = self.client.get(reverse("subekashi:stats"), {"year": "2024"})
+
+        # 全期間: view=1020(7段階=28pt)+like=2(3pt)=31pt -> 15鍵
+        self.assertEqual(unfiltered.context["kenreki"]["key_count"], 15)
+        # 2024年のみ: view=20(2段階=3pt)+like=2(3pt)=6pt -> 3鍵
+        self.assertEqual(filtered_2024.context["kenreki"]["key_count"], 3)
+
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
 class AuthorStatsViewTest(TestCase):

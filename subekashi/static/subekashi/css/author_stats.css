@@ -5,11 +5,23 @@
 }
 
 .kenreki-spectrum {
-    position: relative;
-    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     max-width: 400px;
-    height: 8px;
     margin: 0 auto 20px auto;
+}
+
+.kenreki-spectrum-bound {
+    font-size: 12px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.kenreki-spectrum-bar {
+    position: relative;
+    flex: 1;
+    height: 8px;
     border-radius: 4px;
     background: linear-gradient(to right, hsl(0, 75%, 45%), hsl(270, 75%, 45%));
 }
@@ -29,9 +41,6 @@
     width: 100vw;
     margin-left: -50vw;
     overflow-x: auto;
-    background-color: #000;
-    border-top: 1px solid #fff;
-    border-bottom: 1px solid #fff;
 }
 
 .kenreki-keyboard {

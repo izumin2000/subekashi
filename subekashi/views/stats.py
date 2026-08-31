@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.views import View
+from subekashi.lib.kenreki_service import compute_kenreki
 from subekashi.lib.stats_service import (
     apply_songrange_filter,
     apply_upload_time_filter,
@@ -32,6 +33,9 @@ class StatsView(View):
             {"icon": "fas fa-sitemap", "label": "総模倣曲関係数", "value": stats["total_imitateds"]},
         ])
 
+        # 鍵歴はここでは他の統計項目と同様、絞り込みに連動したstat-itemとしてのみ表示する（鍵盤ビジュアルは無し）
+        kenreki = compute_kenreki(stats["total_view"], stats["total_like"]) if stats["song_count"] > 0 else None
+
         monthly_series = list(Stats.get_monthly_series(songrange).values(
             "year", "month", "song_count", "total_view", "total_like",
             "total_authors", "total_imitateds",
@@ -48,6 +52,7 @@ class StatsView(View):
             "year_choices": year_choices,
             "month_choices": month_choices,
             "stats_items": stats_items,
+            "kenreki": kenreki,
             "monthly_stats": monthly_stats,
             "description": "すべかしに登録された曲の統計情報。",
         }
