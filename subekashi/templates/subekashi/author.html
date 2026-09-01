@@ -20,7 +20,9 @@
             <a href="{% url 'subekashi:author_stats' author_id %}">
                 <div class="dummybutton black-dummybutton"><i class="fas fa-chart-line"></i><p>統計</p></div>
             </a>
-            <p id="author-stats-summary"><i class="fas fa-play"></i> {{ total_view|intcomma:False }}</p>
+            {% if kenreki %}
+                <p id="author-stats-summary"{% if kenreki.overflow_color %} style="color: {{ kenreki.overflow_color }};"{% endif %}><i class="fas fa-trophy"></i> {{ kenreki.key_count|intcomma:False }}</p>
+            {% endif %}
         </div>
     </div>
     {% for songIns in songInsL %}

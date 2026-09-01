@@ -1,1 +1,77 @@
 /* フィルターUI・統計一覧の共通スタイルはcommon.cssを参照 */
+
+.kenreki {
+    margin-top: 30px;
+}
+
+.kenreki-spectrum {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 400px;
+    margin: 20px auto 0 auto;
+}
+
+.kenreki-spectrum-bound {
+    font-size: 12px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.kenreki-spectrum-bar {
+    position: relative;
+    flex: 1;
+    height: 8px;
+    border-radius: 4px;
+    background: linear-gradient(
+        to right,
+        hsl(0, 75%, 45%),
+        hsl(45, 75%, 45%),
+        hsl(90, 75%, 45%),
+        hsl(135, 75%, 45%),
+        hsl(180, 75%, 45%),
+        hsl(225, 75%, 45%),
+        hsl(270, 75%, 45%)
+    );
+}
+
+.kenreki-spectrum-marker {
+    position: absolute;
+    top: 100%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    line-height: 1;
+    color: #fff;
+}
+
+.kenreki-keyboard-scroll {
+    position: relative;
+    left: 50%;
+    width: 100vw;
+    margin-left: -50vw;
+    overflow-x: auto;
+}
+
+.kenreki-keyboard {
+    position: relative;
+    display: flex;
+    height: 40px;
+    margin: 0 auto;
+}
+
+.kenreki-white-key {
+    flex: 0 0 12px;
+    height: 100%;
+    background-color: #dcdcdc;
+    border-right: 1px solid #404040;
+    box-sizing: border-box;
+}
+
+.kenreki-black-key {
+    position: absolute;
+    top: 0;
+    width: 8px;
+    height: 60%;
+    background-color: #606060;
+    z-index: 2;
+}

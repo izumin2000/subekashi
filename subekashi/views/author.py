@@ -1,6 +1,7 @@
-from django.db.models import Sum
 from django.shortcuts import render
 from django.views import View
+from subekashi.lib.kenreki_service import compute_kenreki_for_songs
+from subekashi.lib.stats_service import get_view_like_pairs
 from subekashi.models import Author, Song
 
 
@@ -18,13 +19,18 @@ class AuthorView(View):
         if len(titles) >= 80:
             titles = titles[:80] + "...など"
 
+        view_like_pairs = get_view_like_pairs(songInsL)
+        kenreki = None
+        if view_like_pairs:
+            kenreki = compute_kenreki_for_songs(view_like_pairs)
+
         context = {
             "metatitle": author_name,
             "author": author_name,
             "author_id": author_obj.id,
             "songInsL": songInsL,
             "alias_count": len(author_obj.get_transitive_aliases()),
-            "total_view": songInsL.aggregate(v=Sum("view"))["v"] or 0,
+            "kenreki": kenreki,
             "description": f"{author_name}の曲一覧：{titles}",
         }
         return render(request, "subekashi/author.html", context)

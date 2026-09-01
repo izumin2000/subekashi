@@ -86,7 +86,7 @@ h2 {
     line-height: 50px;
 }
 
-#subekashi-links, #other-links {
+#subekashi-links, #other-links, #special-thanks-links {
     padding: 8px;
     text-align: center;
     background-color: #333;
@@ -96,7 +96,7 @@ h2 {
     padding-bottom: 4px;
 }
 
-#other-links {
+#other-links, #special-thanks-links {
     margin-bottom: 20px;
 }
 
@@ -118,6 +118,14 @@ h2 {
 #subeana {
     text-decoration: none;
     font-size: min(36px, 8.5vw);
+}
+
+#special-thanks-links a {
+    display: inline-block;
+    text-decoration: none;
+    font-size: min(36px, 8.5vw);
+    margin: 0 10px;
+    white-space: nowrap;
 }
 
 #credit {

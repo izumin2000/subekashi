@@ -18,9 +18,11 @@ from subekashi.lib.stats_service import (
     compute_total_imitates,
     compute_unique_author_count,
     compute_unique_collaborator_count,
+    compute_view_like_totals,
     filter_monthly_series_by_year_month,
     get_month_choices,
     get_songrange_availability,
+    get_view_like_pairs,
     get_year_choices,
     month_start,
     next_year_month,
@@ -219,6 +221,46 @@ class ApplyUploadTimeFilterTest(TestCase):
     def test_upload_time_none_excluded_when_only_month_specified(self):
         result = apply_upload_time_filter(Song.objects.all(), "all", "1")
         self.assertNotIn(self.song_no_upload, result)
+
+
+class ComputeViewLikeTotalsTest(TestCase):
+    # compute_base_statsからtotal_imitatedsの追加集計クエリも省いた最小構成
+    # （view/likeの合計だけが必要な場面での無駄クエリ防止）
+    def test_empty_queryset(self):
+        stats = compute_view_like_totals(Song.objects.none())
+        self.assertEqual(stats, {"song_count": 0, "total_view": 0, "total_like": 0})
+
+    def test_sums_view_and_like_treating_null_as_zero(self):
+        Song.objects.create(title="曲1", view=100, like=10)
+        Song.objects.create(title="曲2", view=None, like=None)
+
+        stats = compute_view_like_totals(Song.objects.all())
+
+        self.assertEqual(stats["song_count"], 2)
+        self.assertEqual(stats["total_view"], 100)
+        self.assertEqual(stats["total_like"], 10)
+
+
+class GetViewLikePairsTest(TestCase):
+    # 鍵歴（実績鍵盤）はSongごとに算出してから合計する仕様のため、集計済みのSumではなく
+    # 曲ごとのview/likeペアをそのまま列挙する
+    def test_empty_queryset_returns_empty_list(self):
+        self.assertEqual(get_view_like_pairs(Song.objects.none()), [])
+
+    def test_returns_pair_per_song(self):
+        Song.objects.create(title="曲1", view=100, like=10)
+        Song.objects.create(title="曲2", view=5, like=1)
+
+        pairs = get_view_like_pairs(Song.objects.all().order_by("id"))
+
+        self.assertEqual(pairs, [(100, 10), (5, 1)])
+
+    def test_null_view_and_like_treated_as_zero(self):
+        Song.objects.create(title="曲", view=None, like=None)
+
+        pairs = get_view_like_pairs(Song.objects.all())
+
+        self.assertEqual(pairs, [(0, 0)])
 
 
 class ComputeBaseStatsTest(TestCase):
