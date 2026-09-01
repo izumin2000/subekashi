@@ -91,7 +91,7 @@ class AuthorPrimaryNameForm(forms.Form):
     そのAuthorをこのauthorに統合（マージ）した上で名義を切り替える。
     """
     name = forms.CharField(
-        max_length=500,
+        max_length=255,
         error_messages={'required': '名義を選択してください。'},
     )
 

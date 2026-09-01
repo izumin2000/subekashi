@@ -37,7 +37,7 @@ def get_alias_edges(name, author):
 
 # 曲の作者の情報
 class Author(GetOrNoneMixin, models.Model):
-    name = models.CharField(unique=True, max_length = 500)
+    name = models.CharField(unique=True, max_length = 255)
 
     def __str__(self):
         return self.name
