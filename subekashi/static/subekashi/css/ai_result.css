@@ -15,21 +15,6 @@
     }
 }
 
-.evaluation {
-    display: inline-block;
-}
-
-.evaluation label {
-    margin-right: 15px;
-    cursor: pointer;
-}
-
-.score {
-    box-shadow: none;
-    height: 15px;
-    width: 15px;
-}
-
 #ai-result-form {
     margin-top: 40px;
 }
