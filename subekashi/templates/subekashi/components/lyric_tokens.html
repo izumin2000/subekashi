@@ -1,4 +1,4 @@
-<p class="lyric" data-ai-id="{{ item.id }}">
+<p class="lyric" data-ai-id="{{ item.id }}">{% spaceless %}
     {% for token in item.tokens %}
         {% if token.is_replaceable %}
             <span class="word-token-wrap">
@@ -13,4 +13,4 @@
             <span class="word-token-fixed">{{ token.surface }}</span>
         {% endif %}
     {% endfor %}
-</p>
+{% endspaceless %}</p>

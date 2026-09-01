@@ -4,6 +4,7 @@
 各ページの基本的なアクセス可否・ステータスコード・リダイレクト先を検証する。
 ManifestStaticFilesStorage はテストに不要なため StaticFilesStorage に差し替える。
 """
+import re
 from datetime import datetime, timezone as dt_timezone
 from unittest.mock import patch
 from django.db import connection
@@ -2545,3 +2546,18 @@ class AiResultViewTest(TestCase):
         response = self.client.get(reverse("subekashi:ai_result"))
 
         self.assertNotContains(response, "レガシー歌詞")
+
+    def test_lyric_tokens_render_without_whitespace_between_spans(self):
+        # 「最高の行をコピー」はDOMのinnerTextをそのままコピーするため、
+        # トークン間に空白文字が入っているとコピー結果にも余分なスペースが
+        # 混ざってしまう。{% spaceless %}によりタグ間の空白が除去され、
+        # 単語同士が隙間なく連結して描画されることを確認する（#1081）
+        Word.objects.create(word="走る", hinshi="動詞", candidate="駆ける")
+        Ai.objects.create(lyrics="私は走る", score=0, genetype="janome")
+
+        response = self.client.get(reverse("subekashi:ai_result"))
+        content = response.content.decode()
+
+        lyric_match = re.search(r'<p class="lyric"[^>]*>(.*?)</p>', content, re.DOTALL)
+        self.assertIsNotNone(lyric_match)
+        self.assertNotRegex(lyric_match.group(1), r">\s+<")
