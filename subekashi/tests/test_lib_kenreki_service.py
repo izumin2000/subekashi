@@ -121,29 +121,49 @@ class ComputeKenrekiForSongsTest(TestCase):
 
 
 class BuildKeyboardGeometryTest(TestCase):
+    # key_countは白鍵の本数（度数）ではなく、黒鍵も含めた鍵の総数として扱う
+    # （コードレビュー指摘対応: 以前はkey_countがそのまま白鍵の本数だったため、
+    # 鍵盤数が1増えても黒鍵は無視され白鍵だけが増えていた。ラ(A)から始まる
+    # 12半音の繰り返しをkey_count個分たどり、白鍵・黒鍵それぞれの本数を数える）
     def test_zero_keys_has_no_black_keys(self):
         geometry = build_keyboard_geometry(0)
         self.assertEqual(geometry["white_key_count"], 0)
         self.assertEqual(geometry["black_keys"], [])
         self.assertEqual(geometry["width"], 0)
 
-    def test_single_white_key_has_no_trailing_black_key(self):
+    def test_first_key_is_white(self):
+        # ラ(A)から始まるため、1鍵目は必ず白鍵
         geometry = build_keyboard_geometry(1)
+        self.assertEqual(geometry["white_key_count"], 1)
         self.assertEqual(geometry["black_keys"], [])
 
-    def test_one_octave_has_five_black_keys(self):
-        # 白鍵7本（C~B）につき黒鍵は5本（E-F、B-C間には黒鍵が無い標準的な鍵盤配列）
-        geometry = build_keyboard_geometry(7)
+    def test_second_key_adds_a_black_key_not_a_white_key(self):
+        # ラ(A)の次はラ#(A#、黒鍵)。度数(白鍵)ではなく実際の鍵盤数が増える
+        geometry = build_keyboard_geometry(2)
+        self.assertEqual(geometry["white_key_count"], 1)
+        self.assertEqual(len(geometry["black_keys"]), 1)
+
+    def test_one_full_octave_has_five_black_keys(self):
+        # 12半音(1オクターブ)分で白鍵7本・黒鍵5本（標準的な鍵盤配列と一致）
+        geometry = build_keyboard_geometry(12)
+        self.assertEqual(geometry["white_key_count"], 7)
         self.assertEqual(len(geometry["black_keys"]), 5)
 
     def test_black_key_color_applied_to_all_black_keys(self):
-        geometry = build_keyboard_geometry(7, black_key_color="hsl(120, 75%, 45%)")
+        geometry = build_keyboard_geometry(12, black_key_color="hsl(120, 75%, 45%)")
         self.assertTrue(all(bk["color"] == "hsl(120, 75%, 45%)" for bk in geometry["black_keys"]))
 
-    def test_width_matches_white_key_count(self):
-        geometry = build_keyboard_geometry(10)
-        self.assertEqual(geometry["width"], 10 * 12)
+    def test_width_matches_white_key_count_when_ending_on_white_key(self):
+        # key_count=8はミ(E, 白鍵)で終わる -> 白鍵5本分の幅のみ
+        geometry = build_keyboard_geometry(8)
+        self.assertEqual(geometry["white_key_count"], 5)
+        self.assertEqual(geometry["width"], 5 * 12)
 
-    def test_white_keys_is_iterable_of_key_count_length(self):
-        geometry = build_keyboard_geometry(10)
-        self.assertEqual(len(list(geometry["white_keys"])), 10)
+    def test_width_includes_overhang_when_ending_on_black_key(self):
+        # key_count=2はラ#(A#、黒鍵)で終わる -> 白鍵1本分の幅+黒鍵のはみ出し分
+        geometry = build_keyboard_geometry(2)
+        self.assertEqual(geometry["width"], 1 * 12 + 8 // 2)
+
+    def test_white_keys_is_iterable_of_white_key_count_length(self):
+        geometry = build_keyboard_geometry(12)
+        self.assertEqual(len(list(geometry["white_keys"])), geometry["white_key_count"])

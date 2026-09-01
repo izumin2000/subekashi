@@ -1448,7 +1448,7 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 鍵歴はSongごとに算出してから合計する仕様（コードレビュー指摘対応: 当初はauthor/サイト全体の集計値(Sum)にまとめて閾値判定していたが、Songごとに算出してその総和を表示する方式に変更。同じ合計viewでも曲数が多いほど有利になる）。`get_view_like_pairs(qs)`（`lib/stats_service.py`）でqs内の各曲のview/likeペアを取得し、`compute_kenreki_for_songs`に渡す。
 
 - authorごとの統計ページ: songrange/year/monthの絞り込みの影響を受けない、authorの全期間・全曲（`AuthorStatsView`では`get_view_like_pairs(author_songs)`で取得、`tests/test_views.py`の`test_kenreki_not_affected_by_songrange_year_month_filters`で回帰防止）
-- 総合統計ページ: 他の統計項目と同様、絞り込みの影響を受ける（`StatsView`では`get_view_like_pairs(qs)`で取得、`tests/test_views.py`の`test_kenreki_reflects_songrange_year_month_filters`で回帰防止）
+- 総合統計ページ: 他の統計項目と同様、絞り込みの影響を受ける（`StatsView`では`get_view_like_pairs(qs)`で取得、`tests/test_views.py`の`test_kenreki_reflects_songrange_year_month_filters`で回帰防止）。stat-valueの着色はしない（`overflow_color`を`None`に上書き、`test_kenreki_stat_value_never_colored_even_when_overflowing`で回帰防止）
 
 #### 20-1. `compute_threshold_points(value, thresholds)`
 
@@ -1493,16 +1493,18 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 
 #### 20-4. `build_keyboard_geometry(key_count, black_key_color=None)`
 
-key_count本の白鍵と、標準的な鍵盤配列（E-F・B-C間には黒鍵が無い、1オクターブ7白鍵5黒鍵）に基づく黒鍵の位置一覧を返す。黒鍵は隣り合う白鍵の間にのみ配置され、最後の白鍵の後ろには配置されない。`black_key_color`を指定すると全ての黒鍵をその色で塗る（鍵歴の上限超過表現用）。
+key_countは白鍵の本数（度数）ではなく、黒鍵も含めた実際の鍵の総数として扱う（コードレビュー指摘対応: 以前はkey_count=白鍵の本数で、1増えても黒鍵は無視され白鍵だけが増えていた。ラ(A)から始まる12半音の繰り返し〔`CHROMATIC_IS_WHITE`〕をkey_count個分たどり、白鍵・黒鍵それぞれの本数と黒鍵の位置一覧を返す）。ラから始まるため、`MAX_KEYS`(88)に到達した状態は白鍵52本・黒鍵36本となり、現実の88鍵ピアノの内訳と一致する。`black_key_color`を指定すると全ての黒鍵をその色で塗る（鍵歴の上限超過表現用）。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
-| 鍵盤数0 | `key_count=0` | 黒鍵なし、`width=0` |
-| 白鍵1本のみ | `key_count=1` | 後ろに白鍵が無いため黒鍵は生成されない |
-| 1オクターブ分 | `key_count=7` | 黒鍵は5本（標準的なピアノの配列と一致） |
+| 鍵盤数0 | `key_count=0` | 白鍵0・黒鍵なし、`width=0` |
+| 1鍵目は白鍵 | `key_count=1` | ラ(A)のため白鍵1本、黒鍵なし |
+| 2鍵目は黒鍵が増える（回帰） | `key_count=2` | ラ#(A#)が加わり白鍵は1本のまま、黒鍵が1本増える |
+| 1オクターブ分 | `key_count=12` | 白鍵7本・黒鍵5本（標準的なピアノの配列と一致） |
 | 黒鍵の色指定 | `black_key_color`を指定 | 生成された黒鍵全てにその色が設定される |
-| 幅の算出 | 任意の`key_count` | `width = key_count × 12`(白鍵1本分の幅) |
-| `white_keys`の反復可能性 | 任意の`key_count` | テンプレートの`{% for %}`用にkey_count個の要素を反復できる |
+| 白鍵で終わる場合の幅 | `key_count=8`（ミ/Eで終わる） | `width`は白鍵5本分のみ（黒鍵のはみ出し無し） |
+| 黒鍵で終わる場合の幅 | `key_count=2`（ラ#/A#で終わる） | `width`は白鍵1本分+黒鍵のはみ出し分を含む |
+| `white_keys`の反復可能性 | 任意の`key_count` | `white_key_count`個の要素を反復できる |
 
 `AuthorStatsView`では、authorに曲が1件も無い場合（`get_view_like_pairs`の戻り値が空リスト）は鍵歴コンポーネント自体を非表示にする（`tests/test_views.py`の`test_kenreki_hidden_when_author_has_no_songs`）。
 

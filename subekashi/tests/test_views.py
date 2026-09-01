@@ -798,6 +798,17 @@ class StatsViewTest(TestCase):
         # 2024年のみ: view=20(2段階=2pt)+like=2(2段階=2pt)=4pt -> 2鍵
         self.assertEqual(filtered_2024.context["kenreki"]["key_count"], 2)
 
+    def test_kenreki_stat_value_never_colored_even_when_overflowing(self):
+        # 総合統計ページの鍵歴はstat-valueの着色をしない（authorページとの仕様差、コードレビュー指摘対応）
+        for i in range(5):
+            Song.objects.create(title=f"曲{i}", view=10 ** 12, like=10 ** 12)
+
+        response = self.client.get(reverse("subekashi:stats"))
+
+        self.assertGreaterEqual(response.context["kenreki"]["key_count"], 88)
+        self.assertIsNone(response.context["kenreki"]["overflow_color"])
+        self.assertNotContains(response, "style=\"color: hsl(")
+
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
 class AuthorStatsViewTest(TestCase):

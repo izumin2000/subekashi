@@ -34,9 +34,12 @@ class StatsView(View):
             {"icon": "fas fa-sitemap", "label": "総模倣曲関係数", "value": stats["total_imitateds"]},
         ])
 
-        # 鍵歴はここでは他の統計項目と同様、絞り込みに連動したstat-itemとしてのみ表示する（鍵盤ビジュアルは無し）。
-        # Songごとに算出した鍵歴の総和として算出する
-        kenreki = compute_kenreki_for_songs(get_view_like_pairs(qs)) if stats["song_count"] > 0 else None
+        # 鍵歴はここでは他の統計項目と同様、絞り込みに連動したstat-itemとしてのみ表示する
+        # （鍵盤ビジュアルは無し、値の着色も無し）。Songごとに算出した鍵歴の総和として算出する
+        kenreki = None
+        if stats["song_count"] > 0:
+            kenreki = compute_kenreki_for_songs(get_view_like_pairs(qs))
+            kenreki["overflow_color"] = None
 
         monthly_series = list(Stats.get_monthly_series(songrange).values(
             "year", "month", "song_count", "total_view", "total_like",

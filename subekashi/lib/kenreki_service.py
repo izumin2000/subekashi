@@ -19,8 +19,8 @@ MAX_TOTAL_POINTS = len(VIEW_THRESHOLDS) + len(LIKE_THRESHOLDS)
 
 WHITE_KEY_WIDTH = 12
 BLACK_KEY_WIDTH = 8
-# 1オクターブ内の白鍵(C~B、7音)のうち直後に黒鍵を持つもの（E-F、B-C間には黒鍵が無い）
-OCTAVE_HAS_BLACK_AFTER = [True, True, False, True, True, True, False]
+# 1オクターブ(12半音)の白鍵/黒鍵パターン。ラ(A)から開始: A, A#, B, C, C#, D, D#, E, F, F#, G, G#
+CHROMATIC_IS_WHITE = [True, False, True, True, False, True, False, True, True, False, True, False]
 
 
 def compute_threshold_points(value, thresholds):
@@ -80,21 +80,31 @@ def compute_kenreki_for_songs(view_like_pairs):
 
 
 def build_keyboard_geometry(key_count, black_key_color=None):
-    """key_count本の白鍵と、標準的な鍵盤配列に基づく黒鍵の位置一覧を返す
+    """key_count個分の鍵盤（白鍵・黒鍵の両方を含む実際の鍵の総数）を、標準的な鍵盤配列
+    （ラ(A)から開始する12半音の繰り返し）で並べた白鍵・黒鍵の位置一覧を返す
 
-    黒鍵は隣り合う白鍵の間（最後の白鍵の後ろは除く）に配置され、
+    key_countは白鍵の本数（度数）ではなく、黒鍵も含めた実際の鍵の総数として扱う。
     black_key_colorが指定されていれば全ての黒鍵をその色で塗る（鍵歴の上限超過表現用）
     """
+    white_count = 0
     black_keys = []
-    for i in range(key_count - 1):
-        octave_pos = i % 7
-        if OCTAVE_HAS_BLACK_AFTER[octave_pos]:
-            left = (i + 1) * WHITE_KEY_WIDTH - BLACK_KEY_WIDTH // 2
+    last_is_black = False
+    for i in range(key_count):
+        if CHROMATIC_IS_WHITE[i % len(CHROMATIC_IS_WHITE)]:
+            white_count += 1
+            last_is_black = False
+        else:
+            left = white_count * WHITE_KEY_WIDTH - BLACK_KEY_WIDTH // 2
             black_keys.append({"left": left, "color": black_key_color})
+            last_is_black = True
+
+    width = white_count * WHITE_KEY_WIDTH
+    if last_is_black:
+        width += BLACK_KEY_WIDTH // 2
 
     return {
-        "white_key_count": key_count,
-        "white_keys": range(key_count),
+        "white_key_count": white_count,
+        "white_keys": range(white_count),
         "black_keys": black_keys,
-        "width": key_count * WHITE_KEY_WIDTH,
+        "width": width,
     }
