@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.views import View
-from subekashi.lib.kenreki_service import MAX_KEYS, build_keyboard_geometry, compute_kenreki
+from subekashi.lib.kenreki_service import MAX_KEYS, build_keyboard_geometry, compute_kenreki_for_songs
 from subekashi.lib.stats_service import (
     apply_songrange_filter,
     apply_upload_time_filter,
@@ -9,7 +9,7 @@ from subekashi.lib.stats_service import (
     compute_collaborator_count,
     compute_total_imitates,
     compute_unique_collaborator_count,
-    compute_view_like_totals,
+    get_view_like_pairs,
     resolve_songrange,
     resolve_year_month,
 )
@@ -26,11 +26,11 @@ class AuthorStatsView(View):
         author_songs = Song.objects.filter(authors__id=author_id).distinct()
 
         # 鍵歴（実績鍵盤）はsongrange/year/monthの絞り込みの影響を受けない、
-        # authorの全期間・全曲を通じた累積実績として算出する
-        kenreki_source_stats = compute_view_like_totals(author_songs)
+        # authorの全期間・全曲について、Songごとに算出した鍵歴の総和として算出する
+        view_like_pairs = get_view_like_pairs(author_songs)
         kenreki = None
-        if kenreki_source_stats["song_count"] > 0:
-            kenreki = compute_kenreki(kenreki_source_stats["total_view"], kenreki_source_stats["total_like"])
+        if view_like_pairs:
+            kenreki = compute_kenreki_for_songs(view_like_pairs)
             kenreki["geometry"] = build_keyboard_geometry(min(kenreki["key_count"], MAX_KEYS), kenreki["overflow_color"])
 
         songrange, show_all_songrange = resolve_songrange(request, author_songs)

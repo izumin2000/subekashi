@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.views import View
-from subekashi.lib.kenreki_service import compute_kenreki
-from subekashi.lib.stats_service import compute_view_like_totals
+from subekashi.lib.kenreki_service import compute_kenreki_for_songs
+from subekashi.lib.stats_service import get_view_like_pairs
 from subekashi.models import Author, Song
 
 
@@ -19,10 +19,10 @@ class AuthorView(View):
         if len(titles) >= 80:
             titles = titles[:80] + "...など"
 
-        view_like_totals = compute_view_like_totals(songInsL)
+        view_like_pairs = get_view_like_pairs(songInsL)
         kenreki = None
-        if view_like_totals["song_count"] > 0:
-            kenreki = compute_kenreki(view_like_totals["total_view"], view_like_totals["total_like"])
+        if view_like_pairs:
+            kenreki = compute_kenreki_for_songs(view_like_pairs)
 
         context = {
             "metatitle": author_name,

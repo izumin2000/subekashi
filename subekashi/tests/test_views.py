@@ -558,11 +558,11 @@ class AuthorViewTest(TestCase):
         self.assertContains(response, "fa-chart-line")
 
     def test_stats_summary_shows_kenreki(self):
-        # view=1234は1,20,50,100,200,500,1000の7段階に到達 -> triangular(7)=28pt -> 28//2=14鍵
+        # view=1234は1,20,50,100,200,500,1000の7段階に到達 -> 7pt -> 7//2=3鍵
         Song.objects.filter(title="作者ビューテスト曲").update(view=1234)
         response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
         self.assertContains(response, 'id="author-stats-summary"')
-        self.assertEqual(response.context["kenreki"]["key_count"], 14)
+        self.assertEqual(response.context["kenreki"]["key_count"], 3)
 
     def test_stats_summary_hidden_when_author_has_no_songs(self):
         no_song_author = Author.objects.create(name="曲の無い作者")
@@ -780,7 +780,7 @@ class StatsViewTest(TestCase):
 
         response = self.client.get(reverse("subekashi:stats"))
 
-        self.assertEqual(response.context["kenreki"]["key_count"], 3)
+        self.assertEqual(response.context["kenreki"]["key_count"], 2)
         self.assertNotContains(response, "kenreki-keyboard-scroll")
 
     def test_kenreki_reflects_songrange_year_month_filters(self):
@@ -792,10 +792,11 @@ class StatsViewTest(TestCase):
         unfiltered = self.client.get(reverse("subekashi:stats"))
         filtered_2024 = self.client.get(reverse("subekashi:stats"), {"year": "2024"})
 
-        # 全期間: view=1020(7段階=28pt)+like=2(3pt)=31pt -> 15鍵
-        self.assertEqual(unfiltered.context["kenreki"]["key_count"], 15)
-        # 2024年のみ: view=20(2段階=3pt)+like=2(3pt)=6pt -> 3鍵
-        self.assertEqual(filtered_2024.context["kenreki"]["key_count"], 3)
+        # 全期間: 2024年の曲(view=20:2段階=2pt, like=2:2段階=2pt=4pt) + 2025年の曲(view=1000:7段階=7pt) = 11pt -> 5鍵
+        # （鍵歴はSongごとに算出して合計するため、集計後のview=1020に対する閾値判定ではない）
+        self.assertEqual(unfiltered.context["kenreki"]["key_count"], 5)
+        # 2024年のみ: view=20(2段階=2pt)+like=2(2段階=2pt)=4pt -> 2鍵
+        self.assertEqual(filtered_2024.context["kenreki"]["key_count"], 2)
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
@@ -927,12 +928,12 @@ class AuthorStatsViewTest(TestCase):
         self.assertEqual(response.context["kenreki"]["key_count"], 0)
 
     def test_kenreki_key_count_reflects_total_view_and_like(self):
-        # view=20(3pt)+like=2(1+2=3pt)=合計6pt / 2pt = 3鍵
+        # view=20(2段階=2pt)+like=2(2段階=2pt)=合計4pt / 2pt = 2鍵
         Song.objects.create(title="曲", view=20, like=2).authors.add(self.author)
 
         response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
 
-        self.assertEqual(response.context["kenreki"]["key_count"], 3)
+        self.assertEqual(response.context["kenreki"]["key_count"], 2)
 
     def test_kenreki_not_affected_by_songrange_year_month_filters(self):
         # 鍵歴はauthorの全期間・全songrangeの累積実績（絞り込みの影響を受けない）

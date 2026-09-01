@@ -9,16 +9,13 @@ LIKE_THRESHOLDS = [
 
 POINTS_PER_KEY = 2
 MAX_KEYS = 88  # 鍵盤ビジュアルに描画する本数の上限（現実のピアノの鍵盤数に合わせる）
-# オーバーフロー色スペクトルの上限鍵盤数。2026-09時点の実データ最大値(220)に対して
+# オーバーフロー色スペクトルの上限鍵盤数。鍵歴はSongごとに算出した値の総和のため、
+# 2026-09時点の実データ最大値(1,506、Songごとの総和方式で算出)に対して
 # 十分な伸びしろを持たせた固定値（DBを都度クエリしない）
-MAX_POSSIBLE_KEY_COUNT = 500
+MAX_POSSIBLE_KEY_COUNT = 3000
 
 
-def _triangular(n):
-    return n * (n + 1) // 2
-
-
-MAX_TOTAL_POINTS = _triangular(len(VIEW_THRESHOLDS)) + _triangular(len(LIKE_THRESHOLDS))
+MAX_TOTAL_POINTS = len(VIEW_THRESHOLDS) + len(LIKE_THRESHOLDS)
 
 WHITE_KEY_WIDTH = 12
 BLACK_KEY_WIDTH = 8
@@ -27,23 +24,28 @@ OCTAVE_HAS_BLACK_AFTER = [True, True, False, True, True, True, False]
 
 
 def compute_threshold_points(value, thresholds):
-    """valueが到達した段階数を求め、1〜その段階数までの合計（三角数）を返す
+    """valueが到達した段階数をそのままptとして返す
 
-    各段階は到達順に1, 2, 3, ...ptが割り当てられ、到達した段階のptを全て合計する
+    例: thresholdsが[1, 20, 50, ...]でvalue=55なら、1・20・50の3段階に到達しているため3pt
     """
-    reached = sum(1 for threshold in thresholds if value >= threshold)
-    return _triangular(reached)
+    return sum(1 for threshold in thresholds if value >= threshold)
 
 
-def compute_kenreki(total_view, total_like):
-    """再生数・高評価数から鍵歴（実績鍵盤）の鍵盤数・オーバーフロー色を算出して返す
+def compute_song_points(view, like):
+    """1曲分のview/likeから鍵歴ptを算出する（鍵歴はSongごとに求め、authorや総合統計では
+    その総和を表示する仕様のため、この曲単位の算出が全ての起点になる）
+    """
+    return compute_threshold_points(view, VIEW_THRESHOLDS) + compute_threshold_points(like, LIKE_THRESHOLDS)
+
+
+def _kenreki_from_points(points):
+    """合計ptから鍵歴（鍵盤数・オーバーフロー色等）を算出する
 
     key_countは2pt=鍵盤1本として換算した実際の達成数で、MAX_KEYSでカンストさせない
     （鍵盤ビジュアルの描画本数のみMAX_KEYSを上限とし、呼び出し側でmin()して渡す）。
     key_countがMAX_KEYS(88)以上になった時点で、黒鍵の色（虹色のグラデーション、
     MAX_POSSIBLE_KEY_COUNTに対する到達度で連続的に変化）を返す
     """
-    points = compute_threshold_points(total_view, VIEW_THRESHOLDS) + compute_threshold_points(total_like, LIKE_THRESHOLDS)
     key_count = points // POINTS_PER_KEY
 
     overflow_color = None
@@ -61,6 +63,20 @@ def compute_kenreki(total_view, total_like):
         "overflow_lower_bound": MAX_KEYS,
         "overflow_upper_bound": MAX_POSSIBLE_KEY_COUNT if overflow_ratio is not None else None,
     }
+
+
+def compute_kenreki(view, like):
+    """1曲分のview/likeから鍵歴（実績鍵盤）の鍵盤数・オーバーフロー色を算出して返す"""
+    return _kenreki_from_points(compute_song_points(view, like))
+
+
+def compute_kenreki_for_songs(view_like_pairs):
+    """複数曲分の(view, like)ペアそれぞれについて鍵歴ptを算出し、合計してから鍵歴を返す
+
+    authorごとの統計・総合統計ページで表示する「Songごとの鍵歴の総和」を算出する
+    """
+    total_points = sum(compute_song_points(view, like) for view, like in view_like_pairs)
+    return _kenreki_from_points(total_points)
 
 
 def build_keyboard_geometry(key_count, black_key_color=None):

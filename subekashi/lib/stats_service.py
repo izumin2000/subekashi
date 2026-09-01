@@ -89,6 +89,15 @@ def _clean_base(qs):
     return Song.objects.filter(id__in=qs.values("id"))
 
 
+def get_view_like_pairs(qs):
+    """qs内の各曲のview/likeペアを列挙する（Noneは0として扱う）
+
+    鍵歴（実績鍵盤）はSongごとに算出してから合計する仕様のため、
+    集計済みのSumではなく曲ごとの値をそのまま使う
+    """
+    return [(view or 0, like or 0) for view, like in qs.values_list("view", "like")]
+
+
 def compute_view_like_totals(qs):
     """曲数・総再生回数・総高評価数のみを返す（total_authors/total_imitatedsを含まない最小構成）
 
