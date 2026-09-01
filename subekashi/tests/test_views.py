@@ -6,8 +6,7 @@ ManifestStaticFilesStorage はテストに不要なため StaticFilesStorage に
 """
 import re
 from datetime import datetime, timezone as dt_timezone
-from unittest import skipUnless
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from django.db import connection
 from django.test import TestCase, Client, override_settings, skipUnlessDBFeature
 from django.test.utils import CaptureQueriesContext
@@ -16,6 +15,7 @@ from django.utils import timezone
 from article.models import Article
 from subekashi.forms import AuthorAliasForm
 from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song, Stats, Word
+from subekashi.models.author import TransitiveAlias
 
 
 STATIC_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
@@ -1032,18 +1032,28 @@ class AuthorAliasesViewTest(TestCase):
         self.assertNotContains(response, reverse("subekashi:author_alias_edit", args=[self.author.id, alias.id]))
         self.assertNotContains(response, reverse("subekashi:author_alias_delete", args=[self.author.id, alias.id]))
 
-    @skipUnless(connection.vendor == "sqlite", "MySQLのAUTO_INCREMENT列はid=0の明示指定を自動採番と解釈するため、SQLiteでのみ検証する")
     def test_reverse_alias_shows_nav_icon_even_when_owner_id_is_zero(self):
         # 遷移先author idが0の場合でもアイコンが表示されることを確認する
         # （テンプレート側が`{% if row.next_alias_author_id %}`のような真偽値判定だと
         # 0がfalsyになり表示されなくなる。`is not None`で判定する必要がある）
-        target = Author.objects.create(id=0, name="別名逆方向遷移対象ゼロ")
-        AuthorAlias.objects.create(name=self.author.name, author=target, alias_type="past")
-
-        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+        # MySQLのAUTO_INCREMENT列はid=0の明示指定を自動採番と解釈するため、実際に
+        # Author(id=0)をDBへ保存する形では検証できない。get_transitive_aliases()を
+        # モックしてauthor_id=0のケースを作り、DBバックエンドに依存せず検証する
+        # （#593、コードレビュー指摘対応）
+        fake_source = MagicMock(id=999)
+        fake_alias = TransitiveAlias(
+            name="別名逆方向遷移対象ゼロ",
+            alias_type="past",
+            source=fake_source,
+            is_reverse=True,
+            is_direct=False,
+            author_id=0,
+        )
+        with patch.object(Author, "get_transitive_aliases", return_value=[fake_alias]):
+            response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
 
         self.assertContains(response, "fa-arrow-right")
-        self.assertContains(response, reverse("subekashi:author_aliases", args=[target.id]))
+        self.assertContains(response, reverse("subekashi:author_aliases", args=[0]))
 
     def test_reverse_alias_shows_nav_icon_to_owning_authors_list(self):
         # 編集・削除できない逆方向の別名は、代わりにその別名を所有するauthor自身の
