@@ -11,13 +11,6 @@ def copy_song_to_songs(apps, schema_editor):
 
 class Migration(migrations.Migration):
 
-    replaces = [
-        ('subekashi', '0031_songlink_allow_dup_songlink_is_removed_and_more'),
-        ('subekashi', '0032_alter_songlink_url'),
-        ('subekashi', '0033_songlink_songs_m2m'),
-        ('subekashi', '0034_alter_songlink_songs'),
-    ]
-
     dependencies = [
         ('subekashi', '0030_song_islimited'),
     ]
