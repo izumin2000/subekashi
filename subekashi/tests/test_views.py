@@ -6,9 +6,10 @@ ManifestStaticFilesStorage はテストに不要なため StaticFilesStorage に
 """
 import re
 from datetime import datetime, timezone as dt_timezone
+from unittest import skipUnless
 from unittest.mock import patch
 from django.db import connection
-from django.test import TestCase, Client, override_settings
+from django.test import TestCase, Client, override_settings, skipUnlessDBFeature
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
@@ -801,8 +802,11 @@ class StatsViewTest(TestCase):
 
     def test_kenreki_stat_value_never_colored_even_when_overflowing(self):
         # 総合統計ページの鍵歴はstat-valueの着色をしない（authorページとの仕様差、コードレビュー指摘対応）
+        # view/likeはMySQLのIntegerField（INT、上限约21億）の範囲内に収める必要があるため、
+        # 段階数を十分に振り切れる大きさとして2*10**9を使う（#593、MySQL移行時に10**12だと
+        # Out of range value for columnエラーになることを確認済み）
         for i in range(5):
-            Song.objects.create(title=f"曲{i}", view=10 ** 12, like=10 ** 12)
+            Song.objects.create(title=f"曲{i}", view=2 * 10 ** 9, like=2 * 10 ** 9)
 
         response = self.client.get(reverse("subekashi:stats"))
 
@@ -1028,6 +1032,7 @@ class AuthorAliasesViewTest(TestCase):
         self.assertNotContains(response, reverse("subekashi:author_alias_edit", args=[self.author.id, alias.id]))
         self.assertNotContains(response, reverse("subekashi:author_alias_delete", args=[self.author.id, alias.id]))
 
+    @skipUnless(connection.vendor == "sqlite", "MySQLのAUTO_INCREMENT列はid=0の明示指定を自動採番と解釈するため、SQLiteでのみ検証する")
     def test_reverse_alias_shows_nav_icon_even_when_owner_id_is_zero(self):
         # 遷移先author idが0の場合でもアイコンが表示されることを確認する
         # （テンプレート側が`{% if row.next_alias_author_id %}`のような真偽値判定だと
@@ -1195,9 +1200,13 @@ class AuthorAliasesViewTransitiveResolutionTest(TestCase):
         with CaptureQueriesContext(connection) as ctx:
             self.client.get(reverse("subekashi:author_aliases", args=[self.c.id]))
 
+        # 識別子のクオート文字はDBバックエンドにより異なる（SQLite/PostgreSQLは"、MySQLは`）
+        # ため、connection.ops.quote_name()で動的に生成して比較する（#593）
+        qn = connection.ops.quote_name
+        target_fragment = f'{qn("subekashi_author")}.{qn("name")} IN'
         unresolved_queries = [
             q for q in ctx.captured_queries
-            if 'subekashi_author"."name" IN' in q["sql"]
+            if target_fragment in q["sql"]
         ]
         self.assertEqual(len(unresolved_queries), 1)
         sql = unresolved_queries[0]["sql"]
@@ -1375,9 +1384,13 @@ class AuthorAliasNewViewTest(TestCase):
         # Discord通知前にはDBへ一切書き込まないため、孤立したHistoryも作成されない
         self.assertEqual(History.get_for_author(self.author).count(), 0)
 
+    @skipUnlessDBFeature("supports_partial_indexes")
     def test_toctou_duplicate_name_shows_friendly_error_not_500(self):
         # フォームのclean_name()での重複チェックをすり抜けた場合でも、
         # DB制約(IntegrityError)を捕捉してフォームエラーに変換されることを確認する
+        # unique_authoralias_name_except_groupは条件付きUniqueConstraintのため、
+        # 未サポートのDB（MySQL）では実DB制約が作成されずこのTOCTOU対策自体が
+        # 効かなくなる（本テストも無意味になる）。詳細は#593参照
         AuthorAlias.objects.create(name="競合別名", author=self.author)
         with patch.object(AuthorAliasForm, "clean_name", return_value="競合別名"):
             response = self.client.post(
@@ -1544,7 +1557,11 @@ class AuthorAliasEditViewTest(TestCase):
         self.assertEqual(self.alias.alias_type, "past")
         self.assertEqual(History.get_for_author(self.author).count(), 0)
 
+    @skipUnlessDBFeature("supports_partial_indexes")
     def test_toctou_duplicate_name_shows_friendly_error_not_500(self):
+        # unique_authoralias_name_except_groupは条件付きUniqueConstraintのため、
+        # 未サポートのDB（MySQL）では実DB制約が作成されずこのTOCTOU対策自体が
+        # 効かなくなる（本テストも無意味になる）。詳細は#593参照
         AuthorAlias.objects.create(name="編集競合別名", author=self.author)
         with patch.object(AuthorAliasForm, "clean_name", return_value="編集競合別名"):
             response = self.client.post(
