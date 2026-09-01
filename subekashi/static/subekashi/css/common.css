@@ -874,7 +874,7 @@ input[type=submit], button {
     font-family: 'Imitate', 'Noto Sans JP',  'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif, Meiryo;
     border-radius: 10px;
     color: #000;
-    background-color: #ccc;
+    background-color: #eee;
     transition: all 0.25s;
 }
 
@@ -911,6 +911,7 @@ input[type=submit], button {
     padding: 0 10px;
     cursor: pointer;
     border-radius: 10px;
+    transition: all 0.25s;
 }
 
 .dummybutton p {

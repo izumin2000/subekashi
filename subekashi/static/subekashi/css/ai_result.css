@@ -19,20 +19,17 @@
     margin-top: 40px;
 }
 
-@media (max-width: 450px) {
-    #copy {
-        width: 100%;
-        padding: 0;
-    }
+.ai-result-form {
+    flex-wrap: nowrap;
 }
 
-#copy-message {
-    margin-left: 10px;
+#copy {
+    flex: none;
+    min-width: 0;
 }
 
-@media (max-width: 450px) {
-    #copy-message {
-        text-align: center;
-        margin-left: 0;
-    }
+#regenerate {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
 }
