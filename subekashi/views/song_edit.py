@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
+from django.utils.html import escape
 from django.views import View
 from config.settings import ROOT_URL
 from config.local_settings import NEW_DISCORD_URL, CONTACT_DISCORD_URL
@@ -90,8 +91,11 @@ class SongEditView(View):
             # 許可されていないメディアのURLならばエラー
             if not get_allow_media(cleaned_url_item):
                 contact_url = reverse('subekashi:contact')
-                context["error"] = f"URL：{cleaned_url_item}は信頼されていないURLと判断されました。<br>\
-                <a href='{contact_url}?&category=提案&detail={cleaned_url_item} を登録できるようにしてください。' target='_blank'>お問い合わせ</a>にて、\
+                # song_edit.html側は{{ error|safe }}でオートエスケープを無効化しているため、
+                # ユーザー入力（cleaned_url_item）はここで明示的にエスケープする（XSS対策）
+                escaped_url = escape(cleaned_url_item)
+                context["error"] = f"URL：{escaped_url}は信頼されていないURLと判断されました。<br>\
+                <a href='{contact_url}?&category=提案&detail={escaped_url} を登録できるようにしてください。' target='_blank'>お問い合わせ</a>にて、\
                 該当のURLを登録できるように、ご連絡ください。"
                 return render(request, 'subekashi/song_edit.html', context)
 
@@ -102,10 +106,10 @@ class SongEditView(View):
         # authorsフィールドの処理: カンマ区切りの作者をAuthorオブジェクトに変換
         author_names = cleaned_authors.split(',')
 
-        # 作者名が長すぎる場合はエラー
+        # 作者名が長すぎる場合はエラー（song_edit.html側の|safeのためエスケープが必要）
         author_name_error = validate_author_name_lengths(author_names)
         if author_name_error:
-            context["error"] = author_name_error
+            context["error"] = escape(author_name_error)
             return render(request, 'subekashi/song_edit.html', context)
 
         author_objects = get_or_create_authors(author_names)
@@ -115,10 +119,10 @@ class SongEditView(View):
         # 自分自身や重複は除外し、Song オブジェクトのリストに変換
         imitate_songs = get_imitate_songs(imitates, song_id)
 
-        # 掲載拒否作者か判断する
+        # 掲載拒否作者か判断する（author.nameを含むためエスケープが必要）
         reject_error = check_reject_list(author_objects)
         if reject_error:
-            context["error"] = reject_error
+            context["error"] = escape(reject_error)
             return render(request, 'subekashi/song_edit.html', context)
 
         fields = SongFields(

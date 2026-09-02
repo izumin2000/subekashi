@@ -119,6 +119,9 @@ class SongEditForm(forms.Form):
         max_length=500,
         error_messages={'required': 'タイトルが未入力です。'},
     )
+    # authors・urlはカンマ区切りで複数値を受け付けるため、フォーム全体へのmax_length指定は
+    # 個々の値の長さを正しく制限できない（分割後の各値の長さはview側で個別に検証している。
+    # authors→validate_author_name_lengths()、url→validate_song_url()、#1085）
     authors = forms.CharField(
         error_messages={'required': '作者は空白にできません。'},
     )

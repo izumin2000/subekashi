@@ -377,6 +377,52 @@ class SongEditViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("作者名", response.context["error"])
 
+    def test_post_author_name_error_escapes_html_in_response(self):
+        # コードレビュー指摘対応（反射型XSS）: song_edit.html側は{{ error|safe }}で
+        # オートエスケープが無効化されているため、エラーメッセージに含まれる作者名は
+        # view側で明示的にエスケープされていないと、HTMLタグを注入できてしまう
+        max_length = Author._meta.get_field("name").max_length
+        malicious_name = "<script>alert(1)</script>" * (max_length // 20 + 1)
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {"title": "編集テスト曲", "authors": malicious_name, "url": ""},
+        )
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertNotIn("<script>alert(1)</script>", content)
+        self.assertIn("&lt;script&gt;", content)
+
+    def test_post_untrusted_url_error_escapes_html_in_response(self):
+        # コードレビュー指摘対応（反射型XSS）: 「信頼されていないURL」エラーは
+        # cleaned_url_itemをそのままHTMLとして埋め込んでいたため、URLにHTMLタグを
+        # 含めるとscriptタグを注入できてしまっていた
+        malicious_url = "https://example.com/<script>alert(1)</script>"
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {"title": "編集テスト曲", "authors": "テスト作者", "url": malicious_url},
+        )
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertNotIn("<script>alert(1)</script>", content)
+        self.assertIn("&lt;script&gt;", content)
+
+    def test_post_reject_list_error_escapes_html_in_response(self):
+        # コードレビュー指摘対応（反射型XSS）: check_reject_list()が返すエラーメッセージには
+        # author.nameがそのまま含まれるため、HTMLタグを含む名前がREJECT_LISTに一致した
+        # 場合にview側でエスケープしていないとXSSになりうる
+        malicious_name = "<script>alert(1)</script>"
+        mock_reject_module = MagicMock()
+        mock_reject_module.REJECT_LIST = [malicious_name]
+        with patch.dict("sys.modules", {"subekashi.constants.dynamic.reject": mock_reject_module}):
+            response = self.client.post(
+                reverse("subekashi:song_edit", args=[self.song.id]),
+                {"title": "編集テスト曲", "authors": malicious_name, "url": ""},
+            )
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertNotIn("<script>alert(1)</script>", content)
+        self.assertIn("&lt;script&gt;", content)
+
     def test_post_questionable_forces_lyrics_and_imitate_blank(self):
         # is_questionable時、歌詞・模倣・下書きはユーザー入力に関わらず空/OFFになる
         imitate_target = Song.objects.create(title="模倣元テスト曲")
