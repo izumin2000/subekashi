@@ -24,7 +24,7 @@
         {% comment %} TODO 別名の入力項目を追加 {% endcomment %}
         <div class="form-col">
             <label for="title">曲名<i class="fas fa-info-circle" onclick="showTutorial('title')"></i></label>
-            <input type="text" id="title" name="title" class="sansfont" value="{{ song.title }}" required>
+            <input type="text" id="title" name="title" class="sansfont" value="{{ song.title }}" maxlength="500" required>
         </div>
         <div class="form-col">
             <label for="authors">作者<br>(複数可)<i class="fas fa-info-circle" onclick="showTutorial('authors')"></i></label>
@@ -64,7 +64,7 @@
         </div>
         <div class="form-col" data-hide-if-questionable>
             <label for="lyrics">歌詞<i class="fas fa-info-circle" onclick="showTutorial('lyrics')"></i></label>
-            <textarea id="lyrics" name="lyrics">{{ song.lyrics }}</textarea>
+            <textarea id="lyrics" name="lyrics" maxlength="10000">{{ song.lyrics }}</textarea>
         </div>
         <div class="checkbox-col" data-hide-if-questionable>
             <input type="checkbox" id="is-original" name="is_original" {% if song.is_original %}checked{% endif %}>

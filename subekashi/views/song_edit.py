@@ -8,7 +8,7 @@ from subekashi.models import Song, Editor, History, SongLink, SongFields
 from subekashi.lib.url import clean_url, get_allow_media
 from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
-from subekashi.lib.author_helpers import get_or_create_authors, author_names_were_normalized
+from subekashi.lib.author_helpers import get_or_create_authors, author_names_were_normalized, validate_author_name_lengths
 from subekashi.lib.song_service import (
     check_reject_list,
     validate_song_url,
@@ -101,6 +101,13 @@ class SongEditView(View):
 
         # authorsフィールドの処理: カンマ区切りの作者をAuthorオブジェクトに変換
         author_names = cleaned_authors.split(',')
+
+        # 作者名が長すぎる場合はエラー
+        author_name_error = validate_author_name_lengths(author_names)
+        if author_name_error:
+            context["error"] = author_name_error
+            return render(request, 'subekashi/song_edit.html', context)
+
         author_objects = get_or_create_authors(author_names)
         # 入力した作者名が一番有名な名義（past別名から変換）に正規化されたかどうか
         primary_name_normalized = author_names_were_normalized(author_names, author_objects)

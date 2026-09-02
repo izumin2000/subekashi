@@ -99,6 +99,21 @@ class ValidateSongUrlTest(TestCase):
         result = validate_song_url("https://youtu.be/nosongslink1")
         self.assertIsNone(result)
 
+    def test_url_at_max_length_returns_none(self):
+        # #1085: MySQL移行時のData too long for column対策
+        max_length = SongLink._meta.get_field("url").max_length
+        url = "https://youtu.be/" + "a" * (max_length - len("https://youtu.be/"))
+        self.assertEqual(len(url), max_length)
+        result = validate_song_url(url)
+        self.assertIsNone(result)
+
+    def test_url_over_max_length_returns_error_message(self):
+        max_length = SongLink._meta.get_field("url").max_length
+        url = "https://youtu.be/" + "a" * (max_length - len("https://youtu.be/") + 1)
+        result = validate_song_url(url)
+        self.assertIsNotNone(result)
+        self.assertIn(str(max_length), result)
+
 
 class CreateSongTest(TestCase):
     """create_song() のテスト"""

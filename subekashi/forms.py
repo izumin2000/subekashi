@@ -21,6 +21,7 @@ class ContactForm(forms.Form):
     )
     detail = forms.CharField(
         widget=forms.Textarea,
+        max_length=10000,
         error_messages={'required': '入力必須項目を入力してください。'},
     )
 
@@ -123,7 +124,7 @@ class SongEditForm(forms.Form):
     )
     url = forms.CharField(required=False)
     imitate = forms.CharField(required=False)
-    lyrics = forms.CharField(required=False, widget=forms.Textarea)
+    lyrics = forms.CharField(required=False, max_length=10000, widget=forms.Textarea)
     is_original = forms.BooleanField(required=False)
     is_deleted = forms.BooleanField(required=False)
     is_joke = forms.BooleanField(required=False)

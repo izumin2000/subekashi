@@ -50,6 +50,15 @@ class ContactFormTest(SimpleTestCase):
         form.is_valid()
         self.assertIn("入力必須項目を入力してください。", form.errors["category"])
 
+    def test_detail_max_length_10000_is_valid(self):
+        form = ContactForm(data=self._make_data(detail="あ" * 10000))
+        self.assertTrue(form.is_valid())
+
+    def test_detail_over_10000_chars_is_invalid(self):
+        form = ContactForm(data=self._make_data(detail="あ" * 10001))
+        self.assertFalse(form.is_valid())
+        self.assertIn("detail", form.errors)
+
 
 class SongDeleteFormTest(SimpleTestCase):
     """SongDeleteForm のテスト"""
@@ -128,6 +137,15 @@ class SongEditFormTest(SimpleTestCase):
         form = SongEditForm(data=self._make_data(title="あ" * 501))
         self.assertFalse(form.is_valid())
         self.assertIn("title", form.errors)
+
+    def test_lyrics_max_length_10000_is_valid(self):
+        form = SongEditForm(data=self._make_data(lyrics="あ" * 10000))
+        self.assertTrue(form.is_valid())
+
+    def test_lyrics_over_10000_chars_is_invalid(self):
+        form = SongEditForm(data=self._make_data(lyrics="あ" * 10001))
+        self.assertFalse(form.is_valid())
+        self.assertIn("lyrics", form.errors)
 
     def test_boolean_flag_is_original_true(self):
         form = SongEditForm(data=self._make_data(is_original=True))

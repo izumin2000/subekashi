@@ -284,6 +284,29 @@ class SongNewViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("タイトル", response.context["error"])
 
+    def test_post_title_over_max_length_returns_error(self):
+        # #1085: SongNewViewはフォームを経由せずtitleを保存するため、
+        # 直接バリデーションが必要（MySQL移行時のData too long for column対策）
+        max_length = Song._meta.get_field("title").max_length
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "", "authors": "テスト作者", "title": "あ" * (max_length + 1)},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("タイトル", response.context["error"])
+        self.assertFalse(Song.objects.filter(title__startswith="あ" * 10).exists())
+
+    def test_post_author_name_over_max_length_returns_error(self):
+        # #1085: MySQL移行時のData too long for column対策
+        max_length = Author._meta.get_field("name").max_length
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "", "authors": "い" * (max_length + 1), "title": "長い作者名テスト曲"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("作者名", response.context["error"])
+        self.assertFalse(Song.objects.filter(title="長い作者名テスト曲").exists())
+
     def test_post_questionable_forces_original_false(self):
         # is-questionable時、オリジナル模倣はユーザーの入力値に関わらず強制的にFalseになる
         response = self.client.post(
@@ -343,6 +366,16 @@ class SongEditViewTest(TestCase):
     def test_nonexistent_song_returns_404(self):
         response = self.client.get(reverse("subekashi:song_edit", args=[99999]))
         self.assertEqual(response.status_code, 404)
+
+    def test_post_author_name_over_max_length_returns_error(self):
+        # #1085: MySQL移行時のData too long for column対策
+        max_length = Author._meta.get_field("name").max_length
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {"title": "編集テスト曲", "authors": "う" * (max_length + 1), "url": ""},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("作者名", response.context["error"])
 
     def test_post_questionable_forces_lyrics_and_imitate_blank(self):
         # is_questionable時、歌詞・模倣・下書きはユーザー入力に関わらず空/OFFになる

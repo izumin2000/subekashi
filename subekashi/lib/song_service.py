@@ -22,7 +22,11 @@ def yes_no(value):
 
 
 def validate_song_url(cleaned_url, exclude_song_id=None):
-    """URLの重複チェック。エラーメッセージを返す。問題なければNone。"""
+    """URLの長さ・重複チェック。エラーメッセージを返す。問題なければNone。"""
+    max_length = SongLink._meta.get_field('url').max_length
+    if len(cleaned_url) > max_length:
+        return f"URLは{max_length}文字以下である必要があります。"
+
     qs = SongLink.objects.filter(url__iexact=cleaned_url, allow_dup=False, songs__isnull=False)
     if exclude_song_id is not None:
         qs = qs.exclude(songs__id=exclude_song_id)

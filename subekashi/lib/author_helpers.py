@@ -8,6 +8,15 @@ def _non_empty_names(author_names):
     return [name for name in author_names if name]  # 空文字列をスキップ
 
 
+def validate_author_name_lengths(author_names):
+    """作者名の長さを検証する。上限を超えるものがあればエラーメッセージを返す。問題なければNone。"""
+    max_length = Author._meta.get_field('name').max_length
+    for name in _non_empty_names(author_names):
+        if len(name) > max_length:
+            return f"作者名は{max_length}文字以下である必要があります：{name}"
+    return None
+
+
 def get_or_create_authors(author_names):
     """
     作者名のリストからAuthorオブジェクトのリストを返す

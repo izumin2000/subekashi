@@ -546,6 +546,33 @@ class HistoryModelTest(TestCase):
         self.assertEqual(history.song, self.song)
         self.assertIsNone(history.author)
 
+    def test_create_for_song_truncates_long_title(self):
+        # Song.title（max_length=500）を含む動的titleがHistory.title（max_length=100）を
+        # 超えることがあるため、MySQL移行時にData too long for columnエラーにならないよう
+        # 保存前に切り詰める（#1085）
+        long_title = "あ" * 200
+        history = History.create_for_song(
+            song=self.song,
+            title=long_title,
+            history_type="new",
+            changes=None,
+            editor=self.editor,
+        )
+        self.assertEqual(len(history.title), 100)
+        self.assertEqual(history.title, "あ" * 100)
+
+    def test_create_for_author_truncates_long_title(self):
+        long_title = "い" * 200
+        history = History.create_for_author(
+            author=self.author,
+            title=long_title,
+            history_type="edit",
+            changes=None,
+            editor=self.editor,
+        )
+        self.assertEqual(len(history.title), 100)
+        self.assertEqual(history.title, "い" * 100)
+
     def test_author_set_null_on_author_delete(self):
         history = History.create_for_author(
             author=self.author,
