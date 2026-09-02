@@ -20,6 +20,7 @@ class Command(BaseCommand):
     help = "バックアップ"
 
     BACKUP_FOLDER_NUMS = 50
+    MYSQLDUMP_TIMEOUT_SECONDS = 600
 
     def handle(self, *args, **options):
         now = datetime.now()
@@ -65,9 +66,13 @@ class Command(BaseCommand):
         --single-transactionは、InnoDB前提でLOCK TABLES権限が無くても整合性のある
         スナップショットを取得するため（テーブルは全てInnoDBであることを確認済み）。
         --default-character-set=utf8mb4は、絵文字等の4バイト文字を含むデータの
-        文字化けを防ぐため（config/settings.pyのDB接続設定と合わせる）"""
+        文字化けを防ぐため（config/settings.pyのDB接続設定と合わせる）。
+        --routines --eventsは、ストアドプロシージャ・イベントを使い始めた場合に備えて
+        付与する（現状は未使用だが、mysqldumpは既定でこれらをダンプしない。
+        --triggersは既定で有効だが意図を明示するため付与する）"""
         command = [
             'mysqldump', '--no-tablespaces', '--single-transaction', '--default-character-set=utf8mb4',
+            '--routines', '--events', '--triggers',
             '-h', db_settings['HOST'], '-u', db_settings['USER'],
         ]
         if db_settings.get('PORT'):
@@ -78,7 +83,9 @@ class Command(BaseCommand):
         env['MYSQL_PWD'] = db_settings['PASSWORD']
 
         with open(backup_path, 'wb') as f:
-            result = subprocess.run(command, stdout=f, stderr=subprocess.PIPE, env=env)
+            result = subprocess.run(
+                command, stdout=f, stderr=subprocess.PIPE, env=env, timeout=self.MYSQLDUMP_TIMEOUT_SECONDS
+            )
         if result.returncode != 0:
             # 標準のCalledProcessErrorはstderrの内容を含まず情報量が少ないため、
             # Discord通知で原因を特定しやすいようstderrをメッセージに含める

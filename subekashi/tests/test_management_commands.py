@@ -18,6 +18,7 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
 
+from subekashi.management.commands.backup import Command
 from subekashi.models import Ai, Song, SongLink, Stats, Word
 
 
@@ -255,6 +256,7 @@ class BackupCommandTest(TestCase):
             command,
             [
                 "mysqldump", "--no-tablespaces", "--single-transaction", "--default-character-set=utf8mb4",
+                "--routines", "--events", "--triggers",
                 "-h", "testhost", "-u", "testuser", "-P", "3307", "testdb",
             ],
         )
@@ -263,6 +265,8 @@ class BackupCommandTest(TestCase):
         self.assertEqual(mock_run.call_args.kwargs["env"]["MYSQL_PWD"], "testpass")
         # stderrを捕捉し、失敗時にDiscord通知へ含められるようにする
         self.assertEqual(mock_run.call_args.kwargs["stderr"], subprocess.PIPE)
+        # ハング対策のタイムアウトが設定されている
+        self.assertEqual(mock_run.call_args.kwargs["timeout"], Command.MYSQLDUMP_TIMEOUT_SECONDS)
 
         mock_upload.assert_called_once()
         self.assertEqual(mock_upload.call_args.args[1], "2026-01-01-06.sql")
@@ -296,6 +300,7 @@ class BackupCommandTest(TestCase):
             command,
             [
                 "mysqldump", "--no-tablespaces", "--single-transaction", "--default-character-set=utf8mb4",
+                "--routines", "--events", "--triggers",
                 "-h", "testhost", "-u", "testuser", "testdb",
             ],
         )
@@ -354,6 +359,31 @@ class BackupCommandTest(TestCase):
         mock_delete.assert_not_called()
         mock_send_discord.assert_called_once()
         self.assertIn("Access denied for user", mock_send_discord.call_args.args[1])
+
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_FOLDER_ID", "folder-id")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_REFRESH_TOKEN", "refresh-token")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_SECRET", "client-secret")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_ID", "client-id")
+    @patch("subekashi.management.commands.backup.send_discord")
+    @patch("subekashi.management.commands.backup.delete_old_backups")
+    @patch("subekashi.management.commands.backup.upload_backup")
+    @patch("subekashi.management.commands.backup.subprocess.run")
+    @patch("subekashi.management.commands.backup.DATABASES", MYSQL_DB_SETTINGS)
+    @patch("subekashi.management.commands.backup.datetime")
+    def test_mysql_reports_error_when_mysqldump_times_out(
+        self, mock_datetime, mock_run, mock_upload, mock_delete, mock_send_discord, *_
+    ):
+        # コードレビュー指摘対応: DBサイズの増加やネットワーク要因でmysqldumpがハングし、
+        # バックアップジョブが無期限にブロックされることを防ぐタイムアウトの回帰確認
+        mock_datetime.now.return_value = datetime(2026, 1, 1, 12, 0, 0)
+        mock_run.side_effect = subprocess.TimeoutExpired(cmd="mysqldump", timeout=Command.MYSQLDUMP_TIMEOUT_SECONDS)
+
+        _, err = self._run()
+
+        self.assertIn("Google Driveへのバックアップ中にエラーが発生しました", err)
+        mock_upload.assert_not_called()
+        mock_delete.assert_not_called()
+        mock_send_discord.assert_called_once()
 
 
 class StatsCommandTest(TestCase):

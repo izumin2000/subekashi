@@ -1141,10 +1141,11 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | SQLite: 実行対象の時刻・認証情報あり | `ENGINE=sqlite3`、`now.hour`が6の倍数 | `shutil.copy2`でDBファイルがコピーされ、`.sqlite3`拡張子・`mimetype="application/x-sqlite3"`でDriveにアップロードされた後、古いバックアップの削除（50件保持）が行われる |
 | SQLite: アップロード失敗時 | `upload_backup`が例外を送出 | エラーメッセージを出力し、古いバックアップの削除は行われない。`ERROR_DISCORD_URL`宛にDiscord通知を送る |
 | SQLite: 削除失敗時 | アップロードは成功、`delete_old_backups`が例外を送出 | アップロード失敗時と異なる（削除専用の）エラーメッセージを出力し、Discord通知を送る |
-| MySQL: 実行対象の時刻・認証情報あり | `ENGINE=mysql`、`now.hour`が6の倍数、`PORT`設定あり | `mysqldump --no-tablespaces --single-transaction --default-character-set=utf8mb4 -h <HOST> -u <USER> -P <PORT> <NAME>`が実行され、標準出力がファイルに書き出される。パスワードはコマンドライン引数ではなく環境変数`MYSQL_PWD`経由で渡される（`ps`コマンド等からの漏洩防止）。`.sql`拡張子・`mimetype="text/plain"`でDriveにアップロードされる |
+| MySQL: 実行対象の時刻・認証情報あり | `ENGINE=mysql`、`now.hour`が6の倍数、`PORT`設定あり | `mysqldump --no-tablespaces --single-transaction --default-character-set=utf8mb4 --routines --events --triggers -h <HOST> -u <USER> -P <PORT> <NAME>`が実行され、標準出力がファイルに書き出される。パスワードはコマンドライン引数ではなく環境変数`MYSQL_PWD`経由で渡される（`ps`コマンド等からの漏洩防止）。`timeout=600`秒が設定される。`.sql`拡張子・`mimetype="text/plain"`でDriveにアップロードされる |
 | MySQL: `PORT`未設定 | `DATABASES['default']`に`PORT`キー自体が無い（`config/settings.py`はMYSQL_PORT未設定時にキーを含めない） | コマンドに`-P`オプションが付与されない |
 | MySQL: mysqldumpコマンドが見つからない | `subprocess.run`が`FileNotFoundError`を送出 | SQLite同様「Google Driveへのバックアップ中にエラーが発生しました」に集約され、アップロード・古いバックアップの削除は行われない |
 | MySQL: mysqldumpがエラー終了コードを返す | `returncode != 0` | `CalledProcessError`の標準メッセージではなく、`stderr`の内容を含んだエラーメッセージ（Discord通知にも反映）になる（原因特定を容易にするため） |
+| MySQL: mysqldumpがタイムアウトする | `subprocess.run`が`TimeoutExpired`を送出 | DBサイズの増加やネットワーク要因でハングした場合にバックアップジョブが無期限にブロックされないよう、他の失敗ケースと同様に「Google Driveへのバックアップ中にエラーが発生しました」に集約される |
 
 #### 14-4. `word` コマンド（`word.json`から模倣単語候補を`Word`に一括登録、#1053）
 
