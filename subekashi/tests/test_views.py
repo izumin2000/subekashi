@@ -8,7 +8,7 @@ import re
 from datetime import datetime, timezone as dt_timezone
 from unittest.mock import patch, MagicMock
 from django.db import connection
-from django.test import TestCase, Client, override_settings, skipUnlessDBFeature
+from django.test import TestCase, Client, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
@@ -1394,13 +1394,12 @@ class AuthorAliasNewViewTest(TestCase):
         # Discord通知前にはDBへ一切書き込まないため、孤立したHistoryも作成されない
         self.assertEqual(History.get_for_author(self.author).count(), 0)
 
-    @skipUnlessDBFeature("supports_partial_indexes")
     def test_toctou_duplicate_name_shows_friendly_error_not_500(self):
         # フォームのclean_name()での重複チェックをすり抜けた場合でも、
         # DB制約(IntegrityError)を捕捉してフォームエラーに変換されることを確認する
         # unique_authoralias_name_except_groupは条件付きUniqueConstraintのため、
-        # 未サポートのDB（MySQL）では実DB制約が作成されずこのTOCTOU対策自体が
-        # 効かなくなる（本テストも無意味になる）。詳細は#593参照
+        # 未サポートのMySQLでは0049マイグレーションの生成列ワークアラウンドで
+        # 同等のDB制約を代替している（#593）
         AuthorAlias.objects.create(name="競合別名", author=self.author)
         with patch.object(AuthorAliasForm, "clean_name", return_value="競合別名"):
             response = self.client.post(
@@ -1567,11 +1566,10 @@ class AuthorAliasEditViewTest(TestCase):
         self.assertEqual(self.alias.alias_type, "past")
         self.assertEqual(History.get_for_author(self.author).count(), 0)
 
-    @skipUnlessDBFeature("supports_partial_indexes")
     def test_toctou_duplicate_name_shows_friendly_error_not_500(self):
         # unique_authoralias_name_except_groupは条件付きUniqueConstraintのため、
-        # 未サポートのDB（MySQL）では実DB制約が作成されずこのTOCTOU対策自体が
-        # 効かなくなる（本テストも無意味になる）。詳細は#593参照
+        # 未サポートのMySQLでは0049マイグレーションの生成列ワークアラウンドで
+        # 同等のDB制約を代替している（#593）
         AuthorAlias.objects.create(name="編集競合別名", author=self.author)
         with patch.object(AuthorAliasForm, "clean_name", return_value="編集競合別名"):
             response = self.client.post(

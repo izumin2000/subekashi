@@ -4,7 +4,7 @@
 Song, Author, AuthorAlias, SongLink の CRUD・制約・メソッドを検証する。
 """
 from django.db import IntegrityError
-from django.test import TestCase, skipUnlessDBFeature
+from django.test import TestCase
 from django.utils import timezone
 from subekashi.models import Ai, Author, AuthorAlias, Contact, Editor, History, Song, SongLink, Stats, Word
 from subekashi.models.author import EffectiveAlias, TransitiveAlias
@@ -57,11 +57,10 @@ class AuthorAliasModelTest(TestCase):
         alias = AuthorAlias.objects.create(name="別名B", author=self.author)
         self.assertEqual(str(alias), "別名B")
 
-    @skipUnlessDBFeature("supports_partial_indexes")
     def test_name_unique_constraint(self):
         # unique_authoralias_name_except_groupは条件付きUniqueConstraint（部分インデックス）
-        # のため、これを未サポートのDB（MySQL）では実DB制約が作成されず本テストは無意味になる。
-        # アプリ層の重複防止はtest_forms.pyのAuthorAliasFormTestで別途検証している（#593）
+        # のため、未サポートのMySQLでは0049マイグレーションの生成列ワークアラウンドで
+        # 同等のDB制約を代替している（#593）
         AuthorAlias.objects.create(name="重複別名", author=self.author)
         author2 = Author.objects.create(name="別の作者")
         with self.assertRaises(IntegrityError):
@@ -90,20 +89,18 @@ class AuthorAliasModelTest(TestCase):
         self.assertEqual(alias2.name, "合作グループ")
         self.assertEqual(AuthorAlias.objects.filter(name="合作グループ").count(), 2)
 
-    @skipUnlessDBFeature("supports_partial_indexes")
     def test_same_author_cannot_create_duplicate_group_name(self):
         # 同じauthorによる同じグループ名の重複作成はDB制約でも防がれる（#1044）
         # unique_authoralias_name_author_for_groupは条件付きUniqueConstraintのため、
-        # 未サポートのDB（MySQL）では実DB制約が作成されず本テストは無意味になる（#593）
+        # 未サポートのMySQLでは0049マイグレーションの生成列ワークアラウンドで代替している（#593）
         AuthorAlias.objects.create(name="重複グループ", author=self.author, alias_type="group")
         with self.assertRaises(IntegrityError):
             AuthorAlias.objects.create(name="重複グループ", author=self.author, alias_type="group")
 
-    @skipUnlessDBFeature("supports_partial_indexes")
     def test_non_group_name_still_globally_unique(self):
         # group以外の種別は、DB制約レベルでも従来通りグローバルにユニークのまま（#1044）
         # unique_authoralias_name_except_groupは条件付きUniqueConstraintのため、
-        # 未サポートのDB（MySQL）では実DB制約が作成されず本テストは無意味になる（#593）
+        # 未サポートのMySQLでは0049マイグレーションの生成列ワークアラウンドで代替している（#593）
         author2 = Author.objects.create(name="別の作者(非group)")
         AuthorAlias.objects.create(name="通常別名", author=self.author, alias_type="spell")
         with self.assertRaises(IntegrityError):
@@ -592,12 +589,10 @@ class HistoryModelTest(TestCase):
 class AiModelTest(TestCase):
     """Ai モデルのテスト"""
 
-    @skipUnlessDBFeature("supports_partial_indexes")
     def test_duplicate_janome_lyrics_raises_integrity_error(self):
         # genetype="janome"は(lyrics)がユニーク（#593、MySQL移行時は要注意）
-        # unique_janome_lyricsは条件付きUniqueConstraintのため、未サポートのDB（MySQL）
-        # では実DB制約が作成されず本テストは無意味になる。重複してもAi側の実害はない
-        # ため、MySQL移行にあたってあえて対応しない方針とした（#593）
+        # unique_janome_lyricsは条件付きUniqueConstraintのため、未サポートのMySQLでは
+        # 0049マイグレーションの生成列ワークアラウンドで同等のDB制約を代替している（#593）
         Ai.objects.create(lyrics="私は走る", score=0, genetype="janome")
 
         with self.assertRaises(IntegrityError):
@@ -613,15 +608,13 @@ class AiModelTest(TestCase):
         except IntegrityError:
             self.fail("genetypeが異なる場合はIntegrityErrorが発生してはならない")
 
-    @skipUnlessDBFeature("supports_partial_indexes")
     def test_bulk_create_with_ignore_conflicts_skips_duplicate_janome_lyrics(self):
         # manage.py aiは実行中の別プロセスとの競合に備えてignore_conflicts=True
         # でbulk_createしている（PR #1068のレビュー対応）。unique_janome_lyrics
         # 制約に抵触する行があっても、bulk_create全体が失敗せず、その1件だけが
         # スキップされ他の正当な行は作成されることを確認する
-        # unique_janome_lyricsは条件付きUniqueConstraintのため、未サポートのDB（MySQL）
-        # では実DB制約が作成されず本テストは無意味になる。重複してもAi側の実害はない
-        # ため、MySQL移行にあたってあえて対応しない方針とした（#593）
+        # unique_janome_lyricsは条件付きUniqueConstraintのため、未サポートのMySQLでは
+        # 0049マイグレーションの生成列ワークアラウンドで同等のDB制約を代替している（#593）
         Ai.objects.create(lyrics="既に存在する歌詞", score=3, genetype="janome")
 
         Ai.objects.bulk_create(
