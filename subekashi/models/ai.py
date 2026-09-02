@@ -12,14 +12,17 @@ class Ai(models.Model):
     genetype = models.CharField(default = "", max_length = 100)
 
     class Meta:
-        # 【MySQL移行時の注意】(#593)
+        # 【MySQL移行対応】(#593)
         # 下記のUniqueConstraint(condition=...)は「部分インデックス」であり、
         # SQLite・PostgreSQLではサポートされるが、MySQLではDjangoが未サポートのため
         # 実際のDB制約としては作成されない（`python manage.py check`でmodels.W036の
-        # system check warningが出るのみで、例外にはならず静かにスキップされる）。
-        # その場合、AiWordSwapView/manage.py aiのget_or_create()による重複防止は
-        # アプリ層のみの保証となり、ほぼ同時に同じ入れ替え結果がPOSTされた場合の
-        # TOCTOU対策が効かなくなる。詳細はsubekashi/models/author.pyの同種コメントを参照
+        # system check warningが出るのみで、例外にはならず静かにスキップされる。
+        # この警告自体は無害で、実害はsubekashi/migrations/0049で別途対応済み）。
+        # MySQL上では、subekashi/migrations/0049_mysql_partial_unique_workaround.py
+        # で生成列（Generated Column）＋通常のユニークインデックスによる代替実装を
+        # 追加しており、AiWordSwapView/manage.py aiのTOCTOU対策もSQLite・
+        # PostgreSQL・MySQLいずれでも機能する。詳細は
+        # subekashi/models/author.pyの同種コメントも参照
         constraints = [
             # genetype="janome"のみを対象にする（レガシーgenetype="model"等には
             # 既に(lyrics, genetype)の重複が存在するため、全genetype共通の制約には出来ない）
