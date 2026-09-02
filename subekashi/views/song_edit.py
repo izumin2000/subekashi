@@ -1,3 +1,4 @@
+from urllib.parse import quote
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.utils.html import escape
@@ -94,8 +95,11 @@ class SongEditView(View):
                 # song_edit.html側は{{ error|safe }}でオートエスケープを無効化しているため、
                 # ユーザー入力（cleaned_url_item）はここで明示的にエスケープする（XSS対策）
                 escaped_url = escape(cleaned_url_item)
+                # クエリパラメータdetail=にはURLエンコードした値を埋め込む（HTMLエスケープのみでは
+                # &や#を含むURLでクエリ文字列が途中で切れてしまうため）
+                detail_query = quote(f"{cleaned_url_item} を登録できるようにしてください。")
                 context["error"] = f"URL：{escaped_url}は信頼されていないURLと判断されました。<br>\
-                <a href='{contact_url}?&category=提案&detail={escaped_url} を登録できるようにしてください。' target='_blank'>お問い合わせ</a>にて、\
+                <a href='{contact_url}?&category=提案&detail={detail_query}' target='_blank'>お問い合わせ</a>にて、\
                 該当のURLを登録できるように、ご連絡ください。"
                 return render(request, 'subekashi/song_edit.html', context)
 

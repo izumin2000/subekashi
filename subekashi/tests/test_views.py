@@ -307,6 +307,22 @@ class SongNewViewTest(TestCase):
         self.assertIn("作者名", response.context["error"])
         self.assertFalse(Song.objects.filter(title="長い作者名テスト曲").exists())
 
+    def test_post_author_name_error_escapes_html_in_response(self):
+        # song_new.html側は{{ error }}で（|safeを使わず）Djangoの標準オートエスケープに
+        # 任せる設計のため、song_edit.py側のような明示的なescape()呼び出しは不要だが、
+        # 将来テンプレートが|safeに変更された場合に気付けるよう回帰防止テストを置いておく
+        max_length = Author._meta.get_field("name").max_length
+        malicious_name = "<script>alert(1)</script>" * (max_length // 20 + 1)
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "", "authors": malicious_name, "title": "XSSテスト曲"},
+        )
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertNotIn("<script>alert(1)</script>", content)
+        self.assertIn("&lt;script&gt;", content)
+        self.assertFalse(Song.objects.filter(title="XSSテスト曲").exists())
+
     def test_post_questionable_forces_original_false(self):
         # is-questionable時、オリジナル模倣はユーザーの入力値に関わらず強制的にFalseになる
         response = self.client.post(
@@ -405,6 +421,21 @@ class SongEditViewTest(TestCase):
         content = response.content.decode()
         self.assertNotIn("<script>alert(1)</script>", content)
         self.assertIn("&lt;script&gt;", content)
+
+    def test_post_untrusted_url_error_url_encodes_query_param(self):
+        # コードレビュー指摘対応: お問い合わせリンクのdetail=クエリパラメータは
+        # HTMLエスケープのみではURLに含まれる&や#でクエリ文字列が途中で切れてしまうため、
+        # URLエンコードされていることを確認する
+        url_with_special_chars = "https://example.com/video?a=1&b=2"
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {"title": "編集テスト曲", "authors": "テスト作者", "url": url_with_special_chars},
+        )
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        # &がエンコードされずそのまま出力されていると、クエリ文字列が途中で切れてしまう
+        self.assertNotIn("detail=https://example.com/video?a=1&b=2", content)
+        self.assertIn("a%3D1%26b%3D2", content)
 
     def test_post_reject_list_error_escapes_html_in_response(self):
         # コードレビュー指摘対応（反射型XSS）: check_reject_list()が返すエラーメッセージには
