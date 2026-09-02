@@ -108,8 +108,28 @@ class YoutubeCommandTest(TestCase):
         self.assertEqual(self.song1.view, 0)
 
 
+SQLITE_DB_SETTINGS = {
+    "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": "/tmp/db.sqlite3"},
+}
+MYSQL_DB_SETTINGS = {
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": "testdb",
+        "USER": "testuser",
+        "PASSWORD": "testpass",
+        "HOST": "testhost",
+        "PORT": "3307",
+    },
+}
+
+
 class BackupCommandTest(TestCase):
-    """backup コマンドのテスト（バックアップ先をGoogle Driveに変更、#1050）"""
+    """backup コマンドのテスト（バックアップ先をGoogle Driveに変更、#1050。
+    MySQL移行対応でmysqldump方式を追加、#1086）
+
+    DATABASESはUSE_MYSQL設定によって実行環境ごとに変わるため、テストごとに
+    SQLITE_DB_SETTINGS/MYSQL_DB_SETTINGSへ明示的に差し替えて分岐を検証する。
+    """
 
     def _run(self):
         out = StringIO()
@@ -149,17 +169,19 @@ class BackupCommandTest(TestCase):
     @patch("subekashi.management.commands.backup.delete_old_backups")
     @patch("subekashi.management.commands.backup.upload_backup")
     @patch("subekashi.management.commands.backup.shutil.copy2")
+    @patch("subekashi.management.commands.backup.DATABASES", SQLITE_DB_SETTINGS)
     @patch("subekashi.management.commands.backup.datetime")
-    def test_uploads_to_drive_and_prunes_old_backups_on_scheduled_hour(
+    def test_sqlite_uploads_to_drive_and_prunes_old_backups_on_scheduled_hour(
         self, mock_datetime, mock_copy2, mock_upload, mock_delete, *_
     ):
         mock_datetime.now.return_value = datetime(2026, 1, 1, 6, 0, 0)
 
         self._run()
 
-        mock_copy2.assert_called_once()
+        mock_copy2.assert_called_once_with("/tmp/db.sqlite3", mock_copy2.call_args.args[1])
         mock_upload.assert_called_once()
         self.assertEqual(mock_upload.call_args.args[1], "2026-01-01-06.sqlite3")
+        self.assertEqual(mock_upload.call_args.kwargs["mimetype"], "application/x-sqlite3")
         mock_delete.assert_called_once_with(50)
 
     @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_FOLDER_ID", "folder-id")
@@ -170,6 +192,7 @@ class BackupCommandTest(TestCase):
     @patch("subekashi.management.commands.backup.delete_old_backups")
     @patch("subekashi.management.commands.backup.upload_backup")
     @patch("subekashi.management.commands.backup.shutil.copy2")
+    @patch("subekashi.management.commands.backup.DATABASES", SQLITE_DB_SETTINGS)
     @patch("subekashi.management.commands.backup.datetime")
     def test_reports_error_and_skips_pruning_when_upload_fails(
         self, mock_datetime, mock_copy2, mock_upload, mock_delete, mock_send_discord, *_
@@ -191,6 +214,7 @@ class BackupCommandTest(TestCase):
     @patch("subekashi.management.commands.backup.delete_old_backups")
     @patch("subekashi.management.commands.backup.upload_backup")
     @patch("subekashi.management.commands.backup.shutil.copy2")
+    @patch("subekashi.management.commands.backup.DATABASES", SQLITE_DB_SETTINGS)
     @patch("subekashi.management.commands.backup.datetime")
     def test_reports_cleanup_error_separately_when_upload_succeeds_but_pruning_fails(
         self, mock_datetime, mock_copy2, mock_upload, mock_delete, mock_send_discord, *_
@@ -204,6 +228,64 @@ class BackupCommandTest(TestCase):
         mock_upload.assert_called_once()
         self.assertIn("Google Driveの古いバックアップの削除中にエラーが発生しました", err)
         self.assertNotIn("Google Driveへのバックアップ中にエラーが発生しました", err)
+        mock_send_discord.assert_called_once()
+
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_FOLDER_ID", "folder-id")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_REFRESH_TOKEN", "refresh-token")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_SECRET", "client-secret")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_ID", "client-id")
+    @patch("subekashi.management.commands.backup.delete_old_backups")
+    @patch("subekashi.management.commands.backup.upload_backup")
+    @patch("subekashi.management.commands.backup.subprocess.run")
+    @patch("subekashi.management.commands.backup.DATABASES", MYSQL_DB_SETTINGS)
+    @patch("subekashi.management.commands.backup.datetime")
+    def test_mysql_uploads_to_drive_and_prunes_old_backups_on_scheduled_hour(
+        self, mock_datetime, mock_run, mock_upload, mock_delete, *_
+    ):
+        # #1086: USE_MYSQL=True環境ではshutil.copy2ではなくmysqldumpでダンプを取得する
+        mock_datetime.now.return_value = datetime(2026, 1, 1, 6, 0, 0)
+
+        self._run()
+
+        mock_run.assert_called_once()
+        command = mock_run.call_args.args[0]
+        self.assertEqual(
+            command,
+            ["mysqldump", "--no-tablespaces", "-h", "testhost", "-u", "testuser", "-P", "3307", "testdb"],
+        )
+        # パスワードはコマンドライン引数ではなく環境変数MYSQL_PWD経由で渡す（ps対策）
+        self.assertNotIn("testpass", command)
+        self.assertEqual(mock_run.call_args.kwargs["env"]["MYSQL_PWD"], "testpass")
+        self.assertTrue(mock_run.call_args.kwargs["check"])
+
+        mock_upload.assert_called_once()
+        self.assertEqual(mock_upload.call_args.args[1], "2026-01-01-06.sql")
+        self.assertEqual(mock_upload.call_args.kwargs["mimetype"], "application/sql")
+        mock_delete.assert_called_once_with(50)
+
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_FOLDER_ID", "folder-id")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_REFRESH_TOKEN", "refresh-token")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_SECRET", "client-secret")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_ID", "client-id")
+    @patch("subekashi.management.commands.backup.send_discord")
+    @patch("subekashi.management.commands.backup.delete_old_backups")
+    @patch("subekashi.management.commands.backup.upload_backup")
+    @patch("subekashi.management.commands.backup.subprocess.run")
+    @patch("subekashi.management.commands.backup.DATABASES", MYSQL_DB_SETTINGS)
+    @patch("subekashi.management.commands.backup.datetime")
+    def test_mysql_reports_error_when_mysqldump_fails(
+        self, mock_datetime, mock_run, mock_upload, mock_delete, mock_send_discord, *_
+    ):
+        # mysqldumpコマンド自体が無い場合（PATH未設定等）やエラー終了した場合も
+        # 既存の「Google Driveへのバックアップ中にエラーが発生しました」に集約される
+        mock_datetime.now.return_value = datetime(2026, 1, 1, 12, 0, 0)
+        mock_run.side_effect = FileNotFoundError("mysqldump not found")
+
+        _, err = self._run()
+
+        self.assertIn("Google Driveへのバックアップ中にエラーが発生しました", err)
+        mock_upload.assert_not_called()
+        mock_delete.assert_not_called()
         mock_send_discord.assert_called_once()
 
 

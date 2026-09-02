@@ -1130,16 +1130,19 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | SongLinkが無いSong | 対象外 | 更新されない（スキップ） |
 | 全動画が取得不可 | `get_youtube_api` が `{}` を返す | `is_deleted=True` で保存される |
 
-#### 14-3. `backup` コマンド（バックアップ先をサーバーストレージからGoogle Driveに変更、#1050）
+#### 14-3. `backup` コマンド（バックアップ先をサーバーストレージからGoogle Driveに変更、#1050。MySQL移行対応でmysqldump方式を追加、#1086）
 
-サーバーのストレージにファイルを残さず、DBファイルを一時ディレクトリにコピーしてGoogle Driveへアップロードする。Google Drive APIはモック化する。
+サーバーのストレージにファイルを残さず、DBのダンプを一時ディレクトリに出力してGoogle Driveへアップロードする。`DATABASES['default']['ENGINE']`によりSQLite（`shutil.copy2`、拡張子`.sqlite3`）とMySQL（`mysqldump`、拡張子`.sql`）を切り替える。DATABASESは実行環境のUSE_MYSQL設定に依存するため、テストではSQLITE_DB_SETTINGS/MYSQL_DB_SETTINGSへ明示的に差し替えて両方式を検証する。Google Drive APIはモック化する。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | 実行対象外の時刻 | `now.hour`が6の倍数でない | アップロード・古いバックアップの削除のいずれも行われない |
 | Drive認証情報未設定 | `GOOGLE_DRIVE_CLIENT_ID`等が空 | エラーメッセージを出力し、アップロードを行わない |
-| 実行対象の時刻・認証情報あり | `now.hour`が6の倍数（0, 6, 12, 18時） | DBファイルがコピーされ、日時ファイル名でDriveにアップロードされた後、古いバックアップの削除（50件保持）が行われる |
-| アップロード失敗時 | `upload_backup`が例外を送出 | エラーメッセージを出力し、古いバックアップの削除は行われない。`ERROR_DISCORD_URL`宛にDiscord通知を送る |
+| SQLite: 実行対象の時刻・認証情報あり | `ENGINE=sqlite3`、`now.hour`が6の倍数 | `shutil.copy2`でDBファイルがコピーされ、`.sqlite3`拡張子・`mimetype="application/x-sqlite3"`でDriveにアップロードされた後、古いバックアップの削除（50件保持）が行われる |
+| SQLite: アップロード失敗時 | `upload_backup`が例外を送出 | エラーメッセージを出力し、古いバックアップの削除は行われない。`ERROR_DISCORD_URL`宛にDiscord通知を送る |
+| SQLite: 削除失敗時 | アップロードは成功、`delete_old_backups`が例外を送出 | アップロード失敗時と異なる（削除専用の）エラーメッセージを出力し、Discord通知を送る |
+| MySQL: 実行対象の時刻・認証情報あり | `ENGINE=mysql`、`now.hour`が6の倍数 | `mysqldump --no-tablespaces -h <HOST> -u <USER> [-P <PORT>] <NAME>`が実行され、標準出力がファイルに書き出される。パスワードはコマンドライン引数ではなく環境変数`MYSQL_PWD`経由で渡される（`ps`コマンド等からの漏洩防止）。`.sql`拡張子・`mimetype="application/sql"`でDriveにアップロードされる |
+| MySQL: mysqldump失敗時（`FileNotFoundError`等） | `subprocess.run`が例外を送出 | SQLite同様「Google Driveへのバックアップ中にエラーが発生しました」に集約され、アップロード・古いバックアップの削除は行われない |
 
 #### 14-4. `word` コマンド（`word.json`から模倣単語候補を`Word`に一括登録、#1053）
 
@@ -1243,12 +1246,14 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 
 Google Drive APIはモック化する。
 
-#### 17-1. `upload_backup(file_path, file_name)`
+#### 17-1. `upload_backup(file_path, file_name, mimetype="application/x-sqlite3")`
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | アップロード先の指定 | 通常のファイルパス・ファイル名 | 指定したファイル名・フォルダIDでアップロードが実行される |
 | アップロード後のファイルハンドル解放 | アップロード実行後 | 元ファイルを削除できる（ハンドルが残っていない） |
+| mimetype省略時のデフォルト（#1086） | `mimetype`引数なし | `application/x-sqlite3`でアップロードされる |
+| mimetype指定時（#1086） | `mimetype="application/sql"`（mysqldumpダンプ用） | 指定したmimetypeでアップロードされる |
 
 #### 17-2. `delete_old_backups(keep_nums)` — 保持件数の境界値
 

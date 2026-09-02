@@ -35,6 +35,35 @@ class UploadBackupTest(SimpleTestCase):
         self.assertIn("parents", create_call.call_args.kwargs["body"])
         create_call.return_value.execute.assert_called_once()
 
+    @patch("subekashi.lib.google_drive.MediaIoBaseUpload")
+    @patch("subekashi.lib.google_drive.get_drive_service")
+    def test_defaults_to_sqlite_mimetype(self, mock_get_service, mock_media_upload):
+        mock_get_service.return_value = MagicMock()
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            file_path = os.path.join(tmp_dir, "backup.sqlite3")
+            with open(file_path, "wb") as f:
+                f.write(b"dummy")
+
+            upload_backup(file_path, "2026-01-01-00.sqlite3")
+
+        self.assertEqual(mock_media_upload.call_args.kwargs["mimetype"], "application/x-sqlite3")
+
+    @patch("subekashi.lib.google_drive.MediaIoBaseUpload")
+    @patch("subekashi.lib.google_drive.get_drive_service")
+    def test_uses_specified_mimetype(self, mock_get_service, mock_media_upload):
+        # #1086: MySQL移行時のmysqldumpダンプ(.sql)アップロード用
+        mock_get_service.return_value = MagicMock()
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            file_path = os.path.join(tmp_dir, "backup.sql")
+            with open(file_path, "wb") as f:
+                f.write(b"dummy")
+
+            upload_backup(file_path, "2026-01-01-00.sql", mimetype="application/sql")
+
+        self.assertEqual(mock_media_upload.call_args.kwargs["mimetype"], "application/sql")
+
 
 class DeleteOldBackupsTest(SimpleTestCase):
     def _mock_service_with_files(self, names):

@@ -12,6 +12,7 @@ from subekashi.lib.discord import send_discord
 from subekashi.lib.google_drive import upload_backup, delete_old_backups
 import os
 import shutil
+import subprocess
 import tempfile
 
 
@@ -29,14 +30,19 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR("Google Driveの認証情報が設定されていません"))
             return
 
-        db_path = DATABASES['default']['NAME']
-        file_name = f"{now.strftime('%Y-%m-%d-%H')}.sqlite3"
+        db_settings = DATABASES['default']
+        is_mysql = db_settings['ENGINE'] == 'django.db.backends.mysql'
+        file_name = f"{now.strftime('%Y-%m-%d-%H')}.{'sql' if is_mysql else 'sqlite3'}"
+        mimetype = "application/sql" if is_mysql else "application/x-sqlite3"
 
         try:
             with tempfile.TemporaryDirectory() as tmp_dir:
                 backup_path = os.path.join(tmp_dir, file_name)
-                shutil.copy2(db_path, backup_path)
-                upload_backup(backup_path, file_name)
+                if is_mysql:
+                    self._dump_mysql(db_settings, backup_path)
+                else:
+                    shutil.copy2(db_settings['NAME'], backup_path)
+                upload_backup(backup_path, file_name, mimetype=mimetype)
         except Exception as e:
             message = f"Google Driveへのバックアップ中にエラーが発生しました：{str(e)}"
             self.stderr.write(self.style.ERROR(message))
@@ -49,3 +55,19 @@ class Command(BaseCommand):
             message = f"Google Driveの古いバックアップの削除中にエラーが発生しました：{str(e)}"
             self.stderr.write(self.style.ERROR(message))
             send_discord(ERROR_DISCORD_URL, message)
+
+    def _dump_mysql(self, db_settings, backup_path):
+        """mysqldumpでDB全体をSQLファイルに出力する。パスワードは環境変数MYSQL_PWD経由で渡し、
+        コマンドライン引数（psコマンド等から見える）には含めない。
+        --no-tablespacesは、共有ホスティング環境のDBユーザーには通常PROCESS権限が
+        付与されておらず、付けないとテーブルスペース情報のダンプでエラーになるため付与する"""
+        command = ['mysqldump', '--no-tablespaces', '-h', db_settings['HOST'], '-u', db_settings['USER']]
+        if db_settings.get('PORT'):
+            command += ['-P', str(db_settings['PORT'])]
+        command.append(db_settings['NAME'])
+
+        env = os.environ.copy()
+        env['MYSQL_PWD'] = db_settings['PASSWORD']
+
+        with open(backup_path, 'wb') as f:
+            subprocess.run(command, stdout=f, env=env, check=True)

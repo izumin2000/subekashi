@@ -24,12 +24,12 @@ def get_drive_service():
     return build("drive", "v3", credentials=credentials, cache_discovery=False)
 
 
-def upload_backup(file_path, file_name):
+def upload_backup(file_path, file_name, mimetype="application/x-sqlite3"):
     service = get_drive_service()
     file_metadata = {"name": file_name, "parents": [GOOGLE_DRIVE_FOLDER_ID]}
     # MediaFileUploadは開いたファイルを閉じないため、closeを保証できるMediaIoBaseUploadを使う
     with open(file_path, "rb") as f:
-        media = MediaIoBaseUpload(f, mimetype="application/x-sqlite3", resumable=True)
+        media = MediaIoBaseUpload(f, mimetype=mimetype, resumable=True)
         service.files().create(body=file_metadata, media_body=media, fields="id").execute()
 
 
