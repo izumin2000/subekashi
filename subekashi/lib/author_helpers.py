@@ -8,6 +8,22 @@ def _non_empty_names(author_names):
     return [name for name in author_names if name]  # 空文字列をスキップ
 
 
+def validate_author_name_lengths(author_names):
+    """作者名の長さを検証する。上限を超えるものがあればエラーメッセージを返す。問題なければNone。
+
+    エラーメッセージにはユーザー入力の作者名がそのまま含まれるため、呼び出し側で
+    HTMLエスケープしてから画面に表示すること（views/song_edit.pyのcontext["error"]は
+    song_edit.html側で|safeによりオートエスケープが無効化されているため必須）。
+    """
+    max_length = Author._meta.get_field('name').max_length
+    for name in _non_empty_names(author_names):
+        if len(name) > max_length:
+            # トースト表示が崩れないよう、メッセージに含める名前自体は短く切り詰める
+            displayed_name = name if len(name) <= 50 else name[:50] + "…"
+            return f"作者名は{max_length}文字以下である必要があります：{displayed_name}"
+    return None
+
+
 def get_or_create_authors(author_names):
     """
     作者名のリストからAuthorオブジェクトのリストを返す

@@ -8,7 +8,7 @@ test_author_migration.py の AuthorHelpersTest と重複する部分があるが
 from unittest.mock import MagicMock, patch
 from django.test import TestCase
 from subekashi.models import Author, AuthorAlias
-from subekashi.lib.author_helpers import get_or_create_authors
+from subekashi.lib.author_helpers import get_or_create_authors, validate_author_name_lengths
 from subekashi.lib.song_service import check_reject_list
 
 
@@ -123,3 +123,24 @@ class GetOrCreateAuthorsTest(TestCase):
             authors = get_or_create_authors([f"以前の名義{i}" for i in range(5)])
 
         self.assertEqual(len(authors), 5)
+
+
+class ValidateAuthorNameLengthsTest(TestCase):
+    """validate_author_name_lengths() のテスト（#1085）"""
+
+    def test_names_within_limit_return_none(self):
+        self.assertIsNone(validate_author_name_lengths(["作者A", "作者B"]))
+
+    def test_name_at_max_length_is_valid(self):
+        max_length = Author._meta.get_field("name").max_length
+        self.assertIsNone(validate_author_name_lengths(["あ" * max_length]))
+
+    def test_name_over_max_length_returns_error_message(self):
+        max_length = Author._meta.get_field("name").max_length
+        too_long_name = "あ" * (max_length + 1)
+        error = validate_author_name_lengths(["作者A", too_long_name])
+        self.assertIsNotNone(error)
+        self.assertIn(str(max_length), error)
+
+    def test_empty_strings_are_skipped(self):
+        self.assertIsNone(validate_author_name_lengths(["", "作者A", ""]))

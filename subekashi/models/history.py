@@ -27,7 +27,7 @@ class History(models.Model):
     def create_for_song(cls, song, title, history_type, changes, editor):
         history = cls(
             song=song,
-            title=title,
+            title=title[:cls._meta.get_field("title").max_length],
             history_type=history_type,
             create_time=timezone.now(),
             changes=changes,
@@ -40,7 +40,7 @@ class History(models.Model):
     def create_for_author(cls, author, title, history_type, changes, editor):
         history = cls(
             author=author,
-            title=title,
+            title=title[:cls._meta.get_field("title").max_length],
             history_type=history_type,
             create_time=timezone.now(),
             changes=changes,

@@ -21,6 +21,7 @@ class ContactForm(forms.Form):
     )
     detail = forms.CharField(
         widget=forms.Textarea,
+        max_length=10000,
         error_messages={'required': '入力必須項目を入力してください。'},
     )
 
@@ -118,12 +119,15 @@ class SongEditForm(forms.Form):
         max_length=500,
         error_messages={'required': 'タイトルが未入力です。'},
     )
+    # authors・urlはカンマ区切りで複数値を受け付けるため、フォーム全体へのmax_length指定は
+    # 個々の値の長さを正しく制限できない（分割後の各値の長さはview側で個別に検証している。
+    # authors→validate_author_name_lengths()、url→validate_song_url()、#1085）
     authors = forms.CharField(
         error_messages={'required': '作者は空白にできません。'},
     )
     url = forms.CharField(required=False)
     imitate = forms.CharField(required=False)
-    lyrics = forms.CharField(required=False, widget=forms.Textarea)
+    lyrics = forms.CharField(required=False, max_length=10000, widget=forms.Textarea)
     is_original = forms.BooleanField(required=False)
     is_deleted = forms.BooleanField(required=False)
     is_joke = forms.BooleanField(required=False)

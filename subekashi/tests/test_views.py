@@ -284,6 +284,45 @@ class SongNewViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("タイトル", response.context["error"])
 
+    def test_post_title_over_max_length_returns_error(self):
+        # #1085: SongNewViewはフォームを経由せずtitleを保存するため、
+        # 直接バリデーションが必要（MySQL移行時のData too long for column対策）
+        max_length = Song._meta.get_field("title").max_length
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "", "authors": "テスト作者", "title": "あ" * (max_length + 1)},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("タイトル", response.context["error"])
+        self.assertFalse(Song.objects.filter(title__startswith="あ" * 10).exists())
+
+    def test_post_author_name_over_max_length_returns_error(self):
+        # #1085: MySQL移行時のData too long for column対策
+        max_length = Author._meta.get_field("name").max_length
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "", "authors": "い" * (max_length + 1), "title": "長い作者名テスト曲"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("作者名", response.context["error"])
+        self.assertFalse(Song.objects.filter(title="長い作者名テスト曲").exists())
+
+    def test_post_author_name_error_escapes_html_in_response(self):
+        # song_new.html側は{{ error }}で（|safeを使わず）Djangoの標準オートエスケープに
+        # 任せる設計のため、song_edit.py側のような明示的なescape()呼び出しは不要だが、
+        # 将来テンプレートが|safeに変更された場合に気付けるよう回帰防止テストを置いておく
+        max_length = Author._meta.get_field("name").max_length
+        malicious_name = "<script>alert(1)</script>" * (max_length // 20 + 1)
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "", "authors": malicious_name, "title": "XSSテスト曲"},
+        )
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertNotIn("<script>alert(1)</script>", content)
+        self.assertIn("&lt;script&gt;", content)
+        self.assertFalse(Song.objects.filter(title="XSSテスト曲").exists())
+
     def test_post_questionable_forces_original_false(self):
         # is-questionable時、オリジナル模倣はユーザーの入力値に関わらず強制的にFalseになる
         response = self.client.post(
@@ -343,6 +382,77 @@ class SongEditViewTest(TestCase):
     def test_nonexistent_song_returns_404(self):
         response = self.client.get(reverse("subekashi:song_edit", args=[99999]))
         self.assertEqual(response.status_code, 404)
+
+    def test_post_author_name_over_max_length_returns_error(self):
+        # #1085: MySQL移行時のData too long for column対策
+        max_length = Author._meta.get_field("name").max_length
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {"title": "編集テスト曲", "authors": "う" * (max_length + 1), "url": ""},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("作者名", response.context["error"])
+
+    def test_post_author_name_error_escapes_html_in_response(self):
+        # コードレビュー指摘対応（反射型XSS）: song_edit.html側は{{ error|safe }}で
+        # オートエスケープが無効化されているため、エラーメッセージに含まれる作者名は
+        # view側で明示的にエスケープされていないと、HTMLタグを注入できてしまう
+        max_length = Author._meta.get_field("name").max_length
+        malicious_name = "<script>alert(1)</script>" * (max_length // 20 + 1)
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {"title": "編集テスト曲", "authors": malicious_name, "url": ""},
+        )
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertNotIn("<script>alert(1)</script>", content)
+        self.assertIn("&lt;script&gt;", content)
+
+    def test_post_untrusted_url_error_escapes_html_in_response(self):
+        # コードレビュー指摘対応（反射型XSS）: 「信頼されていないURL」エラーは
+        # cleaned_url_itemをそのままHTMLとして埋め込んでいたため、URLにHTMLタグを
+        # 含めるとscriptタグを注入できてしまっていた
+        malicious_url = "https://example.com/<script>alert(1)</script>"
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {"title": "編集テスト曲", "authors": "テスト作者", "url": malicious_url},
+        )
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertNotIn("<script>alert(1)</script>", content)
+        self.assertIn("&lt;script&gt;", content)
+
+    def test_post_untrusted_url_error_url_encodes_query_param(self):
+        # コードレビュー指摘対応: お問い合わせリンクのdetail=クエリパラメータは
+        # HTMLエスケープのみではURLに含まれる&や#でクエリ文字列が途中で切れてしまうため、
+        # URLエンコードされていることを確認する
+        url_with_special_chars = "https://example.com/video?a=1&b=2"
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {"title": "編集テスト曲", "authors": "テスト作者", "url": url_with_special_chars},
+        )
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        # &がエンコードされずそのまま出力されていると、クエリ文字列が途中で切れてしまう
+        self.assertNotIn("detail=https://example.com/video?a=1&b=2", content)
+        self.assertIn("a%3D1%26b%3D2", content)
+
+    def test_post_reject_list_error_escapes_html_in_response(self):
+        # コードレビュー指摘対応（反射型XSS）: check_reject_list()が返すエラーメッセージには
+        # author.nameがそのまま含まれるため、HTMLタグを含む名前がREJECT_LISTに一致した
+        # 場合にview側でエスケープしていないとXSSになりうる
+        malicious_name = "<script>alert(1)</script>"
+        mock_reject_module = MagicMock()
+        mock_reject_module.REJECT_LIST = [malicious_name]
+        with patch.dict("sys.modules", {"subekashi.constants.dynamic.reject": mock_reject_module}):
+            response = self.client.post(
+                reverse("subekashi:song_edit", args=[self.song.id]),
+                {"title": "編集テスト曲", "authors": malicious_name, "url": ""},
+            )
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertNotIn("<script>alert(1)</script>", content)
+        self.assertIn("&lt;script&gt;", content)
 
     def test_post_questionable_forces_lyrics_and_imitate_blank(self):
         # is_questionable時、歌詞・模倣・下書きはユーザー入力に関わらず空/OFFになる

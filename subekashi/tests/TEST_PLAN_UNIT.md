@@ -112,6 +112,8 @@
 | 自分自身を除外した場合 | `exclude_song_id` を指定し、同じ曲のURL | `None` を返す |
 | `allow_dup=True` のSongLink | 重複URLだが `allow_dup=True` | `None` を返す |
 | 曲に紐付いていないSongLink | リンクは存在するが曲なし | `None` を返す |
+| URLが`SongLink.url`のmax_length丁度 (#1085) | `len(url) == max_length` | `None` を返す |
+| URLが`SongLink.url`のmax_length超過 (#1085) | `len(url) == max_length + 1` | エラーメッセージ文字列を返す（MySQL移行時のData too long for column対策） |
 
 #### 2-3. `create_song(fields)`
 
@@ -336,6 +338,15 @@
 | past正規化とREJECT_LISTすり抜け防止 (#1008) | REJECT_LIST登録済みauthorのpast別名で入力 | `get_or_create_authors()`が現在の名義に正規化するため、`check_reject_list()`が正しく検知できる |
 | past別名の一括取得 (#1008) | past別名5件を含む入力 | past別名の存在チェックが名前ごとに都度クエリを発行せず、1クエリで一括取得される（N+1にならない） |
 
+#### 5-1. `validate_author_name_lengths(author_names)`（#1085）
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 上限内の名前のみ | `["作者A", "作者B"]` | `None` を返す |
+| `Author.name`のmax_length丁度 | `len(name) == max_length` | `None` を返す |
+| `Author.name`のmax_length超過 | `len(name) == max_length + 1` | エラーメッセージ文字列を返す（MySQL移行時のData too long for column対策） |
+| 空文字列はスキップ | `["", "作者A", ""]` | `None` を返す |
+
 ---
 
 ### 6. `forms.py` — フォームバリデーション
@@ -350,6 +361,8 @@
 | categoryが空 | `category=""`, `detail="内容"` | `is_valid() == False`、エラーメッセージあり |
 | detailが空 | `category="質問"`, `detail=""` | `is_valid() == False`、エラーメッセージあり |
 | 不正なcategory値 | `category="不正な選択肢"` | `is_valid() == False` |
+| detailが10000文字丁度 (#1085) | `detail="あ" * 10000` | `is_valid() == True` |
+| detailが10000文字超 (#1085) | `detail="あ" * 10001` | `is_valid() == False` |
 
 #### 6-2. `SongDeleteForm`
 
@@ -369,6 +382,8 @@
 | is_original など boolean フラグ | `is_original=True` | `cleaned_data["is_original"] == True` |
 | is_questionable boolean フラグ | `is_questionable=True` | `cleaned_data["is_questionable"] == True` |
 | titleが500文字超 | `title="あ" * 501` | `is_valid() == False` |
+| lyricsが10000文字丁度 (#1085) | `lyrics="あ" * 10000` | `is_valid() == True` |
+| lyricsが10000文字超 (#1085) | `lyrics="あ" * 10001` | `is_valid() == False` |
 
 #### 6-4. `AuthorAliasForm`（#992）
 
@@ -464,6 +479,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | POST: YouTube以外のURL | `url="https://example.com/..."` | HTTP 200、"YouTube" を含むエラー |
 | POST: 作者が空白 | `url=""`, `authors="  "` | HTTP 200、"作者" を含むエラー |
 | POST: タイトルが空 | `url=""`, `authors="テスト作者"`, `title=""` | HTTP 200、"タイトル" を含むエラー |
+| POST: タイトルが`Song.title`のmax_length超（#1085） | `title`がmax_length+1文字 | HTTP 200、"タイトル" を含むエラー、Songは作成されない（フォームを経由せず保存するため直接バリデーションが必要） |
+| POST: 作者名が`Author.name`のmax_length超（#1085） | `authors`がmax_length+1文字 | HTTP 200、"作者名" を含むエラー、Songは作成されない |
 | POST: is-questionable時、オリジナル模倣は強制OFF・その他フラグの入力値はそのまま保存される | `is-questionable-manual=on`, `is-original-manual=on`, `is-subeana-manual=on` | 保存されたSongの `is_questionable=True`、`is_original=False`、`is_subeana=True` |
 | POST: 作者名がpast別名と一致し一番有名な名義へ正規化される（#1029） | `authors=`past別名のname | 保存後、redirect先URLに`primary_name_normalized=1`が付与される |
 | POST: 正規化が発生しない | `authors=`通常の作者名 | redirect先URLに`primary_name_normalized`は付与されない |
@@ -476,6 +493,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 存在しない曲のGET | 無効なsong_id | HTTP 404 |
 | POST: is_questionable時に歌詞・模倣・下書き・オリジナル模倣が強制的に空/OFF | `is_questionable=True`, `lyrics="..."`, `imitate="<id>"`, `is_draft=True`, `is_original=True` | 保存されたSongの `lyrics=""`、`imitates`が空、`is_draft=False`、`is_original=False`、`is_questionable=True` |
 | POST: is_questionable時も非公開/削除済み・ネタ曲・インスト・すべあな界隈曲は保存される | `is_questionable=True`, `is_deleted=True`, `is_joke=True`, `is_inst=True`, `is_subeana=True` | 各フラグがそれぞれ `True` のまま保存される |
+| POST: 作者名が`Author.name`のmax_length超（#1085） | `authors`がmax_length+1文字 | HTTP 200、"作者名" を含むエラー |
 | POST: 作者名がpast別名と一致し一番有名な名義へ正規化される（#1029） | `authors=`past別名のname | 保存後、redirect先URLに`primary_name_normalized=1`が付与される |
 | POST: 正規化が発生しない | `authors=`通常の作者名 | redirect先URLに`primary_name_normalized`は付与されない |
 
@@ -976,6 +994,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `create_for_song()` | `History.create_for_song(song=song, ...)` | `history.song`が設定され`history.author`は`None`のまま |
 | authorの削除 | `create_for_author()`後に`author.delete()` | `history.author`が`None`になる（`on_delete=SET_NULL`、Historyレコード自体は残る） |
 | `get_for_author(author)` | 複数authorのHistoryが存在する状態で対象authorを指定 | 対象authorのHistoryのみが`-create_time`順で返される |
+| `create_for_song()`のtitle切り詰め (#1085) | `title`が200文字（`History.title`のmax_length=100超） | 保存されたtitleが100文字に切り詰められる（MySQL移行時のData too long for column対策。Song.titleを含む動的titleがHistory.titleの上限を超えうるため） |
+| `create_for_author()`のtitle切り詰め (#1085) | `title`が200文字 | 保存されたtitleが100文字に切り詰められる |
 
 #### 11-7. `Word` モデル（#1053）
 

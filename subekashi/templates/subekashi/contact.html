@@ -19,7 +19,7 @@
         </div>
         <div class="form-col">
             <label for="detail">詳細<sup>*</sup></label>
-            <textarea id="detail" name="detail" required>{{ request.GET.detail }}</textarea>
+            <textarea id="detail" name="detail" maxlength="10000" required>{{ request.GET.detail }}</textarea>
         </div>
         <input type="submit" id="content-submit" name="content-submit" value="送信">
         <p id="contact-info"></p>
