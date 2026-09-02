@@ -33,7 +33,8 @@ class Command(BaseCommand):
         db_settings = DATABASES['default']
         is_mysql = db_settings['ENGINE'] == 'django.db.backends.mysql'
         file_name = f"{now.strftime('%Y-%m-%d-%H')}.{'sql' if is_mysql else 'sqlite3'}"
-        mimetype = "application/sql" if is_mysql else "application/x-sqlite3"
+        # application/sqlはIANA未登録のため、慣例に合わせテキストファイルとして扱う
+        mimetype = "text/plain" if is_mysql else "application/x-sqlite3"
 
         try:
             with tempfile.TemporaryDirectory() as tmp_dir:
@@ -60,8 +61,15 @@ class Command(BaseCommand):
         """mysqldumpでDB全体をSQLファイルに出力する。パスワードは環境変数MYSQL_PWD経由で渡し、
         コマンドライン引数（psコマンド等から見える）には含めない。
         --no-tablespacesは、共有ホスティング環境のDBユーザーには通常PROCESS権限が
-        付与されておらず、付けないとテーブルスペース情報のダンプでエラーになるため付与する"""
-        command = ['mysqldump', '--no-tablespaces', '-h', db_settings['HOST'], '-u', db_settings['USER']]
+        付与されておらず、付けないとテーブルスペース情報のダンプでエラーになるため付与する。
+        --single-transactionは、InnoDB前提でLOCK TABLES権限が無くても整合性のある
+        スナップショットを取得するため（テーブルは全てInnoDBであることを確認済み）。
+        --default-character-set=utf8mb4は、絵文字等の4バイト文字を含むデータの
+        文字化けを防ぐため（config/settings.pyのDB接続設定と合わせる）"""
+        command = [
+            'mysqldump', '--no-tablespaces', '--single-transaction', '--default-character-set=utf8mb4',
+            '-h', db_settings['HOST'], '-u', db_settings['USER'],
+        ]
         if db_settings.get('PORT'):
             command += ['-P', str(db_settings['PORT'])]
         command.append(db_settings['NAME'])
@@ -70,4 +78,11 @@ class Command(BaseCommand):
         env['MYSQL_PWD'] = db_settings['PASSWORD']
 
         with open(backup_path, 'wb') as f:
-            subprocess.run(command, stdout=f, env=env, check=True)
+            result = subprocess.run(command, stdout=f, stderr=subprocess.PIPE, env=env)
+        if result.returncode != 0:
+            # 標準のCalledProcessErrorはstderrの内容を含まず情報量が少ないため、
+            # Discord通知で原因を特定しやすいようstderrをメッセージに含める
+            raise RuntimeError(
+                f"mysqldumpが失敗しました（exit code {result.returncode}）："
+                f"{result.stderr.decode(errors='replace')}"
+            )

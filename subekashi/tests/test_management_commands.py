@@ -9,9 +9,10 @@ ai: Song.lyricsの単語をランダムに入れ替えてgenetype="janome"のAi�
 stats: 月次統計(Stats)を最古のSongの月〜今月まで再計算する処理（#334）を検証する。
 """
 import json
+import subprocess
 from datetime import datetime
 from io import StringIO
-from unittest.mock import mock_open, patch
+from unittest.mock import MagicMock, mock_open, patch
 
 from django.core.management import call_command
 from django.test import TestCase
@@ -244,6 +245,7 @@ class BackupCommandTest(TestCase):
     ):
         # #1086: USE_MYSQL=True環境ではshutil.copy2ではなくmysqldumpでダンプを取得する
         mock_datetime.now.return_value = datetime(2026, 1, 1, 6, 0, 0)
+        mock_run.return_value = MagicMock(returncode=0, stderr=b"")
 
         self._run()
 
@@ -251,17 +253,52 @@ class BackupCommandTest(TestCase):
         command = mock_run.call_args.args[0]
         self.assertEqual(
             command,
-            ["mysqldump", "--no-tablespaces", "-h", "testhost", "-u", "testuser", "-P", "3307", "testdb"],
+            [
+                "mysqldump", "--no-tablespaces", "--single-transaction", "--default-character-set=utf8mb4",
+                "-h", "testhost", "-u", "testuser", "-P", "3307", "testdb",
+            ],
         )
         # パスワードはコマンドライン引数ではなく環境変数MYSQL_PWD経由で渡す（ps対策）
         self.assertNotIn("testpass", command)
         self.assertEqual(mock_run.call_args.kwargs["env"]["MYSQL_PWD"], "testpass")
-        self.assertTrue(mock_run.call_args.kwargs["check"])
+        # stderrを捕捉し、失敗時にDiscord通知へ含められるようにする
+        self.assertEqual(mock_run.call_args.kwargs["stderr"], subprocess.PIPE)
 
         mock_upload.assert_called_once()
         self.assertEqual(mock_upload.call_args.args[1], "2026-01-01-06.sql")
-        self.assertEqual(mock_upload.call_args.kwargs["mimetype"], "application/sql")
+        self.assertEqual(mock_upload.call_args.kwargs["mimetype"], "text/plain")
         mock_delete.assert_called_once_with(50)
+
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_FOLDER_ID", "folder-id")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_REFRESH_TOKEN", "refresh-token")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_SECRET", "client-secret")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_ID", "client-id")
+    @patch("subekashi.management.commands.backup.delete_old_backups")
+    @patch("subekashi.management.commands.backup.upload_backup")
+    @patch("subekashi.management.commands.backup.subprocess.run")
+    @patch("subekashi.management.commands.backup.DATABASES", {
+        "default": {**MYSQL_DB_SETTINGS["default"], "PORT": ""},
+    })
+    @patch("subekashi.management.commands.backup.datetime")
+    def test_mysql_omits_port_flag_when_port_not_configured(
+        self, mock_datetime, mock_run, mock_upload, mock_delete, *_
+    ):
+        # config/settings.pyはMYSQL_PORT未設定時、DATABASESに'PORT'キー自体を含めない
+        # （空文字ではなくキー無し）ため、その場合を再現して検証する
+        mock_datetime.now.return_value = datetime(2026, 1, 1, 6, 0, 0)
+        mock_run.return_value = MagicMock(returncode=0, stderr=b"")
+
+        self._run()
+
+        command = mock_run.call_args.args[0]
+        self.assertNotIn("-P", command)
+        self.assertEqual(
+            command,
+            [
+                "mysqldump", "--no-tablespaces", "--single-transaction", "--default-character-set=utf8mb4",
+                "-h", "testhost", "-u", "testuser", "testdb",
+            ],
+        )
 
     @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_FOLDER_ID", "folder-id")
     @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_REFRESH_TOKEN", "refresh-token")
@@ -273,10 +310,10 @@ class BackupCommandTest(TestCase):
     @patch("subekashi.management.commands.backup.subprocess.run")
     @patch("subekashi.management.commands.backup.DATABASES", MYSQL_DB_SETTINGS)
     @patch("subekashi.management.commands.backup.datetime")
-    def test_mysql_reports_error_when_mysqldump_fails(
+    def test_mysql_reports_error_when_mysqldump_command_not_found(
         self, mock_datetime, mock_run, mock_upload, mock_delete, mock_send_discord, *_
     ):
-        # mysqldumpコマンド自体が無い場合（PATH未設定等）やエラー終了した場合も
+        # mysqldumpコマンド自体が無い場合（PATH未設定等）も
         # 既存の「Google Driveへのバックアップ中にエラーが発生しました」に集約される
         mock_datetime.now.return_value = datetime(2026, 1, 1, 12, 0, 0)
         mock_run.side_effect = FileNotFoundError("mysqldump not found")
@@ -287,6 +324,36 @@ class BackupCommandTest(TestCase):
         mock_upload.assert_not_called()
         mock_delete.assert_not_called()
         mock_send_discord.assert_called_once()
+
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_FOLDER_ID", "folder-id")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_REFRESH_TOKEN", "refresh-token")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_SECRET", "client-secret")
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_ID", "client-id")
+    @patch("subekashi.management.commands.backup.send_discord")
+    @patch("subekashi.management.commands.backup.delete_old_backups")
+    @patch("subekashi.management.commands.backup.upload_backup")
+    @patch("subekashi.management.commands.backup.subprocess.run")
+    @patch("subekashi.management.commands.backup.DATABASES", MYSQL_DB_SETTINGS)
+    @patch("subekashi.management.commands.backup.datetime")
+    def test_mysql_reports_stderr_when_mysqldump_exits_with_error(
+        self, mock_datetime, mock_run, mock_upload, mock_delete, mock_send_discord, *_
+    ):
+        # コードレビュー指摘対応: mysqldumpがエラー終了コードを返した場合、
+        # 標準のCalledProcessErrorだと情報量が少ないため、stderrの内容を
+        # エラーメッセージに含めて原因を特定しやすくする
+        mock_datetime.now.return_value = datetime(2026, 1, 1, 12, 0, 0)
+        mock_run.return_value = MagicMock(
+            returncode=1, stderr=b"mysqldump: Access denied for user 'testuser'@'testhost'"
+        )
+
+        _, err = self._run()
+
+        self.assertIn("Google Driveへのバックアップ中にエラーが発生しました", err)
+        self.assertIn("Access denied for user", err)
+        mock_upload.assert_not_called()
+        mock_delete.assert_not_called()
+        mock_send_discord.assert_called_once()
+        self.assertIn("Access denied for user", mock_send_discord.call_args.args[1])
 
 
 class StatsCommandTest(TestCase):
