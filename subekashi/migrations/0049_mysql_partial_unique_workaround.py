@@ -30,8 +30,10 @@ MYSQL_STATEMENTS = [
         "ALTER TABLE subekashi_authoralias DROP INDEX mysql_uniq_name_except_group",
     ),
     (
+        # nameはmax_length=500、author_id(BigAutoField)は最大19桁+区切り文字1文字で
+        # 理論上の最大長は520文字のため、余裕を持たせて521にする（コードレビュー対応）
         "ALTER TABLE subekashi_authoralias "
-        "ADD COLUMN mysql_unique_name_author_for_group VARCHAR(511) "
+        "ADD COLUMN mysql_unique_name_author_for_group VARCHAR(521) "
         "GENERATED ALWAYS AS (CASE WHEN alias_type = 'group' "
         "THEN CONCAT(name, CHAR(0), author_id) END) VIRTUAL",
         "ALTER TABLE subekashi_authoralias DROP COLUMN mysql_unique_name_author_for_group",
