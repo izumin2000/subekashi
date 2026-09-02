@@ -90,6 +90,8 @@ class AuthorPrimaryNameForm(forms.Form):
     選んだ名前が別のAuthorの名前と衝突する場合、AuthorPrimaryNameSetView側で
     そのAuthorをこのauthorに統合（マージ）した上で名義を切り替える。
     """
+    # 候補にはAuthor.name（max_length=255）だけでなくAuthorAlias.name（past、
+    # max_length=500のまま）も含まれるため、500に合わせる（#593コードレビュー対応）
     name = forms.CharField(
         max_length=500,
         error_messages={'required': '名義を選択してください。'},

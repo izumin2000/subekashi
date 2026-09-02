@@ -87,15 +87,16 @@ SESSION_FILE_PATH = 'sessions'
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
 
 DATABASES = {
-    'default': 
+    'default':
     {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": "izuminapp$default",
-        "USER": "izuminapp",
+        "NAME": MYSQL_NAME,
+        "USER": MYSQL_USER,
         "PASSWORD": MYSQL_PASSWORD,
-        "HOST": "izuminapp.mysql.pythonanywhere-services.com",
+        "HOST": MYSQL_HOST,
+        **({"PORT": MYSQL_PORT} if MYSQL_PORT else {}),
         "OPTIONS": {"charset": "utf8mb4"},
-    } 
+    }
 } if USE_MYSQL else {
     'default':
     {

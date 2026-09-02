@@ -58,6 +58,9 @@ class AuthorAliasModelTest(TestCase):
         self.assertEqual(str(alias), "別名B")
 
     def test_name_unique_constraint(self):
+        # unique_authoralias_name_except_groupは条件付きUniqueConstraint（部分インデックス）
+        # のため、未サポートのMySQLでは0049マイグレーションの生成列ワークアラウンドで
+        # 同等のDB制約を代替している（#593）
         AuthorAlias.objects.create(name="重複別名", author=self.author)
         author2 = Author.objects.create(name="別の作者")
         with self.assertRaises(IntegrityError):
@@ -88,12 +91,16 @@ class AuthorAliasModelTest(TestCase):
 
     def test_same_author_cannot_create_duplicate_group_name(self):
         # 同じauthorによる同じグループ名の重複作成はDB制約でも防がれる（#1044）
+        # unique_authoralias_name_author_for_groupは条件付きUniqueConstraintのため、
+        # 未サポートのMySQLでは0049マイグレーションの生成列ワークアラウンドで代替している（#593）
         AuthorAlias.objects.create(name="重複グループ", author=self.author, alias_type="group")
         with self.assertRaises(IntegrityError):
             AuthorAlias.objects.create(name="重複グループ", author=self.author, alias_type="group")
 
     def test_non_group_name_still_globally_unique(self):
         # group以外の種別は、DB制約レベルでも従来通りグローバルにユニークのまま（#1044）
+        # unique_authoralias_name_except_groupは条件付きUniqueConstraintのため、
+        # 未サポートのMySQLでは0049マイグレーションの生成列ワークアラウンドで代替している（#593）
         author2 = Author.objects.create(name="別の作者(非group)")
         AuthorAlias.objects.create(name="通常別名", author=self.author, alias_type="spell")
         with self.assertRaises(IntegrityError):
@@ -584,6 +591,8 @@ class AiModelTest(TestCase):
 
     def test_duplicate_janome_lyrics_raises_integrity_error(self):
         # genetype="janome"は(lyrics)がユニーク（#593、MySQL移行時は要注意）
+        # unique_janome_lyricsは条件付きUniqueConstraintのため、未サポートのMySQLでは
+        # 0049マイグレーションの生成列ワークアラウンドで同等のDB制約を代替している（#593）
         Ai.objects.create(lyrics="私は走る", score=0, genetype="janome")
 
         with self.assertRaises(IntegrityError):
@@ -604,6 +613,8 @@ class AiModelTest(TestCase):
         # でbulk_createしている（PR #1068のレビュー対応）。unique_janome_lyrics
         # 制約に抵触する行があっても、bulk_create全体が失敗せず、その1件だけが
         # スキップされ他の正当な行は作成されることを確認する
+        # unique_janome_lyricsは条件付きUniqueConstraintのため、未サポートのMySQLでは
+        # 0049マイグレーションの生成列ワークアラウンドで同等のDB制約を代替している（#593）
         Ai.objects.create(lyrics="既に存在する歌詞", score=3, genetype="janome")
 
         Ai.objects.bulk_create(
