@@ -93,6 +93,20 @@ class DeleteOldBackupsTest(SimpleTestCase):
         mock_service.files.return_value.delete.assert_not_called()
 
     @patch("subekashi.lib.google_drive.get_drive_service")
+    def test_no_deletion_when_under_limit_but_more_than_half(self, mock_get_service):
+        # 回帰防止テスト: len(files) - keep_nums が負でも0未満（例: 26-50=-24）の場合、
+        # files[:負の数] は「末尾から」ではなく実質的に「先頭から」の指定になり得るため
+        # （-24は-len(files)=-26より大きい＝スライスが空にならない）、
+        # 誤って最も古いファイルを削除してしまうバグが実際に本番で発生した（#1086）
+        names = [f"file-{i}" for i in range(26)]
+        mock_service = self._mock_service_with_files(names)
+        mock_get_service.return_value = mock_service
+
+        delete_old_backups(50)
+
+        mock_service.files.return_value.delete.assert_not_called()
+
+    @patch("subekashi.lib.google_drive.get_drive_service")
     def test_deletes_only_oldest_file_when_over_limit_by_one(self, mock_get_service):
         names = [f"file-{i}" for i in range(51)]
         mock_service = self._mock_service_with_files(names)

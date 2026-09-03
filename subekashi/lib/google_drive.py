@@ -48,5 +48,8 @@ def delete_old_backups(keep_nums):
         if not page_token:
             break
 
-    for file in files[:len(files) - keep_nums]:
+    # len(files)がkeep_nums以下の場合、files[:負の数]は末尾からの相対指定になり
+    # 意図せず先頭（＝最も古い）ファイルを削除してしまうため、0未満にならないようにする
+    excess_count = max(0, len(files) - keep_nums)
+    for file in files[:excess_count]:
         service.files().delete(fileId=file["id"]).execute()
