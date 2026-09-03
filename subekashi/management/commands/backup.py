@@ -87,9 +87,11 @@ class Command(BaseCommand):
                 command, stdout=f, stderr=subprocess.PIPE, env=env, timeout=self.MYSQLDUMP_TIMEOUT_SECONDS
             )
         if result.returncode != 0:
-            # 標準のCalledProcessErrorはstderrの内容を含まず情報量が少ないため、
-            # Discord通知で原因を特定しやすいようstderrをメッセージに含める
-            raise RuntimeError(
-                f"mysqldumpが失敗しました（exit code {result.returncode}）："
-                f"{result.stderr.decode(errors='replace')}"
-            )
+            # mysqldumpのstderrにはホスト名・ユーザー名等の接続情報が含まれ得る。
+            # ERROR_DISCORD_URLは公開チャンネルのため、詳細はサーバーの標準エラー
+            # 出力にのみ残し、例外（Discord通知に使われる）には一般化した
+            # メッセージのみを含める
+            self.stderr.write(self.style.ERROR(
+                f"mysqldump stderr（exit code {result.returncode}）：{result.stderr.decode(errors='replace')}"
+            ))
+            raise RuntimeError(f"mysqldumpが失敗しました（exit code {result.returncode}）")

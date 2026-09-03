@@ -340,12 +340,13 @@ class BackupCommandTest(TestCase):
     @patch("subekashi.management.commands.backup.subprocess.run")
     @patch("subekashi.management.commands.backup.DATABASES", MYSQL_DB_SETTINGS)
     @patch("subekashi.management.commands.backup.datetime")
-    def test_mysql_reports_stderr_when_mysqldump_exits_with_error(
+    def test_mysql_logs_stderr_but_keeps_it_out_of_discord_notification(
         self, mock_datetime, mock_run, mock_upload, mock_delete, mock_send_discord, *_
     ):
-        # コードレビュー指摘対応: mysqldumpがエラー終了コードを返した場合、
-        # 標準のCalledProcessErrorだと情報量が少ないため、stderrの内容を
-        # エラーメッセージに含めて原因を特定しやすくする
+        # コードレビュー指摘対応: mysqldumpのstderrにはホスト名・ユーザー名等の
+        # 接続情報が含まれ得る。ERROR_DISCORD_URLは公開チャンネルのため、詳細は
+        # サーバーの標準エラー出力（ログ）にのみ残し、Discord通知には一般化した
+        # メッセージのみを送る（exit codeがエラー終了コードを返した場合の検証）
         mock_datetime.now.return_value = datetime(2026, 1, 1, 12, 0, 0)
         mock_run.return_value = MagicMock(
             returncode=1, stderr=b"mysqldump: Access denied for user 'testuser'@'testhost'"
@@ -353,12 +354,17 @@ class BackupCommandTest(TestCase):
 
         _, err = self._run()
 
-        self.assertIn("Google Driveへのバックアップ中にエラーが発生しました", err)
+        # サーバー側の標準エラー出力（ログ）には詳細情報を残す
         self.assertIn("Access denied for user", err)
+        self.assertIn("Google Driveへのバックアップ中にエラーが発生しました", err)
         mock_upload.assert_not_called()
         mock_delete.assert_not_called()
         mock_send_discord.assert_called_once()
-        self.assertIn("Access denied for user", mock_send_discord.call_args.args[1])
+        # 公開チャンネル宛のDiscord通知には、ホスト名・ユーザー名等を含む
+        # stderrの詳細を送らない
+        self.assertNotIn("Access denied for user", mock_send_discord.call_args.args[1])
+        self.assertNotIn("testuser", mock_send_discord.call_args.args[1])
+        self.assertNotIn("testhost", mock_send_discord.call_args.args[1])
 
     @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_FOLDER_ID", "folder-id")
     @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_REFRESH_TOKEN", "refresh-token")
