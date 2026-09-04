@@ -9,6 +9,8 @@ ai: Song.lyricsの単語をランダムに入れ替えてgenetype="janome"のAi�
 stats: 月次統計(Stats)を最古のSongの月〜今月まで再計算する処理（#334）を検証する。
 """
 import json
+import os
+import stat
 import subprocess
 from datetime import datetime
 from io import StringIO
@@ -139,6 +141,28 @@ class BackupCommandTest(TestCase):
         call_command("backup", stdout=out, stderr=err)
         return out.getvalue(), err.getvalue()
 
+    @staticmethod
+    def _create_dummy_file(src, dst):
+        """shutil.copy2()のside_effectとして使う。実装がコピー後にos.chmod(dst, ...)を
+        呼ぶため、モックで済ませず実際にファイルを作成しておく必要がある"""
+        with open(dst, "wb") as f:
+            f.write(b"dummy")
+
+    def _capture_cnf_and_return(self, captured, returncode=0, stderr=b""):
+        """subprocess.run()のside_effectとして使う。--defaults-extra-fileで指定された
+        一時オプションファイルは_dump_mysql()のfinallyで削除されるため、削除される前に
+        中身・パーミッション・コマンド全体をcapturedに保存しておく"""
+        def side_effect(command, **kwargs):
+            cnf_arg = next(a for a in command if a.startswith("--defaults-extra-file="))
+            cnf_path = cnf_arg.split("=", 1)[1]
+            with open(cnf_path) as f:
+                captured["cnf_content"] = f.read()
+            captured["cnf_mode"] = stat.S_IMODE(os.stat(cnf_path).st_mode)
+            captured["cnf_path"] = cnf_path
+            captured["command"] = command
+            return MagicMock(returncode=returncode, stderr=stderr)
+        return side_effect
+
     @patch("subekashi.management.commands.backup.delete_old_backups")
     @patch("subekashi.management.commands.backup.upload_backup")
     @patch("subekashi.management.commands.backup.datetime")
@@ -177,6 +201,7 @@ class BackupCommandTest(TestCase):
         self, mock_datetime, mock_copy2, mock_upload, mock_delete, *_
     ):
         mock_datetime.now.return_value = datetime(2026, 1, 1, 6, 0, 0)
+        mock_copy2.side_effect = self._create_dummy_file
 
         self._run()
 
@@ -185,6 +210,11 @@ class BackupCommandTest(TestCase):
         self.assertEqual(mock_upload.call_args.args[1], "2026-01-01-06.sqlite3")
         self.assertEqual(mock_upload.call_args.kwargs["mimetype"], "application/x-sqlite3")
         mock_delete.assert_called_once_with(50)
+        # コードレビュー指摘対応: DBダンプという機密性の高いファイルのため、
+        # tempfile.TemporaryDirectory()のumask依存のパーミッションに任せず明示的に絞る
+        if os.name != "nt":
+            backup_path = mock_copy2.call_args.args[1]
+            self.assertEqual(stat.S_IMODE(os.stat(backup_path).st_mode), 0o600)
 
     @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_FOLDER_ID", "folder-id")
     @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_REFRESH_TOKEN", "refresh-token")
@@ -200,6 +230,7 @@ class BackupCommandTest(TestCase):
         self, mock_datetime, mock_copy2, mock_upload, mock_delete, mock_send_discord, *_
     ):
         mock_datetime.now.return_value = datetime(2026, 1, 1, 12, 0, 0)
+        mock_copy2.side_effect = self._create_dummy_file
         mock_upload.side_effect = Exception("アップロード失敗")
 
         _, err = self._run()
@@ -223,6 +254,7 @@ class BackupCommandTest(TestCase):
     ):
         # アップロード自体は成功しているので、削除失敗と混同しないメッセージになること
         mock_datetime.now.return_value = datetime(2026, 1, 1, 18, 0, 0)
+        mock_copy2.side_effect = self._create_dummy_file
         mock_delete.side_effect = Exception("削除失敗")
 
         _, err = self._run()
@@ -246,23 +278,41 @@ class BackupCommandTest(TestCase):
     ):
         # #1086: USE_MYSQL=True環境ではshutil.copy2ではなくmysqldumpでダンプを取得する
         mock_datetime.now.return_value = datetime(2026, 1, 1, 6, 0, 0)
-        mock_run.return_value = MagicMock(returncode=0, stderr=b"")
+        captured = {}
+        mock_run.side_effect = self._capture_cnf_and_return(captured)
 
         self._run()
 
         mock_run.assert_called_once()
-        command = mock_run.call_args.args[0]
+        command = captured["command"]
+        self.assertEqual(command[0], "mysqldump")
+        self.assertTrue(command[1].startswith("--defaults-extra-file="))
         self.assertEqual(
-            command,
+            command[2:],
             [
-                "mysqldump", "--no-tablespaces", "--single-transaction", "--default-character-set=utf8mb4",
+                "--no-tablespaces", "--single-transaction", "--default-character-set=utf8mb4",
                 "--routines", "--events", "--triggers",
-                "-h", "testhost", "-u", "testuser", "-P", "3307", "testdb",
+                "testdb",
             ],
         )
-        # パスワードはコマンドライン引数ではなく環境変数MYSQL_PWD経由で渡す（ps対策）
+        # コードレビュー指摘対応: MySQL_PWD環境変数はps等で露出しうるため、
+        # 認証情報はコマンドライン引数にも環境変数にも含めず、
+        # --defaults-extra-fileで指定した一時オプションファイル経由で渡す
         self.assertNotIn("testpass", command)
-        self.assertEqual(mock_run.call_args.kwargs["env"]["MYSQL_PWD"], "testpass")
+        self.assertNotIn("testhost", command)
+        self.assertNotIn("testuser", command)
+        self.assertNotIn("env", mock_run.call_args.kwargs)
+        self.assertIn('user="testuser"', captured["cnf_content"])
+        self.assertIn('password="testpass"', captured["cnf_content"])
+        self.assertIn('host="testhost"', captured["cnf_content"])
+        self.assertIn("port=3307", captured["cnf_content"])
+        if os.name != "nt":
+            # Windowsのos.chmod()は完全なUnixパーミッションを表現できないため、
+            # 本番相当のLinux環境でのみ0600ちょうどであることを厳密に検証する
+            self.assertEqual(captured["cnf_mode"], 0o600)
+        # 一時オプションファイルは処理完了後に削除される
+        self.assertFalse(os.path.exists(captured["cnf_path"]))
+
         # stderrを捕捉し、失敗時にDiscord通知へ含められるようにする
         self.assertEqual(mock_run.call_args.kwargs["stderr"], subprocess.PIPE)
         # ハング対策のタイムアウトが設定されている
@@ -290,20 +340,14 @@ class BackupCommandTest(TestCase):
         # config/settings.pyはMYSQL_PORT未設定時、DATABASESに'PORT'キー自体を含めない
         # （空文字ではなくキー無し）ため、その場合を再現して検証する
         mock_datetime.now.return_value = datetime(2026, 1, 1, 6, 0, 0)
-        mock_run.return_value = MagicMock(returncode=0, stderr=b"")
+        captured = {}
+        mock_run.side_effect = self._capture_cnf_and_return(captured)
 
         self._run()
 
-        command = mock_run.call_args.args[0]
-        self.assertNotIn("-P", command)
-        self.assertEqual(
-            command,
-            [
-                "mysqldump", "--no-tablespaces", "--single-transaction", "--default-character-set=utf8mb4",
-                "--routines", "--events", "--triggers",
-                "-h", "testhost", "-u", "testuser", "testdb",
-            ],
-        )
+        # ポートはコマンドライン引数ではなく--defaults-extra-fileのport=として渡すため、
+        # 未設定時はcnfファイルにport=行自体が含まれない
+        self.assertNotIn("port=", captured["cnf_content"])
 
     @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_FOLDER_ID", "folder-id")
     @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_REFRESH_TOKEN", "refresh-token")
@@ -329,6 +373,11 @@ class BackupCommandTest(TestCase):
         mock_upload.assert_not_called()
         mock_delete.assert_not_called()
         mock_send_discord.assert_called_once()
+        # subprocess.run自体が例外を送出するケースでも、一時オプションファイルは
+        # finallyブロックで確実に削除される
+        command = mock_run.call_args.args[0]
+        cnf_path = next(a for a in command if a.startswith("--defaults-extra-file=")).split("=", 1)[1]
+        self.assertFalse(os.path.exists(cnf_path))
 
     @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_FOLDER_ID", "folder-id")
     @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_REFRESH_TOKEN", "refresh-token")
@@ -381,32 +430,27 @@ class BackupCommandTest(TestCase):
     ):
         # コードレビュー指摘対応: DBサイズの増加やネットワーク要因でmysqldumpがハングし、
         # バックアップジョブが無期限にブロックされることを防ぐタイムアウトの回帰確認。
-        # TimeoutExpired.__str__()は渡したcmdをそのまま文字列化するため、本番相当の
-        # 検出には実際の（ホスト名・ユーザー名を含む）コマンドリストでcmdを再現する
-        # 必要がある（cmd="mysqldump"のような文字列だけでは漏洩を検出できない）
+        # TimeoutExpired.__str__()は渡したcmdをそのまま文字列化するが、認証情報を
+        # --defaults-extra-fileの一時ファイル経由に変更したことで、コマンド自体には
+        # そもそもホスト名・ユーザー名・パスワードが含まれなくなった（#1086フォローアップ）
         mock_datetime.now.return_value = datetime(2026, 1, 1, 12, 0, 0)
-        actual_command = [
-            "mysqldump", "--no-tablespaces", "--single-transaction", "--default-character-set=utf8mb4",
-            "--routines", "--events", "--triggers",
-            "-h", "testhost", "-u", "testuser", "-P", "3307", "testdb",
-        ]
-        mock_run.side_effect = subprocess.TimeoutExpired(
-            cmd=actual_command, timeout=Command.MYSQLDUMP_TIMEOUT_SECONDS
-        )
+
+        def side_effect(command, **kwargs):
+            raise subprocess.TimeoutExpired(cmd=command, timeout=Command.MYSQLDUMP_TIMEOUT_SECONDS)
+
+        mock_run.side_effect = side_effect
 
         _, err = self._run()
 
-        # サーバー側の標準エラー出力（ログ）には詳細情報を残す
-        self.assertIn("testhost", err)
         self.assertIn("Google Driveへのバックアップ中にエラーが発生しました", err)
         mock_upload.assert_not_called()
         mock_delete.assert_not_called()
         mock_send_discord.assert_called_once()
-        # コードレビュー指摘対応: 公開チャンネル宛のDiscord通知には、ホスト名・
-        # ユーザー名・DB名を含むコマンド全体を送らない
+        # 公開チャンネル宛のDiscord通知には、ホスト名・ユーザー名・パスワードを
+        # 含むコマンド全体を送らない（そもそもコマンドにこれらは含まれない）
         self.assertNotIn("testhost", mock_send_discord.call_args.args[1])
         self.assertNotIn("testuser", mock_send_discord.call_args.args[1])
-        self.assertNotIn("testdb", mock_send_discord.call_args.args[1])
+        self.assertNotIn("testpass", mock_send_discord.call_args.args[1])
 
 
 class StatsCommandTest(TestCase):

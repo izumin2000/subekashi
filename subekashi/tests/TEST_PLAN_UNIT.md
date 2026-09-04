@@ -1139,13 +1139,16 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | 実行対象外の時刻 | `now.hour`が6の倍数でない | アップロード・古いバックアップの削除のいずれも行われない |
 | Drive認証情報未設定 | `GOOGLE_DRIVE_CLIENT_ID`等が空 | エラーメッセージを出力し、アップロードを行わない |
 | SQLite: 実行対象の時刻・認証情報あり | `ENGINE=sqlite3`、`now.hour`が6の倍数 | `shutil.copy2`でDBファイルがコピーされ、`.sqlite3`拡張子・`mimetype="application/x-sqlite3"`でDriveにアップロードされた後、古いバックアップの削除（50件保持）が行われる |
+| SQLite: ダンプファイルのパーミッション（コードレビュー対応） | コピー後 | DBダンプという機密性の高いファイルのため、`tempfile.TemporaryDirectory()`のumask依存パーミッションに任せず`os.chmod`で0600に明示的に絞る（Linux環境でのみ厳密に検証、Windowsの`os.chmod`は完全なUnixパーミッションを表現できないため） |
 | SQLite: アップロード失敗時 | `upload_backup`が例外を送出 | エラーメッセージを出力し、古いバックアップの削除は行われない。`ERROR_DISCORD_URL`宛にDiscord通知を送る |
 | SQLite: 削除失敗時 | アップロードは成功、`delete_old_backups`が例外を送出 | アップロード失敗時と異なる（削除専用の）エラーメッセージを出力し、Discord通知を送る |
-| MySQL: 実行対象の時刻・認証情報あり | `ENGINE=mysql`、`now.hour`が6の倍数、`PORT`設定あり | `mysqldump --no-tablespaces --single-transaction --default-character-set=utf8mb4 --routines --events --triggers -h <HOST> -u <USER> -P <PORT> <NAME>`が実行され、標準出力がファイルに書き出される。パスワードはコマンドライン引数ではなく環境変数`MYSQL_PWD`経由で渡される（`ps`コマンド等からの漏洩防止）。`timeout=600`秒が設定される。`.sql`拡張子・`mimetype="text/plain"`でDriveにアップロードされる |
-| MySQL: `PORT`未設定 | `DATABASES['default']`に`PORT`キー自体が無い（`config/settings.py`はMYSQL_PORT未設定時にキーを含めない） | コマンドに`-P`オプションが付与されない |
-| MySQL: mysqldumpコマンドが見つからない | `subprocess.run`が`FileNotFoundError`を送出 | SQLite同様「Google Driveへのバックアップ中にエラーが発生しました」に集約され、アップロード・古いバックアップの削除は行われない |
+| MySQL: 実行対象の時刻・認証情報あり | `ENGINE=mysql`、`now.hour`が6の倍数、`PORT`設定あり | `mysqldump --defaults-extra-file=<一時cnfファイル> --no-tablespaces --single-transaction --default-character-set=utf8mb4 --routines --events --triggers <NAME>`が実行され、標準出力がファイルに書き出される。`timeout=600`秒が設定される。`.sql`拡張子・`mimetype="text/plain"`でDriveにアップロードされる |
+| MySQL: 認証情報の受け渡し方式（コードレビュー対応） | 実行後 | MySQL公式ドキュメントで非推奨とされる環境変数`MYSQL_PWD`は使わず、`--defaults-extra-file`で指定したパーミッション0600（Linux環境でのみ厳密に検証）の一時オプションファイル（`[client]`セクションに`user`/`password`/`host`/`port`を記載、ダブルクォート内は`\`と`"`をエスケープ）経由でホスト名・ユーザー名・パスワードを渡す。コマンドライン引数にはこれらが一切含まれない（DB名のみ残る）。オプションファイルは処理完了後（成功・失敗いずれの場合も）に削除される |
+| MySQL: ダンプファイルのパーミッション（コードレビュー対応） | ダンプ出力後 | DBダンプという機密性の高いファイルのため、`os.chmod`で0600に明示的に絞る（Linux環境でのみ厳密に検証） |
+| MySQL: `PORT`未設定 | `DATABASES['default']`に`PORT`キー自体が無い（`config/settings.py`はMYSQL_PORT未設定時にキーを含めない） | オプションファイルに`port=`行自体が含まれない |
+| MySQL: mysqldumpコマンドが見つからない | `subprocess.run`が`FileNotFoundError`を送出 | SQLite同様「Google Driveへのバックアップ中にエラーが発生しました」に集約され、アップロード・古いバックアップの削除は行われない。一時オプションファイルはこの場合も削除される |
 | MySQL: mysqldumpがエラー終了コードを返す | `returncode != 0` | サーバーの標準エラー出力（ログ）には`stderr`の詳細（ホスト名・ユーザー名等を含みうる）を出力しつつ、公開チャンネルである`ERROR_DISCORD_URL`宛のDiscord通知には一般化したメッセージ（exit codeのみ）のみを送る（詳細を含めない） |
-| MySQL: mysqldumpがタイムアウトする | `subprocess.run`が`TimeoutExpired`を送出 | DBサイズの増加やネットワーク要因でハングした場合にバックアップジョブが無期限にブロックされないよう、他の失敗ケースと同様に「Google Driveへのバックアップ中にエラーが発生しました」に集約される。`TimeoutExpired.__str__()`は渡したcmd（ホスト名・ユーザー名・DB名を含むコマンド引数リストそのもの）をそのまま文字列化するため、`returncode != 0`のケースと同様にサーバーの標準エラー出力（ログ）には詳細を残しつつ、公開チャンネルである`ERROR_DISCORD_URL`宛の通知には含めない |
+| MySQL: mysqldumpがタイムアウトする | `subprocess.run`が`TimeoutExpired`を送出 | DBサイズの増加やネットワーク要因でハングした場合にバックアップジョブが無期限にブロックされないよう、他の失敗ケースと同様に「Google Driveへのバックアップ中にエラーが発生しました」に集約される。`TimeoutExpired.__str__()`は渡したcmdをそのまま文字列化するが、認証情報を`--defaults-extra-file`経由に変更したことでコマンド自体にはそもそもホスト名・ユーザー名・パスワードが含まれないため、公開チャンネルである`ERROR_DISCORD_URL`宛の通知にもこれらは含まれない |
 
 #### 14-4. `word` コマンド（`word.json`から模倣単語候補を`Word`に一括登録、#1053）
 
