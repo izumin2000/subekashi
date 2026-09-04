@@ -380,16 +380,33 @@ class BackupCommandTest(TestCase):
         self, mock_datetime, mock_run, mock_upload, mock_delete, mock_send_discord, *_
     ):
         # コードレビュー指摘対応: DBサイズの増加やネットワーク要因でmysqldumpがハングし、
-        # バックアップジョブが無期限にブロックされることを防ぐタイムアウトの回帰確認
+        # バックアップジョブが無期限にブロックされることを防ぐタイムアウトの回帰確認。
+        # TimeoutExpired.__str__()は渡したcmdをそのまま文字列化するため、本番相当の
+        # 検出には実際の（ホスト名・ユーザー名を含む）コマンドリストでcmdを再現する
+        # 必要がある（cmd="mysqldump"のような文字列だけでは漏洩を検出できない）
         mock_datetime.now.return_value = datetime(2026, 1, 1, 12, 0, 0)
-        mock_run.side_effect = subprocess.TimeoutExpired(cmd="mysqldump", timeout=Command.MYSQLDUMP_TIMEOUT_SECONDS)
+        actual_command = [
+            "mysqldump", "--no-tablespaces", "--single-transaction", "--default-character-set=utf8mb4",
+            "--routines", "--events", "--triggers",
+            "-h", "testhost", "-u", "testuser", "-P", "3307", "testdb",
+        ]
+        mock_run.side_effect = subprocess.TimeoutExpired(
+            cmd=actual_command, timeout=Command.MYSQLDUMP_TIMEOUT_SECONDS
+        )
 
         _, err = self._run()
 
+        # サーバー側の標準エラー出力（ログ）には詳細情報を残す
+        self.assertIn("testhost", err)
         self.assertIn("Google Driveへのバックアップ中にエラーが発生しました", err)
         mock_upload.assert_not_called()
         mock_delete.assert_not_called()
         mock_send_discord.assert_called_once()
+        # コードレビュー指摘対応: 公開チャンネル宛のDiscord通知には、ホスト名・
+        # ユーザー名・DB名を含むコマンド全体を送らない
+        self.assertNotIn("testhost", mock_send_discord.call_args.args[1])
+        self.assertNotIn("testuser", mock_send_discord.call_args.args[1])
+        self.assertNotIn("testdb", mock_send_discord.call_args.args[1])
 
 
 class StatsCommandTest(TestCase):

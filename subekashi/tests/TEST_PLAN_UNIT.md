@@ -1145,7 +1145,7 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | MySQL: `PORT`未設定 | `DATABASES['default']`に`PORT`キー自体が無い（`config/settings.py`はMYSQL_PORT未設定時にキーを含めない） | コマンドに`-P`オプションが付与されない |
 | MySQL: mysqldumpコマンドが見つからない | `subprocess.run`が`FileNotFoundError`を送出 | SQLite同様「Google Driveへのバックアップ中にエラーが発生しました」に集約され、アップロード・古いバックアップの削除は行われない |
 | MySQL: mysqldumpがエラー終了コードを返す | `returncode != 0` | サーバーの標準エラー出力（ログ）には`stderr`の詳細（ホスト名・ユーザー名等を含みうる）を出力しつつ、公開チャンネルである`ERROR_DISCORD_URL`宛のDiscord通知には一般化したメッセージ（exit codeのみ）のみを送る（詳細を含めない） |
-| MySQL: mysqldumpがタイムアウトする | `subprocess.run`が`TimeoutExpired`を送出 | DBサイズの増加やネットワーク要因でハングした場合にバックアップジョブが無期限にブロックされないよう、他の失敗ケースと同様に「Google Driveへのバックアップ中にエラーが発生しました」に集約される |
+| MySQL: mysqldumpがタイムアウトする | `subprocess.run`が`TimeoutExpired`を送出 | DBサイズの増加やネットワーク要因でハングした場合にバックアップジョブが無期限にブロックされないよう、他の失敗ケースと同様に「Google Driveへのバックアップ中にエラーが発生しました」に集約される。`TimeoutExpired.__str__()`は渡したcmd（ホスト名・ユーザー名・DB名を含むコマンド引数リストそのもの）をそのまま文字列化するため、`returncode != 0`のケースと同様にサーバーの標準エラー出力（ログ）には詳細を残しつつ、公開チャンネルである`ERROR_DISCORD_URL`宛の通知には含めない |
 
 #### 14-4. `word` コマンド（`word.json`から模倣単語候補を`Word`に一括登録、#1053）
 

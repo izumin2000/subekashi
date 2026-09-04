@@ -82,10 +82,19 @@ class Command(BaseCommand):
         env = os.environ.copy()
         env['MYSQL_PWD'] = db_settings['PASSWORD']
 
-        with open(backup_path, 'wb') as f:
-            result = subprocess.run(
-                command, stdout=f, stderr=subprocess.PIPE, env=env, timeout=self.MYSQLDUMP_TIMEOUT_SECONDS
-            )
+        try:
+            with open(backup_path, 'wb') as f:
+                result = subprocess.run(
+                    command, stdout=f, stderr=subprocess.PIPE, env=env, timeout=self.MYSQLDUMP_TIMEOUT_SECONDS
+                )
+        except subprocess.TimeoutExpired as e:
+            # TimeoutExpired.__str__()は渡したcmd（ホスト名・ユーザー名・DB名を含む
+            # コマンド引数リストそのもの）をそのまま文字列化するため、returncode != 0の
+            # ケースと同様に詳細はサーバーの標準エラー出力にのみ残し、例外
+            # （Discord通知に使われる）には一般化したメッセージのみを含める
+            self.stderr.write(self.style.ERROR(f"mysqldumpタイムアウト詳細：{str(e)}"))
+            raise RuntimeError(f"mysqldumpがタイムアウトしました（{self.MYSQLDUMP_TIMEOUT_SECONDS}秒）")
+
         if result.returncode != 0:
             # mysqldumpのstderrにはホスト名・ユーザー名等の接続情報が含まれ得る。
             # ERROR_DISCORD_URLは公開チャンネルのため、詳細はサーバーの標準エラー
