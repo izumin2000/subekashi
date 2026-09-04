@@ -194,11 +194,12 @@ class BackupCommandTest(TestCase):
     @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_ID", "client-id")
     @patch("subekashi.management.commands.backup.delete_old_backups")
     @patch("subekashi.management.commands.backup.upload_backup")
+    @patch("subekashi.management.commands.backup.os.chmod")
     @patch("subekashi.management.commands.backup.shutil.copy2")
     @patch("subekashi.management.commands.backup.DATABASES", SQLITE_DB_SETTINGS)
     @patch("subekashi.management.commands.backup.datetime")
     def test_sqlite_uploads_to_drive_and_prunes_old_backups_on_scheduled_hour(
-        self, mock_datetime, mock_copy2, mock_upload, mock_delete, *_
+        self, mock_datetime, mock_copy2, mock_chmod, mock_upload, mock_delete, *_
     ):
         mock_datetime.now.return_value = datetime(2026, 1, 1, 6, 0, 0)
         mock_copy2.side_effect = self._create_dummy_file
@@ -211,10 +212,11 @@ class BackupCommandTest(TestCase):
         self.assertEqual(mock_upload.call_args.kwargs["mimetype"], "application/x-sqlite3")
         mock_delete.assert_called_once_with(50)
         # コードレビュー指摘対応: DBダンプという機密性の高いファイルのため、
-        # tempfile.TemporaryDirectory()のumask依存のパーミッションに任せず明示的に絞る
-        if os.name != "nt":
-            backup_path = mock_copy2.call_args.args[1]
-            self.assertEqual(stat.S_IMODE(os.stat(backup_path).st_mode), 0o600)
+        # tempfile.TemporaryDirectory()のumask依存のパーミッションに任せず明示的に絞る。
+        # コマンド完了後（tempfile.TemporaryDirectory()の終了時）に一時ファイル自体は
+        # 削除されるため、os.statではなくos.chmodの呼び出し引数を直接検証する
+        backup_path = mock_copy2.call_args.args[1]
+        mock_chmod.assert_called_once_with(backup_path, stat.S_IRUSR | stat.S_IWUSR)
 
     @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_FOLDER_ID", "folder-id")
     @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_REFRESH_TOKEN", "refresh-token")
