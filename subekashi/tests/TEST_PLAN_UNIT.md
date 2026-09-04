@@ -1130,16 +1130,25 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | SongLinkが無いSong | 対象外 | 更新されない（スキップ） |
 | 全動画が取得不可 | `get_youtube_api` が `{}` を返す | `is_deleted=True` で保存される |
 
-#### 14-3. `backup` コマンド（バックアップ先をサーバーストレージからGoogle Driveに変更、#1050）
+#### 14-3. `backup` コマンド（バックアップ先をサーバーストレージからGoogle Driveに変更、#1050。MySQL移行対応でmysqldump方式を追加、#1086）
 
-サーバーのストレージにファイルを残さず、DBファイルを一時ディレクトリにコピーしてGoogle Driveへアップロードする。Google Drive APIはモック化する。
+サーバーのストレージにファイルを残さず、DBのダンプを一時ディレクトリに出力してGoogle Driveへアップロードする。`DATABASES['default']['ENGINE']`によりSQLite（`shutil.copy2`、拡張子`.sqlite3`）とMySQL（`mysqldump`、拡張子`.sql`）を切り替える。DATABASESは実行環境のUSE_MYSQL設定に依存するため、テストではSQLITE_DB_SETTINGS/MYSQL_DB_SETTINGSへ明示的に差し替えて両方式を検証する。Google Drive APIはモック化する。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | 実行対象外の時刻 | `now.hour`が6の倍数でない | アップロード・古いバックアップの削除のいずれも行われない |
 | Drive認証情報未設定 | `GOOGLE_DRIVE_CLIENT_ID`等が空 | エラーメッセージを出力し、アップロードを行わない |
-| 実行対象の時刻・認証情報あり | `now.hour`が6の倍数（0, 6, 12, 18時） | DBファイルがコピーされ、日時ファイル名でDriveにアップロードされた後、古いバックアップの削除（50件保持）が行われる |
-| アップロード失敗時 | `upload_backup`が例外を送出 | エラーメッセージを出力し、古いバックアップの削除は行われない。`ERROR_DISCORD_URL`宛にDiscord通知を送る |
+| SQLite: 実行対象の時刻・認証情報あり | `ENGINE=sqlite3`、`now.hour`が6の倍数 | `shutil.copy2`でDBファイルがコピーされ、`.sqlite3`拡張子・`mimetype="application/x-sqlite3"`でDriveにアップロードされた後、古いバックアップの削除（50件保持）が行われる |
+| SQLite: ダンプファイルのパーミッション（コードレビュー対応） | コピー後 | DBダンプという機密性の高いファイルのため、`tempfile.TemporaryDirectory()`のumask依存パーミッションに任せず`os.chmod`で0600に明示的に絞る（Linux環境でのみ厳密に検証、Windowsの`os.chmod`は完全なUnixパーミッションを表現できないため） |
+| SQLite: アップロード失敗時 | `upload_backup`が例外を送出 | エラーメッセージを出力し、古いバックアップの削除は行われない。`ERROR_DISCORD_URL`宛にDiscord通知を送る |
+| SQLite: 削除失敗時 | アップロードは成功、`delete_old_backups`が例外を送出 | アップロード失敗時と異なる（削除専用の）エラーメッセージを出力し、Discord通知を送る |
+| MySQL: 実行対象の時刻・認証情報あり | `ENGINE=mysql`、`now.hour`が6の倍数、`PORT`設定あり | `mysqldump --defaults-extra-file=<一時cnfファイル> --no-tablespaces --single-transaction --default-character-set=utf8mb4 --routines --events --triggers <NAME>`が実行され、標準出力がファイルに書き出される。`timeout=600`秒が設定される。`.sql`拡張子・`mimetype="text/plain"`でDriveにアップロードされる |
+| MySQL: 認証情報の受け渡し方式（コードレビュー対応） | 実行後 | MySQL公式ドキュメントで非推奨とされる環境変数`MYSQL_PWD`は使わず、`--defaults-extra-file`で指定したパーミッション0600（Linux環境でのみ厳密に検証）の一時オプションファイル（`[client]`セクションに`user`/`password`/`host`/`port`を記載、ダブルクォート内は`\`と`"`をエスケープ）経由でホスト名・ユーザー名・パスワードを渡す。コマンドライン引数にはこれらが一切含まれない（DB名のみ残る）。オプションファイルは処理完了後（成功・失敗いずれの場合も）に削除される |
+| MySQL: ダンプファイルのパーミッション（コードレビュー対応） | ダンプ出力後 | DBダンプという機密性の高いファイルのため、`os.chmod`で0600に明示的に絞る（Linux環境でのみ厳密に検証） |
+| MySQL: `PORT`未設定 | `DATABASES['default']`に`PORT`キー自体が無い（`config/settings.py`はMYSQL_PORT未設定時にキーを含めない） | オプションファイルに`port=`行自体が含まれない |
+| MySQL: mysqldumpコマンドが見つからない | `subprocess.run`が`FileNotFoundError`を送出 | SQLite同様「Google Driveへのバックアップ中にエラーが発生しました」に集約され、アップロード・古いバックアップの削除は行われない。一時オプションファイルはこの場合も削除される |
+| MySQL: mysqldumpがエラー終了コードを返す | `returncode != 0` | サーバーの標準エラー出力（ログ）には`stderr`の詳細（ホスト名・ユーザー名等を含みうる）を出力しつつ、公開チャンネルである`ERROR_DISCORD_URL`宛のDiscord通知には一般化したメッセージ（exit codeのみ）のみを送る（詳細を含めない） |
+| MySQL: mysqldumpがタイムアウトする | `subprocess.run`が`TimeoutExpired`を送出 | DBサイズの増加やネットワーク要因でハングした場合にバックアップジョブが無期限にブロックされないよう、他の失敗ケースと同様に「Google Driveへのバックアップ中にエラーが発生しました」に集約される。`TimeoutExpired.__str__()`は渡したcmdをそのまま文字列化するが、認証情報を`--defaults-extra-file`経由に変更したことでコマンド自体にはそもそもホスト名・ユーザー名・パスワードが含まれないため、公開チャンネルである`ERROR_DISCORD_URL`宛の通知にもこれらは含まれない |
 
 #### 14-4. `word` コマンド（`word.json`から模倣単語候補を`Word`に一括登録、#1053）
 
@@ -1243,18 +1252,21 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 
 Google Drive APIはモック化する。
 
-#### 17-1. `upload_backup(file_path, file_name)`
+#### 17-1. `upload_backup(file_path, file_name, mimetype="application/x-sqlite3")`
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | アップロード先の指定 | 通常のファイルパス・ファイル名 | 指定したファイル名・フォルダIDでアップロードが実行される |
 | アップロード後のファイルハンドル解放 | アップロード実行後 | 元ファイルを削除できる（ハンドルが残っていない） |
+| mimetype省略時のデフォルト（#1086） | `mimetype`引数なし | `application/x-sqlite3`でアップロードされる |
+| mimetype指定時（#1086） | `mimetype="text/plain"`（mysqldumpダンプ用。`application/sql`はIANA未登録のため使用しない） | 指定したmimetypeでアップロードされる |
 
 #### 17-2. `delete_old_backups(keep_nums)` — 保持件数の境界値
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | 保持件数未満 | ファイル数 < `keep_nums` | 削除されない |
+| 保持件数未満だが半数超過（#1086、実際に本番で発生したバグの回帰防止） | `keep_nums / 2 < ファイル数 < keep_nums`（例: 26件、`keep_nums=50`） | 削除されない。`len(files) - keep_nums`が負の場合に`max(0, ...)`でクランプしていないと、`files[:負の数]`が末尾からの相対指定と解釈され、意図せず先頭（最も古い）ファイルが削除されてしまう |
 | 保持件数ちょうど | ファイル数 == `keep_nums` | 削除されない |
 | 保持件数を1件超過 | ファイル数 == `keep_nums + 1` | 最も古い1件のみ削除される |
 | 保持件数を複数件超過 | ファイル数 > `keep_nums + 1` | 超過分がすべて（古い順に）削除される |

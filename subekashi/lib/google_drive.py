@@ -24,12 +24,12 @@ def get_drive_service():
     return build("drive", "v3", credentials=credentials, cache_discovery=False)
 
 
-def upload_backup(file_path, file_name):
+def upload_backup(file_path, file_name, mimetype="application/x-sqlite3"):
     service = get_drive_service()
     file_metadata = {"name": file_name, "parents": [GOOGLE_DRIVE_FOLDER_ID]}
     # MediaFileUploadは開いたファイルを閉じないため、closeを保証できるMediaIoBaseUploadを使う
     with open(file_path, "rb") as f:
-        media = MediaIoBaseUpload(f, mimetype="application/x-sqlite3", resumable=True)
+        media = MediaIoBaseUpload(f, mimetype=mimetype, resumable=True)
         service.files().create(body=file_metadata, media_body=media, fields="id").execute()
 
 
@@ -48,5 +48,8 @@ def delete_old_backups(keep_nums):
         if not page_token:
             break
 
-    for file in files[:len(files) - keep_nums]:
+    # len(files)がkeep_nums以下の場合、files[:負の数]は末尾からの相対指定になり
+    # 意図せず先頭（＝最も古い）ファイルを削除してしまうため、0未満にならないようにする
+    excess_count = max(0, len(files) - keep_nums)
+    for file in files[:excess_count]:
         service.files().delete(fileId=file["id"]).execute()

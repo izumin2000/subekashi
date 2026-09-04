@@ -35,6 +35,35 @@ class UploadBackupTest(SimpleTestCase):
         self.assertIn("parents", create_call.call_args.kwargs["body"])
         create_call.return_value.execute.assert_called_once()
 
+    @patch("subekashi.lib.google_drive.MediaIoBaseUpload")
+    @patch("subekashi.lib.google_drive.get_drive_service")
+    def test_defaults_to_sqlite_mimetype(self, mock_get_service, mock_media_upload):
+        mock_get_service.return_value = MagicMock()
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            file_path = os.path.join(tmp_dir, "backup.sqlite3")
+            with open(file_path, "wb") as f:
+                f.write(b"dummy")
+
+            upload_backup(file_path, "2026-01-01-00.sqlite3")
+
+        self.assertEqual(mock_media_upload.call_args.kwargs["mimetype"], "application/x-sqlite3")
+
+    @patch("subekashi.lib.google_drive.MediaIoBaseUpload")
+    @patch("subekashi.lib.google_drive.get_drive_service")
+    def test_uses_specified_mimetype(self, mock_get_service, mock_media_upload):
+        # #1086: MySQL移行時のmysqldumpダンプ(.sql)アップロード用
+        mock_get_service.return_value = MagicMock()
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            file_path = os.path.join(tmp_dir, "backup.sql")
+            with open(file_path, "wb") as f:
+                f.write(b"dummy")
+
+            upload_backup(file_path, "2026-01-01-00.sql", mimetype="application/sql")
+
+        self.assertEqual(mock_media_upload.call_args.kwargs["mimetype"], "application/sql")
+
 
 class DeleteOldBackupsTest(SimpleTestCase):
     def _mock_service_with_files(self, names):
@@ -56,6 +85,20 @@ class DeleteOldBackupsTest(SimpleTestCase):
     @patch("subekashi.lib.google_drive.get_drive_service")
     def test_no_deletion_when_exactly_at_limit(self, mock_get_service):
         names = [f"file-{i}" for i in range(50)]
+        mock_service = self._mock_service_with_files(names)
+        mock_get_service.return_value = mock_service
+
+        delete_old_backups(50)
+
+        mock_service.files.return_value.delete.assert_not_called()
+
+    @patch("subekashi.lib.google_drive.get_drive_service")
+    def test_no_deletion_when_under_limit_but_more_than_half(self, mock_get_service):
+        # 回帰防止テスト: len(files) - keep_nums が負でも0未満（例: 26-50=-24）の場合、
+        # files[:負の数] は「末尾から」ではなく実質的に「先頭から」の指定になり得るため
+        # （-24は-len(files)=-26より大きい＝スライスが空にならない）、
+        # 誤って最も古いファイルを削除してしまうバグが実際に本番で発生した（#1086）
+        names = [f"file-{i}" for i in range(26)]
         mock_service = self._mock_service_with_files(names)
         mock_get_service.return_value = mock_service
 
