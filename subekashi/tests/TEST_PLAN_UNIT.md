@@ -1549,7 +1549,7 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 
 `compute_kenreki`は`compute_song_points`の結果から1曲分の鍵歴を算出する。`compute_kenreki_for_songs`は`(view, like)`のリストを受け取り、各曲の`compute_song_points`を合計してから鍵盤数等に変換する（authorごとの統計・総合統計ページで表示するのはこちら）。
 
-両者とも共通の変換処理（`_kenreki_from_points`）で、鍵盤数（`key_count`）は合計ptをそのまま返す（#1099でPOINTS_PER_KEYによる2pt=鍵盤1本の換算を廃止）。`key_count`自体はカンストさせず実際の達成数をそのまま返す（鍵盤ビジュアルの描画本数のみ`MAX_KEYS`を上限とし、呼び出し側で`min(key_count, MAX_KEYS)`してから`build_keyboard_geometry`に渡す）。`key_count`が`MAX_KEYS`(88、現実のピアノの鍵盤数)以上になった時点で、`MAX_POSSIBLE_KEY_COUNT`（2pt=1鍵盤換算を廃止する前の実データ最大値1,506相当のpt換算後のおおよその最大値に対して、従来と同等の伸びしろ〔従来値の2倍〕を持たせた固定値6,000、都度DBクエリはしない）に対する超過度合いを虹色（赤hue=0〜紫hue=270）のHSL色相に連続的にマッピングし、`overflow_color`として返す（`MAX_KEYS`未満なら`None`）。`overflow_lower_bound`(=`MAX_KEYS`)は常に結果に含まれるが、`overflow_upper_bound`(=`MAX_POSSIBLE_KEY_COUNT`)は超過時のみ値が入り、非超過時は`None`（スペクトル表示は超過時のみ描画するため）。
+両者とも共通の変換処理（`_kenreki_from_points`）で、鍵盤数（`key_count`）は合計ptをそのまま返す（#1099でPOINTS_PER_KEYによる2pt=鍵盤1本の換算を廃止）。`key_count`自体はカンストさせず実際の達成数をそのまま返す（鍵盤ビジュアルの描画本数のみ`MAX_KEYS`を上限とし、呼び出し側で`min(key_count, MAX_KEYS)`してから`build_keyboard_geometry`に渡す）。`key_count`が`MAX_KEYS`(88、現実のピアノの鍵盤数)以上になった時点で、`MAX_POSSIBLE_KEY_COUNT`（2pt=1鍵盤換算を廃止する前の実データ最大値1,506相当のpt換算後のおおよその最大値に対して、十分な伸びしろを持たせた固定値5,000、都度DBクエリはしない）に対する超過度合いを虹色（赤hue=0〜紫hue=270）のHSL色相に連続的にマッピングし、`overflow_color`として返す（`MAX_KEYS`未満なら`None`）。`overflow_lower_bound`(=`MAX_KEYS`)は常に結果に含まれるが、`overflow_upper_bound`(=`MAX_POSSIBLE_KEY_COUNT`)は超過時のみ値が入り、非超過時は`None`（スペクトル表示は超過時のみ描画するため）。
 
 現行の閾値表で1曲あたり到達しうる理論上の最大pt（`MAX_TOTAL_POINTS` = view22段階+like21段階 = 43pt）は`MAX_KEYS`(88)にも届かないため、**1曲だけではMAX_KEYSに到達できず色分岐は発生しない**（複数曲の総和で初めてMAX_KEYSを超えうる、意図した設計）。
 
