@@ -7,12 +7,12 @@ LIKE_THRESHOLDS = [
     20000, 50000, 100000, 200000, 500000, 1000000, 2000000, 5000000,
 ]
 
-POINTS_PER_KEY = 2
 MAX_KEYS = 88  # 鍵盤ビジュアルに描画する本数の上限（現実のピアノの鍵盤数に合わせる）
-# オーバーフロー色スペクトルの上限鍵盤数。鍵歴はSongごとに算出した値の総和のため、
-# 2026-09時点の実データ最大値(1,506、Songごとの総和方式で算出)に対して
-# 十分な伸びしろを持たせた固定値（DBを都度クエリしない）
-MAX_POSSIBLE_KEY_COUNT = 3000
+# オーバーフロー色スペクトルの上限鍵盤数。鍵歴はSongごとに算出したpt合計をそのまま
+# 鍵盤本数として扱う（#1099で2pt=鍵盤1本の換算を廃止）ため、廃止前の実データ最大値
+# (1,506、2pt=1鍵盤換算時)のpt換算後のおおよその最大値に対して、従来と同等の
+# 伸びしろ（従来値の2倍）を持たせた固定値（DBを都度クエリしない）
+MAX_POSSIBLE_KEY_COUNT = 6000
 
 
 MAX_TOTAL_POINTS = len(VIEW_THRESHOLDS) + len(LIKE_THRESHOLDS)
@@ -41,12 +41,12 @@ def compute_song_points(view, like):
 def _kenreki_from_points(points):
     """合計ptから鍵歴（鍵盤数・オーバーフロー色等）を算出する
 
-    key_countは2pt=鍵盤1本として換算した実際の達成数で、MAX_KEYSでカンストさせない
-    （鍵盤ビジュアルの描画本数のみMAX_KEYSを上限とし、呼び出し側でmin()して渡す）。
-    key_countがMAX_KEYS(88)以上になった時点で、黒鍵の色（虹色のグラデーション、
-    MAX_POSSIBLE_KEY_COUNTに対する到達度で連続的に変化）を返す
+    key_countは合計ptをそのまま鍵盤本数として扱う（#1099で2pt=鍵盤1本の換算を廃止）。
+    MAX_KEYSでカンストさせない（鍵盤ビジュアルの描画本数のみMAX_KEYSを上限とし、
+    呼び出し側でmin()して渡す）。key_countがMAX_KEYS(88)以上になった時点で、
+    黒鍵の色（虹色のグラデーション、MAX_POSSIBLE_KEY_COUNTに対する到達度で連続的に変化）を返す
     """
-    key_count = points // POINTS_PER_KEY
+    key_count = points
 
     overflow_color = None
     overflow_ratio = None
