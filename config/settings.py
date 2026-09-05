@@ -95,7 +95,15 @@ DATABASES = {
         "PASSWORD": MYSQL_PASSWORD,
         "HOST": MYSQL_HOST,
         **({"PORT": MYSQL_PORT} if MYSQL_PORT else {}),
-        "OPTIONS": {"charset": "utf8mb4"},
+        # PythonAnywhereの共有MySQLサーバーはsql_modeにSTRICT_TRANS_TABLESを
+        # 含まない設定になっており、max_length超過等の不正な値を挿入しようとしても
+        # エラーにならず警告のみで黙って切り詰められてしまう（#593の移行作業で発覚、#1091）。
+        # サーバー側の設定に依存せず常にstrictな検証が働くよう、接続時に明示的に設定する。
+        # 既存のsql_mode（環境によって異なりうる）を上書きしないよう追加する形にする
+        "OPTIONS": {
+            "charset": "utf8mb4",
+            "init_command": "SET sql_mode=CONCAT(@@sql_mode, ',STRICT_TRANS_TABLES')",
+        },
         # MySQLサーバーの既定照合順序に依存すると環境ごとに挙動が変わってしまうため
         # （#1092、本番はutf8mb4_binで運用しているが、サーバー設定次第では
         # 大文字小文字を区別しないutf8mb4_general_ci等でテストDBが作られうる）、
