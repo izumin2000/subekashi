@@ -29,11 +29,11 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             '--year', type=int, required=False,
-            help='--monthと合わせて指定し、その1ヶ月分のみを再計算する',
+            help='--monthと合わせて指定し、その1ヶ月分のみを再計算する（--forceとは同時に指定できない）',
         )
         parser.add_argument(
             '--month', type=int, required=False,
-            help='--yearと合わせて指定し、その1ヶ月分のみを再計算する',
+            help='--yearと合わせて指定し、その1ヶ月分のみを再計算する（--forceとは同時に指定できない）',
         )
 
     def handle(self, *args, **options):
@@ -44,6 +44,8 @@ class Command(BaseCommand):
         if target_year is not None or target_month is not None:
             if target_year is None or target_month is None:
                 raise CommandError('--yearと--monthは両方指定してください')
+            if options['force']:
+                raise CommandError('--forceと--year/--monthは同時に指定できません')
             self._recalculate_month(target_year, target_month)
             self.stdout.write(self.style.SUCCESS(f"{target_year}年{target_month}月分の統計を更新しました。"))
             return

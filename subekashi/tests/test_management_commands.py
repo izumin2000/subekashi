@@ -604,6 +604,17 @@ class StatsCommandTest(TestCase):
         self.assertEqual(Stats.objects.get(year=2026, month=1, songrange="all").total_view, 10)
 
     @patch("subekashi.management.commands.stats.now_local")
+    def test_force_with_year_month_raises_error(self, mock_now_local):
+        # --forceは全期間再計算、--year/--monthは1ヶ月のみのピンポイント再計算で
+        # スコープが矛盾するため、同時指定は明示的に弾く（コードレビュー指摘対応:
+        # 以前は--year/--monthが指定されていると--forceの値に関わらず無視され、
+        # 意図せず--forceが無効化されたことに気づけなかった）
+        mock_now_local.return_value = timezone_aware(2026, 3, 15)
+
+        with self.assertRaises(CommandError):
+            self._run("--force", "--year", "2026", "--month", "1")
+
+    @patch("subekashi.management.commands.stats.now_local")
     def test_year_without_month_raises_error(self, mock_now_local):
         mock_now_local.return_value = timezone_aware(2026, 3, 15)
 
