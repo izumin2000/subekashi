@@ -51,7 +51,6 @@ class ComputeKenrekiTest(TestCase):
     def test_zero_view_and_like_returns_zero(self):
         result = compute_kenreki(0, 0)
         self.assertEqual(result["points"], 0)
-        self.assertEqual(result["key_count"], 0)
         self.assertIsNone(result["overflow_color"])
         self.assertIsNone(result["overflow_ratio"])
         self.assertIsNone(result["overflow_upper_bound"])
@@ -59,14 +58,13 @@ class ComputeKenrekiTest(TestCase):
     def test_matches_compute_song_points(self):
         result = compute_kenreki(20, 2)
         self.assertEqual(result["points"], 4)
-        self.assertEqual(result["key_count"], 2)
 
     def test_single_song_cannot_reach_max_keys_alone(self):
-        # 1曲だけでは(view/likeとも全閾値到達=43pt->21鍵)MAX_KEYS(88)に届かない
+        # 1曲だけでは(view/likeとも全閾値到達=43pt)MAX_KEYS(88)に届かない
         # 鍵歴が複数曲の総和で伸びていく設計であることの裏付け
         result = compute_kenreki(10 ** 12, 10 ** 12)
         self.assertEqual(result["points"], MAX_TOTAL_POINTS)
-        self.assertLess(result["key_count"], MAX_KEYS)
+        self.assertLess(result["points"], MAX_KEYS)
         self.assertIsNone(result["overflow_color"])
 
     def test_overflow_lower_bound_always_present(self):
@@ -78,16 +76,14 @@ class ComputeKenrekiForSongsTest(TestCase):
     def test_empty_list_returns_zero(self):
         result = compute_kenreki_for_songs([])
         self.assertEqual(result["points"], 0)
-        self.assertEqual(result["key_count"], 0)
 
     def test_single_song_matches_compute_kenreki(self):
         self.assertEqual(compute_kenreki_for_songs([(20, 2)]), compute_kenreki(20, 2))
 
     def test_sums_points_across_multiple_songs(self):
-        # 各曲view=1は1段階目のみ到達(1pt)。3曲で合計3pt -> 1本(3//2)
+        # 各曲view=1は1段階目のみ到達(1pt)。3曲で合計3pt
         result = compute_kenreki_for_songs([(1, 0), (1, 0), (1, 0)])
         self.assertEqual(result["points"], 3)
-        self.assertEqual(result["key_count"], 1)
 
     def test_many_small_songs_can_outscore_one_song_with_the_same_total_view(self):
         # 鍵歴はSongごとに算出してから合計する仕様のため、同じ合計viewでも
@@ -103,19 +99,17 @@ class ComputeKenrekiForSongsTest(TestCase):
         self.assertGreater(many_result["points"], one_result["points"])
 
     def test_below_max_keys_does_not_overflow(self):
-        # 全閾値到達の曲(43pt)を4曲 -> 172pt -> 86鍵（MAX_KEYS未満で色分岐なし）
-        result = compute_kenreki_for_songs([(10 ** 12, 10 ** 12)] * 4)
-        self.assertEqual(result["points"], 172)
-        self.assertEqual(result["key_count"], 86)
+        # 全閾値到達の曲(43pt)を2曲 -> 86pt（MAX_KEYS未満で色分岐なし）
+        result = compute_kenreki_for_songs([(10 ** 12, 10 ** 12)] * 2)
+        self.assertEqual(result["points"], 86)
         self.assertIsNone(result["overflow_color"])
         self.assertIsNone(result["overflow_ratio"])
 
     def test_at_or_above_max_keys_overflows(self):
-        # 全閾値到達の曲(43pt)を5曲 -> 215pt -> 107鍵（MAX_KEYS以上で色分岐開始）
-        result = compute_kenreki_for_songs([(10 ** 12, 10 ** 12)] * 5)
-        self.assertEqual(result["points"], 215)
-        self.assertEqual(result["key_count"], 107)
-        self.assertGreater(result["key_count"], MAX_KEYS)
+        # 全閾値到達の曲(43pt)を3曲 -> 129pt（MAX_KEYS以上で色分岐開始）
+        result = compute_kenreki_for_songs([(10 ** 12, 10 ** 12)] * 3)
+        self.assertEqual(result["points"], 129)
+        self.assertGreater(result["points"], MAX_KEYS)
         self.assertIsNotNone(result["overflow_color"])
         self.assertEqual(result["overflow_upper_bound"], MAX_POSSIBLE_KEY_COUNT)
 

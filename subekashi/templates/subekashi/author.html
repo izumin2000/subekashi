@@ -21,7 +21,7 @@
                 <div class="dummybutton black-dummybutton"><i class="fas fa-chart-line"></i><p>統計</p></div>
             </a>
             {% if kenreki %}
-                <p id="author-stats-summary"{% if kenreki.overflow_color %} style="color: {{ kenreki.overflow_color }};"{% endif %}><i class="fas fa-trophy"></i> {{ kenreki.key_count|intcomma:False }}</p>
+                <p id="author-stats-summary"{% if kenreki.overflow_color %} style="color: {{ kenreki.overflow_color }};"{% endif %}><i class="fas fa-trophy"></i> {{ kenreki.points|intcomma:False }}</p>
             {% endif %}
         </div>
     </div>

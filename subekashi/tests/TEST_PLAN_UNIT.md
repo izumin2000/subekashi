@@ -527,7 +527,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 別名ボタンのアイコン (#1024) | 正常アクセス | `fa-people-arrows`アイコンが含まれる |
 | 統計ボタンのリンク (#334) | 正常アクセス | `/authors/<id>/stats/` へのリンクが含まれる |
 | 統計ボタンのアイコン (#334) | 正常アクセス | `fa-chart-line`アイコンが含まれる |
-| 統計ボタン下のメッセージ (#334、#968で鍵歴表示に変更) | 曲にview=1234を設定 | 鍵歴(`context["kenreki"]["key_count"]`、1234は7段階到達で28pt→14鍵）が正しく渡される |
+| 統計ボタン下のメッセージ (#334、#968で鍵歴表示に変更。#1099でpt表示に変更) | 曲にview=1234を設定 | 鍵歴(`context["kenreki"]["points"]`、1234は7段階到達で7pt）がそのまま表示される（鍵盤数(7//2=3)には変換しない） |
 | 統計ボタン下のメッセージの非表示 (#968) | authorに曲が1件も無い | `#author-stats-summary`自体が表示されない（`context["kenreki"]`が`None`） |
 
 #### 7-8-1. `AuthorAliasesView` (`/authors/<id>/aliases`)（#992、#1007、#1024）
@@ -1511,7 +1511,7 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 
 ---
 
-### 20. `lib/kenreki_service.py` — 鍵歴（実績鍵盤）算出ユーティリティ（#968）
+### 20. `lib/kenreki_service.py` — 鍵歴（実績鍵盤）算出ユーティリティ（#968。2pt=鍵盤1本の換算を廃止、#1099）
 
 **テストファイル**: `tests/test_lib_kenreki_service.py`
 
@@ -1521,6 +1521,8 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 
 - authorごとの統計ページ: songrange/year/monthの絞り込みの影響を受けない、authorの全期間・全曲（`AuthorStatsView`では`get_view_like_pairs(author_songs)`で取得、`tests/test_views.py`の`test_kenreki_not_affected_by_songrange_year_month_filters`で回帰防止）
 - 総合統計ページ: 他の統計項目と同様、絞り込みの影響を受ける（`StatsView`では`get_view_like_pairs(qs)`で取得、`tests/test_views.py`の`test_kenreki_reflects_songrange_year_month_filters`で回帰防止）。stat-valueの着色はしない（`overflow_color`を`None`に上書き、`test_kenreki_stat_value_never_colored_even_when_overflowing`で回帰防止）
+
+`points`（pt合計）はそのまま鍵盤本数としても扱う（#1099で`POINTS_PER_KEY`による2pt=鍵盤1本の換算を廃止。従来は`stat-item`の表示・鍵盤ビジュアルの両方が別フィールドの`key_count`(pt合計を2で割った値)を使っており、pt合計が奇数だと表示上端数が切り捨てられていた）。換算を廃止した結果`points`と`key_count`が常に同値になり、フィールドを分ける意味が無くなったため、`key_count`は`_kenreki_from_points`の返り値から削除し、鍵盤ビジュアル（`AuthorStatsView`が`build_keyboard_geometry`に渡す引数）・画面表示（`components/stats_summary.html`・`author.html`）ともに`points`を直接使うよう統一した（#1099フォローアップ）。`tests/test_views.py`の`test_kenreki_stat_value_displays_points_not_song_count_stat`（`StatsViewTest`/`AuthorStatsViewTest`）・`test_stats_summary_shows_kenreki`（`AuthorViewTest`）で回帰防止。
 
 #### 20-1. `compute_threshold_points(value, thresholds)`
 
@@ -1545,23 +1547,23 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 
 #### 20-3. `compute_kenreki(view, like)`（1曲分）/ `compute_kenreki_for_songs(view_like_pairs)`（複数曲の総和）
 
-`compute_kenreki`は`compute_song_points`の結果から1曲分の鍵歴を算出する。`compute_kenreki_for_songs`は`(view, like)`のリストを受け取り、各曲の`compute_song_points`を合計してから鍵盤数等に変換する（authorごとの統計・総合統計ページで表示するのはこちら）。
+`compute_kenreki`は`compute_song_points`の結果から1曲分の鍵歴を算出する。`compute_kenreki_for_songs`は`(view, like)`のリストを受け取り、各曲の`compute_song_points`を合計してからオーバーフロー色等に変換する（authorごとの統計・総合統計ページで表示するのはこちら）。
 
-両者とも共通の変換処理（`_kenreki_from_points`）で、合計ptを2pt=鍵盤1本として鍵盤数（`key_count`）に変換する。`key_count`自体はカンストさせず実際の達成数をそのまま返す（鍵盤ビジュアルの描画本数のみ`MAX_KEYS`を上限とし、呼び出し側で`min(key_count, MAX_KEYS)`してから`build_keyboard_geometry`に渡す）。`key_count`が`MAX_KEYS`(88、現実のピアノの鍵盤数)以上になった時点で、`MAX_POSSIBLE_KEY_COUNT`（2026-09時点の実データ最大値1,506〔Songごとの総和方式・修正後の正しい算出式で算出〕に対して伸びしろを持たせた固定値3,000、都度DBクエリはしない）に対する超過度合いを虹色（赤hue=0〜紫hue=270）のHSL色相に連続的にマッピングし、`overflow_color`として返す（`MAX_KEYS`未満なら`None`）。`overflow_lower_bound`(=`MAX_KEYS`)は常に結果に含まれるが、`overflow_upper_bound`(=`MAX_POSSIBLE_KEY_COUNT`)は超過時のみ値が入り、非超過時は`None`（スペクトル表示は超過時のみ描画するため）。
+両者とも共通の変換処理（`_kenreki_from_points`）を通す。返り値の`points`（pt合計）自体はカンストさせず実際の達成数をそのまま返す（鍵盤ビジュアルの描画本数のみ`MAX_KEYS`を上限とし、呼び出し側で`min(points, MAX_KEYS)`してから`build_keyboard_geometry`に渡す）。`points`が`MAX_KEYS`(88、現実のピアノの鍵盤数)以上になった時点で、`MAX_POSSIBLE_KEY_COUNT`（2pt=1鍵盤換算を廃止する前の実データ最大値1,506相当のpt換算後のおおよその最大値に対して、十分な伸びしろを持たせた固定値5,000、都度DBクエリはしない）に対する超過度合いを虹色（赤hue=0〜紫hue=270）のHSL色相に連続的にマッピングし、`overflow_color`として返す（`MAX_KEYS`未満なら`None`）。`overflow_lower_bound`(=`MAX_KEYS`)は常に結果に含まれるが、`overflow_upper_bound`(=`MAX_POSSIBLE_KEY_COUNT`)は超過時のみ値が入り、非超過時は`None`（スペクトル表示は超過時のみ描画するため）。
 
-現行の閾値表で1曲あたり到達しうる理論上の最大pt（`MAX_TOTAL_POINTS` = view22段階+like21段階 = 43pt → 21鍵）は`MAX_KEYS`(88)にも届かないため、**1曲だけではMAX_KEYSに到達できず色分岐は発生しない**（複数曲の総和で初めてMAX_KEYSを超えうる、意図した設計）。
+現行の閾値表で1曲あたり到達しうる理論上の最大pt（`MAX_TOTAL_POINTS` = view22段階+like21段階 = 43pt）は`MAX_KEYS`(88)にも届かないため、**1曲だけではMAX_KEYSに到達できず色分岐は発生しない**（複数曲の総和で初めてMAX_KEYSを超えうる、意図した設計）。
 
 | テストケース | 対象 | 条件 | 期待結果 |
 | --- | --- | --- | --- |
-| view・like共に0 | `compute_kenreki` | `(0, 0)` | `points=0`, `key_count=0`, `overflow_color=None`, `overflow_upper_bound=None` |
-| compute_song_pointsと一致 | `compute_kenreki` | view=20、like=2 | `points=4`, `key_count=2` |
-| 1曲だけではMAX_KEYSに届かない | `compute_kenreki` | view・likeとも全閾値到達（43pt） | `key_count=21`（< MAX_KEYS）、`overflow_color=None` |
-| 空リスト | `compute_kenreki_for_songs` | `[]` | `points=0`, `key_count=0` |
+| view・like共に0 | `compute_kenreki` | `(0, 0)` | `points=0`, `overflow_color=None`, `overflow_upper_bound=None` |
+| compute_song_pointsと一致 | `compute_kenreki` | view=20、like=2 | `points=4` |
+| 1曲だけではMAX_KEYSに届かない | `compute_kenreki` | view・likeとも全閾値到達（43pt） | `points=43`（< MAX_KEYS）、`overflow_color=None` |
+| 空リスト | `compute_kenreki_for_songs` | `[]` | `points=0` |
 | 1曲のみ | `compute_kenreki_for_songs` | `[(20, 2)]` | `compute_kenreki(20, 2)`と同じ結果 |
-| 複数曲のpt合計 | `compute_kenreki_for_songs` | 各曲view=1(1pt)を3曲 | `points=3`, `key_count=1` |
+| 複数曲のpt合計 | `compute_kenreki_for_songs` | 各曲view=1(1pt)を3曲 | `points=3` |
 | 曲数が多いほど有利（回帰） | `compute_kenreki_for_songs` | view=1の曲10本 vs view=10の曲1本 | 前者の方が合計pt(10pt)が後者(1pt)より高い（同じ合計viewでも曲を分けた方が有利） |
-| MAX_KEYS未満（複数曲） | `compute_kenreki_for_songs` | 全閾値到達の曲を4曲（172pt） | `key_count=86`、`overflow_color=None` |
-| MAX_KEYS以上で色分岐開始（複数曲） | `compute_kenreki_for_songs` | 全閾値到達の曲を5曲（215pt） | `key_count=107`（≥MAX_KEYS）、`overflow_color`あり、`overflow_upper_bound=MAX_POSSIBLE_KEY_COUNT` |
+| MAX_KEYS未満（複数曲） | `compute_kenreki_for_songs` | 全閾値到達の曲を2曲（86pt） | `points=86`、`overflow_color=None` |
+| MAX_KEYS以上で色分岐開始（複数曲） | `compute_kenreki_for_songs` | 全閾値到達の曲を3曲（129pt） | `points=129`（≥MAX_KEYS）、`overflow_color`あり、`overflow_upper_bound=MAX_POSSIBLE_KEY_COUNT` |
 
 #### 20-4. `build_keyboard_geometry(key_count, black_key_color=None)`
 
