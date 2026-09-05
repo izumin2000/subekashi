@@ -61,7 +61,10 @@ class RatelimitMiddlewareTest(SimpleTestCase):
 
 @override_settings(
     STATIC_URL="/static/",
-    STATICFILES_STORAGE="django.contrib.staticfiles.storage.StaticFilesStorage",
+    STORAGES={
+        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    },
 )
 class CacheControlMiddlewareTest(SimpleTestCase):
     """CacheControlMiddleware のテスト"""

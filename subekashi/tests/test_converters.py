@@ -9,7 +9,10 @@ from subekashi.converters import SQLiteIntConverter
 from subekashi.models import Song
 
 
-STATIC_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+STATIC_STORAGE = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
 
 SQLITE_INT_MAX = 9223372036854775807
 SQLITE_INT_MIN = -9223372036854775808
@@ -39,7 +42,7 @@ class SQLiteIntConverterTest(TestCase):
         self.assertEqual(self.converter.to_url(123), "123")
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class SQLiteIntConverterUrlTest(TestCase):
     """巨大な整数を含むURLアクセス時の挙動テスト"""
 

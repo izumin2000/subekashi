@@ -10,10 +10,13 @@ from django.utils import timezone
 from article.models import Article
 
 
-STATIC_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+STATIC_STORAGE = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class ArticlesViewTest(TestCase):
     """ArticlesView (/articles/) のテスト"""
 
@@ -138,7 +141,7 @@ class ArticleModelTest(TestCase):
         self.assertLess(result.index(newer), result.index(older))
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class DefaultArticleViewTest(TestCase):
     """DefaultArticleView (/articles/<id>/) のテスト"""
 
