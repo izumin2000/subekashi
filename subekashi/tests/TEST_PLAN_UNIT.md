@@ -917,11 +917,19 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 #### 11-2. `Author` モデル
 
+`icontains`/`iexact`はDB照合順序に依存しないよう`subekashi/lib/db_lookups.py`でUPPER()を使った
+独自実装に差し替えている（#1092）。`exact`/`contains`/`=`は元々のDB照合順序（MySQL/SQLite
+いずれもバイト完全一致）に依存したままで、大文字小文字を区別する。CI（`.github/workflows/test.yml`）
+はSQLiteのみで実行されるため、MySQL固有の照合順序に関する回帰は本セクションのテストケースを
+ローカルのMySQL環境（`USE_MYSQL=True`）で手動実行して確認する必要がある。
+
 | テストケース | 操作 | 期待結果 |
 | --- | --- | --- |
 | 作者の作成 | `Author.objects.create(name="テスト作者")` | DBに保存される |
 | `name` のユニーク制約 | 同じ名前で2件作成 | `IntegrityError` が発生 |
 | `name` の大文字小文字違いは別レコード (#1092) | `"MoAI"`と`"moai"`をそれぞれ作成 | 両方ともDBに保存される（一意制約はバイト完全一致で判定） |
+| `name=`によるexact matchは大文字小文字を区別する (#1092) | 上記の状態で`filter(name="MoAI")` | `"MoAI"`のみヒットする（`"moai"`はヒットしない） |
+| `get_by_name()`は大文字小文字違いが共存してもエラーにならない (#1092) | 上記の状態で`get_by_name("MoAI")`と`get_by_name("moai")` | それぞれ対応するレコードを返す（`MultipleObjectsReturned`は発生しない） |
 | `name__iexact`検索 (#1092) | `name="MoAI"`のauthorに対し`iexact="moai"`で検索 | 一致する |
 | `name__icontains`検索 (#1092) | `name="MoAI Project"`のauthorに対し`icontains="moai"`で検索 | 一致する |
 
@@ -932,6 +940,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | エイリアスの作成 | `AuthorAlias.objects.create(name="別名", author=author)` | DBに保存される |
 | `name` のユニーク制約 | 同じ名前で2件作成（`alias_type`はgroup以外） | `IntegrityError` が発生 |
 | `name__icontains`検索 (#1092) | `name="MoAI Alias"`のaliasに対し`icontains="moai"`で検索 | 一致する |
+| `name=`によるexact matchは大文字小文字を区別する (#1092) | `"MoAI"`（author1）を作成後、`filter(name="moai")` | ヒットしない（`forms.py`の重複チェックが大文字小文字違いを誤って衝突と判定しないことの確認） |
 | `alias_type` のデフォルト値 | `alias_type` 未指定で作成 | `alias_type == "another"` |
 | `group`種別 (#1004) | `alias_type="group"`で作成 | DBに保存される。`CHOICES`に`"group"`が含まれる |
 | `group`名の複数author登録 (#1044) | 同じ名前・`alias_type="group"`で別々のauthorが作成 | 両方ともDBに保存される（`(name, alias_type="group")`の組み合わせは複数authorで共有できる） |

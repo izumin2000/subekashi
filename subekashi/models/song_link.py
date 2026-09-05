@@ -4,9 +4,7 @@ from .song import Song
 
 # 曲のURLの情報
 class SongLink(models.Model):
-    # 一意性はDBレベルでは保証されない（Author.nameと同様の理由。#1092参照）。
-    # 実際の一意制約はsubekashi/migrations/0050_mysql_case_insensitive_search.py側にある
-    url = models.URLField(max_length=255)
+    url = models.URLField(max_length=255, unique=True)
     songs = models.ManyToManyField(Song, blank=True, related_name='links')
     is_removed = models.BooleanField(default=False)
     allow_dup = models.BooleanField(default=False)

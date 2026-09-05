@@ -37,12 +37,7 @@ def get_alias_edges(name, author):
 
 # 曲の作者の情報
 class Author(GetOrNoneMixin, models.Model):
-    # 一意性はDBレベルでは保証されない（MySQL移行に伴い、search用にcollationを
-    # 大文字小文字を区別しないものに変更したため、#1092参照）。実際の一意制約は
-    # subekashi/migrations/0050_mysql_case_insensitive_search.pyで、
-    # SQLiteでは通常のUNIQUE INDEX、MySQLではバイト完全一致の生成列を使って
-    # DB側に別途作成している
-    name = models.CharField(max_length = 255)
+    name = models.CharField(unique=True, max_length = 255)
 
     def __str__(self):
         return self.name

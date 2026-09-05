@@ -33,6 +33,24 @@ class AuthorModelTest(TestCase):
         Author.objects.create(name="moai")
         self.assertEqual(Author.objects.filter(name__in=["MoAI", "moai"]).count(), 2)
 
+    def test_exact_filter_is_case_sensitive(self):
+        """#1092: filter(name=...)や=によるexact matchはバイト完全一致のまま
+        （icontains/iexactのみ大文字小文字を区別しないように変更したため、
+        大文字小文字違いの別レコードが共存していてもexact matchは意図せず
+        両方にヒットしたりしない）"""
+        Author.objects.create(name="MoAI")
+        Author.objects.create(name="moai")
+        self.assertEqual(list(Author.objects.filter(name="MoAI").values_list("name", flat=True)), ["MoAI"])
+
+    def test_get_by_name_does_not_raise_when_case_variants_exist(self):
+        """#1092のレビュー指摘: 大文字小文字違いのAuthorが共存していても
+        get_by_name()（内部でAuthor.objects.get(name=name)を使う）が
+        MultipleObjectsReturnedを起こさないこと"""
+        Author.objects.create(name="MoAI")
+        Author.objects.create(name="moai")
+        self.assertEqual(Author.get_by_name("MoAI").name, "MoAI")
+        self.assertEqual(Author.get_by_name("moai").name, "moai")
+
     def test_iexact_search_is_case_insensitive(self):
         """#1092: MySQL移行に伴う照合順序変更後も大文字小文字を区別しない検索ができること"""
         author = Author.objects.create(name="MoAI")
@@ -76,6 +94,15 @@ class AuthorAliasModelTest(TestCase):
         """#1092: MySQL移行に伴う照合順序変更後も大文字小文字を区別しない検索ができること"""
         alias = AuthorAlias.objects.create(name="MoAI Alias", author=self.author)
         self.assertIn(alias, AuthorAlias.objects.filter(name__icontains="moai"))
+
+    def test_exact_filter_is_case_sensitive(self):
+        """#1092のレビュー指摘: forms.pyの重複チェック（AuthorAlias.objects.filter(name=...)）
+        が大文字小文字違いを別名として誤って衝突判定しないこと"""
+        AuthorAlias.objects.create(name="MoAI", author=self.author)
+        author2 = Author.objects.create(name="別の作者2")
+        self.assertFalse(AuthorAlias.objects.filter(name="moai").exists())
+        AuthorAlias.objects.create(name="moai", author=author2)
+        self.assertEqual(AuthorAlias.objects.filter(name="moai").count(), 1)
 
     def test_name_unique_constraint(self):
         # unique_authoralias_name_except_groupは条件付きUniqueConstraint（部分インデックス）
