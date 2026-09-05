@@ -6,6 +6,7 @@ from subekashi.lib.stats_service import (
     month_start,
     next_year_month,
     now_local,
+    previous_year_month,
 )
 from subekashi.models import Song, Stats
 
@@ -14,7 +15,8 @@ SONGRANGES = ["all", "subeana", "xx"]
 
 class Command(BaseCommand):
     help = (
-        "月次統計(Stats)の集計・保存。通常は当月分のみを再計算し、--force指定時は"
+        "月次統計(Stats)の集計・保存。通常は当月分のみを再計算し（月初(1日)のみ、"
+        "閉じたばかりの前月分も最後にもう一度確定させる）、--force指定時は"
         "最古のSongの月〜今月までの全期間を再計算する。--year/--monthで任意の1ヶ月のみを"
         "指定して再計算することもできる（過去月をピンポイントで更新したい場合用）"
     )
@@ -59,7 +61,11 @@ class Command(BaseCommand):
         else:
             # 過去月のview/like等は既に確定した値として扱い、当月分のみを再計算する
             # （view/likeは現在値のため当月中は日々伸びうる。過去の全期間を毎回再計算すると
-            # データ増加に伴い実行コストが線形以上に増えるため、コードレビュー指摘対応）
+            # データ増加に伴い実行コストが線形以上に増えるため、コードレビュー指摘対応）。
+            # 月初(1日)のみ、閉じたばかりの前月分も最後にもう一度確定させる
+            # （前月最終日分の伸びが反映されないまま固定されてしまう問題への対応）
+            if now.day == 1:
+                self._recalculate_month(*previous_year_month(current_year, current_month))
             self._recalculate_month(current_year, current_month)
 
         self.stdout.write(self.style.SUCCESS("月次統計を更新しました。"))

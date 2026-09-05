@@ -490,10 +490,38 @@ class StatsCommandTest(TestCase):
         self.assertEqual(mar_all.total_view, 30)
 
     @patch("subekashi.management.commands.stats.now_local")
+    def test_default_run_on_first_of_month_also_recalculates_previous_month(self, mock_now_local):
+        # 月初(1日)は当月に加えて、閉じたばかりの前月分も最後にもう一度確定させる
+        # （前月最終日分の伸びが反映されないまま固定されてしまう問題への対応、レビュー指摘対応）
+        mock_now_local.return_value = timezone_aware(2026, 3, 1)
+        Song.objects.create(title="2月の曲", upload_time=timezone_aware(2026, 2, 15), view=10)
+        Song.objects.create(title="3月の曲", upload_time=timezone_aware(2026, 3, 1), view=20)
+
+        self._run()
+
+        months = sorted(set(Stats.objects.values_list("year", "month")))
+        self.assertEqual(months, [(2026, 2), (2026, 3)])
+        self.assertEqual(Stats.objects.get(year=2026, month=2, songrange="all").song_count, 1)
+        self.assertEqual(Stats.objects.get(year=2026, month=3, songrange="all").song_count, 2)
+
+    @patch("subekashi.management.commands.stats.now_local")
+    def test_default_run_on_january_first_recalculates_previous_december(self, mock_now_local):
+        # 年をまたぐ場合も前月(前年12月)を正しく再計算できることの回帰確認
+        mock_now_local.return_value = timezone_aware(2026, 1, 1)
+        Song.objects.create(title="昨年12月の曲", upload_time=timezone_aware(2025, 12, 20), view=5)
+
+        self._run()
+
+        months = sorted(set(Stats.objects.values_list("year", "month")))
+        self.assertEqual(months, [(2025, 12), (2026, 1)])
+        self.assertEqual(Stats.objects.get(year=2025, month=12, songrange="all").song_count, 1)
+
+    @patch("subekashi.management.commands.stats.now_local")
     def test_default_run_creates_current_month_stats_even_with_zero_songs(self, mock_now_local):
         # 通常実行は曲が1件も無くても当月分の3件(song_count=0)を作成する
-        # （日付ガードが無くなり、日次実行で常に当月の値を最新化する設計のため）
-        mock_now_local.return_value = timezone_aware(2026, 1, 1)
+        # （日付ガードが無くなり、日次実行で常に当月の値を最新化する設計のため）。
+        # 1日は前月分も追加で再計算されるため、それ以外の日付で検証する
+        mock_now_local.return_value = timezone_aware(2026, 1, 15)
 
         self._run()
 
@@ -552,8 +580,9 @@ class StatsCommandTest(TestCase):
     @patch("subekashi.management.commands.stats.now_local")
     def test_now_local_uses_django_timezone_not_os_timezone(self, mock_now_local):
         # now_local()はtimezone.localtime(timezone.now())のラッパーであり、
-        # サーバーOSのタイムゾーン設定に依存しないことの回帰確認（レビュー指摘対応）
-        mock_now_local.return_value = timezone_aware(2026, 1, 1)
+        # サーバーOSのタイムゾーン設定に依存しないことの回帰確認（レビュー指摘対応）。
+        # 1日は前月分も追加で再計算されるため、それ以外の日付で検証する
+        mock_now_local.return_value = timezone_aware(2026, 1, 15)
         Song.objects.create(title="曲", upload_time=timezone_aware(2026, 1, 1))
 
         self._run()

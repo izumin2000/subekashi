@@ -28,6 +28,7 @@ from subekashi.lib.stats_service import (
     next_year_month,
     now_local,
     parse_int_or_none,
+    previous_year_month,
     resolve_songrange,
     resolve_year_month,
     with_monthly_deltas,
@@ -482,6 +483,14 @@ class NextYearMonthTest(TestCase):
 
     def test_december_rolls_over_to_next_year(self):
         self.assertEqual(next_year_month(2026, 12), (2027, 1))
+
+
+class PreviousYearMonthTest(TestCase):
+    def test_normal_month_decrements(self):
+        self.assertEqual(previous_year_month(2026, 3), (2026, 2))
+
+    def test_january_rolls_back_to_previous_year_december(self):
+        self.assertEqual(previous_year_month(2026, 1), (2025, 12))
 
 
 class MonthStartTest(TestCase):

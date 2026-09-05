@@ -272,6 +272,13 @@ def next_year_month(year, month):
     return year, month + 1
 
 
+def previous_year_month(year, month):
+    """(year, month)の前の月を(year, month)タプルで返す"""
+    if month == 1:
+        return year - 1, 12
+    return year, month - 1
+
+
 def month_start(year, month):
     """year年month月1日0時0分のタイムゾーン付きdatetimeを返す"""
     return timezone.make_aware(datetime(year, month, 1))
