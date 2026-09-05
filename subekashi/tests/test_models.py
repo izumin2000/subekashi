@@ -27,6 +27,21 @@ class AuthorModelTest(TestCase):
         with self.assertRaises(IntegrityError):
             Author.objects.create(name="重複作者")
 
+    def test_different_case_names_can_coexist(self):
+        """一意制約はバイト完全一致で判定され、大文字小文字違いは別レコードとして許容される（#1092）"""
+        Author.objects.create(name="MoAI")
+        Author.objects.create(name="moai")
+        self.assertEqual(Author.objects.filter(name__in=["MoAI", "moai"]).count(), 2)
+
+    def test_iexact_search_is_case_insensitive(self):
+        """#1092: MySQL移行に伴う照合順序変更後も大文字小文字を区別しない検索ができること"""
+        author = Author.objects.create(name="MoAI")
+        self.assertEqual(Author.objects.filter(name__iexact="moai").first(), author)
+
+    def test_icontains_search_is_case_insensitive(self):
+        author = Author.objects.create(name="MoAI Project")
+        self.assertIn(author, Author.objects.filter(name__icontains="moai"))
+
     def test_get_by_name_existing(self):
         Author.objects.create(name="検索対象作者")
         author = Author.get_by_name("検索対象作者")
@@ -56,6 +71,11 @@ class AuthorAliasModelTest(TestCase):
     def test_str_returns_name(self):
         alias = AuthorAlias.objects.create(name="別名B", author=self.author)
         self.assertEqual(str(alias), "別名B")
+
+    def test_icontains_search_is_case_insensitive(self):
+        """#1092: MySQL移行に伴う照合順序変更後も大文字小文字を区別しない検索ができること"""
+        alias = AuthorAlias.objects.create(name="MoAI Alias", author=self.author)
+        self.assertIn(alias, AuthorAlias.objects.filter(name__icontains="moai"))
 
     def test_name_unique_constraint(self):
         # unique_authoralias_name_except_groupは条件付きUniqueConstraint（部分インデックス）
@@ -450,6 +470,11 @@ class SongLinkModelTest(TestCase):
         SongLink.objects.create(url="https://youtu.be/aaaaaaaaaaa")
         with self.assertRaises(IntegrityError):
             SongLink.objects.create(url="https://youtu.be/aaaaaaaaaaa")
+
+    def test_iexact_search_is_case_insensitive(self):
+        """#1092: MySQL移行に伴う照合順序変更後も大文字小文字を区別しない検索ができること"""
+        link = SongLink.objects.create(url="https://youtu.be/AbCdEfGhIjK")
+        self.assertEqual(SongLink.objects.filter(url__iexact="https://youtu.be/abcdefghijk").first(), link)
 
     def test_add_song_to_link(self):
         link = SongLink.objects.create(url="https://youtu.be/bbbbbbbbbbb")
