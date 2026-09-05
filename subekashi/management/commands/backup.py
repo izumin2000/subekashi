@@ -89,14 +89,22 @@ class Command(BaseCommand):
         （ローカル開発環境への同期スクリプト等から常に同じパスを参照できるようにするため）"""
         file_name = f"{self.NOW_OPTION_FILE_NAME}.{'sql' if is_mysql else 'sqlite3'}"
         backup_path = os.path.join(BASE_DIR, file_name)
+        # 固定パスへ直接書き込むと、失敗・タイムアウト時に直前の正常なダンプが不完全な
+        # 内容で上書きされたり、同期スクリプト等の読み取り側と書き込みが競合して
+        # 書きかけのファイルを読んでしまう恐れがある。一時ファイルに書き出してから
+        # 成功時のみos.replace()でアトミックに差し替えることでこれを防ぐ
+        tmp_path = f"{backup_path}.tmp"
         try:
             if is_mysql:
-                self._dump_mysql(db_settings, backup_path)
+                self._dump_mysql(db_settings, tmp_path)
             else:
-                shutil.copy2(db_settings['NAME'], backup_path)
+                shutil.copy2(db_settings['NAME'], tmp_path)
                 # DBダンプという機密性の高いファイルのため、明示的にパーミッションを絞る
-                os.chmod(backup_path, OWNER_READ_WRITE_ONLY)
+                os.chmod(tmp_path, OWNER_READ_WRITE_ONLY)
+            os.replace(tmp_path, backup_path)
         except Exception as e:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
             self.stderr.write(self.style.ERROR(f"ダンプの取得中にエラーが発生しました：{str(e)}"))
             return
 

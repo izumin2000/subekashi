@@ -514,6 +514,10 @@ class BackupCommandTest(TestCase):
             backup_path = os.path.join(tmp_dir, "subekashi_latest.sqlite3")
             self.assertTrue(os.path.exists(backup_path))
             self.assertIn(backup_path, out)
+            with open(backup_path, "rb") as f:
+                self.assertEqual(f.read(), b"dummy-db")
+            # 成功時は一時ファイルをos.replace()で差し替えるため残らない
+            self.assertFalse(os.path.exists(f"{backup_path}.tmp"))
             if os.name != "nt":
                 self.assertEqual(stat.S_IMODE(os.stat(backup_path).st_mode), 0o600)
 
@@ -557,6 +561,26 @@ class BackupCommandTest(TestCase):
 
         self.assertIn("ダンプの取得中にエラーが発生しました", err)
         mock_send_discord.assert_not_called()
+
+    @patch("subekashi.management.commands.backup.subprocess.run")
+    @patch("subekashi.management.commands.backup.DATABASES", MYSQL_DB_SETTINGS)
+    def test_now_option_preserves_previous_dump_and_removes_tmp_file_on_failure(self, mock_run):
+        # コードレビュー指摘対応: 固定パスへ直接書き込むと、失敗時に直前の正常なダンプが
+        # 不完全な内容で上書きされてしまう。一時ファイル経由でos.replace()するため、
+        # 失敗時は直前のダンプがそのまま残り、書きかけの一時ファイルも残らないことを確認する
+        mock_run.side_effect = FileNotFoundError("mysqldump not found")
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            backup_path = os.path.join(tmp_dir, "subekashi_latest.sql")
+            with open(backup_path, "wb") as f:
+                f.write(b"previous-dump")
+
+            with patch("subekashi.management.commands.backup.BASE_DIR", tmp_dir):
+                self._run("--now")
+
+            with open(backup_path, "rb") as f:
+                self.assertEqual(f.read(), b"previous-dump")
+            self.assertFalse(os.path.exists(f"{backup_path}.tmp"))
 
 
 class StatsCommandTest(TestCase):
