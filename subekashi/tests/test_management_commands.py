@@ -12,6 +12,7 @@ import json
 import os
 import stat
 import subprocess
+import tempfile
 from datetime import datetime
 from io import StringIO
 from unittest.mock import MagicMock, mock_open, patch
@@ -27,6 +28,10 @@ from subekashi.models import Ai, Song, SongLink, Stats, Word
 
 def timezone_aware(year, month, day):
     return timezone.make_aware(datetime(year, month, day))
+
+
+def timezone_aware_datetime(year, month, day, hour):
+    return timezone.make_aware(datetime(year, month, day, hour))
 
 
 class DeleteCommandTest(TestCase):
@@ -136,10 +141,10 @@ class BackupCommandTest(TestCase):
     SQLITE_DB_SETTINGS/MYSQL_DB_SETTINGSへ明示的に差し替えて分岐を検証する。
     """
 
-    def _run(self):
+    def _run(self, *extra_args):
         out = StringIO()
         err = StringIO()
-        call_command("backup", stdout=out, stderr=err)
+        call_command("backup", *extra_args, stdout=out, stderr=err)
         return out.getvalue(), err.getvalue()
 
     @staticmethod
@@ -166,10 +171,10 @@ class BackupCommandTest(TestCase):
 
     @patch("subekashi.management.commands.backup.delete_old_backups")
     @patch("subekashi.management.commands.backup.upload_backup")
-    @patch("subekashi.management.commands.backup.datetime")
-    def test_skips_when_not_scheduled_hour(self, mock_datetime, mock_upload, mock_delete):
+    @patch("subekashi.management.commands.backup.timezone")
+    def test_skips_when_not_scheduled_hour(self, mock_timezone, mock_upload, mock_delete):
         # 6時間おき（0, 6, 12, 18時）以外は何もしない
-        mock_datetime.now.return_value = datetime(2026, 1, 1, 1, 0, 0)
+        mock_timezone.localtime.return_value = timezone_aware_datetime(2026, 1, 1, 1)
 
         self._run()
 
@@ -179,9 +184,9 @@ class BackupCommandTest(TestCase):
     @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_ID", "")
     @patch("subekashi.management.commands.backup.delete_old_backups")
     @patch("subekashi.management.commands.backup.upload_backup")
-    @patch("subekashi.management.commands.backup.datetime")
-    def test_skips_when_drive_credentials_missing(self, mock_datetime, mock_upload, mock_delete):
-        mock_datetime.now.return_value = datetime(2026, 1, 1, 0, 0, 0)
+    @patch("subekashi.management.commands.backup.timezone")
+    def test_skips_when_drive_credentials_missing(self, mock_timezone, mock_upload, mock_delete):
+        mock_timezone.localtime.return_value = timezone_aware_datetime(2026, 1, 1, 0)
 
         _, err = self._run()
 
@@ -198,11 +203,11 @@ class BackupCommandTest(TestCase):
     @patch("subekashi.management.commands.backup.os.chmod")
     @patch("subekashi.management.commands.backup.shutil.copy2")
     @patch("subekashi.management.commands.backup.DATABASES", SQLITE_DB_SETTINGS)
-    @patch("subekashi.management.commands.backup.datetime")
+    @patch("subekashi.management.commands.backup.timezone")
     def test_sqlite_uploads_to_drive_and_prunes_old_backups_on_scheduled_hour(
-        self, mock_datetime, mock_copy2, mock_chmod, mock_upload, mock_delete, *_
+        self, mock_timezone, mock_copy2, mock_chmod, mock_upload, mock_delete, *_
     ):
-        mock_datetime.now.return_value = datetime(2026, 1, 1, 6, 0, 0)
+        mock_timezone.localtime.return_value = timezone_aware_datetime(2026, 1, 1, 6)
         mock_copy2.side_effect = self._create_dummy_file
 
         self._run()
@@ -228,11 +233,11 @@ class BackupCommandTest(TestCase):
     @patch("subekashi.management.commands.backup.upload_backup")
     @patch("subekashi.management.commands.backup.shutil.copy2")
     @patch("subekashi.management.commands.backup.DATABASES", SQLITE_DB_SETTINGS)
-    @patch("subekashi.management.commands.backup.datetime")
+    @patch("subekashi.management.commands.backup.timezone")
     def test_reports_error_and_skips_pruning_when_upload_fails(
-        self, mock_datetime, mock_copy2, mock_upload, mock_delete, mock_send_discord, *_
+        self, mock_timezone, mock_copy2, mock_upload, mock_delete, mock_send_discord, *_
     ):
-        mock_datetime.now.return_value = datetime(2026, 1, 1, 12, 0, 0)
+        mock_timezone.localtime.return_value = timezone_aware_datetime(2026, 1, 1, 12)
         mock_copy2.side_effect = self._create_dummy_file
         mock_upload.side_effect = Exception("アップロード失敗")
 
@@ -251,12 +256,12 @@ class BackupCommandTest(TestCase):
     @patch("subekashi.management.commands.backup.upload_backup")
     @patch("subekashi.management.commands.backup.shutil.copy2")
     @patch("subekashi.management.commands.backup.DATABASES", SQLITE_DB_SETTINGS)
-    @patch("subekashi.management.commands.backup.datetime")
+    @patch("subekashi.management.commands.backup.timezone")
     def test_reports_cleanup_error_separately_when_upload_succeeds_but_pruning_fails(
-        self, mock_datetime, mock_copy2, mock_upload, mock_delete, mock_send_discord, *_
+        self, mock_timezone, mock_copy2, mock_upload, mock_delete, mock_send_discord, *_
     ):
         # アップロード自体は成功しているので、削除失敗と混同しないメッセージになること
-        mock_datetime.now.return_value = datetime(2026, 1, 1, 18, 0, 0)
+        mock_timezone.localtime.return_value = timezone_aware_datetime(2026, 1, 1, 18)
         mock_copy2.side_effect = self._create_dummy_file
         mock_delete.side_effect = Exception("削除失敗")
 
@@ -275,12 +280,12 @@ class BackupCommandTest(TestCase):
     @patch("subekashi.management.commands.backup.upload_backup")
     @patch("subekashi.management.commands.backup.subprocess.run")
     @patch("subekashi.management.commands.backup.DATABASES", MYSQL_DB_SETTINGS)
-    @patch("subekashi.management.commands.backup.datetime")
+    @patch("subekashi.management.commands.backup.timezone")
     def test_mysql_uploads_to_drive_and_prunes_old_backups_on_scheduled_hour(
-        self, mock_datetime, mock_run, mock_upload, mock_delete, *_
+        self, mock_timezone, mock_run, mock_upload, mock_delete, *_
     ):
         # #1086: USE_MYSQL=True環境ではshutil.copy2ではなくmysqldumpでダンプを取得する
-        mock_datetime.now.return_value = datetime(2026, 1, 1, 6, 0, 0)
+        mock_timezone.localtime.return_value = timezone_aware_datetime(2026, 1, 1, 6)
         captured = {}
         mock_run.side_effect = self._capture_cnf_and_return(captured)
 
@@ -336,13 +341,13 @@ class BackupCommandTest(TestCase):
     @patch("subekashi.management.commands.backup.DATABASES", {
         "default": {**MYSQL_DB_SETTINGS["default"], "PORT": ""},
     })
-    @patch("subekashi.management.commands.backup.datetime")
+    @patch("subekashi.management.commands.backup.timezone")
     def test_mysql_omits_port_flag_when_port_not_configured(
-        self, mock_datetime, mock_run, mock_upload, mock_delete, *_
+        self, mock_timezone, mock_run, mock_upload, mock_delete, *_
     ):
         # config/settings.pyはMYSQL_PORT未設定時、DATABASESに'PORT'キー自体を含めない
         # （空文字ではなくキー無し）ため、その場合を再現して検証する
-        mock_datetime.now.return_value = datetime(2026, 1, 1, 6, 0, 0)
+        mock_timezone.localtime.return_value = timezone_aware_datetime(2026, 1, 1, 6)
         captured = {}
         mock_run.side_effect = self._capture_cnf_and_return(captured)
 
@@ -361,13 +366,13 @@ class BackupCommandTest(TestCase):
     @patch("subekashi.management.commands.backup.upload_backup")
     @patch("subekashi.management.commands.backup.subprocess.run")
     @patch("subekashi.management.commands.backup.DATABASES", MYSQL_DB_SETTINGS)
-    @patch("subekashi.management.commands.backup.datetime")
+    @patch("subekashi.management.commands.backup.timezone")
     def test_mysql_reports_error_when_mysqldump_command_not_found(
-        self, mock_datetime, mock_run, mock_upload, mock_delete, mock_send_discord, *_
+        self, mock_timezone, mock_run, mock_upload, mock_delete, mock_send_discord, *_
     ):
         # mysqldumpコマンド自体が無い場合（PATH未設定等）も
         # 既存の「Google Driveへのバックアップ中にエラーが発生しました」に集約される
-        mock_datetime.now.return_value = datetime(2026, 1, 1, 12, 0, 0)
+        mock_timezone.localtime.return_value = timezone_aware_datetime(2026, 1, 1, 12)
         mock_run.side_effect = FileNotFoundError("mysqldump not found")
 
         _, err = self._run()
@@ -391,15 +396,15 @@ class BackupCommandTest(TestCase):
     @patch("subekashi.management.commands.backup.upload_backup")
     @patch("subekashi.management.commands.backup.subprocess.run")
     @patch("subekashi.management.commands.backup.DATABASES", MYSQL_DB_SETTINGS)
-    @patch("subekashi.management.commands.backup.datetime")
+    @patch("subekashi.management.commands.backup.timezone")
     def test_mysql_logs_stderr_but_keeps_it_out_of_discord_notification(
-        self, mock_datetime, mock_run, mock_upload, mock_delete, mock_send_discord, *_
+        self, mock_timezone, mock_run, mock_upload, mock_delete, mock_send_discord, *_
     ):
         # コードレビュー指摘対応: mysqldumpのstderrにはホスト名・ユーザー名等の
         # 接続情報が含まれ得る。ERROR_DISCORD_URLは公開チャンネルのため、詳細は
         # サーバーの標準エラー出力（ログ）にのみ残し、Discord通知には一般化した
         # メッセージのみを送る（exit codeがエラー終了コードを返した場合の検証）
-        mock_datetime.now.return_value = datetime(2026, 1, 1, 12, 0, 0)
+        mock_timezone.localtime.return_value = timezone_aware_datetime(2026, 1, 1, 12)
         mock_run.return_value = MagicMock(
             returncode=1, stderr=b"mysqldump: Access denied for user 'testuser'@'testhost'"
         )
@@ -427,16 +432,16 @@ class BackupCommandTest(TestCase):
     @patch("subekashi.management.commands.backup.upload_backup")
     @patch("subekashi.management.commands.backup.subprocess.run")
     @patch("subekashi.management.commands.backup.DATABASES", MYSQL_DB_SETTINGS)
-    @patch("subekashi.management.commands.backup.datetime")
+    @patch("subekashi.management.commands.backup.timezone")
     def test_mysql_reports_error_when_mysqldump_times_out(
-        self, mock_datetime, mock_run, mock_upload, mock_delete, mock_send_discord, *_
+        self, mock_timezone, mock_run, mock_upload, mock_delete, mock_send_discord, *_
     ):
         # コードレビュー指摘対応: DBサイズの増加やネットワーク要因でmysqldumpがハングし、
         # バックアップジョブが無期限にブロックされることを防ぐタイムアウトの回帰確認。
         # TimeoutExpired.__str__()は渡したcmdをそのまま文字列化するが、認証情報を
         # --defaults-extra-fileの一時ファイル経由に変更したことで、コマンド自体には
         # そもそもホスト名・ユーザー名・パスワードが含まれなくなった（#1086フォローアップ）
-        mock_datetime.now.return_value = datetime(2026, 1, 1, 12, 0, 0)
+        mock_timezone.localtime.return_value = timezone_aware_datetime(2026, 1, 1, 12)
 
         def side_effect(command, **kwargs):
             raise subprocess.TimeoutExpired(cmd=command, timeout=Command.MYSQLDUMP_TIMEOUT_SECONDS)
@@ -454,6 +459,104 @@ class BackupCommandTest(TestCase):
         self.assertNotIn("testhost", mock_send_discord.call_args.args[1])
         self.assertNotIn("testuser", mock_send_discord.call_args.args[1])
         self.assertNotIn("testpass", mock_send_discord.call_args.args[1])
+
+    @patch("subekashi.management.commands.backup.delete_old_backups")
+    @patch("subekashi.management.commands.backup.upload_backup")
+    @patch("subekashi.management.commands.backup.timezone")
+    def test_uses_jst_not_os_local_time_for_schedule_guard_and_file_name(
+        self, mock_timezone, mock_upload, mock_delete
+    ):
+        # #1096: サーバーOSのタイムゾーン設定（本番はUTC）に依存するdatetime.now()ではなく、
+        # timezone.localtime(timezone.now())でJSTに変換した時刻を使っていることの回帰確認
+        mock_timezone.localtime.return_value = timezone_aware_datetime(2026, 1, 1, 0)
+
+        self._run()
+
+        mock_timezone.localtime.assert_called_once_with(mock_timezone.now.return_value)
+
+    @patch("subekashi.management.commands.backup.GOOGLE_DRIVE_CLIENT_ID", "")
+    @patch("subekashi.management.commands.backup.delete_old_backups")
+    @patch("subekashi.management.commands.backup.upload_backup")
+    @patch("subekashi.management.commands.backup.timezone")
+    def test_now_option_ignores_schedule_guard_and_missing_drive_credentials(
+        self, mock_timezone, mock_upload, mock_delete
+    ):
+        # --nowはスケジュールガード・Google Drive認証チェックの両方を無視する
+        mock_timezone.localtime.return_value = timezone_aware_datetime(2026, 1, 1, 3)
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            db_path = os.path.join(tmp_dir, "db.sqlite3")
+            with open(db_path, "wb") as f:
+                f.write(b"dummy-db")
+            db_settings = {"default": {**SQLITE_DB_SETTINGS["default"], "NAME": db_path}}
+            with patch("subekashi.management.commands.backup.BASE_DIR", tmp_dir), \
+                    patch("subekashi.management.commands.backup.DATABASES", db_settings):
+                _, err = self._run("--now")
+
+            self.assertEqual(err, "")
+            self.assertTrue(os.path.exists(os.path.join(tmp_dir, "subekashi_latest.sqlite3")))
+
+        mock_upload.assert_not_called()
+        mock_delete.assert_not_called()
+
+    @patch("subekashi.management.commands.backup.delete_old_backups")
+    @patch("subekashi.management.commands.backup.upload_backup")
+    def test_now_option_dumps_sqlite_to_fixed_path_without_uploading(self, mock_upload, mock_delete):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            db_path = os.path.join(tmp_dir, "db.sqlite3")
+            with open(db_path, "wb") as f:
+                f.write(b"dummy-db")
+            db_settings = {"default": {**SQLITE_DB_SETTINGS["default"], "NAME": db_path}}
+            with patch("subekashi.management.commands.backup.BASE_DIR", tmp_dir), \
+                    patch("subekashi.management.commands.backup.DATABASES", db_settings):
+                out, _ = self._run("--now")
+
+            backup_path = os.path.join(tmp_dir, "subekashi_latest.sqlite3")
+            self.assertTrue(os.path.exists(backup_path))
+            self.assertIn(backup_path, out)
+            if os.name != "nt":
+                self.assertEqual(stat.S_IMODE(os.stat(backup_path).st_mode), 0o600)
+
+        mock_upload.assert_not_called()
+        mock_delete.assert_not_called()
+
+    @patch("subekashi.management.commands.backup.delete_old_backups")
+    @patch("subekashi.management.commands.backup.upload_backup")
+    @patch("subekashi.management.commands.backup.subprocess.run")
+    @patch("subekashi.management.commands.backup.DATABASES", MYSQL_DB_SETTINGS)
+    def test_now_option_dumps_mysql_to_fixed_path_without_uploading(
+        self, mock_run, mock_upload, mock_delete
+    ):
+        captured = {}
+        mock_run.side_effect = self._capture_cnf_and_return(captured)
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            with patch("subekashi.management.commands.backup.BASE_DIR", tmp_dir):
+                out, _ = self._run("--now")
+
+            backup_path = os.path.join(tmp_dir, "subekashi_latest.sql")
+            self.assertIn(backup_path, out)
+
+        mock_run.assert_called_once()
+        mock_upload.assert_not_called()
+        mock_delete.assert_not_called()
+
+    @patch("subekashi.management.commands.backup.send_discord")
+    @patch("subekashi.management.commands.backup.subprocess.run")
+    @patch("subekashi.management.commands.backup.DATABASES", MYSQL_DB_SETTINGS)
+    def test_now_option_reports_error_without_discord_notification_on_dump_failure(
+        self, mock_run, mock_send_discord
+    ):
+        # --nowはローカル開発者による手動実行を想定しており、公開のDiscordチャンネルへの
+        # 通知は行わない
+        mock_run.side_effect = FileNotFoundError("mysqldump not found")
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            with patch("subekashi.management.commands.backup.BASE_DIR", tmp_dir):
+                _, err = self._run("--now")
+
+        self.assertIn("ダンプの取得中にエラーが発生しました", err)
+        mock_send_discord.assert_not_called()
 
 
 class StatsCommandTest(TestCase):
