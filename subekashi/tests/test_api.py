@@ -11,10 +11,13 @@ from rest_framework.test import APIClient
 from subekashi.models import Ai, Author, Song, SongLink, Word
 
 
-STATIC_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+STATIC_STORAGE = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 @patch("subekashi.views.api.song.SongAPI.throttle_classes", [])
 class SongAPIListTest(TestCase):
     """SongAPI GET /api/song/ のテスト"""
@@ -87,7 +90,7 @@ class SongAPIListTest(TestCase):
             self.assertIsInstance(item["url"], list)
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 @patch("subekashi.views.api.song.SongAPI.throttle_classes", [])
 class SongAPIRetrieveTest(TestCase):
     """SongAPI GET /api/song/<id>/ のテスト"""
@@ -110,7 +113,7 @@ class SongAPIRetrieveTest(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class EditorIsOpenViewTest(TestCase):
     """EditorIsOpenView /api/editor/is_open のテスト
 
