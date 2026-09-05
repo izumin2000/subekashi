@@ -96,6 +96,11 @@ DATABASES = {
         "HOST": MYSQL_HOST,
         **({"PORT": MYSQL_PORT} if MYSQL_PORT else {}),
         "OPTIONS": {"charset": "utf8mb4"},
+        # MySQLサーバーの既定照合順序に依存すると環境ごとに挙動が変わってしまうため
+        # （#1092、本番はutf8mb4_binで運用しているが、サーバー設定次第では
+        # 大文字小文字を区別しないutf8mb4_general_ci等でテストDBが作られうる）、
+        # テストDBの照合順序を明示的に本番と揃える
+        "TEST": {"CHARSET": "utf8mb4", "COLLATION": "utf8mb4_bin"},
     }
 } if USE_MYSQL else {
     'default':

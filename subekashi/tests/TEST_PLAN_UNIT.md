@@ -917,10 +917,21 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 #### 11-2. `Author` モデル
 
+`icontains`/`iexact`はDB照合順序に依存しないよう`subekashi/lib/db_lookups.py`でUPPER()を使った
+独自実装に差し替えている（#1092）。`exact`/`contains`/`=`は元々のDB照合順序（MySQL/SQLite
+いずれもバイト完全一致）に依存したままで、大文字小文字を区別する。CI（`.github/workflows/test.yml`）
+はSQLiteのみで実行されるため、MySQL固有の照合順序に関する回帰は本セクションのテストケースを
+ローカルのMySQL環境（`USE_MYSQL=True`）で手動実行して確認する必要がある。
+
 | テストケース | 操作 | 期待結果 |
 | --- | --- | --- |
 | 作者の作成 | `Author.objects.create(name="テスト作者")` | DBに保存される |
 | `name` のユニーク制約 | 同じ名前で2件作成 | `IntegrityError` が発生 |
+| `name` の大文字小文字違いは別レコード (#1092) | `"MoAI"`と`"moai"`をそれぞれ作成 | 両方ともDBに保存される（一意制約はバイト完全一致で判定） |
+| `name=`によるexact matchは大文字小文字を区別する (#1092) | 上記の状態で`filter(name="MoAI")` | `"MoAI"`のみヒットする（`"moai"`はヒットしない） |
+| `get_by_name()`は大文字小文字違いが共存してもエラーにならない (#1092) | 上記の状態で`get_by_name("MoAI")`と`get_by_name("moai")` | それぞれ対応するレコードを返す（`MultipleObjectsReturned`は発生しない） |
+| `name__iexact`検索 (#1092) | `name="MoAI"`のauthorに対し`iexact="moai"`で検索 | 一致する |
+| `name__icontains`検索 (#1092) | `name="MoAI Project"`のauthorに対し`icontains="moai"`で検索 | 一致する |
 
 #### 11-3. `AuthorAlias` モデル
 
@@ -928,6 +939,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | エイリアスの作成 | `AuthorAlias.objects.create(name="別名", author=author)` | DBに保存される |
 | `name` のユニーク制約 | 同じ名前で2件作成（`alias_type`はgroup以外） | `IntegrityError` が発生 |
+| `name__icontains`検索 (#1092) | `name="MoAI Alias"`のaliasに対し`icontains="moai"`で検索 | 一致する |
+| `name=`によるexact matchは大文字小文字を区別する (#1092) | `"MoAI"`（author1）を作成後、`filter(name="moai")` | ヒットしない（`forms.py`の重複チェックが大文字小文字違いを誤って衝突と判定しないことの確認） |
 | `alias_type` のデフォルト値 | `alias_type` 未指定で作成 | `alias_type == "another"` |
 | `group`種別 (#1004) | `alias_type="group"`で作成 | DBに保存される。`CHOICES`に`"group"`が含まれる |
 | `group`名の複数author登録 (#1044) | 同じ名前・`alias_type="group"`で別々のauthorが作成 | 両方ともDBに保存される（`(name, alias_type="group")`の組み合わせは複数authorで共有できる） |
@@ -979,6 +992,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | リンクの作成 | `SongLink.objects.create(url="https://youtu.be/xxx")` | DBに保存される |
 | `url` のユニーク制約 | 同じURLで2件作成 | `IntegrityError` が発生 |
+| `url__iexact`検索 (#1092) | `url="https://youtu.be/AbCdEfGhIjK"`のlinkに対し小文字化した値で`iexact`検索 | 一致する |
 | 曲との多対多関係 | `link.songs.add(song)` | 関係が成立する |
 
 #### 11-5. `Contact` モデル
@@ -1133,14 +1147,15 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | SongLinkが無いSong | 対象外 | 更新されない（スキップ） |
 | 全動画が取得不可 | `get_youtube_api` が `{}` を返す | `is_deleted=True` で保存される |
 
-#### 14-3. `backup` コマンド（バックアップ先をサーバーストレージからGoogle Driveに変更、#1050。MySQL移行対応でmysqldump方式を追加、#1086）
+#### 14-3. `backup` コマンド（バックアップ先をサーバーストレージからGoogle Driveに変更、#1050。MySQL移行対応でmysqldump方式を追加、#1086。ファイル名のJST化と`--now`オプションを追加、#1096）
 
-サーバーのストレージにファイルを残さず、DBのダンプを一時ディレクトリに出力してGoogle Driveへアップロードする。`DATABASES['default']['ENGINE']`によりSQLite（`shutil.copy2`、拡張子`.sqlite3`）とMySQL（`mysqldump`、拡張子`.sql`）を切り替える。DATABASESは実行環境のUSE_MYSQL設定に依存するため、テストではSQLITE_DB_SETTINGS/MYSQL_DB_SETTINGSへ明示的に差し替えて両方式を検証する。Google Drive APIはモック化する。
+サーバーのストレージにファイルを残さず、DBのダンプを一時ディレクトリに出力してGoogle Driveへアップロードする。`DATABASES['default']['ENGINE']`によりSQLite（`shutil.copy2`、拡張子`.sqlite3`）とMySQL（`mysqldump`、拡張子`.sql`）を切り替える。DATABASESは実行環境のUSE_MYSQL設定に依存するため、テストではSQLITE_DB_SETTINGS/MYSQL_DB_SETTINGSへ明示的に差し替えて両方式を検証する。Google Drive APIはモック化する。時刻取得はサーバーOSのタイムゾーン設定（本番はUTC）に依存する`datetime.now()`ではなく`timezone.localtime(timezone.now())`を使い、`config/settings.py`の`TIME_ZONE = 'Asia/Tokyo'`設定に基づきJSTでスケジュール判定・ファイル名生成を行う（#1096）。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | 実行対象外の時刻 | `now.hour`が6の倍数でない | アップロード・古いバックアップの削除のいずれも行われない |
 | Drive認証情報未設定 | `GOOGLE_DRIVE_CLIENT_ID`等が空 | エラーメッセージを出力し、アップロードを行わない |
+| JST基準の時刻取得（#1096回帰確認） | 実行後 | `timezone.localtime(timezone.now())`が呼ばれている（サーバーOSのタイムゾーンに依存する`datetime.now()`を使っていない） |
 | SQLite: 実行対象の時刻・認証情報あり | `ENGINE=sqlite3`、`now.hour`が6の倍数 | `shutil.copy2`でDBファイルがコピーされ、`.sqlite3`拡張子・`mimetype="application/x-sqlite3"`でDriveにアップロードされた後、古いバックアップの削除（50件保持）が行われる |
 | SQLite: ダンプファイルのパーミッション（コードレビュー対応） | コピー後 | DBダンプという機密性の高いファイルのため、`tempfile.TemporaryDirectory()`のumask依存パーミッションに任せず`os.chmod`で0600に明示的に絞る（Linux環境でのみ厳密に検証、Windowsの`os.chmod`は完全なUnixパーミッションを表現できないため） |
 | SQLite: アップロード失敗時 | `upload_backup`が例外を送出 | エラーメッセージを出力し、古いバックアップの削除は行われない。`ERROR_DISCORD_URL`宛にDiscord通知を送る |
@@ -1152,6 +1167,10 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | MySQL: mysqldumpコマンドが見つからない | `subprocess.run`が`FileNotFoundError`を送出 | SQLite同様「Google Driveへのバックアップ中にエラーが発生しました」に集約され、アップロード・古いバックアップの削除は行われない。一時オプションファイルはこの場合も削除される |
 | MySQL: mysqldumpがエラー終了コードを返す | `returncode != 0` | サーバーの標準エラー出力（ログ）には`stderr`の詳細（ホスト名・ユーザー名等を含みうる）を出力しつつ、公開チャンネルである`ERROR_DISCORD_URL`宛のDiscord通知には一般化したメッセージ（exit codeのみ）のみを送る（詳細を含めない） |
 | MySQL: mysqldumpがタイムアウトする | `subprocess.run`が`TimeoutExpired`を送出 | DBサイズの増加やネットワーク要因でハングした場合にバックアップジョブが無期限にブロックされないよう、他の失敗ケースと同様に「Google Driveへのバックアップ中にエラーが発生しました」に集約される。`TimeoutExpired.__str__()`は渡したcmdをそのまま文字列化するが、認証情報を`--defaults-extra-file`経由に変更したことでコマンド自体にはそもそもホスト名・ユーザー名・パスワードが含まれないため、公開チャンネルである`ERROR_DISCORD_URL`宛の通知にもこれらは含まれない |
+| `--now`指定時: スケジュール・認証情報の無視（#1096） | 実行対象外の時刻・Drive認証情報未設定 | スケジュールガード・Drive認証チェックのいずれも行わず、ダンプの取得のみを行う |
+| `--now`指定時: SQLiteの固定ファイル名ダンプ（#1096） | `ENGINE=sqlite3` | 日付・時刻ベースの可変ファイル名ではなく、固定ファイル名`subekashi_latest.sqlite3`でプロジェクトルート（`BASE_DIR`）にダンプが出力される。Google Driveへのアップロード・古いバックアップの削除は行われない |
+| `--now`指定時: MySQLの固定ファイル名ダンプ（#1096） | `ENGINE=mysql` | 固定ファイル名`subekashi_latest.sql`で`mysqldump`によるダンプが出力される。Google Driveへのアップロード・古いバックアップの削除は行われない |
+| `--now`指定時: ダンプ失敗時（#1096） | `mysqldump`が見つからない等でダンプが失敗 | エラーメッセージを出力するが、ローカル開発者による手動実行を想定しているため`ERROR_DISCORD_URL`宛のDiscord通知は送らない |
 
 #### 14-4. `word` コマンド（`word.json`から模倣単語候補を`Word`に一括登録、#1053）
 
