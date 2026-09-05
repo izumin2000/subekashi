@@ -33,6 +33,7 @@
             <canvas id="stats-chart"></canvas>
         </div>
         {{ monthly_stats|json_script:"monthly-stats-data" }}
+        {{ highlighted_month|json_script:"highlighted-month-data" }}
     {% endif %}
 </section>
 {% endblock %}

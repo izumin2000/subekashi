@@ -28,6 +28,7 @@ from subekashi.lib.stats_service import (
     next_year_month,
     now_local,
     parse_int_or_none,
+    previous_year_month,
     resolve_songrange,
     resolve_year_month,
     with_monthly_deltas,
@@ -484,6 +485,14 @@ class NextYearMonthTest(TestCase):
         self.assertEqual(next_year_month(2026, 12), (2027, 1))
 
 
+class PreviousYearMonthTest(TestCase):
+    def test_normal_month_decrements(self):
+        self.assertEqual(previous_year_month(2026, 3), (2026, 2))
+
+    def test_january_rolls_back_to_previous_year_december(self):
+        self.assertEqual(previous_year_month(2026, 1), (2025, 12))
+
+
 class MonthStartTest(TestCase):
     def test_returns_aware_datetime_for_first_of_month(self):
         result = month_start(2026, 3)
@@ -533,9 +542,11 @@ class FilterMonthlySeriesByYearMonthTest(TestCase):
         result = filter_monthly_series_by_year_month(self.rows, "2025", "all")
         self.assertEqual(result, [{"year": 2025, "month": 1}, {"year": 2025, "month": 6}])
 
-    def test_year_and_month_filters_by_both(self):
+    def test_year_and_month_both_specified_ignores_month_and_shows_full_year(self):
+        # year・monthを両方指定すると棒グラフが1本だけになり意味を成さないため、
+        # monthは無視してその年の全期間を表示する（コードレビュー指摘対応）
         result = filter_monthly_series_by_year_month(self.rows, "2025", "6")
-        self.assertEqual(result, [{"year": 2025, "month": 6}])
+        self.assertEqual(result, [{"year": 2025, "month": 1}, {"year": 2025, "month": 6}])
 
     def test_month_only_filters_across_all_years(self):
         # apply_upload_time_filterと同様、yearが"all"でもmonthだけで独立して

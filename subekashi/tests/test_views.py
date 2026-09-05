@@ -731,6 +731,29 @@ class StatsViewTest(TestCase):
 
         self.assertEqual(self._song_count(response), 1)
 
+    def test_highlighted_month_is_none_when_only_year_specified(self):
+        Song.objects.create(title="曲", upload_time=datetime(2024, 1, 1, tzinfo=dt_timezone.utc))
+        response = self.client.get(reverse("subekashi:stats"), {"year": "2024"})
+        self.assertIsNone(response.context["highlighted_month"])
+
+    def test_highlighted_month_is_none_when_only_month_specified(self):
+        Song.objects.create(title="曲", upload_time=datetime(2024, 1, 1, tzinfo=dt_timezone.utc))
+        response = self.client.get(reverse("subekashi:stats"), {"month": "1"})
+        self.assertIsNone(response.context["highlighted_month"])
+
+    def test_highlighted_month_set_when_year_and_month_both_specified(self):
+        # year・month両方指定時、グラフはmonthを無視してその年全体を表示するため
+        # （コードレビュー指摘対応）、選択していた月をJS側の棒の色分け用に渡す
+        Stats.objects.create(year=2024, month=6, songrange="all", song_count=1)
+        # is_subeana両方の曲を用意し、songrangeが"all"以外に自動解決されないようにする
+        Song.objects.create(title="曲", upload_time=datetime(2024, 6, 1, tzinfo=dt_timezone.utc), is_subeana=True)
+        Song.objects.create(title="界隈外曲", is_subeana=False)
+
+        response = self.client.get(reverse("subekashi:stats"), {"year": "2024", "month": "6"})
+
+        self.assertEqual(response.context["highlighted_month"], 6)
+        self.assertContains(response, 'id="highlighted-month-data"')
+
     def test_unknown_songrange_falls_back_to_all(self):
         Song.objects.create(title="曲")
         response = self.client.get(reverse("subekashi:stats"), {"songrange": "invalid"})

@@ -764,6 +764,9 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | グラフの差分は絞り込み前の全期間から計算（回帰） | `?year=2025`指定、2024年12月と2025年1月の`Stats`が存在 | 表示範囲を2025年のみに絞り込んでも、`song_count_delta`は2024年12月との差分として正しく計算される |
 | year選択肢は選択中のsongrangeに連動（回帰、コードレビュー指摘対応） | `?songrange=subeana`、xx曲のみの年とsubeana曲のみの年が混在 | `year_choices`にxx曲のみの年が含まれず、選択しても0件になる組み合わせを避けられる |
 | メニューからの導線 | トップページのGET | `/stats/`へのリンクが記事とお問い合わせの間に含まれる |
+| `highlighted_month`はyearのみ指定時はNone | `?year=2024`（monthは指定しない） | `context["highlighted_month"]`が`None` |
+| `highlighted_month`はmonthのみ指定時もNone | `?month=1`（yearは指定しない） | `context["highlighted_month"]`が`None` |
+| `highlighted_month`はyear・month両方指定時のみセット（コードレビュー指摘対応） | `?year=2024&month=6` | `context["highlighted_month"]`が`6`になり、JS側で棒グラフのその月だけ色を変えるための`highlighted-month-data`が埋め込まれる（グラフ側はmonthを無視してその年全体を表示するため、選択していた月をハイライトして元のフィルターとの対応を分かりやすくする） |
 
 #### 7-15. `AuthorStatsView` (`/authors/<id>/stats/`)（#334）
 
@@ -1188,14 +1191,24 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 
 `post_time`ではなく`upload_time`（YouTubeへのアップロード日時）基準で月を判定する。`upload_time=None`の曲は集計期間の起点判定・各月の集計いずれからも除外される。「現在時刻」の取得は`now_local()`（`timezone.localtime(timezone.now())`のラッパー）に統一し、サーバーOSのタイムゾーン設定に依存する素の`datetime.now()`は使わない（コードレビュー指摘対応）。総合統計ページのグラフがsongrangeフィルターの影響を受けるよう仕様変更したため、各月ごとにsongrange(all/subeana/xx)ごとの3件を集計・保存する（コードレビュー指摘対応）。
 
+コードレビュー指摘対応: 過去の全期間を毎回再計算すると、データ増加に伴い実行コストが線形以上に増える懸念があったため、日付ガード（`now.day != 1`ならスキップ）を廃止し、通常実行（`--force`なし）は**当月分のみ**を再計算する方式に変更した（日次実行を想定。当月中はview/like等が伸び続けるため当月分だけは毎回最新化し、過去の確定した月は触らない）。`--force`指定時のみ、従来通り最古のSongの月〜今月までの全期間を再計算する（デプロイ時の過去分バックフィル用）。
+
+この変更により、過去に確定した月のtotal_view/total_like等は月が閉じた時点の値で固定され、以降YouTube側で再生数が伸びても自動追従しない仕様になった（レビュー指摘）。この仕様変更は意図したもので、過去月を明示的に再計算したい場合向けに`--year`/`--month`オプションを追加し、任意の1ヶ月のみをピンポイントで再計算できるようにした（`--year`/`--month`は両方セットで指定する必要がある）。`--force`（全期間再計算）と`--year`/`--month`（1ヶ月のみのピンポイント再計算）はスコープが矛盾するため同時指定はできず、`CommandError`を送出する（コードレビュー指摘対応: 以前は`--year`/`--month`指定時に`--force`の値が無視されても警告が無かった）。
+
+さらに、月初(1日)の実行時のみ、当月に加えて閉じたばかりの前月分も最後にもう一度確定させる（`previous_year_month`使用）。日次実行の最後の実行が前月末日中に行われるため、そこから月が変わるまでの間（前月最終日の残り時間）の伸びが前月分に反映されないまま固定されてしまう問題への対応（レビュー指摘対応）。
+
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
-| 1日以外はスキップ | `now.day != 1`、`--force`なし | `Stats`は作成されない |
-| 1日なら実行 | `now.day == 1` | `upload_time`が最古のSongの月〜今月まで、月ごとにall/subeana/xxの3件`Stats`が作成される |
-| `--force`で日付ガードを無視 | `now.day != 1`、`--force`あり | `Stats`が作成される（デプロイ時の手動バックフィル用） |
-| Songが1件も無い場合 | DBが空 | 何もせず終了する |
-| `upload_time`を持つSongが1件も無い場合 | 全曲`upload_time=None` | 何もせず終了する |
-| 各月の値は累積値 | 1月・3月にそれぞれ`upload_time`を持つSongが存在する状態で今月=3月として実行 | 1月分は1月時点までの曲のみ、3月分は3月時点までの全曲を対象に集計される |
+| 通常実行は当月分のみ更新 | `--force`なし、1月・3月にそれぞれ`upload_time`を持つSongが存在する状態で今月=3月15日として実行 | 3月分のみが作成され、1月分は作成されない |
+| 月初(1日)は前月分も追加で再計算 | `--force`なし、2月・3月にそれぞれ`upload_time`を持つSongが存在する状態で今月=3月1日として実行 | 2月分・3月分の両方が作成される |
+| 年をまたぐ月初(1月1日)も前年12月を正しく再計算 | `--force`なし、前年12月に`upload_time`を持つSongが存在する状態で今月=1月1日として実行 | 前年12月分・当年1月分の両方が作成される |
+| 通常実行は曲が0件でも当月分を作成 | `--force`なし、DBが空、1日以外の日付で実行 | 当月分のsong_count=0のレコードがall/subeana/xxの3件作成される（日次実行で常に当月の値を最新化するため） |
+| `--force`で全期間を再計算 | `--force`あり | `upload_time`が最古のSongの月〜今月まで、月ごとにall/subeana/xxの3件`Stats`が作成される |
+| `--force`時に`upload_time`を持つSongが1件も無い場合 | `--force`あり、全曲`upload_time=None` | バックフィルの起点が決められないため何もせず終了する |
+| `--year`/`--month`で任意の月のみ再計算 | `--year 2026 --month 1`、今月は3月 | 当月(3月)ではなく指定した1月分のみが再計算される |
+| `--year`のみ指定（`--month`無し） | `--year 2026`のみ | `CommandError`（両方指定が必須） |
+| `--month`のみ指定（`--year`無し） | `--month 1`のみ | `CommandError`（両方指定が必須） |
+| `--force`と`--year`/`--month`の同時指定（コードレビュー指摘対応） | `--force --year 2026 --month 1` | `CommandError`（全期間再計算と1ヶ月のみのピンポイント再計算はスコープが矛盾するため明示的に弾く。以前は`--year`/`--month`が優先され`--force`が無警告で無視されていた） |
 | songrangeごとに正しく振り分けられる | is_subeana=True/Falseの曲が混在 | `songrange="subeana"`/`"xx"`のレコードがそれぞれの曲数のみを集計する |
 | 再実行時は上書き更新 | 既存の月・songrangeに対して再実行 | `update_or_create`により重複作成されず、値が最新の集計に更新される |
 
@@ -1447,17 +1460,23 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 | 曲が存在しない年を指定 | その年には曲が無い | 空リスト |
 | `qs`で範囲を絞り込める | 範囲外の曲と範囲内の曲が混在 | 範囲外の曲の月は無視される |
 
-#### 19-5. `next_year_month(year, month)` / `month_start(year, month)`
+#### 19-5. `next_year_month(year, month)` / `previous_year_month(year, month)` / `month_start(year, month)`
+
+`previous_year_month`は`stats`コマンドの月初(1日)処理（前月分の最終確定、#334コードレビュー指摘対応）で使用。
 
 | テストケース | 入力 | 期待結果 |
 | --- | --- | --- |
-| 通常の月送り | `(2026, 3)` | `(2026, 4)` |
-| 12月からの繰り上げ | `(2026, 12)` | `(2027, 1)` |
-| タイムゾーン付きdatetime | `(2026, 3)` | ローカルタイムゾーンで2026年3月1日を指すaware datetimeを返す |
+| 通常の月送り | `next_year_month(2026, 3)` | `(2026, 4)` |
+| 12月からの繰り上げ | `next_year_month(2026, 12)` | `(2027, 1)` |
+| 通常の月戻り | `previous_year_month(2026, 3)` | `(2026, 2)` |
+| 1月からの繰り下げ | `previous_year_month(2026, 1)` | `(2025, 12)` |
+| タイムゾーン付きdatetime | `month_start(2026, 3)` | ローカルタイムゾーンで2026年3月1日を指すaware datetimeを返す |
 
 #### 19-6. `with_monthly_deltas(rows)` / `filter_monthly_series_by_year_month(rows, year, month)`（#334、コードレビュー指摘対応）
 
-総合統計ページのグラフをsongrange/year/monthフィルターに連動させる仕様変更で追加。`with_monthly_deltas`は累積値の行リストから各フィールドの単月差分(`<field>_delta`)を計算し、`filter_monthly_series_by_year_month`は表示するyear/monthの行に絞り込む。差分計算は絞り込み前の全期間に対して行ってから絞り込むため、表示範囲を狭めても差分値はずれない。`filter_monthly_series_by_year_month`は`apply_upload_time_filter`と同様、yearとmonthを独立して適用する（コードレビュー指摘対応: 以前はyear="all"だとmonth条件がまるごと無視され、統計カード（`apply_upload_time_filter`基準）とグラフ（このフィルタ基準）で表示内容が食い違うバグがあった）。
+総合統計ページのグラフをsongrange/year/monthフィルターに連動させる仕様変更で追加。`with_monthly_deltas`は累積値の行リストから各フィールドの単月差分(`<field>_delta`)を計算し、`filter_monthly_series_by_year_month`は表示するyear/monthの行に絞り込む。差分計算は絞り込み前の全期間に対して行ってから絞り込むため、表示範囲を狭めても差分値はずれない。
+
+`filter_monthly_series_by_year_month`は`year`が指定されている場合はその年のみに絞り込み、`month`による絞り込みは行わない（コードレビュー指摘対応: year・monthを両方指定すると棒グラフが1本だけになり意味を成さないため、その年の全期間を表示するよう変更。以前は両方適用され1本になっていた）。`year="all"`の場合は`month`のみで独立して絞り込める（年をまたいだ同月比較として意味を成す）。
 
 | テストケース | 入力 | 期待結果 |
 | --- | --- | --- |
@@ -1467,7 +1486,7 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 | 空リスト | `[]` | `[]` |
 | `year="all"` | 任意の行リスト | 絞り込まれない |
 | `year`のみ指定 | 複数年の行リスト | 該当年の行のみ |
-| `year`・`month`両方指定 | 複数年月の行リスト | 該当年月の行のみ |
+| `year`・`month`両方指定（コードレビュー指摘対応） | 複数年月の行リスト | `month`は無視され、該当年の全期間が表示される |
 | `year="all"`でも`month`のみ指定（回帰、コードレビュー指摘対応） | 複数年の行リスト、`month`のみ指定 | yearに関わらず該当月の行が年をまたいで全て残る |
 
 ---
