@@ -2,6 +2,7 @@
 *.pyc
 .htmlhintrc
 db.sqlite3
+subekashi_latest.sql*
 local_settings.py
 mycommand.py
 wordcloud.py

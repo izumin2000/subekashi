@@ -1,4 +1,4 @@
-from config.settings import DATABASES
+from config.settings import BASE_DIR, DATABASES
 from config.local_settings import (
     ERROR_DISCORD_URL,
     GOOGLE_DRIVE_CLIENT_ID,
@@ -7,7 +7,7 @@ from config.local_settings import (
     GOOGLE_DRIVE_FOLDER_ID,
 )
 from django.core.management.base import BaseCommand
-from datetime import datetime
+from django.utils import timezone
 from subekashi.lib.discord import send_discord
 from subekashi.lib.google_drive import upload_backup, delete_old_backups
 import os
@@ -26,9 +26,28 @@ class Command(BaseCommand):
 
     BACKUP_FOLDER_NUMS = 50
     MYSQLDUMP_TIMEOUT_SECONDS = 600
+    NOW_OPTION_FILE_NAME = "subekashi_latest"
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '-n', '--now',
+            action='store_true',
+            help='スケジュールを無視し、固定ファイル名でダンプの取得のみを行う'
+                 '（Google Driveへのアップロード・古いバックアップの削除は行わない。ローカル開発環境への同期用）',
+        )
 
     def handle(self, *args, **options):
-        now = datetime.now()
+        db_settings = DATABASES['default']
+        is_mysql = db_settings['ENGINE'] == 'django.db.backends.mysql'
+
+        if options['now']:
+            self._dump_now(db_settings, is_mysql)
+            return
+
+        # サーバーOSのタイムゾーン設定（本番PythonAnywhereサーバーはUTC）に依存する
+        # datetime.now()は使わず、Djangoの設定タイムゾーン(Asia/Tokyo)基準で
+        # スケジュール判定・ファイル名生成を行う
+        now = timezone.localtime(timezone.now())
         if now.hour % 6 != 0:
             return
 
@@ -36,8 +55,6 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR("Google Driveの認証情報が設定されていません"))
             return
 
-        db_settings = DATABASES['default']
-        is_mysql = db_settings['ENGINE'] == 'django.db.backends.mysql'
         file_name = f"{now.strftime('%Y-%m-%d-%H')}.{'sql' if is_mysql else 'sqlite3'}"
         # application/sqlはIANA未登録のため、慣例に合わせテキストファイルとして扱う
         mimetype = "text/plain" if is_mysql else "application/x-sqlite3"
@@ -65,6 +82,33 @@ class Command(BaseCommand):
             message = f"Google Driveの古いバックアップの削除中にエラーが発生しました：{str(e)}"
             self.stderr.write(self.style.ERROR(message))
             send_discord(ERROR_DISCORD_URL, message)
+
+    def _dump_now(self, db_settings, is_mysql):
+        """--now指定時の処理。スケジュールガード・Google Driveへのアップロード・
+        古いバックアップの削除は行わず、固定ファイル名でのダンプの取得のみを行う
+        （ローカル開発環境への同期スクリプト等から常に同じパスを参照できるようにするため）"""
+        file_name = f"{self.NOW_OPTION_FILE_NAME}.{'sql' if is_mysql else 'sqlite3'}"
+        backup_path = os.path.join(BASE_DIR, file_name)
+        # 固定パスへ直接書き込むと、失敗・タイムアウト時に直前の正常なダンプが不完全な
+        # 内容で上書きされたり、同期スクリプト等の読み取り側と書き込みが競合して
+        # 書きかけのファイルを読んでしまう恐れがある。一時ファイルに書き出してから
+        # 成功時のみos.replace()でアトミックに差し替えることでこれを防ぐ
+        tmp_path = f"{backup_path}.tmp"
+        try:
+            if is_mysql:
+                self._dump_mysql(db_settings, tmp_path)
+            else:
+                shutil.copy2(db_settings['NAME'], tmp_path)
+                # DBダンプという機密性の高いファイルのため、明示的にパーミッションを絞る
+                os.chmod(tmp_path, OWNER_READ_WRITE_ONLY)
+            os.replace(tmp_path, backup_path)
+        except Exception as e:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+            self.stderr.write(self.style.ERROR(f"ダンプの取得中にエラーが発生しました：{str(e)}"))
+            return
+
+        self.stdout.write(self.style.SUCCESS(f"ダンプを取得しました：{backup_path}"))
 
     def _dump_mysql(self, db_settings, backup_path):
         """mysqldumpでDB全体をSQLファイルに出力する。
