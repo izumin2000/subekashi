@@ -1188,14 +1188,14 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 
 `post_time`ではなく`upload_time`（YouTubeへのアップロード日時）基準で月を判定する。`upload_time=None`の曲は集計期間の起点判定・各月の集計いずれからも除外される。「現在時刻」の取得は`now_local()`（`timezone.localtime(timezone.now())`のラッパー）に統一し、サーバーOSのタイムゾーン設定に依存する素の`datetime.now()`は使わない（コードレビュー指摘対応）。総合統計ページのグラフがsongrangeフィルターの影響を受けるよう仕様変更したため、各月ごとにsongrange(all/subeana/xx)ごとの3件を集計・保存する（コードレビュー指摘対応）。
 
+コードレビュー指摘対応: 過去の全期間を毎回再計算すると、データ増加に伴い実行コストが線形以上に増える懸念があったため、日付ガード（`now.day != 1`ならスキップ）を廃止し、通常実行（`--force`なし）は**当月分のみ**を再計算する方式に変更した（日次実行を想定。当月中はview/like等が伸び続けるため当月分だけは毎回最新化し、過去の確定した月は触らない）。`--force`指定時のみ、従来通り最古のSongの月〜今月までの全期間を再計算する（デプロイ時の過去分バックフィル用）。
+
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
-| 1日以外はスキップ | `now.day != 1`、`--force`なし | `Stats`は作成されない |
-| 1日なら実行 | `now.day == 1` | `upload_time`が最古のSongの月〜今月まで、月ごとにall/subeana/xxの3件`Stats`が作成される |
-| `--force`で日付ガードを無視 | `now.day != 1`、`--force`あり | `Stats`が作成される（デプロイ時の手動バックフィル用） |
-| Songが1件も無い場合 | DBが空 | 何もせず終了する |
-| `upload_time`を持つSongが1件も無い場合 | 全曲`upload_time=None` | 何もせず終了する |
-| 各月の値は累積値 | 1月・3月にそれぞれ`upload_time`を持つSongが存在する状態で今月=3月として実行 | 1月分は1月時点までの曲のみ、3月分は3月時点までの全曲を対象に集計される |
+| 通常実行は当月分のみ更新 | `--force`なし、1月・3月にそれぞれ`upload_time`を持つSongが存在する状態で今月=3月として実行 | 3月分のみが作成され、1月分は作成されない |
+| 通常実行は曲が0件でも当月分を作成 | `--force`なし、DBが空 | 当月分のsong_count=0のレコードがall/subeana/xxの3件作成される（日次実行で常に当月の値を最新化するため） |
+| `--force`で全期間を再計算 | `--force`あり | `upload_time`が最古のSongの月〜今月まで、月ごとにall/subeana/xxの3件`Stats`が作成される |
+| `--force`時に`upload_time`を持つSongが1件も無い場合 | `--force`あり、全曲`upload_time=None` | バックフィルの起点が決められないため何もせず終了する |
 | songrangeごとに正しく振り分けられる | is_subeana=True/Falseの曲が混在 | `songrange="subeana"`/`"xx"`のレコードがそれぞれの曲数のみを集計する |
 | 再実行時は上書き更新 | 既存の月・songrangeに対して再実行 | `update_or_create`により重複作成されず、値が最新の集計に更新される |
 
@@ -1457,7 +1457,9 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 
 #### 19-6. `with_monthly_deltas(rows)` / `filter_monthly_series_by_year_month(rows, year, month)`（#334、コードレビュー指摘対応）
 
-総合統計ページのグラフをsongrange/year/monthフィルターに連動させる仕様変更で追加。`with_monthly_deltas`は累積値の行リストから各フィールドの単月差分(`<field>_delta`)を計算し、`filter_monthly_series_by_year_month`は表示するyear/monthの行に絞り込む。差分計算は絞り込み前の全期間に対して行ってから絞り込むため、表示範囲を狭めても差分値はずれない。`filter_monthly_series_by_year_month`は`apply_upload_time_filter`と同様、yearとmonthを独立して適用する（コードレビュー指摘対応: 以前はyear="all"だとmonth条件がまるごと無視され、統計カード（`apply_upload_time_filter`基準）とグラフ（このフィルタ基準）で表示内容が食い違うバグがあった）。
+総合統計ページのグラフをsongrange/year/monthフィルターに連動させる仕様変更で追加。`with_monthly_deltas`は累積値の行リストから各フィールドの単月差分(`<field>_delta`)を計算し、`filter_monthly_series_by_year_month`は表示するyear/monthの行に絞り込む。差分計算は絞り込み前の全期間に対して行ってから絞り込むため、表示範囲を狭めても差分値はずれない。
+
+`filter_monthly_series_by_year_month`は`year`が指定されている場合はその年のみに絞り込み、`month`による絞り込みは行わない（コードレビュー指摘対応: year・monthを両方指定すると棒グラフが1本だけになり意味を成さないため、その年の全期間を表示するよう変更。以前は両方適用され1本になっていた）。`year="all"`の場合は`month`のみで独立して絞り込める（年をまたいだ同月比較として意味を成す）。
 
 | テストケース | 入力 | 期待結果 |
 | --- | --- | --- |
@@ -1467,7 +1469,7 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 | 空リスト | `[]` | `[]` |
 | `year="all"` | 任意の行リスト | 絞り込まれない |
 | `year`のみ指定 | 複数年の行リスト | 該当年の行のみ |
-| `year`・`month`両方指定 | 複数年月の行リスト | 該当年月の行のみ |
+| `year`・`month`両方指定（コードレビュー指摘対応） | 複数年月の行リスト | `month`は無視され、該当年の全期間が表示される |
 | `year="all"`でも`month`のみ指定（回帰、コードレビュー指摘対応） | 複数年の行リスト、`month`のみ指定 | yearに関わらず該当月の行が年をまたいで全て残る |
 
 ---

@@ -533,9 +533,11 @@ class FilterMonthlySeriesByYearMonthTest(TestCase):
         result = filter_monthly_series_by_year_month(self.rows, "2025", "all")
         self.assertEqual(result, [{"year": 2025, "month": 1}, {"year": 2025, "month": 6}])
 
-    def test_year_and_month_filters_by_both(self):
+    def test_year_and_month_both_specified_ignores_month_and_shows_full_year(self):
+        # year・monthを両方指定すると棒グラフが1本だけになり意味を成さないため、
+        # monthは無視してその年の全期間を表示する（コードレビュー指摘対応）
         result = filter_monthly_series_by_year_month(self.rows, "2025", "6")
-        self.assertEqual(result, [{"year": 2025, "month": 6}])
+        self.assertEqual(result, [{"year": 2025, "month": 1}, {"year": 2025, "month": 6}])
 
     def test_month_only_filters_across_all_years(self):
         # apply_upload_time_filterと同様、yearが"all"でもmonthだけで独立して

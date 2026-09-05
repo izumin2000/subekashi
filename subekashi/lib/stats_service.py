@@ -253,11 +253,13 @@ def with_monthly_deltas(rows):
 def filter_monthly_series_by_year_month(rows, year, month):
     """year("all"または数値文字列)/month("all"または数値文字列)で表示する行を絞り込む
 
-    apply_upload_time_filterと同様、yearとmonthは独立して指定できる
-    （yearが"all"でもmonthだけで絞り込める）
+    yearが指定されている場合はその年のみに絞り込み、monthによる絞り込みは行わない
+    （year・monthを両方指定すると棒グラフが1本だけになり意味を成さないため、
+    その場合はmonthを無視してその年の全期間を表示する。コードレビュー指摘対応）。
+    yearが"all"の場合はmonthのみで絞り込める（年をまたいだ同月比較として意味を成す）
     """
     if year and year != "all":
-        rows = [row for row in rows if row["year"] == int(year)]
+        return [row for row in rows if row["year"] == int(year)]
     if month and month != "all":
         rows = [row for row in rows if row["month"] == int(month)]
     return rows

@@ -456,7 +456,14 @@ class BackupCommandTest(TestCase):
 
 
 class StatsCommandTest(TestCase):
-    """stats コマンドのテスト（月次統計(Stats)の集計・保存、#334）"""
+    """stats コマンドのテスト（月次統計(Stats)の集計・保存、#334）
+
+    コードレビュー指摘対応: 過去の全期間を毎回再計算すると、データ増加に伴い
+    実行コストが線形以上に増えるため、通常実行（--forceなし）は当月分のみを
+    再計算するよう変更した（日次実行を想定、当月中はview/like等が伸び続けるため
+    当月分だけは毎回最新化する）。--force指定時のみ、従来通り最古のSongの月〜
+    今月までの全期間を再計算する（デプロイ時の過去分バックフィル用）
+    """
 
     def _run(self, *extra_args):
         out = StringIO()
@@ -465,38 +472,40 @@ class StatsCommandTest(TestCase):
         return out.getvalue(), err.getvalue()
 
     @patch("subekashi.management.commands.stats.now_local")
-    def test_skips_when_not_first_of_month(self, mock_now_local):
-        mock_now_local.return_value = timezone_aware(2026, 1, 15)
-        Song.objects.create(title="曲", upload_time=timezone.make_aware(datetime(2025, 1, 1)))
+    def test_default_run_updates_only_current_month(self, mock_now_local):
+        mock_now_local.return_value = timezone_aware(2026, 3, 15)
+        Song.objects.create(title="1月の曲", upload_time=timezone_aware(2026, 1, 15), view=10, is_subeana=True)
+        Song.objects.create(title="3月の曲", upload_time=timezone_aware(2026, 3, 10), view=20, is_subeana=False)
 
         self._run()
 
-        self.assertEqual(Stats.objects.count(), 0)
+        # --forceなしの通常実行では当月(3月)分のみが作成され、1月分は作成されない
+        months = sorted(set(Stats.objects.values_list("year", "month")))
+        self.assertEqual(months, [(2026, 3)])
+        self.assertEqual(Stats.objects.filter(year=2026, month=3).count(), 3)
+
+        mar_all = Stats.objects.get(year=2026, month=3, songrange="all")
+        self.assertEqual(mar_all.song_count, 2)
+        self.assertEqual(mar_all.total_view, 30)
 
     @patch("subekashi.management.commands.stats.now_local")
-    def test_no_songs_does_nothing(self, mock_now_local):
+    def test_default_run_creates_current_month_stats_even_with_zero_songs(self, mock_now_local):
+        # 通常実行は曲が1件も無くても当月分の3件(song_count=0)を作成する
+        # （日付ガードが無くなり、日次実行で常に当月の値を最新化する設計のため）
         mock_now_local.return_value = timezone_aware(2026, 1, 1)
 
         self._run()
 
-        self.assertEqual(Stats.objects.count(), 0)
+        self.assertEqual(Stats.objects.count(), 3)
+        self.assertEqual(Stats.objects.get(year=2026, month=1, songrange="all").song_count, 0)
 
     @patch("subekashi.management.commands.stats.now_local")
-    def test_no_songs_with_upload_time_does_nothing(self, mock_now_local):
-        mock_now_local.return_value = timezone_aware(2026, 1, 1)
-        Song.objects.create(title="曲", upload_time=None)
-
-        self._run()
-
-        self.assertEqual(Stats.objects.count(), 0)
-
-    @patch("subekashi.management.commands.stats.now_local")
-    def test_runs_on_first_of_month_and_creates_stats_for_each_month(self, mock_now_local):
+    def test_force_recalculates_full_history(self, mock_now_local):
         mock_now_local.return_value = timezone_aware(2026, 3, 1)
         Song.objects.create(title="1月の曲", upload_time=timezone_aware(2026, 1, 15), view=10, is_subeana=True)
         Song.objects.create(title="3月の曲", upload_time=timezone_aware(2026, 3, 15), view=20, is_subeana=False)
 
-        self._run()
+        self._run("--force")
 
         months = sorted(set(Stats.objects.values_list("year", "month")))
         self.assertEqual(months, [(2026, 1), (2026, 2), (2026, 3)])
@@ -518,13 +527,14 @@ class StatsCommandTest(TestCase):
         self.assertEqual(mar_xx.song_count, 1)
 
     @patch("subekashi.management.commands.stats.now_local")
-    def test_force_bypasses_day_guard(self, mock_now_local):
-        mock_now_local.return_value = timezone_aware(2026, 3, 15)
-        Song.objects.create(title="曲", upload_time=timezone_aware(2026, 3, 1))
+    def test_force_with_no_songs_with_upload_time_does_nothing(self, mock_now_local):
+        # --force時のみ、最古のSongが無ければ何もしない（バックフィルの起点が決められないため）
+        mock_now_local.return_value = timezone_aware(2026, 1, 1)
+        Song.objects.create(title="曲", upload_time=None)
 
         self._run("--force")
 
-        self.assertEqual(Stats.objects.count(), 3)
+        self.assertEqual(Stats.objects.count(), 0)
 
     @patch("subekashi.management.commands.stats.now_local")
     def test_rerun_updates_existing_month_instead_of_duplicating(self, mock_now_local):
@@ -533,7 +543,7 @@ class StatsCommandTest(TestCase):
 
         self._run()
         Song.objects.create(title="追加曲", upload_time=timezone_aware(2026, 1, 2), view=2)
-        self._run("--force")
+        self._run()
 
         self.assertEqual(Stats.objects.filter(year=2026, month=1).count(), 3)
         self.assertEqual(Stats.objects.get(year=2026, month=1, songrange="all").song_count, 2)
