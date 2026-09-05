@@ -48,6 +48,10 @@ class StatsView(View):
         # 差分(月ごとモード用)は絞り込み前の全期間から計算してから、表示範囲をyear/monthで絞り込む
         monthly_stats = filter_monthly_series_by_year_month(with_monthly_deltas(monthly_series), year, month)
 
+        # year・month両方指定時、グラフはmonthを無視してその年の全期間を表示するため（コードレビュー指摘対応）
+        # 選択していた月のみ棒の色を変えて分かりやすくする
+        highlighted_month = int(month) if year != "all" and month != "all" else None
+
         context = {
             "metatitle": "統計",
             "songrange": songrange,
@@ -59,6 +63,7 @@ class StatsView(View):
             "stats_items": stats_items,
             "kenreki": kenreki,
             "monthly_stats": monthly_stats,
+            "highlighted_month": highlighted_month,
             "description": "すべかしに登録された曲の統計情報。",
         }
         return render(request, "subekashi/stats.html", context)

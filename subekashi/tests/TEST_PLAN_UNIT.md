@@ -764,6 +764,9 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | グラフの差分は絞り込み前の全期間から計算（回帰） | `?year=2025`指定、2024年12月と2025年1月の`Stats`が存在 | 表示範囲を2025年のみに絞り込んでも、`song_count_delta`は2024年12月との差分として正しく計算される |
 | year選択肢は選択中のsongrangeに連動（回帰、コードレビュー指摘対応） | `?songrange=subeana`、xx曲のみの年とsubeana曲のみの年が混在 | `year_choices`にxx曲のみの年が含まれず、選択しても0件になる組み合わせを避けられる |
 | メニューからの導線 | トップページのGET | `/stats/`へのリンクが記事とお問い合わせの間に含まれる |
+| `highlighted_month`はyearのみ指定時はNone | `?year=2024`（monthは指定しない） | `context["highlighted_month"]`が`None` |
+| `highlighted_month`はmonthのみ指定時もNone | `?month=1`（yearは指定しない） | `context["highlighted_month"]`が`None` |
+| `highlighted_month`はyear・month両方指定時のみセット（コードレビュー指摘対応） | `?year=2024&month=6` | `context["highlighted_month"]`が`6`になり、JS側で棒グラフのその月だけ色を変えるための`highlighted-month-data`が埋め込まれる（グラフ側はmonthを無視してその年全体を表示するため、選択していた月をハイライトして元のフィルターとの対応を分かりやすくする） |
 
 #### 7-15. `AuthorStatsView` (`/authors/<id>/stats/`)（#334）
 
@@ -1190,12 +1193,17 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 
 コードレビュー指摘対応: 過去の全期間を毎回再計算すると、データ増加に伴い実行コストが線形以上に増える懸念があったため、日付ガード（`now.day != 1`ならスキップ）を廃止し、通常実行（`--force`なし）は**当月分のみ**を再計算する方式に変更した（日次実行を想定。当月中はview/like等が伸び続けるため当月分だけは毎回最新化し、過去の確定した月は触らない）。`--force`指定時のみ、従来通り最古のSongの月〜今月までの全期間を再計算する（デプロイ時の過去分バックフィル用）。
 
+この変更により、過去に確定した月のtotal_view/total_like等は月が閉じた時点の値で固定され、以降YouTube側で再生数が伸びても自動追従しない仕様になった（レビュー指摘）。この仕様変更は意図したもので、過去月を明示的に再計算したい場合向けに`--year`/`--month`オプションを追加し、任意の1ヶ月のみをピンポイントで再計算できるようにした（`--year`/`--month`は両方セットで指定する必要がある）。
+
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | 通常実行は当月分のみ更新 | `--force`なし、1月・3月にそれぞれ`upload_time`を持つSongが存在する状態で今月=3月として実行 | 3月分のみが作成され、1月分は作成されない |
 | 通常実行は曲が0件でも当月分を作成 | `--force`なし、DBが空 | 当月分のsong_count=0のレコードがall/subeana/xxの3件作成される（日次実行で常に当月の値を最新化するため） |
 | `--force`で全期間を再計算 | `--force`あり | `upload_time`が最古のSongの月〜今月まで、月ごとにall/subeana/xxの3件`Stats`が作成される |
 | `--force`時に`upload_time`を持つSongが1件も無い場合 | `--force`あり、全曲`upload_time=None` | バックフィルの起点が決められないため何もせず終了する |
+| `--year`/`--month`で任意の月のみ再計算 | `--year 2026 --month 1`、今月は3月 | 当月(3月)ではなく指定した1月分のみが再計算される |
+| `--year`のみ指定（`--month`無し） | `--year 2026`のみ | `CommandError`（両方指定が必須） |
+| `--month`のみ指定（`--year`無し） | `--month 1`のみ | `CommandError`（両方指定が必須） |
 | songrangeごとに正しく振り分けられる | is_subeana=True/Falseの曲が混在 | `songrange="subeana"`/`"xx"`のレコードがそれぞれの曲数のみを集計する |
 | 再実行時は上書き更新 | 既存の月・songrangeに対して再実行 | `update_or_create`により重複作成されず、値が最新の集計に更新される |
 

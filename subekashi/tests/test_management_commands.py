@@ -17,6 +17,7 @@ from io import StringIO
 from unittest.mock import MagicMock, mock_open, patch
 
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import TestCase
 from django.utils import timezone
 
@@ -559,6 +560,33 @@ class StatsCommandTest(TestCase):
 
         mock_now_local.assert_called_once()
         self.assertEqual(Stats.objects.count(), 3)
+
+    @patch("subekashi.management.commands.stats.now_local")
+    def test_year_month_option_recalculates_only_the_specified_month(self, mock_now_local):
+        # --year/--monthを指定すると、当月(3月)ではなく指定した月(1月)のみが再計算される
+        # （過去月をピンポイントで更新したい場合用、コードレビュー指摘対応）
+        mock_now_local.return_value = timezone_aware(2026, 3, 15)
+        Song.objects.create(title="1月の曲", upload_time=timezone_aware(2026, 1, 15), view=10)
+
+        self._run("--year", "2026", "--month", "1")
+
+        months = sorted(set(Stats.objects.values_list("year", "month")))
+        self.assertEqual(months, [(2026, 1)])
+        self.assertEqual(Stats.objects.get(year=2026, month=1, songrange="all").total_view, 10)
+
+    @patch("subekashi.management.commands.stats.now_local")
+    def test_year_without_month_raises_error(self, mock_now_local):
+        mock_now_local.return_value = timezone_aware(2026, 3, 15)
+
+        with self.assertRaises(CommandError):
+            self._run("--year", "2026")
+
+    @patch("subekashi.management.commands.stats.now_local")
+    def test_month_without_year_raises_error(self, mock_now_local):
+        mock_now_local.return_value = timezone_aware(2026, 3, 15)
+
+        with self.assertRaises(CommandError):
+            self._run("--month", "1")
 
 
 class WordCommandTest(TestCase):
