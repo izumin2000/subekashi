@@ -922,8 +922,7 @@ class StatsViewTest(TestCase):
 
         response = self.client.get(reverse("subekashi:stats"))
 
-        # #1099: key_countはpt合計をそのまま鍵盤本数として扱う（2pt=鍵盤1本の換算は廃止）
-        self.assertEqual(response.context["kenreki"]["key_count"], 4)
+        self.assertEqual(response.context["kenreki"]["points"], 4)
         self.assertNotContains(response, "kenreki-keyboard-scroll")
 
     def test_kenreki_stat_value_displays_points_not_song_count_stat(self):
@@ -934,7 +933,6 @@ class StatsViewTest(TestCase):
         response = self.client.get(reverse("subekashi:stats"))
 
         self.assertEqual(response.context["kenreki"]["points"], 1)
-        self.assertEqual(response.context["kenreki"]["key_count"], 1)
         match = re.search(
             r'<p class="icon-p">鍵歴</p>\s*<p class="stat-value"[^>]*>(\d+)</p>',
             response.content.decode(),
@@ -952,11 +950,10 @@ class StatsViewTest(TestCase):
         filtered_2024 = self.client.get(reverse("subekashi:stats"), {"year": "2024"})
 
         # 全期間: 2024年の曲(view=20:2段階=2pt, like=2:2段階=2pt=4pt) + 2025年の曲(view=1000:7段階=7pt) = 11pt
-        # （鍵歴はSongごとに算出して合計するため、集計後のview=1020に対する閾値判定ではない。
-        # #1099: key_countはpt合計そのものなので11鍵）
-        self.assertEqual(unfiltered.context["kenreki"]["key_count"], 11)
-        # 2024年のみ: view=20(2段階=2pt)+like=2(2段階=2pt)=4pt -> 4鍵
-        self.assertEqual(filtered_2024.context["kenreki"]["key_count"], 4)
+        # （鍵歴はSongごとに算出して合計するため、集計後のview=1020に対する閾値判定ではない）
+        self.assertEqual(unfiltered.context["kenreki"]["points"], 11)
+        # 2024年のみ: view=20(2段階=2pt)+like=2(2段階=2pt)=4pt
+        self.assertEqual(filtered_2024.context["kenreki"]["points"], 4)
 
     def test_kenreki_stat_value_never_colored_even_when_overflowing(self):
         # 総合統計ページの鍵歴はstat-valueの着色をしない（authorページとの仕様差、コードレビュー指摘対応）
@@ -968,7 +965,7 @@ class StatsViewTest(TestCase):
 
         response = self.client.get(reverse("subekashi:stats"))
 
-        self.assertGreaterEqual(response.context["kenreki"]["key_count"], 88)
+        self.assertGreaterEqual(response.context["kenreki"]["points"], 88)
         self.assertIsNone(response.context["kenreki"]["overflow_color"])
         self.assertNotContains(response, "style=\"color: hsl(")
 
@@ -1099,16 +1096,15 @@ class AuthorStatsViewTest(TestCase):
         response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
 
         self.assertIsNotNone(response.context["kenreki"])
-        # #1099: key_countはpt合計をそのまま鍵盤本数として扱う（2pt=鍵盤1本の換算は廃止）
-        self.assertEqual(response.context["kenreki"]["key_count"], 1)
+        self.assertEqual(response.context["kenreki"]["points"], 1)
 
-    def test_kenreki_key_count_reflects_total_view_and_like(self):
-        # view=20(2段階=2pt)+like=2(2段階=2pt)=合計4pt。#1099: key_countはpt合計そのもの
+    def test_kenreki_points_reflects_total_view_and_like(self):
+        # view=20(2段階=2pt)+like=2(2段階=2pt)=合計4pt
         Song.objects.create(title="曲", view=20, like=2).authors.add(self.author)
 
         response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
 
-        self.assertEqual(response.context["kenreki"]["key_count"], 4)
+        self.assertEqual(response.context["kenreki"]["points"], 4)
 
     def test_kenreki_stat_value_displays_points_not_song_count_stat(self):
         # #1099: view=1(1段階=1pt)の曲を1曲のみ登録し、鍵歴のpt合計(1)が
@@ -1118,7 +1114,6 @@ class AuthorStatsViewTest(TestCase):
         response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
 
         self.assertEqual(response.context["kenreki"]["points"], 1)
-        self.assertEqual(response.context["kenreki"]["key_count"], 1)
         match = re.search(
             r'<p class="icon-p">鍵歴</p>\s*<p class="stat-value"[^>]*>(\d+)</p>',
             response.content.decode(),
@@ -1139,8 +1134,8 @@ class AuthorStatsViewTest(TestCase):
             {"songrange": "xx", "year": "2024"},
         )
 
-        self.assertEqual(unfiltered.context["kenreki"]["key_count"], filtered.context["kenreki"]["key_count"])
-        self.assertGreater(filtered.context["kenreki"]["key_count"], 0)
+        self.assertEqual(unfiltered.context["kenreki"]["points"], filtered.context["kenreki"]["points"])
+        self.assertGreater(filtered.context["kenreki"]["points"], 0)
 
 
 @override_settings(STATICFILES_STORAGE=STATIC_STORAGE)

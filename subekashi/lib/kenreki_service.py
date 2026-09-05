@@ -39,25 +39,23 @@ def compute_song_points(view, like):
 
 
 def _kenreki_from_points(points):
-    """合計ptから鍵歴（鍵盤数・オーバーフロー色等）を算出する
+    """合計ptから鍵歴（オーバーフロー色等）を算出する
 
-    key_countは合計ptをそのまま鍵盤本数として扱う（#1099で2pt=鍵盤1本の換算を廃止）。
-    MAX_KEYSでカンストさせない（鍵盤ビジュアルの描画本数のみMAX_KEYSを上限とし、
-    呼び出し側でmin()して渡す）。key_countがMAX_KEYS(88)以上になった時点で、
-    黒鍵の色（虹色のグラデーション、MAX_POSSIBLE_KEY_COUNTに対する到達度で連続的に変化）を返す
+    ptは合計をそのまま鍵盤本数として扱う（#1099で2pt=鍵盤1本の換算を廃止したため、
+    鍵盤ビジュアル用の別フィールドは持たない）。カンストはさせず実際の達成数を
+    そのまま返す（鍵盤ビジュアルの描画本数のみMAX_KEYSを上限とし、呼び出し側で
+    min()して渡す）。ptがMAX_KEYS(88)以上になった時点で、黒鍵の色（虹色の
+    グラデーション、MAX_POSSIBLE_KEY_COUNTに対する到達度で連続的に変化）を返す
     """
-    key_count = points
-
     overflow_color = None
     overflow_ratio = None
-    if key_count >= MAX_KEYS:
-        overflow_ratio = min(1.0, (key_count - MAX_KEYS) / (MAX_POSSIBLE_KEY_COUNT - MAX_KEYS))
+    if points >= MAX_KEYS:
+        overflow_ratio = min(1.0, (points - MAX_KEYS) / (MAX_POSSIBLE_KEY_COUNT - MAX_KEYS))
         hue = round(overflow_ratio * 270)
         overflow_color = f"hsl({hue}, 75%, 45%)"
 
     return {
         "points": points,
-        "key_count": key_count,
         "overflow_color": overflow_color,
         "overflow_ratio": overflow_ratio,
         "overflow_lower_bound": MAX_KEYS,
@@ -66,7 +64,7 @@ def _kenreki_from_points(points):
 
 
 def compute_kenreki(view, like):
-    """1曲分のview/likeから鍵歴（実績鍵盤）の鍵盤数・オーバーフロー色を算出して返す"""
+    """1曲分のview/likeから鍵歴（実績鍵盤）のpt・オーバーフロー色を算出して返す"""
     return _kenreki_from_points(compute_song_points(view, like))
 
 

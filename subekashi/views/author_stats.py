@@ -31,7 +31,7 @@ class AuthorStatsView(View):
         kenreki = None
         if view_like_pairs:
             kenreki = compute_kenreki_for_songs(view_like_pairs)
-            kenreki["geometry"] = build_keyboard_geometry(min(kenreki["key_count"], MAX_KEYS), kenreki["overflow_color"])
+            kenreki["geometry"] = build_keyboard_geometry(min(kenreki["points"], MAX_KEYS), kenreki["overflow_color"])
 
         songrange, show_all_songrange = resolve_songrange(request, author_songs)
         songrange_qs = apply_songrange_filter(author_songs, songrange)
