@@ -927,6 +927,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | 作者の作成 | `Author.objects.create(name="テスト作者")` | DBに保存される |
 | `name` のユニーク制約 | 同じ名前で2件作成 | `IntegrityError` が発生 |
+| Strict Modeによるmax_length超過の拒否 (#1091、MySQLのみ) | `max_length=255`を超える`name`で`save()` | `DataError`が発生（`config/settings.py`のinit_commandでSTRICT_TRANS_TABLESを有効化しているため） |
 | `name` の大文字小文字違いは別レコード (#1092) | `"MoAI"`と`"moai"`をそれぞれ作成 | 両方ともDBに保存される（一意制約はバイト完全一致で判定） |
 | `name=`によるexact matchは大文字小文字を区別する (#1092) | 上記の状態で`filter(name="MoAI")` | `"MoAI"`のみヒットする（`"moai"`はヒットしない） |
 | `get_by_name()`は大文字小文字違いが共存してもエラーにならない (#1092) | 上記の状態で`get_by_name("MoAI")`と`get_by_name("moai")` | それぞれ対応するレコードを返す（`MultipleObjectsReturned`は発生しない） |

@@ -3,7 +3,9 @@
 
 Song, Author, AuthorAlias, SongLink の CRUD・制約・メソッドを検証する。
 """
-from django.db import IntegrityError
+import unittest
+from django.db import IntegrityError, connection
+from django.db.utils import DataError
 from django.test import TestCase
 from django.utils import timezone
 from subekashi.models import Ai, Author, AuthorAlias, Contact, Editor, History, Song, SongLink, Stats, Word
@@ -26,6 +28,14 @@ class AuthorModelTest(TestCase):
         Author.objects.create(name="重複作者")
         with self.assertRaises(IntegrityError):
             Author.objects.create(name="重複作者")
+
+    @unittest.skipUnless(connection.vendor == "mysql", "Strict ModeはMySQL固有の設定のため")
+    def test_mysql_strict_mode_rejects_max_length_overflow(self):
+        """#1091: Strict Modeが有効な場合、max_length超過の値はDBレベルでDataErrorになること
+        （無効だと警告のみでサイレントに切り詰められてしまい#593の移行時に実データで問題になった）"""
+        author = Author(name="あ" * 256)
+        with self.assertRaises(DataError):
+            author.save()
 
     def test_different_case_names_can_coexist(self):
         """一意制約はバイト完全一致で判定され、大文字小文字違いは別レコードとして許容される（#1092）"""
