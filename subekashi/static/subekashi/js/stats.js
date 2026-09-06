@@ -78,6 +78,17 @@ if (statsChartCanvas) {
 
     renderChart();
 
+    // Chart.jsの組み込みresponsive自動追従は、コンテナが一度縮小した後に再び拡大した際、
+    // canvasのサイズが元に戻らない不具合があるため（#1110）、自前でコンテナのサイズ変化を
+    // 監視し、明示的にresize()を呼び出すことで追従させる。Chart.js自身の内部処理と
+    // 同一フレーム内で競合すると古いサイズに巻き戻されるため、rAFを2回はさんで
+    // 内部処理が完全に収まった後に呼び出す
+    new ResizeObserver(() => {
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => chart.resize());
+        });
+    }).observe(document.getElementById("stats-chart-wrapper"));
+
     document.querySelectorAll('input[name="chart-mode"], input[name="chart-series"]').forEach(radio => {
         radio.addEventListener("change", () => {
             if (radio.checked) {
