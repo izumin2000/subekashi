@@ -12,6 +12,10 @@ DSP_DISCORD_URL = ''
 PYTHONANYWHERE_USERNAME = ''
 PYTHONANYWHERE_TOKEN = ''
 
+# manage.py deploy でpip/pythonを実行する際に使う仮想環境のパス（例: '/home/username/.virtualenvs/subekashi-venv'）。
+# 空文字列の場合はグローバルのpip/pythonを使う
+VENV_PATH = ''
+
 YOUTUBE_API_KEY = ''
 
 DEBUG = True

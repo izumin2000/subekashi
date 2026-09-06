@@ -175,6 +175,26 @@ class DefaultArticleViewTest(TestCase):
         response = self.client.get(f"/articles/{self.article.article_id}/")
         self.assertContains(response, "詳細テスト記事")
 
+    def test_markdown_table_syntax_is_rendered_as_html_table(self):
+        # markdown.markdown()にtables拡張を渡していないと、パイプ区切りのテーブル記法が
+        # 素通りしてしまい<table>要素にならない（回帰防止）
+        table_article = Article.objects.create(
+            article_id="test-default-003",
+            title="テーブルテスト記事",
+            author="テスト筆者",
+            tag="news",
+            text="| 見出し1 | 見出し2 |\n| ---- | ---- |\n| 値1 | 値2 |",
+            post_time=timezone.now(),
+            is_open=True,
+            is_md=True,
+        )
+
+        response = self.client.get(f"/articles/{table_article.article_id}/")
+
+        self.assertContains(response, "<table>")
+        self.assertContains(response, "<th>見出し1</th>")
+        self.assertContains(response, "<td>値1</td>")
+
     def test_nonexistent_article_returns_404(self):
         response = self.client.get("/articles/nonexistent-id-xyz/")
         self.assertEqual(response.status_code, 404)

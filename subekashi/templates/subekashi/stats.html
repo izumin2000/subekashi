@@ -6,7 +6,7 @@
 
 {% block content %}
 <section>
-    <h1>統計</h1>
+    <h1>統計<a href="{% url 'article:default_article' 'howToStats' %}"><i class="fas fa-info-circle"></i></a></h1>
     {% include "subekashi/components/stats_filter.html" %}
     {% include "subekashi/components/stats_summary.html" %}
 
