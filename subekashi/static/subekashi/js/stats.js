@@ -82,10 +82,27 @@ if (statsChartCanvas) {
     // canvasのサイズが元に戻らない不具合があるため（#1110）、自前でコンテナのサイズ変化を
     // 監視し、明示的にresize()を呼び出すことで追従させる。Chart.js自身の内部処理と
     // 同一フレーム内で競合すると古いサイズに巻き戻されるため、rAFを2回はさんで
-    // 内部処理が完全に収まった後に呼び出す
+    // 内部処理が完全に収まった後に呼び出す（options.resizeDelayでは今回の問題は
+    // 解消しないことを確認済み。縮小方向は追従するが拡大方向のみ追従しないという
+    // 非対称な不具合のため、単純なデバウンスでは直らない）
+    //
+    // resizeScheduledは、ドラッグ操作等でResizeObserverが連続発火した際に
+    // 二重rAFコールバックが多重に積み上がるのを防ぐガード（コードレビュー指摘対応）。
+    // chart?.resize()は、将来renderChartの非同期化等でこのコールバック実行時に
+    // chartが未生成/破棄済みになるケースに備えた防御的な書き方（コードレビュー指摘対応）。
+    // このスクリプトはフルページロードの度に1回だけ実行される前提のため、
+    // ResizeObserverのdisconnect()は行っていない
+    let resizeScheduled = false;
     new ResizeObserver(() => {
+        if (resizeScheduled) {
+            return;
+        }
+        resizeScheduled = true;
         requestAnimationFrame(() => {
-            requestAnimationFrame(() => chart.resize());
+            requestAnimationFrame(() => {
+                chart?.resize();
+                resizeScheduled = false;
+            });
         });
     }).observe(document.getElementById("stats-chart-wrapper"));
 
