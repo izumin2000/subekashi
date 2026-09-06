@@ -13,7 +13,7 @@ import os
 import stat
 import subprocess
 import tempfile
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import StringIO
 from unittest.mock import MagicMock, mock_open, patch
 
@@ -590,7 +590,12 @@ class StatsCommandTest(TestCase):
     実行コストが線形以上に増えるため、通常実行（--forceなし）は当月分のみを
     再計算するよう変更した（日次実行を想定、当月中はview/like等が伸び続けるため
     当月分だけは毎回最新化する）。--force指定時のみ、従来通り最古のSongの月〜
-    今月までの全期間を再計算する（デプロイ時の過去分バックフィル用）
+    今月までの全期間を再計算する（デプロイ時の過去分バックフィル用）。
+
+    #1106: 過去の年月に公開された動画を事後的に登録した場合、その曲のupload_time
+    は過去月になるが通常実行では反映されないまま放置される問題への対応として、
+    直近RETROACTIVE_LOOKBACK_DAYS(7)日以内に登録された曲(post_time基準)の
+    upload_timeの月も自動で再計算対象に加えるようにした
     """
 
     def _run(self, *extra_args):
@@ -602,7 +607,13 @@ class StatsCommandTest(TestCase):
     @patch("subekashi.management.commands.stats.now_local")
     def test_default_run_updates_only_current_month(self, mock_now_local):
         mock_now_local.return_value = timezone_aware(2026, 3, 15)
-        Song.objects.create(title="1月の曲", upload_time=timezone_aware(2026, 1, 15), view=10, is_subeana=True)
+        # post_timeをupload_timeと同時期にし、「アップロード直後に登録された曲」を再現する
+        # （#1106の事後登録検知はpost_time基準のため、post_time省略＝実行時刻になり
+        # 意図せず直近登録として扱われてしまうのを避ける）
+        Song.objects.create(
+            title="1月の曲", upload_time=timezone_aware(2026, 1, 15), post_time=timezone_aware(2026, 1, 15),
+            view=10, is_subeana=True,
+        )
         Song.objects.create(title="3月の曲", upload_time=timezone_aware(2026, 3, 10), view=20, is_subeana=False)
 
         self._run()
@@ -654,6 +665,78 @@ class StatsCommandTest(TestCase):
 
         self.assertEqual(Stats.objects.count(), 3)
         self.assertEqual(Stats.objects.get(year=2026, month=1, songrange="all").song_count, 0)
+
+    @patch("subekashi.management.commands.stats.now_local")
+    def test_default_run_recalculates_month_of_recently_registered_past_song(self, mock_now_local):
+        # #1106: 過去の年月に公開された動画を最近になって登録した場合（post_timeは最近、
+        # upload_timeは過去月）、通常実行でもその過去月が自動で再計算対象に入ることを確認する
+        mock_now_local.return_value = timezone_aware(2026, 3, 15)
+        Song.objects.create(
+            title="事後登録された1月の曲", upload_time=timezone_aware(2026, 1, 15),
+            post_time=timezone_aware(2026, 3, 10), view=10,
+        )
+
+        self._run()
+
+        months = sorted(set(Stats.objects.values_list("year", "month")))
+        self.assertEqual(months, [(2026, 1), (2026, 3)])
+        self.assertEqual(Stats.objects.get(year=2026, month=1, songrange="all").song_count, 1)
+
+    @patch("subekashi.management.commands.stats.now_local")
+    def test_default_run_does_not_recalculate_month_of_song_registered_outside_lookback_window(self, mock_now_local):
+        # RETROACTIVE_LOOKBACK_DAYS(7日)より前に登録された曲は対象外
+        # （実行コストを増やさないための境界。lookback日数を1日超えたケースで検証する）
+        mock_now_local.return_value = timezone_aware(2026, 3, 15)
+        Song.objects.create(
+            title="8日前に登録された1月の曲", upload_time=timezone_aware(2026, 1, 15),
+            post_time=timezone_aware(2026, 3, 15) - timedelta(days=8), view=10,
+        )
+
+        self._run()
+
+        months = sorted(set(Stats.objects.values_list("year", "month")))
+        self.assertEqual(months, [(2026, 3)])
+
+    @patch("subekashi.management.commands.stats.now_local")
+    def test_default_run_lookback_boundary_is_inclusive(self, mock_now_local):
+        # ちょうどRETROACTIVE_LOOKBACK_DAYS(7日)前ぴったりは対象に含める境界値確認
+        mock_now_local.return_value = timezone_aware(2026, 3, 15)
+        Song.objects.create(
+            title="ちょうど7日前に登録された1月の曲", upload_time=timezone_aware(2026, 1, 15),
+            post_time=timezone_aware(2026, 3, 15) - timedelta(days=7), view=10,
+        )
+
+        self._run()
+
+        months = sorted(set(Stats.objects.values_list("year", "month")))
+        self.assertEqual(months, [(2026, 1), (2026, 3)])
+
+    @patch("subekashi.management.commands.stats.now_local")
+    def test_default_run_recently_registered_song_in_already_covered_month_is_not_duplicated(self, mock_now_local):
+        # 最近登録された曲でも、upload_timeが当月・前月（既に再計算対象）の場合は
+        # 重複して余計な月を再計算しない
+        mock_now_local.return_value = timezone_aware(2026, 3, 1)
+        Song.objects.create(
+            title="最近登録された3月の曲", upload_time=timezone_aware(2026, 3, 1),
+            post_time=timezone_aware(2026, 3, 1), view=10,
+        )
+
+        self._run()
+
+        months = sorted(set(Stats.objects.values_list("year", "month")))
+        self.assertEqual(months, [(2026, 2), (2026, 3)])
+
+    @patch("subekashi.management.commands.stats.now_local")
+    def test_default_run_ignores_recently_registered_song_without_upload_time(self, mock_now_local):
+        # upload_time未設定の曲は年月を特定できないため、事後登録検知の対象から除外する
+        # （例外にならないことの確認）
+        mock_now_local.return_value = timezone_aware(2026, 3, 15)
+        Song.objects.create(title="upload_time未設定の曲", upload_time=None, post_time=timezone_aware(2026, 3, 10))
+
+        self._run()
+
+        months = sorted(set(Stats.objects.values_list("year", "month")))
+        self.assertEqual(months, [(2026, 3)])
 
     @patch("subekashi.management.commands.stats.now_local")
     def test_force_recalculates_full_history(self, mock_now_local):

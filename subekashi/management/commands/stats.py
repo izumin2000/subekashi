@@ -1,3 +1,4 @@
+from datetime import timedelta
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 from subekashi.lib.stats_service import (
@@ -18,8 +19,19 @@ class Command(BaseCommand):
         "月次統計(Stats)の集計・保存。通常は当月分のみを再計算し（月初(1日)のみ、"
         "閉じたばかりの前月分も最後にもう一度確定させる）、--force指定時は"
         "最古のSongの月〜今月までの全期間を再計算する。--year/--monthで任意の1ヶ月のみを"
-        "指定して再計算することもできる（過去月をピンポイントで更新したい場合用）"
+        "指定して再計算することもできる（過去月をピンポイントで更新したい場合用）。"
+        "通常実行時は、過去の年月に公開された動画が事後的に登録された場合に備え、"
+        "直近に登録された曲のupload_timeの月も自動で再計算対象に加える"
     )
+
+    # 過去の年月に公開された動画を事後的に登録すると、その曲のupload_timeは過去月になるが、
+    # 通常実行は当月分（月初のみ前月分も）しか再計算しないため、登録した曲の実績が
+    # 月次統計に反映されないまま放置されてしまう問題への対応（#1106）。
+    # 通常実行のたびに全期間を再計算する（#1094で廃止した方式）のではなく、直近
+    # RETROACTIVE_LOOKBACK_DAYS日以内に登録された曲のupload_timeの月だけを追加で
+    # 再計算することで、実行コストを増やさずに反映漏れを防ぐ。日次実行を想定し、
+    # 数日分の実行漏れがあっても取りこぼさないよう1週間分の余裕を持たせている
+    RETROACTIVE_LOOKBACK_DAYS = 7
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -66,11 +78,34 @@ class Command(BaseCommand):
             # データ増加に伴い実行コストが線形以上に増えるため、コードレビュー指摘対応）。
             # 月初(1日)のみ、閉じたばかりの前月分も最後にもう一度確定させる
             # （前月最終日分の伸びが反映されないまま固定されてしまう問題への対応）
-            if now.day == 1:
-                self._recalculate_month(*previous_year_month(current_year, current_month))
+            recalculated_months = {(current_year, current_month)}
             self._recalculate_month(current_year, current_month)
+            if now.day == 1:
+                previous_month = previous_year_month(current_year, current_month)
+                self._recalculate_month(*previous_month)
+                recalculated_months.add(previous_month)
+
+            for year, month in self._recently_registered_months(now, exclude=recalculated_months):
+                self._recalculate_month(year, month)
 
         self.stdout.write(self.style.SUCCESS("月次統計を更新しました。"))
+
+    def _recently_registered_months(self, now, exclude):
+        """直近RETROACTIVE_LOOKBACK_DAYS日以内に登録された曲(post_time基準)について、
+        upload_timeの年月をexclude（既に再計算対象の年月）を除いて重複無く返す（#1106）
+        """
+        cutoff = now - timedelta(days=self.RETROACTIVE_LOOKBACK_DAYS)
+        recent_songs = Song.objects.filter(
+            post_time__gte=cutoff, upload_time__isnull=False,
+        ).only('upload_time')
+
+        months = set()
+        for song in recent_songs:
+            # DBにはUTCで保存されているため、月の境界はローカルタイムゾーンに変換してから判定する
+            local_upload = timezone.localtime(song.upload_time)
+            months.add((local_upload.year, local_upload.month))
+
+        return months - exclude
 
     def _recalculate_month(self, year, month):
         """year年month月分のStatsをsongrange(all/subeana/xx)ごとに再計算・保存する"""
