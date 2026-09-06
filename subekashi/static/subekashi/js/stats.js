@@ -7,7 +7,7 @@ if (statsChartCanvas) {
     const BAR_COLOR = "rgba(54, 162, 235, 0.5)";
     // year・month両方指定時はグラフ側はmonthを無視してその年全体を表示するため、
     // 選択していた月の棒だけ色を変えて元のフィルターとの対応が分かるようにする（コードレビュー指摘対応）
-    const HIGHLIGHT_BAR_COLOR = "rgba(255, 99, 132, 0.7)";
+    const HIGHLIGHT_BAR_COLOR = "rgba(34, 197, 94, 0.8)";
 
     const SERIES_LABELS = {
         song_count: "曲数",
