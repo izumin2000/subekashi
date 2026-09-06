@@ -14,6 +14,17 @@ from subekashi.lib.stats_service import (
 )
 from subekashi.models import Song, Stats
 
+# グラフ表示設定のcookie名・許容値・デフォルト値。cookie自体はstats.js側で
+# document.cookieに直接書き込む（songrange/year/month用のformとは別扱いのため、
+# ページ全体の再読み込みを挟んでも設定が消えないよう、選択変更時にcookieへ保存する。#1111）
+CHART_MODE_COOKIE = "stats_chart_mode"
+CHART_MODE_CHOICES = {"monthly", "cumulative"}
+CHART_MODE_DEFAULT = "monthly"
+
+CHART_SERIES_COOKIE = "stats_chart_series"
+CHART_SERIES_CHOICES = {"song_count", "total_view", "total_like", "total_authors", "total_imitateds"}
+CHART_SERIES_DEFAULT = "song_count"
+
 
 class StatsView(View):
     def get(self, request):
@@ -52,6 +63,14 @@ class StatsView(View):
         # 選択していた月のみ棒の色を変えて分かりやすくする
         highlighted_month = int(month) if year != "all" and month != "all" else None
 
+        chart_mode = request.COOKIES.get(CHART_MODE_COOKIE, CHART_MODE_DEFAULT)
+        if chart_mode not in CHART_MODE_CHOICES:
+            chart_mode = CHART_MODE_DEFAULT
+
+        chart_series = request.COOKIES.get(CHART_SERIES_COOKIE, CHART_SERIES_DEFAULT)
+        if chart_series not in CHART_SERIES_CHOICES:
+            chart_series = CHART_SERIES_DEFAULT
+
         context = {
             "metatitle": "統計",
             "songrange": songrange,
@@ -64,6 +83,8 @@ class StatsView(View):
             "kenreki": kenreki,
             "monthly_stats": monthly_stats,
             "highlighted_month": highlighted_month,
+            "chart_mode": chart_mode,
+            "chart_series": chart_series,
             "description": "すべかしに登録された曲の統計情報。",
         }
         return render(request, "subekashi/stats.html", context)

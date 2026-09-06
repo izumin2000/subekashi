@@ -106,9 +106,20 @@ if (statsChartCanvas) {
         });
     }).observe(document.getElementById("stats-chart-wrapper"));
 
+    // グラフ表示設定(chart-mode/chart-series)はsongrange/year/month用のformとは別扱いのため、
+    // ページ全体の再読み込みを挟むと消えてしまう。選択変更時にcookieへ保存しておき、
+    // 次回アクセス時にサーバー側(StatsView)がcookieを読んで初期状態に反映する（#1111）
+    const CHART_SETTING_COOKIE_NAMES = {
+        "chart-mode": "stats_chart_mode",
+        "chart-series": "stats_chart_series",
+    };
+    const CHART_SETTING_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1年（サーバー側のLONG_TERM_COOKIE_AGEと合わせる）
+
     document.querySelectorAll('input[name="chart-mode"], input[name="chart-series"]').forEach(radio => {
         radio.addEventListener("change", () => {
             if (radio.checked) {
+                const cookieName = CHART_SETTING_COOKIE_NAMES[radio.name];
+                document.cookie = `${cookieName}=${radio.value}; path=/; max-age=${CHART_SETTING_COOKIE_MAX_AGE}; samesite=lax`;
                 renderChart();
             }
         });

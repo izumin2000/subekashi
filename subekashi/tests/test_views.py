@@ -972,6 +972,69 @@ class StatsViewTest(TestCase):
         self.assertIsNone(response.context["kenreki"]["overflow_color"])
         self.assertNotContains(response, "style=\"color: hsl(")
 
+    @staticmethod
+    def _is_radio_checked(response, radio_id):
+        match = re.search(rf'<input[^>]*id="{radio_id}"[^>]*>', response.content.decode())
+        assert match is not None, f'{radio_id} not found in response'
+        return "checked" in match.group(0)
+
+    def _create_all_songrange_stats(self):
+        # monthly_statsが存在しないとchart-mode/chart-seriesのラジオボタン自体が
+        # 描画されないため、Statsレコードを用意する。また、songrangeは実在するSongの
+        # 種類に応じてresolve_songrange()が自動選択するため、"全て"が選ばれるよう
+        # is_subeana=True/False両方のSongも用意する
+        Song.objects.create(title="すべあな曲", is_subeana=True)
+        Song.objects.create(title="界隈外曲", is_subeana=False)
+        Stats.objects.create(year=2024, month=1, songrange="all", song_count=2)
+
+    def test_chart_settings_default_when_no_cookie(self):
+        # #1111: cookie未設定時は月ごと/曲数がデフォルトで選択される
+        self._create_all_songrange_stats()
+
+        response = self.client.get(reverse("subekashi:stats"))
+
+        self.assertEqual(response.context["chart_mode"], "monthly")
+        self.assertEqual(response.context["chart_series"], "song_count")
+        self.assertTrue(self._is_radio_checked(response, "chart-mode-monthly"))
+        self.assertFalse(self._is_radio_checked(response, "chart-mode-cumulative"))
+        self.assertTrue(self._is_radio_checked(response, "chart-series-song_count"))
+
+    def test_chart_settings_reflect_cookie_values(self):
+        # #1111: songrange/year/month用のformとは別に、グラフ表示設定はcookieで
+        # 引き継がれる（stats.js側がchart-mode/chart-series変更時にcookieへ保存する）
+        self._create_all_songrange_stats()
+        self.client.cookies["stats_chart_mode"] = "cumulative"
+        self.client.cookies["stats_chart_series"] = "total_view"
+
+        response = self.client.get(reverse("subekashi:stats"))
+
+        self.assertEqual(response.context["chart_mode"], "cumulative")
+        self.assertEqual(response.context["chart_series"], "total_view")
+        self.assertTrue(self._is_radio_checked(response, "chart-mode-cumulative"))
+        self.assertFalse(self._is_radio_checked(response, "chart-mode-monthly"))
+        self.assertTrue(self._is_radio_checked(response, "chart-series-total_view"))
+        self.assertFalse(self._is_radio_checked(response, "chart-series-song_count"))
+
+    def test_chart_settings_reflect_cookie_across_songrange_filter_change(self):
+        # #1111の再現ケース: songrange変更（ページ全体の再読み込み相当）を挟んでも
+        # グラフ表示設定(cookie)が維持されること
+        self.client.cookies["stats_chart_mode"] = "cumulative"
+        Song.objects.create(title="すべあな曲", is_subeana=True)
+
+        response = self.client.get(reverse("subekashi:stats"), {"songrange": "subeana"})
+
+        self.assertEqual(response.context["chart_mode"], "cumulative")
+
+    def test_invalid_chart_settings_cookie_falls_back_to_default(self):
+        # 不正なcookie値（改ざん・旧バージョンの値等）はデフォルトにフォールバックする
+        self.client.cookies["stats_chart_mode"] = "invalid-value"
+        self.client.cookies["stats_chart_series"] = "invalid-value"
+
+        response = self.client.get(reverse("subekashi:stats"))
+
+        self.assertEqual(response.context["chart_mode"], "monthly")
+        self.assertEqual(response.context["chart_series"], "song_count")
+
 
 @override_settings(STORAGES=STATIC_STORAGE)
 class AuthorStatsViewTest(TestCase):
