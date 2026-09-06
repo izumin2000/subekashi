@@ -15,7 +15,7 @@ class DefaultArticleView(View):
             return render(request, 'subekashi/404.html', status=404)
 
         # 記事本文がマークダウンかどうかによってMD -> HTMLにする
-        text = markdown.markdown(article.text) if article.is_md else article.text
+        text = markdown.markdown(article.text, extensions=['tables']) if article.is_md else article.text
 
         context = {
             "metatitle": article.title,
