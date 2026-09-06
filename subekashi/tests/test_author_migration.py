@@ -93,7 +93,10 @@ class AuthorHelpersTest(TestCase):
         self.assertEqual(Author.objects.count(), 2)
 
 
-@override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.StaticFilesStorage')
+@override_settings(STORAGES={
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+})
 class AuthorViewTest(TestCase):
     """作者ページのビューテスト"""
 
@@ -124,7 +127,10 @@ class AuthorViewTest(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
-@override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.StaticFilesStorage')
+@override_settings(STORAGES={
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+})
 class ChannelRedirectTest(TestCase):
     """後方互換性のためのリダイレクトテスト"""
 
@@ -153,7 +159,10 @@ class ChannelRedirectTest(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
-@override_settings(STATICFILES_STORAGE='django.contrib.staticfiles.storage.StaticFilesStorage')
+@override_settings(STORAGES={
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+})
 class SongDisplayTest(TestCase):
     """曲表示ページのテスト"""
 

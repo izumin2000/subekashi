@@ -576,7 +576,7 @@ subekashi/tests/
 
 1. **テストクラス**: `django.test.TestCase` を使用（各テスト後に DB を自動ロールバック）
 2. **テストクライアント**: `from django.test import Client` を使用してフル HTTP スタックを通す
-3. **StaticFilesStorage**: `@override_settings(STATICFILES_STORAGE="django.contrib.staticfiles.storage.StaticFilesStorage")` で ManifestStaticFilesStorage を無効化
+3. **StaticFilesStorage**: `@override_settings(STORAGES={"default": {...}, "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"}})` で ManifestStaticFilesStorage を無効化（Django 5.2でSTATICFILES_STORAGE設定は廃止されたためSTORAGES形式を使用）
 4. **Discord**: `SEND_DISCORD=False` により自動でスキップ。追加のモック不要
 5. **YouTube API**: YouTube URL を含まないシナリオで回避。含む場合は `@patch("subekashi.views.song_new.get_youtube_api", return_value={...})` を使用
 6. **DB 状態の検証**: `assertX` の前後で `Model.objects.count()` や `Model.objects.get()` を使い、副作用も含めて確認する

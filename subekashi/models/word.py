@@ -16,7 +16,7 @@ class Word(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['word', 'hinshi', 'katsuyou', 'candidate'], name='unique_word_hinshi_candidate'),
-            models.CheckConstraint(check=~models.Q(word=models.F('candidate')), name='word_not_equal_candidate'),
+            models.CheckConstraint(condition=~models.Q(word=models.F('candidate')), name='word_not_equal_candidate'),
         ]
         indexes = [
             models.Index(fields=['word', 'hinshi']),

@@ -18,10 +18,13 @@ from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, E
 from subekashi.models.author import TransitiveAlias
 
 
-STATIC_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+STATIC_STORAGE = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class TopViewTest(TestCase):
     """TopView (/) のテスト"""
 
@@ -88,7 +91,7 @@ class TopViewTest(TestCase):
         self.assertContains(response, f"<span><a href='{url}'>扱い指定ニュース</a></span>")
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class SongsViewTest(TestCase):
     """SongsView (/songs/) のテスト"""
 
@@ -200,7 +203,7 @@ class SongsViewTest(TestCase):
         self.assertEqual(response.cookies["search_songrange"].value, "xx")
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class SongViewTest(TestCase):
     """SongView (/songs/<id>/) のテスト"""
 
@@ -247,7 +250,7 @@ class SongViewTest(TestCase):
         self.assertContains(response, '<meta name="robots" content="noindex, nofollow">')
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class SongNewViewTest(TestCase):
     """SongNewView (/songs/new/) のテスト"""
 
@@ -367,7 +370,7 @@ class SongNewViewTest(TestCase):
         self.assertNotIn("primary_name_normalized", response.url)
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class SongEditViewTest(TestCase):
     """SongEditView (/songs/<id>/edit/) のテスト"""
 
@@ -527,7 +530,7 @@ class SongEditViewTest(TestCase):
         self.assertNotIn("primary_name_normalized", response.url)
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class SongHistoryViewTest(TestCase):
     """SongHistoryView (/songs/<id>/history/) のテスト"""
 
@@ -544,7 +547,7 @@ class SongHistoryViewTest(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class SongDeleteViewTest(TestCase):
     """SongDeleteView (/songs/<id>/delete/) のテスト"""
 
@@ -581,7 +584,7 @@ class SongDeleteViewTest(TestCase):
         self.assertIn("error", response.context)
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class EditorViewTest(TestCase):
     """EditorView (/editor/<id>/) のテスト"""
 
@@ -605,7 +608,7 @@ class EditorViewTest(TestCase):
         self.assertNotContains(response, "この曲は削除されました")
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class AuthorViewTest(TestCase):
     """AuthorView (/authors/<id>/) のテスト"""
 
@@ -690,7 +693,7 @@ class AuthorViewTest(TestCase):
         self.assertNotContains(response, 'id="author-stats-summary"')
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class StatsViewTest(TestCase):
     """StatsView (/stats/) のテスト"""
 
@@ -970,7 +973,7 @@ class StatsViewTest(TestCase):
         self.assertNotContains(response, "style=\"color: hsl(")
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class AuthorStatsViewTest(TestCase):
     """AuthorStatsView (/authors/<id>/stats/) のテスト"""
 
@@ -1138,7 +1141,7 @@ class AuthorStatsViewTest(TestCase):
         self.assertGreater(filtered.context["kenreki"]["points"], 0)
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class AuthorAliasesViewTest(TestCase):
     """AuthorAliasesView (/authors/<id>/aliases) のテスト"""
 
@@ -1288,7 +1291,7 @@ class AuthorAliasesViewTest(TestCase):
         self.assertContains(response, "fa-plus")
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class AuthorAliasesViewTransitiveResolutionTest(TestCase):
     """AuthorAliasesView の推移的関係解決の反映のテスト（#1007）
 
@@ -1427,7 +1430,7 @@ class AuthorAliasesViewTransitiveResolutionTest(TestCase):
         self.assertEqual(response.content.decode().count("fa-arrow-right"), 2)
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class AuthorAliasNewViewTest(TestCase):
     """AuthorAliasNewView (/authors/<id>/aliases/new) のテスト"""
 
@@ -1581,7 +1584,7 @@ class AuthorAliasNewViewTest(TestCase):
         self.assertEqual(AuthorAlias.objects.filter(name="競合別名").count(), 1)
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class AuthorAliasEditViewTest(TestCase):
     """AuthorAliasEditView (/authors/<id>/aliases/<alias_id>/edit) のテスト"""
 
@@ -1752,7 +1755,7 @@ class AuthorAliasEditViewTest(TestCase):
         self.assertEqual(self.alias.name, "編集前別名")
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class AuthorAliasDeleteViewTest(TestCase):
     """AuthorAliasDeleteView (/authors/<id>/aliases/<alias_id>/delete) のテスト"""
 
@@ -1821,7 +1824,7 @@ class AuthorAliasDeleteViewTest(TestCase):
         self.assertEqual(History.get_for_author(self.author).count(), 0)
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class AuthorPrimaryNameSetViewTest(TestCase):
     """AuthorPrimaryNameSetView (/authors/<id>/aliases/primary) のテスト（#1008）"""
 
@@ -2271,7 +2274,7 @@ class AuthorPrimaryNameSetViewTest(TestCase):
         self.assertIn("disabled", submit_button)
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class AuthorPrimaryNameConfirmViewTest(TestCase):
     """AuthorPrimaryNameConfirmView (/authors/<id>/aliases/primary/confirm) のテスト（#1029）
 
@@ -2405,7 +2408,7 @@ class AuthorPrimaryNameConfirmViewTest(TestCase):
         self.assertEqual(response.content.decode().count('class="primary-name-song-hidden"'), 1)
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class ChannelViewTest(TestCase):
     """ChannelView (/channel/<name>/) のテスト"""
 
@@ -2433,7 +2436,7 @@ class ChannelViewTest(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class ContactViewTest(TestCase):
     """ContactView (/contact/) のテスト"""
 
@@ -2479,7 +2482,7 @@ class ContactViewTest(TestCase):
         self.assertEqual(Contact.objects.count(), count_before)
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class HistoriesViewTest(TestCase):
     """HistoriesView (/histories/) のテスト"""
 
@@ -2516,7 +2519,7 @@ class HistoriesViewTest(TestCase):
         self.assertContains(response, "この曲または作者は削除されました")
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE, RATELIMIT_ENABLE=False)
+@override_settings(STORAGES=STATIC_STORAGE, RATELIMIT_ENABLE=False)
 class SongCardsViewTest(TestCase):
     """SongCardsView (/api/html/song_cards) のテスト"""
 
@@ -2578,7 +2581,7 @@ class SongCardsViewTest(TestCase):
         self.assertIn("song-card-lyrics", content)
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class RedirectViewTest(TestCase):
     """/search/ と /new/ のリダイレクトテスト"""
 
@@ -2596,7 +2599,7 @@ class RedirectViewTest(TestCase):
         self.assertRedirects(response, "/songs/new/", fetch_redirect_response=False)
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class AdViewTest(TestCase):
     """AdView (/ad/) のテスト"""
 
@@ -2646,7 +2649,7 @@ class AdViewTest(TestCase):
         self.assertEqual(adIns.dup, 1)
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class AiViewTest(TestCase):
     """AiView (/ai/) のテスト"""
 
@@ -2693,7 +2696,7 @@ class AiViewTest(TestCase):
         self.assertNotContains(response, "レガシー歌詞")
 
 
-@override_settings(STATICFILES_STORAGE=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE)
 class AiResultViewTest(TestCase):
     """AiResultView (/ai/result/) のテスト"""
 
