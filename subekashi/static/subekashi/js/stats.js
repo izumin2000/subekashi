@@ -14,6 +14,12 @@ if (statsChartCanvas) {
     // 丸の拡大は期間(年月)を具体的に指定した時のみ、全てのポイントに適用する
     const HIGHLIGHTED_POINT_RADIUS = 6;
 
+    // 棒(bar)の色・折れ線のポイント色はどちらも「該当月だけハイライト色、それ以外は通常色」で
+    // 共通のため、1つのヘルパーに集約する（コードレビュー指摘対応: 同じ式が2箇所に重複していた）
+    function colorForMonth(row) {
+        return row.month === highlightedMonth ? HIGHLIGHT_BAR_COLOR : BAR_COLOR;
+    }
+
     const SERIES_LABELS = {
         song_count: "曲数",
         total_view: "総再生回数",
@@ -36,20 +42,18 @@ if (statsChartCanvas) {
         const dataKey = chartMode === "monthly" ? `${seriesKey}_delta` : seriesKey;
 
         const isBar = chartMode === "monthly";
-        const backgroundColor = isBar
-            ? monthlyStats.map(row => row.month === highlightedMonth ? HIGHLIGHT_BAR_COLOR : BAR_COLOR)
-            : BAR_COLOR;
 
         const dataset = {
             label: SERIES_LABELS[seriesKey],
             data: monthlyStats.map(row => row[dataKey]),
-            backgroundColor: backgroundColor,
         };
-        if (!isBar) {
+        if (isBar) {
+            dataset.backgroundColor = monthlyStats.map(colorForMonth);
+        } else {
             // 累積グラフ(折れ線)は線を白系にし、期間(年月)を具体的に指定した時のみ
             // 全てのポイントを大きくしつつ、該当月のポイントだけ棒グラフと同じ緑系色にする（#1107）
             dataset.borderColor = LINE_COLOR;
-            dataset.pointBackgroundColor = monthlyStats.map(row => row.month === highlightedMonth ? HIGHLIGHT_BAR_COLOR : BAR_COLOR);
+            dataset.pointBackgroundColor = monthlyStats.map(colorForMonth);
             const pointRadius = highlightedMonth !== null ? HIGHLIGHTED_POINT_RADIUS : POINT_RADIUS;
             dataset.pointRadius = pointRadius;
             dataset.pointHoverRadius = pointRadius + 2;
