@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from config.local_settings import PYTHONANYWHERE_USERNAME, PYTHONANYWHERE_TOKEN
+from config.local_settings import PYTHONANYWHERE_USERNAME, PYTHONANYWHERE_TOKEN, VENV_PATH
 import subprocess
 import requests
 
@@ -13,14 +13,19 @@ class Command(BaseCommand) :
         )
 
     def handle(self, *args, **options):
+        # VENV_PATHが設定されていれば仮想環境のpip/pythonを使う。
+        # 未設定（空文字列）の場合は従来通りグローバルのpip/pythonを使う
+        pip = f"{VENV_PATH}/bin/pip" if VENV_PATH else "pip"
+        python = f"{VENV_PATH}/bin/python" if VENV_PATH else "python"
+
         COMMANDS = [
             "git pull origin main",
-            "pip install -r requirements.txt",
-            "python manage.py collectstatic --noinput --clear",
-            "python manage.py appversion"
+            f"{pip} install -r requirements.txt",
+            f"{python} manage.py collectstatic --noinput --clear",
+            f"{python} manage.py appversion"
         ]
         if not options['no_migrate']:
-            COMMANDS.insert(2, "python manage.py migrate")
+            COMMANDS.insert(2, f"{python} manage.py migrate")
         
         try:
             # エラーハンドリング
