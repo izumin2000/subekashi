@@ -91,18 +91,19 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("月次統計を更新しました。"))
 
     def _recently_registered_months(self, now, exclude):
-        """直近RETROACTIVE_LOOKBACK_DAYS日以内に登録された曲(post_time基準)について、
-        upload_timeの年月をexclude（既に再計算対象の年月）を除いて重複無く返す（#1106）
+        """直近RETROACTIVE_LOOKBACK_DAYS日以内に登録された曲(post_time基準)のupload_time
+        から、excludeに含まれない年月を重複無く返す（詳細はRETROACTIVE_LOOKBACK_DAYS参照）
         """
         cutoff = now - timedelta(days=self.RETROACTIVE_LOOKBACK_DAYS)
-        recent_songs = Song.objects.filter(
+        # モデルインスタンス化のオーバーヘッドを避けるため、必要なupload_timeの値のみ取得する
+        upload_times = Song.objects.filter(
             post_time__gte=cutoff, upload_time__isnull=False,
-        ).only('upload_time')
+        ).values_list('upload_time', flat=True)
 
         months = set()
-        for song in recent_songs:
+        for upload_time in upload_times:
             # DBにはUTCで保存されているため、月の境界はローカルタイムゾーンに変換してから判定する
-            local_upload = timezone.localtime(song.upload_time)
+            local_upload = timezone.localtime(upload_time)
             months.add((local_upload.year, local_upload.month))
 
         return months - exclude
