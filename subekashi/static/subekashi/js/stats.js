@@ -2,6 +2,7 @@ const statsChartCanvas = document.getElementById("stats-chart");
 if (statsChartCanvas) {
     const monthlyStats = JSON.parse(document.getElementById("monthly-stats-data").textContent);
     const highlightedMonth = JSON.parse(document.getElementById("highlighted-month-data").textContent);
+    const chartSettingsCookieConfig = JSON.parse(document.getElementById("chart-settings-cookie-config").textContent);
     const labels = monthlyStats.map(row => `${row.year}/${row.month}`);
 
     const BAR_COLOR = "rgba(54, 162, 235, 0.5)";
@@ -106,9 +107,16 @@ if (statsChartCanvas) {
         });
     }).observe(document.getElementById("stats-chart-wrapper"));
 
+    // グラフ表示設定(chart-mode/chart-series)はsongrange/year/month用のformとは別扱いのため、
+    // ページ全体の再読み込みを挟むと消えてしまう。選択変更時にcookieへ保存しておき、
+    // 次回アクセス時にサーバー側(StatsView)がcookieを読んで初期状態に反映する（#1111）。
+    // cookie名・有効期限はサーバー側とのハードコードの二重管理を避けるため、
+    // chartSettingsCookieConfig(StatsViewがcontext経由で渡す)を参照する（コードレビュー指摘対応）
     document.querySelectorAll('input[name="chart-mode"], input[name="chart-series"]').forEach(radio => {
         radio.addEventListener("change", () => {
             if (radio.checked) {
+                const cookieName = chartSettingsCookieConfig.names[radio.name];
+                document.cookie = `${cookieName}=${radio.value}; path=/; max-age=${chartSettingsCookieConfig.max_age}; samesite=lax`;
                 renderChart();
             }
         });

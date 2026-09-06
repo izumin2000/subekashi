@@ -738,7 +738,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | フォールバック時もレガシーgenetype="model"は対象外 | 未評価janomeが0件で、評価済みの`genetype="model"`レコードが存在 | フォールバックしても表示されない |
 | トークンのspan間に空白を挟まない（#1081） | Word候補がある単語を含む歌詞 | `.lyric`内の`</span>`と`<span>`の間に空白文字が入らない（「最高の行をコピー」でinnerTextをコピーした際に単語同士が連結され、余分なスペースが入らないようにするため） |
 
-#### 7-14. `StatsView` (`/stats/`)（#334）
+#### 7-14. `StatsView` (`/stats/`)（#334。グラフ表示設定のcookie保持、#1111）
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
@@ -767,6 +767,10 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `highlighted_month`はyearのみ指定時はNone | `?year=2024`（monthは指定しない） | `context["highlighted_month"]`が`None` |
 | `highlighted_month`はmonthのみ指定時もNone | `?month=1`（yearは指定しない） | `context["highlighted_month"]`が`None` |
 | `highlighted_month`はyear・month両方指定時のみセット（コードレビュー指摘対応） | `?year=2024&month=6` | `context["highlighted_month"]`が`6`になり、JS側で棒グラフのその月だけ色を変えるための`highlighted-month-data`が埋め込まれる（グラフ側はmonthを無視してその年全体を表示するため、選択していた月をハイライトして元のフィルターとの対応を分かりやすくする） |
+| グラフ表示設定はcookie未設定時デフォルト（#1111） | cookie無し | `context["chart_mode"]`が`"monthly"`、`context["chart_series"]`が`"song_count"`になり、対応するラジオボタンに`checked`が付く |
+| グラフ表示設定はcookieの値を反映（#1111） | `stats_chart_mode=cumulative`・`stats_chart_series=total_view`のcookieを送信 | `context["chart_mode"]`が`"cumulative"`、`context["chart_series"]`が`"total_view"`になり、対応するラジオボタンのみに`checked`が付く |
+| グラフ表示設定はsongrange変更（ページ全体の再読み込み）を挟んでも維持される（#1111の再現ケース） | `stats_chart_mode=cumulative`のcookieを送信した状態で`?songrange=subeana`にアクセス | `context["chart_mode"]`が`"cumulative"`のまま（`chart-mode`/`chart-series`は`songrange`/`year`/`month`用のformの外側にあり、これらの変更时のページ全体再読み込みでは送信されないため、cookie側で維持する） |
+| 不正なグラフ表示設定cookieはデフォルトにフォールバック（#1111） | `stats_chart_mode`/`stats_chart_series`に許可されていない値を送信 | `context["chart_mode"]`が`"monthly"`、`context["chart_series"]`が`"song_count"`にフォールバックする |
 
 #### 7-15. `AuthorStatsView` (`/authors/<id>/stats/`)（#334）
 

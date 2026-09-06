@@ -12,21 +12,21 @@
 
     {% if monthly_stats %}
         <div class="range-radio-group">
-            <input type="radio" id="chart-mode-monthly" name="chart-mode" value="monthly" checked>
+            <input type="radio" id="chart-mode-monthly" name="chart-mode" value="monthly" {% if chart_mode == "monthly" %}checked{% endif %}>
             <label for="chart-mode-monthly">月ごと</label>
-            <input type="radio" id="chart-mode-cumulative" name="chart-mode" value="cumulative">
+            <input type="radio" id="chart-mode-cumulative" name="chart-mode" value="cumulative" {% if chart_mode == "cumulative" %}checked{% endif %}>
             <label for="chart-mode-cumulative">累積</label>
         </div>
         <div class="range-radio-group">
-            <input type="radio" id="chart-series-song_count" name="chart-series" value="song_count" checked>
+            <input type="radio" id="chart-series-song_count" name="chart-series" value="song_count" {% if chart_series == "song_count" %}checked{% endif %}>
             <label for="chart-series-song_count">曲数</label>
-            <input type="radio" id="chart-series-total_view" name="chart-series" value="total_view">
+            <input type="radio" id="chart-series-total_view" name="chart-series" value="total_view" {% if chart_series == "total_view" %}checked{% endif %}>
             <label for="chart-series-total_view">総再生回数</label>
-            <input type="radio" id="chart-series-total_like" name="chart-series" value="total_like">
+            <input type="radio" id="chart-series-total_like" name="chart-series" value="total_like" {% if chart_series == "total_like" %}checked{% endif %}>
             <label for="chart-series-total_like">総高評価数</label>
-            <input type="radio" id="chart-series-total_authors" name="chart-series" value="total_authors">
+            <input type="radio" id="chart-series-total_authors" name="chart-series" value="total_authors" {% if chart_series == "total_authors" %}checked{% endif %}>
             <label for="chart-series-total_authors">総作者数</label>
-            <input type="radio" id="chart-series-total_imitateds" name="chart-series" value="total_imitateds">
+            <input type="radio" id="chart-series-total_imitateds" name="chart-series" value="total_imitateds" {% if chart_series == "total_imitateds" %}checked{% endif %}>
             <label for="chart-series-total_imitateds">総模倣曲関係数</label>
         </div>
         <div id="stats-chart-wrapper">
@@ -34,6 +34,7 @@
         </div>
         {{ monthly_stats|json_script:"monthly-stats-data" }}
         {{ highlighted_month|json_script:"highlighted-month-data" }}
+        {{ chart_settings_cookie_config|json_script:"chart-settings-cookie-config" }}
     {% endif %}
 </section>
 {% endblock %}
