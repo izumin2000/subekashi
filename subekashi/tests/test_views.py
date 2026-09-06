@@ -974,6 +974,8 @@ class StatsViewTest(TestCase):
 
     @staticmethod
     def _is_radio_checked(response, radio_id):
+        # stats.htmlは各<input>を1行で出力する前提のパターン（re.DOTALL無し）。
+        # 将来templateが複数行に変わった場合はこのヘルパーも合わせて見直すこと（コードレビュー指摘対応）
         match = re.search(rf'<input[^>]*id="{radio_id}"[^>]*>', response.content.decode())
         assert match is not None, f'{radio_id} not found in response'
         return "checked" in match.group(0)

@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.views import View
+from subekashi.constants.constants import LONG_TERM_COOKIE_AGE
 from subekashi.lib.kenreki_service import compute_kenreki_for_songs
 from subekashi.lib.stats_service import (
     apply_songrange_filter,
@@ -24,6 +25,13 @@ CHART_MODE_DEFAULT = "monthly"
 CHART_SERIES_COOKIE = "stats_chart_series"
 CHART_SERIES_CHOICES = {"song_count", "total_view", "total_like", "total_authors", "total_imitateds"}
 CHART_SERIES_DEFAULT = "song_count"
+
+# stats.js側もこのcookie名・有効期限を使ってdocument.cookieに書き込む必要があるため、
+# ハードコードを二重管理せずcontext経由でJSに渡す（コードレビュー指摘対応）
+CHART_SETTINGS_COOKIE_CONFIG = {
+    "names": {"chart-mode": CHART_MODE_COOKIE, "chart-series": CHART_SERIES_COOKIE},
+    "max_age": LONG_TERM_COOKIE_AGE,
+}
 
 
 class StatsView(View):
@@ -85,6 +93,7 @@ class StatsView(View):
             "highlighted_month": highlighted_month,
             "chart_mode": chart_mode,
             "chart_series": chart_series,
+            "chart_settings_cookie_config": CHART_SETTINGS_COOKIE_CONFIG,
             "description": "すべかしに登録された曲の統計情報。",
         }
         return render(request, "subekashi/stats.html", context)
