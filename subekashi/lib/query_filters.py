@@ -83,10 +83,12 @@ def filter_by_imitated(imitated):
 
 # 模倣元の検索に利用するフィルター
 def filter_by_guesser(guesser):
+    url_keyword = clean_url(guesser)
     return (
         Q(title__contains = guesser) |
         Q(authors__name__contains = guesser) |
-        filter_by_author_alias("contains", guesser)
+        filter_by_author_alias("contains", guesser) |
+        Q(links__url__icontains=url_keyword)
     )
 
 # メディアの検索に利用するフィルター

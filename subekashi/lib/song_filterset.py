@@ -162,7 +162,7 @@ class SongFilter(django_filters.FilterSet):
         return queryset.filter(filter_by_imitated(value))
 
     def filter_guesser(self, queryset, name, value):
-        """guesserによるフィルタ（タイトルとチャンネルを検索）"""
+        """guesserによるフィルタ（タイトル・チャンネル・URLを検索）"""
         return queryset.filter(filter_by_guesser(value))
 
     def filter_mediatypes(self, queryset, name, value):
