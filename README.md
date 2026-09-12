@@ -193,7 +193,7 @@ python manage.py runserver
 
 - `imitate`: 模倣元の曲のsong ID（整数）
 - `imitated`: 被模倣の曲のsong ID（整数）
-- `guesser`: 候補（タイトルとチャンネルを検索、最大500文字）
+- `guesser`: 候補（タイトル・チャンネル・URLを検索、最大500文字）
 - `mediatypes`: メディアタイプ（正規表現対応、最大100文字）
 
 **ページネーション**
