@@ -54,5 +54,5 @@ urlpatterns = [
     path('api/html/toast', toast, name='toast'),
     path('search/', RedirectView.as_view(url=f"/songs/", permanent=False)),
     path('new/', RedirectView.as_view(url='/songs/new/', permanent=False)),
-    path('channel/<str:channel_name>/', ChannelView.as_view(), name='channel'),
+    path('channel/<path:channel_name>/', ChannelView.as_view(), name='channel'),
 ]
