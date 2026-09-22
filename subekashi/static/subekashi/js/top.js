@@ -1,5 +1,6 @@
 const keywordElement = document.getElementById("keyword");
-if (keywordElement) {
+const isPC = window.innerWidth > 960; 
+if (keywordElement && isPC) {
     keywordElement.focus();
     keywordElement.click();
 }
@@ -12,6 +13,8 @@ if (newsDisplayEle) {
     let currentIndex = 0;
 
     function showNews(newsEle_) {
+        if(!newsEle_) return;
+
         const newsEle = newsEle_.cloneNode(true)
         newsDisplayEle.innerHTML = '';
         newsDisplayEle.appendChild(newsEle);
