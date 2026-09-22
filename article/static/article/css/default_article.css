@@ -47,11 +47,15 @@
 
 #article-text h3 {
     margin-top: 30px;
+    line-height: 45px;
 }
 
 #article-text table {
+    display: block;
     border-collapse: collapse;
     width: 100%;
+    overflow-x: auto;
+    scrollbar-color: #09F #FFF;
 }
 
 #article-text th, #article-text td {
@@ -64,4 +68,9 @@
 #article-text th {
     background: #333;
     color: #fff;
+    font-weight: normal;
+}
+
+#article-text th {
+
 }
