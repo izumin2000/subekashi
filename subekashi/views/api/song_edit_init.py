@@ -39,7 +39,7 @@ class SongEditInitView(APIView):
         # 模倣元一覧
         imitate_songs = None
         if fetch_imitate and song_id:
-            qs, _ = song_search({'imitated': song_id})
+            qs, _ = song_search({'imitated': song_id, 'size': Song.objects.get(pk = song_id).imitateds.count()})
             imitate_songs = list(SongSerializer(qs, many=True).data)
 
         # URLごとの重複チェック（入力URLの順序を保持したリスト）
