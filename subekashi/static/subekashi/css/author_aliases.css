@@ -88,7 +88,7 @@
     color: #aaa;
 }
 
-#primary-name-song-list {
+#unify-name-song-list {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -97,7 +97,14 @@
 }
 
 /* 候補の名義名は長さが不揃いのため、共通の.checkbox-col labelの固定幅(8em)を
-   一番有名な名義フォームに限り無効化する */
-#primary-name-form .checkbox-col label {
+   名義を統一するフォームに限り無効化する */
+#unify-name-form .checkbox-col label {
     width: auto;
+}
+
+/* 統一元の名義（上）と統一先の名義（下）の間に中央寄せで表示する */
+#unify-name-arrow {
+    display: block;
+    text-align: center;
+    margin: 10px 0;
 }

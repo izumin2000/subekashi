@@ -8,14 +8,15 @@ from django.views import View
 from django.views.decorators.cache import never_cache
 from config.local_settings import NEW_DISCORD_URL
 from subekashi.models import Author, AuthorAlias, AuthorLink, Editor, History, Song
-from subekashi.forms import AuthorAliasForm, AuthorPrimaryNameForm
+from subekashi.forms import AuthorAliasForm, AuthorUnifyNameForm
 from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
 from subekashi.lib.author_alias_service import (
     build_new_alias_discord_text,
     build_edit_alias_discord_text,
     build_delete_alias_discord_text,
-    build_set_primary_name_discord_text,
+    build_unify_name_discord_text,
+    build_unify_name_plan,
 )
 
 
@@ -28,7 +29,7 @@ ALIAS_TYPE_DESCRIPTIONS = {
     "id": "YouTubeチャンネルIDなど、名前ではなく識別子としての別名です。",
     "abbr": "作者名を短縮した略称です。",
     "common": "正式名称ではないが、広く使われている呼び方です。",
-    "past": f"以前使用されていた名称です。別名一覧画面から一番有名な名義として選択でき、選択するとこの名前が今後の作者の表示名になります。{CHANNEL_LINK_NOTE}",
+    "past": f"以前使用されていた名称です。別名一覧画面の「名義を統一する」で統一先として選択でき、選択するとこの名前が今後の作者の表示名になります。{CHANNEL_LINK_NOTE}",
     "sns": "SNS上で使われている名称です。",
     "spell": "表記揺れ（ひらがな・カタカナ・英字表記の違いなど）です。",
     "another": f"同一人物が運用している、本人公認の別名義です。曲検索では自動的に同一視されません。{CHANNEL_LINK_NOTE}",
@@ -93,8 +94,9 @@ class AuthorAliasesView(View):
             "metatitle": f"{author.name}の別名一覧",
             "author": author,
             "alias_rows": alias_rows,
-            # 一番有名な名義の選択肢（#1008）。候補は現在の名前 + alias_type="past"の別名のみ
-            "primary_name_candidates": [author.name] + list(
+            # 名義の統一先の選択肢（#1008、#1137）。候補は現在の名前 + alias_type="past"の別名のみで、
+            # ここでは現在の名前以外を渡す
+            "unify_name_sources": list(
                 author.aliases.filter(alias_type="past").values_list("name", flat=True)
             ),
         }
@@ -279,12 +281,12 @@ class AuthorAliasDeleteView(View):
         return redirect(f"{reverse('subekashi:author_aliases', args=[self.author.id])}?toast=delete")
 
 
-class AuthorPrimaryNameConfirmView(View):
-    """一番有名な名義の変更前の確認画面（#1029）
+class AuthorUnifyNameConfirmView(View):
+    """名義の統一前の確認画面（#1029、#1137）
 
-    選択した名義が既存の別Authorと衝突する場合、そのAuthorが自動的に統合
-    （マージ）され削除される。これはIPアドレスのみで判別する匿名の編集者でも
-    実行できてしまうため、実際に変更する前に内容を確認できるワンクッションを挟む。
+    統一により、候補の名義と同名の別Authorの曲が統一先へ移る。これはIPアドレスのみで
+    判別する匿名の編集者でも実行できてしまうため、実際に統一する前に内容を確認できる
+    ワンクッションを挟む。
     """
     def dispatch(self, request, author_id, *args, **kwargs):
         self.author = Author.get_or_none(author_id)
@@ -294,49 +296,49 @@ class AuthorPrimaryNameConfirmView(View):
 
     def get(self, request, author_id):
         base_url = reverse('subekashi:author_aliases', args=[self.author.id])
-        form = AuthorPrimaryNameForm(request.GET, author=self.author)
+        form = AuthorUnifyNameForm(request.GET, author=self.author)
 
         if not form.is_valid():
-            return redirect(f"{base_url}?toast=primary_error")
+            return redirect(f"{base_url}?toast=unify_error")
 
-        new_name = form.cleaned_data['name']
-        if new_name == self.author.name:
-            return redirect(base_url)
+        plan = build_unify_name_plan(self.author, form.cleaned_data['name'])
+        song_author_pairs = plan.song_author_pairs()
+        if not plan.renames_author and not plan.moves_to_existing_author and not song_author_pairs:
+            return redirect(f"{base_url}?toast=unify_noop")
 
-        conflicting_author = Author.objects.filter(name=new_name).exclude(pk=self.author.pk).first()
-
-        # 名義の変更によって表示上の作者名が変わる曲を一覧できるようにする。
-        # 衝突するAuthorが存在する場合、その曲もマージによりこのauthorに
-        # 付け替わり同じく新名義で表示されるようになるため対象に含める。
-        # 同じ曲がauthor・conflicting_author双方の共著になっているケース
-        # （同一曲が両名義で重複してしまう）に備え、Song単位でdistinct()する
-        song_filter = Q(authors=self.author)
-        if conflicting_author is not None:
-            song_filter |= Q(authors=conflicting_author)
+        # 統一によって表示上の作者名が変わる曲を一覧できるようにする。曲を移すAuthorの曲に加え、
+        # authorの名前を変更する場合は元々authorに紐づく曲も対象になる。同じ曲が複数の
+        # Authorの共著になっているケースに備え、Song単位でdistinct()する
+        song_filter = Q(pk__in={song_id for song_id, _ in song_author_pairs})
+        if plan.renames_author:
+            song_filter |= Q(authors=self.author)
         song_titles = list(Song.objects.filter(song_filter).distinct().values_list("title", flat=True))
 
         context = {
-            "metatitle": f"{self.author.name}の一番有名な名義の変更を確認",
+            "metatitle": f"{self.author.name}の名義の統一を確認",
             "author": self.author,
-            "old_name": self.author.name,
-            "new_name": new_name,
-            "conflicting_author": conflicting_author,
+            "new_name": plan.new_name,
+            "target_author": plan.target_author if plan.moves_to_existing_author else None,
+            "source_authors": [
+                a for a in plan.affected_source_authors(song_author_pairs) if a.pk != self.author.pk
+            ],
             "song_titles": song_titles,
         }
-        return render(request, 'subekashi/author_primary_name_confirm.html', context)
+        return render(request, 'subekashi/author_unify_name_confirm.html', context)
 
 
-class AuthorPrimaryNameSetView(View):
-    """一番有名な名義の変更（#1008）
+class AuthorUnifyNameSetView(View):
+    """名義の統一（#1008、#1029、#1137）
 
-    author.nameと、選択されたalias_type="past"のAuthorAlias.nameを入れ替える。
-    Song.authorsはAuthorのPK参照のため、この入れ替えだけで既存のSongデータは
-    一切変更せずに表示上の正規化が完了する。
+    候補の名義（author.name + alias_type="past"の別名）と同名のAuthorに紐づく曲を、
+    選択した名義のAuthor（統一先）へ全て移す。曲を移したAuthor自体は削除せず、曲数が0になるだけ。
 
-    選択した名前が既存の別のAuthor（conflicting_author）の名前と衝突する場合
-    （同一人物が重複して別々のAuthor行として登録されているケース）は、その
-    Authorが持つSong・AuthorLink・AuthorAliasを全てこのauthorに付け替えた上で
-    conflicting_authorを削除する（マージしてから名義を切り替える、#1029）。
+    統一先は、選択した名義と同名の既存Authorがあればそれ、なければauthor自身。
+    - author自身が統一先で、以前の名称を選択した場合: author.nameと選択したAuthorAlias.nameを
+      入れ替える。Song.authorsはAuthorのPK参照のため、元々authorに紐づく曲はSongデータを
+      変更せずに表示上の作者名が変わる
+    - 既存の別Authorが統一先の場合: Author.nameはuniqueでauthorをその名前に変更できないため、
+      authorの曲に加えて別名・リンクも統一先へ移し、authorの旧名を統一先の以前の名称として登録する
     """
     def dispatch(self, request, author_id, *args, **kwargs):
         self.author = Author.get_or_none(author_id)
@@ -346,38 +348,37 @@ class AuthorPrimaryNameSetView(View):
 
     def post(self, request, author_id):
         base_url = reverse('subekashi:author_aliases', args=[self.author.id])
-        form = AuthorPrimaryNameForm(request.POST, author=self.author)
+        form = AuthorUnifyNameForm(request.POST, author=self.author)
 
         if not form.is_valid():
-            return redirect(f"{base_url}?toast=primary_error")
+            return redirect(f"{base_url}?toast=unify_error")
 
         new_name = form.cleaned_data['name']
         old_name = self.author.name
+        plan = build_unify_name_plan(self.author, new_name)
+        song_author_pairs = plan.song_author_pairs()
 
-        if new_name == old_name:
-            return redirect(base_url)
+        if not plan.renames_author and not plan.moves_to_existing_author and not song_author_pairs:
+            return redirect(f"{base_url}?toast=unify_noop")
 
-        conflicting_author = Author.objects.filter(name=new_name).exclude(pk=self.author.pk).first()
-
-        # 旧名(old_name)を新たなpast別名として登録し直すが、AuthorAlias.nameは
+        # 旧名(old_name)は統一先の新たなpast別名として登録し直すが、AuthorAlias.nameは
         # グローバルにunique（他のauthorが既にold_nameと同名の別名を持つ「逆方向」の
         # 関係は正常な状態としてありうる）なため、衝突している場合は登録できない。
-        # ただしconflicting_author自身が持つ別名は、これからマージにより
-        # このauthorのものになるため対象外とする
-        old_name_conflict_qs = AuthorAlias.objects.filter(name=old_name)
-        if conflicting_author is not None:
-            old_name_conflict_qs = old_name_conflict_qs.exclude(author=conflicting_author)
+        # ただしauthor・統一先自身が持つ別名は、統一後は統一先のものとして再利用するため対象外とする。
         # これは同時実行のレースではなく既存データ次第で毎回決定的に失敗するため、
         # Discord通知を送る前に弾く（通知だけ成功してDBが更新されない不整合を避ける）
-        if old_name_conflict_qs.exists():
-            return redirect(f"{base_url}?toast=primary_error")
+        if old_name != new_name and AuthorAlias.objects.filter(name=old_name).exclude(
+            author__in=[self.author, plan.target_author]
+        ).exists():
+            return redirect(f"{base_url}?toast=unify_error")
 
         editor = Editor.get_or_create_from_ip(get_ip(request))
 
         # Discordへの通知が成功した場合のみDBへコミットする
         # （New/Edit/Deleteと同じ「通知成功後にDB確定」パターン）
-        discord_text = build_set_primary_name_discord_text(
-            self.author, old_name, new_name, editor, merged_author=conflicting_author
+        discord_text = build_unify_name_discord_text(
+            plan.target_author, old_name, new_name, editor,
+            source_authors=plan.affected_source_authors(song_author_pairs),
         )
         is_ok = send_discord(NEW_DISCORD_URL, discord_text)
         if not is_ok:
@@ -386,120 +387,125 @@ class AuthorPrimaryNameSetView(View):
         # send_discord()（ネットワークI/O）の完了を待つ間に、別のリクエストが対象の
         # past別名を変更・削除してしまうTOCTOU対策。.get()だとDoesNotExistが
         # IntegrityError以外の未処理の例外として伝播してしまうため、.filter().first()で
-        # Noneチェックしてから同じtoast=primary_errorに倒す（他の分岐と挙動を揃える）
-        selected_alias = AuthorAlias.objects.filter(
-            author=self.author, name=new_name, alias_type="past"
-        ).first()
-        if selected_alias is None:
-            return redirect(f"{base_url}?toast=primary_error")
+        # Noneチェックしてから同じtoast=unify_errorに倒す（他の分岐と挙動を揃える）
+        selected_alias = None
+        if new_name != old_name:
+            selected_alias = AuthorAlias.objects.filter(
+                author=self.author, name=new_name, alias_type="past"
+            ).first()
+            if selected_alias is None:
+                return redirect(f"{base_url}?toast=unify_error")
 
         try:
             with transaction.atomic():
-                # 統合（マージ）で新たに加わる曲と区別するため、この時点で既に
-                # このauthorに紐づいている曲を確定させておく（#1034）。
-                # History(song=song, ...)へのFK設定とidの突き合わせにしか使わないため、
-                # 曲数が多いauthorでの不要なカラム転送を避けてidのみ取得する
-                pre_existing_songs = list(self.author.songs.only("id"))
+                # 統一先・曲を移すAuthorについてもTOCTOU対策として再取得してから統一する
+                plan = build_unify_name_plan(self.author, new_name)
+                target = plan.target_author
+                song_author_pairs = plan.song_author_pairs()
+                source_authors = plan.affected_source_authors(song_author_pairs)
 
-                # conflicting_authorについてもTOCTOU対策として再取得してから統合する
-                current_conflict = Author.objects.filter(name=new_name).exclude(pk=self.author.pk).first()
-                merged_author_info = None
-                merge_song_histories = []
-                merged_song_ids = set()
-                if current_conflict is not None:
-                    # Historyはon_delete=SET_NULLのため付け替えは行わず、統合の事実を
-                    # 別途新しいHistoryとして記録する（過去の履歴内容自体は改変しない）
-                    conflict_name = current_conflict.name
-                    merged_author_info = f"id={current_conflict.id}, name={conflict_name}"
-                    # add()・History(song=song, ...)・id突き合わせのいずれもidしか
-                    # 使わないため、こちらも同様にidのみ取得する
-                    merged_songs = list(current_conflict.songs.only("id"))
-                    merged_song_ids = {song.id for song in merged_songs}
-                    self.author.songs.add(*merged_songs)
-                    AuthorLink.objects.filter(author=current_conflict).update(author=self.author)
-                    AuthorAlias.objects.filter(author=current_conflict).update(author=self.author)
+                # 統一で新たに加わる曲と区別するため、名前の変更により表示上の作者名が
+                # 変わる曲（元々authorに紐づいている曲）を移動前に確定させておく（#1034）
+                renamed_song_ids = list(self.author.songs.values_list("id", flat=True)) if plan.renames_author else []
 
-                    # conflicting_authorの検索条件（name=new_name）上、conflict_nameは
-                    # 常にnew_nameと同一文字列になるため、名前だけを編集前後に並べても
-                    # 「何も変わっていないように」見えてしまう。実際に変わったのは
-                    # Authorの実体（id）であるため、idを含めて明示する
-                    before_author_info = f"id={current_conflict.id}, name={conflict_name}"
-                    after_author_info = f"id={self.author.id}, name={new_name}"
-                    current_conflict.delete()
+                author_infos = {a.pk: f"id={a.id}, name={a.name}" for a in plan.source_authors}
+                target_info = f"id={target.id}, name={new_name}"
+                source_infos_by_song_id = {}
+                for song_id, author_id in song_author_pairs:
+                    source_infos_by_song_id.setdefault(song_id, []).append(author_infos[author_id])
 
-                    # 統合によりauthorが変わった曲それぞれの編集履歴一覧にも記録する（#1034）。
-                    # 実際のbulk_create()は、下の名義変更分と合わせて1回にまとめて行う
-                    merge_song_histories = [
-                        History(
-                            song=song,
-                            title="一番有名な名義の変更により作者を統合",
-                            history_type="edit",
-                            create_time=timezone.now(),
-                            changes=[["種類", "編集前", "編集後"], ["作者", before_author_info, after_author_info]],
-                            editor=editor,
-                        )
-                        for song in merged_songs
-                    ]
+                if source_infos_by_song_id:
+                    # 曲数が増えてもクエリ数が変わらないよう、idでまとめて付け替える
+                    target.songs.add(*source_infos_by_song_id)
+                    Song.authors.through.objects.filter(author__in=plan.source_authors).delete()
 
-                # 選択された側のAuthorAlias行は、これからauthor自身の名前になるため削除する
-                selected_alias.delete()
-                self.author.name = new_name
-                self.author.save()
-                # 旧名を新たな「以前の名称」として登録し直す。マージにより既に
-                # 同名の別名が存在する場合（conflicting_authorがold_nameと同名の別名を
-                # 持っていたケース）は、新規作成せずその別名を再利用しつつ、他の
-                # past別名と同様に選択候補になるようalias_typeを"past"へ揃える
-                existing_old_alias = AuthorAlias.objects.filter(name=old_name).first()
-                if existing_old_alias is None:
-                    AuthorAlias.objects.create(name=old_name, author=self.author, alias_type="past")
-                elif current_conflict is not None and existing_old_alias.author_id == self.author.id:
-                    if existing_old_alias.alias_type != "past":
+                if plan.moves_to_existing_author:
+                    # 選択された側のAuthorAlias行は統一先自身の名前と同じになるため削除する
+                    selected_alias.delete()
+                    # グループ名は(name, author)単位でユニークなため、統一先が既に持つものは移さずに削除する
+                    target_group_names = list(
+                        AuthorAlias.objects.filter(author=target, alias_type="group").values_list("name", flat=True)
+                    )
+                    AuthorAlias.objects.filter(author=self.author, alias_type="group", name__in=target_group_names).delete()
+                    AuthorAlias.objects.filter(author=self.author).update(author=target)
+                    AuthorLink.objects.filter(author=self.author).update(author=target)
+                elif plan.renames_author:
+                    # 選択された側のAuthorAlias行は、これからauthor自身の名前になるため削除する
+                    selected_alias.delete()
+                    self.author.name = new_name
+                    self.author.save()
+
+                if old_name != new_name:
+                    # 旧名を統一先の新たな「以前の名称」として登録し直す。統一先が既に
+                    # 同名の別名を持つ場合は、新規作成せずその別名を再利用しつつ、他の
+                    # past別名と同様に選択候補になるようalias_typeを"past"へ揃える
+                    old_name_aliases = AuthorAlias.objects.filter(name=old_name)
+                    if old_name_aliases.exclude(author=target).exists():
+                        # send_discord()の待機中に、無関係な別authorがold_nameと同名の
+                        # 別名を新規作成していた場合（TOCTOU）。他authorの別名を誤って
+                        # 書き換えないよう、IntegrityErrorと同じ扱いで安全側に倒す
+                        raise IntegrityError(f"AuthorAlias(name={old_name!r}) already exists and is not owned by the target author")
+                    existing_old_alias = old_name_aliases.first()
+                    if existing_old_alias is None:
+                        AuthorAlias.objects.create(name=old_name, author=target, alias_type="past")
+                    elif existing_old_alias.alias_type != "past":
                         existing_old_alias.alias_type = "past"
                         existing_old_alias.save()
-                else:
-                    # send_discord()の待機中に、無関係な別authorがold_nameと同名の
-                    # 別名を新規作成していた場合（TOCTOU）。マージにより付け替わった
-                    # ものだと確認できない限り再利用せず、従来通りIntegrityErrorと
-                    # 同じ扱いで安全側に倒す（他authorの別名を誤って書き換えない）
-                    raise IntegrityError(f"AuthorAlias(name={old_name!r}) already exists and is not owned by self.author")
 
-                changes = [["種類", "編集前", "編集後"], ["一番有名な名義", old_name, new_name]]
-                if merged_author_info is not None:
-                    changes.append(["統合したAuthor", merged_author_info, "（削除）"])
+                history_title = f"名義を『{new_name}』に統一"
+                changes = [["種類", "編集前", "編集後"]]
+                if plan.renames_author:
+                    changes.append(["名義", old_name, new_name])
+                for source in source_authors:
+                    changes.append(["統一した作者", author_infos[source.pk], target_info])
                 History.create_for_author(
-                    author=self.author,
-                    title=f"一番有名な名義を『{new_name}』に変更",
+                    author=target,
+                    title=history_title,
                     history_type="edit",
                     changes=changes,
                     editor=editor,
                 )
-
-                # 名義変更により作者の表示名が変わった、元々このauthorに紐づいていた
-                # 曲それぞれの編集履歴一覧にも記録する（#1034）。マージで新たに加わった
-                # 曲の分（merge_song_histories）と合わせ、1回のbulk_create()でまとめて作成する。
-                # あるSongが統合前から既にself.authorとconflicting_author双方に
-                # 紐づいていた場合、merged_song_ids側にも含まれ二重に記録されてしまうため除外する。
-                # （このケースは実際にはself.author側の紐付け自体は変わらず、共著者としての
-                # conflicting_authorが消えるだけだが、他の統合曲と同じ「作者を統合」の文言で
-                # 記録する仕様としている。曲ごとに異なる文言を出し分けるほどの実益がないための
-                # 意図的な割り切りであり、共著曲を見落としているわけではない）
-                rename_song_histories = [
-                    History(
-                        song=song,
-                        title="一番有名な名義の変更により作者を変更",
+                # 曲を移したAuthorは削除されずに残るため、それぞれの編集履歴一覧にも統一先を記録する
+                for source in source_authors:
+                    History.create_for_author(
+                        author=source,
+                        title=history_title,
                         history_type="edit",
-                        create_time=timezone.now(),
+                        changes=[["種類", "編集前", "編集後"], ["統一した作者", author_infos[source.pk], target_info]],
+                        editor=editor,
+                    )
+
+                # 統一により作者が変わった曲、名前の変更により作者の表示名が変わった曲
+                # それぞれの編集履歴一覧にも記録する（#1034）。1回のbulk_create()でまとめて作成する。
+                # 統一前から既にauthorと曲を移すAuthor双方に紐づいていた曲は、二重に記録しないよう
+                # 統一側の文言のみで記録する
+                now = timezone.now()
+                song_histories = [
+                    History(
+                        song_id=song_id,
+                        title="名義の統一により作者を統合",
+                        history_type="edit",
+                        create_time=now,
+                        changes=[["種類", "編集前", "編集後"], ["作者", " / ".join(infos), target_info]],
+                        editor=editor,
+                    )
+                    for song_id, infos in source_infos_by_song_id.items()
+                ] + [
+                    History(
+                        song_id=song_id,
+                        title="名義の統一により作者名を変更",
+                        history_type="edit",
+                        create_time=now,
                         changes=[["種類", "編集前", "編集後"], ["作者", old_name, new_name]],
                         editor=editor,
                     )
-                    for song in pre_existing_songs
-                    if song.id not in merged_song_ids
+                    for song_id in renamed_song_ids
+                    if song_id not in source_infos_by_song_id
                 ]
-                song_histories = merge_song_histories + rename_song_histories
                 if song_histories:
                     History.objects.bulk_create(song_histories)
         except IntegrityError:
             # ほぼ同時に同名の別名が別途登録された場合等のTOCTOU対策
-            return redirect(f"{base_url}?toast=primary_error")
+            return redirect(f"{base_url}?toast=unify_error")
 
-        return redirect(f"{base_url}?toast=primary")
+        return redirect(f"{reverse('subekashi:author_aliases', args=[target.id])}?toast=unify")

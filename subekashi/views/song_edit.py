@@ -122,8 +122,8 @@ class SongEditView(View):
             return render(request, 'subekashi/song_edit.html', context)
 
         author_objects = get_or_create_authors(author_names)
-        # 入力した作者名が一番有名な名義（past別名から変換）に正規化されたかどうか
-        primary_name_normalized = author_names_were_normalized(author_names, author_objects)
+        # 入力した作者名が統一した名義（past別名から変換）に正規化されたかどうか
+        name_unified = author_names_were_normalized(author_names, author_objects)
 
         # 自分自身や重複は除外し、Song オブジェクトのリストに変換
         imitate_songs = get_imitate_songs(imitates, song_id)
@@ -173,8 +173,8 @@ class SongEditView(View):
                 return render(request, 'subekashi/500.html', status=500)
 
         redirect_url = f'/songs/{song_id}?toast=edit'
-        if primary_name_normalized:
-            redirect_url += '&primary_name_normalized=1'
+        if name_unified:
+            redirect_url += '&name_unified=1'
         response = redirect(redirect_url)
         response["X-Robots-Tag"] = "noindex, nofollow"
         return response
