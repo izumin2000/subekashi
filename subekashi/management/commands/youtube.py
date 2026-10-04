@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from config.local_settings import ERROR_DISCORD_URL
 from subekashi.lib.discord import send_discord
 from subekashi.lib.url import *
@@ -72,6 +72,8 @@ class Command(BaseCommand):
         # song_idが指定されていたらそのsongのみ、指定されていなければ全てのsongが対象（SongLinkが存在するSongのみ）
         # IDを先に全件取得してカーソルを閉じることでDBロックを防ぐ
         if id:
+            if not Song.objects.filter(pk=id).exists():
+                raise CommandError(f"song_id：{id}の曲は存在しません")
             song_ids = [id]
         else:
             song_ids = list(
@@ -79,7 +81,11 @@ class Command(BaseCommand):
             )
 
         for song_id in song_ids:
-            song = Song.objects.get(pk=song_id)
+            # 全件処理は時間がかかるため、処理中に削除された曲はスキップする
+            song = Song.objects.filter(pk=song_id).first()
+            if song is None:
+                continue
+
             try:
                 info = self.get_youtube_info_sum(song)
 

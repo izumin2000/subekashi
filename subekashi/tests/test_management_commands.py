@@ -303,6 +303,32 @@ class YoutubeCommandTest(TestCase):
         self.assert_not_updated(self.song1, upload_time)
         mock_send_discord.assert_called_once()
 
+    @patch("subekashi.management.commands.youtube.sleep")
+    @patch("subekashi.management.commands.youtube.get_youtube_api")
+    def test_nonexistent_id_raises_command_error(self, mock_api, mock_sleep):
+        with self.assertRaises(CommandError):
+            call_command("youtube", id=999999)
+        mock_api.assert_not_called()
+
+    @patch("subekashi.management.commands.youtube.sleep")
+    @patch("subekashi.management.commands.youtube.get_youtube_api")
+    def test_song_deleted_during_processing_is_skipped(self, mock_api, mock_sleep):
+        # 全件処理は時間がかかるため、処理中に削除された曲があっても残りの処理を続ける
+        song_by_video_id = {"aaaaaaaaaaa": self.song1, "bbbbbbbbbbb": self.song2}
+
+        def get_youtube_api(video_id):
+            # 1曲目の処理中に、もう1曲を削除する
+            for other_video_id, other_song in song_by_video_id.items():
+                if other_video_id != video_id:
+                    Song.objects.filter(pk=other_song.pk).delete()
+            return {"view": 50, "like": 5, "upload_time": None}
+
+        mock_api.side_effect = get_youtube_api
+        call_command("youtube")
+
+        self.assertEqual(mock_api.call_count, 1)
+        self.assertEqual(Song.objects.filter(view=50).count(), 1)
+
 
 SQLITE_DB_SETTINGS = {
     "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": "/tmp/db.sqlite3"},
