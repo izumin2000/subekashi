@@ -5,7 +5,7 @@ function add_special_button() {
     `
     <div class="dummybuttons">
         <a>
-            <div class="dummybutton" onclick="special()"><i class="fas fa-magic"></i><p class="icon-p-big">スペシャルデザイン</p></div>
+            <div class="dummybutton" id="special-button"><i class="fas fa-magic"></i><p class="icon-p-big">スペシャルデザイン</p></div>
         </a>
         <a href="./history/">
             <div class="dummybutton"><i class="fas fa-history"></i><p class="icon-p-big">編集履歴</p></div>
@@ -13,6 +13,7 @@ function add_special_button() {
     </div>
     `
     defaultDummybuttonsEle.innerHTML = stringToHTML(designedDummybuttonsEle).innerHTML;
+    document.getElementById("special-button").addEventListener("click", special);
 }
 
 

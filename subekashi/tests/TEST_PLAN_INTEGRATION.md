@@ -553,6 +553,62 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 
 ---
 
+### 13. ZAP診断に基づくセキュリティ対策フロー（#1126）
+
+**テストファイル**: `tests/test_security.py`
+
+ミドルウェア・テンプレート・JSが連携して、CSP・CORS・CSRFトークンの扱いが正しく機能することをHTTPリクエスト単位で検証する。ブラウザ上でCSP違反が発生しないこと・インラインハンドラから置き換えたイベントが動作することはDjangoテストの対象外のため、実サーバー起動 + Playwright（Chrome）で全ページの巡回と主要操作の確認を行った（本PR作成時に実施済み）。
+
+#### 13-1. CSPとnonce
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作 | トップ・検索・曲・新規登録・編集・設定・歌詞作成・作成結果・お問い合わせ・宣伝・統計・記事一覧の各ページを`GET` |
+| 検証1 | 全ページに`Content-Security-Policy`ヘッダーが付与される |
+| 検証2 | `src`を持たないインラインの`<script>`（`json_script`のデータブロックを除く）に、ヘッダーと同じnonceが付与されている |
+| 検証3 | 描画結果にインラインのイベントハンドラ属性（`onclick`等）が含まれない |
+| 検証4 | APIのJSONレスポンス（`/api/song/<id>/?format=json`）にはCSPヘッダーが付与されない |
+
+#### 13-2. インラインイベントハンドラの不使用
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作 | `subekashi`・`article`のテンプレート（`*.html`）と静的JS（`*.js`）を走査 |
+| 検証 | 開始タグ内に`on〇〇=`形式のイベントハンドラ属性が含まれない（CSPで実行されないため） |
+
+#### 13-3. CORS
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作1 | `Origin`ヘッダー付きで`GET /api/song/` |
+| 検証1 | `Access-Control-Allow-Origin: *`が返り、`Access-Control-Allow-Credentials`は返らない |
+| 操作2 | `Origin`・`Access-Control-Request-Method`付きで`OPTIONS /api/song/`（プリフライト） |
+| 検証2 | HTTP 200、`Access-Control-Allow-Origin: *` |
+| 操作3 | `Origin`ヘッダー付きでトップ・検索・曲ページを`GET` |
+| 検証3 | CORSヘッダーが付与されない |
+
+#### 13-4. CSRFトークン（csrftokenクッキーのHttpOnly化）
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `Client(enforce_csrf_checks=True)` |
+| 検証1 | `GET /songs/new/`で発行される`csrftoken`クッキーに`HttpOnly`が付く |
+| 検証2 | `getCSRF()`を使うページ（トップ・検索・設定・作成結果）に`csrfmiddlewaretoken`が含まれる |
+| 操作3 | `GET /setting/`で取得したトークンを`X-CSRFToken`に指定して`POST /api/setting/save/` |
+| 検証3 | HTTP 200、設定のcookieが保存される |
+| 操作4 | トークンなしで`POST /api/setting/save/` |
+| 検証4 | HTTP 403 |
+| 検証5 | `GET /ai/`のGETフォームに`csrfmiddlewaretoken`が含まれない（トークンがURLに含まれないこと） |
+
+#### 13-5. サブリソース整合性（SRI）
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作 | `GET /` |
+| 検証 | Font Awesomeの`<link>`に`integrity`と`crossorigin="anonymous"`が付与されている |
+
+---
+
 ## テスト実装の方針
 
 ### ディレクトリ構成（案）

@@ -7,10 +7,18 @@
 <div class="maintenance-content">
     {{ maintenance_message|safe }}<span class="loading"></span>
     <div class="dummybuttons">
-        <a onclick="location.reload()">
+        <a id="maintenance-reload">
             <div class="dummybutton"><i class="fas fa-redo"></i><p>再読み込み</p></div>
         </a>
     </div>
 </div>
 
+{% endblock %}
+
+{% block js %}
+<script nonce="{{ csp_nonce }}">
+    document.getElementById("maintenance-reload").addEventListener("click", function() {
+        location.reload();
+    });
+</script>
 {% endblock %}

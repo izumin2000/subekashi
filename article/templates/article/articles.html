@@ -30,7 +30,7 @@
                     <span class="article-title-wrapper news-underline">記事の投稿方法</span>
                 </a>
                 {% if is_pinned_article %}
-                    <i id="close-button" class="fas fa-thumbtack" onclick="closeHowToArticle()"></i>
+                    <i id="close-button" class="fas fa-thumbtack"></i>
                 {% endif %}
             </div>
         {% elif article.tag == 'news' %}
@@ -65,11 +65,12 @@
 {% endblock %}
 
 {% block js %}
-<script>
+<script nonce="{{ csp_nonce }}">
     function closeHowToArticle(){
         setCookie("is_pinned_article", "False")
         showToast("ok", "ピン留めを外しました。");
         document.getElementById("close-button").remove();
     }
+    document.getElementById("close-button")?.addEventListener("click", closeHowToArticle);
 </script>
 {% endblock %}

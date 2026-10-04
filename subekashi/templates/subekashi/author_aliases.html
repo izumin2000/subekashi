@@ -12,7 +12,7 @@
         <a href="{% url 'subekashi:author' author.id %}">
             <div class="dummybutton black-dummybutton"><i class="fas fa-user"></i><p class="icon-p-big">作者ページ</p></div>
         </a>
-        <a onclick="reloadPage()">
+        <a id="alias-reload">
             <div class="dummybutton black-dummybutton"><i class="fas fa-redo"></i><p class="icon-p-big">再読み込み</p></div>
         </a>
         <a href="{% url 'subekashi:author_alias_new' author.id %}">
@@ -47,7 +47,7 @@
     {% endfor %}
 
     {% if unify_name_sources %}
-        <h1>名義を統一する<i class="fas fa-info-circle" onclick="showTutorial('unify-name')"></i></h1>
+        <h1>名義を統一する<i class="fas fa-info-circle" data-tutorial="unify-name"></i></h1>
         <form method="GET" action="{% url 'subekashi:author_unify_name_confirm' author.id %}" id="unify-name-form">
             <div id="unify-name-sources">
                 {% for source in unify_name_sources %}
@@ -73,7 +73,7 @@
 {% endblock %}
 
 {% block js %}
-<script defer>
+<script defer nonce="{{ csp_nonce }}">
     // historyを更新するリロード（subekashi/js/editor.jsと同様。DOMContentLoaded時に
     // <details>要素の存在を前提とする処理を含むため、editor.js自体は読み込まない）
     function reloadPage() {
@@ -81,6 +81,7 @@
         history.replaceState(null, '', newUrl);
         location.reload();
     }
+    document.getElementById('alias-reload').addEventListener('click', reloadPage);
 
     // 名義を統一するフォーム: 選択中の名義（統一先）を矢印の下に、それ以外の名義を矢印の上に並べる
     (function() {

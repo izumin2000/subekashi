@@ -144,7 +144,8 @@ python manage.py runserver
 エラーが発生した場合はissueで報告してください。  
   
 ## 全て歌詞の所為です。APIについて
-全て歌詞の所為です。上で登録された情報はRESTfulなAPIで提供しています。
+全て歌詞の所為です。上で登録された情報はRESTfulなAPIで提供しています。  
+APIは全てのオリジンから利用できます（`Access-Control-Allow-Origin: *`）。Cookie等の認証情報を付けたクロスオリジンリクエストには対応していません。
 
 ### Song API
 **エンドポイント**: [https://lyrics.imicomweb.com/api/song](https://lyrics.imicomweb.com/api/song)
@@ -312,6 +313,37 @@ python manage.py runserver
 その他、issueの起票だけでも助かります。  
 マージの場所はmainでお願いします。  
 PRにはClaude Code Actionsを使用しております。  
+
+## 開発時の注意
+全て歌詞の所為です。ではXSS等の対策として、Content Security Policy（CSP）を設定しています（`subekashi/middleware/csp.py`）。  
+コードや記事を追加する際は以下に注意してください。
+
+### JavaScript
+- `onclick`・`oninput`等のイベントハンドラ属性は実行されません。JSの文字列で組み立てて`innerHTML`に入れるHTMLも同様です。`addEventListener`で登録してください
+  - チュートリアルの表示は`data-tutorial="キー"`、入力の変更時のフォームの送信は`<form data-auto-submit>`で行えます
+- テンプレートに直接書く`<script>`には`nonce="{{ csp_nonce }}"`を付けてください。`src`で読み込むスクリプトには不要です
+- `eval`・`new Function`・`setTimeout("文字列")`・`javascript:`で始まるURLは使えません
+
+### 外部のリソース
+- 外部のスクリプト・画像・フォント・iframe・通信先を追加する場合は、`subekashi/middleware/csp.py`の`CSP_DIRECTIVES`にドメインを追加してください
+- CDNから読み込むCSS・JSはバージョンを固定したURLにし、`integrity`属性と`crossorigin="anonymous"`を付けてください
+
+### CSRFトークン
+- `csrftoken`クッキーはJSから読み取れません。JSからPOST・PUT等を送るページでは、テンプレートに`{% csrf_token %}`を置き、`getCSRF()`でトークンを取得してください
+- `input`要素をまとめて取得する処理では、`{% csrf_token %}`が出力するhiddenの`input`も含まれるため、必要に応じて`:not([type="hidden"])`で除外してください
+- GETのフォームには`{% csrf_token %}`を入れないでください（トークンがURLに含まれてしまうため）
+
+### APIとエスケープ
+- `/api/`以下のレスポンスは全てのサイトから読み取れます（Cookieは送られません）。他のサイトに読み取られて困る情報を`/api/`以下で返さないでください
+- ユーザーの入力値をHTMLに埋め込む場合は、Pythonでは`django.utils.html.escape()`、JSでは`escapeHtml()`でエスケープしてください。テンプレートで`|safe`を使う値にユーザーの入力値を含めないでください
+
+### 記事
+- 記事本文の`<script>`には表示時に自動でnonceが付与されるため、そのまま実行されます。記事のHTMLに書いた`onclick`等は実行されないため、`<script>`内で`addEventListener`を使ってください
+- 外部サイトの画像は表示されません。画像は`article/static/article/image/`に置いてください
+- 埋め込みはYouTubeの動画・X（Twitter）のポストが利用できます。それ以外のサービスの埋め込みや外部への通信は`CSP_DIRECTIVES`への追加が必要です
+- 記事の追加後は、ブラウザの開発者ツールのコンソールに「Content Security Policy」のエラーが出ていないことを確認してください
+
+テンプレート・静的JSにイベントハンドラ属性が含まれていると、`subekashi/tests/test_security.py`のテストが失敗します。
 
 ## リンク集
 

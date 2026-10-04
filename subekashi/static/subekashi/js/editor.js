@@ -34,3 +34,6 @@ function openAll() {
     });
     is_open = !is_open;
 }
+
+document.getElementById("history-reload").addEventListener("click", reloadPage);
+document.getElementById("history-open-all").addEventListener("click", openAll);

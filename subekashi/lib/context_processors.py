@@ -26,6 +26,7 @@ def context_processors(request):
         "is_maintenance": maintenance.get("IS_MAINTENANCE", False),
         "maintenance_message": maintenance.get("MAINTENANCE_MESSAGE", "<p>メンテナンス中です</p>"),
         "pc_menu_position": request.COOKIES.get("pc_menu_position", "header"),
+        "csp_nonce": getattr(request, "csp_nonce", ""),
     }
 
     return context

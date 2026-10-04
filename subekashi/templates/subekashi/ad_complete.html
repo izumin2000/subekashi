@@ -8,6 +8,14 @@
 <section>
     <p>正常に枠を登録できました</p>
     <p>審査が終わるまで数日お待ちください</p>
-    <button type="button" onclick="window.location.href = `{% url 'subekashi:ad' %}`">OK!</button>
+    <button type="button" id="ad-complete-ok">OK!</button>
 </section>
+{% endblock %}
+
+{% block js %}
+<script nonce="{{ csp_nonce }}">
+    document.getElementById("ad-complete-ok").addEventListener("click", function() {
+        window.location.href = "{% url 'subekashi:ad' %}";
+    });
+</script>
 {% endblock %}

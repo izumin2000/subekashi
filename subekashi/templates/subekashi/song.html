@@ -71,7 +71,7 @@
                 </td>
                 <td>
                     {% if is_questionable %}
-                        <p id="special-tag"><i class="fas fa-question"></i><span class="icon-p-big">界隈曲?</span><i class="fas fa-info-circle" onclick="showTutorial('is_questionable')"></i></p>
+                        <p id="special-tag"><i class="fas fa-question"></i><span class="icon-p-big">界隈曲?</span><i class="fas fa-info-circle" data-tutorial="is_questionable"></i></p>
                     {% endif %}
                     {% if is_lack %}
                         <a href="{% url 'subekashi:songs' %}?is_lack=True"><i class="fas fa-tasks"></i><span class="icon-p-big">未完成</span></a>
@@ -98,7 +98,7 @@
                         <p id="special-tag"><i class="fas fa-magic"></i><span class="icon-p-big">スペシャルデザイン</span></p>
                     {% endif %}
                     {% if song.is_limited %}
-                        <p id="special-tag"><i class="fas fa-low-vision"></i><span class="icon-p-big">限定公開</span><i class="fas fa-info-circle" onclick="showTutorial('is_limited')"></i></p>
+                        <p id="special-tag"><i class="fas fa-low-vision"></i><span class="icon-p-big">限定公開</span><i class="fas fa-info-circle" data-tutorial="is_limited"></i></p>
                     {% endif %}
                 </td>
             </tr>
@@ -187,7 +187,7 @@
 {% endblock %}
 
 {% block js %}
-<script defer>
+<script defer nonce="{{ csp_nonce }}">
     document.querySelectorAll('.far.fa-copy').forEach(el => {
         el.addEventListener('click', () => {
             const text = el.dataset.copy;

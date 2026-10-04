@@ -12,17 +12,17 @@
     <form action="{% url 'subekashi:ad' %}" method="POST" id="ad-form">{% csrf_token %}
         <div class="form-col">
             <label>1枠目</label>
-            <input type="text" value="{{ url1 }}" id="url1" name="url1" placeholder="URLを入力" oninput="setad()"><br>
+            <input type="text" value="{{ url1 }}" id="url1" name="url1" placeholder="URLを入力"><br>
             <input type="text" value="{{ ad1 }}" id="ad1" name="ad1" hidden>
         </div>
         <div class="form-col">
             <label>2枠目</label>
-            <input type="text" value="{{ url2 }}" id="url2" name="url2" placeholder="URLを入力" oninput="setad()"><br>
+            <input type="text" value="{{ url2 }}" id="url2" name="url2" placeholder="URLを入力"><br>
             <input type="text" value="{{ ad2 }}" id="ad2" name="ad2" hidden>
         </div>
         <div class="form-col">
             <label>3枠目</label>
-            <input type="text" value="{{ url3 }}" id="url3" name="url3" placeholder="URLを入力" oninput="setad()"><br>
+            <input type="text" value="{{ url3 }}" id="url3" name="url3" placeholder="URLを入力"><br>
             <input type="text" value="{{ ad3 }}" id="ad3" name="ad3" hidden>
         </div>
         <input type="submit" value="送信" id="adsubmit">
@@ -46,7 +46,7 @@
 {% endblock %}
 
 {% block js %}
-    <script defer>
+    <script defer nonce="{{ csp_nonce }}">
         pattern = /(?:\/|v=)([A-Za-z0-9_-]{11})(?:\?|&|$)/
         function isYouTubeLink(link) {
             var videoID = link.match(pattern);
@@ -79,6 +79,10 @@
                     setCookie("ad" + i, ShortLink(url));
                 }
             }
+        }
+
+        for (var i = 1; i <= 3; i++) {
+            document.getElementById("url" + String(i)).addEventListener('input', setad);
         }
 
         window.addEventListener('load', function(){

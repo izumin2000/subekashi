@@ -7,15 +7,13 @@
 {% block content %}
 <section id="ai-section">
     <h1>全て蛇の目の所為です。<a href="{% url 'article:default_article' 'howToJanome' %}"><i class="fas fa-info-circle"></i></a></h1>
-    <form action="{% url 'subekashi:ai_result' %}">{% csrf_token %}
+    <form action="{% url 'subekashi:ai_result' %}">
         <input type="submit" value="作成">
     </form>
 
     {% if show_janome_notice %}
         <div class="notice-wrapper" id="janome-notice">
-            <i id="janome-notice-close" class="fas fa-times" role="button" tabindex="0" aria-label="閉じる"
-               onclick="closeJanomeNotice()"
-               onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); closeJanomeNotice(); }"></i>
+            <i id="janome-notice-close" class="fas fa-times" role="button" tabindex="0" aria-label="閉じる"></i>
             <p>全て蛇の目の所為です。はすべあな界隈曲っぽい歌詞を作成するアルゴリズムです</p>
             <a href="{% url 'article:default_article' 'howToJanome' %}">詳しく</a>
         </div>
@@ -29,10 +27,21 @@
 {% endblock %}
 
 {% block js %}
-<script>
+<script nonce="{{ csp_nonce }}">
     function closeJanomeNotice(){
         setCookie("show_janome_notice", "off");
         document.getElementById("janome-notice").remove();
+    }
+
+    const janomeNoticeCloseEle = document.getElementById("janome-notice-close");
+    if (janomeNoticeCloseEle) {
+        janomeNoticeCloseEle.addEventListener("click", closeJanomeNotice);
+        janomeNoticeCloseEle.addEventListener("keydown", (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                closeJanomeNotice();
+            }
+        });
     }
 </script>
 {% endblock %}

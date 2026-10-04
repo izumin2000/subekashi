@@ -171,6 +171,7 @@ function renderSongGuesser() {
     songGuesserController = new AbortController();
     getSongGuessers(imitateTitle, "song-guesser", songGuesserController.signal, renderSongGuesser);
 }
+imitateTitleEle.addEventListener("input", renderSongGuesser);
 
 // すべあな原曲以外からから選択
 async function songGuesserClick(id) {
