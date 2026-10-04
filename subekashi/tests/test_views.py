@@ -2360,7 +2360,7 @@ class AuthorUnifyNameSetViewTest(TestCase):
         response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
         self.assertContains(response, 'id="unify-name-form"')
         self.assertContains(response, "名義を統一する")
-        self.assertContains(response, "showTutorial('unify-name')")
+        self.assertContains(response, 'data-tutorial="unify-name"')
         self.assertContains(
             response, f'action="{reverse("subekashi:author_unify_name_confirm", args=[self.author.id])}"'
         )

@@ -683,7 +683,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | Discord通知待機中の並行削除（TOCTOU、統一先の既存Author） | `send_discord()`の完了待ち中に統一先の既存Authorが別リクエストで削除されたと仮定 | 統一先を再取得し、author自身の名前を変更する通常の統一として`?toast=unify`付きで成立する |
 | Discord通知待機中の無関係な別名作成（TOCTOU） | `send_discord()`の完了待ち中に、無関係な別authorがold_nameと同名の`AuthorAlias`を新規作成したと仮定 | 所有者を確認できないため再利用せず安全側に倒し、曲の付け替え・別名の移動を含む統一全体をロールバックして`?toast=unify_error`へリダイレクトする。無関係な別名のalias_typeは書き換えられない |
 | 旧名(old_name)が既存の別名と衝突 | old_nameと同名の`AuthorAlias`をauthor・統一先以外の別authorが既に保有（「逆方向」の関係として正常にありうる状態） | `AuthorAlias.name`のグローバルなunique制約により再登録が決定的に失敗するため、Discord通知を送る前に検知して`?toast=unify_error`へリダイレクトする。`send_discord()`は呼ばれない |
-| 別名一覧画面のフォーム表示 | authorが`alias_type="past"`の別名を持つ | フォーム（`#unify-name-form`）と「名義を統一する」の見出し、`showTutorial('unify-name')`が表示される。フォームの送信先は確認画面（`AuthorUnifyNameConfirmView`） |
+| 別名一覧画面のフォーム表示 | authorが`alias_type="past"`の別名を持つ | フォーム（`#unify-name-form`）と「名義を統一する」の見出し、チュートリアルアイコン（`data-tutorial="unify-name"`、#1126でインラインのonclickから変更）が表示される。フォームの送信先は確認画面（`AuthorUnifyNameConfirmView`） |
 | 別名一覧画面のフォーム非表示 | authorが`alias_type="past"`の別名を持たない | フォームは表示されない（選択肢が現在の名前1件のみのため） |
 | フォームの並び（#1137） | authorが`alias_type="past"`の別名を持つ | 「[ ] 以前の名称 ↓ [x] 現在の名義」の順に、past別名・矢印（`#unify-name-arrow`）・現在の名義が並び、初期状態では現在の名義のみが`checked`になる。選択を変えると、選択した名義が矢印の下へ移動する（JSによるDOM操作のため手動確認） |
 | 統一するボタン（#1137） | authorが`alias_type="past"`の別名を持つ | `#unify-name-submit`ボタンは`disabled`ではなく（フォームを変更しなくても統一できる）、ラベルは「統一する」 |
@@ -915,6 +915,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | nonceの一意性 | 2回リクエスト | リクエストごとに異なるnonceが生成される |
 | HTML以外のレスポンス | `JsonResponse` | `Content-Security-Policy`ヘッダーが付与されない |
 | 既存のCSPヘッダー | レスポンスに設定済み | 上書きされない |
+| DEBUG時のサーバーエラー | `DEBUG=True`、HTTP 500 | Djangoのエラーページがインラインスクリプトを使うため付与されない |
+| 本番のサーバーエラー | `DEBUG=False`、HTTP 500 | 付与される |
 | インラインスクリプトの禁止 | `script-src` | `'unsafe-inline'`・`'unsafe-eval'`・`*`を含まない |
 | 制限的なディレクティブ | - | `default-src 'self'`・`object-src 'none'`・`base-uri 'self'`・`form-action 'self'`・`frame-ancestors 'none'` |
 

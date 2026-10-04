@@ -1,4 +1,5 @@
 import secrets
+from django.conf import settings
 
 # Google Analyticsの読み込み元・送信先（Googleシグナル利用時を含む）
 GOOGLE_ANALYTICS_SOURCES = [
@@ -66,6 +67,10 @@ class ContentSecurityPolicyMiddleware:
         response = self.get_response(request)
 
         if "Content-Security-Policy" in response:
+            return response
+
+        # DEBUG時のDjangoのエラーページはインラインスクリプトを使用しているため対象外にする
+        if settings.DEBUG and response.status_code >= 500:
             return response
 
         if response.get("Content-Type", "").startswith("text/html"):

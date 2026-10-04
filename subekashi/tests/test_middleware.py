@@ -146,6 +146,17 @@ class ContentSecurityPolicyMiddlewareTest(SimpleTestCase):
         _, response = self._call(original)
         self.assertEqual(response["Content-Security-Policy"], existing)
 
+    @override_settings(DEBUG=True)
+    def test_server_error_in_debug_has_no_csp(self):
+        # DEBUG時のDjangoのエラーページはインラインスクリプトを使用している
+        _, response = self._call(HttpResponse("Error", status=500))
+        self.assertNotIn("Content-Security-Policy", response)
+
+    @override_settings(DEBUG=False)
+    def test_server_error_in_production_has_csp(self):
+        _, response = self._call(HttpResponse("Error", status=500))
+        self.assertIn("Content-Security-Policy", response)
+
     def test_inline_script_is_not_allowed_without_nonce(self):
         _, response = self._call(HttpResponse("OK"))
         script_src = self._directives(response)["script-src"]
