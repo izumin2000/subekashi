@@ -6,7 +6,7 @@ ContactForm/SongDeleteForm/SongEditFormはDBアクセスしないため SimpleTe
 AuthorAliasFormはclean_name()で重複チェックのためDBアクセスするため TestCase を使用する。
 """
 from django.test import SimpleTestCase, TestCase
-from subekashi.forms import AuthorAliasForm, AuthorPrimaryNameForm, ContactForm, SongDeleteForm, SongEditForm
+from subekashi.forms import AuthorAliasForm, AuthorUnifyNameForm, ContactForm, SongDeleteForm, SongEditForm
 from subekashi.models import Author, AuthorAlias
 
 
@@ -275,37 +275,37 @@ class AuthorAliasFormTest(TestCase):
         self.assertIn("その別名は既に登録されています。", form.errors["name"])
 
 
-class AuthorPrimaryNameFormTest(TestCase):
-    """AuthorPrimaryNameForm のテスト（#1008）"""
+class AuthorUnifyNameFormTest(TestCase):
+    """AuthorUnifyNameForm のテスト（#1008、#1137）"""
 
     def setUp(self):
         self.author = Author.objects.create(name="現在の名義")
 
     def test_current_name_is_valid(self):
-        form = AuthorPrimaryNameForm(data={"name": self.author.name}, author=self.author)
+        form = AuthorUnifyNameForm(data={"name": self.author.name}, author=self.author)
         self.assertTrue(form.is_valid())
 
     def test_past_alias_name_is_valid(self):
         AuthorAlias.objects.create(name="以前の名義", author=self.author, alias_type="past")
-        form = AuthorPrimaryNameForm(data={"name": "以前の名義"}, author=self.author)
+        form = AuthorUnifyNameForm(data={"name": "以前の名義"}, author=self.author)
         self.assertTrue(form.is_valid())
 
     def test_non_past_alias_name_is_invalid(self):
         # another等、past以外の種別は候補にならない
         AuthorAlias.objects.create(name="別名義", author=self.author, alias_type="another")
-        form = AuthorPrimaryNameForm(data={"name": "別名義"}, author=self.author)
+        form = AuthorUnifyNameForm(data={"name": "別名義"}, author=self.author)
         self.assertFalse(form.is_valid())
         self.assertIn("選択できない名義です。", form.errors["name"])
 
     def test_unrelated_name_is_invalid(self):
-        form = AuthorPrimaryNameForm(data={"name": "全く関係ない名前"}, author=self.author)
+        form = AuthorUnifyNameForm(data={"name": "全く関係ない名前"}, author=self.author)
         self.assertFalse(form.is_valid())
         self.assertIn("選択できない名義です。", form.errors["name"])
 
     def test_past_alias_name_conflicting_with_another_author_is_valid(self):
         # past別名の名前と完全一致する別のAuthorが既に存在していても選択可能。
-        # 衝突するAuthorの統合（マージ）はAuthorPrimaryNameSetView側で行う（#1029）
+        # そのAuthorを統一先とする処理はAuthorUnifyNameSetView側で行う（#1029、#1137）
         Author.objects.create(name="衝突する名前")
         AuthorAlias.objects.create(name="衝突する名前", author=self.author, alias_type="past")
-        form = AuthorPrimaryNameForm(data={"name": "衝突する名前"}, author=self.author)
+        form = AuthorUnifyNameForm(data={"name": "衝突する名前"}, author=self.author)
         self.assertTrue(form.is_valid())

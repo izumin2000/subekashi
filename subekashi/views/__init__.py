@@ -12,8 +12,8 @@ from subekashi.views.author_alias import (
     AuthorAliasNewView,
     AuthorAliasEditView,
     AuthorAliasDeleteView,
-    AuthorPrimaryNameConfirmView,
-    AuthorPrimaryNameSetView,
+    AuthorUnifyNameConfirmView,
+    AuthorUnifyNameSetView,
 )
 from subekashi.views.channel import ChannelView
 from subekashi.views.contact import ContactView

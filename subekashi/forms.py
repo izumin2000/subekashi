@@ -84,12 +84,12 @@ class AuthorAliasForm(forms.Form):
         return cleaned_data
 
 
-class AuthorPrimaryNameForm(forms.Form):
-    """一番有名な名義の選択フォーム（#1008）
+class AuthorUnifyNameForm(forms.Form):
+    """名義の統一先の選択フォーム（#1008、#1137）
 
     選択肢はauthor自身の現在の名前 + alias_type="past"の別名のみ。
-    選んだ名前が別のAuthorの名前と衝突する場合、AuthorPrimaryNameSetView側で
-    そのAuthorをこのauthorに統合（マージ）した上で名義を切り替える。
+    選んだ名前と同名の別のAuthorが存在する場合、AuthorUnifyNameSetView側で
+    そのAuthorを統一先とする。
     """
     # 候補にはAuthor.name（max_length=255）だけでなくAuthorAlias.name（past、
     # max_length=500のまま）も含まれるため、500に合わせる（#593コードレビュー対応）

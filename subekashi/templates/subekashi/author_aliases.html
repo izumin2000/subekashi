@@ -46,17 +46,26 @@
         <p id="alias-not-found">別名が見つかりませんでした</p>
     {% endfor %}
 
-    {% if primary_name_candidates|length > 1 %}
-        <h1>一番有名な名義<i class="fas fa-info-circle" onclick="showTutorial('primary-name')"></i></h1>
-        <form method="GET" action="{% url 'subekashi:author_primary_name_confirm' author.id %}" id="primary-name-form">
-            {% for candidate in primary_name_candidates %}
-                <div class="checkbox-col">
-                    <input type="radio" name="name" value="{{ candidate }}" id="primary-name-{{ forloop.counter }}" {% if candidate == author.name %}checked{% endif %}>
-                    <label for="primary-name-{{ forloop.counter }}">{{ candidate }}</label>
+    {% if unify_name_sources %}
+        <h1>名義を統一する<i class="fas fa-info-circle" onclick="showTutorial('unify-name')"></i></h1>
+        <form method="GET" action="{% url 'subekashi:author_unify_name_confirm' author.id %}" id="unify-name-form">
+            <div id="unify-name-sources">
+                {% for source in unify_name_sources %}
+                    <div class="checkbox-col" data-order="{{ forloop.counter }}">
+                        <input type="radio" name="name" value="{{ source }}" id="unify-name-{{ forloop.counter }}">
+                        <label for="unify-name-{{ forloop.counter }}">{{ source }}</label>
+                    </div>
+                {% endfor %}
+            </div>
+            <i class="fas fa-arrow-down" id="unify-name-arrow"></i>
+            <div id="unify-name-target">
+                <div class="checkbox-col" data-order="0">
+                    <input type="radio" name="name" value="{{ author.name }}" id="unify-name-0" checked>
+                    <label for="unify-name-0">{{ author.name }}</label>
                 </div>
-            {% endfor %}
+            </div>
             <div class="dummybuttons">
-                <button type="submit" id="primary-name-submit" class="dummybutton black-dummybutton" disabled><i class="fas fa-check"></i><p class="icon-p-big">変更する</p></button>
+                <button type="submit" id="unify-name-submit" class="dummybutton black-dummybutton"><i class="fas fa-check"></i><p class="icon-p-big">統一する</p></button>
             </div>
         </form>
     {% endif %}
@@ -73,15 +82,20 @@
         location.reload();
     }
 
-    // 一番有名な名義フォーム: 選択が現在の名義から変わっていない間は変更するボタンをdisabledにする
+    // 名義を統一するフォーム: 選択中の名義（統一先）を矢印の下に、それ以外の名義を矢印の上に並べる
     (function() {
-        const primaryNameForm = document.getElementById('primary-name-form');
-        if (!primaryNameForm) return;
-        const submitBtn = document.getElementById('primary-name-submit');
-        const initialValue = primaryNameForm.querySelector('input[name="name"]:checked')?.value;
-        primaryNameForm.querySelectorAll('input[name="name"]').forEach(radio => {
+        const unifyNameForm = document.getElementById('unify-name-form');
+        if (!unifyNameForm) return;
+        const sources = document.getElementById('unify-name-sources');
+        const target = document.getElementById('unify-name-target');
+        unifyNameForm.querySelectorAll('input[name="name"]').forEach(radio => {
             radio.addEventListener('change', () => {
-                submitBtn.disabled = primaryNameForm.querySelector('input[name="name"]:checked')?.value === initialValue;
+                // 直前の統一先は、元の並び順の位置に戻す
+                for (const row of [...target.children]) {
+                    const nextRow = [...sources.children].find(r => Number(r.dataset.order) > Number(row.dataset.order));
+                    sources.insertBefore(row, nextRow ?? null);
+                }
+                target.appendChild(radio.closest('.checkbox-col'));
             });
         });
     })();
@@ -92,10 +106,12 @@
         showToast("ok", "別名を編集しました。");
     {% elif request.GET.toast == "delete" %}
         showToast("ok", "別名を削除しました。");
-    {% elif request.GET.toast == "primary" %}
-        showToast("ok", "一番有名な名義を変更しました。");
-    {% elif request.GET.toast == "primary_error" %}
-        showToast("error", "一番有名な名義を変更できませんでした。時間をおいて再度お試しください。");
+    {% elif request.GET.toast == "unify" %}
+        showToast("ok", "名義を統一しました。");
+    {% elif request.GET.toast == "unify_noop" %}
+        showToast("info", "既に名義は統一されています。");
+    {% elif request.GET.toast == "unify_error" %}
+        showToast("error", "名義を統一できませんでした。時間をおいて再度お試しください。");
     {% endif %}
 
     deleteToastUrlQuery()

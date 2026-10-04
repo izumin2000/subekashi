@@ -1,0 +1,50 @@
+{% extends "subekashi/base/base.html" %}
+
+
+{% load static %}
+{% block css %}{% static 'subekashi/css/author_aliases.css'%}{% endblock %}
+
+{% block content %}
+<section>
+    <h1>名義の統一を確認</h1>
+    {% if song_titles %}
+        <ul id="unify-name-song-list">
+            {% for song_title in song_titles %}
+                <li{% if forloop.counter > 10 %} class="unify-name-song-hidden" style="display:none;"{% endif %}>{{ song_title }}</li>
+            {% endfor %}
+        </ul>
+        {% if song_titles|length > 10 %}
+            <div class="dummybuttons">
+                <button type="button" id="unify-name-show-all-songs" class="dummybutton black-dummybutton"><i class="fas fa-arrows-alt-v"></i><p class="icon-p-big">全て表示</p></button>
+            </div>
+        {% endif %}
+        <p>の作者が『{{ new_name }}』に統一されます</p>
+    {% else %}
+        <p>名義が『{{ new_name }}』に統一されます</p>
+    {% endif %}
+    {% if source_authors %}
+        <p>{% for source_author in source_authors %}作者『{{ source_author.name }}』{% if not forloop.last %}、{% endif %}{% endfor %}の曲は全て『{{ new_name }}』に移動します</p>
+    {% endif %}
+    {% if target_author %}
+        <p>既存の作者『{{ target_author.name }}』が統一先となり、この作者の曲・別名・作者リンクは全てそちらに移動します</p>
+    {% endif %}
+    <div class="dummybuttons">
+        <a href="{% url 'subekashi:author_aliases' author.id %}">
+            <div class="dummybutton black-dummybutton"><i class="fas fa-times"></i><p class="icon-p-big">戻る</p></div>
+        </a>
+        <form action="{% url 'subekashi:author_unify_name_set' author.id %}" method="POST" class="dummybutton-form">{% csrf_token %}
+            <input type="hidden" name="name" value="{{ new_name }}">
+            <button type="submit" class="dummybutton black-dummybutton dummybutton-w140"><i class="fas fa-check"></i><p class="icon-p-big">統一する</p></button>
+        </form>
+    </div>
+</section>
+{% endblock %}
+
+{% block js %}
+<script defer>
+    document.getElementById('unify-name-show-all-songs')?.addEventListener('click', function() {
+        document.querySelectorAll('.unify-name-song-hidden').forEach(li => li.style.display = '');
+        this.remove();
+    });
+</script>
+{% endblock %}

@@ -1,4 +1,6 @@
+from dataclasses import dataclass
 from config.settings import ROOT_URL
+from subekashi.models import Author, Song
 
 
 def build_new_alias_discord_text(author, alias, editor):
@@ -41,21 +43,75 @@ def build_delete_alias_discord_text(author, alias_name, editor):
     )
 
 
-def build_set_primary_name_discord_text(author, old_name, new_name, editor, merged_author=None):
-    """一番有名な名義の変更用のDiscordテキストを構築する（#1008）
+@dataclass
+class UnifyNamePlan:
+    """名義の統一（#1137）で行う変更内容
 
-    merged_authorが指定されている場合、選択した名義が既に別のAuthorとして
-    登録されていたため、そのAuthorを統合（マージ）した上で名義を変更したことを
-    合わせて通知する（#1029）
+    target_authorは統一先のAuthor。選択した名義と同名の既存Authorがあればそれ、
+    なければauthor自身（選択した名義が以前の名称なら、authorをその名前に変更する）。
+    source_authorsは候補の名義（authorの名前＋以前の名称）と同名のAuthorのうち、
+    統一先以外のもの。これらの曲は統一先へ移すが、Author自体は削除しない。
     """
-    merge_note = (
-        f"**統合**：`Author(id={merged_author.id})`を統合しました\n" if merged_author is not None else ""
+    author: Author
+    old_name: str
+    new_name: str
+    target_author: Author
+    source_authors: list
+
+    @property
+    def renames_author(self):
+        return self.target_author.pk == self.author.pk and self.new_name != self.old_name
+
+    @property
+    def moves_to_existing_author(self):
+        return self.target_author.pk != self.author.pk
+
+    def song_author_pairs(self):
+        """統一先へ移す曲の(song_id, author_id)の一覧を返す"""
+        return list(
+            Song.authors.through.objects.filter(author__in=self.source_authors).values_list("song_id", "author_id")
+        )
+
+    def affected_source_authors(self, song_author_pairs):
+        """source_authorsのうち、統一により実際に変更が及ぶものを返す
+
+        曲を持たないAuthorは何も変わらないため除く。ただし統一先が既存の別Authorの
+        場合のauthor自身は、曲の有無に関わらず別名・リンクを統一先へ移すため含める
+        """
+        moved_author_ids = {author_id for _, author_id in song_author_pairs}
+        return [a for a in self.source_authors if a.pk in moved_author_ids or a.pk == self.author.pk]
+
+
+def build_unify_name_plan(author, new_name):
+    past_names = list(author.aliases.filter(alias_type="past").values_list("name", flat=True))
+    other_authors = list(Author.objects.filter(name__in=past_names).exclude(pk=author.pk))
+    target_author = next((a for a in other_authors if a.name == new_name), author)
+    source_authors = [a for a in [author] + other_authors if a.pk != target_author.pk]
+    return UnifyNamePlan(
+        author=author,
+        old_name=author.name,
+        new_name=new_name,
+        target_author=target_author,
+        source_authors=source_authors,
+    )
+
+
+def build_unify_name_discord_text(target_author, old_name, new_name, editor, source_authors=()):
+    """名義の統一用のDiscordテキストを構築する（#1137）
+
+    source_authorsには、曲（統一先が既存の別Authorの場合は別名・リンクも）を
+    統一先へ移したAuthorを渡す
+    """
+    rename_note = f"**変更前**：`{old_name}`\n" if old_name != new_name else ""
+    source_note = (
+        "**統一元**：" + ", ".join(f"`Author(id={a.id}, name={a.name})`" for a in source_authors) + "\n"
+        if source_authors else ""
     )
     return (
-        f"一番有名な名義が変更されました\n"
-        f"{ROOT_URL}/authors/{author.id}/aliases\n\n"
-        f"**変更前**：`{old_name}`\n"
-        f"**変更後**：`{new_name}`\n"
-        f"{merge_note}"
+        f"名義が統一されました\n"
+        f"{ROOT_URL}/authors/{target_author.id}/aliases\n\n"
+        f"{rename_note}"
+        f"**統一後**：`{new_name}`\n"
+        f"{source_note}"
         f"編集者：`{editor}`"
     )

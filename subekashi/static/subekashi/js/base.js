@@ -382,7 +382,7 @@ const TUTORIALS = {
     "select": "詳細検索の選択肢である界隈曲の種類・ネタ曲・並び替えの状態を保存します。保存しない場合、選択肢は上から、「全て表示」、「全て表示」、「更新日が遅い順」になります。",
     "is_limited": "作者の要望により全て歌詞の所為です。上で、検索にヒットしない状態になっています。<br>YouTubeの限定公開とは別のものです。",
     "is_questionable": "界隈曲かどうか議論の余地があり、人それぞれ認識が異なる曲に表示されるタグです。",
-    "primary-name": "選択した名義が、この作者の一番有名な名義になります。<br>曲の登録・編集時に「以前の名称」を入力すると、自動的にこの名義に変換されて保存されます。"
+    "unify-name": "この作者の名義を、選択した名義に統一します。<br>「以前の名称」と同じ名前で別の作者として登録されている曲も、選択した名義の作者にまとめられます。<br>曲の登録・編集時に「以前の名称」を入力すると、自動的に統一した名義に変換されて保存されます。"
 }
 
 function showTutorial(place) {
@@ -394,7 +394,7 @@ function showTutorial(place) {
 function deleteToastUrlQuery() {
     const url = new URL(window.location.href);
     let changed = false;
-    for (const key of ['toast', 'primary_name_normalized']) {
+    for (const key of ['toast', 'name_unified']) {
         if (url.searchParams.has(key)) {
             url.searchParams.delete(key);
             changed = true;

@@ -346,10 +346,10 @@ class SongNewViewTest(TestCase):
         self.assertTrue(song.is_subeana)
 
     def test_post_with_past_alias_author_name_normalizes_and_flags_toast(self):
-        # 入力した作者名がpast別名と一致する場合、一番有名な名義に正規化されて
+        # 入力した作者名がpast別名と一致する場合、統一した名義に正規化されて
         # 保存される。redirect先のURLにその旨を伝えるtoast用のフラグが付与される
-        primary_author = Author.objects.create(name="現在の名義")
-        AuthorAlias.objects.create(name="以前の名義", author=primary_author, alias_type="past")
+        unified_author = Author.objects.create(name="現在の名義")
+        AuthorAlias.objects.create(name="以前の名義", author=unified_author, alias_type="past")
 
         response = self.client.post(
             reverse("subekashi:song_new"),
@@ -357,9 +357,9 @@ class SongNewViewTest(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertIn("primary_name_normalized=1", response.url)
+        self.assertIn("name_unified=1", response.url)
         song = Song.objects.get(title="正規化テスト曲")
-        self.assertIn(primary_author, song.authors.all())
+        self.assertIn(unified_author, song.authors.all())
 
     def test_post_without_normalization_does_not_flag_toast(self):
         response = self.client.post(
@@ -367,7 +367,7 @@ class SongNewViewTest(TestCase):
             {"url": "", "authors": "正規化されない作者", "title": "通常テスト曲"},
         )
         self.assertEqual(response.status_code, 302)
-        self.assertNotIn("primary_name_normalized", response.url)
+        self.assertNotIn("name_unified", response.url)
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
@@ -514,8 +514,8 @@ class SongEditViewTest(TestCase):
         self.assertTrue(self.song.is_subeana)
 
     def test_post_with_past_alias_author_name_normalizes_and_flags_toast(self):
-        primary_author = Author.objects.create(name="現在の名義")
-        AuthorAlias.objects.create(name="以前の名義", author=primary_author, alias_type="past")
+        unified_author = Author.objects.create(name="現在の名義")
+        AuthorAlias.objects.create(name="以前の名義", author=unified_author, alias_type="past")
 
         response = self.client.post(
             reverse("subekashi:song_edit", args=[self.song.id]),
@@ -523,9 +523,9 @@ class SongEditViewTest(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertIn("primary_name_normalized=1", response.url)
+        self.assertIn("name_unified=1", response.url)
         self.song.refresh_from_db()
-        self.assertIn(primary_author, self.song.authors.all())
+        self.assertIn(unified_author, self.song.authors.all())
 
     def test_post_without_normalization_does_not_flag_toast(self):
         response = self.client.post(
@@ -533,7 +533,7 @@ class SongEditViewTest(TestCase):
             {"title": "編集テスト曲", "authors": "正規化されない作者", "url": "", "imitate": "", "lyrics": ""},
         )
         self.assertEqual(response.status_code, 302)
-        self.assertNotIn("primary_name_normalized", response.url)
+        self.assertNotIn("name_unified", response.url)
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
@@ -1472,7 +1472,7 @@ class AuthorAliasesViewTransitiveResolutionTest(TestCase):
         # #1023: 遷移先author idの補完的な問い合わせが、クラスタ全体ではなく
         # 未解決の名前(B・E)のみを対象にした1クエリに収まっていることの回帰防止テスト。
         # クエリ数が増えた場合はこの値を更新しつつ、原因を確認すること
-        # （10クエリ目は#1008で追加した一番有名な名義の候補一覧取得）
+        # （10クエリ目は#1008で追加した名義の統一先の候補一覧取得）
         with self.assertNumQueries(10):
             self.client.get(reverse("subekashi:author_aliases", args=[self.c.id]))
 
@@ -1568,12 +1568,12 @@ class AuthorAliasNewViewTest(TestCase):
         self.assertIn("チャンネルページへのリンク", group_option)
         self.assertNotIn("チャンネルページへのリンク", abbr_option)
 
-    def test_past_description_mentions_primary_name(self):
-        # past種別の説明に、一番有名な名義として選択できる旨を含める（#1029）
+    def test_past_description_mentions_unify_name(self):
+        # past種別の説明に、名義の統一先として選択できる旨を含める（#1029、#1137）
         response = self.client.get(reverse("subekashi:author_alias_new", args=[self.author.id]))
         content = response.content.decode()
         past_option = content[content.index('value="past"'):content.index('</option>', content.index('value="past"'))]
-        self.assertIn("一番有名な名義", past_option)
+        self.assertIn("名義を統一する", past_option)
 
     def test_group_option_is_available(self):
         response = self.client.get(reverse("subekashi:author_alias_new", args=[self.author.id]))
@@ -1728,7 +1728,7 @@ class AuthorAliasEditViewTest(TestCase):
         self.assertContains(response, "戻る")
 
     def test_submit_button_matches_confirm_screen_style(self):
-        # 更新ボタンを一番有名な名義の変更確認画面と同様のdummybutton形式にする（#1024）
+        # 更新ボタンを名義の統一の確認画面と同様のdummybutton形式にする（#1024）
         response = self.client.get(
             reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id])
         )
@@ -1934,37 +1934,60 @@ class AuthorAliasDeleteViewTest(TestCase):
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
-class AuthorPrimaryNameSetViewTest(TestCase):
-    """AuthorPrimaryNameSetView (/authors/<id>/aliases/primary) のテスト（#1008）"""
+class AuthorUnifyNameSetViewTest(TestCase):
+    """AuthorUnifyNameSetView (/authors/<id>/aliases/unify) のテスト（#1008、#1029、#1137）"""
 
     def setUp(self):
         self.client = Client()
         self.author = Author.objects.create(name="現在の名義")
         self.past_alias = AuthorAlias.objects.create(name="以前の名義", author=self.author, alias_type="past")
 
+    def _post(self, name, author=None):
+        author = author or self.author
+        return self.client.post(reverse("subekashi:author_unify_name_set", args=[author.id]), {"name": name})
+
+    def _aliases_url(self, author, toast):
+        return reverse("subekashi:author_aliases", args=[author.id]) + f"?toast={toast}"
+
     def test_nonexistent_author_returns_404(self):
         response = self.client.post(
-            reverse("subekashi:author_primary_name_set", args=[99999]), {"name": "以前の名義"}
+            reverse("subekashi:author_unify_name_set", args=[99999]), {"name": "以前の名義"}
         )
         self.assertEqual(response.status_code, 404)
 
-    def test_selecting_current_name_is_noop_and_redirects(self):
-        response = self.client.post(
-            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
-            {"name": self.author.name},
-        )
-        self.assertRedirects(response, reverse("subekashi:author_aliases", args=[self.author.id]))
+    @patch("subekashi.views.author_alias.send_discord")
+    def test_selecting_current_name_with_nothing_to_move_is_noop(self, mock_send_discord):
+        # 統一先が現在の名義で、移す曲も無い場合は何も変更せず、Discord通知も送らない
+        response = self._post(self.author.name)
+
+        self.assertRedirects(response, self._aliases_url(self.author, "unify_noop"))
         self.author.refresh_from_db()
         self.assertEqual(self.author.name, "現在の名義")
+        self.assertFalse(mock_send_discord.called)
+        self.assertEqual(History.objects.count(), 0)
+
+    def test_selecting_current_name_moves_songs_of_past_alias_author(self):
+        # フォームを変更しない（現在の名義のまま）送信でも、以前の名称と同名の
+        # 別Authorの曲を現在の名義へ統一できる（#1137）
+        past_author = Author.objects.create(name="以前の名義")
+        song = Song.objects.create(title="以前の名義の曲")
+        song.authors.add(past_author)
+
+        response = self._post(self.author.name)
+
+        self.assertRedirects(response, self._aliases_url(self.author, "unify"))
+        self.author.refresh_from_db()
+        self.assertEqual(self.author.name, "現在の名義")
+        self.assertEqual(list(song.authors.all()), [self.author])
+        # 曲を移したAuthorは削除されず、曲数が0になるだけ
+        self.assertTrue(Author.objects.filter(pk=past_author.pk).exists())
+        self.assertEqual(past_author.songs.count(), 0)
+        self.assertTrue(AuthorAlias.objects.filter(pk=self.past_alias.pk).exists())
 
     def test_selecting_past_alias_swaps_name_and_reregisters_old_name_as_past(self):
-        response = self.client.post(
-            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
-            {"name": "以前の名義"},
-        )
-        self.assertRedirects(
-            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=primary"
-        )
+        response = self._post("以前の名義")
+
+        self.assertRedirects(response, self._aliases_url(self.author, "unify"))
         self.author.refresh_from_db()
         self.assertEqual(self.author.name, "以前の名義")
         # 選ばれた側の別名行は消え、旧名が新たなpast別名として登録される
@@ -1973,306 +1996,315 @@ class AuthorPrimaryNameSetViewTest(TestCase):
         self.assertEqual(new_alias.author, self.author)
         self.assertEqual(new_alias.alias_type, "past")
 
+    def test_selecting_past_alias_also_moves_songs_of_other_past_alias_authors(self):
+        AuthorAlias.objects.create(name="以前の名義2", author=self.author, alias_type="past")
+        other_past_author = Author.objects.create(name="以前の名義2")
+        song = Song.objects.create(title="以前の名義2の曲")
+        song.authors.add(other_past_author)
+
+        self._post("以前の名義")
+
+        self.author.refresh_from_db()
+        self.assertEqual(self.author.name, "以前の名義")
+        self.assertEqual(list(song.authors.all()), [self.author])
+        self.assertTrue(Author.objects.filter(pk=other_past_author.pk).exists())
+        self.assertEqual(other_past_author.songs.count(), 0)
+
+    def test_authors_matching_non_past_aliases_are_not_unified(self):
+        # 別名義（another）等、past以外の種別は意図的に区別すべき名義のため統一の対象外
+        AuthorAlias.objects.create(name="別名義", author=self.author, alias_type="another")
+        another_author = Author.objects.create(name="別名義")
+        song = Song.objects.create(title="別名義の曲")
+        song.authors.add(another_author)
+        Song.objects.create(title="以前の名義の曲").authors.add(Author.objects.create(name="以前の名義"))
+
+        self._post(self.author.name)
+
+        self.assertEqual(list(song.authors.all()), [another_author])
+
     def test_selecting_non_past_alias_type_is_rejected(self):
         AuthorAlias.objects.create(name="別名義候補", author=self.author, alias_type="another")
-        response = self.client.post(
-            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
-            {"name": "別名義候補"},
-        )
-        self.assertRedirects(
-            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=primary_error"
-        )
+        response = self._post("別名義候補")
+        self.assertRedirects(response, self._aliases_url(self.author, "unify_error"))
         self.author.refresh_from_db()
         self.assertEqual(self.author.name, "現在の名義")
 
-    def test_selecting_name_conflicting_with_another_author_merges_and_deletes_it(self):
-        # 選択した名義が既に別のAuthorとして登録されている場合、そのAuthorを
-        # このauthorに統合（マージ）した上で名義を変更する（#1029）
-        conflicting = Author.objects.create(name="以前の名義")
-        song = Song.objects.create(title="conflicting側の曲")
-        song.authors.add(conflicting)
-        link = AuthorLink.objects.create(url="https://example.com/conflicting", author=conflicting)
-        conflicting_alias = AuthorAlias.objects.create(name="conflictingの別名", author=conflicting, alias_type="another")
+    def test_selecting_name_of_existing_author_makes_it_the_target(self):
+        # Author.nameはuniqueのため、選択した名義と同名の既存Authorがあればそれを統一先とし、
+        # このauthorの曲・別名・作者リンクを全てそちらへ移す。このauthor自体は削除しない（#1137）
+        target = Author.objects.create(name="以前の名義")
+        target_song = Song.objects.create(title="統一先の曲")
+        target_song.authors.add(target)
+        target_link = AuthorLink.objects.create(url="https://example.com/target", author=target)
+        own_song = Song.objects.create(title="このauthorの曲")
+        own_song.authors.add(self.author)
+        own_link = AuthorLink.objects.create(url="https://example.com/own", author=self.author)
+        own_alias = AuthorAlias.objects.create(name="このauthorの略称", author=self.author, alias_type="abbr")
 
-        response = self.client.post(
-            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
-            {"name": "以前の名義"},
-        )
+        response = self._post("以前の名義")
 
-        self.assertRedirects(
-            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=primary"
-        )
+        self.assertRedirects(response, self._aliases_url(target, "unify"))
         self.author.refresh_from_db()
-        self.assertEqual(self.author.name, "以前の名義")
-        self.assertFalse(Author.objects.filter(pk=conflicting.pk).exists())
+        self.assertEqual(self.author.name, "現在の名義")
+        self.assertEqual(self.author.songs.count(), 0)
+        self.assertEqual(set(target.songs.all()), {target_song, own_song})
 
-        song.refresh_from_db()
-        self.assertIn(self.author, song.authors.all())
+        own_link.refresh_from_db()
+        self.assertEqual(own_link.author_id, target.id)
+        target_link.refresh_from_db()
+        self.assertEqual(target_link.author_id, target.id)
+        own_alias.refresh_from_db()
+        self.assertEqual(own_alias.author_id, target.id)
 
-        link.refresh_from_db()
-        self.assertEqual(link.author_id, self.author.id)
+        # 選択した別名は統一先自身の名前と同じになるため削除され、旧名が統一先のpast別名になる
+        self.assertFalse(AuthorAlias.objects.filter(pk=self.past_alias.pk).exists())
+        old_name_alias = AuthorAlias.objects.get(name="現在の名義")
+        self.assertEqual(old_name_alias.author_id, target.id)
+        self.assertEqual(old_name_alias.alias_type, "past")
+        self.assertFalse(self.author.aliases.exists())
 
-        conflicting_alias.refresh_from_db()
-        self.assertEqual(conflicting_alias.author_id, self.author.id)
+    def test_existing_target_reuses_its_alias_matching_old_name(self):
+        # 統一先が既にold_nameと同名の別名を持っている場合、重複登録（IntegrityError）を
+        # 起こさずにその別名を活かし、他のpast別名と同様に選択候補になるようalias_typeを"past"へ揃える
+        target = Author.objects.create(name="以前の名義")
+        existing_alias = AuthorAlias.objects.create(name="現在の名義", author=target, alias_type="another")
 
-        new_alias = AuthorAlias.objects.get(name="現在の名義")
-        self.assertEqual(new_alias.author, self.author)
-        self.assertEqual(new_alias.alias_type, "past")
+        response = self._post("以前の名義")
 
-    def test_merge_records_history_on_each_reassigned_song(self):
-        # 統合によりauthorが変わる曲それぞれの編集履歴一覧にも記録する（#1034）。
-        # conflicting_authorはname=new_nameで検索されるため、名前だけを編集前後に
-        # 並べると常に同一文字列になり「何も変わっていないように」見えてしまう。
-        # 実際に変わったのはAuthorの実体（id）であるため、idを含めて記録する
-        conflicting = Author.objects.create(name="以前の名義")
-        conflicting_id = conflicting.id
-        song1 = Song.objects.create(title="統合対象曲1")
-        song1.authors.add(conflicting)
-        song2 = Song.objects.create(title="統合対象曲2")
-        song2.authors.add(conflicting)
-        unrelated_author = Author.objects.create(name="無関係な作者")
+        self.assertRedirects(response, self._aliases_url(target, "unify"))
+        existing_alias.refresh_from_db()
+        self.assertEqual(existing_alias.author_id, target.id)
+        self.assertEqual(existing_alias.alias_type, "past")
+        self.assertEqual(AuthorAlias.objects.filter(name="現在の名義").count(), 1)
+
+    def test_existing_target_with_same_group_alias_does_not_fail(self):
+        # グループ名は(name, author)単位でユニークなため、統一先が既に同じグループ名を
+        # 持つ場合はこのauthor側のものを移さずに削除する
+        target = Author.objects.create(name="以前の名義")
+        AuthorAlias.objects.create(name="合作グループ", author=target, alias_type="group")
+        AuthorAlias.objects.create(name="合作グループ", author=self.author, alias_type="group")
+
+        response = self._post("以前の名義")
+
+        self.assertRedirects(response, self._aliases_url(target, "unify"))
+        self.assertEqual(AuthorAlias.objects.filter(name="合作グループ", author=target).count(), 1)
+        self.assertFalse(AuthorAlias.objects.filter(name="合作グループ", author=self.author).exists())
+
+    def test_moved_songs_record_history(self):
+        # 統一によりauthorが変わる曲それぞれの編集履歴一覧にも記録する（#1034）。
+        # 曲を移したAuthorと統一先が同名になる場合もあるため、idを含めて実体が変わったことを明示する
+        target = Author.objects.create(name="以前の名義")
+        song1 = Song.objects.create(title="統一対象曲1")
+        song1.authors.add(self.author)
+        song2 = Song.objects.create(title="統一対象曲2")
+        song2.authors.add(self.author)
         unrelated_song = Song.objects.create(title="無関係な曲")
-        unrelated_song.authors.add(unrelated_author)
+        unrelated_song.authors.add(Author.objects.create(name="無関係な作者"))
 
-        self.client.post(
-            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
-            {"name": "以前の名義"},
-        )
+        self._post("以前の名義")
 
         for song in (song1, song2):
             # 将来同様の重複バグが再発した際に検知できるよう、件数も明示的に確認する
             self.assertEqual(History.get_for_song(song).count(), 1)
             history = History.get_for_song(song).first()
-            self.assertIsNotNone(history)
             self.assertEqual(history.history_type, "edit")
-            self.assertEqual(history.title, "一番有名な名義の変更により作者を統合")
-            merge_row = next((row for row in history.changes if row[0] == "作者"), None)
-            self.assertIsNotNone(merge_row)
-            self.assertEqual(merge_row[1], f"id={conflicting_id}, name=以前の名義")
-            self.assertEqual(merge_row[2], f"id={self.author.id}, name=以前の名義")
-
-        # このauthorとは無関係な曲の編集履歴は増えない
+            self.assertEqual(history.title, "名義の統一により作者を統合")
+            self.assertEqual(
+                history.changes[1], ["作者", f"id={self.author.id}, name=現在の名義", f"id={target.id}, name=以前の名義"]
+            )
         self.assertEqual(History.get_for_song(unrelated_song).count(), 0)
 
-    def test_rename_without_merge_records_history_on_existing_songs(self):
-        # 衝突するAuthorが存在しない単純な名義変更でも、元々このauthorに
-        # 紐づいている曲の編集履歴一覧に「作者の名義が変更された」旨を記録する（#1034）
+    def test_rename_records_history_on_existing_songs(self):
+        # 名前の変更により作者の表示名が変わる、元々このauthorに紐づいている曲にも記録する（#1034）
         own_song = Song.objects.create(title="既存の曲")
         own_song.authors.add(self.author)
 
-        self.client.post(
-            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
-            {"name": "以前の名義"},
-        )
+        self._post("以前の名義")
 
-        # 将来同様の重複バグが再発した際に検知できるよう、件数も明示的に確認する
         self.assertEqual(History.get_for_song(own_song).count(), 1)
         history = History.get_for_song(own_song).first()
-        self.assertIsNotNone(history)
         self.assertEqual(history.history_type, "edit")
-        self.assertEqual(history.title, "一番有名な名義の変更により作者を変更")
-        rename_row = next((row for row in history.changes if row[0] == "作者"), None)
-        self.assertIsNotNone(rename_row)
-        self.assertEqual(rename_row[1], "現在の名義")
-        self.assertEqual(rename_row[2], "以前の名義")
+        self.assertEqual(history.title, "名義の統一により作者名を変更")
+        self.assertEqual(history.changes[1], ["作者", "現在の名義", "以前の名義"])
 
-    def test_merge_and_rename_histories_both_created_in_same_request(self):
-        # マージ対象の曲（統合側）と、元々このauthorに紐づく別の曲（改名側）が
-        # 同時に存在するケースで、1回のbulk_create()呼び出しで両方に正しく
-        # 履歴が作成されることを確認する（#1034）
-        conflicting = Author.objects.create(name="以前の名義")
-        merged_song = Song.objects.create(title="統合対象曲")
-        merged_song.authors.add(conflicting)
+    def test_moved_and_renamed_song_histories_both_created_in_same_request(self):
+        AuthorAlias.objects.create(name="以前の名義2", author=self.author, alias_type="past")
+        moved_song = Song.objects.create(title="統一対象曲")
+        moved_song.authors.add(Author.objects.create(name="以前の名義2"))
         own_song = Song.objects.create(title="元々このauthorの曲")
         own_song.authors.add(self.author)
 
-        self.client.post(
-            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
-            {"name": "以前の名義"},
-        )
+        self._post("以前の名義")
 
-        self.assertEqual(History.get_for_song(merged_song).count(), 1)
-        self.assertEqual(History.get_for_song(merged_song).first().title, "一番有名な名義の変更により作者を統合")
-
+        self.assertEqual(History.get_for_song(moved_song).count(), 1)
+        self.assertEqual(History.get_for_song(moved_song).first().title, "名義の統一により作者を統合")
         self.assertEqual(History.get_for_song(own_song).count(), 1)
-        self.assertEqual(History.get_for_song(own_song).first().title, "一番有名な名義の変更により作者を変更")
+        self.assertEqual(History.get_for_song(own_song).first().title, "名義の統一により作者名を変更")
 
-    def test_song_shared_by_both_authors_before_merge_gets_only_one_history(self):
-        # あるSongが統合前から既にself.authorとconflicting_author双方に紐づいて
-        # いた場合、マージ側・名義変更側の両方から履歴が1件ずつ、計2件作成されて
-        # しまわないよう重複を排除する（#1034）
-        conflicting = Author.objects.create(name="以前の名義")
+    def test_song_shared_by_author_and_moved_author_gets_only_one_history(self):
+        AuthorAlias.objects.create(name="以前の名義2", author=self.author, alias_type="past")
         shared_song = Song.objects.create(title="共著の曲")
-        shared_song.authors.add(self.author, conflicting)
+        shared_song.authors.add(self.author, Author.objects.create(name="以前の名義2"))
 
-        self.client.post(
-            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
-            {"name": "以前の名義"},
-        )
+        self._post("以前の名義")
 
         self.assertEqual(History.get_for_song(shared_song).count(), 1)
+        self.assertEqual(list(shared_song.authors.all()), [self.author])
 
-    def test_merge_reuses_conflicting_authors_alias_matching_old_name(self):
-        # conflicting_authorが既にold_nameと同名の別名を持っている場合、
-        # マージ後にその別名をそのまま活かし、重複登録（IntegrityError）を起こさない。
-        # 他のpast別名と同様に今後も選択候補になるよう、alias_typeは"past"へ揃える
-        conflicting = Author.objects.create(name="以前の名義")
-        existing_alias = AuthorAlias.objects.create(name="現在の名義", author=conflicting, alias_type="another")
+    def test_post_creates_history_on_target_and_moved_authors(self):
+        AuthorAlias.objects.create(name="以前の名義2", author=self.author, alias_type="past")
+        moved_author = Author.objects.create(name="以前の名義2")
+        Song.objects.create(title="統一対象曲").authors.add(moved_author)
 
-        response = self.client.post(
-            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
-            {"name": "以前の名義"},
+        self._post("以前の名義")
+
+        history = History.get_for_author(self.author).first()
+        self.assertEqual(history.history_type, "edit")
+        self.assertEqual(history.title, "名義を『以前の名義』に統一")
+        moved_row = ["統一した作者", f"id={moved_author.id}, name=以前の名義2", f"id={self.author.id}, name=以前の名義"]
+        self.assertEqual(history.changes[1:], [["名義", "現在の名義", "以前の名義"], moved_row])
+        # 曲を移したAuthorは削除されずに残るため、そちらの編集履歴一覧にも統一先を記録する
+        moved_history = History.get_for_author(moved_author).first()
+        self.assertEqual(moved_history.title, "名義を『以前の名義』に統一")
+        self.assertEqual(moved_history.changes[1:], [moved_row])
+
+    def test_authors_without_songs_are_not_recorded_as_unified(self):
+        # 以前の名称と同名のAuthorが存在しても、曲を持たなければ何も変わらないため記録しない
+        empty_author = Author.objects.create(name="以前の名義2")
+        AuthorAlias.objects.create(name="以前の名義2", author=self.author, alias_type="past")
+
+        self._post("以前の名義")
+
+        history = History.get_for_author(self.author).first()
+        self.assertEqual(history.changes[1:], [["名義", "現在の名義", "以前の名義"]])
+        self.assertEqual(History.get_for_author(empty_author).count(), 0)
+
+    def test_moved_authors_own_history_is_kept(self):
+        # 曲を移したAuthorは削除しないため、過去のHistoryの紐付けもそのまま残る（#1137）
+        past_author = Author.objects.create(name="以前の名義")
+        Song.objects.create(title="以前の名義の曲").authors.add(past_author)
+        old_history = History.create_for_author(
+            author=past_author, title="別名を追加", history_type="edit", changes=None,
+            editor=Editor.objects.create(ip="127.0.0.9"),
         )
 
-        self.assertRedirects(
-            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=primary"
-        )
-        self.author.refresh_from_db()
-        self.assertEqual(self.author.name, "以前の名義")
+        self._post(self.author.name)
 
-        existing_alias.refresh_from_db()
-        self.assertEqual(existing_alias.author_id, self.author.id)
-        self.assertEqual(existing_alias.alias_type, "past")
-        self.assertEqual(AuthorAlias.objects.filter(name="現在の名義").count(), 1)
+        old_history.refresh_from_db()
+        self.assertEqual(old_history.author_id, past_author.id)
+        self.assertEqual(old_history.title, "別名を追加")
 
-    def test_merging_songs_query_count_does_not_scale_with_song_count(self):
-        # conflicting_authorのSongをauthor.songs.add(*queryset)でまとめて付け替える
-        # ことで、統合対象の曲数が増えてもクエリ数がほぼ変わらないことを確認する。
+    def test_moving_songs_query_count_does_not_scale_with_song_count(self):
+        # 曲をidでまとめて付け替え、編集履歴もbulk_create()でまとめて作成することで、
+        # 統一対象の曲数が増えてもクエリ数が変わらないことを確認する。
         # Editor.get_or_create_from_ip()はIPごとに最初の1回だけINSERTが発生するため、
         # 計測対象のリクエストより前にウォームアップしてクエリ数の比較に影響しないようにする
         warmup_author = Author.objects.create(name="ウォームアップ用作者")
         AuthorAlias.objects.create(name="ウォームアップ用別名", author=warmup_author, alias_type="past")
-        self.client.post(
-            reverse("subekashi:author_primary_name_set", args=[warmup_author.id]),
-            {"name": "ウォームアップ用別名"},
-        )
+        self._post("ウォームアップ用別名", author=warmup_author)
 
         author_one_song = Author.objects.create(name="現在の名義A")
         AuthorAlias.objects.create(name="以前の名義A", author=author_one_song, alias_type="past")
-        conflicting_one_song = Author.objects.create(name="以前の名義A")
-        Song.objects.create(title="曲A").authors.add(conflicting_one_song)
+        Song.objects.create(title="曲A").authors.add(Author.objects.create(name="以前の名義A"))
 
         with CaptureQueriesContext(connection) as ctx_one_song:
-            self.client.post(
-                reverse("subekashi:author_primary_name_set", args=[author_one_song.id]),
-                {"name": "以前の名義A"},
-            )
+            self._post("現在の名義A", author=author_one_song)
 
         author_many_songs = Author.objects.create(name="現在の名義B")
         AuthorAlias.objects.create(name="以前の名義B", author=author_many_songs, alias_type="past")
-        conflicting_many_songs = Author.objects.create(name="以前の名義B")
+        past_author_many_songs = Author.objects.create(name="以前の名義B")
         for i in range(5):
-            Song.objects.create(title=f"曲B{i}").authors.add(conflicting_many_songs)
+            Song.objects.create(title=f"曲B{i}").authors.add(past_author_many_songs)
 
         with CaptureQueriesContext(connection) as ctx_many_songs:
-            self.client.post(
-                reverse("subekashi:author_primary_name_set", args=[author_many_songs.id]),
-                {"name": "以前の名義B"},
-            )
+            self._post("現在の名義B", author=author_many_songs)
 
+        self.assertEqual(author_many_songs.songs.count(), 5)
         self.assertEqual(len(ctx_one_song.captured_queries), len(ctx_many_songs.captured_queries))
-
-
-    def test_merge_records_history_with_merged_author_info(self):
-        conflicting = Author.objects.create(name="以前の名義")
-        conflicting_id = conflicting.id
-
-        self.client.post(
-            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
-            {"name": "以前の名義"},
-        )
-
-        history = History.get_for_author(self.author).first()
-        self.assertIsNotNone(history)
-        merge_row = next((row for row in history.changes if row[0] == "統合したAuthor"), None)
-        self.assertIsNotNone(merge_row)
-        self.assertIn(f"id={conflicting_id}", merge_row[1])
-
-    def test_merge_does_not_modify_conflicting_authors_own_history(self):
-        # マージ対象Authorの過去のHistoryは改変しない（Author自体はon_delete=SET_NULLで
-        # authorがNULLになるだけで、Historyの内容自体は保持される）
-        conflicting = Author.objects.create(name="以前の名義")
-        other_editor = Editor.objects.create(ip="127.0.0.9")
-        old_history = History.create_for_author(
-            author=conflicting, title="別名を追加", history_type="edit", changes=None, editor=other_editor,
-        )
-
-        self.client.post(
-            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
-            {"name": "以前の名義"},
-        )
-
-        old_history.refresh_from_db()
-        self.assertIsNone(old_history.author)
-        self.assertEqual(old_history.title, "別名を追加")
-
-    def test_post_creates_history_with_before_and_after_names(self):
-        self.client.post(
-            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
-            {"name": "以前の名義"},
-        )
-        history = History.get_for_author(self.author).first()
-        self.assertIsNotNone(history)
-        self.assertEqual(history.history_type, "edit")
-        self.assertIn("以前の名義", history.title)
-        self.assertEqual(history.changes[1], ["一番有名な名義", "現在の名義", "以前の名義"])
 
     @patch("subekashi.views.author_alias.send_discord")
     def test_post_sends_discord_notification(self, mock_send_discord):
         mock_send_discord.return_value = True
-        self.client.post(
-            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
-            {"name": "以前の名義"},
-        )
+        self._post("以前の名義")
         self.assertTrue(mock_send_discord.called)
         content = mock_send_discord.call_args[0][1]
         self.assertIn("現在の名義", content)
         self.assertIn("以前の名義", content)
 
     @patch("subekashi.views.author_alias.send_discord")
-    def test_post_discord_notification_mentions_merged_author(self, mock_send_discord):
-        conflicting = Author.objects.create(name="以前の名義")
+    def test_post_discord_notification_mentions_moved_authors(self, mock_send_discord):
+        past_author = Author.objects.create(name="以前の名義")
+        Song.objects.create(title="以前の名義の曲").authors.add(past_author)
         mock_send_discord.return_value = True
 
-        self.client.post(
-            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
-            {"name": "以前の名義"},
-        )
+        self._post(self.author.name)
 
         content = mock_send_discord.call_args[0][1]
-        self.assertIn(f"Author(id={conflicting.id})", content)
+        self.assertIn(f"Author(id={past_author.id}", content)
 
     @patch("subekashi.views.author_alias.send_discord")
-    def test_conflicting_author_deleted_concurrently_during_discord_wait_still_succeeds(self, mock_send_discord):
-        # send_discord()の完了を待つ間に、統合対象のconflicting_authorが別のリクエストで
-        # 削除されてしまうケース。マージ部分をスキップして通常の名義切り替えとして完了する
-        conflicting = Author.objects.create(name="以前の名義")
+    def test_post_discord_failure_prevents_changes(self, mock_send_discord):
+        past_author = Author.objects.create(name="以前の名義2")
+        AuthorAlias.objects.create(name="以前の名義2", author=self.author, alias_type="past")
+        song = Song.objects.create(title="以前の名義2の曲")
+        song.authors.add(past_author)
+        mock_send_discord.return_value = False
 
-        def delete_conflicting_then_succeed(url, content):
-            conflicting.delete()
+        response = self._post("以前の名義")
+
+        self.assertEqual(response.status_code, 500)
+        self.author.refresh_from_db()
+        self.assertEqual(self.author.name, "現在の名義")
+        self.assertTrue(AuthorAlias.objects.filter(pk=self.past_alias.pk).exists())
+        self.assertEqual(list(song.authors.all()), [past_author])
+        self.assertEqual(History.objects.count(), 0)
+
+    @patch("subekashi.views.author_alias.send_discord")
+    def test_alias_deleted_concurrently_during_discord_wait_redirects_with_error(self, mock_send_discord):
+        # send_discord()（ネットワークI/O）の完了を待つ間に、別のリクエストが対象の
+        # past別名を削除してしまうケースを、send_discordのside_effectで模擬する。
+        # DoesNotExistが未処理の例外(500)にならず、他の異常系と同じくtoast=unify_error
+        # へ穏当にリダイレクトされることを確認する
+        def delete_alias_then_succeed(url, content):
+            self.past_alias.delete()
             return True
 
-        mock_send_discord.side_effect = delete_conflicting_then_succeed
+        mock_send_discord.side_effect = delete_alias_then_succeed
 
-        response = self.client.post(
-            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
-            {"name": "以前の名義"},
-        )
+        response = self._post("以前の名義")
 
-        self.assertRedirects(
-            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=primary"
-        )
+        self.assertRedirects(response, self._aliases_url(self.author, "unify_error"))
+        self.author.refresh_from_db()
+        self.assertEqual(self.author.name, "現在の名義")
+        self.assertEqual(History.get_for_author(self.author).count(), 0)
+
+    @patch("subekashi.views.author_alias.send_discord")
+    def test_existing_target_deleted_concurrently_during_discord_wait_falls_back_to_rename(self, mock_send_discord):
+        # send_discord()の完了を待つ間に、統一先の既存Authorが別のリクエストで削除されてしまう
+        # ケース。統一先を再取得し、このauthorの名前を変更する通常の統一として完了する
+        target = Author.objects.create(name="以前の名義")
+
+        def delete_target_then_succeed(url, content):
+            target.delete()
+            return True
+
+        mock_send_discord.side_effect = delete_target_then_succeed
+
+        response = self._post("以前の名義")
+
+        self.assertRedirects(response, self._aliases_url(self.author, "unify"))
         self.author.refresh_from_db()
         self.assertEqual(self.author.name, "以前の名義")
 
     @patch("subekashi.views.author_alias.send_discord")
     def test_unrelated_alias_matching_old_name_created_during_discord_wait_is_not_corrupted(self, mock_send_discord):
-        # send_discord()の待機中に、マージ対象(conflicting_author)とは無関係な別authorが
-        # old_nameと同名のAuthorAliasを新規作成してしまうケース（TOCTOU）。
-        # マージにより付け替わったものと誤認して所有者チェックなしに再利用（alias_typeの
-        # 書き換え）してしまうと、無関係な別authorのデータを破壊することになるため、
-        # 安全側に倒して統合全体をロールバックすることを確認する
-        conflicting = Author.objects.create(name="以前の名義")
+        # send_discord()の待機中に、無関係な別authorがold_nameと同名のAuthorAliasを
+        # 新規作成してしまうケース（TOCTOU）。所有者チェックなしに再利用（alias_typeの
+        # 書き換え）してしまうと無関係な別authorのデータを破壊することになるため、
+        # 安全側に倒して統一全体をロールバックすることを確認する
+        target = Author.objects.create(name="以前の名義")
+        own_song = Song.objects.create(title="このauthorの曲")
+        own_song.authors.add(self.author)
         unrelated_author = Author.objects.create(name="無関係な作者")
 
         def create_unrelated_alias_then_succeed(url, content):
@@ -2281,59 +2313,17 @@ class AuthorPrimaryNameSetViewTest(TestCase):
 
         mock_send_discord.side_effect = create_unrelated_alias_then_succeed
 
-        response = self.client.post(
-            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
-            {"name": "以前の名義"},
-        )
+        response = self._post("以前の名義")
 
-        self.assertRedirects(
-            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=primary_error"
-        )
-        self.author.refresh_from_db()
-        self.assertEqual(self.author.name, "現在の名義")
-        # マージ・名義変更ともにロールバックされる
-        self.assertTrue(Author.objects.filter(pk=conflicting.pk).exists())
+        self.assertRedirects(response, self._aliases_url(self.author, "unify_error"))
+        # 曲の付け替え・別名の移動ともにロールバックされる
+        self.assertEqual(list(own_song.authors.all()), [self.author])
+        self.assertEqual(target.songs.count(), 0)
+        self.assertTrue(AuthorAlias.objects.filter(pk=self.past_alias.pk, author=self.author).exists())
         # 無関係な別名は書き換えられない
         unrelated_alias = AuthorAlias.objects.get(name="現在の名義")
         self.assertEqual(unrelated_alias.author_id, unrelated_author.id)
         self.assertEqual(unrelated_alias.alias_type, "another")
-
-    @patch("subekashi.views.author_alias.send_discord")
-    def test_post_discord_failure_prevents_name_change(self, mock_send_discord):
-        mock_send_discord.return_value = False
-        response = self.client.post(
-            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
-            {"name": "以前の名義"},
-        )
-        self.assertEqual(response.status_code, 500)
-        self.author.refresh_from_db()
-        self.assertEqual(self.author.name, "現在の名義")
-        self.assertTrue(AuthorAlias.objects.filter(pk=self.past_alias.pk).exists())
-        self.assertEqual(History.get_for_author(self.author).count(), 0)
-
-    @patch("subekashi.views.author_alias.send_discord")
-    def test_alias_deleted_concurrently_during_discord_wait_redirects_with_error(self, mock_send_discord):
-        # send_discord()（ネットワークI/O）の完了を待つ間に、別のリクエストが対象の
-        # past別名を削除してしまうケースを、send_discordのside_effectで模擬する。
-        # DoesNotExistが未処理の例外(500)にならず、他の異常系と同じくtoast=primary_error
-        # へ穏当にリダイレクトされることを確認する
-        def delete_alias_then_succeed(url, content):
-            self.past_alias.delete()
-            return True
-
-        mock_send_discord.side_effect = delete_alias_then_succeed
-
-        response = self.client.post(
-            reverse("subekashi:author_primary_name_set", args=[self.author.id]),
-            {"name": "以前の名義"},
-        )
-
-        self.assertRedirects(
-            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=primary_error"
-        )
-        self.author.refresh_from_db()
-        self.assertEqual(self.author.name, "現在の名義")
-        self.assertEqual(History.get_for_author(self.author).count(), 0)
 
     def test_old_name_conflicting_with_existing_alias_is_rejected_before_discord(self):
         # AuthorAlias.nameはグローバルにuniqueなため、旧名(old_name)が既に別のauthorの
@@ -2344,152 +2334,169 @@ class AuthorPrimaryNameSetViewTest(TestCase):
         AuthorAlias.objects.create(name=self.author.name, author=other, alias_type="another")
 
         with patch("subekashi.views.author_alias.send_discord") as mock_send_discord:
-            response = self.client.post(
-                reverse("subekashi:author_primary_name_set", args=[self.author.id]),
-                {"name": "以前の名義"},
-            )
+            response = self._post("以前の名義")
             self.assertFalse(mock_send_discord.called)
 
-        self.assertRedirects(
-            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=primary_error"
-        )
+        self.assertRedirects(response, self._aliases_url(self.author, "unify_error"))
         self.author.refresh_from_db()
         self.assertEqual(self.author.name, "現在の名義")
         self.assertTrue(AuthorAlias.objects.filter(pk=self.past_alias.pk).exists())
 
-    def test_alias_list_page_shows_primary_name_form_when_past_alias_exists(self):
+    def test_alias_list_page_shows_unify_name_form_when_past_alias_exists(self):
         response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
-        self.assertContains(response, 'id="primary-name-form"')
-        self.assertContains(response, "一番有名な名義")
+        self.assertContains(response, 'id="unify-name-form"')
+        self.assertContains(response, "名義を統一する")
+        self.assertContains(response, "showTutorial('unify-name')")
+        self.assertContains(
+            response, f'action="{reverse("subekashi:author_unify_name_confirm", args=[self.author.id])}"'
+        )
 
-    def test_alias_list_page_hides_primary_name_form_when_no_past_alias(self):
+    def test_alias_list_page_hides_unify_name_form_when_no_past_alias(self):
         # フォーム本体（HTML要素）が描画されないことを確認する。判定用JS自体は
         # フォームの有無に関わらず読み込まれ、要素が存在しない場合は何もせず
         # no-opする実装のため、bareな文字列一致ではなくid属性の有無で判定する
         author = Author.objects.create(name="別名なし作者")
         response = self.client.get(reverse("subekashi:author_aliases", args=[author.id]))
-        self.assertNotContains(response, 'id="primary-name-form"')
+        self.assertNotContains(response, 'id="unify-name-form"')
 
-    def test_primary_name_submit_button_is_disabled_and_labeled_change(self):
-        # 初期状態（現在の名義が選択されたまま）では変更不要なためボタンはdisabled、
-        # ラベルは「変更する」（#1029）
+    def test_unify_name_form_lists_past_aliases_above_arrow_and_current_name_below_checked(self):
+        # 「[ ] 以前の名称 ↓ [x] 現在の名義」の並びで、初期状態の統一先は現在の名義（#1137）
         response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
-        self.assertContains(response, 'id="primary-name-submit"')
-        self.assertContains(response, "変更する")
         content = response.content.decode()
-        submit_button = content[
-            content.index('id="primary-name-submit"'):content.index("</button>", content.index('id="primary-name-submit"'))
-        ]
-        self.assertIn("disabled", submit_button)
+        past_index = content.index('value="以前の名義"')
+        arrow_index = content.index('id="unify-name-arrow"')
+        current_index = content.index('value="現在の名義"')
+        self.assertLess(past_index, arrow_index)
+        self.assertLess(arrow_index, current_index)
+        current_input = content[current_index:content.index(">", current_index)]
+        self.assertIn("checked", current_input)
+        past_input = content[past_index:content.index(">", past_index)]
+        self.assertNotIn("checked", past_input)
+
+    def test_unify_name_submit_button_is_enabled_and_labeled_unify(self):
+        # フォームを変更しなくても統一できるよう、ボタンはdisabledにしない（#1137）
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+        content = response.content.decode()
+        submit_index = content.index('id="unify-name-submit"')
+        submit_button = content[submit_index:content.index("</button>", submit_index)]
+        self.assertNotIn("disabled", submit_button)
+        self.assertIn("統一する", submit_button)
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
-class AuthorPrimaryNameConfirmViewTest(TestCase):
-    """AuthorPrimaryNameConfirmView (/authors/<id>/aliases/primary/confirm) のテスト（#1029）
+class AuthorUnifyNameConfirmViewTest(TestCase):
+    """AuthorUnifyNameConfirmView (/authors/<id>/aliases/unify/confirm) のテスト（#1029、#1137）
 
-    衝突するAuthorが存在する場合に自動的にマージ・削除されてしまうことへの安全策として、
-    実際の変更前に内容を確認できる画面を経由させるためのビュー。
+    統一により他のAuthorの曲が統一先へ移ることへの安全策として、
+    実際の統一前に内容を確認できる画面を経由させるためのビュー。
     """
     def setUp(self):
         self.client = Client()
         self.author = Author.objects.create(name="現在の名義")
         self.past_alias = AuthorAlias.objects.create(name="以前の名義", author=self.author, alias_type="past")
 
+    def _get(self, name):
+        return self.client.get(reverse("subekashi:author_unify_name_confirm", args=[self.author.id]), {"name": name})
+
     def test_nonexistent_author_returns_404(self):
         response = self.client.get(
-            reverse("subekashi:author_primary_name_confirm", args=[99999]), {"name": "以前の名義"}
+            reverse("subekashi:author_unify_name_confirm", args=[99999]), {"name": "以前の名義"}
         )
         self.assertEqual(response.status_code, 404)
 
     def test_invalid_name_redirects_with_error(self):
-        response = self.client.get(
-            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "全く関係ない名前"}
-        )
+        response = self._get("全く関係ない名前")
         self.assertRedirects(
-            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=primary_error"
+            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=unify_error"
         )
 
-    def test_current_name_redirects_to_alias_list_without_confirmation(self):
-        response = self.client.get(
-            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": self.author.name}
+    def test_current_name_with_nothing_to_move_redirects_without_confirmation(self):
+        response = self._get(self.author.name)
+        self.assertRedirects(
+            response, reverse("subekashi:author_aliases", args=[self.author.id]) + "?toast=unify_noop"
         )
-        self.assertRedirects(response, reverse("subekashi:author_aliases", args=[self.author.id]))
 
-    def test_shows_confirmation_without_merge_warning_when_no_conflict(self):
-        response = self.client.get(
-            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
-        )
+    def test_current_name_shows_songs_of_past_alias_author(self):
+        # フォームを変更しない（現在の名義のまま）送信でも、以前の名称と同名の別Authorの曲を統一できる（#1137）
+        past_author = Author.objects.create(name="以前の名義")
+        Song.objects.create(title="以前の名義の曲").authors.add(past_author)
+
+        response = self._get(self.author.name)
+
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "現在の名義")
-        self.assertContains(response, "以前の名義")
-        self.assertNotContains(response, "削除されます")
+        self.assertContains(response, "以前の名義の曲")
+        self.assertContains(response, "の作者が『現在の名義』に統一されます")
+        self.assertContains(response, "作者『以前の名義』の曲は全て『現在の名義』に移動します")
+        self.assertNotContains(response, f"（id={past_author.id}）")
+        self.assertNotContains(response, "作者自体は削除されません")
 
-    def test_shows_merge_warning_when_conflicting_author_exists(self):
-        conflicting = Author.objects.create(name="以前の名義")
-        response = self.client.get(
-            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
-        )
+    def test_past_alias_without_existing_author_does_not_mention_existing_target(self):
+        response = self._get("以前の名義")
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, f"id={conflicting.id}")
-        self.assertContains(response, "削除されます")
+        self.assertNotContains(response, "既存の作者")
+        self.assertNotContains(response, "に移動します")
+
+    def test_existing_target_author_is_shown(self):
+        target = Author.objects.create(name="以前の名義")
+        response = self._get("以前の名義")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "既存の作者『以前の名義』が統一先となり、この作者の曲・別名・作者リンクは全てそちらに移動します")
+        self.assertNotContains(response, f"（id={target.id}）")
+        self.assertNotContains(response, "この作者自体は削除されません")
 
     def test_confirmation_page_does_not_modify_any_data(self):
-        Author.objects.create(name="以前の名義")
-        self.client.get(
-            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
-        )
+        past_author = Author.objects.create(name="以前の名義")
+        song = Song.objects.create(title="以前の名義の曲")
+        song.authors.add(past_author)
+
+        self._get("以前の名義")
+
         self.author.refresh_from_db()
         self.assertEqual(self.author.name, "現在の名義")
-        self.assertEqual(Author.objects.count(), 2)
+        self.assertEqual(list(song.authors.all()), [past_author])
+        self.assertTrue(AuthorAlias.objects.filter(pk=self.past_alias.pk).exists())
 
     def test_no_songs_falls_back_to_plain_message(self):
-        response = self.client.get(
-            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
-        )
-        self.assertContains(response, "名義を『以前の名義』に変更されます")
+        response = self._get("以前の名義")
+        self.assertContains(response, "名義が『以前の名義』に統一されます")
 
-    def test_shows_affected_song_titles(self):
+    def test_shows_own_song_titles_when_renaming(self):
         song = Song.objects.create(title="変更対象の曲")
         song.authors.add(self.author)
 
-        response = self.client.get(
-            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
-        )
+        response = self._get("以前の名義")
 
         self.assertContains(response, "変更対象の曲")
-        self.assertContains(response, "の名義を『以前の名義』に変更されます")
+        self.assertContains(response, "の作者が『以前の名義』に統一されます")
 
-    def test_shows_conflicting_authors_song_titles_too(self):
-        conflicting = Author.objects.create(name="以前の名義")
-        conflicting_song = Song.objects.create(title="統合対象作者の曲")
-        conflicting_song.authors.add(conflicting)
+    def test_existing_target_lists_own_songs_but_not_targets_songs(self):
+        # 統一先の既存Authorの曲は表示上の作者名が変わらないため一覧に含めない
+        target = Author.objects.create(name="以前の名義")
+        Song.objects.create(title="統一先の曲").authors.add(target)
+        Song.objects.create(title="このauthorの曲").authors.add(self.author)
 
-        response = self.client.get(
-            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
-        )
+        response = self._get("以前の名義")
 
-        self.assertContains(response, "統合対象作者の曲")
+        self.assertContains(response, "このauthorの曲")
+        self.assertNotContains(response, "統一先の曲")
 
-    def test_song_shared_by_both_authors_is_not_listed_twice(self):
-        # 同じ曲がauthor・conflicting_author双方の共著になっている場合、
+    def test_song_shared_by_multiple_authors_is_not_listed_twice(self):
+        # 同じ曲が統一対象の複数のAuthorの共著になっている場合、
         # 曲タイトルが確認画面に重複して表示されないことを確認する
-        conflicting = Author.objects.create(name="以前の名義")
+        AuthorAlias.objects.create(name="以前の名義2", author=self.author, alias_type="past")
         shared_song = Song.objects.create(title="共著の曲")
-        shared_song.authors.add(self.author, conflicting)
+        shared_song.authors.add(self.author, Author.objects.create(name="以前の名義2"))
 
-        response = self.client.get(
-            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
-        )
+        response = self._get("以前の名義")
 
         self.assertEqual(response.content.decode().count("共著の曲"), 1)
 
-    def test_save_button_is_labeled_change_with_fixed_width(self):
-        response = self.client.get(
-            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
-        )
-        self.assertContains(response, "変更する")
+    def test_submit_button_is_labeled_unify_with_fixed_width(self):
+        response = self._get("以前の名義")
+        self.assertContains(response, "統一する")
         self.assertContains(response, "dummybutton-w140")
-        self.assertNotContains(response, "保存する")
+        self.assertNotContains(response, "変更する")
+        self.assertContains(response, f'action="{reverse("subekashi:author_unify_name_set", args=[self.author.id])}"')
 
     def test_show_all_songs_button_hidden_when_ten_or_fewer_songs(self):
         # ボタンのid文字列自体はno-opなJS（要素が無ければ何もしない）内にも常に
@@ -2497,24 +2504,20 @@ class AuthorPrimaryNameConfirmViewTest(TestCase):
         for i in range(10):
             Song.objects.create(title=f"曲{i}").authors.add(self.author)
 
-        response = self.client.get(
-            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
-        )
+        response = self._get("以前の名義")
 
-        self.assertNotContains(response, 'id="primary-name-show-all-songs"')
-        self.assertNotContains(response, 'class="primary-name-song-hidden"')
+        self.assertNotContains(response, 'id="unify-name-show-all-songs"')
+        self.assertNotContains(response, 'class="unify-name-song-hidden"')
 
     def test_show_all_songs_button_shown_and_hides_songs_past_ten(self):
         for i in range(11):
             Song.objects.create(title=f"曲{i}").authors.add(self.author)
 
-        response = self.client.get(
-            reverse("subekashi:author_primary_name_confirm", args=[self.author.id]), {"name": "以前の名義"}
-        )
+        response = self._get("以前の名義")
 
-        self.assertContains(response, 'id="primary-name-show-all-songs"')
+        self.assertContains(response, 'id="unify-name-show-all-songs"')
         self.assertContains(response, "全て表示")
-        self.assertEqual(response.content.decode().count('class="primary-name-song-hidden"'), 1)
+        self.assertEqual(response.content.decode().count('class="unify-name-song-hidden"'), 1)
 
 
 @override_settings(STORAGES=STATIC_STORAGE)

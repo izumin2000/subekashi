@@ -107,8 +107,8 @@ class SongNewView(View):
             return render(request, 'subekashi/song_new.html', context)
 
         authors = get_or_create_authors(author_names)
-        # 入力した作者名が一番有名な名義（past別名から変換）に正規化されたかどうか
-        primary_name_normalized = author_names_were_normalized(author_names, authors)
+        # 入力した作者名が統一した名義（past別名から変換）に正規化されたかどうか
+        name_unified = author_names_were_normalized(author_names, authors)
 
         # 掲載拒否作者か判断する
         reject_error = check_reject_list(authors)
@@ -153,6 +153,6 @@ class SongNewView(View):
 
         # 登録できましたトーストを表示する
         redirect_url = f'/songs/{song_id}/edit?toast={request.GET.get("toast")}'
-        if primary_name_normalized:
-            redirect_url += '&primary_name_normalized=1'
+        if name_unified:
+            redirect_url += '&name_unified=1'
         return redirect(redirect_url)
