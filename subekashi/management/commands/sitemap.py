@@ -8,6 +8,9 @@ from xml.etree.ElementTree import Element, SubElement, ElementTree
 from django.core import management
 
 
+BASE_URL = "https://lyrics.imicomweb.com"
+
+
 class Command(BaseCommand):
     help = "subekashi/static/subekashi/にsitemap.xmlを生成する"
 
@@ -16,30 +19,8 @@ class Command(BaseCommand):
 
         # ルート要素を作成
         urlset = Element("urlset", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
-        base_url = "https://lyrics.imicomweb.com"
-        self.add_url(urlset, base_url + "/", "1.0")
-
-        # 優先度が0.9の固定パス
-        static_paths = ["/ai/", "/songs/", "/songs/new/", "/ai/", "/ai/result/", "/ad/", "/contact/", "/articles/"]
-        for path in static_paths:
-            self.add_url(urlset, base_url + path, "0.9")
-
-        # 優先度が0.8の動的パス (song_id)
-        for song_id in Song.objects.values_list('id', flat=True).iterator():
-            # /songs/<int:song_id> のURL
-            self.add_url(urlset, f"{base_url}/songs/{song_id}/", "0.8")
-
-        # 優先度が0.8の動的パス (作者)
-        for author_id, author_name in Author.objects.values_list('id', 'name').iterator():
-            # /author/<int:author_id> のURL（新形式）
-            self.add_url(urlset, f"{base_url}/author/{author_id}/", "0.8")
-            # /channel/<str:author_name> のURL（旧形式、リダイレクトのため維持）
-            self.add_url(urlset, f"{base_url}/channel/{author_name}/", "0.7")
-
-        # 優先度が0.8の動的パス (article_id)
-        for article_id in Article.objects.filter(is_open=True).exclude(tag="news").values_list('article_id', flat=True).iterator():
-            # /articles/<str:article_id> のURL
-            self.add_url(urlset, f"{base_url}/articles/{article_id}/", "0.8")
+        for loc, priority in self.get_urls():
+            self.add_url(urlset, loc, priority)
 
         # sitemap.xmlファイルの保存
         tree = ElementTree(urlset)
@@ -47,8 +28,33 @@ class Command(BaseCommand):
 
         if not DEBUG:
             management.call_command("collectstatic", "--noinput")
-        
+
         self.stdout.write(self.style.SUCCESS(f"サイトマップを生成しました"))
+
+    def get_urls(self):
+        yield f"{BASE_URL}/", "1.0"
+
+        # 優先度が0.9の固定パス
+        static_paths = ["/songs/", "/songs/new/", "/stats/", "/ai/", "/ai/result/", "/ad/", "/contact/", "/articles/", "/articles/lilyriku/"]
+        for path in static_paths:
+            yield BASE_URL + path, "0.9"
+
+        # 優先度が0.8の動的パス (song_id)
+        # noindexにしている疑義曲・非公開曲は除外する
+        song_ids = Song.objects.filter(is_questionable=False, is_limited=False).values_list('id', flat=True)
+        for song_id in song_ids.iterator():
+            yield f"{BASE_URL}/songs/{song_id}/", "0.8"
+            yield f"{BASE_URL}/songs/{song_id}/history/", "0.5"
+
+        # 優先度が0.8の動的パス (作者)
+        for author_id in Author.objects.values_list('id', flat=True).iterator():
+            yield f"{BASE_URL}/authors/{author_id}/", "0.8"
+            yield f"{BASE_URL}/authors/{author_id}/stats/", "0.6"
+            yield f"{BASE_URL}/authors/{author_id}/aliases/", "0.6"
+
+        # 優先度が0.8の動的パス (article_id)
+        for article_id in Article.objects.filter(is_open=True).exclude(tag="news").values_list('article_id', flat=True).iterator():
+            yield f"{BASE_URL}/articles/{article_id}/", "0.8"
 
     def add_url(self, urlset, loc, priority):
         url = SubElement(urlset, "url")
