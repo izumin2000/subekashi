@@ -862,6 +862,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 模倣元がない曲 | `?song_id=<id>&fetch_imitate=1` | `imitate_songs`が`None`ではなく空配列 |
 | 模倣元が検索のデフォルト件数（50件）超 | 模倣元51件の曲 | 51件すべてが返る |
 | 削除済み・下書きの模倣元 | `is_deleted=True`・`is_draft=True`の曲を模倣元に持つ曲 | 除外されずにすべて返る |
+| 存在しないsong_id | `?song_id=99999&fetch_imitate=1` | HTTP 200（500にならない）、`imitate_songs`が`None`（`song_edit.js`は読み込み失敗として登録ボタンを無効化する） |
+| 数値でないsong_id | `?song_id=abc&fetch_imitate=1` | HTTP 200（500にならない）、`imitate_songs`が`None` |
 
 ---
 

@@ -36,11 +36,11 @@ class SongEditInitView(APIView):
             qs, _ = song_search({'title_exact': title, 'author_exact': authors})
             title_author_songs = list(SongSerializer(qs, many=True).data)
 
-        # 模倣元一覧
+        # 模倣元一覧（song_edit.jsは送信する模倣曲IDもこの結果から組み立てるため、件数の上限を設けず全件返す）
         imitate_songs = None
-        if fetch_imitate and song_id:
-            size = Song.objects.get(pk = song_id).imitates.count()
-            qs, _ = song_search({'imitated': song_id, 'size': size})
+        song = Song.get_or_none(song_id) if fetch_imitate and song_id.isdigit() else None
+        if song is not None:
+            qs = song.imitates.prefetch_related('links', 'authors').order_by('id')
             imitate_songs = list(SongSerializer(qs, many=True).data)
 
         # URLごとの重複チェック（入力URLの順序を保持したリスト）

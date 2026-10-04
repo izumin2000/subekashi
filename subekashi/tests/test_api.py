@@ -155,6 +155,16 @@ class SongEditInitViewTest(TestCase):
         self.song.imitates.set([deleted_song, draft_song])
         self.assertCountEqual(self._get_imitate_ids(), [deleted_song.id, draft_song.id])
 
+    def test_nonexistent_song_id_returns_none_instead_of_500(self):
+        response = self.client.get("/api/song_edit_init/", {"song_id": 99999, "fetch_imitate": "1"})
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.json()["imitate_songs"])
+
+    def test_non_numeric_song_id_returns_none_instead_of_500(self):
+        response = self.client.get("/api/song_edit_init/", {"song_id": "abc", "fetch_imitate": "1"})
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.json()["imitate_songs"])
+
 
 @override_settings(STORAGES=STATIC_STORAGE)
 class EditorIsOpenViewTest(TestCase):

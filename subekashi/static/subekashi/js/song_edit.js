@@ -32,8 +32,19 @@ async function init() {
     if (urlEle.value) params.append('urls', urlEle.value);
     params.append('fetch_imitate', '1');
 
-    const initData = await exponentialBackoff(`song_edit_init/?${params}`, "init", init);
+    let initData;
+    try {
+        initData = await exponentialBackoff(`song_edit_init/?${params}`, "init", init);
+    } catch (error) {
+        console.error(error);
+        failInit();
+        return;
+    }
     if (!initData) return;
+    if (!Array.isArray(initData.imitate_songs)) {
+        failInit();
+        return;
+    }
 
     await checkTitleAuthorForm(initData.title_author_songs);
     await checkUrlForm(initData.song_links);
@@ -44,6 +55,13 @@ async function init() {
     updateQuestionableVisibility();
 };
 window.addEventListener('load', init);
+
+// 初期化に失敗した場合は模倣一覧を読み込めず、#imitateの値が古い可能性があるため登録させない（#1135）
+var isInitFailed = false;
+function failInit() {
+    isInitFailed = true;
+    checkButton();
+}
 
 
 function openDeleteDetails() {
@@ -96,8 +114,8 @@ function initImitateList(imitateSongList) {
     for (const imitateSong of imitateSongList) {
         appendImitateList(imitateSong);
     }
-    setImitate();
     isImitateListLoaded = true;
+    setImitate();
 }
 
 // ビューに渡すimitateカラムの値を#imitateにセット
@@ -123,7 +141,7 @@ function appendImitate(song) {
 
     // 同じ曲が2つ並ぶと、片方を削除した際に両方とも#imitateから消えてしまうため追加させない（#1135）
     if (imitateIdList.some(id => id == song.id)) {
-        showToast("error", "その曲は既に模倣曲として登録されています。");
+        showToast("info", "その曲は既に模倣曲として登録されています。");
         return;
     }
 
@@ -376,8 +394,14 @@ document.getElementById('is-questionable').addEventListener('change', updateQues
 // 登録ボタン
 function checkButton() {
     // ボタンのdisabledの変更
+    // 模倣一覧の読み込みが完了するまでは、#imitateの値が古い可能性があるため登録させない（#1135）
     const songEditSubmitEle = document.getElementById('song-edit-submit');
-    songEditSubmitEle.disabled = !(isTitleAuthorValid && isUrlValid)
+    songEditSubmitEle.disabled = !(isTitleAuthorValid && isUrlValid && isImitateListLoaded)
+
+    if (isInitFailed) {
+        document.getElementById('song-edit-info-submit').innerHTML = "<span class='error'><i class='fas fa-ban error'></i>読み込みに失敗したため登録できません。ページを再読み込みしてください。</span>";
+        return;
+    }
 
     // 未完成に関する変数の定義
     var message = "";
