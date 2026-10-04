@@ -2,7 +2,8 @@
 管理コマンドのテスト
 
 delete: is_removedをfalseのままにする--keep-linksオプションを検証する。
-youtube: DBロック対策で処理方式を変更した後の挙動（id指定・全件処理・リンク無しスキップ・動画削除時の扱い）と、YouTube以外のURLがある曲を削除済みにしない挙動（#1136）を検証する。
+youtube: DBロック対策で処理方式を変更した後の挙動（id指定・全件処理・リンク無しスキップ・動画削除時の扱い）と、YouTube以外のURLがある曲を削除済みにしない挙動（#1136）、
+APIの呼び出しに失敗した曲を更新しない挙動・クォータ超過時に処理を打ち切る挙動（#1146）を検証する。
 backup: バックアップ先をサーバーストレージからGoogle Driveに変更した挙動（#1050）を検証する。
 word: word.jsonから模倣単語候補をWordに一括登録する処理（#1053）を検証する。
 ai: Song.lyricsの単語をランダムに入れ替えてgenetype="janome"のAiレコードをシードする処理を検証する。
@@ -22,6 +23,7 @@ from django.core.management.base import CommandError
 from django.test import TestCase
 from django.utils import timezone
 
+from subekashi.lib.youtube import YoutubeApiError, YoutubeApiUnavailableError
 from subekashi.management.commands.backup import Command
 from subekashi.models import Ai, Song, SongLink, Stats, Word
 
@@ -196,6 +198,136 @@ class YoutubeCommandTest(TestCase):
 
         self.song1.refresh_from_db()
         self.assertFalse(self.song1.is_deleted)
+
+    def set_previous_values(self, song):
+        upload_time = timezone_aware(2024, 1, 1)
+        song.view = 100
+        song.like = 10
+        song.upload_time = upload_time
+        song.save()
+        return upload_time
+
+    def assert_not_updated(self, song, upload_time):
+        song.refresh_from_db()
+        self.assertFalse(song.is_deleted)
+        self.assertEqual(song.view, 100)
+        self.assertEqual(song.like, 10)
+        self.assertEqual(song.upload_time, upload_time)
+
+    @patch("subekashi.management.commands.youtube.sleep")
+    @patch("subekashi.management.commands.youtube.get_youtube_api")
+    def test_api_error_does_not_mark_deleted(self, mock_api, mock_sleep):
+        # 通信エラーなどの一時的な失敗は、動画の削除と区別して削除済みにしない（#1146）
+        upload_time = self.set_previous_values(self.song1)
+        mock_api.side_effect = YoutubeApiError("YouTube Data APIの呼び出しに失敗しました")
+        call_command("youtube", id=self.song1.id, stderr=StringIO())
+
+        self.assert_not_updated(self.song1, upload_time)
+
+    @patch("subekashi.management.commands.youtube.sleep")
+    @patch("subekashi.management.commands.youtube.get_youtube_api")
+    def test_api_error_on_one_of_multiple_videos_does_not_update_song(self, mock_api, mock_sleep):
+        # 1本でも取得に失敗すると再生回数などの総和が不正確になるため、曲を更新しない（#1146）
+        upload_time = self.set_previous_values(self.song1)
+        self.link2.songs.add(self.song1)
+        mock_api.side_effect = [
+            {"view": 30, "like": 3, "upload_time": timezone_aware(2025, 1, 1)},
+            YoutubeApiError("YouTube Data APIの呼び出しに失敗しました"),
+        ]
+        call_command("youtube", id=self.song1.id, stderr=StringIO())
+
+        self.assert_not_updated(self.song1, upload_time)
+
+    @patch("subekashi.management.commands.youtube.sleep")
+    @patch("subekashi.management.commands.youtube.get_youtube_api")
+    def test_api_error_with_deleted_video_does_not_mark_deleted(self, mock_api, mock_sleep):
+        # 取得に失敗した動画が公開されている可能性があるため、他の動画が削除済みでも削除済みにしない（#1146）
+        upload_time = self.set_previous_values(self.song1)
+        self.link2.songs.add(self.song1)
+        mock_api.side_effect = [{}, YoutubeApiError("YouTube Data APIの呼び出しに失敗しました")]
+        call_command("youtube", id=self.song1.id, stderr=StringIO())
+
+        self.assert_not_updated(self.song1, upload_time)
+
+    @patch("subekashi.management.commands.youtube.sleep")
+    @patch("subekashi.management.commands.youtube.get_youtube_api")
+    def test_api_error_skips_only_that_song(self, mock_api, mock_sleep):
+        # 一時的な失敗では処理を打ち切らず、残りの曲は更新する（#1146）
+        upload_time = self.set_previous_values(self.song1)
+
+        def get_youtube_api(video_id):
+            if video_id == "aaaaaaaaaaa":
+                raise YoutubeApiError("YouTube Data APIの呼び出しに失敗しました")
+            return {"view": 50, "like": 5, "upload_time": None}
+
+        mock_api.side_effect = get_youtube_api
+        stderr = StringIO()
+        call_command("youtube", stderr=stderr)
+
+        self.assert_not_updated(self.song1, upload_time)
+        self.song2.refresh_from_db()
+        self.assertEqual(self.song2.view, 50)
+        self.assertIn(f"song_id：{self.song1.id}", stderr.getvalue())
+
+    @patch("subekashi.management.commands.youtube.send_discord")
+    @patch("subekashi.management.commands.youtube.sleep")
+    @patch("subekashi.management.commands.youtube.get_youtube_api")
+    def test_quota_exceeded_stops_processing_and_notifies_discord(self, mock_api, mock_sleep, mock_send_discord):
+        # クォータ超過は以降の呼び出しも全て失敗するため、残りの曲の処理を打ち切りDiscordに通知する（#1146）
+        upload_time1 = self.set_previous_values(self.song1)
+        upload_time2 = self.set_previous_values(self.song2)
+        mock_api.side_effect = YoutubeApiUnavailableError("YouTube Data APIのクォータを超過しました")
+        stderr = StringIO()
+        call_command("youtube", stderr=stderr)
+
+        self.assertEqual(mock_api.call_count, 1)
+        self.assert_not_updated(self.song1, upload_time1)
+        self.assert_not_updated(self.song2, upload_time2)
+        mock_send_discord.assert_called_once()
+        self.assertIn("クォータを超過しました", mock_send_discord.call_args.args[1])
+        self.assertIn("クォータを超過しました", stderr.getvalue())
+
+    @patch("subekashi.management.commands.youtube.send_discord")
+    @patch("subekashi.management.commands.youtube.sleep")
+    @patch("subekashi.management.commands.youtube.get_youtube_api")
+    def test_quota_exceeded_on_second_video_does_not_update_song(self, mock_api, mock_sleep, mock_send_discord):
+        # 途中の動画でクォータを超過した場合も、取得済みの動画の値だけで曲を更新しない（#1146）
+        upload_time = self.set_previous_values(self.song1)
+        self.link2.songs.add(self.song1)
+        mock_api.side_effect = [
+            {"view": 30, "like": 3, "upload_time": None},
+            YoutubeApiUnavailableError("YouTube Data APIのクォータを超過しました"),
+        ]
+        call_command("youtube", id=self.song1.id, stderr=StringIO())
+
+        self.assert_not_updated(self.song1, upload_time)
+        mock_send_discord.assert_called_once()
+
+    @patch("subekashi.management.commands.youtube.sleep")
+    @patch("subekashi.management.commands.youtube.get_youtube_api")
+    def test_nonexistent_id_raises_command_error(self, mock_api, mock_sleep):
+        with self.assertRaises(CommandError):
+            call_command("youtube", id=999999)
+        mock_api.assert_not_called()
+
+    @patch("subekashi.management.commands.youtube.sleep")
+    @patch("subekashi.management.commands.youtube.get_youtube_api")
+    def test_song_deleted_during_processing_is_skipped(self, mock_api, mock_sleep):
+        # 全件処理は時間がかかるため、処理中に削除された曲があっても残りの処理を続ける
+        song_by_video_id = {"aaaaaaaaaaa": self.song1, "bbbbbbbbbbb": self.song2}
+
+        def get_youtube_api(video_id):
+            # 1曲目の処理中に、もう1曲を削除する
+            for other_video_id, other_song in song_by_video_id.items():
+                if other_video_id != video_id:
+                    Song.objects.filter(pk=other_song.pk).delete()
+            return {"view": 50, "like": 5, "upload_time": None}
+
+        mock_api.side_effect = get_youtube_api
+        call_command("youtube")
+
+        self.assertEqual(mock_api.call_count, 1)
+        self.assertEqual(Song.objects.filter(view=50).count(), 1)
 
 
 SQLITE_DB_SETTINGS = {
