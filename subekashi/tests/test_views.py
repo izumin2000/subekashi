@@ -1366,6 +1366,16 @@ class AuthorAliasesViewTest(TestCase):
 
         self.assertNotContains(response, reverse("subekashi:channel", args=["略称対象作者"]))
 
+    def test_past_alias_with_slash_in_name_links_to_channel(self):
+        # #1127: 別名に"/"が含まれていてもNoReverseMatchにならずchannelへのリンクが表示される
+        Author.objects.create(name="別名/スラッシュ")
+        AuthorAlias.objects.create(name="別名/スラッシュ", author=self.author, alias_type="past")
+
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("subekashi:channel", args=["別名/スラッシュ"]))
+
     def test_reload_button_present(self):
         response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
         self.assertContains(response, "reloadPage()")
@@ -2519,6 +2529,15 @@ class ChannelViewTest(TestCase):
             reverse("subekashi:channel", args=["存在しない作者名XYZ"])
         )
         self.assertEqual(response.status_code, 404)
+
+    def test_author_name_with_slash_redirects(self):
+        # #1127: 作者名に"/"が含まれていてもreverseでき、作者ページへリダイレクトされる
+        author = Author.objects.create(name="スラッシュ/作者")
+        url = reverse("subekashi:channel", args=["スラッシュ/作者"])
+
+        response = self.client.get(url)
+
+        self.assertRedirects(response, reverse("subekashi:author", args=[author.id]))
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
