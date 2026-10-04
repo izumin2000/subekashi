@@ -864,6 +864,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 削除済み・下書きの模倣元 | `is_deleted=True`・`is_draft=True`の曲を模倣元に持つ曲 | 除外されずにすべて返る |
 | 存在しないsong_id | `?song_id=99999&fetch_imitate=1` | HTTP 200（500にならない）、`imitate_songs`が`None`（`song_edit.js`は読み込み失敗として登録ボタンを無効化する） |
 | 数値でないsong_id | `?song_id=abc&fetch_imitate=1` | HTTP 200（500にならない）、`imitate_songs`が`None` |
+| 上付き数字のsong_id | `?song_id=²&fetch_imitate=1` | HTTP 200（500にならない）、`imitate_songs`が`None`（`str.isdigit()`はTrueだが`int()`で変換できない） |
+| 範囲外のsong_id | 30桁の数字 | HTTP 200（500にならない）、`imitate_songs`が`None` |
 
 ---
 

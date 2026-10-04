@@ -38,7 +38,8 @@ class SongEditInitView(APIView):
 
         # 模倣元一覧（song_edit.jsは送信する模倣曲IDもこの結果から組み立てるため、件数の上限を設けず全件返す）
         imitate_songs = None
-        song = Song.get_or_none(song_id) if fetch_imitate and song_id.isdigit() else None
+        # isdigit()は"²"等の上付き数字もTrueになりint()で変換できず500になるため、isdecimal()で判定する
+        song = Song.get_or_none(song_id) if fetch_imitate and song_id.isdecimal() else None
         if song is not None:
             qs = song.imitates.prefetch_related('links', 'authors').order_by('id')
             imitate_songs = list(SongSerializer(qs, many=True).data)

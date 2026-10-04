@@ -134,6 +134,10 @@ function deleteImitate(imitateId) {
 // 模倣一覧にsongを追加
 function appendImitate(song) {
     // 読み込み完了前に追加すると、読み込み完了時に既存の模倣曲で上書きされてしまうため追加させない
+    if (isInitFailed) {
+        showToast("error", "模倣一覧の読み込みに失敗しました。ページを再読み込みしてください。");
+        return;
+    }
     if (!isImitateListLoaded) {
         showToast("info", "模倣一覧を読み込み中です。読み込み完了後に再度選択してください。");
         return;

@@ -165,6 +165,17 @@ class SongEditInitViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(response.json()["imitate_songs"])
 
+    def test_superscript_digit_song_id_returns_none_instead_of_500(self):
+        # "²"はstr.isdigit()がTrueになるがint()で変換できない
+        response = self.client.get("/api/song_edit_init/", {"song_id": "²", "fetch_imitate": "1"})
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.json()["imitate_songs"])
+
+    def test_out_of_range_song_id_returns_none_instead_of_500(self):
+        response = self.client.get("/api/song_edit_init/", {"song_id": "9" * 30, "fetch_imitate": "1"})
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.json()["imitate_songs"])
+
 
 @override_settings(STORAGES=STATIC_STORAGE)
 class EditorIsOpenViewTest(TestCase):
