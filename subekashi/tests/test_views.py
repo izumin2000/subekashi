@@ -719,6 +719,16 @@ class StatsViewTest(TestCase):
         self.assertEqual(stats_items["総高評価数"], 0)
         self.assertContains(response, "stat-item")
 
+    def test_only_youtube_items_have_youtube_flag(self):
+        # YouTube由来の指標(総再生回数・総高評価数)のみYouTubeアイコンを表示する (#896)
+        Song.objects.create(title="曲", view=100, like=10)
+
+        response = self.client.get(reverse("subekashi:stats"))
+
+        youtube_labels = [item["label"] for item in response.context["stats_items"] if item.get("is_youtube")]
+        self.assertEqual(youtube_labels, ["総再生回数", "総高評価数"])
+        self.assertContains(response, "fa-youtube")
+
     @staticmethod
     def _song_count(response):
         return next(item["value"] for item in response.context["stats_items"] if item["label"] == "曲数")
@@ -1085,6 +1095,16 @@ class AuthorStatsViewTest(TestCase):
         self.assertEqual(stats_items["合作人数(重複あり)"], 1)
         self.assertEqual(stats_items["合作人数(重複なし)"], 1)
         self.assertNotIn("総作者数", stats_items)
+
+    def test_only_youtube_items_have_youtube_flag(self):
+        # YouTube由来の指標(総再生回数・総高評価数)のみYouTubeアイコンを表示する (#896)
+        Song.objects.create(title="この作者の曲", view=100, like=10).authors.add(self.author)
+
+        response = self.client.get(reverse("subekashi:author_stats", args=[self.author.id]))
+
+        youtube_labels = [item["label"] for item in response.context["stats_items"] if item.get("is_youtube")]
+        self.assertEqual(youtube_labels, ["総再生回数", "総高評価数"])
+        self.assertContains(response, "fa-youtube")
 
     def test_songrange_radio_group_hidden_when_author_has_only_one_songrange(self):
         # サイト全体にはxx曲が存在しても、この作者自身にはsubeana曲しかないため

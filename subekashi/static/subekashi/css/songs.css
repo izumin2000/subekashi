@@ -1,3 +1,19 @@
+.icon-p-big {
+    margin-left: 0;
+}
+
+.small-icon {
+    margin-right: 5px;
+}
+
+i.icon-p-big, .small-icon {
+    margin-left: -5px;
+}
+
+.fa-search {
+    margin-right:  10px;
+}
+
 #isdetail {
     padding: 3px;
 }

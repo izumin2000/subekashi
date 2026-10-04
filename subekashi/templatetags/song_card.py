@@ -21,12 +21,12 @@ def get_author(song):
     author = authors.first()
     if author is None:
         send_discord(ERROR_DISCORD_URL, f"作者が不明です： {ROOT_URL}/songs/{song.id}")
-        return mark_safe('<i class="fas fa-user-circle"></i>作者不明')
+        return mark_safe('<i class="fas fa-user"></i>作者不明')
     
     # html特殊文字をエスケープ(一応)
     author_name = author.name.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
     author_url = reverse('subekashi:author', kwargs={'author_id': author.id})
-    return mark_safe(f'<object><a href="{author_url}"><i class="fas fa-user-circle"></i>{author_name}</a></object>')
+    return mark_safe(f'<object><a href="{author_url}"><i class="fas fa-user"></i>{author_name}</a></object>')
 
 
 @register.simple_tag

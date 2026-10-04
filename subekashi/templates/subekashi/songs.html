@@ -11,29 +11,29 @@
     <h1>曲の一覧と検索</h1>
 
     <div class="form-col">
-        <label for="keyword">キーワード</label>
+        <label for="keyword"><i class="fas fa-search"></i><span class="icon-p-big">キーワード</span></label>
         <input type="text" id="keyword" placeholder="タイトル・作者・歌詞・URL" value="{{ request.GET.keyword }}">
     </div>
     {% comment %} isdetail -> request.COOKIES.isdetail {% endcomment %}
     <details id="isdetail" {% if isdetail == "True" %}open{% endif %}>
         <summary>高度な検索</summary>
         <div id="under-sumary" class="form-col">
-            <label for="title">タイトル</label>
+            <label for="title"><i class="fab fa-itunes-note"></i><span class="icon-p-big">タイトル</span></label>
             <input type="text" id="title" value="{{ request.GET.title }}">
         </div>
         <div class="form-col">
-            <label for="author">作者</label>
+            <label for="author"><i class="fas fa-user"></i><span class="icon-p-big">作者</span></label>
             <input type="text" id="author" value="{{ request.GET.author }}">
         </div>
         <div class="form-col">
-            <label for="lyrics">歌詞</label>
+            <label for="lyrics"><i class="fas fa-align-center"></i><span class="icon-p-big">歌詞</span></label>
             <input type="text" id="lyrics" value="{{ request.GET.lyrics }}">
         </div>
         <div class="form-col">
-            <label for="url">URL</label>
+            <label for="url"><i class="fas fa-link"></i><span class="icon-p-big">URL</span></label>
             <input type="text" id="url" value="{{ request.GET.url }}">
         </div>
-        <label for="imitate">模倣</label>
+        <label for="imitate"><i class="fas fa-sitemap"></i><span class="icon-p-big">模倣</span></label>
         <div id="imitate-div">
             <p>曲ID</p>
             <input type="text" id="imitate" value="{{ request.GET.imitate }}" oninput="renderSongGuesser()" placeholder="タイトルか作者かURLを入力">
@@ -42,62 +42,62 @@
             {% render_categorys %}
         </div>
         <div class="form-col">
-            <label for="view_gte">再生回数/以上</label>
+            <label for="view_gte"><i class="fas fa-play"></i><i class="fas fa-greater-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>再生回数/以上</span></label>
             <input type="number" id="view_gte" value="{{ request.GET.view_gte }}" min="1">
         </div>
         <div class="form-col">
-            <label for="view_lte">再生回数/以下</label>
+            <label for="view_lte"><i class="fas fa-play"></i><i class="fas fa-less-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>再生回数/以下</span></label>
             <input type="number" id="view_lte" value="{{ request.GET.view_lte }}" min="1">
         </div>
         <div class="form-col">
-            <label for="like_gte">高評価数/以上</label>
+            <label for="like_gte"><i class="far fa-thumbs-up"></i><i class="fas fa-greater-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>高評価数/以上</span></label>
             <input type="number" id="like_gte" value="{{ request.GET.like_gte }}" min="1">
         </div>
         <div class="form-col">
-            <label for="like_lte">高評価数/以下</label>
+            <label for="like_lte"><i class="far fa-thumbs-up"></i><i class="fas fa-less-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>高評価数/以下</span></label>
             <input type="number" id="like_lte" value="{{ request.GET.like_lte }}" min="1">
         </div>
         <div class="form-col">
-            <label for="upload_time_gte"><i class="fab fa-youtube"></i>投稿日/以降</label>
+            <label for="upload_time_gte"><i class="far fa-calendar-alt"></i><i class="fas fa-greater-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>投稿日/以降</span></label>
             <input type="date" id="upload_time_gte" value="{{ request.GET.upload_time_gte }}" min="2000-01-01" max="9999-12-31">
         </div>
         <div class="form-col">
-            <label for="upload_time_lte"><i class="fab fa-youtube"></i>投稿日/以前</label>
+            <label for="upload_time_lte"><i class="far fa-calendar-alt"></i><i class="fas fa-less-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>投稿日/以前</span></label>
             <input type="date" id="upload_time_lte" value="{{ request.GET.upload_time_lte }}" min="2000-01-01" max="9999-12-31">
         </div>
         <div class="form-col">
-            <label for="songrange">界隈曲の種類</label>
+            <label for="songrange"><i class="fas fa-border-style"></i><span class="icon-p-big">界隈曲の種類</span></label>
             <select id="songrange" name="songrange">
-                <option value="all" {% if songrange == 'all' %}selected{% endif %}>全て表示</option>
-                <option value="subeana" {% if songrange == 'subeana' %}selected{% endif %}>すべあな界隈曲のみを表示</option>
-                <option value="xx" {% if songrange == 'xx' %}selected{% endif %}>すべあな界隈曲以外を表示</option>
+                <option value="all" {% if songrange == 'all' %}selected{% endif %}><i class="fas fa-expand"></i><span class="icon-p-big">全て表示</span></option>
+                <option value="subeana" {% if songrange == 'subeana' %}selected{% endif %}><i class="fas fa-user-circle"></i><span class="icon-p-big">すべあな界隈曲のみを表示</span></option>
+                <option value="xx" {% if songrange == 'xx' %}selected{% endif %}><i class="fas fa-fish"></i><span class="icon-p-big">すべあな界隈曲以外を表示</span></option>
             </select>
         </div>
         <div class="form-col">
-            <label for="jokerange">ネタ曲</label>
+            <label for="jokerange"><i class="far fa-meh-rolling-eyes"></i><span class="icon-p-big">ネタ曲</span></label>
             <select id="jokerange" name="jokerange">
-                <option value="on" {% if jokerange == 'on' %}selected{% endif %}>全て表示</option>
-                <option value="only" {% if jokerange == 'only' %}selected{% endif %}>ネタ曲のみを表示</option>
-                <option value="off" {% if jokerange == 'off' %}selected{% endif %}>ネタ曲のみを非表示</option>
+                <option value="on" {% if jokerange == 'on' %}selected{% endif %}><i class="fas fa-expand"></i><span class="icon-p-big">全て表示</span></option>
+                <option value="only" {% if jokerange == 'only' %}selected{% endif %}><i class="fas fa-equals small-icon icon-p-big"></i><span class="icon-p-big">ネタ曲のみを表示</span></option>
+                <option value="off" {% if jokerange == 'off' %}selected{% endif %}><i class="fas fa-not-equal small-icon icon-p-big"></i><span class="icon-p-big">ネタ曲のみを非表示</span></option>
             </select>
         </div>
         <div class="form-col">
-            <label for="sort">並び替え</label>
+            <label for="sort"><i class="fas fa-sort-amount-down"></i><span class="icon-p-big">並び替え</span></label>
             <select id="sort" name="sort">
-                <option value="id" {% if sort == 'id' %}selected{% endif %}>新規登録日が早い順</option>
-                <option value="-id" {% if sort == '-id' %}selected{% endif %}>新規登録日が遅い順</option>
-                <option value="post_time" {% if sort == 'post_time' %}selected{% endif %}>更新日が早い順</option>
-                <option value="-post_time" {% if sort == '-post_time' %}selected{% endif %}>更新日が遅い順</option>
-                <option value="upload_time" {% if sort == 'upload_time' %}selected{% endif %}>YouTubeに投稿した日が早い順</option>
-                <option value="-upload_time" {% if sort == '-upload_time' %}selected{% endif %}>YouTubeに投稿した日が遅い順</option>
-                <option value="-view" {% if sort == '-view' %}selected{% endif %}>YouTubeの再生回数が多い順</option>
-                <option value="view" {% if sort == 'view' %}selected{% endif %}>YouTubeの再生回数が少ない順</option>
-                <option value="-like" {% if sort == '-like' %}selected{% endif %}>YouTubeの高評価数が多い順</option>
-                <option value="like" {% if sort == 'like' %}selected{% endif %}>YouTubeの高評価数が少ない順</option>
-                <option value="random" {% if sort == 'random' %}selected{% endif %}>ランダム</option>
+                <option value="id" {% if sort == 'id' %}selected{% endif %}><i class="fa fa-plus"></i><i class="fas fa-sort-numeric-down small-icon icon-p-big"></i><span class="icon-p-big">新規登録日が早い順</span></option>
+                <option value="-id" {% if sort == '-id' %}selected{% endif %}><i class="fa fa-plus"></i><i class="fas fa-sort-numeric-down-alt small-icon icon-p-big"></i><span class="icon-p-big">新規登録日が遅い順</span></option>
+                <option value="post_time" {% if sort == 'post_time' %}selected{% endif %}><i class="fas fa-file-signature"></i><i class="fas fa-sort-numeric-down small-icon icon-p-big"></i><span class="icon-p-big">更新日が早い順</span></option>
+                <option value="-post_time" {% if sort == '-post_time' %}selected{% endif %}><i class="fas fa-file-signature"></i><i class="fas fa-sort-numeric-down-alt small-icon icon-p-big"></i><span class="icon-p-big">更新日が遅い順</span></option>
+                <option value="upload_time" {% if sort == 'upload_time' %}selected{% endif %}><i class="far fa-calendar-alt"></i><i class="fas fa-sort-numeric-down small-icon icon-p-big"></i><span class="icon-p-big">YouTubeに投稿した日が早い順</span></option>
+                <option value="-upload_time" {% if sort == '-upload_time' %}selected{% endif %}><i class="far fa-calendar-alt"></i><i class="fas fa-sort-numeric-down-alt small-icon icon-p-big"></i><span class="icon-p-big">YouTubeに投稿した日が遅い順</span></option>
+                <option value="view" {% if sort == 'view' %}selected{% endif %}><i class="fas fa-play"></i><i class="fas fa-sort-numeric-down small-icon icon-p-big"></i><span class="icon-p-big">YouTubeの再生回数が少ない順</span></option>
+                <option value="-view" {% if sort == '-view' %}selected{% endif %}><i class="fas fa-play"></i><i class="fas fa-sort-numeric-down-alt small-icon icon-p-big"></i><span class="icon-p-big">YouTubeの再生回数が多い順</span></option>
+                <option value="like" {% if sort == 'like' %}selected{% endif %}><i class="far fa-thumbs-up"></i><i class="fas fa-sort-numeric-down small-icon icon-p-big"></i><span class="icon-p-big">YouTubeの高評価数が少ない順</span></option>
+                <option value="-like" {% if sort == '-like' %}selected{% endif %}><i class="far fa-thumbs-up"></i><i class="fas fa-sort-numeric-down-alt small-icon icon-p-big"></i><span class="icon-p-big">YouTubeの高評価数が多い順</span></option>
+                <option value="random" {% if sort == 'random' %}selected{% endif %}><i class="fas fa-random"></i><span class="icon-p-big">ランダム</span></option>
             </select>
         </div>
-        <label>メディア</label>
+        <label><i class="fas fa-photo-video"></i><span class="icon-p-big">メディア</span></label>
         <div id="mediatype-wrapper">
             {% for media in ALL_MEDIAS %}
                 {% if forloop.counter0 == display_media_index %}
@@ -108,12 +108,12 @@
                 {% if forloop.counter0 >= display_media_index and forloop.counter0 < forloop.revcounter0|add:"-1" %}
                     <div class="checkbox-col">
                         <input type="checkbox" value="media-{{ media.id }}" id="media-{{ media.id }}">
-                        <label for="media-{{ media.id }}">{{ media.icon|safe }}{{ media.name }}</label>
+                        <label for="media-{{ media.id }}">{{ media.icon|safe }}<span class="icon-p-big">{{ media.name }}</span></label>
                     </div>
                 {% else %}
                     <div class="checkbox-col">
                         <input type="checkbox" value="media-{{ media.id }}" id="media-{{ media.id }}">
-                        <label for="media-{{ media.id }}">{{ media.icon|safe }}{{ media.name }}</label>
+                        <label for="media-{{ media.id }}">{{ media.icon|safe }}<span class="icon-p-big">{{ media.name }}</span></label>
                     </div>
                 {% endif %}
             
@@ -124,27 +124,27 @@
         </div>
         <div class="checkbox-col">
             <input type="checkbox" value="is_lack" id="is_lack" {% if is_lack %}checked{% endif %}>
-            <label for="is_lack">未完成</label>
+            <label for="is_lack"><i class="fas fa-tasks"></i><span class="icon-p-big">未完成</span></label>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" value="is_draft" id="is_draft" {% if is_draft %}checked{% endif %}>
-            <label for="is_draft">下書き</label>
+            <label for="is_draft"><i class="fas fa-user-edit"></i><span class="icon-p-big">下書き</span></label>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" value="is_original" id="is_original" {% if is_original %}checked{% endif %}>
-            <label for="is_original">オリジナル模倣曲</label>
+            <label for="is_original"><i class="fas fa-external-link-alt"></i><span class="icon-p-big">オリジナル模倣曲</span></label>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" value="is_inst" id="is_inst" {% if is_inst %}checked{% endif %}>
-            <label for="is_inst">インスト曲</label>
+            <label for="is_inst"><i class="fas fa-comment-slash"></i><span class="icon-p-big">インスト曲</span></label>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" value="is_deleted" id="is_deleted" {% if is_deleted %}checked{% endif %}>
-            <label for="is_deleted">非公開/削除済み</label>
+            <label for="is_deleted"><i class="far fa-eye-slash"></i><span class="icon-p-big">非公開/削除済み</span></label>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" value="is_questionable" id="is_questionable" {% if is_questionable %}checked{% endif %}>
-            <label for="is_questionable">界隈曲?</label>
+            <label for="is_questionable"><i class="fas fa-question"></i><span class="icon-p-big">界隈曲?</span></label>
         </div>
     </details>
     <input type="submit" id="search-button" value="検索" onclick="renderSearch()"></input>

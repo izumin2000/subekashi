@@ -47,8 +47,8 @@ class StatsView(View):
 
         stats_items = build_stats_items(stats, [
             {"icon": "fas fa-list-ol", "label": "曲数", "value": stats["song_count"]},
-            {"icon": "fas fa-play", "label": "総再生回数", "value": stats["total_view"]},
-            {"icon": "far fa-thumbs-up", "label": "総高評価数", "value": stats["total_like"]},
+            {"icon": "fas fa-play", "label": "総再生回数", "value": stats["total_view"], "is_youtube": True},
+            {"icon": "far fa-thumbs-up", "label": "総高評価数", "value": stats["total_like"], "is_youtube": True},
             {"icon": "fas fa-users", "label": "総作者数", "value": stats["total_authors"]},
             {"icon": "fas fa-sitemap", "label": "総模倣曲関係数", "value": stats["total_imitateds"]},
         ])

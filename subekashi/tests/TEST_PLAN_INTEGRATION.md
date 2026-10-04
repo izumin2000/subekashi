@@ -77,9 +77,9 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 操作 | `POST /songs/new/` `{title="曲名", authors="作者", is-questionable-manual="on", is-original-manual="on", is-subeana-manual="on"}` |
+| 操作 | `POST /songs/new/` `{title="タイトル", authors="作者", is-questionable-manual="on", is-original-manual="on", is-subeana-manual="on"}` |
 | 検証: レスポンス | `/songs/<id>/edit` へリダイレクト (302) |
-| 検証: Song | `is_questionable == True`、`is_original == False`（強制OFF）、`is_subeana == True`（曲名・作者・URLに加え非公開/削除済み・ネタ曲・インスト・すべあな界隈曲の入力値はそのまま保存される） |
+| 検証: Song | `is_questionable == True`、`is_original == False`（強制OFF）、`is_subeana == True`（タイトル・作者・URLに加え非公開/削除済み・ネタ曲・インスト・すべあな界隈曲の入力値はそのまま保存される） |
 
 ---
 
@@ -158,7 +158,7 @@
 | 前提 | `lyrics`・`imitates`・`is_draft`・`is_original` などが設定済みの曲が存在する |
 | 操作 | `POST /songs/<id>/edit/` `{title=..., authors=..., is_questionable=True, lyrics="...", imitate="<id>", is_draft=True, is_original=True}` |
 | 検証: レスポンス | `/songs/<id>?toast=edit` へリダイレクト (302) |
-| 検証: Song | `is_questionable == True`、`lyrics == ""`、`imitates` が空、`is_draft == False`、`is_original == False`（曲名・作者・URLはそのまま保存） |
+| 検証: Song | `is_questionable == True`、`lyrics == ""`、`imitates` が空、`is_draft == False`、`is_original == False`（タイトル・作者・URLはそのまま保存） |
 
 #### 2-9. is_questionable 編集時も、非公開/削除済み・ネタ曲・インスト・すべあな界隈曲の入力値はそのまま保存される
 

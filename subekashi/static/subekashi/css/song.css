@@ -15,8 +15,9 @@
     margin: 0 auto;
 }
 
-#song-info p, #song-info i, #song-info td {
-    line-height: 50px;
+/* 1行の行は高さ50pxを確保しつつ、自動改行した行どうしの間隔は広げない */
+#song-info td {
+    height: 50px;
 }
 
 #song-info td:nth-child(1) {
@@ -26,16 +27,10 @@
     margin-right: 0;
 }
 
-#song-info td:nth-child(1) p, .dummybuttons p {
+#song-info td:nth-child(1) p {
     display: inline-block;
-    font-size: 12px;
     line-height: 15px;
-}
-
-@media (max-width: 960px) {
-    #song-info td:nth-child(1) p {
-        display: none;
-    }
+    margin-left: 0;
 }
 
 #song-info td:nth-child(2) {
@@ -59,13 +54,18 @@
     margin-right: 5px;
 }
 
-.icon-p {
-    margin: 0;
+#song-info td:nth-child(1) .fa-youtube {
+    font-size: 15px;
+    margin-right: 2px;
 }
 
 #special-tag, #tags a {
     display: inline-block;
     margin-right: 15px;
+}
+
+#tags .icon-p-big {
+    margin-left: 0;
 }
 
 .fa-tags {
@@ -78,6 +78,10 @@
 
 details {
     margin: 10px 0 15px 0;
+}
+
+summary .icon-p {
+    margin: 0 15px 0 -5px;
 }
 
 #lyrics-wrapper {

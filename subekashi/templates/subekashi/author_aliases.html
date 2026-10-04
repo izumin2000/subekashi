@@ -10,13 +10,13 @@
 
     <div class="dummybuttons">
         <a href="{% url 'subekashi:author' author.id %}">
-            <div class="dummybutton black-dummybutton"><i class="fas fa-user-circle"></i><p>作者ページ</p></div>
+            <div class="dummybutton black-dummybutton"><i class="fas fa-user"></i><p class="icon-p-big">作者ページ</p></div>
         </a>
         <a onclick="reloadPage()">
-            <div class="dummybutton black-dummybutton"><i class="fas fa-redo"></i><p>再読み込み</p></div>
+            <div class="dummybutton black-dummybutton"><i class="fas fa-redo"></i><p class="icon-p-big">再読み込み</p></div>
         </a>
         <a href="{% url 'subekashi:author_alias_new' author.id %}">
-            <div class="dummybutton black-dummybutton"><i class="fas fa-plus"></i><p>別名を追加する</p></div>
+            <div class="dummybutton black-dummybutton"><i class="fas fa-plus"></i><p class="icon-p-big">別名を追加する</p></div>
         </a>
     </div>
 
@@ -56,7 +56,7 @@
                 </div>
             {% endfor %}
             <div class="dummybuttons">
-                <button type="submit" id="primary-name-submit" class="dummybutton black-dummybutton" disabled><i class="fas fa-check"></i><p>変更する</p></button>
+                <button type="submit" id="primary-name-submit" class="dummybutton black-dummybutton" disabled><i class="fas fa-check"></i><p class="icon-p-big">変更する</p></button>
             </div>
         </form>
     {% endif %}

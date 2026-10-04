@@ -10,81 +10,81 @@
     <h1>YouTubeの動画リンクから登録<a href="{% url 'article:default_article' 'howToSong' %}"><i class="fas fa-info-circle"></i></a></h1>
     <form action="{% url 'subekashi:song_new' %}?toast=auto" method="POST" id="new-form-auto">{% csrf_token %}
         <div class="form-col">
-            <label for="url">YouTubeの<br>動画リンク<i class="fas fa-info-circle" onclick="showTutorial('youtube-url')"></i></label>
+            <label for="url"><i class="fas fa-link"></i><span class="icon-p-big"><i class="fab fa-youtube"></i>URL</span><i class="fas fa-info-circle" onclick="showTutorial('youtube-url')"></i></label>
             <input type="url" id="url" name="url" value="{{ request.GET.url }}" required>
         </div>
         <div class="checkbox-col" data-hide-if-questionable>
             <input type="checkbox" id="is-original-auto" name="is-original-auto" data-sync="original">
-            <label for="is-original-auto">オリジナル模倣</label>
+            <label for="is-original-auto"><i class="fas fa-external-link-alt"></i><span class="icon-p-big">オリジナル模倣</span></label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-original')"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-deleted-auto" name="is-deleted-auto" data-sync="deleted">
-            <label for="is-deleted-auto">非公開/削除済み</label>
+            <label for="is-deleted-auto"><i class="far fa-eye-slash"></i><span class="icon-p-big">非公開/削除済み</span></label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-deleted')"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-joke-auto" name="is-joke-auto" data-sync="joke">
-            <label for="is-joke-auto">ネタ曲</label>
+            <label for="is-joke-auto"><i class="far fa-meh-rolling-eyes"></i><span class="icon-p-big">ネタ曲</span></label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-joke')"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-inst-auto" name="is-inst-auto" data-sync="inst">
-            <label for="is-inst-auto">インスト</label>
+            <label for="is-inst-auto"><i class="fas fa-comment-slash"></i><span class="icon-p-big">インスト</span></label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-inst')"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-subeana-auto" name="is-subeana-auto" data-sync="subeana" checked>
-            <label for="is-subeana-auto">すべあな界隈曲</label>
+            <label for="is-subeana-auto"><i class="fas fa-user-circle"></i><span class="icon-p-big">すべあな界隈曲</span></label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-subeana')"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-questionable-auto" name="is-questionable-auto" data-sync="questionable">
-            <label for="is-questionable-auto">界隈曲?</label>
+            <label for="is-questionable-auto"><i class="fas fa-question"></i><span class="icon-p-big">界隈曲?</span></label>
             <i class="fas fa-info-circle" onclick="showTutorial('is_questionable')"></i>
         </div>
         <input type="submit" value="登録" id="new-submit-auto" disabled>
         <p id="new-form-auto-info"><span class='loading'></span></p>
     </form>
     
-    <h1>曲名と作者から登録<a href="{% url 'article:default_article' 'howToSong' %}"><i class="fas fa-info-circle"></i></a></h1>
+    <h1>タイトルと作者から登録<a href="{% url 'article:default_article' 'howToSong' %}"><i class="fas fa-info-circle"></i></a></h1>
     <form action="{% url 'subekashi:song_new' %}?toast=manual" method="POST" id="new-form-manual">{% csrf_token %}
         <div class="form-col">
-            <label for="title">曲名<i class="fas fa-info-circle" onclick="showTutorial('title')"></i></label>
+            <label for="title"><i class="fab fa-itunes-note"></i><span class="icon-p-big">タイトル</span><i class="fas fa-info-circle" onclick="showTutorial('title')"></i></label>
             <input type="text" id="title" name="title" class="sansfont" value="{{ request.GET.title }}" maxlength="500" required>
         </div>
         <div class="form-col">
-            <label for="authors">作者<br>(複数可)<i class="fas fa-info-circle" onclick="showTutorial('authors')"></i></label>
+            <label for="authors"><i class="fas fa-user-friends"></i><span class="icon-p-big">作者</span><span class="icon-p">(複数可)</span><i class="fas fa-info-circle" onclick="showTutorial('authors')"></i></label>
             <input type="text" id="authors" name="authors" class="sansfont" value="{{ request.GET.authors }}" required>
         </div>
         <div class="checkbox-col" data-hide-if-questionable>
             <input type="checkbox" id="is-original-manual" name="is-original-manual" data-sync="original">
-            <label for="is-original-manual">オリジナル模倣</label>
+            <label for="is-original-manual"><i class="fas fa-external-link-alt"></i><span class="icon-p-big">オリジナル模倣</span></label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-original')"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-deleted-manual" name="is-deleted-manual" data-sync="deleted">
-            <label for="is-deleted-manual">非公開/削除済み</label>
+            <label for="is-deleted-manual"><i class="far fa-eye-slash"></i><span class="icon-p-big">非公開/削除済み</span></label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-deleted')"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-joke-manual" name="is-joke-manual" data-sync="joke">
-            <label for="is-joke-manual">ネタ曲</label>
+            <label for="is-joke-manual"><i class="far fa-meh-rolling-eyes"></i><span class="icon-p-big">ネタ曲</span></label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-joke')"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-inst-manual" name="is-inst-manual" data-sync="inst">
-            <label for="is-inst-manual">インスト</label>
+            <label for="is-inst-manual"><i class="fas fa-comment-slash"></i><span class="icon-p-big">インスト</span></label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-inst')"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-subeana-manual" name="is-subeana-manual" data-sync="subeana" checked>
-            <label for="is-subeana-manual">すべあな界隈曲</label>
+            <label for="is-subeana-manual"><i class="fas fa-user-circle"></i><span class="icon-p-big">すべあな界隈曲</span></label>
             <i class="fas fa-info-circle" onclick="showTutorial('is-subeana')"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-questionable-manual" name="is-questionable-manual" data-sync="questionable">
-            <label for="is-questionable-manual">界隈曲?</label>
+            <label for="is-questionable-manual"><i class="fas fa-question"></i><span class="icon-p-big">界隈曲?</span></label>
             <i class="fas fa-info-circle" onclick="showTutorial('is_questionable')"></i>
         </div>
         <input type="submit" value="登録" id="new-submit-manual" disabled>

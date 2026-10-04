@@ -23,7 +23,7 @@
         <h1>検索</h1>
         <form action="{% url 'subekashi:songs' %}" method="GET" id="search-form">
             <div class="form-col">
-                <label for="keyword">キーワード</label>
+                <label for="keyword"><i class="fas fa-search"></i><span class="icon-p-big">キーワード</span></label>
                 <input type="text" id="keyword" name="keyword" placeholder="タイトル・チャンネル名・歌詞・URL">
             </div>
             <input type="submit" value="検索" id="searchsubmit">
@@ -36,8 +36,8 @@
             {% render_song_card songIns %}
         {% endfor %}
         <div class="dummybuttons">
-            <a href="{% url 'subekashi:songs' %}"><div class="dummybutton black-dummybutton"><p>もっと見る</p></div></a>
-            <a href="{% url 'subekashi:song_new' %}"><div class="dummybutton black-dummybutton"><p>曲を登録する</p></div></a>
+            <a href="{% url 'subekashi:songs' %}"><div class="dummybutton black-dummybutton"><i class="fas fa-search"></i><p class="icon-p-big">もっと見る</p></div></a>
+            <a href="{% url 'subekashi:song_new' %}"><div class="dummybutton black-dummybutton"><i class="fa fa-plus"></i><p class="icon-p-big">曲を登録する</p></div></a>
         </div>
     {% endif %}
 
@@ -47,8 +47,8 @@
             <iframe id="player" src="https://www.youtube-nocookie.com/embed/{{ adIns.url | slice:'17:' }}?enablejsapi=1" title="YouTube video player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreenframeborder="0"></iframe>
         </div>
         <div class="dummybuttons">
-            <a href="{% url 'subekashi:ad' %}"><div class="dummybutton black-dummybutton"><p>宣伝する</p></div></a>
-            <a href="{% url 'subekashi:setting' %}#is_shown_ad"><div class="dummybutton black-dummybutton"><p>非表示にする</p></div></a>
+            <a href="{% url 'subekashi:ad' %}"><div class="dummybutton black-dummybutton"><i class="fas fa-bullhorn"></i><p class="icon-p-big">宣伝する</p></div></a>
+            <a href="{% url 'subekashi:setting' %}#is_shown_ad"><div class="dummybutton black-dummybutton"><i class="fas fa-cog"></i><p class="icon-p-big">非表示にする</p></div></a>
         </div>
     {% endif %}
 
@@ -58,7 +58,7 @@
             <p class="lyrics">{{ aiIns.lyrics }}</p>
         {% endfor %}
         <div class="dummybuttons">
-            <a href="{% url 'subekashi:ai' %}"><div class="dummybutton black-dummybutton"><p>もっと見る</p></div></a>
+            <a href="{% url 'subekashi:ai' %}"><div class="dummybutton black-dummybutton"><i class="fas fa-align-center"></i><p class="icon-p-big">もっと見る</p></div></a>
         </div>
     {% endif %}
 
@@ -68,8 +68,7 @@
             {% render_song_card songIns %}
         {% endfor %}
             <div class="dummybuttons">
-                <a href="{% url 'subekashi:songs' %}?is_lack=True"><div class="dummybutton black-dummybutton"><p>もっと見る</p></div></a>
-                <a href="{% url 'subekashi:song_new' %}"><div class="dummybutton black-dummybutton"><p>曲を登録する</p></div></a>
+                <a href="{% url 'subekashi:songs' %}?is_lack=True"><div class="dummybutton black-dummybutton"><i class="fas fa-search"></i><p class="icon-p-big">もっと見る</p></div></a>
             </div>
     {% endif %}
  

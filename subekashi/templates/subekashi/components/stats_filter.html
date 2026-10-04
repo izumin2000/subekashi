@@ -2,11 +2,11 @@
     {% if show_all_songrange %}
         <div class="range-radio-group">
             <input type="radio" id="songrange-all" name="songrange" value="all" {% if songrange == 'all' %}checked{% endif %} onchange="this.form.submit()">
-            <label for="songrange-all">全て</label>
+            <label for="songrange-all"><i class="fas fa-expand"></i><span class="icon-p-big">全て</span></label>
             <input type="radio" id="songrange-subeana" name="songrange" value="subeana" {% if songrange == 'subeana' %}checked{% endif %} onchange="this.form.submit()">
-            <label for="songrange-subeana">すべあな界隈曲のみ</label>
+            <label for="songrange-subeana"><i class="fas fa-user-circle"></i><span class="icon-p-big">すべあな界隈曲のみ</span></label>
             <input type="radio" id="songrange-xx" name="songrange" value="xx" {% if songrange == 'xx' %}checked{% endif %} onchange="this.form.submit()">
-            <label for="songrange-xx">すべあな界隈曲以外</label>
+            <label for="songrange-xx"><i class="fas fa-fish"></i><span class="icon-p-big">すべあな界隈曲以外</span></label>
         </div>
     {% endif %}
     <div class="stats-select-group">

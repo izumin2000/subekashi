@@ -37,11 +37,6 @@
     height: 20px;
 }
 
-.fa-eye-slash {
-    cursor: not-allowed;
-    color: #888;
-}
-
 .song-card-col1 {
     display: block;
     width: fit-content;
