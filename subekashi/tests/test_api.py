@@ -58,6 +58,13 @@ class SongAPIListTest(TestCase):
         self.assertEqual(data["count"], 1)
         self.assertEqual(data["result"][0]["title"], "APIテスト曲1")
 
+    def test_guesser_filter_matches_url(self):
+        # #1117: song guesserはURLからもヒットする
+        response = self.client.get("/api/song/", {"guesser": "https://www.youtube.com/watch?v=apitesturl01"})
+        data = response.json()
+        self.assertEqual(data["count"], 1)
+        self.assertEqual(data["result"][0]["title"], "APIテスト曲1")
+
     def test_pagination_size_is_respected(self):
         response = self.client.get("/api/song/", {"size": "1"})
         data = response.json()

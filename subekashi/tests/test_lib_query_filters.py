@@ -149,6 +149,9 @@ class FilterByGuesserTest(TestCase):
         self.song_by_title = Song.objects.create(title="推測対象タイトル")
         self.song_by_author = Song.objects.create(title="別曲")
         self.song_by_author.authors.add(self.author)
+        self.song_by_url = Song.objects.create(title="URL推測曲")
+        link = SongLink.objects.create(url="https://youtu.be/guessUrl001")
+        link.songs.add(self.song_by_url)
         self.unrelated = Song.objects.create(title="関係ない曲")
 
     def test_filter_by_title(self):
@@ -158,6 +161,31 @@ class FilterByGuesserTest(TestCase):
     def test_filter_by_author_name(self):
         qs = Song.objects.filter(filter_by_guesser("推測テスト作者")).distinct()
         self.assertIn(self.song_by_author, qs)
+
+    def test_filter_by_url(self):
+        # #1117: URLからもヒットする
+        qs = Song.objects.filter(filter_by_guesser("https://youtu.be/guessUrl001")).distinct()
+        self.assertIn(self.song_by_url, qs)
+        self.assertNotIn(self.unrelated, qs)
+
+    def test_filter_by_partial_url(self):
+        # #1117: 動画IDのみ（URLの一部）でもヒットする
+        qs = Song.objects.filter(filter_by_guesser("guessUrl001")).distinct()
+        self.assertIn(self.song_by_url, qs)
+
+    def test_filter_by_unnormalized_youtube_url(self):
+        # #1117: clean_urlで正規化されるため、youtube.com/watch?v=形式でもyoutu.be形式のリンクにヒットする
+        qs = Song.objects.filter(filter_by_guesser("https://www.youtube.com/watch?v=guessUrl001")).distinct()
+        self.assertIn(self.song_by_url, qs)
+
+    def test_filter_by_url_case_insensitive(self):
+        # #1117: URLは大文字小文字を区別しない
+        qs = Song.objects.filter(filter_by_guesser("GUESSURL001")).distinct()
+        self.assertIn(self.song_by_url, qs)
+
+    def test_filter_by_url_not_match_other_url(self):
+        qs = Song.objects.filter(filter_by_guesser("https://youtu.be/otherUrl999")).distinct()
+        self.assertNotIn(self.song_by_url, qs)
 
     def test_filter_by_author_alias_bidirectional(self):
         # owner/targetの名前は部分文字列関係にならないものを使う（素の作者名一致で
