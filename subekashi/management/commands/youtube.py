@@ -45,20 +45,22 @@ class Command(BaseCommand):
             if upload_time:
                 upload_time_list.append(upload_time)
                 
+        # YouTubeの動画が全て取得できなかったら、再生回数・高評価数・アップロード日時は前回の値を引き継ぐ
+        if is_deleted:
+            # YouTube以外のURLは公開状況を確認できないため、削除済みかどうかも変更しない
+            if has_other_url:
+                return {}
+            return {"is_deleted": True}
+
         info["upload_time"] = max(upload_time_list) if upload_time_list else None
-
-        # YouTube以外のURLは公開状況を確認できないため、YouTubeの動画が全て取得できなくても削除済みかどうかは変更しない
-        if is_deleted and has_other_url:
-            return info
-
         info["is_deleted"] = is_deleted
         return info
-    
+
     # Songモデルにinfoの内容を保存
     def save_song(self, song, info):
-        song.view = info.get("view", 0)
-        song.like = info.get("like", 0)
-        song.upload_time = info.get("upload_time", None)
+        song.view = info.get("view", song.view)
+        song.like = info.get("like", song.like)
+        song.upload_time = info.get("upload_time", song.upload_time)
         song.is_deleted = info.get("is_deleted", song.is_deleted)
         song.save()
     

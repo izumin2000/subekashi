@@ -110,17 +110,30 @@ class YoutubeCommandTest(TestCase):
     @patch("subekashi.management.commands.youtube.get_youtube_api")
     def test_all_videos_unavailable_marks_song_deleted(self, mock_api, mock_sleep):
         # 動画が削除されている場合、get_youtube_apiは{}を返す
+        # 再生回数・高評価数・アップロード日時は前回の値を引き継ぐ（#1136）
+        upload_time = timezone_aware(2024, 1, 1)
+        self.song1.view = 100
+        self.song1.like = 10
+        self.song1.upload_time = upload_time
+        self.song1.save()
         mock_api.return_value = {}
         call_command("youtube", id=self.song1.id)
 
         self.song1.refresh_from_db()
         self.assertTrue(self.song1.is_deleted)
-        self.assertEqual(self.song1.view, 0)
+        self.assertEqual(self.song1.view, 100)
+        self.assertEqual(self.song1.like, 10)
+        self.assertEqual(self.song1.upload_time, upload_time)
 
     @patch("subekashi.management.commands.youtube.sleep")
     @patch("subekashi.management.commands.youtube.get_youtube_api")
     def test_unavailable_youtube_with_other_url_does_not_mark_deleted(self, mock_api, mock_sleep):
         # YouTube以外のURLは公開状況を確認できないため、YouTubeが削除済みでも削除済みにしない（#1136）
+        upload_time = timezone_aware(2024, 1, 1)
+        self.song1.view = 100
+        self.song1.like = 10
+        self.song1.upload_time = upload_time
+        self.song1.save()
         niconico_link = SongLink.objects.create(url="https://nicovideo.jp/watch/sm1136")
         niconico_link.songs.add(self.song1)
         mock_api.return_value = {}
@@ -128,6 +141,9 @@ class YoutubeCommandTest(TestCase):
 
         self.song1.refresh_from_db()
         self.assertFalse(self.song1.is_deleted)
+        self.assertEqual(self.song1.view, 100)
+        self.assertEqual(self.song1.like, 10)
+        self.assertEqual(self.song1.upload_time, upload_time)
 
     @patch("subekashi.management.commands.youtube.sleep")
     @patch("subekashi.management.commands.youtube.get_youtube_api")
