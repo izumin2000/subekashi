@@ -24,8 +24,10 @@ from django.test import TestCase
 from django.utils import timezone
 
 from subekashi.lib.youtube import YoutubeApiError, YoutubeApiUnavailableError
+from article.models import Article
 from subekashi.management.commands.backup import Command
-from subekashi.models import Ai, Song, SongLink, Stats, Word
+from subekashi.management.commands.sitemap import Command as SitemapCommand
+from subekashi.models import Ai, Author, Song, SongLink, Stats, Word
 
 
 def timezone_aware(year, month, day):
@@ -1198,3 +1200,62 @@ class AiCommandTest(TestCase):
         call_command("ai", stdout=out)
 
         self.assertIn("新規Aiレコード数：1件（対象1曲中）", out.getvalue())
+
+
+class SitemapCommandTest(TestCase):
+    """sitemapコマンドのURL生成テスト"""
+
+    BASE_URL = "https://lyrics.imicomweb.com"
+
+    def get_locs(self):
+        return [loc for loc, _ in SitemapCommand().get_urls()]
+
+    def test_static_paths_are_included_without_duplicates(self):
+        locs = self.get_locs()
+
+        for path in ["/", "/songs/", "/songs/new/", "/stats/", "/ai/", "/ai/result/", "/ad/", "/contact/", "/articles/", "/articles/lilyriku/"]:
+            self.assertEqual(locs.count(self.BASE_URL + path), 1)
+
+    def test_song_and_history_urls_are_included(self):
+        song = Song.objects.create(title="曲")
+
+        locs = self.get_locs()
+
+        self.assertIn(f"{self.BASE_URL}/songs/{song.id}/", locs)
+        self.assertIn(f"{self.BASE_URL}/songs/{song.id}/history/", locs)
+
+    def test_questionable_and_limited_songs_are_excluded(self):
+        questionable = Song.objects.create(title="疑義曲", is_questionable=True)
+        limited = Song.objects.create(title="非公開曲", is_limited=True)
+
+        locs = self.get_locs()
+
+        for song in [questionable, limited]:
+            self.assertNotIn(f"{self.BASE_URL}/songs/{song.id}/", locs)
+            self.assertNotIn(f"{self.BASE_URL}/songs/{song.id}/history/", locs)
+
+    def test_author_urls_use_authors_path(self):
+        author = Author.objects.create(name="作者")
+
+        locs = self.get_locs()
+
+        self.assertIn(f"{self.BASE_URL}/authors/{author.id}/", locs)
+        self.assertIn(f"{self.BASE_URL}/authors/{author.id}/stats/", locs)
+        self.assertIn(f"{self.BASE_URL}/authors/{author.id}/aliases/", locs)
+        self.assertNotIn(f"{self.BASE_URL}/author/{author.id}/", locs)
+
+    def test_channel_urls_are_not_included(self):
+        Author.objects.create(name="作者")
+
+        self.assertFalse(any("/channel/" in loc for loc in self.get_locs()))
+
+    def test_only_open_non_news_articles_are_included(self):
+        Article.objects.create(article_id="open", tag="blog", is_open=True)
+        Article.objects.create(article_id="closed", tag="blog", is_open=False)
+        Article.objects.create(article_id="news", tag="news", is_open=True)
+
+        locs = self.get_locs()
+
+        self.assertIn(f"{self.BASE_URL}/articles/open/", locs)
+        self.assertNotIn(f"{self.BASE_URL}/articles/closed/", locs)
+        self.assertNotIn(f"{self.BASE_URL}/articles/news/", locs)

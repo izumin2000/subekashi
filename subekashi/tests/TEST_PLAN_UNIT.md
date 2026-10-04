@@ -1311,6 +1311,19 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | `now_local()`を使用 | 正常実行 | `now_local()`が1回だけ呼ばれる |
 | 廃止されたオプション（#1118） | `--year 2026 --month 1` | `CommandError`（オプションが存在しないため） |
 
+#### 14-7. `sitemap` コマンド（sitemapの掲載ページを見直し、#970）
+
+URL生成は`get_urls()`に分離しており、ファイル出力・`collectstatic`を伴わずにテストする。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 固定パス | 正常実行 | `/`・`/songs/`・`/songs/new/`・`/stats/`・`/ai/`・`/ai/result/`・`/ad/`・`/contact/`・`/articles/`・`/articles/lilyriku/`がそれぞれ1件ずつ含まれる（`/ai/`の重複を解消） |
+| 曲・編集履歴 | 通常の曲が存在 | `/songs/<id>/`と`/songs/<id>/history/`が含まれる |
+| noindexの曲は除外 | `is_questionable=True`または`is_limited=True`の曲が存在 | その曲の`/songs/<id>/`・`/songs/<id>/history/`は含まれない |
+| 作者 | Authorが存在 | `/authors/<id>/`・`/authors/<id>/stats/`・`/authors/<id>/aliases/`が含まれ、存在しない旧パス`/author/<id>/`は含まれない |
+| 旧形式のchannel | Authorが存在 | リダイレクト用の`/channel/<name>/`は含まれない |
+| 記事 | 公開・非公開・news記事が混在 | 公開かつnews以外の記事のみ`/articles/<id>/`が含まれる |
+
 ---
 
 ### 15. `templatetags/song_card.py` — テンプレートタグ
