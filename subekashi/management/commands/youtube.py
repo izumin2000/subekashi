@@ -8,22 +8,13 @@ from time import sleep
 class Command(BaseCommand):
     help = "YouTube API関連。idオプションを加えることでそのidのみのsongレコードを更新する"
     
-    # SongLinkからYouTube動画IDを取得しリストにする
-    def get_youtube_ids(self, song):
-        urls = song.links.values_list('url', flat=True)
-        video_ids = [get_youtube_id(url) for url in urls if is_youtube_url(url)]
-        return video_ids
-    
-    # SongLinkにYouTube以外のURLがあるか
-    def has_other_url(self, song):
-        urls = song.links.values_list('url', flat=True)
-        return any(not is_youtube_url(url) for url in urls)
-    
     # 複数のYouTubeの動画の再生回数・高評価数の総和を求める
     # アップロード日時は最も新しい日時を取得する
-    def get_youtube_info_sum(self, songs):
+    def get_youtube_info_sum(self, song):
         is_deleted = True
-        video_ids = self.get_youtube_ids(songs)
+        urls = list(song.links.values_list('url', flat=True))
+        video_ids = [get_youtube_id(url) for url in urls if is_youtube_url(url)]
+        has_other_url = any(not is_youtube_url(url) for url in urls)
         upload_time_list = []
         info = {
             "view": 0,
@@ -57,7 +48,7 @@ class Command(BaseCommand):
         info["upload_time"] = max(upload_time_list) if upload_time_list else None
 
         # YouTube以外のURLは公開状況を確認できないため、YouTubeの動画が全て取得できなくても削除済みかどうかは変更しない
-        if is_deleted and self.has_other_url(songs):
+        if is_deleted and has_other_url:
             return info
 
         info["is_deleted"] = is_deleted

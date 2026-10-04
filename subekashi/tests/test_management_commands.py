@@ -155,6 +155,32 @@ class YoutubeCommandTest(TestCase):
         self.assertFalse(self.song1.is_deleted)
         self.assertEqual(self.song1.view, 30)
 
+    @patch("subekashi.management.commands.youtube.sleep")
+    @patch("subekashi.management.commands.youtube.get_youtube_api")
+    def test_available_youtube_with_other_url_does_not_mark_deleted(self, mock_api, mock_sleep):
+        niconico_link = SongLink.objects.create(url="https://nicovideo.jp/watch/sm1136")
+        niconico_link.songs.add(self.song1)
+        mock_api.return_value = {"view": 40, "like": 4, "upload_time": None}
+        call_command("youtube", id=self.song1.id)
+
+        self.song1.refresh_from_db()
+        self.assertFalse(self.song1.is_deleted)
+        self.assertEqual(self.song1.view, 40)
+
+    @patch("subekashi.management.commands.youtube.sleep")
+    @patch("subekashi.management.commands.youtube.get_youtube_api")
+    def test_available_youtube_unmarks_manual_deleted_with_other_url(self, mock_api, mock_sleep):
+        # 削除済みを維持するのはYouTubeが全て取得不可の場合のみで、取得できれば未削除に戻す（#1136）
+        self.song1.is_deleted = True
+        self.song1.save()
+        niconico_link = SongLink.objects.create(url="https://nicovideo.jp/watch/sm1136")
+        niconico_link.songs.add(self.song1)
+        mock_api.return_value = {"view": 40, "like": 4, "upload_time": None}
+        call_command("youtube", id=self.song1.id)
+
+        self.song1.refresh_from_db()
+        self.assertFalse(self.song1.is_deleted)
+
 
 SQLITE_DB_SETTINGS = {
     "default": {"ENGINE": "django.db.backends.sqlite3", "NAME": "/tmp/db.sqlite3"},
