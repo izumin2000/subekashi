@@ -452,20 +452,34 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | キーワード検索 | `?keyword=テスト` | HTTP 200、結果が絞られる |
 | ページネーション | `?page=2&size=10` | HTTP 200 |
 | 不正なページ番号 | `?page=abc` | HTTP 200 (デフォルト page=1 で処理) |
-| 真偽値クエリ (大文字True) | `?is_draft=True` | context["is_draft"] = True (チェックボックス有効) |
-| 真偽値クエリ (数値1) | `?is_draft=1` | context["is_draft"] = True |
-| 真偽値クエリ (大文字False) | `?is_draft=False` | context["is_draft"] = False |
+| 真偽値クエリ (大文字True) | `?is_draft=True` | context["is_draft"] = "True" (下書きのみ) |
+| 真偽値クエリ (数値1) | `?is_draft=1` | context["is_draft"] = "True" |
+| 真偽値クエリ (大文字False) | `?is_draft=False` | context["is_draft"] = "False" (下書き以外) |
+| 真偽値クエリ (数値0) | `?is_draft=0` | context["is_draft"] = "False" |
+| 真偽値クエリ (不正な値) | `?is_draft=abc` | context に is_draft が含まれない（フィルタなし） |
+| 真偽値クエリ False の表示 | `?is_lack=False` | 「以外」のラジオボタンが選択された状態で表示される |
+| 真偽値クエリ 未指定の表示 | URLクエリなし | 「全て」のラジオボタンが選択された状態で表示される |
+| 真偽値フィルタは重複して表示しない | `?is_inst=True&is_original=False` | インスト曲・オリジナル模倣曲のラジオボタンはそれぞれ1つのフォームにのみ表示される |
+| 界隈曲の種類・ネタ曲のラジオボタン | `?is_subeana=xx&is_joke=False` | 「以外」(`songrange-xx`・`jokerange-off`) のラジオボタンが選択された状態で表示される（選択肢は「全て」「のみ」「以外」） |
+| 界隈曲の種類・ネタ曲のラジオボタン（未指定） | URLクエリなし | `songrange-all`・`jokerange-on`（全て）のラジオボタンが選択された状態で表示される |
+| ラジオボタンの選択肢の文言 | GETリクエスト | 検索フォームのラジオボタンの選択肢に「表示」が含まれない |
 | is_joke=True | `?is_joke=True` | context["jokerange"] = "only" |
 | is_joke=only | `?is_joke=only` | context["jokerange"] = "only" |
 | is_joke=False | `?is_joke=False` | context["jokerange"] = "off" |
 | is_joke=off | `?is_joke=off` | context["jokerange"] = "off" |
 | is_joke=all | `?is_joke=all` | context["jokerange"] = "on" |
 | is_joke=on | `?is_joke=on` | context["jokerange"] = "on" |
-| is_original/is_inst 大文字True | `?is_original=True` など | 対応 context フィールドが True |
-| is_questionable 大文字True | `?is_questionable=True` | context["is_questionable"] = True |
+| is_original/is_inst/is_questionable/is_lack/is_deleted | 各フィールドに `True` / `False` | 対応 context フィールドが "True" / "False" |
 | is_subeana経由の絞り込み(タグリンク等)は保存設定cookieを上書きしない | `is_saved_select=on`, `search_songrange=subeana` (cookie), `?is_subeana=xx` | context["songrange"] = "xx"（表示のみ反映）、`search_songrange` cookieは上書きされない |
 | is_joke経由の絞り込み(タグリンク等)は保存設定cookieを上書きしない | `is_saved_select=on`, `search_jokerange=on` (cookie), `?is_joke=only` | context["jokerange"] = "only"（表示のみ反映）、`search_jokerange` cookieは上書きされない |
 | songrangeクエリ(検索フォーム経由)は引き続きcookieに保存される | `is_saved_select=on`, `?songrange=xx` | `search_songrange` cookieに "xx" が保存される |
+| 検索フォームの初期表示（デフォルト） | URLクエリなし | context["search_form"] = "keyword"、キーワードのラジオボタンが選択され、他のフォームは `hidden` |
+| 検索フォームの初期表示（URLクエリ指定） | `?title=テスト` `?view_gte=100` `?is_subeana=xx` `?jokerange=off` `?is_original=True` `?is_inst=True` `?is_questionable=True` `?is_lack=True` `?sort=-view` など | URLクエリを含むフォーム（title/youtube/subeana/joke/original/inst/questionable/lack/sortなど）が表示される |
+| 検索フォームの初期表示（複数指定） | `?is_lack=True&keyword=テスト` / `?title=テスト&sort=-view` / `?title=テスト&view_gte=100` / `?view_gte=100&lyrics=テスト` | ラジオボタンの並び順で先の "keyword" / "sort" / "youtube" / "lyrics" が表示される |
+| ラジオボタンの並び順 | GETリクエスト | よく利用するため、先頭からキーワード・並び替え・歌詞・YouTubeの順に並ぶ（全16個） |
+| 検索フォームの初期表示（空の値） | `?title=` | "keyword" が表示される |
+| ラジオボタンを全て表示するボタン | GETリクエスト | `#search-form-radios-toggle`（`aria-expanded="false"`、「全て表示」）が表示される |
+| 「結果を表示」ボタンの廃止（#970） | GETリクエスト | `scroll-to-results` が含まれない |
 
 #### 7-3. `SongView` (`/songs/<id>/`)
 
@@ -743,6 +757,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `is_questionable=True` の曲 | GETリクエスト | カードHTMLに `song-card-lyrics` が含まれない |
 | `is_questionable=False` の曲 | GETリクエスト | カードHTMLに `song-card-lyrics` が含まれる |
 | エラーメッセージのエスケープ（#1126） | `sort=<img src=x onerror=alert(1)>` | `class='error'` の要素内で入力値がHTMLエスケープされ、`<img` が含まれない |
+| `is_questionable=True` / `False` | GETリクエスト | 「界隈曲?が有効です」が含まれる |
 
 #### 7-11-1. `song_guessers` (`/api/html/song_guessers`)（#1126）
 
@@ -964,6 +979,16 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | author（逆方向） | `{"author": "yamada"}` | `yamada`・`sasaki`双方の曲がヒット |
 | author_exact（逆方向） | `{"author_exact": "yamada"}` | `yamada`・`sasaki`双方の曲がヒット |
 | keyword（逆方向） | `{"keyword": "yamada"}` | `yamada`・`sasaki`双方の曲がヒット |
+
+#### 10-4. is_lackフィルター（True・False・フィルタなしの3値）
+
+完成した曲（URLを2つ持つ曲・模倣元を持つ曲）と未完成の曲（URLなし）が存在するシナリオで検証する。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| is_lack=True | `{"is_lack": "True"}` | 未完成の曲のみ返される |
+| is_lack=False | `{"is_lack": "False"}` | 未完成の曲が除外され、完成した曲が重複なく返される |
+| is_lack指定なし | `{}` | 全ての曲が返される |
 
 ---
 

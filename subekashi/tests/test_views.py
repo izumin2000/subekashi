@@ -117,22 +117,76 @@ class SongsViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_bool_query_param_true_uppercase_sets_context(self):
-        """is_draft=True (大文字) でチェックボックスが有効になること"""
+        """is_draft=True (大文字) で下書きのみになること"""
         response = self.client.get(reverse("subekashi:songs"), {"is_draft": "True"})
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.context["is_draft"])
+        self.assertEqual(response.context["is_draft"], "True")
 
     def test_bool_query_param_1_sets_context(self):
-        """is_draft=1 でチェックボックスが有効になること"""
+        """is_draft=1 で下書きのみになること"""
         response = self.client.get(reverse("subekashi:songs"), {"is_draft": "1"})
         self.assertEqual(response.status_code, 200)
-        self.assertTrue(response.context["is_draft"])
+        self.assertEqual(response.context["is_draft"], "True")
 
     def test_bool_query_param_false_uppercase_sets_context(self):
-        """is_draft=False (大文字) でチェックボックスが無効になること"""
+        """is_draft=False (大文字) で下書き以外になること"""
         response = self.client.get(reverse("subekashi:songs"), {"is_draft": "False"})
         self.assertEqual(response.status_code, 200)
-        self.assertFalse(response.context["is_draft"])
+        self.assertEqual(response.context["is_draft"], "False")
+
+    def test_bool_query_param_0_sets_context(self):
+        """is_draft=0 で下書き以外になること"""
+        response = self.client.get(reverse("subekashi:songs"), {"is_draft": "0"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["is_draft"], "False")
+
+    def test_bool_query_param_invalid_value_is_not_filtered(self):
+        """is_draft に真偽値以外を指定した場合はフィルタなしになること"""
+        response = self.client.get(reverse("subekashi:songs"), {"is_draft": "abc"})
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("is_draft", response.context)
+
+    def test_bool_query_param_false_selects_false_radio(self):
+        """is_lack=False のとき「以外」のラジオボタンが選択された状態で表示されること"""
+        response = self.client.get(reverse("subekashi:songs"), {"is_lack": "False"})
+        self.assertContains(response, '<input type="radio" id="is_lack-false" name="is_lack" value="False" checked>')
+        self.assertContains(response, '<label for="is_lack-false"><i class="fas fa-not-equal"></i><span class="icon-p-big">以外</span></label>')
+
+    def test_bool_query_param_not_specified_selects_all_radio(self):
+        """is_lack を指定しないとき「全て」のラジオボタンが選択された状態で表示されること"""
+        response = self.client.get(reverse("subekashi:songs"))
+        self.assertContains(response, '<input type="radio" id="is_lack-all" name="is_lack" value="" checked>')
+        self.assertContains(response, '<label for="is_lack-all"><i class="fas fa-expand"></i><span class="icon-p-big">全て</span></label>')
+
+    def test_bool_filters_are_not_duplicated(self):
+        """インスト曲・オリジナル模倣曲は、それぞれ1つのフォームにのみ表示されること"""
+        response = self.client.get(reverse("subekashi:songs"), {"is_inst": "True", "is_original": "False"})
+        self.assertContains(response, '<input type="radio" id="is_inst-true" name="is_inst" value="True" checked>', count=1)
+        self.assertContains(response, '<input type="radio" id="is_original-false" name="is_original" value="False" checked>', count=1)
+
+    def test_songrange_and_jokerange_are_radio(self):
+        """界隈曲の種類・ネタ曲はラジオボタンで選択された状態で表示されること"""
+        response = self.client.get(reverse("subekashi:songs"), {"is_subeana": "xx", "is_joke": "False"})
+        self.assertContains(response, '<input type="radio" id="songrange-xx" name="songrange" value="xx" checked>')
+        self.assertContains(response, '<label for="songrange-xx"><i class="fas fa-not-equal"></i><span class="icon-p-big">以外</span></label>')
+        self.assertContains(response, '<input type="radio" id="jokerange-off" name="jokerange" value="off" checked>')
+        self.assertContains(response, '<label for="jokerange-off"><i class="fas fa-not-equal"></i><span class="icon-p-big">以外</span></label>')
+
+    def test_songrange_and_jokerange_default_radio(self):
+        """界隈曲の種類・ネタ曲は指定がなければ「全て」のラジオボタンが選択されること"""
+        response = self.client.get(reverse("subekashi:songs"))
+        self.assertContains(response, '<input type="radio" id="songrange-all" name="songrange" value="all" checked>')
+        self.assertContains(response, '<input type="radio" id="jokerange-on" name="jokerange" value="on" checked>')
+
+    def test_radio_labels_do_not_contain_hyouji(self):
+        """検索フォームのラジオボタンの選択肢に「表示」が含まれないこと"""
+        response = self.client.get(reverse("subekashi:songs"))
+        content = response.content.decode()
+        search_forms = content[content.index('<div id="search-forms">'):content.index('id="search-button"')]
+        labels = re.findall(r'<label for="[^"]+"><i class="[^"]+"></i><span class="icon-p-big">([^<]+)</span></label>', search_forms)
+        self.assertTrue(labels)
+        for label in labels:
+            self.assertNotIn("表示", label)
 
     def test_is_joke_true_sets_jokerange_only(self):
         """is_joke=True でjokerangeがonlyになること"""
@@ -171,12 +225,13 @@ class SongsViewTest(TestCase):
         self.assertEqual(response.context["jokerange"], "on")
 
     def test_bool_query_params_all_fields(self):
-        """is_original/is_inst/is_questionable でもTrue/Falseが正しく変換されること"""
-        for field in ["is_original", "is_inst", "is_questionable"]:
-            with self.subTest(field=field):
-                response = self.client.get(reverse("subekashi:songs"), {field: "True"})
-                self.assertEqual(response.status_code, 200)
-                self.assertTrue(response.context[field])
+        """is_original/is_inst/is_questionable/is_lack/is_deleted でもTrue/Falseが正しく変換されること"""
+        for field in ["is_original", "is_inst", "is_questionable", "is_lack", "is_deleted"]:
+            for value in ["True", "False"]:
+                with self.subTest(field=field, value=value):
+                    response = self.client.get(reverse("subekashi:songs"), {field: value})
+                    self.assertEqual(response.status_code, 200)
+                    self.assertEqual(response.context[field], value)
 
     def test_is_subeana_query_param_does_not_overwrite_saved_songrange_cookie(self):
         """曲詳細ページのタグリンク(is_subeana)経由の絞り込みでsearch_songrange cookieが上書きされないこと"""
@@ -202,6 +257,77 @@ class SongsViewTest(TestCase):
         response = self.client.get(reverse("subekashi:songs"), {"songrange": "xx"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.cookies["search_songrange"].value, "xx")
+
+    def test_search_form_defaults_to_keyword(self):
+        """URLクエリがない場合はキーワードのフォームが表示されること"""
+        response = self.client.get(reverse("subekashi:songs"))
+        self.assertEqual(response.context["search_form"], "keyword")
+        self.assertContains(response, '<input type="radio" id="search-form-radio-keyword" name="search-form" value="keyword" checked>')
+        self.assertContains(response, '<div class="search-form" id="search-form-keyword" >')
+        self.assertContains(response, '<div class="search-form" id="search-form-title" hidden>')
+
+    def test_search_form_selected_by_query(self):
+        """URLクエリで指定されたフィルタを含むフォームが表示されること"""
+        cases = [
+            ({"title": "テスト"}, "title"),
+            ({"author": "テスト"}, "author"),
+            ({"lyrics": "テスト"}, "lyrics"),
+            ({"url": "https://youtu.be/xxx"}, "url"),
+            ({"imitate": "1"}, "imitate"),
+            ({"view_gte": "100"}, "youtube"),
+            ({"upload_time_lte": "2024-01-01"}, "youtube"),
+            ({"is_subeana": "xx"}, "subeana"),
+            ({"songrange": "subeana"}, "subeana"),
+            ({"is_joke": "only"}, "joke"),
+            ({"jokerange": "off"}, "joke"),
+            ({"is_original": "True"}, "original"),
+            ({"is_inst": "True"}, "inst"),
+            ({"is_questionable": "True"}, "questionable"),
+            ({"is_deleted": "True"}, "deleted"),
+            ({"is_lack": "True"}, "lack"),
+            ({"is_draft": "True"}, "draft"),
+            ({"sort": "-view"}, "sort"),
+        ]
+        for query, expected in cases:
+            with self.subTest(query=query):
+                response = self.client.get(reverse("subekashi:songs"), query)
+                self.assertEqual(response.context["search_form"], expected)
+                self.assertContains(response, f'<div class="search-form" id="search-form-{expected}" >')
+
+    def test_search_form_prefers_earlier_form(self):
+        """複数のフォームのURLクエリが指定された場合はラジオボタンの並び順で先のフォームが表示されること"""
+        cases = [
+            ({"is_lack": "True", "keyword": "テスト"}, "keyword"),
+            ({"title": "テスト", "sort": "-view"}, "sort"),
+            ({"title": "テスト", "view_gte": "100"}, "youtube"),
+            ({"view_gte": "100", "lyrics": "テスト"}, "lyrics"),
+        ]
+        for query, expected in cases:
+            with self.subTest(query=query):
+                response = self.client.get(reverse("subekashi:songs"), query)
+                self.assertEqual(response.context["search_form"], expected)
+
+    def test_search_form_radio_order(self):
+        """よく利用するフォームを先頭に、キーワード・並び替え・歌詞・YouTubeの順でラジオボタンが並ぶこと"""
+        response = self.client.get(reverse("subekashi:songs"))
+        radios = re.findall(r'id="search-form-radio-(\w+)"', response.content.decode())
+        self.assertEqual(radios[:4], ["keyword", "sort", "lyrics", "youtube"])
+        self.assertEqual(len(radios), 16)
+
+    def test_search_form_ignores_empty_query(self):
+        """値が空のURLクエリではフォームが切り替わらないこと"""
+        response = self.client.get(reverse("subekashi:songs"), {"title": ""})
+        self.assertEqual(response.context["search_form"], "keyword")
+
+    def test_search_form_radios_toggle_button_is_shown(self):
+        """フォームを切り替えるラジオボタンを全て表示するボタンが、閉じた状態で表示されること"""
+        response = self.client.get(reverse("subekashi:songs"))
+        self.assertContains(response, '<button type="button" id="search-form-radios-toggle" aria-expanded="false"><i class="fas fa-angle-down"></i><span>全て表示</span></button>')
+
+    def test_scroll_to_results_button_is_removed(self):
+        """「結果を表示」ボタン(scroll-to-results)が表示されないこと"""
+        response = self.client.get(reverse("subekashi:songs"))
+        self.assertNotContains(response, "scroll-to-results")
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
@@ -2725,6 +2851,17 @@ class SongCardsViewTest(TestCase):
         self.assertIn("class='error'", content)
         self.assertNotIn("<img", content)
         self.assertIn("&lt;img src=x onerror=alert(1)&gt;", content)
+
+    def test_is_questionable_shows_active_filter(self):
+        """is_questionable を指定したとき「界隈曲?が有効です」が含まれること"""
+        for value in ["True", "False"]:
+            with self.subTest(value=value):
+                response = self.client.get(
+                    reverse("subekashi:song_cards"), {"is_questionable": value}
+                )
+                self.assertEqual(response.status_code, 200)
+                content = "".join(response.json())
+                self.assertIn("界隈曲?が有効です", content)
 
 
 @override_settings(STORAGES=STATIC_STORAGE)

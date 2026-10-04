@@ -837,12 +837,14 @@ input:focus {
     margin: 5px 0;
 }
 
+/* labelはベースラインではなく中央で揃える（アイコンが画像の場合、ベースラインが画像の下端になり上に余白ができるため） */
 .checkbox-col label {
     display: inline-flex;
     width: 8em;
     min-height: 30px;
     align-items: center;
     justify-content: center;
+    vertical-align: middle;
 }
 
 input[type=checkbox], input[type=radio] {
@@ -853,6 +855,10 @@ input[type=checkbox], input[type=radio] {
     margin: -5px 0 0 20px;
     vertical-align: middle;
     cursor: pointer;
+}
+
+.checkbox-col input[type=checkbox], .checkbox-col input[type=radio] {
+    margin-top: 0;
 }
 
 textarea {
@@ -873,7 +879,7 @@ sup {
     .form-col label {
         width: fit-content;
         display: block;
-        margin: 0 auto;
+        margin: 0 auto 5px auto;
     }
 
     .checkbox-col {
@@ -950,7 +956,7 @@ input[type=submit], button {
     transform: rotate(180deg);
 }
 
-.range-radio-group {
+.radio-group {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -958,11 +964,11 @@ input[type=submit], button {
     margin: 20px 0;
 }
 
-.range-radio-group input[type=radio] {
+.radio-group input[type=radio] {
     display: none;
 }
 
-.range-radio-group label {
+.radio-group label {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -976,7 +982,7 @@ input[type=submit], button {
     white-space: nowrap;
 }
 
-.range-radio-group label::before {
+.radio-group label::before {
     content: "";
     display: inline-block;
     width: 12px;
@@ -986,17 +992,30 @@ input[type=submit], button {
     background-color: #bbb;
 }
 
-.range-radio-group input[type=radio]:checked + label {
+.radio-group input[type=radio]:checked + label {
     background-color: #eee;
     color: #111;
 }
 
-.range-radio-group input[type=radio]:checked + label i {
+.radio-group input[type=radio]:checked + label i {
     color: #111;
 }
 
-.range-radio-group input[type=radio]:checked + label::before {
+.radio-group input[type=radio]:checked + label::before {
     background-color: #09F;
+}
+
+/* フィルタバッジ */
+.radio-group label.filtered::after {
+    content: "";
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background-color: #090;
+    box-shadow: 0 0 0 2px #111;
 }
 
 .stats-select-group {

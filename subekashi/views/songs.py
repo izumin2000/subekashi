@@ -5,10 +5,6 @@ from subekashi.constants.constants import ALL_MEDIAS, LONG_TERM_COOKIE_AGE
 
 # Cookieに保存するフォームの設定
 COOKIE_FORMS = {
-    'isdetail': {
-        'values': {'True', 'False'},
-        'default': 'False'
-    },
     'songrange': {
         'values': {'all', 'subeana', 'xx'},
         'default': 'all'
@@ -23,8 +19,30 @@ COOKIE_FORMS = {
     }
 }
 
-# チェックボックス
+# 真偽値のフィルタ（True・False・フィルタなしの3値）
 BOOL_FORMS = ["is_subeana", "is_joke", "is_lack", "is_draft", "is_original", "is_inst", "is_deleted", "is_questionable"]
+
+# ラジオボタンで切り替えるフォームと、そのフォームに含まれるURLクエリ
+# URLクエリが指定されている場合は該当するフォームを初期表示する
+SEARCH_FORM_QUERIES = {
+    'keyword': ['keyword'],
+    'sort': ['sort'],
+    'lyrics': ['lyrics'],
+    'youtube': ['view_gte', 'view_lte', 'like_gte', 'like_lte', 'upload_time_gte', 'upload_time_lte'],
+    'title': ['title'],
+    'author': ['author'],
+    'url': ['url'],
+    'imitate': ['imitate'],
+    'subeana': ['songrange', 'is_subeana'],
+    'joke': ['jokerange', 'is_joke'],
+    'original': ['is_original'],
+    'inst': ['is_inst'],
+    'questionable': ['is_questionable'],
+    'deleted': ['is_deleted'],
+    'lack': ['is_lack'],
+    'draft': ['is_draft'],
+}
+DEFAULT_SEARCH_FORM = 'keyword'
 
 # 折りたたまれていないメディアタイプ
 DISPLAY_MEDIA_INDEX = 6
@@ -74,7 +92,7 @@ class SongsView(View):
                     cookie_value = COOKIES.get(f"search_{form_name}", default_value)
                     context[form_name] = cookie_value
 
-        # チェックボックスのURLクエリ対応
+        # 真偽値のフィルタのURLクエリ対応
         for filter in BOOL_FORMS:
             raw = REQUEST_DATA.get(filter)
             if raw is None:
@@ -93,8 +111,15 @@ class SongsView(View):
                 else:
                     jokerange_value = "off"
                 context["jokerange"] = jokerange_value
-            else:
-                context[filter] = value_lower in ["true", "1"]
+            elif value_lower in ["true", "1"]:
+                context[filter] = "True"
+            elif value_lower in ["false", "0"]:
+                context[filter] = "False"
+
+        context["search_form"] = next(
+            (form for form, queries in SEARCH_FORM_QUERIES.items() if any(REQUEST_DATA.get(query) for query in queries)),
+            DEFAULT_SEARCH_FORM
+        )
 
         response = render(request, "subekashi/songs.html", context)
 

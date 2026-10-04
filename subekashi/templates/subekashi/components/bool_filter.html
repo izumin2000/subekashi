@@ -1,0 +1,11 @@
+<div class="radio-col">
+    <p class="radio-col-label"><i class="{{ icon }}"></i><span class="icon-p-big">{{ label }}</span></p>
+    <div class="radio-group">
+        <input type="radio" id="{{ name }}-all" name="{{ name }}" value="" {% if value != "True" and value != "False" %}checked{% endif %}>
+        <label for="{{ name }}-all"><i class="fas fa-expand"></i><span class="icon-p-big">全て</span></label>
+        <input type="radio" id="{{ name }}-true" name="{{ name }}" value="True" {% if value == "True" %}checked{% endif %}>
+        <label for="{{ name }}-true"><i class="fas fa-equals"></i><span class="icon-p-big">のみ</span></label>
+        <input type="radio" id="{{ name }}-false" name="{{ name }}" value="False" {% if value == "False" %}checked{% endif %}>
+        <label for="{{ name }}-false"><i class="fas fa-not-equal"></i><span class="icon-p-big">以外</span></label>
+    </div>
+</div>

@@ -121,6 +121,37 @@ class SongSearchFilterTest(TestCase):
         self.assertEqual(stats["count"], 1)
 
 
+class SongSearchIsLackFilterTest(TestCase):
+    """is_lack フィルターのテスト（True・False・フィルタなしの3値）"""
+
+    def setUp(self):
+        # 完成した曲（URLあり・歌詞あり・オリジナル模倣曲）。重複しないことを確認するためURLを2つ持たせる
+        self.complete = Song.objects.create(title="完成曲", lyrics="歌詞あり", is_original=True)
+        for url in ["https://youtu.be/complete001", "https://youtu.be/complete003"]:
+            SongLink.objects.create(url=url).songs.add(self.complete)
+        # 模倣元を持つ完成した曲（imitates の JOIN で判定がずれないことを確認する）
+        self.complete_imitate = Song.objects.create(title="模倣元あり曲", lyrics="歌詞あり")
+        self.complete_imitate.imitates.add(self.complete)
+        SongLink.objects.create(url="https://youtu.be/complete002").songs.add(self.complete_imitate)
+        # 未完成の曲（URLなし）
+        self.lack = Song.objects.create(title="未完成曲", lyrics="歌詞あり", is_original=True)
+
+    def _search_ids(self, params):
+        qs, _ = song_search({**params, "size": "100"})
+        return [s.id for s in qs]
+
+    def test_is_lack_true_returns_only_lack_songs(self):
+        self.assertEqual(self._search_ids({"is_lack": "True"}), [self.lack.id])
+
+    def test_is_lack_false_excludes_lack_songs(self):
+        ids = self._search_ids({"is_lack": "False"})
+        self.assertCountEqual(ids, [self.complete.id, self.complete_imitate.id])
+
+    def test_is_lack_not_specified_returns_all_songs(self):
+        ids = self._search_ids({})
+        self.assertCountEqual(ids, [self.complete.id, self.complete_imitate.id, self.lack.id])
+
+
 class SongSearchSortWithFilterTest(TestCase):
     """sort と他フィルターを組み合わせた場合のソート順テスト（distinct適用後も維持されることを確認）"""
 

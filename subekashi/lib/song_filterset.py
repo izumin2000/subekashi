@@ -170,10 +170,10 @@ class SongFilter(django_filters.FilterSet):
         return queryset.filter(filter_by_mediatypes(value))
 
     def filter_is_lack(self, queryset, name, value):
-        """不完全な曲をフィルタ"""
+        """不完全な曲をフィルタ（Falseの場合は不完全な曲を除外）"""
         if value:
             return queryset.filter(filter_by_lack())
-        return queryset
+        return queryset.exclude(id__in=Song.objects.filter(filter_by_lack()).values('id'))
 
     def filter_sort(self, queryset, name, value):
         """ランダムソートを含むソート処理"""

@@ -11,13 +11,13 @@
     {% include "subekashi/components/stats_summary.html" %}
 
     {% if monthly_stats %}
-        <div class="range-radio-group">
+        <div class="radio-group">
             <input type="radio" id="chart-mode-monthly" name="chart-mode" value="monthly" {% if chart_mode == "monthly" %}checked{% endif %}>
             <label for="chart-mode-monthly"><i class="far fa-calendar"></i><span class="icon-p-big">月ごと</span></label>
             <input type="radio" id="chart-mode-cumulative" name="chart-mode" value="cumulative" {% if chart_mode == "cumulative" %}checked{% endif %}>
             <label for="chart-mode-cumulative"><i class="fas fa-layer-group"></i><span class="icon-p-big">累積</span></label>
         </div>
-        <div class="range-radio-group">
+        <div class="radio-group">
             <input type="radio" id="chart-series-song_count" name="chart-series" value="song_count" {% if chart_series == "song_count" %}checked{% endif %}>
             <label for="chart-series-song_count"><i class="fas fa-list-ol"></i><span class="icon-p-big">曲数</span></label>
             <input type="radio" id="chart-series-total_view" name="chart-series" value="total_view" {% if chart_series == "total_view" %}checked{% endif %}>

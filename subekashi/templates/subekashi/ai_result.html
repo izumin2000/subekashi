@@ -11,7 +11,7 @@
     {% for aiIns in aiInsL  %}
         <div class="ai-ins">
             {% include "subekashi/components/lyric_tokens.html" with item=aiIns %}
-            <div class="range-radio-group">
+            <div class="radio-group">
                 <input type="radio" id="{{ aiIns.id }}1" name="radio{{ aiIns.id }}" data-ai-id="{{ aiIns.id }}" data-score="1">
                 <label for="{{ aiIns.id }}1">悪い</label>
                 <input type="radio" id="{{ aiIns.id }}2" name="radio{{ aiIns.id }}" data-ai-id="{{ aiIns.id }}" data-score="2">
