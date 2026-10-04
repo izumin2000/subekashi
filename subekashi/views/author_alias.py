@@ -3,7 +3,9 @@ from django.db.models import Q
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.decorators.cache import never_cache
 from config.local_settings import NEW_DISCORD_URL
 from subekashi.models import Author, AuthorAlias, AuthorLink, Editor, History, Song
 from subekashi.forms import AuthorAliasForm, AuthorPrimaryNameForm
@@ -157,6 +159,8 @@ class AuthorAliasNewView(View):
         return redirect(f"{reverse('subekashi:author_aliases', args=[self.author.id])}?toast=new")
 
 
+# SongEditViewと同様、キャッシュされた古いフォームの送信で編集が巻き戻らないようにする（#1135）
+@method_decorator(never_cache, name='dispatch')
 class AuthorAliasEditView(View):
     def dispatch(self, request, author_id, alias_id, *args, **kwargs):
         self.author = Author.get_or_none(author_id)

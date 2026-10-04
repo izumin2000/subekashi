@@ -1,8 +1,10 @@
 from urllib.parse import quote
 from django.shortcuts import render, redirect
 from django.urls import reverse
+from django.utils.decorators import method_decorator
 from django.utils.html import escape
 from django.views import View
+from django.views.decorators.cache import never_cache
 from config.settings import ROOT_URL
 from config.local_settings import NEW_DISCORD_URL, CONTACT_DISCORD_URL
 from subekashi.forms import SongEditForm
@@ -20,6 +22,9 @@ from subekashi.lib.song_service import (
 )
 
 
+# ブラウザにキャッシュされた古いフォームが送信されると、その間に行われた編集が巻き戻ってしまうため
+# キャッシュさせない（#1135）
+@method_decorator(never_cache, name='dispatch')
 class SongEditView(View):
     def dispatch(self, request, song_id, *args, **kwargs):
         self.song = Song.get_or_none(song_id)

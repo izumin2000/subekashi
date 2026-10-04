@@ -500,6 +500,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | 存在する曲のGET | 有効なsong_id | HTTP 200 |
 | 存在しない曲のGET | 無効なsong_id | HTTP 404 |
+| GET: ブラウザにキャッシュさせない（#1135） | 有効なsong_id | `Cache-Control`に`no-store`が含まれ、`public`は含まれない（キャッシュされた古いフォームの送信で、その間の編集が巻き戻るのを防ぐ） |
 | POST: is_questionable時に歌詞・模倣・下書き・オリジナル模倣が強制的に空/OFF | `is_questionable=True`, `lyrics="..."`, `imitate="<id>"`, `is_draft=True`, `is_original=True` | 保存されたSongの `lyrics=""`、`imitates`が空、`is_draft=False`、`is_original=False`、`is_questionable=True` |
 | POST: is_questionable時も非公開/削除済み・ネタ曲・インスト・すべあな界隈曲は保存される | `is_questionable=True`, `is_deleted=True`, `is_joke=True`, `is_inst=True`, `is_subeana=True` | 各フラグがそれぞれ `True` のまま保存される |
 | POST: 作者名が`Author.name`のmax_length超（#1085） | `authors`がmax_length+1文字 | HTTP 200、"作者名" を含むエラー |
@@ -616,6 +617,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | 正常アクセス | GETリクエスト | HTTP 200 |
+| ブラウザにキャッシュさせない（#1135） | GETリクエスト | `Cache-Control`に`no-store`が含まれ、`public`は含まれない（SongEditViewと同様） |
 | 存在しないalias_id | 無効なalias_id | HTTP 404 |
 | 他authorが所有するalias_id | 別authorのalias_idを指定 | HTTP 404 |
 | 正常なPOST | 有効な`name`・`alias_type` | AuthorAliasが更新され一覧画面へリダイレクト |
@@ -850,6 +852,20 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 重複判定はgenetypeも考慮 | `lyrics`は同じだが`genetype="model"`の既存`Ai`が存在 | 既存レコードを誤って再利用せず、`genetype="janome"`の新規レコードを作成する |
 | レスポンスステータスの正確性 | 同一の`base_id`・`token_index`・`candidate`で2回POST | 1回目はHTTP 201（新規作成）、2回目はHTTP 200（既存レコードの再利用） |
 | レスポンスに再トークナイズ済みのtokensを含める | 正常な入れ替え後 | 入れ替え後の歌詞を実際に再トークナイズした`surface`・`hinshi`・`katsuyou`・`index`・`is_replaceable`を含む。janomeは文脈依存のトークナイザのため、クライアント側が古い`token_index`を使い回すと同じ行での連続入れ替え時にズレる可能性があり、それを防ぐためクライアント側でその行のDOMを丸ごと作り直せるようにする |
+
+#### 8-5. `SongEditInitView` (`/api/song_edit_init/`)（#1135）
+
+`song_edit.js`は模倣一覧の表示と送信する模倣曲IDのどちらも`imitate_songs`を元にするため、模倣元が1件でも欠けると保存時にその模倣情報が消える。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 模倣元がない曲 | `?song_id=<id>&fetch_imitate=1` | `imitate_songs`が`None`ではなく空配列 |
+| 模倣元が検索のデフォルト件数（50件）超 | 模倣元51件の曲 | 51件すべてが返る |
+| 削除済み・下書きの模倣元 | `is_deleted=True`・`is_draft=True`の曲を模倣元に持つ曲 | 除外されずにすべて返る |
+| 存在しないsong_id | `?song_id=99999&fetch_imitate=1` | HTTP 200（500にならない）、`imitate_songs`が`None`（`song_edit.js`は読み込み失敗として登録ボタンを無効化する） |
+| 数値でないsong_id | `?song_id=abc&fetch_imitate=1` | HTTP 200（500にならない）、`imitate_songs`が`None` |
+| 上付き数字のsong_id | `?song_id=²&fetch_imitate=1` | HTTP 200（500にならない）、`imitate_songs`が`None`（`str.isdigit()`はTrueだが`int()`で変換できない） |
+| 範囲外のsong_id | 30桁の数字 | HTTP 200（500にならない）、`imitate_songs`が`None` |
 
 ---
 

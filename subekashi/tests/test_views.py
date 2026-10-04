@@ -386,6 +386,12 @@ class SongEditViewTest(TestCase):
         response = self.client.get(reverse("subekashi:song_edit", args=[99999]))
         self.assertEqual(response.status_code, 404)
 
+    def test_get_response_is_not_cached(self):
+        # #1135: ブラウザにキャッシュされた古いフォームが送信されると、その間の編集（模倣の追加等）が巻き戻ってしまう
+        response = self.client.get(reverse("subekashi:song_edit", args=[self.song.id]))
+        self.assertIn("no-store", response["Cache-Control"])
+        self.assertNotIn("public", response["Cache-Control"])
+
     def test_post_author_name_over_max_length_returns_error(self):
         # #1085: MySQL移行時のData too long for column対策
         max_length = Author._meta.get_field("name").max_length
@@ -1693,6 +1699,14 @@ class AuthorAliasEditViewTest(TestCase):
             reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id])
         )
         self.assertEqual(response.status_code, 200)
+
+    def test_get_response_is_not_cached(self):
+        # #1135: SongEditViewと同様、キャッシュされた古いフォームの送信で編集が巻き戻らないようにする
+        response = self.client.get(
+            reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id])
+        )
+        self.assertIn("no-store", response["Cache-Control"])
+        self.assertNotIn("public", response["Cache-Control"])
 
     def test_current_alias_type_is_selected(self):
         response = self.client.get(

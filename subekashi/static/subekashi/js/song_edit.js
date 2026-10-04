@@ -30,20 +30,38 @@ async function init() {
     if (titleEle.value) params.append('title', titleEle.value);
     if (authorsEle.value.trim()) params.append('authors', authorsEle.value);
     if (urlEle.value) params.append('urls', urlEle.value);
-    if (imitateEle.value) params.append('fetch_imitate', '1');
+    params.append('fetch_imitate', '1');
 
-    const initData = await exponentialBackoff(`song_edit_init/?${params}`, "init", init);
+    let initData;
+    try {
+        initData = await exponentialBackoff(`song_edit_init/?${params}`, "init", init);
+    } catch (error) {
+        console.error(error);
+        failInit();
+        return;
+    }
     if (!initData) return;
+    if (!Array.isArray(initData.imitate_songs)) {
+        failInit();
+        return;
+    }
 
     await checkTitleAuthorForm(initData.title_author_songs);
     await checkUrlForm(initData.song_links);
-    await initImitateList(initData.imitate_songs);
+    initImitateList(initData.imitate_songs);
     document.getElementById("song-guesser").innerHTML = "";
     checkButton();
     checkDeleteForm();
     updateQuestionableVisibility();
 };
 window.addEventListener('load', init);
+
+// 初期化に失敗した場合は模倣一覧を読み込めず、#imitateの値が古い可能性があるため登録させない（#1135）
+var isInitFailed = false;
+function failInit() {
+    isInitFailed = true;
+    checkButton();
+}
 
 
 function openDeleteDetails() {
@@ -88,26 +106,16 @@ function appendImitateList(song) {
 
 // 読み込み時に模倣一覧を描画
 var imitateEle = document.getElementById("imitate");
-async function initImitateList(prefetchedSongs = undefined) {
-    if (!imitateEle.value) {
-        return;
-    }
-
-    let imitateSongList;
-    if (Array.isArray(prefetchedSongs)) {
-        imitateSongList = prefetchedSongs;
-    } else {
-        const imitateSongListRes = await exponentialBackoff(`song/?imitated=${song_id}`, "init", initImitateList);
-        if (!imitateSongListRes) {
-            return;
-        }
-        imitateSongList = imitateSongListRes.result;
-    }
-
-    imitateIdList = imitateEle.value.split(",");
+var isImitateListLoaded = false;
+function initImitateList(imitateSongList) {
+    // 一覧の表示と#imitateの値がずれると、表示されている曲が保存時に消えてしまうため、
+    // キャッシュ等で古くなりうるHTML上の値は使わず、どちらもAPIから取得した最新の模倣曲を元にする（#1135）
+    imitateIdList = imitateSongList.map(song => song.id);
     for (const imitateSong of imitateSongList) {
         appendImitateList(imitateSong);
     }
+    isImitateListLoaded = true;
+    setImitate();
 }
 
 // ビューに渡すimitateカラムの値を#imitateにセット
@@ -125,6 +133,22 @@ function deleteImitate(imitateId) {
 
 // 模倣一覧にsongを追加
 function appendImitate(song) {
+    // 読み込み完了前に追加すると、読み込み完了時に既存の模倣曲で上書きされてしまうため追加させない
+    if (isInitFailed) {
+        showToast("error", "模倣一覧の読み込みに失敗しました。ページを再読み込みしてください。");
+        return;
+    }
+    if (!isImitateListLoaded) {
+        showToast("info", "模倣一覧を読み込み中です。読み込み完了後に再度選択してください。");
+        return;
+    }
+
+    // 同じ曲が2つ並ぶと、片方を削除した際に両方とも#imitateから消えてしまうため追加させない（#1135）
+    if (imitateIdList.some(id => id == song.id)) {
+        showToast("info", "その曲は既に模倣曲として登録されています。");
+        return;
+    }
+
     appendImitateList(song)
     imitateIdList.push(song.id);      // imitateIdListにsong.idを追加
     setImitate();       // imitateIdListの内容を#imitateにセット
@@ -374,8 +398,14 @@ document.getElementById('is-questionable').addEventListener('change', updateQues
 // 登録ボタン
 function checkButton() {
     // ボタンのdisabledの変更
+    // 模倣一覧の読み込みが完了するまでは、#imitateの値が古い可能性があるため登録させない（#1135）
     const songEditSubmitEle = document.getElementById('song-edit-submit');
-    songEditSubmitEle.disabled = !(isTitleAuthorValid && isUrlValid)
+    songEditSubmitEle.disabled = !(isTitleAuthorValid && isUrlValid && isImitateListLoaded)
+
+    if (isInitFailed) {
+        document.getElementById('song-edit-info-submit').innerHTML = "<span class='error'><i class='fas fa-ban error'></i>読み込みに失敗したため登録できません。ページを再読み込みしてください。</span>";
+        return;
+    }
 
     // 未完成に関する変数の定義
     var message = "";
