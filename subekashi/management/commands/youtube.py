@@ -1,4 +1,6 @@
 from django.core.management.base import BaseCommand
+from config.local_settings import ERROR_DISCORD_URL
+from subekashi.lib.discord import send_discord
 from subekashi.lib.url import *
 from subekashi.lib.youtube import *
 from subekashi.models import Song
@@ -30,7 +32,7 @@ class Command(BaseCommand):
             sleep(2)
             res = get_youtube_api(video_id)
             
-            # APIを取得できなかったら
+            # 動画が削除・非公開なら
             if res == {}:
                 continue
             
@@ -67,24 +69,32 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         id = options["id"]
         
-        # song_idが指定されていたら
-        if id:
-            song = Song.objects.get(pk=id)
-            info = self.get_youtube_info_sum(song)
-            if not info:
-                return
-            self.save_song(song, info)
-            return
-
-        # 全てのsongが対象なら（SongLinkが存在するSongのみ）
+        # song_idが指定されていたらそのsongのみ、指定されていなければ全てのsongが対象（SongLinkが存在するSongのみ）
         # IDを先に全件取得してカーソルを閉じることでDBロックを防ぐ
-        song_ids = list(
-            Song.objects.filter(links__isnull=False).distinct().values_list('pk', flat=True)
-        )
-        
+        if id:
+            song_ids = [id]
+        else:
+            song_ids = list(
+                Song.objects.filter(links__isnull=False).distinct().values_list('pk', flat=True)
+            )
+
         for song_id in song_ids:
             song = Song.objects.get(pk=song_id)
-            info = self.get_youtube_info_sum(song)
+            try:
+                info = self.get_youtube_info_sum(song)
+
+            # 以降の呼び出しも全て失敗するため、残りの曲の処理を打ち切る
+            except YoutubeApiUnavailableError as e:
+                message = f"{e}。youtubeコマンドの処理を打ち切りました（song_id：{song_id}）"
+                self.stderr.write(self.style.ERROR(message))
+                send_discord(ERROR_DISCORD_URL, message)
+                return
+
+            # 1本でも取得に失敗した曲は、公開状況・再生回数などが不正確になるため更新しない
+            except YoutubeApiError as e:
+                self.stderr.write(self.style.WARNING(f"{e}。更新をスキップしました（song_id：{song_id}）"))
+                continue
+
             if not info:
                 continue
             self.save_song(song, info)

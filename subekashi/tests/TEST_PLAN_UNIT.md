@@ -486,6 +486,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | GETアクセス | GETリクエスト | HTTP 200、フォームが表示される |
 | POST: YouTube以外のURL | `url="https://example.com/..."` | HTTP 200、"YouTube" を含むエラー |
+| POST: YouTube APIの呼び出しに失敗（#1146） | YouTubeのURL・`get_youtube_api` が `YoutubeApiError` を送出 | 500エラーにならずHTTP 200でエラーを表示し、Songは作成されない（動画が削除・非公開の場合と同様に扱う） |
 | POST: 作者が空白 | `url=""`, `authors="  "` | HTTP 200、"作者" を含むエラー |
 | POST: タイトルが空 | `url=""`, `authors="テスト作者"`, `title=""` | HTTP 200、"タイトル" を含むエラー |
 | POST: タイトルが`Song.title`のmax_length超（#1085） | `title`がmax_length+1文字 | HTTP 200、"タイトル" を含むエラー、Songは作成されない（フォームを経由せず保存するため直接バリデーションが必要） |
@@ -1173,7 +1174,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 #### 14-2. `youtube` コマンド
 
-DBロックエラー対策で全件処理時に先にID一覧を取得する方式に変更したことに対応（YouTube APIはモック化）。YouTube以外のURL（ニコニコ動画・SoundCloud等）は公開状況を確認できないため、それらを持つ曲はYouTubeの動画が全て取得不可でも`is_deleted`を変更しない（#1136）。また、YouTubeの動画が全て取得不可の場合、`view`・`like`・`upload_time`は前回の値を引き継ぐ（#1136）。
+DBロックエラー対策で全件処理時に先にID一覧を取得する方式に変更したことに対応（YouTube APIはモック化）。YouTube以外のURL（ニコニコ動画・SoundCloud等）は公開状況を確認できないため、それらを持つ曲はYouTubeの動画が全て取得不可でも`is_deleted`を変更しない（#1136）。また、YouTubeの動画が全て取得不可の場合、`view`・`like`・`upload_time`は前回の値を引き継ぐ（#1136）。APIの呼び出しに失敗した（`YoutubeApiError`）動画が1本でもある曲は、削除と区別して`is_deleted`・`view`・`like`・`upload_time`を更新しない。クォータ超過など以降の呼び出しも全て失敗する場合（`YoutubeApiUnavailableError`）は、残りの曲の処理を打ち切りDiscordにエラー通知する（#1146）。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
@@ -1186,6 +1187,12 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | 複数YouTube動画のうち1つのみ取得可 | 1件目は `{}`、2件目は情報を返す | `is_deleted=False`、`view`は取得できた動画の値 |
 | YouTube動画が取得可＋YouTube以外のURLあり（#1136） | ニコニコ動画のURLも紐づく・`get_youtube_api` が情報を返す | `is_deleted=False`、`view`は取得できた動画の値 |
 | 手動で削除済み＋YouTube動画が取得可＋YouTube以外のURLあり（#1136） | `is_deleted=True`・ニコニコ動画のURLも紐づく・`get_youtube_api` が情報を返す | `is_deleted=False` に戻る |
+| APIの呼び出しに失敗（#1146） | `view`・`like`・`upload_time`が設定済み・`get_youtube_api` が `YoutubeApiError` を送出 | `is_deleted=False` のまま、`view`・`like`・`upload_time`は前回の値のまま |
+| 複数YouTube動画のうち1つが取得可・1つが呼び出し失敗（#1146） | 1件目は情報を返し、2件目は `YoutubeApiError` を送出 | 取得できた動画の値だけで更新せず、`view`・`like`・`upload_time`・`is_deleted`は前回の値のまま |
+| 複数YouTube動画のうち1つが削除済み・1つが呼び出し失敗（#1146） | 1件目は `{}`、2件目は `YoutubeApiError` を送出 | 失敗した動画が公開されている可能性があるため、`is_deleted=False` のまま |
+| 全件処理中に1曲だけ呼び出し失敗（#1146） | `-id` 未指定・1曲目の動画のみ `YoutubeApiError` を送出 | 処理を打ち切らず、失敗した曲のみ更新されず残りの曲は更新される。標準エラー出力に失敗した曲のIDが出る |
+| クォータ超過（#1146） | `-id` 未指定・`get_youtube_api` が `YoutubeApiUnavailableError` を送出 | APIの呼び出しは1回で打ち切られ、どの曲も更新されない。Discord（`ERROR_DISCORD_URL`）と標準エラー出力に通知される |
+| 2本目の動画でクォータ超過（#1146） | 1件目は情報を返し、2件目は `YoutubeApiUnavailableError` を送出 | 取得できた動画の値だけで更新せず、Discordに通知される |
 
 #### 14-3. `backup` コマンド（バックアップ先をサーバーストレージからGoogle Driveに変更、#1050。MySQL移行対応でmysqldump方式を追加、#1086。ファイル名のJST化と`--now`オプションを追加、#1096）
 
@@ -1616,6 +1623,31 @@ key_countは白鍵の本数（度数）ではなく、黒鍵も含めた実際�
 
 ---
 
+### 21. `lib/youtube.py` — YouTube Data API連携（#1146）
+
+**テストファイル**: `tests/test_lib_youtube.py`
+
+YouTube Data API（`build`）はモック化する。「動画が存在しない（削除・非公開）」場合と「APIの呼び出しに失敗した」場合を区別し、前者は`{}`を返し、後者は`YoutubeApiError`を送出する。クォータ超過・APIキー未設定は以降の呼び出しも全て失敗し続けるため、`YoutubeApiError`のサブクラスである`YoutubeApiUnavailableError`を送出する。
+
+#### 21-1. `get_youtube_api(video_id)`
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 動画の情報を取得 | `items`に動画が1件 | `view`・`like`・`title`・`author`・`upload_time`（日本標準時）を返す |
+| プレミア公開前の動画 | `liveBroadcastContent="upcoming"`・`scheduledPublishTime`あり | `upload_time`は`scheduledPublishTime`を日本標準時にした値 |
+| 高評価数が非公開 | `statistics`に`likeCount`が無い | `like=0` |
+| 動画が削除・非公開 | `items`が空 | `{}`を返す |
+| クォータ超過 | `HttpError` 403・`reason="quotaExceeded"` | `YoutubeApiUnavailableError`を送出する |
+| クォータ超過以外の403 | `HttpError` 403・`reason="forbidden"` | `YoutubeApiError`を送出する（`YoutubeApiUnavailableError`ではない） |
+| サーバーエラー | `HttpError` 500 | `YoutubeApiError`を送出する（`YoutubeApiUnavailableError`ではない） |
+| JSONでないエラーレスポンス | `HttpError` 502・本文がHTML | `YoutubeApiError`を送出する（`YoutubeApiUnavailableError`ではない） |
+| 通信エラー・タイムアウト | `socket.timeout` | `YoutubeApiError`を送出する（`YoutubeApiUnavailableError`ではない） |
+| 想定外のレスポンス | `items`に動画はあるが`statistics`が無い | `YoutubeApiError`を送出する（動画は存在するため`{}`は返さない） |
+| エラーメッセージにAPIキーを含めない | `HttpError`のURLにAPIキーが含まれる | 例外のメッセージにAPIキーが含まれない（Discordの公開チャンネルに通知されるため） |
+| APIキー未設定 | `YOUTUBE_API_KEY=""` | `YoutubeApiUnavailableError`を送出し、APIは呼び出さない |
+
+---
+
 ## テスト優先度
 
 | 優先度 | 対象 | 理由 |
@@ -1664,6 +1696,7 @@ subekashi/tests/
 ├── test_middleware.py              # 実装済み: ミドルウェア
 ├── test_models.py                  # 実装済み: モデル基本動作
 ├── test_converters.py              # 実装済み: URLコンバータ
+├── test_lib_youtube.py             # 実装済み: YouTube Data API連携
 ├── test_management_commands.py     # 実装済み: 管理コマンド
 └── test_templatetags_song_card.py  # 実装済み: song_card テンプレートタグ
 

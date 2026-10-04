@@ -14,6 +14,7 @@ from django.urls import reverse
 from django.utils import timezone
 from article.models import Article
 from subekashi.forms import AuthorAliasForm
+from subekashi.lib.youtube import YoutubeApiError
 from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song, Stats, Word
 from subekashi.models.author import TransitiveAlias
 
@@ -268,6 +269,19 @@ class SongNewViewTest(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn("YouTube", response.context["error"])
+
+    @patch("subekashi.views.song_new.get_youtube_api")
+    def test_post_youtube_url_with_api_error_returns_error(self, mock_api):
+        # #1146: get_youtube_apiは呼び出しに失敗すると例外を送出するようになったため、
+        # 500エラーにならず、動画が削除・非公開の場合と同様にエラーを表示することを確認する
+        mock_api.side_effect = YoutubeApiError("YouTube Data APIの呼び出しに失敗しました")
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "https://youtu.be/aaaaaaaaaaa", "authors": "", "title": ""},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("error", response.context)
+        self.assertFalse(Song.objects.exists())
 
     def test_post_empty_authors_returns_error(self):
         # URL なし・作者空白 → 作者バリデーションエラー

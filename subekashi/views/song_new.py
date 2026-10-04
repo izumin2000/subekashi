@@ -7,7 +7,7 @@ from subekashi.models import Editor, History, Song, SongLink, SongFields
 from subekashi.lib.url import clean_url, is_youtube_url, get_youtube_id
 from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
-from subekashi.lib.youtube import get_youtube_api
+from subekashi.lib.youtube import get_youtube_api, YoutubeApiError
 from subekashi.lib.author_helpers import get_or_create_authors, author_names_were_normalized, validate_author_name_lengths
 from subekashi.lib.song_service import (
     check_reject_list,
@@ -57,7 +57,11 @@ class SongNewView(View):
         youtube_res = {}
         if is_youtube_url(url):
             youtube_id = get_youtube_id(url)
-            youtube_res = get_youtube_api(youtube_id)
+            # 呼び出しに失敗した場合は、動画が削除・非公開の場合と同様に扱う
+            try:
+                youtube_res = get_youtube_api(youtube_id)
+            except YoutubeApiError:
+                pass
             title = youtube_res.get("title", "")
             authors_input = youtube_res.get("author", "")       # 現状、YouTube Data APIの仕様上,1チャンネルしか取得できない。
 
