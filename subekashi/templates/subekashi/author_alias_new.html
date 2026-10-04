@@ -9,11 +9,11 @@
     <h1>{{ author.name }}の別名を追加</h1>
     <form action="{% url 'subekashi:author_alias_new' author.id %}" method="POST">{% csrf_token %}
         <div class="form-col">
-            <label for="name">別名</label>
+            <label for="name"><i class="fas fa-people-arrows"></i><span class="icon-p-big">別名</span></label>
             <input type="text" id="name" name="name" class="sansfont" required>
         </div>
         <div class="form-col">
-            <label for="alias_type">種別</label>
+            <label for="alias_type"><i class="fas fa-tag"></i><span class="icon-p-big">種別</span></label>
             <select id="alias_type" name="alias_type" required>
                 <option value="" selected disabled>選択してください</option>
                 {% for choice in alias_type_choices %}

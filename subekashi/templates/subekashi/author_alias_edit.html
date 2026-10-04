@@ -9,11 +9,11 @@
     <h1>{{ author.name }}の別名『{{ alias.name }}』を編集</h1>
     <form action="{% url 'subekashi:author_alias_edit' author.id alias.id %}" method="POST">{% csrf_token %}
         <div class="form-col">
-            <label for="name">別名</label>
+            <label for="name"><i class="fas fa-people-arrows"></i><span class="icon-p-big">別名</span></label>
             <input type="text" id="name" name="name" class="sansfont" value="{{ alias.name }}" required>
         </div>
         <div class="form-col">
-            <label for="alias_type">種別</label>
+            <label for="alias_type"><i class="fas fa-tag"></i><span class="icon-p-big">種別</span></label>
             <select id="alias_type" name="alias_type" required>
                 <option value="" disabled>選択してください</option>
                 {% for choice in alias_type_choices %}
@@ -26,9 +26,9 @@
         </p>
         <div class="dummybuttons">
             <a href="{% url 'subekashi:author_aliases' author.id %}">
-                <div class="dummybutton black-dummybutton"><i class="fas fa-times"></i><p>戻る</p></div>
+                <div class="dummybutton black-dummybutton"><i class="fas fa-times"></i><p class="icon-p-big">戻る</p></div>
             </a>
-            <button type="submit" class="dummybutton black-dummybutton dummybutton-w140"><i class="fas fa-check"></i><p>更新する</p></button>
+            <button type="submit" class="dummybutton black-dummybutton dummybutton-w140"><i class="fas fa-check"></i><p class="icon-p-big">更新する</p></button>
         </div>
     </form>
 </section>

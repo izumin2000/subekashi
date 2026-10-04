@@ -65,7 +65,7 @@ async function play() {
     const stopEle = `
     <div class="dummybuttons">
         <a>
-            <div class="dummybutton" onclick="stop()"><i class="fas fa-stop"></i><p>停止</p></div>
+            <div class="dummybutton" onclick="stop()"><i class="fas fa-stop"></i><p class="icon-p-big">停止</p></div>
         </a>
     </div>
     `;
@@ -126,7 +126,7 @@ function stop() {
     const playEle = `
         < div class="dummybuttons" >
             <a>
-                <div class="dummybutton" onclick="play()"><i class="fas fa-play"></i><p>再生</p></div>
+                <div class="dummybutton" onclick="play()"><i class="fas fa-play"></i><p class="icon-p-big">再生</p></div>
             </a>
         </ >
     `
@@ -155,10 +155,10 @@ document.addEventListener("DOMContentLoaded", () => {
     `
     <div class="dummybuttons">
         <a>
-            <div class="dummybutton" onclick="play()"><i class="fas fa-play"></i><p>再生</p></div>
+            <div class="dummybutton" onclick="play()"><i class="fas fa-play"></i><p class="icon-p-big">再生</p></div>
         </a>
         <a href="/songs/4775/history/">
-            <div class="dummybutton"><i class="fas fa-history"></i><p>編集履歴</p></div>
+            <div class="dummybutton"><i class="fas fa-history"></i><p class="icon-p-big">編集履歴</p></div>
         </a>
     </div>
     `

@@ -156,7 +156,7 @@ python manage.py runserver
 #### クエリパラメータ
 
 **テキスト検索（部分一致、大文字小文字を区別しない）**
-- `title`: 曲名で検索（最大500文字）
+- `title`: タイトルで検索（最大500文字）
 - `author`: 作者名で検索（最大500文字）
 - `lyrics`: 歌詞で検索（最大10000文字）
 - `url`: URLで検索（最大500文字）
@@ -165,7 +165,7 @@ python manage.py runserver
   - 自動的にURLが正規化されます
 
 **完全一致検索**
-- `title_exact`: 曲名で完全一致検索（最大500文字）
+- `title_exact`: タイトルで完全一致検索（最大500文字）
 - `author_exact`: 作者名で完全一致検索（最大500文字）
 
 **数値範囲フィルタ（1以上の値のみ）**
@@ -227,7 +227,7 @@ python manage.py runserver
   "result": [
     {
       "id": 1,
-      "title": "曲名",
+      "title": "タイトル",
       "authors": [
         {
           "id": 1,
@@ -255,7 +255,7 @@ python manage.py runserver
 ```json
 {
   "id": 1,
-  "title": "曲名",
+  "title": "タイトル",
   "authors": [
     {
       "id": 1,

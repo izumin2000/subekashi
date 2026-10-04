@@ -361,7 +361,7 @@ async function checkUrlForm(prefetchedLinks = undefined) {
 }
 urlEle.addEventListener('input', checkUrlForm);
 
-// 界隈曲?チェック時、曲名/作者/URL以外のフォームを非表示にする
+// 界隈曲?チェック時タイトル/作者/URL以外のフォームを非表示にする
 function updateQuestionableVisibility() {
     const checked = document.getElementById('is-questionable').checked;
     document.querySelectorAll('[data-hide-if-questionable]').forEach(el => {

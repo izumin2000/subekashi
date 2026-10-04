@@ -12,7 +12,7 @@
     <div class="dummybuttons">
         {% if my_editor %}
             <a href="{% url 'subekashi:editor' my_editor.id %}">
-                <div class="dummybutton"><i class="fas fa-user-edit"></i><p>自分の編集履歴</p></div>
+                <div class="dummybutton"><i class="fas fa-user-edit"></i><p class="icon-p-big">自分の編集履歴</p></div>
             </a>
         {% endif %}
         {% include "subekashi/components/history_action_buttons.html" %}

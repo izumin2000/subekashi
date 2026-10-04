@@ -44,8 +44,8 @@ class AuthorStatsView(View):
 
         stats_items = build_stats_items(stats, [
             {"icon": "fas fa-list-ol", "label": "曲数", "value": stats["song_count"]},
-            {"icon": "fas fa-play", "label": "総再生回数", "value": stats["total_view"]},
-            {"icon": "far fa-thumbs-up", "label": "総高評価数", "value": stats["total_like"]},
+            {"icon": "fas fa-play", "label": "総再生回数", "value": stats["total_view"], "is_youtube": True},
+            {"icon": "far fa-thumbs-up", "label": "総高評価数", "value": stats["total_like"], "is_youtube": True},
             {"icon": "fas fa-users", "label": "合作人数(重複あり)", "value": compute_collaborator_count(qs, author_id)},
             {"icon": "fas fa-user-friends", "label": "合作人数(重複なし)", "value": compute_unique_collaborator_count(qs, author_id)},
             {"icon": "fas fa-sitemap imitate", "label": "総模倣元関係数", "value": compute_total_imitates(qs)},
