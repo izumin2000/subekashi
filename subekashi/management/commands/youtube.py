@@ -8,17 +8,13 @@ from time import sleep
 class Command(BaseCommand):
     help = "YouTube API関連。idオプションを加えることでそのidのみのsongレコードを更新する"
     
-    # SongLinkからYouTube動画IDを取得しリストにする
-    def get_youtube_ids(self, song):
-        urls = song.links.values_list('url', flat=True)
-        video_ids = [get_youtube_id(url) for url in urls if is_youtube_url(url)]
-        return video_ids
-    
     # 複数のYouTubeの動画の再生回数・高評価数の総和を求める
     # アップロード日時は最も新しい日時を取得する
-    def get_youtube_info_sum(self, songs):
+    def get_youtube_info_sum(self, song):
         is_deleted = True
-        video_ids = self.get_youtube_ids(songs)
+        urls = list(song.links.values_list('url', flat=True))
+        video_ids = [get_youtube_id(url) for url in urls if is_youtube_url(url)]
+        has_other_url = any(not is_youtube_url(url) for url in urls)
         upload_time_list = []
         info = {
             "view": 0,
@@ -49,16 +45,23 @@ class Command(BaseCommand):
             if upload_time:
                 upload_time_list.append(upload_time)
                 
-        info["is_deleted"] = is_deleted
+        # YouTubeの動画が全て取得できなかったら、再生回数・高評価数・アップロード日時は前回の値を引き継ぐ
+        if is_deleted:
+            # YouTube以外のURLは公開状況を確認できないため、削除済みかどうかも変更しない
+            if has_other_url:
+                return {}
+            return {"is_deleted": True}
+
         info["upload_time"] = max(upload_time_list) if upload_time_list else None
+        info["is_deleted"] = is_deleted
         return info
-    
+
     # Songモデルにinfoの内容を保存
     def save_song(self, song, info):
-        song.view = info.get("view", 0)
-        song.like = info.get("like", 0)
-        song.upload_time = info.get("upload_time", None)
-        song.is_deleted = info.get("is_deleted", False)
+        song.view = info.get("view", song.view)
+        song.like = info.get("like", song.like)
+        song.upload_time = info.get("upload_time", song.upload_time)
+        song.is_deleted = info.get("is_deleted", song.is_deleted)
         song.save()
     
     def handle(self, *args, **options):

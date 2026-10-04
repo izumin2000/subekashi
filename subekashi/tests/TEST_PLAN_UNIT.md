@@ -1173,14 +1173,19 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 #### 14-2. `youtube` コマンド
 
-DBロックエラー対策で全件処理時に先にID一覧を取得する方式に変更したことに対応（YouTube APIはモック化）。
+DBロックエラー対策で全件処理時に先にID一覧を取得する方式に変更したことに対応（YouTube APIはモック化）。YouTube以外のURL（ニコニコ動画・SoundCloud等）は公開状況を確認できないため、それらを持つ曲はYouTubeの動画が全て取得不可でも`is_deleted`を変更しない（#1136）。また、YouTubeの動画が全て取得不可の場合、`view`・`like`・`upload_time`は前回の値を引き継ぐ（#1136）。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | `-id` 指定 | 特定のSongのみ対象 | 指定Songのみ`view`等が更新される |
 | `-id` 未指定 | SongLinkが紐づく全Song | 該当する全Songが更新される |
 | SongLinkが無いSong | 対象外 | 更新されない（スキップ） |
-| 全動画が取得不可 | `get_youtube_api` が `{}` を返す | `is_deleted=True` で保存される |
+| 全動画が取得不可 | `view`・`like`・`upload_time`が設定済み・`get_youtube_api` が `{}` を返す | `is_deleted=True` で保存され、`view`・`like`・`upload_time`は前回の値のまま |
+| 全YouTube動画が取得不可＋YouTube以外のURLあり（#1136） | `view`・`like`・`upload_time`が設定済み・ニコニコ動画のURLも紐づく・`get_youtube_api` が `{}` を返す | `is_deleted=False` のまま、`view`・`like`・`upload_time`は前回の値のまま |
+| 全YouTube動画が取得不可＋YouTube以外のURLあり＋手動で削除済み（#1136） | `is_deleted=True`・SoundCloudのURLも紐づく・`get_youtube_api` が `{}` を返す | `is_deleted=True` のまま |
+| 複数YouTube動画のうち1つのみ取得可 | 1件目は `{}`、2件目は情報を返す | `is_deleted=False`、`view`は取得できた動画の値 |
+| YouTube動画が取得可＋YouTube以外のURLあり（#1136） | ニコニコ動画のURLも紐づく・`get_youtube_api` が情報を返す | `is_deleted=False`、`view`は取得できた動画の値 |
+| 手動で削除済み＋YouTube動画が取得可＋YouTube以外のURLあり（#1136） | `is_deleted=True`・ニコニコ動画のURLも紐づく・`get_youtube_api` が情報を返す | `is_deleted=False` に戻る |
 
 #### 14-3. `backup` コマンド（バックアップ先をサーバーストレージからGoogle Driveに変更、#1050。MySQL移行対応でmysqldump方式を追加、#1086。ファイル名のJST化と`--now`オプションを追加、#1096）
 
