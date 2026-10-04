@@ -14,6 +14,11 @@ class Command(BaseCommand):
         video_ids = [get_youtube_id(url) for url in urls if is_youtube_url(url)]
         return video_ids
     
+    # SongLinkにYouTube以外のURLがあるか
+    def has_other_url(self, song):
+        urls = song.links.values_list('url', flat=True)
+        return any(not is_youtube_url(url) for url in urls)
+    
     # 複数のYouTubeの動画の再生回数・高評価数の総和を求める
     # アップロード日時は最も新しい日時を取得する
     def get_youtube_info_sum(self, songs):
@@ -49,8 +54,13 @@ class Command(BaseCommand):
             if upload_time:
                 upload_time_list.append(upload_time)
                 
-        info["is_deleted"] = is_deleted
         info["upload_time"] = max(upload_time_list) if upload_time_list else None
+
+        # YouTube以外のURLは公開状況を確認できないため、YouTubeの動画が全て取得できなくても削除済みかどうかは変更しない
+        if is_deleted and self.has_other_url(songs):
+            return info
+
+        info["is_deleted"] = is_deleted
         return info
     
     # Songモデルにinfoの内容を保存
@@ -58,7 +68,7 @@ class Command(BaseCommand):
         song.view = info.get("view", 0)
         song.like = info.get("like", 0)
         song.upload_time = info.get("upload_time", None)
-        song.is_deleted = info.get("is_deleted", False)
+        song.is_deleted = info.get("is_deleted", song.is_deleted)
         song.save()
     
     def handle(self, *args, **options):
