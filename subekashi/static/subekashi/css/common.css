@@ -832,6 +832,7 @@ input:focus {
 
 .checkbox-col {
     display: block;
+    min-height: 30px;
     text-align: center;
     margin: 5px 0;
 }
@@ -839,6 +840,7 @@ input:focus {
 .checkbox-col label {
     display: inline-flex;
     width: 8em;
+    min-height: 30px;
     align-items: center;
     justify-content: center;
 }
