@@ -36,7 +36,7 @@
 
 {% block js %}
 <script src="{% static 'subekashi/js/author_alias_form.js' %}" defer></script>
-<script defer>
+<script defer nonce="{{ csp_nonce }}">
     {% if error %}
         showToast("error", "{{ error }}");
     {% endif %}

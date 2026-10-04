@@ -25,7 +25,7 @@
         <link rel="stylesheet" type="text/css" href="{% static 'subekashi/css/components/song_guesser.css'%}">
         <link rel="stylesheet" type="text/css" href="{% static 'subekashi/css/components/lyric_tokens.css'%}">
         <link rel="stylesheet" type="text/css" href="{% block css %}{% endblock %}">
-        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" > <!-- font awesome -->
+        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" integrity="sha384-DyZ88mC6Up2uqS4h/KRgHuoeGwBcD4Ng9SiP4dIRy0EXTlnuz47vAwmeGwVChigm" crossorigin="anonymous"> <!-- font awesome -->
         <link rel="shortcut icon" href="{% static 'subekashi/image/icon.ico' %}">
         <link rel="apple-touch-icon" href="{% static 'subekashi/image/apple-touch-icon.png' %}">
     </head>
@@ -48,7 +48,7 @@
     <script src="{% static 'subekashi/js/base.js' %}" rel="stylesheet"></script>
     {% block js %}{% endblock %}
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-GJHM3M7SH1"></script>
-    <script>
+    <script nonce="{{ csp_nonce }}">
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
         gtag('js', new Date());

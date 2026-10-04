@@ -1,5 +1,5 @@
 var page = 1, songGuesserController;
-const FORM_QUERIES = 'input:not(#search-button), select'
+const FORM_QUERIES = 'input:not(#search-button):not([type="hidden"]), select'
 const COOKIE_FORMS = ["songrange", "jokerange", "sort"];
 
 window.addEventListener('load', async function () {
@@ -111,6 +111,9 @@ function renderSongGuesser() {
     imitateTitle = document.getElementById("imitate").value;
     getSongGuessers(imitateTitle, "song-guesser", songGuesserController.signal);
 }
+
+document.getElementById("imitate").addEventListener("input", renderSongGuesser);
+document.getElementById("search-button").addEventListener("click", renderSearch);
 
 function songGuesserClick(id) {
     imitateEle = document.getElementById("imitate");

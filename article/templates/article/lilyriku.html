@@ -30,7 +30,7 @@
 
 {% block js %}
 <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
-<script>
+<script nonce="{{ csp_nonce }}">
     // 埋め込みの読み込みが終わったら元の画像を非表示
     window.twttr = (function(d, s, id) {
         var js, fjs = d.getElementsByTagName(s)[0],

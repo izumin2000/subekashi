@@ -14,7 +14,6 @@ STATICFILES_DIRS = []
 
 ROOT_URL = "http://subekashi.localhost:8000" if DEBUG else "https://lyrics.imicomweb.com"
 
-CORS_ALLOW_CREDENTIALS = True
 ALLOWED_HOSTS = [
     'subekashi.localhost',
     'lyrics.imicomweb.com',
@@ -39,6 +38,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'subekashi.middleware.csp.ContentSecurityPolicyMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -185,7 +185,13 @@ STORAGES = {
     },
 }
 
+# APIは外部サイトからも利用できるよう全オリジンに公開する。
+# 認証情報（Cookie）付きのクロスオリジンリクエストは許可せず、API以外のページにはCORSヘッダーを付与しない（#1126）
 CORS_ALLOW_ALL_ORIGINS = True
+CORS_URLS_REGEX = r"^/api/.*$"
+
+# csrftokenはJSから読み取らず、ページ内の{% csrf_token %}から取得する（#1126）
+CSRF_COOKIE_HTTPONLY = True
 
 REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_CLASSES": [

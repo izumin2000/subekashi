@@ -6,27 +6,28 @@
 
 {% block content %}
 <section>
+    {% csrf_token %}
     <h1>歌詞の作成結果</h1>
     {% for aiIns in aiInsL  %}
         <div class="ai-ins">
             {% include "subekashi/components/lyric_tokens.html" with item=aiIns %}
             <div class="range-radio-group">
-                <input type="radio" id="{{ aiIns.id }}1" name="radio{{ aiIns.id }}" oninput="setScore('{{ aiIns.id }}', 1)">
+                <input type="radio" id="{{ aiIns.id }}1" name="radio{{ aiIns.id }}" data-ai-id="{{ aiIns.id }}" data-score="1">
                 <label for="{{ aiIns.id }}1">悪い</label>
-                <input type="radio" id="{{ aiIns.id }}2" name="radio{{ aiIns.id }}" oninput="setScore('{{ aiIns.id }}', 2)">
+                <input type="radio" id="{{ aiIns.id }}2" name="radio{{ aiIns.id }}" data-ai-id="{{ aiIns.id }}" data-score="2">
                 <label for="{{ aiIns.id }}2">微妙</label>
-                <input type="radio" id="{{ aiIns.id }}3" name="radio{{ aiIns.id }}" oninput="setScore('{{ aiIns.id }}', 3)">
+                <input type="radio" id="{{ aiIns.id }}3" name="radio{{ aiIns.id }}" data-ai-id="{{ aiIns.id }}" data-score="3">
                 <label for="{{ aiIns.id }}3">普通</label>
-                <input type="radio" id="{{ aiIns.id }}4" name="radio{{ aiIns.id }}" oninput="setScore('{{ aiIns.id }}', 4)">
+                <input type="radio" id="{{ aiIns.id }}4" name="radio{{ aiIns.id }}" data-ai-id="{{ aiIns.id }}" data-score="4">
                 <label for="{{ aiIns.id }}4">良い</label>
-                <input type="radio" id="{{ aiIns.id }}5" name="radio{{ aiIns.id }}" oninput="setScore('{{ aiIns.id }}', 5)">
+                <input type="radio" id="{{ aiIns.id }}5" name="radio{{ aiIns.id }}" data-ai-id="{{ aiIns.id }}" data-score="5">
                 <label for="{{ aiIns.id }}5">最高</label>
             </div>
         </div>
     {% endfor %}
     <div class="dummybuttons ai-result-form">
-        <div class="dummybutton" id="copy" onclick="copyBest()"><i class="far fa-copy"></i><p class="icon-p-big">最高の行をコピー</p></div>
-        <div class="dummybutton" id="regenerate" onclick="regenerate()"><i class="fas fa-redo"></i><p class="icon-p-big">再作成</p></div>
+        <div class="dummybutton" id="copy"><i class="far fa-copy"></i><p class="icon-p-big">最高の行をコピー</p></div>
+        <div class="dummybutton" id="regenerate"><i class="fas fa-redo"></i><p class="icon-p-big">再作成</p></div>
     </div>
 </section>
 {% endblock %}

@@ -1,4 +1,5 @@
 from django.template.loader import render_to_string
+from django.utils.html import escape
 from django.http import JsonResponse
 from subekashi.models import Song
 from subekashi.lib.song_search import song_search
@@ -69,7 +70,7 @@ def song_cards(request):
             error_message = error_detail["error"]
         else:
             error_message = str(error_detail)
-        result.append(f"<p class='error'>エラー: {error_message}</p>")
+        result.append(f"<p class='error'>エラー: {escape(error_message)}</p>")
         return JsonResponse(result, safe=False)
 
     if page == 1:

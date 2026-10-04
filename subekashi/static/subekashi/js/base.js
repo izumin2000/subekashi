@@ -15,6 +15,14 @@ document.querySelectorAll('textarea').forEach((textarea) => {
     };
 });
 
+// data-auto-submit属性を持つフォームは入力が変更されたら送信する
+document.addEventListener('change', (event) => {
+    const autoSubmitFormEle = event.target.closest('form[data-auto-submit]');
+    if (autoSubmitFormEle) {
+        autoSubmitFormEle.submit();
+    }
+});
+
 // <input type="number">上でスクロールしても値が変わらないようにする
 document.addEventListener('wheel', function(event) {
     if (event.target.type === 'number') {
@@ -177,7 +185,7 @@ async function getSongGuessers(text, to, signal, calling_func = () => {}) {
     toEle.appendChild(loadingEle);
 
     try {
-        const songGuessers = await exponentialBackoff(`html/song_guessers?guesser=${text}`, "getSongGuessers", calling_func);
+        const songGuessers = await exponentialBackoff(`html/song_guessers?guesser=${encodeURIComponent(text)}`, "getSongGuessers", calling_func);
         if (!songGuessers) return;
 
         for (var songGuesser of songGuessers) {
@@ -195,6 +203,24 @@ async function getSongGuessers(text, to, signal, calling_func = () => {}) {
         console.error(error)
     }
 }
+
+// song guesser・原曲ボタンのクリック（songGuesserClick・categoryClickは各ページのJSで定義）
+document.addEventListener('click', (event) => {
+    const songGuesserEle = event.target.closest('.song-guesser[data-song-id]');
+    if (songGuesserEle) {
+        songGuesserClick(Number(songGuesserEle.dataset.songId));
+        return;
+    }
+
+    const categoryEle = event.target.closest('#categorys button[data-song-id]');
+    if (categoryEle) {
+        categoryClick({
+            id: categoryEle.dataset.songId,
+            title: categoryEle.dataset.songTitle,
+            authors: [{ name: '全てあなたの所為です。' }]
+        });
+    }
+});
 
 // グローバルヘッダーの取得
 var globalHeaderEle, globalItemEles;
@@ -306,14 +332,10 @@ document.body.addEventListener('click', (event) => {
 });
 
 
-// CSRFの取得
+// CSRFの取得（csrftokenクッキーはHttpOnlyのため、ページ内の{% csrf_token %}から取得する）
 async function getCSRF() {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; csrftoken=`);
-    if (parts.length === 2) {
-        csrf = parts.pop().split(';').shift()
-        return csrf;
-    }
+    const csrfEle = document.querySelector('[name=csrfmiddlewaretoken]');
+    return csrfEle ? csrfEle.value : undefined;
 }
 
 // クッキーの保存
@@ -389,6 +411,14 @@ function showTutorial(place) {
     const tutorial = TUTORIALS[place];
     showToast("info", tutorial);
 }
+
+// data-tutorial属性を持つ要素のクリックでチュートリアルを表示
+document.addEventListener('click', (event) => {
+    const tutorialEle = event.target.closest('[data-tutorial]');
+    if (tutorialEle) {
+        showTutorial(tutorialEle.dataset.tutorial);
+    }
+});
 
 // 表示用のトーストURLクエリを削除
 function deleteToastUrlQuery() {

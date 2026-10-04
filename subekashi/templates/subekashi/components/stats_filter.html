@@ -1,22 +1,22 @@
-<form method="get" id="stats-filter">
+<form method="get" id="stats-filter" data-auto-submit>
     {% if show_all_songrange %}
         <div class="range-radio-group">
-            <input type="radio" id="songrange-all" name="songrange" value="all" {% if songrange == 'all' %}checked{% endif %} onchange="this.form.submit()">
+            <input type="radio" id="songrange-all" name="songrange" value="all" {% if songrange == 'all' %}checked{% endif %}>
             <label for="songrange-all"><i class="fas fa-expand"></i><span class="icon-p-big">全て</span></label>
-            <input type="radio" id="songrange-subeana" name="songrange" value="subeana" {% if songrange == 'subeana' %}checked{% endif %} onchange="this.form.submit()">
+            <input type="radio" id="songrange-subeana" name="songrange" value="subeana" {% if songrange == 'subeana' %}checked{% endif %}>
             <label for="songrange-subeana"><i class="fas fa-user-circle"></i><span class="icon-p-big">すべあな界隈曲のみ</span></label>
-            <input type="radio" id="songrange-xx" name="songrange" value="xx" {% if songrange == 'xx' %}checked{% endif %} onchange="this.form.submit()">
+            <input type="radio" id="songrange-xx" name="songrange" value="xx" {% if songrange == 'xx' %}checked{% endif %}>
             <label for="songrange-xx"><i class="fas fa-fish"></i><span class="icon-p-big">すべあな界隈曲以外</span></label>
         </div>
     {% endif %}
     <div class="stats-select-group">
-        <select name="year" id="stats-year" onchange="this.form.submit()">
+        <select name="year" id="stats-year">
             <option value="all" {% if year == 'all' %}selected{% endif %}>全ての年</option>
             {% for y in year_choices %}
                 <option value="{{ y }}" {% if year == y|stringformat:"s" %}selected{% endif %}>{{ y }}年</option>
             {% endfor %}
         </select>
-        <select name="month" id="stats-month" onchange="this.form.submit()">
+        <select name="month" id="stats-month">
             <option value="all" {% if month == 'all' %}selected{% endif %}>全ての月</option>
             {% for m in month_choices %}
                 <option value="{{ m }}" {% if month == m|stringformat:"s" %}selected{% endif %}>{{ m }}月</option>

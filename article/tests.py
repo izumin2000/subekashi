@@ -3,6 +3,7 @@ article アプリのビューテスト
 
 ArticlesView・DefaultArticleView の HTTP レスポンスを検証する。
 """
+import re
 from datetime import timedelta
 
 from django.test import TestCase, Client, override_settings
@@ -202,3 +203,37 @@ class DefaultArticleViewTest(TestCase):
     def test_closed_article_returns_404(self):
         response = self.client.get(f"/articles/{self.closed_article.article_id}/")
         self.assertEqual(response.status_code, 404)
+
+    def test_script_in_article_text_gets_csp_nonce(self):
+        # 記事本文は管理者が書いた信頼済みのHTMLのため、本文中の<script>もCSPのnonceで実行を許可する（#1126）
+        script_article = Article.objects.create(
+            article_id="test-default-004",
+            title="スクリプトテスト記事",
+            author="テスト筆者",
+            tag="blog",
+            text='<p id="target"></p><script>document.getElementById("target").textContent = "ok";</script>',
+            post_time=timezone.now(),
+            is_open=True,
+            is_md=False,
+        )
+
+        response = self.client.get(f"/articles/{script_article.article_id}/")
+
+        nonce = re.search(r"'nonce-([^']+)'", response["Content-Security-Policy"]).group(1)
+        self.assertContains(response, f'<script nonce="{nonce}">document.getElementById("target")')
+
+    def test_article_without_text_returns_200(self):
+        empty_article = Article.objects.create(
+            article_id="test-default-005",
+            title="本文なし記事",
+            author="テスト筆者",
+            tag="blog",
+            text=None,
+            post_time=timezone.now(),
+            is_open=True,
+            is_md=False,
+        )
+
+        response = self.client.get(f"/articles/{empty_article.article_id}/")
+
+        self.assertEqual(response.status_code, 200)

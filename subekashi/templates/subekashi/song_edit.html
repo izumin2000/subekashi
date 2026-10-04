@@ -23,26 +23,26 @@
     <form action="{% url 'subekashi:song_edit' song.id %}" method="POST" id="song-edit-form">{% csrf_token %}
         {% comment %} TODO 別名の入力項目を追加 {% endcomment %}
         <div class="form-col">
-            <label for="title"><i class="fab fa-itunes-note"></i><span class="icon-p-big">タイトル</span><i class="fas fa-info-circle" onclick="showTutorial('title')"></i></label>
+            <label for="title"><i class="fab fa-itunes-note"></i><span class="icon-p-big">タイトル</span><i class="fas fa-info-circle" data-tutorial="title"></i></label>
             <input type="text" id="title" name="title" class="sansfont" value="{{ song.title }}" maxlength="500" required>
         </div>
         <div class="form-col">
-            <label for="authors"><i class="fas fa-user-friends"></i><span class="icon-p-big">作者</span><span class="icon-p">(複数可)</span><i class="fas fa-info-circle" onclick="showTutorial('authors')"></i></label>
+            <label for="authors"><i class="fas fa-user-friends"></i><span class="icon-p-big">作者</span><span class="icon-p">(複数可)</span><i class="fas fa-info-circle" data-tutorial="authors"></i></label>
             <input type="text" id="authors" name="authors" class="sansfont" value="{{ song.authors.all|join:',' }}" required>
         </div>
         <p class="song-edit-info" id="song-edit-info-title-authors"><span class='loading'></span></p>
         {% comment %} TODO URLを複数入力形式に {% endcomment %}
         <div class="form-col">
-            <label for="url"><i class="fas fa-link"></i><span class="icon-p-big">URL</span><span class="icon-p">(複数可)</span><i class="fas fa-info-circle" onclick="showTutorial('url')"></i></label>
+            <label for="url"><i class="fas fa-link"></i><span class="icon-p-big">URL</span><span class="icon-p">(複数可)</span><i class="fas fa-info-circle" data-tutorial="url"></i></label>
             <input type="text" id="url" name="url" value="{{ song.links.all|join:',' }}">
         </div>
         <p class="song-edit-info" id="song-edit-info-url"><span class='loading'></span></p>
-        <label id="imitate-label" data-hide-if-questionable><i class="fas fa-sitemap"></i><span class="icon-p-big">模倣</span><i class="fas fa-info-circle" onclick="showTutorial('imitate')"></i></label>
+        <label id="imitate-label" data-hide-if-questionable><i class="fas fa-sitemap"></i><span class="icon-p-big">模倣</span><i class="fas fa-info-circle" data-tutorial="imitate"></i></label>
         <div id="imitate-div" data-hide-if-questionable>
             <p>原曲から選択</p>
             {% render_categorys %}
             <p id="imitate-sub">もしくは模倣曲から選択</p>
-            <input type="text" id="imitate-title" class="sansfont" oninput="renderSongGuesser()" placeholder="タイトルか作者かURLを入力">
+            <input type="text" id="imitate-title" class="sansfont" placeholder="タイトルか作者かURLを入力">
             <div id="song-guesser" class="sansfont"><span class="loading"></span></div>
             <template id="imitate-item-template">
                 <div class="imitate-item">
@@ -63,43 +63,43 @@
             <input type="text" id="imitate" name="imitate" value="{% for s in song.imitates.all %}{{ s.id }}{% if not forloop.last %},{% endif %}{% endfor %}" hidden>
         </div>
         <div class="form-col" data-hide-if-questionable>
-            <label for="lyrics"><i class="fas fa-align-center"></i><span class="icon-p-big">歌詞</span><i class="fas fa-info-circle" onclick="showTutorial('lyrics')"></i></label>
+            <label for="lyrics"><i class="fas fa-align-center"></i><span class="icon-p-big">歌詞</span><i class="fas fa-info-circle" data-tutorial="lyrics"></i></label>
             <textarea id="lyrics" name="lyrics" maxlength="10000">{{ song.lyrics }}</textarea>
         </div>
         <div class="checkbox-col" data-hide-if-questionable>
             <input type="checkbox" id="is-original" name="is_original" {% if song.is_original %}checked{% endif %}>
             <label for="is-original"><i class="fas fa-external-link-alt"></i><span class="icon-p-big">オリジナル模倣</span></label>
-            <i class="fas fa-info-circle" onclick="showTutorial('is-original')"></i>
+            <i class="fas fa-info-circle" data-tutorial="is-original"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-deleted" name="is_deleted" {% if song.is_deleted %}checked{% endif %}>
             <label for="is-deleted"><i class="far fa-eye-slash"></i><span class="icon-p-big">非公開/削除済み</span></label>
-            <i class="fas fa-info-circle" onclick="showTutorial('is-deleted')"></i>
+            <i class="fas fa-info-circle" data-tutorial="is-deleted"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-joke" name="is_joke" {% if song.is_joke %}checked{% endif %}>
             <label for="is-joke"><i class="far fa-meh-rolling-eyes"></i><span class="icon-p-big">ネタ曲</span></label>
-            <i class="fas fa-info-circle" onclick="showTutorial('is-joke')"></i>
+            <i class="fas fa-info-circle" data-tutorial="is-joke"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-inst" name="is_inst" {% if song.is_inst %}checked{% endif %}>
             <label for="is-inst"><i class="fas fa-comment-slash"></i><span class="icon-p-big">インスト</span></label>
-            <i class="fas fa-info-circle" onclick="showTutorial('is-inst')"></i>
+            <i class="fas fa-info-circle" data-tutorial="is-inst"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-subeana" name="is_subeana" {% if song.is_subeana %}checked{% endif %}>
             <label for="is-subeana"><i class="fas fa-user-circle"></i><span class="icon-p-big">すべあな界隈曲</span></label>
-            <i class="fas fa-info-circle" onclick="showTutorial('is-subeana')"></i>
+            <i class="fas fa-info-circle" data-tutorial="is-subeana"></i>
         </div>
         <div class="checkbox-col" data-hide-if-questionable>
             <input type="checkbox" id="is-draft" name="is_draft" {% if song.is_draft %}checked{% endif %}>
             <label for="is-draft"><i class="fas fa-user-edit"></i><span class="icon-p-big">下書き</span></label>
-            <i class="fas fa-info-circle" onclick="showTutorial('is-draft')"></i>
+            <i class="fas fa-info-circle" data-tutorial="is-draft"></i>
         </div>
         <div class="checkbox-col">
             <input type="checkbox" id="is-questionable" name="is_questionable" {% if song.is_questionable %}checked{% endif %}>
             <label for="is-questionable"><i class="fas fa-question"></i><span class="icon-p-big">界隈曲?</span></label>
-            <i class="fas fa-info-circle" onclick="showTutorial('is_questionable')"></i>
+            <i class="fas fa-info-circle" data-tutorial="is_questionable"></i>
         </div>
         <input type="submit" value="登録" id="song-edit-submit" disabled>
         <p id="song-edit-info-submit" class="song-edit-info"><span class='loading'></span></p>
@@ -120,7 +120,7 @@
 
 {% block js %}
 <script defer src="{% static 'subekashi/js/song_edit.js' %}"></script>
-<script defer>
+<script defer nonce="{{ csp_nonce }}">
     {% if error %}
         showToast("error", "{{ error|safe }}");
     {% elif request.GET.toast == "auto" %}

@@ -58,4 +58,10 @@ function copyBest() {
     showToast("ok", "コピーしました。");
 }
 
+document.querySelectorAll("input[data-score]").forEach(radioEle => {
+    radioEle.addEventListener("input", () => setScore(radioEle.dataset.aiId, Number(radioEle.dataset.score)));
+});
+document.getElementById("copy").addEventListener("click", copyBest);
+document.getElementById("regenerate").addEventListener("click", regenerate);
+
 showToast("ok", "歌詞を作成しました。");

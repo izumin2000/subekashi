@@ -8,6 +8,7 @@
 
 {% block content %}
 <section>
+    {% csrf_token %}
     <h1>曲の一覧と検索</h1>
 
     <div class="form-col">
@@ -36,7 +37,7 @@
         <label for="imitate"><i class="fas fa-sitemap"></i><span class="icon-p-big">模倣</span></label>
         <div id="imitate-div">
             <p>曲ID</p>
-            <input type="text" id="imitate" value="{{ request.GET.imitate }}" oninput="renderSongGuesser()" placeholder="タイトルか作者かURLを入力">
+            <input type="text" id="imitate" value="{{ request.GET.imitate }}" placeholder="タイトルか作者かURLを入力">
             <div id="song-guesser" class="sansfont"></div>
             <p id="imitate-sub">もしくは原曲から入力</p>
             {% render_categorys %}
@@ -147,7 +148,7 @@
             <label for="is_questionable"><i class="fas fa-question"></i><span class="icon-p-big">界隈曲?</span></label>
         </div>
     </details>
-    <input type="submit" id="search-button" value="検索" onclick="renderSearch()"></input>
+    <input type="submit" id="search-button" value="検索"></input>
     <div id="song-cards"></div>
 </section>
 <div id="scroll-to-results-container">

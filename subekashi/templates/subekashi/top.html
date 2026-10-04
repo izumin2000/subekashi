@@ -50,6 +50,7 @@
             <a href="{% url 'subekashi:ad' %}"><div class="dummybutton black-dummybutton"><i class="fas fa-bullhorn"></i><p class="icon-p-big">宣伝する</p></div></a>
             <a href="{% url 'subekashi:setting' %}#is_shown_ad"><div class="dummybutton black-dummybutton"><i class="fas fa-cog"></i><p class="icon-p-big">非表示にする</p></div></a>
         </div>
+        {% csrf_token %}
     {% endif %}
 
     {% if aiInsL and request.COOKIES.is_shown_ai != "off" %}
@@ -112,7 +113,7 @@
 
 
 {% block js %}
-<script>
+<script nonce="{{ csp_nonce }}">
     const isShownAd = {{ is_shown_ad|lower }};
     {% if is_shown_ad %}
     const adView = Number('{{ adIns.view }}');

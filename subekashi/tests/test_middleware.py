@@ -1,7 +1,7 @@
 """
 ミドルウェアのテスト
 
-RatelimitMiddleware・CacheControlMiddleware の動作を検証する。
+RatelimitMiddleware・CacheControlMiddleware・ContentSecurityPolicyMiddleware の動作を検証する。
 """
 import json
 from unittest.mock import MagicMock
@@ -10,6 +10,7 @@ from django.test import RequestFactory, SimpleTestCase, TestCase, override_setti
 from django_ratelimit.exceptions import Ratelimited
 from subekashi.middleware.rate_limit import RatelimitMiddleware
 from subekashi.middleware.cache import CacheControlMiddleware
+from subekashi.middleware.csp import ContentSecurityPolicyMiddleware
 from subekashi.constants.constants import SHORT_TERM_COOKIE_AGE, LONG_TERM_COOKIE_AGE
 
 
@@ -105,3 +106,58 @@ class CacheControlMiddlewareTest(SimpleTestCase):
     def test_cache_control_is_public(self):
         response = self._apply_middleware("/songs/")
         self.assertIn("public", response["Cache-Control"])
+
+
+class ContentSecurityPolicyMiddlewareTest(SimpleTestCase):
+    """ContentSecurityPolicyMiddleware のテスト"""
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    def _call(self, response):
+        request = self.factory.get("/")
+        middleware = ContentSecurityPolicyMiddleware(lambda req: response)
+        return request, middleware(request)
+
+    def _directives(self, response):
+        directives = {}
+        for directive in response["Content-Security-Policy"].split(";"):
+            name, *sources = directive.split()
+            directives[name] = sources
+        return directives
+
+    def test_html_response_has_csp_with_request_nonce(self):
+        request, response = self._call(HttpResponse("OK"))
+        self.assertIn(f"'nonce-{request.csp_nonce}'", self._directives(response)["script-src"])
+
+    def test_nonce_differs_per_request(self):
+        first_request, _ = self._call(HttpResponse("OK"))
+        second_request, _ = self._call(HttpResponse("OK"))
+        self.assertNotEqual(first_request.csp_nonce, second_request.csp_nonce)
+
+    def test_non_html_response_has_no_csp(self):
+        _, response = self._call(JsonResponse({"result": []}))
+        self.assertNotIn("Content-Security-Policy", response)
+
+    def test_existing_csp_is_not_overwritten(self):
+        existing = "default-src 'none'"
+        original = HttpResponse("OK")
+        original["Content-Security-Policy"] = existing
+        _, response = self._call(original)
+        self.assertEqual(response["Content-Security-Policy"], existing)
+
+    def test_inline_script_is_not_allowed_without_nonce(self):
+        _, response = self._call(HttpResponse("OK"))
+        script_src = self._directives(response)["script-src"]
+        self.assertNotIn("'unsafe-inline'", script_src)
+        self.assertNotIn("'unsafe-eval'", script_src)
+        self.assertNotIn("*", script_src)
+
+    def test_restrictive_directives(self):
+        _, response = self._call(HttpResponse("OK"))
+        directives = self._directives(response)
+        self.assertEqual(directives["default-src"], ["'self'"])
+        self.assertEqual(directives["object-src"], ["'none'"])
+        self.assertEqual(directives["base-uri"], ["'self'"])
+        self.assertEqual(directives["form-action"], ["'self'"])
+        self.assertEqual(directives["frame-ancestors"], ["'none'"])

@@ -742,6 +742,13 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `sort=title` | GETリクエスト | 投稿日用のsearch-infoが含まれない |
 | `is_questionable=True` の曲 | GETリクエスト | カードHTMLに `song-card-lyrics` が含まれない |
 | `is_questionable=False` の曲 | GETリクエスト | カードHTMLに `song-card-lyrics` が含まれる |
+| エラーメッセージのエスケープ（#1126） | `sort=<img src=x onerror=alert(1)>` | `class='error'` の要素内で入力値がHTMLエスケープされ、`<img` が含まれない |
+
+#### 7-11-1. `song_guessers` (`/api/html/song_guessers`)（#1126）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| エラーメッセージのエスケープ | `sort=<img src=x onerror=alert(1)>` | `class='error'` の要素内で入力値がHTMLエスケープされ、`<img` が含まれない |
 
 #### 7-12. `AiView` (`/ai/`)
 
@@ -899,6 +906,17 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | 静的ファイルURL | `/static/` へのリクエスト | Cache-Controlヘッダーが設定される |
 | 通常ページURL | `/` へのリクエスト | Cache-Controlが適切に設定される |
+
+#### 9-3. `ContentSecurityPolicyMiddleware`（#1126）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| HTMLレスポンス | `HttpResponse` | `Content-Security-Policy`の`script-src`に`request.csp_nonce`のnonceが含まれる |
+| nonceの一意性 | 2回リクエスト | リクエストごとに異なるnonceが生成される |
+| HTML以外のレスポンス | `JsonResponse` | `Content-Security-Policy`ヘッダーが付与されない |
+| 既存のCSPヘッダー | レスポンスに設定済み | 上書きされない |
+| インラインスクリプトの禁止 | `script-src` | `'unsafe-inline'`・`'unsafe-eval'`・`*`を含まない |
+| 制限的なディレクティブ | - | `default-src 'self'`・`object-src 'none'`・`base-uri 'self'`・`form-action 'self'`・`frame-ancestors 'none'` |
 
 ---
 
@@ -1130,6 +1148,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 記事タイトルの表示 | 有効なarticle_id | レスポンスにタイトルが含まれる |
 | 存在しない記事ID | 無効なarticle_id | HTTP 404 |
 | 非公開記事 | `is_open=False` | HTTP 404 |
+| 本文中の`<script>`へのnonce付与（#1126） | `is_md=False`で本文に`<script>`を含む | `<script nonce="（CSPヘッダーと同じnonce）">`として出力される |
+| 本文が空 | `text=None` | HTTP 200 |
 
 #### 12-3. `is_pinned_article` Cookie による並び替え (`ArticlesView`)
 
@@ -1733,6 +1753,7 @@ subekashi/tests/
 ├── test_views.py                   # 実装済み: ビュー（GET・POST）
 ├── test_api.py                     # 実装済み: REST API
 ├── test_middleware.py              # 実装済み: ミドルウェア
+├── test_security.py                # 実装済み: CSP・CORS・CSRFトークン・SRI（結合、#1126）
 ├── test_models.py                  # 実装済み: モデル基本動作
 ├── test_converters.py              # 実装済み: URLコンバータ
 ├── test_lib_youtube.py             # 実装済み: YouTube Data API連携

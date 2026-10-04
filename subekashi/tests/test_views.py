@@ -2715,6 +2715,36 @@ class SongCardsViewTest(TestCase):
         content = "".join(response.json())
         self.assertIn("song-card-lyrics", content)
 
+    def test_validation_error_message_is_escaped(self):
+        """エラーメッセージに含まれる入力値がHTMLエスケープされること（#1126）"""
+        response = self.client.get(
+            reverse("subekashi:song_cards"), {"sort": "<img src=x onerror=alert(1)>"}
+        )
+        self.assertEqual(response.status_code, 200)
+        content = "".join(response.json())
+        self.assertIn("class='error'", content)
+        self.assertNotIn("<img", content)
+        self.assertIn("&lt;img src=x onerror=alert(1)&gt;", content)
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+class SongGuessersViewTest(TestCase):
+    """song_guessers (/api/html/song_guessers) のテスト"""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_validation_error_message_is_escaped(self):
+        """エラーメッセージに含まれる入力値がHTMLエスケープされること（#1126）"""
+        response = self.client.get(
+            reverse("subekashi:song_guessers"), {"guesser": "曲", "sort": "<img src=x onerror=alert(1)>"}
+        )
+        self.assertEqual(response.status_code, 200)
+        content = "".join(response.json())
+        self.assertIn("class='error'", content)
+        self.assertNotIn("<img", content)
+        self.assertIn("&lt;img src=x onerror=alert(1)&gt;", content)
+
 
 @override_settings(STORAGES=STATIC_STORAGE)
 class RedirectViewTest(TestCase):
