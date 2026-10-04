@@ -30,14 +30,14 @@ async function init() {
     if (titleEle.value) params.append('title', titleEle.value);
     if (authorsEle.value.trim()) params.append('authors', authorsEle.value);
     if (urlEle.value) params.append('urls', urlEle.value);
-    if (imitateEle.value) params.append('fetch_imitate', '1');
+    params.append('fetch_imitate', '1');
 
     const initData = await exponentialBackoff(`song_edit_init/?${params}`, "init", init);
     if (!initData) return;
 
     await checkTitleAuthorForm(initData.title_author_songs);
     await checkUrlForm(initData.song_links);
-    await initImitateList(initData.imitate_songs);
+    initImitateList(initData.imitate_songs);
     document.getElementById("song-guesser").innerHTML = "";
     checkButton();
     checkDeleteForm();
@@ -88,26 +88,16 @@ function appendImitateList(song) {
 
 // 読み込み時に模倣一覧を描画
 var imitateEle = document.getElementById("imitate");
-async function initImitateList(prefetchedSongs = undefined) {
-    if (!imitateEle.value) {
-        return;
-    }
-
-    let imitateSongList;
-    if (Array.isArray(prefetchedSongs)) {
-        imitateSongList = prefetchedSongs;
-    } else {
-        const imitateSongListRes = await exponentialBackoff(`song/?imitated=${song_id}`, "init", initImitateList);
-        if (!imitateSongListRes) {
-            return;
-        }
-        imitateSongList = imitateSongListRes.result;
-    }
-
-    imitateIdList = imitateEle.value.split(",");
+var isImitateListLoaded = false;
+function initImitateList(imitateSongList) {
+    // 一覧の表示と#imitateの値がずれると、表示されている曲が保存時に消えてしまうため、
+    // キャッシュ等で古くなりうるHTML上の値は使わず、どちらもAPIから取得した最新の模倣曲を元にする（#1135）
+    imitateIdList = imitateSongList.map(song => song.id);
     for (const imitateSong of imitateSongList) {
         appendImitateList(imitateSong);
     }
+    setImitate();
+    isImitateListLoaded = true;
 }
 
 // ビューに渡すimitateカラムの値を#imitateにセット
@@ -125,6 +115,18 @@ function deleteImitate(imitateId) {
 
 // 模倣一覧にsongを追加
 function appendImitate(song) {
+    // 読み込み完了前に追加すると、読み込み完了時に既存の模倣曲で上書きされてしまうため追加させない
+    if (!isImitateListLoaded) {
+        showToast("info", "模倣一覧を読み込み中です。読み込み完了後に再度選択してください。");
+        return;
+    }
+
+    // 同じ曲が2つ並ぶと、片方を削除した際に両方とも#imitateから消えてしまうため追加させない（#1135）
+    if (imitateIdList.some(id => id == song.id)) {
+        showToast("error", "その曲は既に模倣曲として登録されています。");
+        return;
+    }
+
     appendImitateList(song)
     imitateIdList.push(song.id);      // imitateIdListにsong.idを追加
     setImitate();       // imitateIdListの内容を#imitateにセット

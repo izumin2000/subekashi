@@ -8,6 +8,7 @@ import json
 from unittest.mock import patch
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
+from subekashi.lib.song_search import DEFAULT_SIZE
 from subekashi.models import Ai, Author, Song, SongLink, Word
 
 
@@ -118,6 +119,41 @@ class SongAPIRetrieveTest(TestCase):
     def test_retrieve_nonexistent_song_returns_404(self):
         response = self.client.get("/api/song/99999/")
         self.assertEqual(response.status_code, 404)
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+@patch("subekashi.views.api.song_edit_init.SongEditInitView.throttle_classes", [])
+class SongEditInitViewTest(TestCase):
+    """SongEditInitView GET /api/song_edit_init/ のテスト
+
+    song_edit.jsは模倣一覧の表示と送信する模倣曲IDのどちらも、このAPIのimitate_songsを元にする（#1135）。
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+        self.song = Song.objects.create(title="編集初期化テスト曲")
+
+    def _get_imitate_ids(self):
+        response = self.client.get("/api/song_edit_init/", {"song_id": self.song.id, "fetch_imitate": "1"})
+        self.assertEqual(response.status_code, 200)
+        return [song["id"] for song in response.json()["imitate_songs"]]
+
+    def test_imitate_songs_is_empty_list_when_no_imitates(self):
+        # song_edit.jsはimitate_songsを配列として扱うため、Noneではなく空リストを返す
+        self.assertEqual(self._get_imitate_ids(), [])
+
+    def test_imitate_songs_returns_all_imitates_over_default_size(self):
+        # 検索のデフォルト件数で打ち切られると、保存時に残りの模倣情報が消えてしまう
+        imitates = [Song.objects.create(title=f"模倣元{i}") for i in range(DEFAULT_SIZE + 1)]
+        self.song.imitates.set(imitates)
+        self.assertCountEqual(self._get_imitate_ids(), [song.id for song in imitates])
+
+    def test_imitate_songs_includes_deleted_and_draft_songs(self):
+        # 削除済み・下書きの曲が除外されると、保存時にその模倣情報が消えてしまう
+        deleted_song = Song.objects.create(title="削除済み模倣元", is_deleted=True)
+        draft_song = Song.objects.create(title="下書き模倣元", is_draft=True)
+        self.song.imitates.set([deleted_song, draft_song])
+        self.assertCountEqual(self._get_imitate_ids(), [deleted_song.id, draft_song.id])
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
