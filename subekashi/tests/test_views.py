@@ -155,10 +155,10 @@ class SongsViewTest(TestCase):
         self.assertContains(response, '<label for="is_lack-false"><i class="fas fa-not-equal"></i><span class="icon-p-big">以外</span></label>')
 
     def test_bool_query_param_not_specified_selects_all_radio(self):
-        """is_lack を指定しないとき「全て」のラジオボタンが選択された状態で表示されること"""
+        """is_lack を指定しないとき「指定なし」のラジオボタンが選択された状態で表示されること"""
         response = self.client.get(reverse("subekashi:songs"))
         self.assertContains(response, '<input type="radio" id="is_lack-all" name="is_lack" value="" checked>')
-        self.assertContains(response, '<label for="is_lack-all"><i class="fas fa-expand"></i><span class="icon-p-big">全て</span></label>')
+        self.assertContains(response, '<label for="is_lack-all"><i class="fas fa-expand"></i><span class="icon-p-big">指定なし</span></label>')
 
     def test_bool_filters_are_not_duplicated(self):
         """インスト曲・オリジナル模倣曲は、それぞれ1つのフォームにのみ表示されること"""
@@ -175,10 +175,12 @@ class SongsViewTest(TestCase):
         self.assertContains(response, '<label for="jokerange-off"><i class="fas fa-not-equal"></i><span class="icon-p-big">以外</span></label>')
 
     def test_songrange_and_jokerange_default_radio(self):
-        """界隈曲の種類・ネタ曲は指定がなければ「全て」のラジオボタンが選択されること"""
+        """界隈曲の種類・ネタ曲は指定がなければ「指定なし」のラジオボタンが選択されること"""
         response = self.client.get(reverse("subekashi:songs"))
         self.assertContains(response, '<input type="radio" id="songrange-all" name="songrange" value="all" checked>')
         self.assertContains(response, '<input type="radio" id="jokerange-on" name="jokerange" value="on" checked>')
+        self.assertContains(response, '<label for="songrange-all"><i class="fas fa-expand"></i><span class="icon-p-big">指定なし</span></label>')
+        self.assertContains(response, '<label for="jokerange-on"><i class="fas fa-expand"></i><span class="icon-p-big">指定なし</span></label>')
 
     def test_radio_labels_do_not_contain_hyouji(self):
         """検索フォームのラジオボタンの選択肢に「表示」が含まれないこと"""

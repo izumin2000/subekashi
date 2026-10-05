@@ -470,10 +470,10 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 真偽値クエリ (数値0) | `?is_draft=0` | context["is_draft"] = "False" |
 | 真偽値クエリ (不正な値) | `?is_draft=abc` | context に is_draft が含まれない（フィルタなし） |
 | 真偽値クエリ False の表示 | `?is_lack=False` | 「以外」のラジオボタンが選択された状態で表示される |
-| 真偽値クエリ 未指定の表示 | URLクエリなし | 「全て」のラジオボタンが選択された状態で表示される |
+| 真偽値クエリ 未指定の表示 | URLクエリなし | 「指定なし」のラジオボタンが選択された状態で表示される |
 | 真偽値フィルタは重複して表示しない | `?is_inst=True&is_original=False` | インスト曲・オリジナル模倣曲のラジオボタンはそれぞれ1つのフォームにのみ表示される |
-| 界隈曲の種類・ネタ曲のラジオボタン | `?is_subeana=xx&is_joke=False` | 「以外」(`songrange-xx`・`jokerange-off`) のラジオボタンが選択された状態で表示される（選択肢は「全て」「のみ」「以外」） |
-| 界隈曲の種類・ネタ曲のラジオボタン（未指定） | URLクエリなし | `songrange-all`・`jokerange-on`（全て）のラジオボタンが選択された状態で表示される |
+| 界隈曲の種類・ネタ曲のラジオボタン | `?is_subeana=xx&is_joke=False` | 「以外」(`songrange-xx`・`jokerange-off`) のラジオボタンが選択された状態で表示される（選択肢は「指定なし」「のみ」「以外」） |
+| 界隈曲の種類・ネタ曲のラジオボタン（未指定） | URLクエリなし | `songrange-all`・`jokerange-on`（指定なし）のラジオボタンが選択された状態で表示される |
 | ラジオボタンの選択肢の文言 | GETリクエスト | 検索フォームのラジオボタンの選択肢に「表示」が含まれない |
 | is_joke=True | `?is_joke=True` | context["jokerange"] = "only" |
 | is_joke=only | `?is_joke=only` | context["jokerange"] = "only" |
@@ -490,7 +490,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 検索フォームの初期表示（複数指定） | `?is_lack=True&keyword=テスト` / `?title=テスト&sort=-view` / `?title=テスト&view_gte=100` / `?view_gte=100&lyrics=テスト` | ラジオボタンの並び順で先の "keyword" / "sort" / "youtube" / "lyrics" が表示される |
 | ラジオボタンの並び順 | GETリクエスト | よく利用するため、先頭からキーワード・並び替え・歌詞・YouTubeの順に並ぶ（全16個） |
 | 検索フォームの初期表示（空の値） | `?title=` | "keyword" が表示される |
-| 先頭のラジオボタンがデフォルト値 | GETリクエスト | フィルタバッジは先頭のラジオボタンをデフォルト値として判定するため、`songrange`・`jokerange` の先頭は `COOKIE_FORMS` のデフォルト値、真偽値のフィルタの先頭は `""`（全て） |
+| 先頭のラジオボタンがデフォルト値 | GETリクエスト | フィルタバッジは先頭のラジオボタンをデフォルト値として判定するため、`songrange`・`jokerange` の先頭は `COOKIE_FORMS` のデフォルト値、真偽値のフィルタの先頭は `""`（指定なし） |
 | cookieの不正な値 | `search_songrange`・`search_jokerange`・`search_sort` に不正な値 (cookie) | デフォルト値（`all`・`on`・`-post_time`）のラジオボタンが選択される |
 | 並び替えのラジオボタン | `?sort=-view` | `select` ではなく `SORT_CHOICES` の数のラジオボタンが表示され、`-view` のみが選択される |
 | 並び替えのラベル | GETリクエスト | 「登録日/早い順」のように短く、YouTube関連の並び替え（`YOUTUBE_SORTS`）のみ文言の前にYouTubeのアイコンが付く（「YouTubeの」等の文言は含まない） |

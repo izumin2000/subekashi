@@ -110,18 +110,24 @@ i.icon-p-big, .small-icon {
         width: auto;
         margin: 0 0 10px 0;
     }
+}
 
-    /* 3つの選択肢が1行に収まるよう余白を詰める */
+/* 3つの選択肢が1行に収まるよう余白を詰める（画面幅360pxや、項目名を左に並べると幅が足りない641〜700pxでも収まるようにする） */
+@media (max-width: 700px) {
     .radio-col .radio-group {
         gap: 6px;
     }
 
     .radio-col .radio-group label {
-        padding: 0 10px;
+        padding: 0 8px;
+    }
+
+    .radio-col .radio-group label::before {
+        margin-right: 6px;
     }
 
     .radio-col .radio-group label i {
-        margin-right: 6px;
+        margin-right: 4px;
     }
 }
 

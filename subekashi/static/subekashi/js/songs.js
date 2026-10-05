@@ -250,7 +250,7 @@ function isFilteredForm(formEle) {
     if (formEle.type == "checkbox") {
         return formEle.checked;
     }
-    // ラジオボタンは先頭の選択肢(全て)以外が選択されているか
+    // ラジオボタンは先頭の選択肢(指定なし)以外が選択されているか
     if (formEle.type == "radio") {
         return formEle.checked && formEle !== document.querySelector(`#search-forms input[name="${formEle.name}"]`);
     }
