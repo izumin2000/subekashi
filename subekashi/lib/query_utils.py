@@ -2,6 +2,11 @@
 クエリパラメータ関連のユーティリティ関数
 """
 
+# YouTube関連のフィルタ・並び替え（指定され、mediatypesが無い場合はYouTubeの曲のみに絞り込む）
+# 曲の検索画面(songs.js)でも、自動で適用されるフィルタの案内に使用する
+YOUTUBE_FILTERS = ['view_gte', 'view_lte', 'like_gte', 'like_lte', 'upload_time_gte', 'upload_time_lte']
+YOUTUBE_SORTS = ['view', '-view', 'like', '-like', 'upload_time', '-upload_time']
+
 
 def clean_query_params(query_params):
     """
@@ -23,6 +28,20 @@ def clean_query_params(query_params):
             value = value[0]
         cleaned_query[key] = value
     return cleaned_query
+
+
+def has_youtube_filter_or_sort(query_data):
+    """
+    YouTube関連のフィルタまたはソートが存在するかチェック
+
+    Args:
+        query_data: クエリパラメータの辞書
+
+    Returns:
+        bool: YouTube関連のフィルタまたはソートが存在する場合True
+    """
+    has_youtube_filter = any(key in query_data for key in YOUTUBE_FILTERS)
+    return has_youtube_filter or query_data.get('sort') in YOUTUBE_SORTS
 
 
 def has_view_filter_or_sort(query_data):

@@ -1,7 +1,23 @@
 from django.shortcuts import render
 from django.views import View
 from subekashi.constants.constants import ALL_MEDIAS, LONG_TERM_COOKIE_AGE
+from subekashi.lib.query_utils import YOUTUBE_FILTERS, YOUTUBE_SORTS
 
+
+# 並び替えの選択肢（YouTube関連の並び替え(YOUTUBE_SORTS)はラベルにYouTubeのアイコンを付ける）
+SORT_CHOICES = [
+    {'value': 'id', 'icon': 'fa fa-plus', 'label': '登録日/早い順'},
+    {'value': '-id', 'icon': 'fa fa-plus', 'label': '登録日/遅い順'},
+    {'value': 'post_time', 'icon': 'fas fa-file-signature', 'label': '更新日/早い順'},
+    {'value': '-post_time', 'icon': 'fas fa-file-signature', 'label': '更新日/遅い順'},
+    {'value': 'upload_time', 'icon': 'far fa-calendar-alt', 'label': '投稿日/早い順'},
+    {'value': '-upload_time', 'icon': 'far fa-calendar-alt', 'label': '投稿日/遅い順'},
+    {'value': 'view', 'icon': 'fas fa-play', 'label': '再生回数/少ない順'},
+    {'value': '-view', 'icon': 'fas fa-play', 'label': '再生回数/多い順'},
+    {'value': 'like', 'icon': 'far fa-thumbs-up', 'label': '高評価数/少ない順'},
+    {'value': '-like', 'icon': 'far fa-thumbs-up', 'label': '高評価数/多い順'},
+    {'value': 'random', 'icon': 'fas fa-random', 'label': 'ランダム'},
+]
 
 # Cookieに保存するフォームの設定
 COOKIE_FORMS = {
@@ -14,7 +30,7 @@ COOKIE_FORMS = {
         'default': 'on'
     },
     'sort': {
-        'values': {'id', '-id', 'post_time', '-post_time', 'upload_time', '-upload_time', '-view', 'view', '-like', 'like', 'random'},
+        'values': {choice['value'] for choice in SORT_CHOICES},
         'default': '-post_time'
     }
 }
@@ -28,7 +44,7 @@ SEARCH_FORM_QUERIES = {
     'keyword': ['keyword'],
     'sort': ['sort'],
     'lyrics': ['lyrics'],
-    'youtube': ['view_gte', 'view_lte', 'like_gte', 'like_lte', 'upload_time_gte', 'upload_time_lte'],
+    'youtube': YOUTUBE_FILTERS,
     'title': ['title'],
     'author': ['author'],
     'url': ['url'],
@@ -59,7 +75,10 @@ class SongsView(View):
         context = {
             "metatitle": "一覧と検索",
             "ALL_MEDIAS": ALL_MEDIAS[:-1],     # 最後の許可されていないURLのドメイン情報は不要
-            "display_media_index": DISPLAY_MEDIA_INDEX
+            "display_media_index": DISPLAY_MEDIA_INDEX,
+            "SORT_CHOICES": SORT_CHOICES,
+            # 自動で適用されるフィルタの案内に使用する（songs.js）
+            "youtube_queries": {"filters": YOUTUBE_FILTERS, "sorts": YOUTUBE_SORTS},
         }
 
         # POSTリクエストの場合はPOST、それ以外はGET
@@ -90,7 +109,8 @@ class SongsView(View):
                     context[form_name] = default_value
                 else:
                     cookie_value = COOKIES.get(f"search_{form_name}", default_value)
-                    context[form_name] = cookie_value
+                    # cookieが不正な値の場合はデフォルト値を使用
+                    context[form_name] = cookie_value if cookie_value in allowed_values else default_value
 
         # 真偽値のフィルタのURLクエリ対応
         for filter in BOOL_FORMS:

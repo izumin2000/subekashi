@@ -14,9 +14,11 @@ from django.urls import reverse
 from django.utils import timezone
 from article.models import Article
 from subekashi.forms import AuthorAliasForm
+from subekashi.lib.query_utils import YOUTUBE_FILTERS, YOUTUBE_SORTS
 from subekashi.lib.youtube import YoutubeApiError
 from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song, Stats, Word
 from subekashi.models.author import TransitiveAlias
+from subekashi.views.songs import COOKIE_FORMS, SORT_CHOICES
 
 
 STATIC_STORAGE = {
@@ -318,6 +320,64 @@ class SongsViewTest(TestCase):
         """値が空のURLクエリではフォームが切り替わらないこと"""
         response = self.client.get(reverse("subekashi:songs"), {"title": ""})
         self.assertEqual(response.context["search_form"], "keyword")
+
+    def test_first_radio_is_default_value(self):
+        """フィルタバッジは先頭のラジオボタンをデフォルト値として判定するため、先頭がデフォルト値（フィルタなし）であること"""
+        content = self.client.get(reverse("subekashi:songs")).content.decode()
+        expected = {
+            "songrange": COOKIE_FORMS["songrange"]["default"],
+            "jokerange": COOKIE_FORMS["jokerange"]["default"],
+            "is_original": "", "is_inst": "", "is_questionable": "", "is_deleted": "", "is_lack": "", "is_draft": "",
+        }
+        for name, default in expected.items():
+            with self.subTest(name=name):
+                values = re.findall(rf'<input type="radio" id="[^"]+" name="{name}" value="([^"]*)"', content)
+                self.assertEqual(values[0], default)
+
+    def test_invalid_cookie_value_uses_default(self):
+        """cookieに不正な値が保存されている場合はデフォルト値のラジオボタンが選択されること"""
+        self.client.cookies["is_saved_select"] = "on"
+        self.client.cookies["search_songrange"] = "invalid"
+        self.client.cookies["search_jokerange"] = "invalid"
+        self.client.cookies["search_sort"] = "invalid"
+        response = self.client.get(reverse("subekashi:songs"))
+        self.assertEqual(response.context["songrange"], "all")
+        self.assertEqual(response.context["jokerange"], "on")
+        self.assertEqual(response.context["sort"], "-post_time")
+        self.assertContains(response, 'name="songrange" value="all" checked>')
+        self.assertContains(response, 'name="jokerange" value="on" checked>')
+        self.assertContains(response, 'name="sort" value="-post_time" checked>')
+
+    def test_sort_is_radio(self):
+        """並び替えはラジオボタンで表示され、指定した並び替えが選択されること"""
+        response = self.client.get(reverse("subekashi:songs"), {"sort": "-view"})
+        content = response.content.decode()
+        self.assertNotIn('<select id="sort"', content)
+        self.assertEqual(len(re.findall(r'<input type="radio" id="sort-\d+" name="sort"', content)), len(SORT_CHOICES))
+        self.assertEqual(re.findall(r'name="sort" value="([^"]*)" checked>', content), ["-view"])
+
+    def test_sort_labels_have_youtube_icon(self):
+        """並び替えのラベルは短く、YouTube関連の並び替えにのみYouTubeのアイコンが付くこと"""
+        content = self.client.get(reverse("subekashi:songs")).content.decode()
+        labels = dict(re.findall(r'<label for="(sort-\d+)"><i class="[^"]+"></i><span class="icon-p-big">(.*?)</span></label>', content))
+        self.assertEqual(labels["sort-1"], "登録日/早い順")
+        self.assertEqual(labels["sort-4"], "更新日/遅い順")
+        self.assertEqual(labels["sort-5"], '<i class="fab fa-youtube"></i>投稿日/早い順')
+        self.assertEqual(labels["sort-8"], '<i class="fab fa-youtube"></i>再生回数/多い順')
+        self.assertEqual(labels["sort-10"], '<i class="fab fa-youtube"></i>高評価数/多い順')
+        self.assertEqual(labels["sort-11"], "ランダム")
+        self.assertNotIn("YouTubeの", "".join(labels.values()))
+
+    def test_sort_defaults_to_post_time_desc(self):
+        """並び替えを指定しない場合は「更新日が遅い順」が選択されること"""
+        response = self.client.get(reverse("subekashi:songs"))
+        self.assertEqual(re.findall(r'name="sort" value="([^"]*)" checked>', response.content.decode()), ["-post_time"])
+
+    def test_youtube_queries_are_passed_to_js(self):
+        """自動で適用されるフィルタの案内に使うYouTube関連のクエリが、サーバー側の定義のままJSに渡されること"""
+        response = self.client.get(reverse("subekashi:songs"))
+        self.assertEqual(response.context["youtube_queries"], {"filters": YOUTUBE_FILTERS, "sorts": YOUTUBE_SORTS})
+        self.assertContains(response, '<script id="youtube-queries" type="application/json">')
 
     def test_search_form_radios_toggle_button_is_shown(self):
         """フォームを切り替えるラジオボタンを全て表示するボタンが、閉じた状態で表示されること"""

@@ -330,6 +330,18 @@ URLでの検索は`clean_url`で正規化した値に対する`links__url__icont
 | view系ソート | `{"sort": "view"}` | `False` |
 | like系ソート | `{"sort": "like"}` | `False` |
 
+#### 4-5. `has_youtube_filter_or_sort(query_data)`（#970）
+
+`YOUTUBE_FILTERS`・`YOUTUBE_SORTS` は `SongFilter.qs()` と曲の検索画面（songs.js）の案内表示で共通して使用する。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| YouTube関連のフィルタ | `YOUTUBE_FILTERS` の各キー | `True` |
+| YouTube関連のソート | `YOUTUBE_SORTS` の各ソート（upload_timeを含む） | `True` |
+| 別のソート | `{"sort": "-post_time"}` | `False` |
+| 別のフィルタ | `{"title": "テスト", "mediatypes": "youtube"}` | `False` |
+| 空辞書 | `{}` | `False` |
+
 ---
 
 ### 5. `lib/author_helpers.py` — 作者ヘルパー
@@ -478,6 +490,12 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 検索フォームの初期表示（複数指定） | `?is_lack=True&keyword=テスト` / `?title=テスト&sort=-view` / `?title=テスト&view_gte=100` / `?view_gte=100&lyrics=テスト` | ラジオボタンの並び順で先の "keyword" / "sort" / "youtube" / "lyrics" が表示される |
 | ラジオボタンの並び順 | GETリクエスト | よく利用するため、先頭からキーワード・並び替え・歌詞・YouTubeの順に並ぶ（全16個） |
 | 検索フォームの初期表示（空の値） | `?title=` | "keyword" が表示される |
+| 先頭のラジオボタンがデフォルト値 | GETリクエスト | フィルタバッジは先頭のラジオボタンをデフォルト値として判定するため、`songrange`・`jokerange` の先頭は `COOKIE_FORMS` のデフォルト値、真偽値のフィルタの先頭は `""`（全て） |
+| cookieの不正な値 | `search_songrange`・`search_jokerange`・`search_sort` に不正な値 (cookie) | デフォルト値（`all`・`on`・`-post_time`）のラジオボタンが選択される |
+| 並び替えのラジオボタン | `?sort=-view` | `select` ではなく `SORT_CHOICES` の数のラジオボタンが表示され、`-view` のみが選択される |
+| 並び替えのラベル | GETリクエスト | 「登録日/早い順」のように短く、YouTube関連の並び替え（`YOUTUBE_SORTS`）のみ文言の前にYouTubeのアイコンが付く（「YouTubeの」等の文言は含まない） |
+| 並び替えのデフォルト | URLクエリなし | `-post_time`（更新日が遅い順）が選択される |
+| YouTube関連のクエリをJSに渡す | GETリクエスト | context["youtube_queries"] が `query_utils` の `YOUTUBE_FILTERS`・`YOUTUBE_SORTS` と一致し、`json_script`（`#youtube-queries`）で出力される |
 | ラジオボタンを全て表示するボタン | GETリクエスト | `#search-form-radios-toggle`（`aria-expanded="false"`、「全て表示」）が表示される |
 | 「結果を表示」ボタンの廃止（#970） | GETリクエスト | `scroll-to-results` が含まれない |
 
@@ -854,6 +872,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | ページネーション | `?page=1&size=5` | HTTP 200、最大5件 |
 | 不正なsize | `?size=-1` | HTTP 200、デフォルトサイズで処理 |
 | 統計情報の含有 | GETリクエスト | レスポンスに `count`, `page`, `max_page` が含まれる |
+| `is_lack=False`（#970） | URLあり・歌詞ありの曲とURLなしの曲が存在、`?is_lack=False` | 未完成の曲（URLなし）が除外される |
 
 #### 8-2. `EditorIsOpenView` (`/api/editor/is_open`)
 

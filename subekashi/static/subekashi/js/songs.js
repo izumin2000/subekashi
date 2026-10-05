@@ -1,8 +1,8 @@
 var page = 1, songGuesserController;
-const FORM_QUERIES = '#search-forms input, #search-forms select';
+const FORM_QUERIES = '#search-forms input';
 const COOKIE_FORMS = ["songrange", "jokerange", "sort"];
-const YOUTUBE_FILTERS = ["view_gte", "view_lte", "like_gte", "like_lte", "upload_time_gte", "upload_time_lte"];
-const YOUTUBE_SORTS = ["view", "-view", "like", "-like", "upload_time", "-upload_time"];
+// YouTube関連のフィルタ・並び替え（lib/query_utils.pyのYOUTUBE_FILTERS・YOUTUBE_SORTS）
+const YOUTUBE_QUERIES = JSON.parse(document.getElementById("youtube-queries").textContent);
 
 window.addEventListener('load', async function () {
     const searchFormName = document.querySelector('input[name="search-form"]:checked').value;
@@ -85,15 +85,9 @@ function restoreFormValuesFromCookies() {
     });
 }
 
-// フィルタの値をフォームに反映する（ラジオボタンの場合は該当する値を選択する）
+// フィルタの値に該当するラジオボタンを選択する
 function setFormValue(filter, value) {
-    const selectEle = document.querySelector(`#search-forms select[name="${filter}"]`);
-    if (selectEle) {
-        selectEle.value = value;
-        return;
-    }
-
-    const radioEle = document.querySelector(`#search-forms input[name="${filter}"][value="${CSS.escape(value)}"]`);
+    const radioEle = Array.from(document.querySelectorAll(`#search-forms input[name="${filter}"]`)).find((ele) => ele.value === value);
     if (radioEle) {
         radioEle.checked = true;
     }
@@ -165,7 +159,6 @@ function focusSearchForm(formName) {
         textEle.focus();
     }
 }
-
 
 function renderSongGuesser() {
     // 以前のリクエストが存在する場合、そのリクエストをキャンセルする
@@ -261,17 +254,15 @@ function isFilteredForm(formEle) {
     if (formEle.type == "radio") {
         return formEle.checked && formEle !== document.querySelector(`#search-forms input[name="${formEle.name}"]`);
     }
-    if (formEle.tagName == "SELECT") {
-        return formEle.value !== formEle.options[0].value;
-    }
     return formEle.value !== "";
 }
 
-// YouTube関連のフィルタ/並び替えによって自動で適用されるフィルタの案内を表示する（lib/song_filterset.pyのSongFilter.qs参照）
+// YouTube関連のフィルタ/並び替えによって自動で適用されるフィルタの案内を表示する
+// 判定はlib/song_filterset.pyのSongFilter.qs・lib/query_utils.pyのhas_*_filter_or_sort / has_upload_time_sortと揃える
 function renderOverrideInfos(query) {
     const sort = query.sort;
     const overrides = {
-        "media": (YOUTUBE_FILTERS.some((key) => key in query) || YOUTUBE_SORTS.includes(sort)) && !("mediatypes" in query),
+        "media": (YOUTUBE_QUERIES.filters.some((key) => key in query) || YOUTUBE_QUERIES.sorts.includes(sort)) && !("mediatypes" in query),
         "view": ("view_lte" in query || ["view", "-view"].includes(sort)) && !("view_gte" in query),
         "like": ("like_lte" in query || ["like", "-like"].includes(sort)) && !("like_gte" in query),
         "upload_time": ["upload_time", "-upload_time"].includes(sort),

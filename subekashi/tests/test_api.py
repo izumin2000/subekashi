@@ -59,6 +59,16 @@ class SongAPIListTest(TestCase):
         self.assertEqual(data["count"], 1)
         self.assertEqual(data["result"][0]["title"], "APIテスト曲1")
 
+    def test_is_lack_false_excludes_lack_songs(self):
+        """is_lack=False で未完成の曲が除外されること（#970）"""
+        # song1: URLあり・歌詞ありのオリジナル模倣曲（完成）、song2: URLなし（未完成）
+        self.song1.is_original = True
+        self.song1.save()
+        response = self.client.get("/api/song/", {"is_lack": "False"})
+        data = response.json()
+        self.assertEqual(data["count"], 1)
+        self.assertEqual(data["result"][0]["title"], "APIテスト曲1")
+
     def test_guesser_filter_matches_url(self):
         # #1117: song guesserはURLからもヒットする
         response = self.client.get("/api/song/", {"guesser": "https://www.youtube.com/watch?v=apitesturl01"})

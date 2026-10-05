@@ -55,21 +55,14 @@
             </div>
         </div>
         <div class="search-form" id="search-form-sort" {% if search_form != "sort" %}hidden{% endif %}>
-            <div class="form-col">
-                <label for="sort"><i class="fas fa-sort-amount-down"></i><span class="icon-p-big">並び替え</span></label>
-                <select id="sort" name="sort">
-                    <option value="id" {% if sort == 'id' %}selected{% endif %}><i class="fa fa-plus"></i><i class="fas fa-sort-numeric-down small-icon icon-p-big"></i><span class="icon-p-big">新規登録日が早い順</span></option>
-                    <option value="-id" {% if sort == '-id' %}selected{% endif %}><i class="fa fa-plus"></i><i class="fas fa-sort-numeric-down-alt small-icon icon-p-big"></i><span class="icon-p-big">新規登録日が遅い順</span></option>
-                    <option value="post_time" {% if sort == 'post_time' %}selected{% endif %}><i class="fas fa-file-signature"></i><i class="fas fa-sort-numeric-down small-icon icon-p-big"></i><span class="icon-p-big">更新日が早い順</span></option>
-                    <option value="-post_time" {% if sort == '-post_time' %}selected{% endif %}><i class="fas fa-file-signature"></i><i class="fas fa-sort-numeric-down-alt small-icon icon-p-big"></i><span class="icon-p-big">更新日が遅い順</span></option>
-                    <option value="upload_time" {% if sort == 'upload_time' %}selected{% endif %}><i class="far fa-calendar-alt"></i><i class="fas fa-sort-numeric-down small-icon icon-p-big"></i><span class="icon-p-big">YouTubeに投稿した日が早い順</span></option>
-                    <option value="-upload_time" {% if sort == '-upload_time' %}selected{% endif %}><i class="far fa-calendar-alt"></i><i class="fas fa-sort-numeric-down-alt small-icon icon-p-big"></i><span class="icon-p-big">YouTubeに投稿した日が遅い順</span></option>
-                    <option value="view" {% if sort == 'view' %}selected{% endif %}><i class="fas fa-play"></i><i class="fas fa-sort-numeric-down small-icon icon-p-big"></i><span class="icon-p-big">YouTubeの再生回数が少ない順</span></option>
-                    <option value="-view" {% if sort == '-view' %}selected{% endif %}><i class="fas fa-play"></i><i class="fas fa-sort-numeric-down-alt small-icon icon-p-big"></i><span class="icon-p-big">YouTubeの再生回数が多い順</span></option>
-                    <option value="like" {% if sort == 'like' %}selected{% endif %}><i class="far fa-thumbs-up"></i><i class="fas fa-sort-numeric-down small-icon icon-p-big"></i><span class="icon-p-big">YouTubeの高評価数が少ない順</span></option>
-                    <option value="-like" {% if sort == '-like' %}selected{% endif %}><i class="far fa-thumbs-up"></i><i class="fas fa-sort-numeric-down-alt small-icon icon-p-big"></i><span class="icon-p-big">YouTubeの高評価数が多い順</span></option>
-                    <option value="random" {% if sort == 'random' %}selected{% endif %}><i class="fas fa-random"></i><span class="icon-p-big">ランダム</span></option>
-                </select>
+            <div class="radio-col">
+                <p class="radio-col-label"><i class="fas fa-sort-amount-down"></i><span class="icon-p-big">並び替え</span></p>
+                <div class="radio-group">
+                    {% for choice in SORT_CHOICES %}
+                        <input type="radio" id="sort-{{ forloop.counter }}" name="sort" value="{{ choice.value }}" {% if sort == choice.value %}checked{% endif %}>
+                        <label for="sort-{{ forloop.counter }}"><i class="{{ choice.icon }}"></i><span class="icon-p-big">{% if choice.value in youtube_queries.sorts %}<i class="fab fa-youtube"></i>{% endif %}{{ choice.label }}</span></label>
+                    {% endfor %}
+                </div>
             </div>
         </div>
         <div class="search-form" id="search-form-lyrics" {% if search_form != "lyrics" %}hidden{% endif %}>
@@ -165,7 +158,7 @@
             <div class="radio-col">
                 <p class="radio-col-label"><i class="fas fa-border-style"></i><span class="icon-p-big">すべあな界隈曲</span></p>
                 <div class="radio-group">
-                    <input type="radio" id="songrange-all" name="songrange" value="all" {% if songrange != 'subeana' and songrange != 'xx' %}checked{% endif %}>
+                    <input type="radio" id="songrange-all" name="songrange" value="all" {% if songrange == 'all' %}checked{% endif %}>
                     <label for="songrange-all"><i class="fas fa-expand"></i><span class="icon-p-big">全て</span></label>
                     <input type="radio" id="songrange-subeana" name="songrange" value="subeana" {% if songrange == 'subeana' %}checked{% endif %}>
                     <label for="songrange-subeana"><i class="fas fa-equals"></i><span class="icon-p-big">のみ</span></label>
@@ -178,7 +171,7 @@
             <div class="radio-col">
                 <p class="radio-col-label"><i class="far fa-meh-rolling-eyes"></i><span class="icon-p-big">ネタ曲</span></p>
                 <div class="radio-group">
-                    <input type="radio" id="jokerange-on" name="jokerange" value="on" {% if jokerange != 'only' and jokerange != 'off' %}checked{% endif %}>
+                    <input type="radio" id="jokerange-on" name="jokerange" value="on" {% if jokerange == 'on' %}checked{% endif %}>
                     <label for="jokerange-on"><i class="fas fa-expand"></i><span class="icon-p-big">全て</span></label>
                     <input type="radio" id="jokerange-only" name="jokerange" value="only" {% if jokerange == 'only' %}checked{% endif %}>
                     <label for="jokerange-only"><i class="fas fa-equals"></i><span class="icon-p-big">のみ</span></label>
@@ -208,6 +201,7 @@
     </div>
     <input type="submit" id="search-button" value="検索"></input>
     <div id="song-cards"></div>
+    {{ youtube_queries|json_script:"youtube-queries" }}
 </section>
 {% endblock %}
 

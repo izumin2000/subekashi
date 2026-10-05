@@ -956,11 +956,12 @@ input[type=submit], button {
     transform: rotate(180deg);
 }
 
+/* labelの右余白は行末にも付き中央からずれるため、labelの余白ではなく列の間隔(15px)で空ける */
 .radio-group {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 10px;
+    gap: 10px 15px;
     margin: 20px 0;
 }
 
@@ -974,6 +975,7 @@ input[type=submit], button {
     justify-content: center;
     width: auto;
     height: 40px;
+    margin-right: 0;
     padding: 0 15px;
     background-color: #333;
     color: #fff;

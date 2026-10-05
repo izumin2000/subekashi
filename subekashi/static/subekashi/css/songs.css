@@ -46,15 +46,23 @@ i.icon-p-big, .small-icon {
     margin: 0;
 }
 
-/* フォームを切り替えるラジオボタンは2行と3行目の半分(40px × 2 + 間隔10px × 2 + 20px)までを表示し、残りは縦スクロールで表示する（バッジが切れないよう上と左右に余白を取る） */
+/* 並び替えは早い順・遅い順(少ない順・多い順)が1行に2つずつ並ぶよう幅を制限し、中央に寄せる */
+#search-form-sort .radio-group {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+/* フォームを切り替えるラジオボタンは2.5行分(3行目の半分)までを表示し、残りは縦スクロールで表示する（バッジが切れないよう上と左右に余白を取る） */
+/* 高さはcommon.cssの.radio-groupのラジオボタンの高さ(40px)と間隔(10px)から計算する */
 /* 続きがあることが分かるよう下端をぼかす（一番下までスクロールした場合はぼかさない） */
 #search-form-radios {
-    max-height: 120px;
+    max-height: calc(40px * 2.5 + 10px * 2);
     overflow-x: hidden;
     overflow-y: auto;
     margin: 10px 0;
     padding: 6px 6px 0 6px;
     scrollbar-color: #555 transparent;
+    scrollbar-gutter: stable both-edges;     /* スクロールバーが幅を取る環境でも左右中央に揃える */
     -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 15px), rgba(0, 0, 0, 0.25));
     mask-image: linear-gradient(to bottom, #000 calc(100% - 15px), rgba(0, 0, 0, 0.25));
 }
@@ -109,7 +117,6 @@ i.icon-p-big, .small-icon {
     }
 
     .radio-col .radio-group label {
-        margin-right: 0;
         padding: 0 10px;
     }
 
