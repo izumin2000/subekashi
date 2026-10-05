@@ -18,7 +18,7 @@ from subekashi.lib.query_utils import YOUTUBE_FILTERS, YOUTUBE_SORTS
 from subekashi.lib.youtube import YoutubeApiError
 from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song, Stats, Word
 from subekashi.models.author import TransitiveAlias
-from subekashi.views.songs import COOKIE_FORMS, SORT_CHOICES
+from subekashi.views.songs import COOKIE_FORMS, SEARCH_FORM_QUERIES, SORT_CHOICES
 
 
 STATIC_STORAGE = {
@@ -271,12 +271,15 @@ class SongsViewTest(TestCase):
         self.assertContains(response, '<div class="search-form" id="search-form-title" hidden>')
 
     def test_search_form_selected_by_query(self):
-        """URLクエリで指定されたフィルタを含むフォームが表示されること"""
+        """URLクエリで指定されたフィルタを含むフォームが表示され、そのラジオボタンのみが選択されること"""
         cases = [
+            ({}, "keyword"),
+            ({"keyword": "テスト"}, "keyword"),
             ({"title": "テスト"}, "title"),
             ({"author": "テスト"}, "author"),
             ({"lyrics": "テスト"}, "lyrics"),
             ({"url": "https://youtu.be/xxx"}, "url"),
+            ({"mediatypes": "youtube"}, "url"),
             ({"imitate": "1"}, "imitate"),
             ({"view_gte": "100"}, "youtube"),
             ({"upload_time_lte": "2024-01-01"}, "youtube"),
@@ -297,6 +300,33 @@ class SongsViewTest(TestCase):
                 response = self.client.get(reverse("subekashi:songs"), query)
                 self.assertEqual(response.context["search_form"], expected)
                 self.assertContains(response, f'<div class="search-form" id="search-form-{expected}" >')
+                # JSは選択されているラジオボタンが必ず1つあることを前提にしている
+                self.assertEqual(re.findall(r'name="search-form" value="(\w+)" checked>', response.content.decode()), [expected])
+
+    def test_search_form_covers_all_forms(self):
+        """全てのフォームのラジオボタンに、初期表示するためのURLクエリが対応づけられていること"""
+        content = self.client.get(reverse("subekashi:songs")).content.decode()
+        radios = re.findall(r'id="search-form-radio-(\w+)"', content)
+        self.assertEqual(radios, list(SEARCH_FORM_QUERIES))
+
+    def test_invalid_bool_value_selects_default_radio(self):
+        """真偽値のフィルタに不正な値を指定した場合は、そのフォームを表示し「指定なし」が選択されること"""
+        response = self.client.get(reverse("subekashi:songs"), {"is_lack": "foo"})
+        self.assertEqual(response.context["search_form"], "lack")
+        self.assertContains(response, '<input type="radio" id="is_lack-all" name="is_lack" value="" data-default checked>')
+        self.assertEqual(re.findall(r'name="is_lack" value="([^"]*)"[^>]*checked>', response.content.decode()), [""])
+
+    def test_mediatypes_query_checks_media(self):
+        """mediatypesで指定したメディアのチェックボックスが選択された状態で表示されること"""
+        response = self.client.get(reverse("subekashi:songs"), {"mediatypes": "youtube,nicovideo,unknown"})
+        content = response.content.decode()
+        checked = re.findall(r'<input type="checkbox" value="media-[^"]+" id="media-([^"]+)" checked>', content)
+        self.assertCountEqual(checked, ["youtube", "nicovideo"])
+
+    def test_no_mediatypes_query_checks_nothing(self):
+        """mediatypesを指定しない場合はメディアのチェックボックスが選択されないこと"""
+        content = self.client.get(reverse("subekashi:songs")).content.decode()
+        self.assertEqual(re.findall(r'id="media-[^"]+" checked>', content), [])
 
     def test_search_form_prefers_earlier_form(self):
         """複数のフォームのURLクエリが指定された場合はラジオボタンの並び順で先のフォームが表示されること"""

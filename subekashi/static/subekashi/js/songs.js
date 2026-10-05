@@ -5,7 +5,7 @@ const COOKIE_FORMS = ["songrange", "jokerange", "sort"];
 window.addEventListener('load', async function () {
     restoreFormValuesFromCookies();
     syncSearchForm();
-    focusSearchForm(document.querySelector('input[name="search-form"]:checked').value);
+    focusSearchForm(getSearchFormName());
     document.getElementById("search-form-radios").addEventListener('scroll', updateSearchFormRadiosScrollEnd);
     window.addEventListener('resize', updateSearchFormRadiosScrollEnd);
     renderSearch();
@@ -26,7 +26,7 @@ window.addEventListener('load', async function () {
         const isExpanded = !document.getElementById("search-form-radios").classList.contains("expanded");
         setSearchFormRadiosExpanded(isExpanded);
         if (!isExpanded) {
-            scrollToSearchFormRadio(document.querySelector('input[name="search-form"]:checked').value, "auto");
+            scrollToSearchFormRadio(getSearchFormName(), "auto");
         }
     });
 
@@ -53,10 +53,16 @@ window.addEventListener('pageshow', function (event) {
     }
 });
 
+// 選択されているフォームのラジオボタンの値（テンプレートで必ず1つ選択されるが、選択されていない場合はキーワードとする）
+function getSearchFormName() {
+    const radioEle = document.querySelector('input[name="search-form"]:checked');
+    return radioEle ? radioEle.value : "keyword";
+}
+
 // 選択されているラジオボタンのフォームを表示する
 // ブラウザバック時はブラウザがラジオボタンの選択状態を復元するため、サーバーが表示したフォームとずれないようにする
 function syncSearchForm() {
-    const searchFormName = document.querySelector('input[name="search-form"]:checked').value;
+    const searchFormName = getSearchFormName();
     showSearchForm(searchFormName);
     scrollToSearchFormRadio(searchFormName, "auto");
     updateSearchFormRadiosScrollEnd();

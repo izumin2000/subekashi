@@ -40,6 +40,7 @@ BOOL_FORMS = ["is_subeana", "is_joke", "is_lack", "is_draft", "is_original", "is
 
 # ラジオボタンで切り替えるフォームと、そのフォームに含まれるURLクエリ
 # URLクエリが指定されている場合は該当するフォームを初期表示する
+# 画面にフォームがあるクエリのみ（imitated・guesser・title_exact等のAPI専用のクエリは画面で扱わない）
 SEARCH_FORM_QUERIES = {
     'keyword': ['keyword'],
     'sort': ['sort'],
@@ -47,7 +48,7 @@ SEARCH_FORM_QUERIES = {
     'youtube': YOUTUBE_FILTERS,
     'title': ['title'],
     'author': ['author'],
-    'url': ['url'],
+    'url': ['url', 'mediatypes'],
     'imitate': ['imitate'],
     'subeana': ['songrange', 'is_subeana'],
     'joke': ['jokerange', 'is_joke'],
@@ -135,6 +136,9 @@ class SongsView(View):
                 context[filter] = "True"
             elif value_lower in ["false", "0"]:
                 context[filter] = "False"
+
+        # メディアのチェックボックスのURLクエリ対応（カンマ区切り）
+        context["mediatypes"] = REQUEST_DATA.get("mediatypes", "").split(",")
 
         context["search_form"] = next(
             (form for form, queries in SEARCH_FORM_QUERIES.items() if any(REQUEST_DATA.get(query) for query in queries)),

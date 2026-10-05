@@ -127,12 +127,12 @@
 
                     {% if forloop.counter0 >= display_media_index and forloop.counter0 < forloop.revcounter0|add:"-1" %}
                         <div class="checkbox-col">
-                            <input type="checkbox" value="media-{{ media.id }}" id="media-{{ media.id }}">
+                            <input type="checkbox" value="media-{{ media.id }}" id="media-{{ media.id }}" {% if media.id in mediatypes %}checked{% endif %}>
                             <label for="media-{{ media.id }}">{{ media.icon|safe }}<span class="icon-p-big">{{ media.name }}</span></label>
                         </div>
                     {% else %}
                         <div class="checkbox-col">
-                            <input type="checkbox" value="media-{{ media.id }}" id="media-{{ media.id }}">
+                            <input type="checkbox" value="media-{{ media.id }}" id="media-{{ media.id }}" {% if media.id in mediatypes %}checked{% endif %}>
                             <label for="media-{{ media.id }}">{{ media.icon|safe }}<span class="icon-p-big">{{ media.name }}</span></label>
                         </div>
                     {% endif %}

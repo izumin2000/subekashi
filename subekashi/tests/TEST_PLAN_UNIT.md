@@ -486,7 +486,12 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | is_joke経由の絞り込み(タグリンク等)は保存設定cookieを上書きしない | `is_saved_select=on`, `search_jokerange=on` (cookie), `?is_joke=only` | context["jokerange"] = "only"（表示のみ反映）、`search_jokerange` cookieは上書きされない |
 | songrangeクエリ(検索フォーム経由)は引き続きcookieに保存される | `is_saved_select=on`, `?songrange=xx` | `search_songrange` cookieに "xx" が保存される |
 | 検索フォームの初期表示（デフォルト） | URLクエリなし | context["search_form"] = "keyword"、キーワードのラジオボタンが選択され、他のフォームは `hidden` |
-| 検索フォームの初期表示（URLクエリ指定） | `?title=テスト` `?view_gte=100` `?is_subeana=xx` `?jokerange=off` `?is_original=True` `?is_inst=True` `?is_questionable=True` `?is_lack=True` `?sort=-view` など | URLクエリを含むフォーム（title/youtube/subeana/joke/original/inst/questionable/lack/sortなど）が表示される |
+| 検索フォームのラジオボタンは必ず1つ選択される | URLクエリなし・各フォームのURLクエリ | `name="search-form"` のラジオボタンが常に1つだけ選択される（JSはこれを前提にしている） |
+| 全てのフォームにURLクエリが対応づけられている | GETリクエスト | 16個のラジオボタンの並びが `SEARCH_FORM_QUERIES` のキーの並びと一致する |
+| 真偽値のフィルタの不正な値 | `?is_lack=foo` | 「未完成」のフォームが表示され、「指定なし」のラジオボタンが選択される |
+| mediatypesのURLクエリ | `?mediatypes=youtube,nicovideo,unknown` | URLのフォームが表示され、YouTube・ニコニコ動画のチェックボックスのみ選択される（存在しないメディアは無視） |
+| mediatypes未指定 | URLクエリなし | メディアのチェックボックスは選択されない |
+| 検索フォームの初期表示（URLクエリ指定） | `?title=テスト` `?mediatypes=youtube` `?view_gte=100` `?is_subeana=xx` `?jokerange=off` `?is_original=True` `?is_inst=True` `?is_questionable=True` `?is_lack=True` `?sort=-view` など | URLクエリを含むフォーム（title/url/youtube/subeana/joke/original/inst/questionable/lack/sortなど）が表示される |
 | 検索フォームの初期表示（複数指定） | `?is_lack=True&keyword=テスト` / `?title=テスト&sort=-view` / `?title=テスト&view_gte=100` / `?view_gte=100&lyrics=テスト` | ラジオボタンの並び順で先の "keyword" / "sort" / "youtube" / "lyrics" が表示される |
 | ラジオボタンの並び順 | GETリクエスト | よく利用するため、先頭からキーワード・並び替え・歌詞・YouTubeの順に並ぶ（全16個） |
 | 検索フォームの初期表示（空の値） | `?title=` | "keyword" が表示される |
