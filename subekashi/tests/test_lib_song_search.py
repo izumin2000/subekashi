@@ -122,34 +122,61 @@ class SongSearchFilterTest(TestCase):
 
 
 class SongSearchIsLackFilterTest(TestCase):
-    """is_lack フィルターのテスト（True・False・フィルタなしの3値）"""
+    """is_lack フィルターのテスト（True・False・フィルタなしの3値）
+
+    is_lack=False は filter_by_lack() を exclude() で否定するため、多値リレーション(imitates)や
+    Exists を含む各条件で、True の結果と互いに素になり、合わせると全件になることを確認する。
+    """
 
     def setUp(self):
+        def add_link(song, url):
+            SongLink.objects.create(url=url).songs.add(song)
+
         # 完成した曲（URLあり・歌詞あり・オリジナル模倣曲）。重複しないことを確認するためURLを2つ持たせる
         self.complete = Song.objects.create(title="完成曲", lyrics="歌詞あり", is_original=True)
-        for url in ["https://youtu.be/complete001", "https://youtu.be/complete003"]:
-            SongLink.objects.create(url=url).songs.add(self.complete)
+        add_link(self.complete, "https://youtu.be/complete001")
+        add_link(self.complete, "https://youtu.be/complete003")
         # 模倣元を持つ完成した曲（imitates の JOIN で判定がずれないことを確認する）
         self.complete_imitate = Song.objects.create(title="模倣元あり曲", lyrics="歌詞あり")
         self.complete_imitate.imitates.add(self.complete)
-        SongLink.objects.create(url="https://youtu.be/complete002").songs.add(self.complete_imitate)
-        # 未完成の曲（URLなし）
+        add_link(self.complete_imitate, "https://youtu.be/complete002")
+        # 歌詞なしのインスト曲（完成）
+        self.complete_inst = Song.objects.create(title="インスト曲", lyrics="", is_inst=True, is_original=True)
+        add_link(self.complete_inst, "https://youtu.be/complete004")
+        # URLなしだが非公開/削除済みの曲（完成）
+        self.complete_deleted = Song.objects.create(title="削除済み曲", lyrics="歌詞あり", is_original=True, is_deleted=True)
+        # 未完成の曲: URLなしで非公開/削除済みでない
         self.lack = Song.objects.create(title="未完成曲", lyrics="歌詞あり", is_original=True)
+        # 未完成の曲: 模倣元が無いすべあな界隈曲（imitates が空）
+        self.lack_no_imitate = Song.objects.create(title="模倣元なし曲", lyrics="歌詞あり")
+        add_link(self.lack_no_imitate, "https://youtu.be/lacksong001")
+        # 未完成の曲: 歌詞が空文字列でインスト曲でない
+        self.lack_no_lyrics = Song.objects.create(title="歌詞なし曲", lyrics="", is_original=True)
+        add_link(self.lack_no_lyrics, "https://youtu.be/lacksong002")
+
+        self.complete_ids = {self.complete.id, self.complete_imitate.id, self.complete_inst.id, self.complete_deleted.id}
+        self.lack_ids = {self.lack.id, self.lack_no_imitate.id, self.lack_no_lyrics.id}
 
     def _search_ids(self, params):
         qs, _ = song_search({**params, "size": "100"})
-        return [s.id for s in qs]
+        ids = [s.id for s in qs]
+        self.assertEqual(len(ids), len(set(ids)))
+        return set(ids)
 
     def test_is_lack_true_returns_only_lack_songs(self):
-        self.assertEqual(self._search_ids({"is_lack": "True"}), [self.lack.id])
+        self.assertEqual(self._search_ids({"is_lack": "True"}), self.lack_ids)
 
     def test_is_lack_false_excludes_lack_songs(self):
-        ids = self._search_ids({"is_lack": "False"})
-        self.assertCountEqual(ids, [self.complete.id, self.complete_imitate.id])
+        self.assertEqual(self._search_ids({"is_lack": "False"}), self.complete_ids)
 
     def test_is_lack_not_specified_returns_all_songs(self):
-        ids = self._search_ids({})
-        self.assertCountEqual(ids, [self.complete.id, self.complete_imitate.id, self.lack.id])
+        self.assertEqual(self._search_ids({}), self.complete_ids | self.lack_ids)
+
+    def test_is_lack_true_and_false_are_disjoint_and_cover_all(self):
+        lack_ids = self._search_ids({"is_lack": "True"})
+        not_lack_ids = self._search_ids({"is_lack": "False"})
+        self.assertTrue(lack_ids.isdisjoint(not_lack_ids))
+        self.assertEqual(lack_ids | not_lack_ids, set(Song.objects.values_list("id", flat=True)))
 
 
 class SongSearchSortWithFilterTest(TestCase):

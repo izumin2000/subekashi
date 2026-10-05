@@ -157,7 +157,7 @@ class SongsViewTest(TestCase):
     def test_bool_query_param_not_specified_selects_all_radio(self):
         """is_lack を指定しないとき「指定なし」のラジオボタンが選択された状態で表示されること"""
         response = self.client.get(reverse("subekashi:songs"))
-        self.assertContains(response, '<input type="radio" id="is_lack-all" name="is_lack" value="" checked>')
+        self.assertContains(response, '<input type="radio" id="is_lack-all" name="is_lack" value="" data-default checked>')
         self.assertContains(response, '<label for="is_lack-all"><i class="fas fa-expand"></i><span class="icon-p-big">指定なし</span></label>')
 
     def test_bool_filters_are_not_duplicated(self):
@@ -177,8 +177,8 @@ class SongsViewTest(TestCase):
     def test_songrange_and_jokerange_default_radio(self):
         """界隈曲の種類・ネタ曲は指定がなければ「指定なし」のラジオボタンが選択されること"""
         response = self.client.get(reverse("subekashi:songs"))
-        self.assertContains(response, '<input type="radio" id="songrange-all" name="songrange" value="all" checked>')
-        self.assertContains(response, '<input type="radio" id="jokerange-on" name="jokerange" value="on" checked>')
+        self.assertContains(response, '<input type="radio" id="songrange-all" name="songrange" value="all" data-default checked>')
+        self.assertContains(response, '<input type="radio" id="jokerange-on" name="jokerange" value="on" data-default checked>')
         self.assertContains(response, '<label for="songrange-all"><i class="fas fa-expand"></i><span class="icon-p-big">指定なし</span></label>')
         self.assertContains(response, '<label for="jokerange-on"><i class="fas fa-expand"></i><span class="icon-p-big">指定なし</span></label>')
 
@@ -323,8 +323,8 @@ class SongsViewTest(TestCase):
         response = self.client.get(reverse("subekashi:songs"), {"title": ""})
         self.assertEqual(response.context["search_form"], "keyword")
 
-    def test_first_radio_is_default_value(self):
-        """フィルタバッジは先頭のラジオボタンをデフォルト値として判定するため、先頭がデフォルト値（フィルタなし）であること"""
+    def test_default_radio_has_data_default(self):
+        """フィルタバッジはdata-defaultのラジオボタンをデフォルト値として判定するため、各フィルタでデフォルト値（指定なし）のラジオボタンにのみdata-defaultが付くこと"""
         content = self.client.get(reverse("subekashi:songs")).content.decode()
         expected = {
             "songrange": COOKIE_FORMS["songrange"]["default"],
@@ -333,8 +333,8 @@ class SongsViewTest(TestCase):
         }
         for name, default in expected.items():
             with self.subTest(name=name):
-                values = re.findall(rf'<input type="radio" id="[^"]+" name="{name}" value="([^"]*)"', content)
-                self.assertEqual(values[0], default)
+                values = re.findall(rf'<input type="radio" id="[^"]+" name="{name}" value="([^"]*)" data-default', content)
+                self.assertEqual(values, [default])
 
     def test_invalid_cookie_value_uses_default(self):
         """cookieに不正な値が保存されている場合はデフォルト値のラジオボタンが選択されること"""
@@ -346,8 +346,8 @@ class SongsViewTest(TestCase):
         self.assertEqual(response.context["songrange"], "all")
         self.assertEqual(response.context["jokerange"], "on")
         self.assertEqual(response.context["sort"], "-post_time")
-        self.assertContains(response, 'name="songrange" value="all" checked>')
-        self.assertContains(response, 'name="jokerange" value="on" checked>')
+        self.assertContains(response, 'name="songrange" value="all" data-default checked>')
+        self.assertContains(response, 'name="jokerange" value="on" data-default checked>')
         self.assertContains(response, 'name="sort" value="-post_time" checked>')
 
     def test_sort_is_radio(self):
@@ -384,7 +384,7 @@ class SongsViewTest(TestCase):
     def test_search_form_radios_toggle_button_is_shown(self):
         """フォームを切り替えるラジオボタンを全て表示するボタンが、閉じた状態で表示されること"""
         response = self.client.get(reverse("subekashi:songs"))
-        self.assertContains(response, '<button type="button" id="search-form-radios-toggle" aria-expanded="false"><i class="fas fa-angle-down"></i><span>全て表示</span></button>')
+        self.assertContains(response, '<button type="button" id="search-form-radios-toggle" aria-controls="search-form-radios" aria-expanded="false"><i class="fas fa-angle-down"></i><span>全て表示</span></button>')
 
     def test_scroll_to_results_button_is_removed(self):
         """「結果を表示」ボタン(scroll-to-results)が表示されないこと"""

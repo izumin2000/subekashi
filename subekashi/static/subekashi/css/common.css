@@ -965,8 +965,20 @@ input[type=submit], button {
     margin: 20px 0;
 }
 
+/* キーボードで選択できるよう、display: noneではなく見えない状態にする */
+/* .radio-groupを基準に配置しないことで、スクロールする.radio-group内でフォーカスしても先頭にスクロールしないようにする */
 .radio-group input[type=radio] {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.radio-group input[type=radio]:focus-visible + label {
+    outline: 2px solid #09F;
+    outline-offset: 2px;
 }
 
 .radio-group label {

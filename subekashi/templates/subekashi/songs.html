@@ -45,7 +45,7 @@
         <input type="radio" id="search-form-radio-draft" name="search-form" value="draft" {% if search_form == "draft" %}checked{% endif %}>
         <label for="search-form-radio-draft"><i class="fas fa-user-edit"></i><span class="icon-p-big">下書き</span></label>
     </div>
-    <button type="button" id="search-form-radios-toggle" aria-expanded="false"><i class="fas fa-angle-down"></i><span>全て表示</span></button>
+    <button type="button" id="search-form-radios-toggle" aria-controls="search-form-radios" aria-expanded="false"><i class="fas fa-angle-down"></i><span>全て表示</span></button>
 
     <div id="search-forms">
         <div class="search-form" id="search-form-keyword" {% if search_form != "keyword" %}hidden{% endif %}>
@@ -158,7 +158,7 @@
             <div class="radio-col">
                 <p class="radio-col-label"><i class="fas fa-border-style"></i><span class="icon-p-big">すべあな界隈曲</span></p>
                 <div class="radio-group">
-                    <input type="radio" id="songrange-all" name="songrange" value="all" {% if songrange == 'all' %}checked{% endif %}>
+                    <input type="radio" id="songrange-all" name="songrange" value="all" data-default {% if songrange == 'all' %}checked{% endif %}>
                     <label for="songrange-all"><i class="fas fa-expand"></i><span class="icon-p-big">指定なし</span></label>
                     <input type="radio" id="songrange-subeana" name="songrange" value="subeana" {% if songrange == 'subeana' %}checked{% endif %}>
                     <label for="songrange-subeana"><i class="fas fa-equals"></i><span class="icon-p-big">のみ</span></label>
@@ -171,7 +171,7 @@
             <div class="radio-col">
                 <p class="radio-col-label"><i class="far fa-meh-rolling-eyes"></i><span class="icon-p-big">ネタ曲</span></p>
                 <div class="radio-group">
-                    <input type="radio" id="jokerange-on" name="jokerange" value="on" {% if jokerange == 'on' %}checked{% endif %}>
+                    <input type="radio" id="jokerange-on" name="jokerange" value="on" data-default {% if jokerange == 'on' %}checked{% endif %}>
                     <label for="jokerange-on"><i class="fas fa-expand"></i><span class="icon-p-big">指定なし</span></label>
                     <input type="radio" id="jokerange-only" name="jokerange" value="only" {% if jokerange == 'only' %}checked{% endif %}>
                     <label for="jokerange-only"><i class="fas fa-equals"></i><span class="icon-p-big">のみ</span></label>

@@ -490,13 +490,13 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 検索フォームの初期表示（複数指定） | `?is_lack=True&keyword=テスト` / `?title=テスト&sort=-view` / `?title=テスト&view_gte=100` / `?view_gte=100&lyrics=テスト` | ラジオボタンの並び順で先の "keyword" / "sort" / "youtube" / "lyrics" が表示される |
 | ラジオボタンの並び順 | GETリクエスト | よく利用するため、先頭からキーワード・並び替え・歌詞・YouTubeの順に並ぶ（全16個） |
 | 検索フォームの初期表示（空の値） | `?title=` | "keyword" が表示される |
-| 先頭のラジオボタンがデフォルト値 | GETリクエスト | フィルタバッジは先頭のラジオボタンをデフォルト値として判定するため、`songrange`・`jokerange` の先頭は `COOKIE_FORMS` のデフォルト値、真偽値のフィルタの先頭は `""`（指定なし） |
+| デフォルト値のラジオボタンに`data-default` | GETリクエスト | フィルタバッジは`data-default`のラジオボタンをデフォルト値として判定するため、各フィルタで1つだけ付き、`songrange`・`jokerange` は `COOKIE_FORMS` のデフォルト値、真偽値のフィルタは `""`（指定なし）のラジオボタンに付く |
 | cookieの不正な値 | `search_songrange`・`search_jokerange`・`search_sort` に不正な値 (cookie) | デフォルト値（`all`・`on`・`-post_time`）のラジオボタンが選択される |
 | 並び替えのラジオボタン | `?sort=-view` | `select` ではなく `SORT_CHOICES` の数のラジオボタンが表示され、`-view` のみが選択される |
 | 並び替えのラベル | GETリクエスト | 「登録日/早い順」のように短く、YouTube関連の並び替え（`YOUTUBE_SORTS`）のみ文言の前にYouTubeのアイコンが付く（「YouTubeの」等の文言は含まない） |
 | 並び替えのデフォルト | URLクエリなし | `-post_time`（更新日が遅い順）が選択される |
 | YouTube関連のクエリをJSに渡す | GETリクエスト | context["youtube_queries"] が `query_utils` の `YOUTUBE_FILTERS`・`YOUTUBE_SORTS` と一致し、`json_script`（`#youtube-queries`）で出力される |
-| ラジオボタンを全て表示するボタン | GETリクエスト | `#search-form-radios-toggle`（`aria-expanded="false"`、「全て表示」）が表示される |
+| ラジオボタンを全て表示するボタン | GETリクエスト | `#search-form-radios-toggle`（`aria-controls="search-form-radios"`、`aria-expanded="false"`、「全て表示」）が表示される |
 | 「結果を表示」ボタンの廃止（#970） | GETリクエスト | `scroll-to-results` が含まれない |
 
 #### 7-3. `SongView` (`/songs/<id>/`)
@@ -1001,13 +1001,15 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 #### 10-4. is_lackフィルター（True・False・フィルタなしの3値）
 
-完成した曲（URLを2つ持つ曲・模倣元を持つ曲）と未完成の曲（URLなし）が存在するシナリオで検証する。
+`is_lack=False` は `filter_by_lack()` を `exclude()` で否定するため、多値リレーション（`imitates`）や `Exists` を含む各条件で正しく否定されることを検証する。
+完成した曲（URLを2つ持つ曲・模倣元を持つ曲・歌詞なしのインスト曲・URLなしの非公開/削除済みの曲）と、未完成の曲（URLなしで非公開/削除済みでない曲・模倣元が無いすべあな界隈曲・歌詞が空でインスト曲でない曲）が存在するシナリオで検証する。
 
 | テストケース | 入力 | 期待結果 |
 | --- | --- | --- |
-| is_lack=True | `{"is_lack": "True"}` | 未完成の曲のみ返される |
+| is_lack=True | `{"is_lack": "True"}` | 未完成の曲のみ重複なく返される |
 | is_lack=False | `{"is_lack": "False"}` | 未完成の曲が除外され、完成した曲が重複なく返される |
 | is_lack指定なし | `{}` | 全ての曲が返される |
+| True と False の関係 | `{"is_lack": "True"}` と `{"is_lack": "False"}` | 結果が互いに素で、合わせると全件になる |
 
 ---
 

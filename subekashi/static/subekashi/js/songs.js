@@ -1,24 +1,22 @@
 var page = 1, songGuesserController;
 const FORM_QUERIES = '#search-forms input';
 const COOKIE_FORMS = ["songrange", "jokerange", "sort"];
-// YouTube関連のフィルタ・並び替え（lib/query_utils.pyのYOUTUBE_FILTERS・YOUTUBE_SORTS）
-const YOUTUBE_QUERIES = JSON.parse(document.getElementById("youtube-queries").textContent);
 
 window.addEventListener('load', async function () {
-    const searchFormName = document.querySelector('input[name="search-form"]:checked').value;
-    focusSearchForm(searchFormName);
-    scrollToSearchFormRadio(searchFormName, "auto");
-    updateSearchFormRadiosScrollEnd();
+    restoreFormValuesFromCookies();
+    syncSearchForm();
+    focusSearchForm(document.querySelector('input[name="search-form"]:checked').value);
     document.getElementById("search-form-radios").addEventListener('scroll', updateSearchFormRadiosScrollEnd);
     window.addEventListener('resize', updateSearchFormRadiosScrollEnd);
-
-    restoreFormValuesFromCookies();
     renderSearch();
 
     document.querySelectorAll('input[name="search-form"]').forEach((radioEle) => {
         radioEle.addEventListener('change', () => {
             showSearchForm(radioEle.value);
-            focusSearchForm(radioEle.value);
+            // キーボードでラジオボタンを選択している場合は、続けて選択できるようフォーカスを移さない
+            if (!radioEle.matches(':focus-visible')) {
+                focusSearchForm(radioEle.value);
+            }
             setSearchFormRadiosExpanded(false);
             scrollToSearchFormRadio(radioEle.value, "smooth");
         });
@@ -50,9 +48,19 @@ window.addEventListener('load', async function () {
 window.addEventListener('pageshow', function (event) {
     if (event.persisted) {
         restoreFormValuesFromCookies();
+        syncSearchForm();
         renderFilterStatus();
     }
 });
+
+// 選択されているラジオボタンのフォームを表示する
+// ブラウザバック時はブラウザがラジオボタンの選択状態を復元するため、サーバーが表示したフォームとずれないようにする
+function syncSearchForm() {
+    const searchFormName = document.querySelector('input[name="search-form"]:checked').value;
+    showSearchForm(searchFormName);
+    scrollToSearchFormRadio(searchFormName, "auto");
+    updateSearchFormRadiosScrollEnd();
+}
 
 // 他のページからブラウザバックしたとき、cookie formの内容をcookieの値に反映する
 function restoreFormValuesFromCookies() {
@@ -250,9 +258,9 @@ function isFilteredForm(formEle) {
     if (formEle.type == "checkbox") {
         return formEle.checked;
     }
-    // ラジオボタンは先頭の選択肢(指定なし)以外が選択されているか
+    // ラジオボタンはデフォルト値(data-default、指定なし)以外が選択されているか
     if (formEle.type == "radio") {
-        return formEle.checked && formEle !== document.querySelector(`#search-forms input[name="${formEle.name}"]`);
+        return formEle.checked && !formEle.hasAttribute("data-default");
     }
     return formEle.value !== "";
 }
@@ -260,9 +268,11 @@ function isFilteredForm(formEle) {
 // YouTube関連のフィルタ/並び替えによって自動で適用されるフィルタの案内を表示する
 // 判定はlib/song_filterset.pyのSongFilter.qs・lib/query_utils.pyのhas_*_filter_or_sort / has_upload_time_sortと揃える
 function renderOverrideInfos(query) {
+    // YouTube関連のフィルタ・並び替え（lib/query_utils.pyのYOUTUBE_FILTERS・YOUTUBE_SORTS）
+    const youtubeQueries = JSON.parse(document.getElementById("youtube-queries").textContent);
     const sort = query.sort;
     const overrides = {
-        "media": (YOUTUBE_QUERIES.filters.some((key) => key in query) || YOUTUBE_QUERIES.sorts.includes(sort)) && !("mediatypes" in query),
+        "media": (youtubeQueries.filters.some((key) => key in query) || youtubeQueries.sorts.includes(sort)) && !("mediatypes" in query),
         "view": ("view_lte" in query || ["view", "-view"].includes(sort)) && !("view_gte" in query),
         "like": ("like_lte" in query || ["like", "-like"].includes(sort)) && !("like_gte" in query),
         "upload_time": ["upload_time", "-upload_time"].includes(sort),
