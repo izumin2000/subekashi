@@ -10,32 +10,133 @@ i.icon-p-big, .small-icon {
     margin-left: -5px;
 }
 
-.fa-search {
-    margin-right:  10px;
+#search-form-radios .icon-p-big {
+    margin-left: 8px;
 }
 
-#isdetail {
-    padding: 3px;
+#search-forms {
+    text-align: center;
 }
 
-#under-sumary {
-    margin-top: 15px;
+/* details iと同じく、クラス指定のあるアイコンの余白より優先度を低くする */
+:where(#search-forms) i {
+    margin: 0 10px 0 0;
 }
 
-#imitate-div {
+.override-info {
+    margin-bottom: 20px;
+}
+
+/* ラジオボタンで選ぶフィルタ（.form-colと同じく、左に項目名・右に選択肢を並べる） */
+.radio-col {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.radio-col-label {
+    flex-shrink: 0;
+    width: 9em;
+    margin-right: 5px;
+    line-height: 22px;
+}
+
+.radio-col .radio-group {
+    flex: 1;
+    margin: 0;
+}
+
+/* 並び替えは早い順・遅い順(少ない順・多い順)が1行に2つずつ並ぶよう幅を制限し、中央に寄せる */
+#search-form-sort .radio-group {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+/* フォームを切り替えるラジオボタンは2.5行分(3行目の半分)までを表示し、残りは縦スクロールで表示する（バッジが切れないよう上と左右に余白を取る） */
+/* 高さはcommon.cssの.radio-groupのラジオボタンの高さ(40px)と間隔(10px)から計算する */
+/* 続きがあることが分かるよう下端をぼかす（一番下までスクロールした場合はぼかさない） */
+#search-form-radios {
+    max-height: calc(40px * 2.5 + 10px * 2);
+    overflow-x: hidden;
+    overflow-y: auto;
+    margin: 10px 0;
+    padding: 6px 6px 0 6px;
+    scrollbar-color: #555 transparent;
+    scrollbar-gutter: stable both-edges;     /* スクロールバーが幅を取る環境でも左右中央に揃える */
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 15px), rgba(0, 0, 0, 0.25));
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 15px), rgba(0, 0, 0, 0.25));
+}
+
+#search-form-radios.expanded {
+    max-height: none;
+}
+
+#search-form-radios.expanded, #search-form-radios.scroll-end {
+    -webkit-mask-image: none;
+    mask-image: none;
+}
+
+/* ラジオボタンを全て表示するボタン */
+#search-form-radios-toggle {
+    display: block;
+    width: auto;
+    height: auto;
+    margin: 0 auto 10px auto;
+    padding: 0 12px;
+    font-size: 13px;
+    line-height: 24px;
+    color: #fff;
+    background-color: #333;
+    border-radius: 20px;
+}
+
+#search-form-radios-toggle:hover, #search-form-radios-toggle:active {
+    box-shadow: none;
     background-color: #555;
+}
+
+#search-form-radios-toggle i {
+    margin-right: 6px;
+    font-size: 13px;
+    line-height: 24px;
+}
+
+@media (max-width: 640px) {
+    .radio-col {
+        display: block;
+    }
+
+    .radio-col-label {
+        width: auto;
+        margin: 0 0 10px 0;
+    }
+}
+
+/* 3つの選択肢が1行に収まるよう余白を詰める（画面幅360pxや、項目名を左に並べると幅が足りない641〜700pxでも収まるようにする） */
+@media (max-width: 700px) {
+    .radio-col .radio-group {
+        gap: 6px;
+    }
+
+    .radio-col .radio-group label {
+        padding: 0 8px;
+    }
+
+    .radio-col .radio-group label::before {
+        margin-right: 6px;
+    }
+
+    .radio-col .radio-group label i {
+        margin-right: 4px;
+    }
+}
+
+.override-info i {
+    margin-right: 8px;
 }
 
 #imitate-div p {
     margin: 0;
-}
-
-.song-guesser {
-    background-color: #333;
-}
-
-.song-guesser:hover {
-    background-color: #111;
 }
 
 details {
@@ -70,53 +171,17 @@ hr {
 }
 
 #mediatype-wrapper {
-    background-color: #555;
-    margin-bottom: 5px;
+    background-color: #333;
+    margin-top: 5px;
     padding: 5px 0;
+}
+
+#mediatype-wrapper details{
+    background-color: #555;
+    margin: 0 5px;
 }
 
 #mediatype-wrapper img {
     height: 24px;
     margin-right: 5px;
-}
-
-#scroll-to-results-container {
-    position: fixed;
-    bottom: 20px;
-    left: 0;
-    right: 0;
-    pointer-events: none;
-    z-index: 100;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.2s ease, visibility 0.2s ease;
-}
-
-#scroll-to-results-container.visible {
-    opacity: 1;
-    visibility: visible;
-}
-
-#scroll-to-results-container .dummybuttons {
-    margin: 0;
-    pointer-events: none;
-}
-
-#scroll-to-results-container .dummybutton {
-    background-color: #333;
-    color: #fff;
-    border: 2px solid;
-    pointer-events: auto;
-    gap: 5px;
-    align-items: center;
-}
-
-#scroll-to-results-container .dummybutton:hover {
-    background-color: #555;
-}
-
-@media (max-width: 960px) {
-    #scroll-to-results-container {
-        bottom: 60px;
-    }
 }

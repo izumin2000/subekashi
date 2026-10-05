@@ -1,14 +1,26 @@
 from django.shortcuts import render
 from django.views import View
 from subekashi.constants.constants import ALL_MEDIAS, LONG_TERM_COOKIE_AGE
+from subekashi.lib.query_utils import YOUTUBE_FILTERS, YOUTUBE_SORTS
 
+
+# 並び替えの選択肢（YouTube関連の並び替え(YOUTUBE_SORTS)はラベルにYouTubeのアイコンを付ける）
+SORT_CHOICES = [
+    {'value': 'id', 'icon': 'fa fa-plus', 'label': '登録日/早い順'},
+    {'value': '-id', 'icon': 'fa fa-plus', 'label': '登録日/遅い順'},
+    {'value': 'post_time', 'icon': 'fas fa-file-signature', 'label': '更新日/早い順'},
+    {'value': '-post_time', 'icon': 'fas fa-file-signature', 'label': '更新日/遅い順'},
+    {'value': 'upload_time', 'icon': 'far fa-calendar-alt', 'label': '投稿日/早い順'},
+    {'value': '-upload_time', 'icon': 'far fa-calendar-alt', 'label': '投稿日/遅い順'},
+    {'value': 'view', 'icon': 'fas fa-play', 'label': '再生回数/少ない順'},
+    {'value': '-view', 'icon': 'fas fa-play', 'label': '再生回数/多い順'},
+    {'value': 'like', 'icon': 'far fa-thumbs-up', 'label': '高評価数/少ない順'},
+    {'value': '-like', 'icon': 'far fa-thumbs-up', 'label': '高評価数/多い順'},
+    {'value': 'random', 'icon': 'fas fa-random', 'label': 'ランダム'},
+]
 
 # Cookieに保存するフォームの設定
 COOKIE_FORMS = {
-    'isdetail': {
-        'values': {'True', 'False'},
-        'default': 'False'
-    },
     'songrange': {
         'values': {'all', 'subeana', 'xx'},
         'default': 'all'
@@ -18,13 +30,36 @@ COOKIE_FORMS = {
         'default': 'on'
     },
     'sort': {
-        'values': {'id', '-id', 'post_time', '-post_time', 'upload_time', '-upload_time', '-view', 'view', '-like', 'like', 'random'},
+        'values': {choice['value'] for choice in SORT_CHOICES},
         'default': '-post_time'
     }
 }
 
-# チェックボックス
+# 真偽値のフィルタ（True・False・フィルタなしの3値）
 BOOL_FORMS = ["is_subeana", "is_joke", "is_lack", "is_draft", "is_original", "is_inst", "is_deleted", "is_questionable"]
+
+# ラジオボタンで切り替えるフォームと、そのフォームに含まれるURLクエリ
+# URLクエリが指定されている場合は該当するフォームを初期表示する
+# 画面にフォームがあるクエリのみ（imitated・guesser・title_exact等のAPI専用のクエリは画面で扱わない）
+SEARCH_FORM_QUERIES = {
+    'keyword': ['keyword'],
+    'sort': ['sort'],
+    'lyrics': ['lyrics'],
+    'youtube': YOUTUBE_FILTERS,
+    'title': ['title'],
+    'author': ['author'],
+    'url': ['url', 'mediatypes'],
+    'imitate': ['imitate'],
+    'subeana': ['songrange', 'is_subeana'],
+    'joke': ['jokerange', 'is_joke'],
+    'original': ['is_original'],
+    'inst': ['is_inst'],
+    'questionable': ['is_questionable'],
+    'deleted': ['is_deleted'],
+    'lack': ['is_lack'],
+    'draft': ['is_draft'],
+}
+DEFAULT_SEARCH_FORM = 'keyword'
 
 # 折りたたまれていないメディアタイプ
 DISPLAY_MEDIA_INDEX = 6
@@ -41,7 +76,10 @@ class SongsView(View):
         context = {
             "metatitle": "一覧と検索",
             "ALL_MEDIAS": ALL_MEDIAS[:-1],     # 最後の許可されていないURLのドメイン情報は不要
-            "display_media_index": DISPLAY_MEDIA_INDEX
+            "display_media_index": DISPLAY_MEDIA_INDEX,
+            "SORT_CHOICES": SORT_CHOICES,
+            # 自動で適用されるフィルタの案内に使用する（songs.js）
+            "youtube_queries": {"filters": YOUTUBE_FILTERS, "sorts": YOUTUBE_SORTS},
         }
 
         # POSTリクエストの場合はPOST、それ以外はGET
@@ -72,9 +110,10 @@ class SongsView(View):
                     context[form_name] = default_value
                 else:
                     cookie_value = COOKIES.get(f"search_{form_name}", default_value)
-                    context[form_name] = cookie_value
+                    # cookieが不正な値の場合はデフォルト値を使用
+                    context[form_name] = cookie_value if cookie_value in allowed_values else default_value
 
-        # チェックボックスのURLクエリ対応
+        # 真偽値のフィルタのURLクエリ対応
         for filter in BOOL_FORMS:
             raw = REQUEST_DATA.get(filter)
             if raw is None:
@@ -93,8 +132,18 @@ class SongsView(View):
                 else:
                     jokerange_value = "off"
                 context["jokerange"] = jokerange_value
-            else:
-                context[filter] = value_lower in ["true", "1"]
+            elif value_lower in ["true", "1"]:
+                context[filter] = "True"
+            elif value_lower in ["false", "0"]:
+                context[filter] = "False"
+
+        # メディアのチェックボックスのURLクエリ対応（カンマ区切り）
+        context["mediatypes"] = REQUEST_DATA.get("mediatypes", "").split(",")
+
+        context["search_form"] = next(
+            (form for form, queries in SEARCH_FORM_QUERIES.items() if any(REQUEST_DATA.get(query) for query in queries)),
+            DEFAULT_SEARCH_FORM
+        )
 
         response = render(request, "subekashi/songs.html", context)
 

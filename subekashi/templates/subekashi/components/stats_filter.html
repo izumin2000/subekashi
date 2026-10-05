@@ -1,6 +1,6 @@
 <form method="get" id="stats-filter" data-auto-submit>
     {% if show_all_songrange %}
-        <div class="range-radio-group">
+        <div class="radio-group">
             <input type="radio" id="songrange-all" name="songrange" value="all" {% if songrange == 'all' %}checked{% endif %}>
             <label for="songrange-all"><i class="fas fa-expand"></i><span class="icon-p-big">全て</span></label>
             <input type="radio" id="songrange-subeana" name="songrange" value="subeana" {% if songrange == 'subeana' %}checked{% endif %}>

@@ -13,7 +13,7 @@ from subekashi.lib.query_filters import (
     filter_by_author_exact,
 )
 from subekashi.lib.url import clean_url
-from subekashi.lib.query_utils import has_view_filter_or_sort, has_like_filter_or_sort, has_upload_time_sort
+from subekashi.lib.query_utils import has_youtube_filter_or_sort, has_view_filter_or_sort, has_like_filter_or_sort, has_upload_time_sort
 
 # URLパラメータのソートフィールド名 → Django ORM のフィールド名マッピング
 AUTHOR_SORT_MAP = {'author': 'authors__name', '-author': '-authors__name'}
@@ -170,10 +170,10 @@ class SongFilter(django_filters.FilterSet):
         return queryset.filter(filter_by_mediatypes(value))
 
     def filter_is_lack(self, queryset, name, value):
-        """不完全な曲をフィルタ"""
+        """不完全な曲をフィルタ（Falseの場合は不完全な曲を除外）"""
         if value:
             return queryset.filter(filter_by_lack())
-        return queryset
+        return queryset.exclude(filter_by_lack())
 
     def filter_sort(self, queryset, name, value):
         """ランダムソートを含むソート処理"""
@@ -214,29 +214,15 @@ class SongFilter(django_filters.FilterSet):
         """
         queryset = super().qs
 
-        # YouTube関連のパラメータが存在するかチェック
-        YOUTUBE_ITEMS = ['view', 'like', 'upload_time']
-        YOUTUBE_SORT = ['view', '-view', 'like', '-like']
+        # 曲の検索画面(songs.js)は、以下で自動的に適用されるフィルタを案内しているため、条件を変更した場合はそちらも合わせて変更する
 
-        youtube_filters = [f'{item}_gte' for item in YOUTUBE_ITEMS] + \
-                          [f'{item}_lte' for item in YOUTUBE_ITEMS]
-
-        has_youtube_sort = self.data.get('sort') in YOUTUBE_SORT
-        has_youtube_filter = any(key in self.data for key in youtube_filters)
-
-        # YouTube関連だがmediatypesが指定されていない場合、YouTubeフィルタを追加
-        auto_youtube_applied = (has_youtube_sort or has_youtube_filter) and 'mediatypes' not in self.data
+        # YouTube関連のフィルタ/ソート(upload_timeソートを含む)だがmediatypesが指定されていない場合、YouTubeフィルタを追加
+        auto_youtube_applied = has_youtube_filter_or_sort(self.data) and 'mediatypes' not in self.data
         if auto_youtube_applied:
             queryset = queryset.filter(filter_by_mediatypes('youtube'))
 
-        # upload_timeソートがある場合、mediatypes=youtubeを明示的に適用
-        has_upload_time_sort_value = has_upload_time_sort(self.data)
-        upload_time_youtube_applied = has_upload_time_sort_value and 'mediatypes' not in self.data
-        if upload_time_youtube_applied:
-            queryset = queryset.filter(filter_by_mediatypes('youtube'))
-
         # upload_timeソートがある場合、upload_time が null の曲を除外
-        if has_upload_time_sort_value:
+        if has_upload_time_sort(self.data):
             queryset = queryset.filter(upload_time__isnull=False)
 
         # view関連のフィルタまたはソートがある場合、view >= 1 を適用
@@ -248,10 +234,10 @@ class SongFilter(django_filters.FilterSet):
             queryset = queryset.filter(like__gte=1)
 
         # フィルタ使用時、またはrandom/authorソート時にdistinct()を適用
-        # auto_youtube_applied / upload_time_youtube_applied の場合も links JOIN による重複が発生するため distinct が必要
+        # auto_youtube_applied の場合も links JOIN による重複が発生するため distinct が必要
         NEED_DISTINCT_KEY_LIST = ['author', 'author_exact', 'keyword', 'guesser', 'is_lack', 'url', 'mediatypes', 'imitate', 'imitated']
         NEED_DISTINCT_SORT_LIST = ['random', 'author', '-author']
-        if any(key in self.data for key in NEED_DISTINCT_KEY_LIST) or (self.data.get('sort') in NEED_DISTINCT_SORT_LIST) or auto_youtube_applied or upload_time_youtube_applied:
+        if any(key in self.data for key in NEED_DISTINCT_KEY_LIST) or (self.data.get('sort') in NEED_DISTINCT_SORT_LIST) or auto_youtube_applied:
             ids = queryset.values('id').distinct()
             # Song.objects.filter(...) で新規 queryset を作るため、song_search.py で設定した
             # prefetch_related は引き継がれない。ここで明示的に再設定する。

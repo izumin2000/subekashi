@@ -6,7 +6,10 @@ DB不要のため SimpleTestCase を使用する。
 """
 from django.test import SimpleTestCase
 from subekashi.lib.query_utils import (
+    YOUTUBE_FILTERS,
+    YOUTUBE_SORTS,
     clean_query_params,
+    has_youtube_filter_or_sort,
     has_view_filter_or_sort,
     has_like_filter_or_sort,
     has_upload_time_sort,
@@ -124,3 +127,26 @@ class HasUploadTimeSortTest(SimpleTestCase):
 
     def test_like_sort_returns_false(self):
         self.assertFalse(has_upload_time_sort({"sort": "like"}))
+
+
+class HasYoutubeFilterOrSortTest(SimpleTestCase):
+    """has_youtube_filter_or_sort() のテスト"""
+
+    def test_youtube_filters_return_true(self):
+        for key in YOUTUBE_FILTERS:
+            with self.subTest(key=key):
+                self.assertTrue(has_youtube_filter_or_sort({key: "1"}))
+
+    def test_youtube_sorts_return_true(self):
+        for sort in YOUTUBE_SORTS:
+            with self.subTest(sort=sort):
+                self.assertTrue(has_youtube_filter_or_sort({"sort": sort}))
+
+    def test_other_sort_returns_false(self):
+        self.assertFalse(has_youtube_filter_or_sort({"sort": "-post_time"}))
+
+    def test_other_filter_returns_false(self):
+        self.assertFalse(has_youtube_filter_or_sort({"title": "テスト", "mediatypes": "youtube"}))
+
+    def test_empty_dict_returns_false(self):
+        self.assertFalse(has_youtube_filter_or_sort({}))

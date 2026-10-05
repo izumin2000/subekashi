@@ -1,42 +1,72 @@
 var page = 1, songGuesserController;
-const FORM_QUERIES = 'input:not(#search-button):not([type="hidden"]), select'
+const FORM_QUERIES = '#search-forms input';
 const COOKIE_FORMS = ["songrange", "jokerange", "sort"];
 
 window.addEventListener('load', async function () {
-    document.getElementById("keyword").focus();
-    document.getElementById("keyword").click();
-
     restoreFormValuesFromCookies();
+    syncSearchForm();
+    focusSearchForm(getSearchFormName());
+    document.getElementById("search-form-radios").addEventListener('scroll', updateSearchFormRadiosScrollEnd);
+    window.addEventListener('resize', updateSearchFormRadiosScrollEnd);
     renderSearch();
+
+    document.querySelectorAll('input[name="search-form"]').forEach((radioEle) => {
+        radioEle.addEventListener('change', () => {
+            showSearchForm(radioEle.value);
+            // キーボードでラジオボタンを選択している場合は、続けて選択できるようフォーカスを移さない
+            if (!radioEle.matches(':focus-visible')) {
+                focusSearchForm(radioEle.value);
+            }
+            setSearchFormRadiosExpanded(false);
+            scrollToSearchFormRadio(radioEle.value, "smooth");
+        });
+    });
+
+    document.getElementById("search-form-radios-toggle").addEventListener('click', () => {
+        const isExpanded = !document.getElementById("search-form-radios").classList.contains("expanded");
+        setSearchFormRadiosExpanded(isExpanded);
+        if (!isExpanded) {
+            scrollToSearchFormRadio(getSearchFormName(), "auto");
+        }
+    });
 
     document.querySelectorAll(FORM_QUERIES).forEach((formEle) => {
         formEle.addEventListener('change', async () => {
-            if (COOKIE_FORMS.includes(formEle.id)) {
+            if (COOKIE_FORMS.includes(formEle.name)) {
                 // is_saved_selectがonの場合のみcookieに保存
                 const cookies = getCookie();
                 const isSavedSelect = cookies['is_saved_select'] || 'on';
                 if (isSavedSelect === 'on') {
-                    await saveCookieToBackend(formEle.id, formEle.value);
+                    await saveCookieToBackend(formEle.name, formEle.value);
                 }
             }
             renderSearch();
         });
     });
-
-    const detailsEle = document.getElementById("isdetail");
-    if (detailsEle) {
-        detailsEle.addEventListener('toggle', async (event) => {
-            const value = event.target.open ? "True" : "False";
-            await saveCookieToBackend("isdetail", value);
-        });
-    }
 });
 
 window.addEventListener('pageshow', function (event) {
     if (event.persisted) {
         restoreFormValuesFromCookies();
+        syncSearchForm();
+        renderFilterStatus();
     }
 });
+
+// 選択されているフォームのラジオボタンの値（テンプレートで必ず1つ選択されるが、選択されていない場合はキーワードとする）
+function getSearchFormName() {
+    const radioEle = document.querySelector('input[name="search-form"]:checked');
+    return radioEle ? radioEle.value : "keyword";
+}
+
+// 選択されているラジオボタンのフォームを表示する
+// ブラウザバック時はブラウザがラジオボタンの選択状態を復元するため、サーバーが表示したフォームとずれないようにする
+function syncSearchForm() {
+    const searchFormName = getSearchFormName();
+    showSearchForm(searchFormName);
+    scrollToSearchFormRadio(searchFormName, "auto");
+    updateSearchFormRadiosScrollEnd();
+}
 
 // 他のページからブラウザバックしたとき、cookie formの内容をcookieの値に反映する
 function restoreFormValuesFromCookies() {
@@ -52,29 +82,29 @@ function restoreFormValuesFromCookies() {
     const urlParams = new URLSearchParams(window.location.search);
 
     const cookieFormMappings = [
-        { cookieName: 'search_isdetail', elementId: 'isdetail', isDetailsElement: true },
-        { cookieName: 'search_songrange', elementId: 'songrange', queryKeys: ['songrange', 'is_subeana'] },
-        { cookieName: 'search_jokerange', elementId: 'jokerange', queryKeys: ['jokerange', 'is_joke'] },
-        { cookieName: 'search_sort', elementId: 'sort', queryKeys: ['sort'] }
+        { cookieName: 'search_songrange', filter: 'songrange', queryKeys: ['songrange', 'is_subeana'] },
+        { cookieName: 'search_jokerange', filter: 'jokerange', queryKeys: ['jokerange', 'is_joke'] },
+        { cookieName: 'search_sort', filter: 'sort', queryKeys: ['sort'] }
     ];
 
-    cookieFormMappings.forEach(({ cookieName, elementId, isDetailsElement, queryKeys }) => {
-        if (queryKeys && queryKeys.some((key) => urlParams.has(key))) {
+    cookieFormMappings.forEach(({ cookieName, filter, queryKeys }) => {
+        if (queryKeys.some((key) => urlParams.has(key))) {
             return;
         }
 
         const cookieValue = cookies[cookieName];
         if (cookieValue) {
-            const element = document.getElementById(elementId);
-            if (element) {
-                if (isDetailsElement) {
-                    element.open = (cookieValue === 'True');
-                } else if (element.value !== cookieValue) {
-                    element.value = cookieValue;
-                }
-            }
+            setFormValue(filter, cookieValue);
         }
     });
+}
+
+// フィルタの値に該当するラジオボタンを選択する
+function setFormValue(filter, value) {
+    const radioEle = Array.from(document.querySelectorAll(`#search-forms input[name="${filter}"]`)).find((ele) => ele.value === value);
+    if (radioEle) {
+        radioEle.checked = true;
+    }
 }
 
 // cookie formの内容をバックエンドに伝える
@@ -95,10 +125,53 @@ async function saveCookieToBackend(name, value) {
     }).catch(() => {});
 }
 
-function getInputIds() {
-    const inputs = document.querySelectorAll(FORM_QUERIES);
-    ids = Array.from(inputs).map(input => input.id);
-    return ids;
+// ラジオボタンで選択されたフォームのみを表示する
+function showSearchForm(formName) {
+    document.querySelectorAll(".search-form").forEach((searchFormEle) => {
+        searchFormEle.hidden = searchFormEle.id !== `search-form-${formName}`;
+    });
+}
+
+// 一部の行を隠しているラジオボタンを全て表示する
+function setSearchFormRadiosExpanded(isExpanded) {
+    document.getElementById("search-form-radios").classList.toggle("expanded", isExpanded);
+    const toggleEle = document.getElementById("search-form-radios-toggle");
+    toggleEle.setAttribute("aria-expanded", isExpanded);
+    toggleEle.querySelector("i").className = isExpanded ? "fas fa-angle-up" : "fas fa-angle-down";
+    toggleEle.querySelector("span").textContent = isExpanded ? "閉じる" : "全て表示";
+    updateSearchFormRadiosScrollEnd();
+}
+
+// 一番下までスクロールした場合は下端のぼかしを外す
+function updateSearchFormRadiosScrollEnd() {
+    const radiosEle = document.getElementById("search-form-radios");
+    const isScrollEnd = radiosEle.scrollTop + radiosEle.clientHeight >= radiosEle.scrollHeight - 1;
+    radiosEle.classList.toggle("scroll-end", isScrollEnd);
+}
+
+// 選択したラジオボタンが隠れている行にある場合、その行が先頭に来るようにスクロールする
+function scrollToSearchFormRadio(formName, behavior) {
+    const radiosEle = document.getElementById("search-form-radios");
+    const labelRect = document.querySelector(`label[for="search-form-radio-${formName}"]`).getBoundingClientRect();
+    const radiosRect = radiosEle.getBoundingClientRect();
+    const paddingTop = parseFloat(getComputedStyle(radiosEle).paddingTop);
+    const isVisible = labelRect.top >= radiosRect.top + paddingTop - 0.5 && labelRect.bottom <= radiosRect.bottom + 0.5;
+    if (!isVisible) {
+        radiosEle.scrollBy({ top: labelRect.top - radiosRect.top - paddingTop, behavior });
+    }
+}
+
+// PCの場合のみ、表示したフォームの最初のテキスト入力欄を選択する
+function focusSearchForm(formName) {
+    const isPC = window.innerWidth > 960;
+    if (!isPC) {
+        return;
+    }
+
+    const textEle = document.querySelector(`#search-form-${formName} input[type=text]`);
+    if (textEle) {
+        textEle.focus();
+    }
 }
 
 function renderSongGuesser() {
@@ -118,7 +191,7 @@ document.getElementById("search-button").addEventListener("click", renderSearch)
 function songGuesserClick(id) {
     imitateEle = document.getElementById("imitate");
     imitateEle.value = "";
-    
+
     renderSongGuesser();
     imitateEle.value = id;
     renderSearch();
@@ -154,48 +227,78 @@ function cleanQuery(query) {
             delete query[key];
         }
     })
-    
+
     return query;
 }
 
 function formToQuery() {
-    query = {};
-    formIds = getInputIds();
-    checkboxIds = formIds.filter(id => id.startsWith("is"));
-    for (formId of formIds) {
-        // checkboxなら
-        if (checkboxIds.includes(formId)) {
-            value = document.getElementById(formId).checked;
-            if (!value) {
-                continue;
-            }
-            query[formId] = "True";
-            continue;
-        }
-        value = document.getElementById(formId).value;
-        if (formId == "songrange") {
-            query = { ...query, ...songrangeToQuery(value) };
-            continue;
-        }
-        if (formId.startsWith("media-"))
-        {
-            /**@type {string} */
-            const media = formId.split("-")[1]
-            const checked = document.getElementById(formId).checked;
-            query.mediatypes ??= "";
-            if(checked){
-                query.mediatypes += (query.mediatypes.length===0 ? "" : ",") + media;
+    let query = {};
+    const mediatypes = [];
+    for (const formEle of document.querySelectorAll(FORM_QUERIES)) {
+        if (formEle.id.startsWith("media-")) {
+            if (formEle.checked) {
+                mediatypes.push(formEle.id.split("-")[1]);
             }
             continue;
         }
-        if (formId == "jokerange") {
-            query = { ...query, ...isjokeToQuery(value) };
+        if (formEle.type == "radio" && !formEle.checked) {
             continue;
         }
-        query[formId] = value;
+        if (formEle.name == "songrange") {
+            query = { ...query, ...songrangeToQuery(formEle.value) };
+            continue;
+        }
+        if (formEle.name == "jokerange") {
+            query = { ...query, ...isjokeToQuery(formEle.value) };
+            continue;
+        }
+        query[formEle.name] = formEle.value;
     }
+    query.mediatypes = mediatypes.join(",");
     query = cleanQuery(query);
     return query;
+}
+
+// フォームの値がデフォルト値から変更されているか
+function isFilteredForm(formEle) {
+    if (formEle.type == "checkbox") {
+        return formEle.checked;
+    }
+    // ラジオボタンはデフォルト値(data-default、指定なし)以外が選択されているか
+    if (formEle.type == "radio") {
+        return formEle.checked && !formEle.hasAttribute("data-default");
+    }
+    return formEle.value !== "";
+}
+
+// YouTube関連のフィルタ/並び替えによって自動で適用されるフィルタの案内を表示する
+// 判定はlib/song_filterset.pyのSongFilter.qs・lib/query_utils.pyのhas_*_filter_or_sort / has_upload_time_sortと揃える
+function renderOverrideInfos(query) {
+    // YouTube関連のフィルタ・並び替え（lib/query_utils.pyのYOUTUBE_FILTERS・YOUTUBE_SORTS）
+    const youtubeQueries = JSON.parse(document.getElementById("youtube-queries").textContent);
+    const sort = query.sort;
+    const overrides = {
+        "media": (youtubeQueries.filters.some((key) => key in query) || youtubeQueries.sorts.includes(sort)) && !("mediatypes" in query),
+        "view": ("view_lte" in query || ["view", "-view"].includes(sort)) && !("view_gte" in query),
+        "like": ("like_lte" in query || ["like", "-like"].includes(sort)) && !("like_gte" in query),
+        "upload_time": ["upload_time", "-upload_time"].includes(sort),
+    };
+
+    for (const [name, isOverridden] of Object.entries(overrides)) {
+        document.getElementById(`${name}-override-info`).hidden = !isOverridden;
+    }
+}
+
+// フィルタが有効なフォームのラジオボタンにバッジを表示する（並び替えは除く）
+function renderFilterStatus() {
+    renderOverrideInfos(formToQuery());
+
+    document.querySelectorAll(".search-form:not(#search-form-sort)").forEach((searchFormEle) => {
+        const isFiltered = Array.from(searchFormEle.querySelectorAll('input, select')).some(isFilteredForm) ||
+            Array.from(searchFormEle.querySelectorAll('.override-info')).some((infoEle) => !infoEle.hidden);
+        const formName = searchFormEle.id.replace("search-form-", "");
+        document.querySelector(`label[for="search-form-radio-${formName}"]`).classList.toggle("filtered", isFiltered);
+    });
 }
 
 // queryからURLクエリの文字列に変換 例：{"hoge":1, "isok": true}なら"?hoge=1&isok=True}"
@@ -211,6 +314,8 @@ function renderSearch() {
     if (SearchController) {
         SearchController.abort();
     }
+
+    renderFilterStatus();
 
     page = 1;
     songCardsEle = document.getElementById("song-cards");
@@ -282,30 +387,3 @@ function paging() {
     document.getElementById("next-page-loading").remove();
     search(SearchController.signal, page);
 }
-
-// 「結果を表示」ボタンの表示/非表示制御
-(function() {
-    const detailsEle = document.getElementById("isdetail");
-    const container = document.getElementById("scroll-to-results-container");
-    if (!detailsEle || !container) return;
-
-    let isIntersecting = false;
-
-    function updateButtonVisibility() {
-        container.classList.toggle('visible', detailsEle.open && isIntersecting);
-    }
-
-    const intersectionObserver = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            isIntersecting = entry.isIntersecting;
-            updateButtonVisibility();
-        });
-    });
-    intersectionObserver.observe(detailsEle);
-
-    detailsEle.addEventListener('toggle', updateButtonVisibility);
-
-    document.getElementById("scroll-to-results-btn").addEventListener('click', () => {
-        document.getElementById("song-cards").scrollIntoView({ behavior: 'auto' });
-    });
-})();
