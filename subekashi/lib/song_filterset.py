@@ -1,4 +1,5 @@
 import django_filters
+from django import forms
 from django.core.exceptions import ValidationError
 from django.db.models import Subquery
 from subekashi.models import Song
@@ -39,6 +40,25 @@ def validate_max_length(max_length):
     return validator
 
 
+class SearchCharField(forms.CharField):
+    """前後の空白を除去するが、空白のみの入力はそのまま検索語として残す（#1125）
+
+    標準のCharFieldは「　」や「 」を空文字にしてしまい、フィルタが適用されなくなるため
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs['strip'] = False
+        super().__init__(*args, **kwargs)
+
+    def to_python(self, value):
+        value = super().to_python(value)
+        return value.strip() or value
+
+
+class SearchCharFilter(django_filters.CharFilter):
+    field_class = SearchCharField
+
+
 class SongFilter(django_filters.FilterSet):
     """
     SongモデルのためのDjango-filter FilterSet
@@ -46,30 +66,30 @@ class SongFilter(django_filters.FilterSet):
 
     # 大文字小文字を区別しない部分一致テキストフィールド
     # models.pyの max_length に準拠したバリデーション
-    title = django_filters.CharFilter(
+    title = SearchCharFilter(
         lookup_expr='icontains',
         validators=[validate_max_length(500)]
     )
-    author = django_filters.CharFilter(
+    author = SearchCharFilter(
         method='filter_author',
         validators=[validate_max_length(500)]
     )
-    lyrics = django_filters.CharFilter(
+    lyrics = SearchCharFilter(
         lookup_expr='icontains',
         validators=[validate_max_length(10000)]
     )
-    url = django_filters.CharFilter(
+    url = SearchCharFilter(
         method='filter_url',
         validators=[validate_max_length(500)]
     )
 
     # 完全一致フィルタ（後方互換性のため_exactサフィックスを使用）
-    title_exact = django_filters.CharFilter(
+    title_exact = SearchCharFilter(
         field_name='title',
         lookup_expr='exact',
         validators=[validate_max_length(500)]
     )
-    author_exact = django_filters.CharFilter(
+    author_exact = SearchCharFilter(
         method='filter_author_exact',
         validators=[validate_max_length(500)]
     )
@@ -110,13 +130,13 @@ class SongFilter(django_filters.FilterSet):
     is_questionable = django_filters.BooleanFilter()
 
     # カスタムフィルタ
-    keyword = django_filters.CharFilter(
+    keyword = SearchCharFilter(
         method='filter_keyword',
         validators=[validate_max_length(500)]
     )
     imitate = django_filters.NumberFilter(method='filter_imitate')
     imitated = django_filters.NumberFilter(method='filter_imitated')
-    guesser = django_filters.CharFilter(
+    guesser = SearchCharFilter(
         method='filter_guesser',
         validators=[validate_max_length(500)]
     )

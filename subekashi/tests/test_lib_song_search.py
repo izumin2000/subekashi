@@ -179,6 +179,40 @@ class SongSearchIsLackFilterTest(TestCase):
         self.assertEqual(lack_ids | not_lack_ids, set(Song.objects.values_list("id", flat=True)))
 
 
+class SongSearchWhitespaceTest(TestCase):
+    """空白のみの検索語でもフィルタが適用されることのテスト（#1125）"""
+
+    def setUp(self):
+        Song.objects.create(title="全角　スペース")
+        Song.objects.create(title="半角 スペース")
+        Song.objects.create(title="空白なし", lyrics="歌詞　全角")
+
+    def _titles(self, query):
+        qs, _ = song_search(query)
+        return {s.title for s in qs}
+
+    def test_keyword_fullwidth_space_only(self):
+        self.assertEqual(self._titles({"keyword": "　"}), {"全角　スペース", "空白なし"})
+
+    def test_keyword_halfwidth_space_only(self):
+        self.assertEqual(self._titles({"keyword": " "}), {"半角 スペース"})
+
+    def test_title_fullwidth_space_only(self):
+        titles = self._titles({"title": "　"})
+        self.assertIn("全角　スペース", titles)
+        self.assertNotIn("空白なし", titles)
+
+    def test_lyrics_fullwidth_space_only(self):
+        self.assertEqual(self._titles({"lyrics": "　"}), {"空白なし"})
+
+    def test_keyword_surrounding_spaces_are_stripped(self):
+        self.assertEqual(self._titles({"keyword": "　空白なし "}), {"空白なし"})
+
+    def test_empty_keyword_does_not_filter(self):
+        _, stats = song_search({"keyword": ""})
+        self.assertEqual(stats["count"], 3)
+
+
 class SongSearchSortWithFilterTest(TestCase):
     """sort と他フィルターを組み合わせた場合のソート順テスト（distinct適用後も維持されることを確認）"""
 
