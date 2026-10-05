@@ -166,6 +166,12 @@ class SongsViewTest(TestCase):
         self.assertContains(response, '<input type="radio" id="is_inst-true" name="is_inst" value="True" checked>', count=1)
         self.assertContains(response, '<input type="radio" id="is_original-false" name="is_original" value="False" checked>', count=1)
 
+    def test_is_special_query_param_selects_true_radio(self):
+        """is_special=True のときスペシャルデザインのフォームで「のみ」のラジオボタンが選択された状態で表示されること（#939）"""
+        response = self.client.get(reverse("subekashi:songs"), {"is_special": "True"})
+        self.assertContains(response, '<label for="search-form-radio-special"><i class="fas fa-magic"></i><span class="icon-p-big">スペシャルデザイン</span></label>')
+        self.assertContains(response, '<input type="radio" id="is_special-true" name="is_special" value="True" checked>', count=1)
+
     def test_songrange_and_jokerange_are_radio(self):
         """界隈曲の種類・ネタ曲はラジオボタンで選択された状態で表示されること"""
         response = self.client.get(reverse("subekashi:songs"), {"is_subeana": "xx", "is_joke": "False"})
@@ -229,8 +235,8 @@ class SongsViewTest(TestCase):
         self.assertEqual(response.context["jokerange"], "on")
 
     def test_bool_query_params_all_fields(self):
-        """is_original/is_inst/is_questionable/is_lack/is_deleted でもTrue/Falseが正しく変換されること"""
-        for field in ["is_original", "is_inst", "is_questionable", "is_lack", "is_deleted"]:
+        """is_original/is_inst/is_questionable/is_special/is_lack/is_deleted でもTrue/Falseが正しく変換されること"""
+        for field in ["is_original", "is_inst", "is_questionable", "is_special", "is_lack", "is_deleted"]:
             for value in ["True", "False"]:
                 with self.subTest(field=field, value=value):
                     response = self.client.get(reverse("subekashi:songs"), {field: value})
@@ -290,6 +296,7 @@ class SongsViewTest(TestCase):
             ({"is_original": "True"}, "original"),
             ({"is_inst": "True"}, "inst"),
             ({"is_questionable": "True"}, "questionable"),
+            ({"is_special": "True"}, "special"),
             ({"is_deleted": "True"}, "deleted"),
             ({"is_lack": "True"}, "lack"),
             ({"is_draft": "True"}, "draft"),
@@ -346,7 +353,7 @@ class SongsViewTest(TestCase):
         response = self.client.get(reverse("subekashi:songs"))
         radios = re.findall(r'id="search-form-radio-(\w+)"', response.content.decode())
         self.assertEqual(radios[:4], ["keyword", "sort", "lyrics", "youtube"])
-        self.assertEqual(len(radios), 16)
+        self.assertEqual(len(radios), 17)
 
     def test_search_form_ignores_empty_query(self):
         """値が空のURLクエリではフォームが切り替わらないこと"""
@@ -359,7 +366,7 @@ class SongsViewTest(TestCase):
         expected = {
             "songrange": COOKIE_FORMS["songrange"]["default"],
             "jokerange": COOKIE_FORMS["jokerange"]["default"],
-            "is_original": "", "is_inst": "", "is_questionable": "", "is_deleted": "", "is_lack": "", "is_draft": "",
+            "is_original": "", "is_inst": "", "is_questionable": "", "is_special": "", "is_deleted": "", "is_lack": "", "is_draft": "",
         }
         for name, default in expected.items():
             with self.subTest(name=name):
@@ -2954,6 +2961,28 @@ class SongCardsViewTest(TestCase):
                 self.assertEqual(response.status_code, 200)
                 content = "".join(response.json())
                 self.assertIn("界隈曲?が有効です", content)
+
+    def test_is_special_shows_active_filter(self):
+        """is_special を指定したとき「スペシャルデザインが有効です」が含まれること"""
+        for value in ["True", "False"]:
+            with self.subTest(value=value):
+                response = self.client.get(
+                    reverse("subekashi:song_cards"), {"is_special": value}
+                )
+                self.assertEqual(response.status_code, 200)
+                content = "".join(response.json())
+                self.assertIn("スペシャルデザインが有効です", content)
+
+    def test_is_special_filters_song_cards(self):
+        """is_special=True のときスペシャルデザインの曲のカードのみが返されること"""
+        Song.objects.create(title="スペシャルデザインカードテスト", is_special=True)
+        response = self.client.get(
+            reverse("subekashi:song_cards"), {"is_special": "True"}
+        )
+        self.assertEqual(response.status_code, 200)
+        content = "".join(response.json())
+        self.assertIn("スペシャルデザインカードテスト", content)
+        self.assertNotIn("カードテスト曲", content)
 
 
 @override_settings(STORAGES=STATIC_STORAGE)

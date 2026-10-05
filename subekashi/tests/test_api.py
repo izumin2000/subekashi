@@ -69,6 +69,15 @@ class SongAPIListTest(TestCase):
         self.assertEqual(data["count"], 1)
         self.assertEqual(data["result"][0]["title"], "APIテスト曲1")
 
+    def test_is_special_filter_narrows_results(self):
+        """is_special=True でスペシャルデザインの曲のみ返されること（#939）"""
+        self.song2.is_special = True
+        self.song2.save()
+        response = self.client.get("/api/song/", {"is_special": "True"})
+        data = response.json()
+        self.assertEqual(data["count"], 1)
+        self.assertEqual(data["result"][0]["title"], "APIテスト曲2")
+
     def test_guesser_filter_matches_url(self):
         # #1117: song guesserはURLからもヒットする
         response = self.client.get("/api/song/", {"guesser": "https://www.youtube.com/watch?v=apitesturl01"})

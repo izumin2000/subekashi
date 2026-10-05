@@ -213,6 +213,31 @@ class SongSearchWhitespaceTest(TestCase):
         self.assertEqual(stats["count"], 3)
 
 
+class SongSearchIsSpecialFilterTest(TestCase):
+    """is_special フィルターのテスト（True・False・フィルタなしの3値、#939）"""
+
+    def setUp(self):
+        self.special = Song.objects.create(title="スペシャルデザイン曲", is_special=True)
+        self.normal = Song.objects.create(title="通常デザイン曲")
+
+    def _search_ids(self, params):
+        qs, _ = song_search({**params, "size": "100"})
+        return [s.id for s in qs]
+
+    def test_is_special_true_returns_only_special_songs(self):
+        for value in ["True", "true"]:
+            with self.subTest(value=value):
+                self.assertEqual(self._search_ids({"is_special": value}), [self.special.id])
+
+    def test_is_special_false_excludes_special_songs(self):
+        for value in ["False", "false"]:
+            with self.subTest(value=value):
+                self.assertEqual(self._search_ids({"is_special": value}), [self.normal.id])
+
+    def test_is_special_not_specified_returns_all_songs(self):
+        self.assertCountEqual(self._search_ids({}), [self.special.id, self.normal.id])
+
+
 class SongSearchSortWithFilterTest(TestCase):
     """sort と他フィルターを組み合わせた場合のソート順テスト（distinct適用後も維持されることを確認）"""
 

@@ -39,6 +39,7 @@ def get_active_filters(query):
         'is_inst': 'インスト曲',
         'is_deleted': '非公開/削除済み',
         'is_questionable': '界隈曲?',
+        'is_special': 'スペシャルデザイン',
     }
 
     active = []
