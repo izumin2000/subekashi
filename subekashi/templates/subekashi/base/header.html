@@ -1,14 +1,8 @@
 {% load static %}
 <header>
-    <div id="pc-global-header">
-        <div id="pc-global-items-wrapper" class="sansfont">
-        </div>
-        <div id="pc-global-message">
-            <p id="pc-global-news"></p>
-            <p class="pc-global-notice"></p>
-            <p class="pc-global-notice"></p>
-        </div>
-    </div>
+    {% if pc_menu_position != "header" %}
+        {% include './pc_global_header.html' %}
+    {% endif %}
 
     <div id="subekashi-header">
         <div id="subekashi-header-top">

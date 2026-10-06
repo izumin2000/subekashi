@@ -455,6 +455,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | ニュース欄のリンク付与（#961） | `tag="news"`かつ`handle_as_news=True`の記事 | `handle_as_news`が優先され、リンクが付与される |
 | 作成された歌詞の表示 | `genetype="janome", score=5`のAiレコードが存在 | 「作成された歌詞」欄に表示される |
 | レガシーgenetype="model"は対象外（GPTインポート廃止） | `genetype="model", score=5`のレコードが存在 | 「作成された歌詞」欄に表示されない（`get_top_scored()`も`genetype="janome"`のみ対象） |
+| PC向けグローバルヘッダーの配置（#1123） | `pc_menu_position`クッキーなし（トップ） | `#pc-global-header`が`#pc-header-menu`の中に1つだけ置かれる |
+| PC向けグローバルヘッダーの配置（#1123） | `pc_menu_position=aside`（サイド） | `#pc-header-menu`は無く、`#pc-global-header`が`#subekashi-header`より前に1つだけ置かれる |
 
 #### 7-2. `SongsView` (`/songs/`)
 

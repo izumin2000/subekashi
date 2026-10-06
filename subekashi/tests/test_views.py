@@ -93,6 +93,25 @@ class TopViewTest(TestCase):
         url = reverse("article:default_article", args=[article.article_id])
         self.assertContains(response, f"<span><a href='{url}'>扱い指定ニュース</a></span>")
 
+    def test_pc_global_header_is_in_pc_header_menu(self):
+        """メニュー位置がトップの場合、PC向けグローバルヘッダーは#pc-header-menuの中に1つだけ置かれる（#1123）"""
+        response = self.client.get(reverse("subekashi:top"))
+        content = response.content.decode()
+
+        self.assertEqual(content.count('id="pc-global-header"'), 1)
+        pc_header_menu = re.search(r'<nav id="pc-header-menu">.*?</nav>', content, re.DOTALL).group()
+        self.assertIn('id="pc-global-header"', pc_header_menu)
+
+    def test_pc_global_header_is_above_subekashi_header_when_aside(self):
+        """メニュー位置がサイドの場合、PC向けグローバルヘッダーは#subekashi-headerの上に1つだけ置かれる（#1123）"""
+        self.client.cookies["pc_menu_position"] = "aside"
+        response = self.client.get(reverse("subekashi:top"))
+        content = response.content.decode()
+
+        self.assertEqual(content.count('id="pc-global-header"'), 1)
+        self.assertNotIn('id="pc-header-menu"', content)
+        self.assertLess(content.index('id="pc-global-header"'), content.index('id="subekashi-header"'))
+
 
 @override_settings(STORAGES=STATIC_STORAGE)
 class SongsViewTest(TestCase):
