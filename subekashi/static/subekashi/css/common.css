@@ -50,10 +50,11 @@ header {
 @media (min-width: 961px) {
     body[data-pc-menu="header"] header {
         position: sticky;
-        top: -90px; /* -(#pc-global-items-wrapper 30px + #subekashi-header-top 60px) */
+        top: -60px; /* -(#subekashi-header-top 60px) */
     }
 
-    body[data-pc-menu="header"] header:has(#pc-header-menu:hover) {
+    body[data-pc-menu="header"] header:has(#pc-header-menu:hover),
+    body[data-pc-menu="header"] header:has(#pc-header-menu :focus-visible) {
         border-bottom-color: #000;
         transition-delay: 0.2s;
     }
@@ -90,17 +91,28 @@ header {
 }
 
 #pc-global-message {
-    position: absolute;
     width: 100%;
+    background-color: #fff;
+}
+
+#pc-global-message p {
+    text-align: center;
+    color: #111;
+    font-size: 16px;
+    line-height: 16px;
+}
+
+/* ヘッダー上部に置く場合（サイドメニュー時）は項目にカーソルを合わせるとメッセージを表示する */
+header > #pc-global-header #pc-global-message {
+    position: absolute;
     height: 0;
     margin: 0 auto;
-    background-color: #fff;
     z-index: 0;
     opacity: 0;
     transition: all 300ms 0s ease;
 }
 
-#pc-global-items-wrapper:hover + #pc-global-message {
+header > #pc-global-header #pc-global-items-wrapper:hover + #pc-global-message {
     height: 65px;
     z-index: 99;
     opacity: 1;
@@ -108,18 +120,15 @@ header {
     transition-delay: 0.2s;
 }
 
-#pc-global-message p {
+header > #pc-global-header #pc-global-message p {
     position: relative;
-    text-align: center;
-    color: #111;
-    font-size: 16px;
     line-height: 0px;
     bottom: 20px;
     pointer-events: none;
     transition: all 300ms 0s ease;
 }
 
-#pc-global-items-wrapper:hover + #pc-global-message p {
+header > #pc-global-header #pc-global-items-wrapper:hover + #pc-global-message p {
     line-height: 16px;
     bottom: 0px;
     transition: all 300ms 0s ease;
@@ -215,7 +224,7 @@ header {
     flex: 1;
 }
 
-#pc-header-menu a {
+#pc-header-menu table a {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -229,14 +238,14 @@ header {
     height: 100%;
 }
 
-#pc-header-menu i {
+#pc-header-menu table i {
     display: block;
     width: 1em;
     margin: 0.3em auto;
     text-align: center;
 }
 
-#pc-header-menu p {
+#pc-header-menu table p {
     font-family: 'k8x12s';
     writing-mode: vertical-rl;
     font-size: 15px;
@@ -249,7 +258,8 @@ header {
     transition: max-height 300ms ease, opacity 300ms ease;
 }
 
-#pc-header-menu:hover p {
+#pc-header-menu:hover table p,
+#pc-header-menu:has(:focus-visible) table p {
     max-height: 200px;
     opacity: 1;
     transition-delay: 0.2s;
@@ -263,9 +273,24 @@ header {
     margin-bottom: 3px !important;
 }
 
-#pc-header-menu {
-    margin-left: -2px !important;
-    margin-right: 2px !important;
+/* PCヘッダーメニュー下部のグローバルヘッダー */
+#pc-header-menu #pc-global-header {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 300ms ease, opacity 300ms ease;
+}
+
+#pc-header-menu:hover #pc-global-header,
+#pc-header-menu:has(:focus-visible) #pc-global-header {
+    max-height: 200px;
+    opacity: 1;
+    transition-delay: 0.2s;
+}
+
+#pc-header-menu #pc-global-message {
+    display: flow-root; /* #pc-global-news の margin が外にはみ出さないようにする */
+    padding-bottom: 7px;
 }
 
 
