@@ -472,6 +472,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 真偽値クエリ False の表示 | `?is_lack=False` | 「以外」のラジオボタンが選択された状態で表示される |
 | 真偽値クエリ 未指定の表示 | URLクエリなし | 「指定なし」のラジオボタンが選択された状態で表示される |
 | 真偽値フィルタは重複して表示しない | `?is_inst=True&is_original=False` | インスト曲・オリジナル模倣曲のラジオボタンはそれぞれ1つのフォームにのみ表示される |
+| スペシャルデザインのフィルタ（#939） | `?is_special=True` | 「スペシャルデザイン」のラジオボタン（`fas fa-magic`）が表示され、`is_special-true`（のみ）のラジオボタンが1つだけ選択された状態で表示される |
 | 界隈曲の種類・ネタ曲のラジオボタン | `?is_subeana=xx&is_joke=False` | 「以外」(`songrange-xx`・`jokerange-off`) のラジオボタンが選択された状態で表示される（選択肢は「指定なし」「のみ」「以外」） |
 | 界隈曲の種類・ネタ曲のラジオボタン（未指定） | URLクエリなし | `songrange-all`・`jokerange-on`（指定なし）のラジオボタンが選択された状態で表示される |
 | ラジオボタンの選択肢の文言 | GETリクエスト | 検索フォームのラジオボタンの選択肢に「表示」が含まれない |
@@ -481,19 +482,19 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | is_joke=off | `?is_joke=off` | context["jokerange"] = "off" |
 | is_joke=all | `?is_joke=all` | context["jokerange"] = "on" |
 | is_joke=on | `?is_joke=on` | context["jokerange"] = "on" |
-| is_original/is_inst/is_questionable/is_lack/is_deleted | 各フィールドに `True` / `False` | 対応 context フィールドが "True" / "False" |
+| is_original/is_inst/is_questionable/is_special/is_lack/is_deleted | 各フィールドに `True` / `False` | 対応 context フィールドが "True" / "False" |
 | is_subeana経由の絞り込み(タグリンク等)は保存設定cookieを上書きしない | `is_saved_select=on`, `search_songrange=subeana` (cookie), `?is_subeana=xx` | context["songrange"] = "xx"（表示のみ反映）、`search_songrange` cookieは上書きされない |
 | is_joke経由の絞り込み(タグリンク等)は保存設定cookieを上書きしない | `is_saved_select=on`, `search_jokerange=on` (cookie), `?is_joke=only` | context["jokerange"] = "only"（表示のみ反映）、`search_jokerange` cookieは上書きされない |
 | songrangeクエリ(検索フォーム経由)は引き続きcookieに保存される | `is_saved_select=on`, `?songrange=xx` | `search_songrange` cookieに "xx" が保存される |
 | 検索フォームの初期表示（デフォルト） | URLクエリなし | context["search_form"] = "keyword"、キーワードのラジオボタンが選択され、他のフォームは `hidden` |
 | 検索フォームのラジオボタンは必ず1つ選択される | URLクエリなし・各フォームのURLクエリ | `name="search-form"` のラジオボタンが常に1つだけ選択される（JSはこれを前提にしている） |
-| 全てのフォームにURLクエリが対応づけられている | GETリクエスト | 16個のラジオボタンの並びが `SEARCH_FORM_QUERIES` のキーの並びと一致する |
+| 全てのフォームにURLクエリが対応づけられている | GETリクエスト | 17個のラジオボタンの並びが `SEARCH_FORM_QUERIES` のキーの並びと一致する |
 | 真偽値のフィルタの不正な値 | `?is_lack=foo` | 「未完成」のフォームが表示され、「指定なし」のラジオボタンが選択される |
 | mediatypesのURLクエリ | `?mediatypes=youtube,nicovideo,unknown` | URLのフォームが表示され、YouTube・ニコニコ動画のチェックボックスのみ選択される（存在しないメディアは無視） |
 | mediatypes未指定 | URLクエリなし | メディアのチェックボックスは選択されない |
-| 検索フォームの初期表示（URLクエリ指定） | `?title=テスト` `?mediatypes=youtube` `?view_gte=100` `?is_subeana=xx` `?jokerange=off` `?is_original=True` `?is_inst=True` `?is_questionable=True` `?is_lack=True` `?sort=-view` など | URLクエリを含むフォーム（title/url/youtube/subeana/joke/original/inst/questionable/lack/sortなど）が表示される |
+| 検索フォームの初期表示（URLクエリ指定） | `?title=テスト` `?mediatypes=youtube` `?view_gte=100` `?is_subeana=xx` `?jokerange=off` `?is_original=True` `?is_inst=True` `?is_questionable=True` `?is_special=True` `?is_lack=True` `?sort=-view` など | URLクエリを含むフォーム（title/url/youtube/subeana/joke/original/inst/questionable/special/lack/sortなど）が表示される |
 | 検索フォームの初期表示（複数指定） | `?is_lack=True&keyword=テスト` / `?title=テスト&sort=-view` / `?title=テスト&view_gte=100` / `?view_gte=100&lyrics=テスト` | ラジオボタンの並び順で先の "keyword" / "sort" / "youtube" / "lyrics" が表示される |
-| ラジオボタンの並び順 | GETリクエスト | よく利用するため、先頭からキーワード・並び替え・歌詞・YouTubeの順に並ぶ（全16個） |
+| ラジオボタンの並び順 | GETリクエスト | よく利用するため、先頭からキーワード・並び替え・歌詞・YouTubeの順に並ぶ（全17個） |
 | 検索フォームの初期表示（空の値） | `?title=` | "keyword" が表示される |
 | デフォルト値のラジオボタンに`data-default` | GETリクエスト | フィルタバッジは`data-default`のラジオボタンをデフォルト値として判定するため、各フィルタで1つだけ付き、`songrange`・`jokerange` は `COOKIE_FORMS` のデフォルト値、真偽値のフィルタは `""`（指定なし）のラジオボタンに付く |
 | cookieの不正な値 | `search_songrange`・`search_jokerange`・`search_sort` に不正な値 (cookie) | デフォルト値（`all`・`on`・`-post_time`）のラジオボタンが選択される |
@@ -781,6 +782,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `is_questionable=False` の曲 | GETリクエスト | カードHTMLに `song-card-lyrics` が含まれる |
 | エラーメッセージのエスケープ（#1126） | `sort=<img src=x onerror=alert(1)>` | `class='error'` の要素内で入力値がHTMLエスケープされ、`<img` が含まれない |
 | `is_questionable=True` / `False` | GETリクエスト | 「界隈曲?が有効です」が含まれる |
+| `is_special=True` / `False`（#939） | GETリクエスト | 「スペシャルデザインが有効です」が含まれる |
+| `is_special=True` の絞り込み（#939） | `is_special=True` の曲と通常の曲が存在 | スペシャルデザインの曲のカードのみが返される |
 
 #### 7-11-1. `song_guessers` (`/api/html/song_guessers`)（#1126）
 
@@ -878,6 +881,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 不正なsize | `?size=-1` | HTTP 200、デフォルトサイズで処理 |
 | 統計情報の含有 | GETリクエスト | レスポンスに `count`, `page`, `max_page` が含まれる |
 | `is_lack=False`（#970） | URLあり・歌詞ありの曲とURLなしの曲が存在、`?is_lack=False` | 未完成の曲（URLなし）が除外される |
+| `is_special=True`（#939） | スペシャルデザインの曲と通常の曲が存在、`?is_special=True` | スペシャルデザインの曲のみ返される |
 
 #### 8-2. `EditorIsOpenView` (`/api/editor/is_open`)
 
@@ -1029,6 +1033,16 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | lyricsが全角スペースのみ | `{"lyrics": "　"}` | 歌詞に全角スペースを含む曲のみヒット |
 | 前後に空白のあるkeyword | `{"keyword": "　空白なし "}` | 前後の空白が除去され`空白なし`で検索される |
 | keywordが空文字 | `{"keyword": ""}` | フィルタは適用されず全曲を返す |
+
+#### 10-6. is_specialフィルター（True・False・フィルタなしの3値、#939）
+
+スペシャルデザインの曲（`is_special=True`）と通常の曲が存在するシナリオで検証する。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| is_special=True | `{"is_special": "True"}` / `"true"` | スペシャルデザインの曲のみ返される |
+| is_special=False | `{"is_special": "False"}` / `"false"` | スペシャルデザインの曲が除外される |
+| is_special指定なし | `{}` | 全ての曲が返される |
 
 ---
 
