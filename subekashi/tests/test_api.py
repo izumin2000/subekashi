@@ -78,6 +78,14 @@ class SongAPIListTest(TestCase):
         self.assertEqual(data["count"], 1)
         self.assertEqual(data["result"][0]["title"], "APIテスト曲2")
 
+    def test_is_collab_filter_narrows_results(self):
+        """is_collab=True で合作の曲（作者が2人以上の曲）のみ返されること（#943）"""
+        self.song2.authors.add(self.author, Author.objects.create(name="APIテスト作者2"))
+        response = self.client.get("/api/song/", {"is_collab": "True"})
+        data = response.json()
+        self.assertEqual(data["count"], 1)
+        self.assertEqual(data["result"][0]["title"], "APIテスト曲2")
+
     def test_guesser_filter_matches_url(self):
         # #1117: song guesserはURLからもヒットする
         response = self.client.get("/api/song/", {"guesser": "https://www.youtube.com/watch?v=apitesturl01"})

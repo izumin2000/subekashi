@@ -189,6 +189,7 @@ APIは全てのオリジンから利用できます（`Access-Control-Allow-Orig
 - `is_deleted`: 削除済みかどうか
 - `is_limited`: すべかし内で限定公開かどうか
 - `is_special`: スペシャルデザインの曲かどうか
+- `is_collab`: 合作の曲（作者が2人以上の曲）かどうか
 - `is_lack`: 不完全な曲（情報が欠けている曲）
   - `True` で不完全な曲のみ、`False` で不完全な曲を除外します（以前は `False` を指定しても絞り込まれませんでした）
 

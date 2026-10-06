@@ -172,6 +172,12 @@ class SongsViewTest(TestCase):
         self.assertContains(response, '<label for="search-form-radio-special"><i class="fas fa-magic"></i><span class="icon-p-big">スペシャルデザイン</span></label>')
         self.assertContains(response, '<input type="radio" id="is_special-true" name="is_special" value="True" checked>', count=1)
 
+    def test_is_collab_query_param_selects_true_radio(self):
+        """is_collab=True のとき合作のフォームで「のみ」のラジオボタンが選択された状態で表示されること（#943）"""
+        response = self.client.get(reverse("subekashi:songs"), {"is_collab": "True"})
+        self.assertContains(response, '<label for="search-form-radio-collab"><i class="fas fa-user-friends"></i><span class="icon-p-big">合作</span></label>')
+        self.assertContains(response, '<input type="radio" id="is_collab-true" name="is_collab" value="True" checked>', count=1)
+
     def test_songrange_and_jokerange_are_radio(self):
         """界隈曲の種類・ネタ曲はラジオボタンで選択された状態で表示されること"""
         response = self.client.get(reverse("subekashi:songs"), {"is_subeana": "xx", "is_joke": "False"})
@@ -235,8 +241,8 @@ class SongsViewTest(TestCase):
         self.assertEqual(response.context["jokerange"], "on")
 
     def test_bool_query_params_all_fields(self):
-        """is_original/is_inst/is_questionable/is_special/is_lack/is_deleted でもTrue/Falseが正しく変換されること"""
-        for field in ["is_original", "is_inst", "is_questionable", "is_special", "is_lack", "is_deleted"]:
+        """is_original/is_inst/is_questionable/is_special/is_collab/is_lack/is_deleted でもTrue/Falseが正しく変換されること"""
+        for field in ["is_original", "is_inst", "is_questionable", "is_special", "is_collab", "is_lack", "is_deleted"]:
             for value in ["True", "False"]:
                 with self.subTest(field=field, value=value):
                     response = self.client.get(reverse("subekashi:songs"), {field: value})
@@ -297,6 +303,7 @@ class SongsViewTest(TestCase):
             ({"is_inst": "True"}, "inst"),
             ({"is_questionable": "True"}, "questionable"),
             ({"is_special": "True"}, "special"),
+            ({"is_collab": "True"}, "collab"),
             ({"is_deleted": "True"}, "deleted"),
             ({"is_lack": "True"}, "lack"),
             ({"is_draft": "True"}, "draft"),
@@ -353,7 +360,7 @@ class SongsViewTest(TestCase):
         response = self.client.get(reverse("subekashi:songs"))
         radios = re.findall(r'id="search-form-radio-(\w+)"', response.content.decode())
         self.assertEqual(radios[:4], ["keyword", "sort", "lyrics", "youtube"])
-        self.assertEqual(len(radios), 17)
+        self.assertEqual(len(radios), 18)
 
     def test_search_form_ignores_empty_query(self):
         """値が空のURLクエリではフォームが切り替わらないこと"""
@@ -366,7 +373,7 @@ class SongsViewTest(TestCase):
         expected = {
             "songrange": COOKIE_FORMS["songrange"]["default"],
             "jokerange": COOKIE_FORMS["jokerange"]["default"],
-            "is_original": "", "is_inst": "", "is_questionable": "", "is_special": "", "is_deleted": "", "is_lack": "", "is_draft": "",
+            "is_original": "", "is_inst": "", "is_questionable": "", "is_special": "", "is_collab": "", "is_deleted": "", "is_lack": "", "is_draft": "",
         }
         for name, default in expected.items():
             with self.subTest(name=name):
@@ -2982,6 +2989,29 @@ class SongCardsViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         content = "".join(response.json())
         self.assertIn("スペシャルデザインカードテスト", content)
+        self.assertNotIn("カードテスト曲", content)
+
+    def test_is_collab_shows_active_filter(self):
+        """is_collab を指定したとき「合作が有効です」が含まれること"""
+        for value in ["True", "False"]:
+            with self.subTest(value=value):
+                response = self.client.get(
+                    reverse("subekashi:song_cards"), {"is_collab": value}
+                )
+                self.assertEqual(response.status_code, 200)
+                content = "".join(response.json())
+                self.assertIn("合作が有効です", content)
+
+    def test_is_collab_filters_song_cards(self):
+        """is_collab=True のとき合作の曲（作者が2人以上の曲）のカードのみが返されること"""
+        song = Song.objects.create(title="合作カードテスト")
+        song.authors.add(Author.objects.create(name="合作カード作者A"), Author.objects.create(name="合作カード作者B"))
+        response = self.client.get(
+            reverse("subekashi:song_cards"), {"is_collab": "True"}
+        )
+        self.assertEqual(response.status_code, 200)
+        content = "".join(response.json())
+        self.assertIn("合作カードテスト", content)
         self.assertNotIn("カードテスト曲", content)
 
 

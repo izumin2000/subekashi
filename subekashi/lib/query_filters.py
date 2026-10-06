@@ -1,8 +1,8 @@
 from collections import deque
-from django.db.models import BooleanField, Case, Exists, OuterRef, Q, Value, When
+from django.db.models import BooleanField, Case, Count, Exists, OuterRef, Q, Value, When
 from subekashi.constants.constants import ALL_MEDIAS
 from subekashi.lib.url import clean_url
-from subekashi.models import Author, AuthorAlias, SongLink
+from subekashi.models import Author, AuthorAlias, Song, SongLink
 from subekashi.models.author import NON_BRIDGING_ALIAS_TYPES, get_alias_edges
 
 
@@ -135,3 +135,16 @@ def make_is_lack_annotation():
         default=Value(False),
         output_field=BooleanField(),
     )
+
+
+# 合作フィルター（作者が2人以上の曲。曲カードの「合作」の表示と同じ条件）
+# authorsをJOINすると曲が重複するため、作者数を集計したサブクエリで絞り込む
+def filter_by_collab():
+    collab_song_ids = (
+        Song.authors.through.objects
+        .values('song_id')
+        .annotate(author_count=Count('author_id'))
+        .filter(author_count__gte=2)
+        .values('song_id')
+    )
+    return Q(id__in=collab_song_ids)
