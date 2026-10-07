@@ -90,49 +90,52 @@ header {
     text-decoration: underline;
 }
 
+/* 項目にカーソルを合わせ続けるとメッセージを表示する */
 #pc-global-message {
     width: 100%;
-    background-color: #fff;
-}
-
-#pc-global-message p {
-    text-align: center;
-    color: #111;
-    font-size: 16px;
-    line-height: 16px;
-}
-
-/* ヘッダー上部に置く場合（サイドメニュー時）は項目にカーソルを合わせるとメッセージを表示する */
-header > #pc-global-header #pc-global-message {
-    position: absolute;
     height: 0;
-    margin: 0 auto;
-    z-index: 0;
+    background-color: #fff;
     opacity: 0;
     transition: all 300ms 0s ease;
 }
 
-header > #pc-global-header #pc-global-items-wrapper:hover + #pc-global-message {
+#pc-global-items-wrapper:hover + #pc-global-message,
+#pc-global-items-wrapper:has(:focus-visible) + #pc-global-message {
     height: 65px;
-    z-index: 99;
     opacity: 1;
     transition: all 300ms 0s ease;
     transition-delay: 0.2s;
 }
 
-header > #pc-global-header #pc-global-message p {
+#pc-global-message p {
     position: relative;
+    text-align: center;
+    color: #111;
+    font-size: 16px;
     line-height: 0px;
     bottom: 20px;
     pointer-events: none;
     transition: all 300ms 0s ease;
 }
 
-header > #pc-global-header #pc-global-items-wrapper:hover + #pc-global-message p {
+#pc-global-items-wrapper:hover + #pc-global-message p,
+#pc-global-items-wrapper:has(:focus-visible) + #pc-global-message p {
     line-height: 16px;
     bottom: 0px;
     transition: all 300ms 0s ease;
     transition-delay: 0.2s;
+}
+
+/* ヘッダー上部に置く場合（サイドメニュー時）はメッセージをページに重ねて表示する */
+header > #pc-global-header #pc-global-message {
+    position: absolute;
+    margin: 0 auto;
+    z-index: 0;
+}
+
+header > #pc-global-header #pc-global-items-wrapper:hover + #pc-global-message,
+header > #pc-global-header #pc-global-items-wrapper:has(:focus-visible) + #pc-global-message {
+    z-index: 99;
 }
 
 #pc-global-news {
@@ -290,7 +293,6 @@ header > #pc-global-header #pc-global-items-wrapper:hover + #pc-global-message p
 
 #pc-header-menu #pc-global-message {
     display: flow-root; /* #pc-global-news の margin が外にはみ出さないようにする */
-    padding-bottom: 7px;
 }
 
 
