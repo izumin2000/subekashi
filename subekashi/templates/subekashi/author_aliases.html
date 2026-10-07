@@ -8,10 +8,10 @@
 <section>
     <h1>{{ author.name }}の別名一覧</h1>
 
-    <div class="dummybuttons">
-        <a href="{% url 'subekashi:author' author.id %}" class="dummybutton black-dummybutton"><i class="fas fa-user"></i><p class="icon-p-big">作者ページ</p></a>
-        <button type="button" id="alias-reload" class="dummybutton black-dummybutton"><i class="fas fa-redo"></i><p class="icon-p-big">再読み込み</p></button>
-        <a href="{% url 'subekashi:author_alias_new' author.id %}" class="dummybutton black-dummybutton"><i class="fas fa-plus"></i><p class="icon-p-big">別名を追加する</p></a>
+    <div class="action-buttons">
+        <a href="{% url 'subekashi:author' author.id %}" class="action-button black-action-button"><i class="fas fa-user"></i><span class="icon-p-big">作者ページ</span></a>
+        <button type="button" id="alias-reload" class="action-button black-action-button"><i class="fas fa-redo"></i><span class="icon-p-big">再読み込み</span></button>
+        <a href="{% url 'subekashi:author_alias_new' author.id %}" class="action-button black-action-button"><i class="fas fa-plus"></i><span class="icon-p-big">別名を追加する</span></a>
     </div>
 
     {% for row in alias_rows %}
@@ -58,8 +58,8 @@
                     <label for="unify-name-0">{{ author.name }}</label>
                 </div>
             </div>
-            <div class="dummybuttons">
-                <button type="submit" id="unify-name-submit" class="dummybutton black-dummybutton"><i class="fas fa-check"></i><p class="icon-p-big">統一する</p></button>
+            <div class="action-buttons">
+                <button type="submit" id="unify-name-submit" class="action-button black-action-button"><i class="fas fa-check"></i><span class="icon-p-big">統一する</span></button>
             </div>
         </form>
     {% endif %}

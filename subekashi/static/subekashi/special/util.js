@@ -1,14 +1,14 @@
 // スペシャルデザインボタンを表示
 function add_special_button() {
-    var defaultDummybuttonsEle = document.getElementsByClassName("dummybuttons")[0];
-    const designedDummybuttonsEle =
+    var defaultActionButtonsEle = document.getElementsByClassName("action-buttons")[0];
+    const designedActionButtonsEle =
     `
-    <div class="dummybuttons">
-        <button type="button" id="special-button" class="dummybutton"><i class="fas fa-magic"></i><p class="icon-p-big">スペシャルデザイン</p></button>
-        <a href="./history/" class="dummybutton"><i class="fas fa-history"></i><p class="icon-p-big">編集履歴</p></a>
+    <div class="action-buttons">
+        <button type="button" id="special-button" class="action-button"><i class="fas fa-magic"></i><span class="icon-p-big">スペシャルデザイン</span></button>
+        <a href="./history/" class="action-button"><i class="fas fa-history"></i><span class="icon-p-big">編集履歴</span></a>
     </div>
     `
-    defaultDummybuttonsEle.innerHTML = stringToHTML(designedDummybuttonsEle).innerHTML;
+    defaultActionButtonsEle.innerHTML = stringToHTML(designedActionButtonsEle).innerHTML;
     document.getElementById("special-button").addEventListener("click", special);
 }
 

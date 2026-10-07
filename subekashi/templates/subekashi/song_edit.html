@@ -9,9 +9,9 @@
 {% block content %}
 <section>
     {% if request.GET.toast %}
-        <div class="dummybuttons">
-            <a href="{% url 'subekashi:song_new' %}" class="dummybutton black-dummybutton"><i class="fa fa-plus"></i><p class="icon-p-big">続けて新規登録する</p></a>
-            <a href="{% url 'subekashi:song' song.id %}" class="dummybutton black-dummybutton"><i class="fas fa-music"></i><p class="icon-p-big">登録した記事を見る</p></a>
+        <div class="action-buttons">
+            <a href="{% url 'subekashi:song_new' %}" class="action-button black-action-button"><i class="fa fa-plus"></i><span class="icon-p-big">続けて新規登録する</span></a>
+            <a href="{% url 'subekashi:song' song.id %}" class="action-button black-action-button"><i class="fas fa-music"></i><span class="icon-p-big">登録した記事を見る</span></a>
         </div>
     {% endif %}
 

@@ -20,11 +20,11 @@
     </style>
 {% endif %}
 <section>
-    <div class="dummybuttons">
+    <div class="action-buttons">
         {% if not song.is_lock %}
-            <a href="{% url 'subekashi:song_edit' song.id %}" class="dummybutton"><i class="fas fa-pen"></i><p class="icon-p-big">編集/削除申請</p></a>
+            <a href="{% url 'subekashi:song_edit' song.id %}" class="action-button"><i class="fas fa-pen"></i><span class="icon-p-big">編集/削除申請</span></a>
         {% endif %}
-        <a href="{% url 'subekashi:song_history' song.id %}" class="dummybutton"><i class="fas fa-history"></i><p class="icon-p-big">編集履歴</p></a>
+        <a href="{% url 'subekashi:song_history' song.id %}" class="action-button"><i class="fas fa-history"></i><span class="icon-p-big">編集履歴</span></a>
     </div>
 
     <table id="song-info">

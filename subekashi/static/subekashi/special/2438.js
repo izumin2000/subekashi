@@ -1,6 +1,6 @@
 function special() {
     window.location.href = `${baseURL()}/songs/2438/#lyrics`;
-    document.getElementsByClassName("dummybuttons")[0].remove();
+    document.getElementsByClassName("action-buttons")[0].remove();
     
     const lyricsEle = document.getElementById("lyrics");
     lyricsEle.style.whiteSpace = "pre-wrap";

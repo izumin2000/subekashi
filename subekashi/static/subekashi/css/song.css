@@ -1,12 +1,12 @@
-.dummybutton {
+.action-button {
     background-color: #333;
 }
 
-.dummybutton:hover {
+.action-button:hover {
     background-color: #666;
 }
 
-.dummybutton p {
+.action-button span {
     color: #fff;
     padding-top: 10px;
 }

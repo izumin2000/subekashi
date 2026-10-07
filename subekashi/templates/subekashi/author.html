@@ -9,13 +9,13 @@
 {% block content %}
 <section>
     <h1>{{ author }}</h1>
-    <div class="dummybuttons">
-        <div class="dummybutton-with-count">
-            <a href="{% url 'subekashi:author_aliases' author_id %}" class="dummybutton black-dummybutton"><i class="fas fa-people-arrows"></i><p class="icon-p-big">別名</p></a>
+    <div class="action-buttons">
+        <div class="action-button-with-count">
+            <a href="{% url 'subekashi:author_aliases' author_id %}" class="action-button black-action-button"><i class="fas fa-people-arrows"></i><span class="icon-p-big">別名</span></a>
             {% if alias_count >= 1 %}<p id="alias-count">{{ alias_count }}件の別名</p>{% endif %}
         </div>
-        <div class="dummybutton-with-count">
-            <a href="{% url 'subekashi:author_stats' author_id %}" class="dummybutton black-dummybutton"><i class="fas fa-chart-line"></i><p class="icon-p-big">統計</p></a>
+        <div class="action-button-with-count">
+            <a href="{% url 'subekashi:author_stats' author_id %}" class="action-button black-action-button"><i class="fas fa-chart-line"></i><span class="icon-p-big">統計</span></a>
             {% if kenreki %}
                 <p id="author-stats-summary"{% if kenreki.overflow_color %} style="color: {{ kenreki.overflow_color }};"{% endif %}><i class="fas fa-trophy"></i> {{ kenreki.points|intcomma:False }}</p>
             {% endif %}
@@ -26,8 +26,8 @@
     {% empty %}
         <p id="songnotfound">曲が見つかりませんでした</p>
     {% endfor %}
-    <div class="dummybuttons">
-        <a href="{% url 'subekashi:song_new' %}?authors={{ author }}" class="dummybutton black-dummybutton"><i class="fa fa-plus"></i><p class="icon-p-big">曲を登録する</p></a>
+    <div class="action-buttons">
+        <a href="{% url 'subekashi:song_new' %}?authors={{ author }}" class="action-button black-action-button"><i class="fa fa-plus"></i><span class="icon-p-big">曲を登録する</span></a>
     </div>
 </section>
 {% endblock %}

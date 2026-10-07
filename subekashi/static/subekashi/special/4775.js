@@ -54,7 +54,7 @@ function changeLyricsDesign() {
 
 
 let currentPlayController = null;
-var defaultDummybuttonsEle = document.getElementsByClassName("dummybuttons")[0];
+var defaultActionButtonsEle = document.getElementsByClassName("action-buttons")[0];
 async function play() {
     // 前の処理があれば中止
     if (currentPlayController) {
@@ -63,16 +63,16 @@ async function play() {
 
     // 停止ボタンに変更
     const stopEle = `
-    <div class="dummybuttons">
-        <button type="button" id="special-stop-button" class="dummybutton"><i class="fas fa-stop"></i><p class="icon-p-big">停止</p></button>
+    <div class="action-buttons">
+        <button type="button" id="special-stop-button" class="action-button"><i class="fas fa-stop"></i><span class="icon-p-big">停止</span></button>
     </div>
     `;
-    defaultDummybuttonsEle.innerHTML = stringToHTML(stopEle).innerHTML;
+    defaultActionButtonsEle.innerHTML = stringToHTML(stopEle).innerHTML;
     document.getElementById("special-stop-button").addEventListener("click", stop);
-    defaultDummybuttonsEle.style.position = "sticky";
-    defaultDummybuttonsEle.style.top = "15px";
-    defaultDummybuttonsEle.style.zIndex = '9999';
-    defaultDummybuttonsEle.style.opacity = '0.5';
+    defaultActionButtonsEle.style.position = "sticky";
+    defaultActionButtonsEle.style.top = "15px";
+    defaultActionButtonsEle.style.zIndex = '9999';
+    defaultActionButtonsEle.style.opacity = '0.5';
 
     // 新しいAbortControllerを作成
     const controller = new AbortController();
@@ -123,11 +123,11 @@ async function play() {
 
 function stop() {
     const playEle = `
-        <div class="dummybuttons">
-            <button type="button" id="special-play-button" class="dummybutton"><i class="fas fa-play"></i><p class="icon-p-big">再生</p></button>
+        <div class="action-buttons">
+            <button type="button" id="special-play-button" class="action-button"><i class="fas fa-play"></i><span class="icon-p-big">再生</span></button>
         </div>
     `
-    defaultDummybuttonsEle.innerHTML = stringToHTML(playEle).innerHTML;
+    defaultActionButtonsEle.innerHTML = stringToHTML(playEle).innerHTML;
     document.getElementById("special-play-button").addEventListener("click", play);
 
     clearInterval(timer);
@@ -149,13 +149,13 @@ function sleepWithAbort(seconds, signal) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    const designedDummybuttonsEle =
+    const designedActionButtonsEle =
     `
-    <div class="dummybuttons">
-        <button type="button" id="special-play-button" class="dummybutton"><i class="fas fa-play"></i><p class="icon-p-big">再生</p></button>
-        <a href="/songs/4775/history/" class="dummybutton"><i class="fas fa-history"></i><p class="icon-p-big">編集履歴</p></a>
+    <div class="action-buttons">
+        <button type="button" id="special-play-button" class="action-button"><i class="fas fa-play"></i><span class="icon-p-big">再生</span></button>
+        <a href="/songs/4775/history/" class="action-button"><i class="fas fa-history"></i><span class="icon-p-big">編集履歴</span></a>
     </div>
     `
-    defaultDummybuttonsEle.innerHTML = stringToHTML(designedDummybuttonsEle).innerHTML;
+    defaultActionButtonsEle.innerHTML = stringToHTML(designedActionButtonsEle).innerHTML;
     document.getElementById("special-play-button").addEventListener("click", play);
 });

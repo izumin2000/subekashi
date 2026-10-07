@@ -1,6 +1,6 @@
 function special() {
     document.querySelector('#lyrics').style.lineHeight = '64px';
-    document.getElementsByClassName("dummybuttons")[0].remove();
+    document.getElementsByClassName("action-buttons")[0].remove();
 
         /**
      * sky-gradient-scroll.js

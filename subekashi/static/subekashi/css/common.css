@@ -939,7 +939,7 @@ input[type=submit], button {
     margin-left: 0px;
 }
 
-.dummybuttons {
+.action-buttons {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -948,8 +948,8 @@ input[type=submit], button {
     gap: 10px;
 }
 
-/* aタグの下線・buttonタグのデフォルトスタイル(box-sizing/margin/font-size等)を打ち消し、どちらも同じ見た目にする */
-.dummybutton {
+/* aタグの下線・buttonタグのデフォルトスタイル(box-sizing/margin/font-size/line-height等)を打ち消し、どちらも同じ見た目にする */
+.action-button {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -962,21 +962,29 @@ input[type=submit], button {
     margin: 0;
     border: none;
     font-size: 22px;
+    line-height: 32px;
     text-decoration: none;
     cursor: pointer;
     border-radius: 10px;
-    transition: all 0.25s;
+    /* フォーカス表示の枠は、初期値(3px・文字色)からのアニメーションをせずにすぐ表示する */
+    transition: all 0.25s, outline 0s, outline-offset 0s;
 }
 
-.dummybutton p {
+.action-button span {
     color: #111;
     text-align: center;
     white-space: nowrap;
     padding-top: 5px;
 }
 
-.dummybutton i {
+.action-button i {
     font-size: 1.0em;
+}
+
+/* キーボード操作時のフォーカス表示（ラジオボタンと同じ） */
+.action-button:focus-visible {
+    outline: 2px solid #09F;
+    outline-offset: 2px;
 }
 
 .imitate {
@@ -1108,17 +1116,17 @@ input[type=submit], button {
     font-weight: bold;
 }
 
-input[type=submit]:hover, button:hover, .dummybutton:hover {
+input[type=submit]:hover, button:hover, .action-button:hover {
     background-color: #fff;
 }
 
-input[type=submit]:active, button:active, .dummybutton:active {
+input[type=submit]:active, button:active, .action-button:active {
     border: none;
     box-shadow: 0 0 0 2px #fff inset;
     background-color: #aaa;
 }
 
-input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
+input[type=submit]:disabled, button:disabled, .action-button:disabled {
     color: #333;
     background-color: #666;
     box-shadow: none;
@@ -1127,15 +1135,15 @@ input[type=submit]:disabled, button:disabled, .dummybutton:disabled {
 }
 
 /* 画面遷移系ボタン */
-.dummybutton.black-dummybutton {
+.action-button.black-action-button {
     background-color: #333;
 }
 
-.dummybutton.black-dummybutton:hover {
+.action-button.black-action-button:hover {
     background-color: #666;
 }
 
-.dummybutton.black-dummybutton p {
+.action-button.black-action-button span {
     color: #fff;
 }
 
