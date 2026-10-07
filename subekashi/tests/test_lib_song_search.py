@@ -5,7 +5,9 @@ song_search() のページネーション・統計情報・バリデーション
 """
 import math
 from datetime import datetime, timezone
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 from rest_framework.exceptions import ValidationError
 from subekashi.models import Author, AuthorAlias, Song, SongLink
 from subekashi.lib.song_search import song_search, DEFAULT_SIZE
@@ -309,6 +311,15 @@ class SongSearchImitateCountSortTest(TestCase):
         for params, expected in cases:
             with self.subTest(params=params):
                 self.assertEqual(self._search_titles(params), expected)
+
+    def test_count_query_does_not_sort(self):
+        """distinctが適用される場合、件数の取得では模倣曲の数を数えず、並び替えもしないこと（#1124）"""
+        with CaptureQueriesContext(connection) as context:
+            song_search({"keyword": "模倣ソート", "sort": "-imitated_count", "count": True})
+        count_sqls = [query["sql"] for query in context.captured_queries if "COUNT(*)" in query["sql"]]
+        self.assertEqual(len(count_sqls), 1)
+        self.assertNotIn("subekashi_song_imitates", count_sqls[0])
+        self.assertNotIn("ORDER BY", count_sqls[0])
 
 
 class SongSearchSortWithFilterTest(TestCase):
