@@ -7,12 +7,15 @@ from rest_framework.exceptions import ValidationError
 
 
 SIZE = 50
+# 模倣元として選ばれやすいよう、模倣曲の数が多い順に候補を表示する（#1124）
+DEFAULT_SORT = "-imitated_count"
 @ratelimit(key='ip', rate='2/second', method=['GET', 'POST'], block=True)
 def song_guessers(request):
     result = []
     query = dict(request.GET)
     query["size"] = SIZE
     query["count"] = True
+    query.setdefault("sort", DEFAULT_SORT)
 
     try:
         song_qs, statistics = song_search(query)

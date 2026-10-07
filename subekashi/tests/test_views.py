@@ -3056,7 +3056,7 @@ class SongCardsViewTest(TestCase):
         self.assertNotIn("カードテスト曲", content)
 
 
-@override_settings(STORAGES=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE, RATELIMIT_ENABLE=False)
 class SongGuessersViewTest(TestCase):
     """song_guessers (/api/html/song_guessers) のテスト"""
 
@@ -3073,6 +3073,29 @@ class SongGuessersViewTest(TestCase):
         self.assertIn("class='error'", content)
         self.assertNotIn("<img", content)
         self.assertIn("&lt;img src=x onerror=alert(1)&gt;", content)
+
+    def test_guessers_are_sorted_by_imitated_count(self):
+        """候補は模倣曲の数が多い順に表示され、同じ数の曲は登録日の遅い順になること（#1124）"""
+        few = Song.objects.create(title="候補ソート模倣1曲")
+        many = Song.objects.create(title="候補ソート模倣2曲")
+        none_old = Song.objects.create(title="候補ソート模倣なし旧")
+        none_new = Song.objects.create(title="候補ソート模倣なし新")
+        imitator1 = Song.objects.create(title="模倣した曲1")
+        imitator2 = Song.objects.create(title="模倣した曲2")
+        imitator1.imitates.add(many, few)
+        imitator2.imitates.add(many)
+        response = self.client.get(reverse("subekashi:song_guessers"), {"guesser": "候補ソート"})
+        self.assertEqual(response.status_code, 200)
+        titles = re.findall(r'<i class="fas fa-music"></i> (.*?)</p>', "".join(response.json()))
+        self.assertEqual(titles, [many.title, few.title, none_new.title, none_old.title])
+
+    def test_sort_query_overrides_default_sort(self):
+        """sortを指定した場合はその並び順で表示されること"""
+        Song.objects.create(title="候補ソート指定B")
+        Song.objects.create(title="候補ソート指定A")
+        response = self.client.get(reverse("subekashi:song_guessers"), {"guesser": "候補ソート指定", "sort": "title"})
+        titles = re.findall(r'<i class="fas fa-music"></i> (.*?)</p>', "".join(response.json()))
+        self.assertEqual(titles, ["候補ソート指定A", "候補ソート指定B"])
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
