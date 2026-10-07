@@ -957,7 +957,7 @@ class AuthorViewTest(TestCase):
         self.assertContains(response, "2件の別名")
 
     def test_stats_link_present(self):
-        # 統計ページへのdummybuttonが別名ボタンの右に追加される（#334）
+        # 統計ページへのaction-buttonが別名ボタンの右に追加される（#334）
         response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
         self.assertContains(response, reverse("subekashi:author_stats", args=[self.author.id]))
 
@@ -1546,7 +1546,7 @@ class AuthorAliasesViewTest(TestCase):
         self.assertContains(response, "作者ページ")
 
     def test_author_page_link_is_leftmost_button(self):
-        # 作者ページボタンは.dummybuttons内の一番左（DOM順で最初）に配置する（#1024）
+        # 作者ページボタンは.action-buttons内の一番左（DOM順で最初）に配置する（#1024）
         response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
         content = response.content.decode()
         author_url = reverse("subekashi:author", args=[self.author.id])
@@ -2015,12 +2015,12 @@ class AuthorAliasEditViewTest(TestCase):
         self.assertContains(response, "戻る")
 
     def test_submit_button_matches_confirm_screen_style(self):
-        # 更新ボタンを名義の統一の確認画面と同様のdummybutton形式にする（#1024）
+        # 更新ボタンを名義の統一の確認画面と同様のaction-button形式にする（#1024）
         response = self.client.get(
             reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id])
         )
         self.assertContains(response, "更新する")
-        self.assertContains(response, '<button type="submit" class="dummybutton black-dummybutton dummybutton-w140">')
+        self.assertContains(response, '<button type="submit" class="action-button black-action-button">')
 
     def test_alias_type_has_disabled_placeholder_option(self):
         response = self.client.get(
@@ -2778,10 +2778,11 @@ class AuthorUnifyNameConfirmViewTest(TestCase):
 
         self.assertEqual(response.content.decode().count("共著の曲"), 1)
 
-    def test_submit_button_is_labeled_unify_with_fixed_width(self):
+    def test_submit_button_is_labeled_unify(self):
+        # 幅は共通の.action-buttonで「戻る」と揃うため、幅指定用のクラスは使わない（#450）
         response = self._get("以前の名義")
         self.assertContains(response, "統一する")
-        self.assertContains(response, "dummybutton-w140")
+        self.assertContains(response, '<button type="submit" class="action-button black-action-button">')
         self.assertNotContains(response, "変更する")
         self.assertContains(response, f'action="{reverse("subekashi:author_unify_name_set", args=[self.author.id])}"')
 
@@ -3291,3 +3292,99 @@ class AiResultViewTest(TestCase):
         lyric_match = re.search(r'<p class="lyric"[^>]*>(.*?)</p>', content, re.DOTALL)
         self.assertIsNotNone(lyric_match)
         self.assertNotRegex(lyric_match.group(1), r">\s+<")
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+class ActionButtonMarkupTest(TestCase):
+    """action-buttonの要素のテスト（#450）
+
+    divで作っていたdummybuttonをaction-buttonに改名し、画面遷移はhref付きの<a class="action-button">、
+    JSで処理するボタンは<button type="button" class="action-button">で実装する。ボタンの文言はspanにする。
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.author = Author.objects.create(name="action-buttonテスト作者")
+        self.song = Song.objects.create(title="action-buttonテスト曲")
+        self.song.authors.add(self.author)
+        self.alias = AuthorAlias.objects.create(name="action-buttonテスト別名", author=self.author, alias_type="past")
+        self.editor = Editor.objects.create(ip="127.0.0.5", is_open=True)
+
+    def _get_pages(self):
+        pages = [
+            (reverse("subekashi:top"), {}),
+            (reverse("subekashi:song", args=[self.song.id]), {}),
+            (reverse("subekashi:song_history", args=[self.song.id]), {}),
+            (reverse("subekashi:song_edit", args=[self.song.id]), {"toast": "new"}),
+            (reverse("subekashi:histories"), {}),
+            (reverse("subekashi:editor", args=[self.editor.id]), {}),
+            (reverse("subekashi:author", args=[self.author.id]), {}),
+            (reverse("subekashi:author_aliases", args=[self.author.id]), {}),
+            (reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id]), {}),
+            (reverse("subekashi:author_alias_delete", args=[self.author.id, self.alias.id]), {}),
+            (reverse("subekashi:author_unify_name_confirm", args=[self.author.id]), {"name": self.alias.name}),
+            (reverse("subekashi:ai_result"), {}),
+        ]
+        for url, params in pages:
+            response = self.client.get(url, params)
+            self.assertEqual(response.status_code, 200)
+            yield url, response.content.decode()
+
+    def _find_buttons(self, content):
+        return re.findall(
+            r'<(?:a href="[^"]*"|button type="(?:button|submit)"[^>]*) class="action-button[^"]*">(.*?)</(?:a|button)>',
+            content,
+        )
+
+    def test_action_button_is_not_div(self):
+        for url, content in self._get_pages():
+            with self.subTest(url=url):
+                self.assertTrue(self._find_buttons(content))
+                self.assertNotRegex(content, r'<div class="action-button[ "]')
+                self.assertNotIn("dummybutton", content)
+
+    def test_action_button_label_is_span(self):
+        # buttonの中にpは入れられない（HTMLの仕様違反）ため、aも含めて文言はspanに統一する
+        for url, content in self._get_pages():
+            with self.subTest(url=url):
+                for inner in self._find_buttons(content):
+                    self.assertRegex(inner, r'<span[^>]*>[^<]+</span>$')
+                    self.assertNotIn("<p", inner)
+
+    def test_link_action_button_is_a_with_href(self):
+        response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
+        edit_url = reverse("subekashi:song_edit", args=[self.song.id])
+        history_url = reverse("subekashi:song_history", args=[self.song.id])
+        self.assertContains(response, f'<a href="{edit_url}" class="action-button">')
+        self.assertContains(response, f'<a href="{history_url}" class="action-button">')
+
+    def test_black_link_action_button_is_a_with_href(self):
+        response = self.client.get(reverse("subekashi:author_alias_delete", args=[self.author.id, self.alias.id]))
+        aliases_url = reverse("subekashi:author_aliases", args=[self.author.id])
+        self.assertContains(response, f'<a href="{aliases_url}" class="action-button black-action-button">')
+
+    def test_history_action_buttons_are_button(self):
+        for url in [
+            reverse("subekashi:histories"),
+            reverse("subekashi:editor", args=[self.editor.id]),
+            reverse("subekashi:song_history", args=[self.song.id]),
+        ]:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertContains(response, '<button type="button" id="history-reload" class="action-button">')
+                self.assertContains(response, '<button type="button" id="history-open-all" class="action-button">')
+
+    def test_alias_reload_button_is_button(self):
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+        self.assertContains(response, '<button type="button" id="alias-reload" class="action-button black-action-button">')
+
+    def test_ai_result_buttons_are_button(self):
+        response = self.client.get(reverse("subekashi:ai_result"))
+        self.assertContains(response, '<button type="button" id="copy" class="action-button">')
+        self.assertContains(response, '<button type="button" id="regenerate" class="action-button">')
+
+    @patch("subekashi.middleware.maintenance._load_maintenance", return_value={"IS_MAINTENANCE": True})
+    def test_maintenance_reload_button_is_button(self, _):
+        response = self.client.get(reverse("subekashi:ai_result"))
+        self.assertTemplateUsed(response, "subekashi/maintenance.html")
+        self.assertContains(response, '<button type="button" id="maintenance-reload" class="action-button"><i class="fas fa-redo"></i><span>再読み込み</span></button>')

@@ -14,18 +14,18 @@
     font-size: 26px;
 }
 
-.dummybuttons {
+.action-buttons {
     margin: 50px 0 0 0;
 }
 
-.dummybutton p {
+.action-button span {
     color: #000;
     margin-bottom: 0;
     font-size: 22px;
     padding-bottom: 5px;
 }
 
-.maintenance-content .dummybutton i {
+.maintenance-content .action-button i {
     color: #000;
     margin-right: 5px;
 }

@@ -1,5 +1,5 @@
 function special() { 
-    document.getElementsByClassName("dummybuttons")[0].remove();
+    document.getElementsByClassName("action-buttons")[0].remove();
     kyouiku();
 }
 

@@ -34,8 +34,6 @@
     margin: 0;
 }
 
-/* 共通の.dummybutton i(font-size: 1.0em)を打ち消し、通常のiと同じサイズにする */
-.ai-result-form .dummybutton i {
+.ai-result-form .action-button i {
     color: #111;
-    font-size: 22px;
 }

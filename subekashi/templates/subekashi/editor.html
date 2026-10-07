@@ -13,7 +13,7 @@
         {% if not editor.is_open and not editor.is_forced_open %}
             <p id="private_info">この情報はあなただけに表示されています。</p>
         {% endif %}
-        <div class="dummybuttons">
+        <div class="action-buttons">
             {% include "subekashi/components/history_action_buttons.html" %}
         </div>
         <p id="history-count">{{ total_count }}件</p>

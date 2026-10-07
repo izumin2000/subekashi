@@ -612,7 +612,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 遷移先author idが0の場合の遷移アイコン | 遷移先authorを`id=0`で作成 | テンプレートが`is not None`で判定しているため、`id=0`でも遷移アイコンが表示される（真偽値判定だと0がfalsyになり表示されなくなる） |
 | 名義を統一するフォームの初期状態（#1029、#1137） | past別名が存在するauthorのGET | 「[ ] 以前の名称 ↓ [x] 現在の名義」の順に並び、`#unify-name-submit`ボタンは`disabled`ではなくラベルは「統一する」（フォームを変更しなくても統一できる。詳細は7-8-5） |
 | 作者ページへの導線（#1024） | 正常アクセス | 作者自身のページ（`/authors/<id>/`）へのリンク（`href`属性完全一致で判定。`/authors/<id>/aliases/...`系の他リンクとの部分一致による誤検出を避けるため）が表示される |
-| 作者ページボタンの位置（#1024） | 正常アクセス | `.dummybuttons`内で「再読み込み」「別名を追加する」より前（DOM順で最初、一番左）に配置される |
+| 作者ページボタンの位置（#1024） | 正常アクセス | `.action-buttons`内で「再読み込み」「別名を追加する」より前（DOM順で最初、一番左）に配置される |
 
 ##### 推移的関係解決の反映・遷移アイコン（#1007、#1019）
 
@@ -684,7 +684,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `alias_type`のプレースホルダー (#996) | GETリクエスト | `<option value="" disabled>選択してください</option>`が含まれる（selectedではない） |
 | author_alias_form.jsの読み込み (#996) | GETリクエスト | スクリプトタグが含まれる |
 | 別名一覧画面へ戻るボタン (#1024) | GETリクエスト | 別名一覧画面（`/authors/<id>/aliases/`）へのリンク（`href`属性完全一致で判定。このページ自体のフォームaction`/authors/<id>/aliases/<alias_id>/edit/`との部分一致による誤検出を避けるため）と「戻る」の文言が含まれる |
-| 更新ボタンのスタイル (#1024) | GETリクエスト | 更新ボタンが名義の統一の確認画面と同様の`dummybutton`形式（`<button type="submit" class="dummybutton black-dummybutton dummybutton-w140">`、幅140px）で「更新する」と表示され、「戻る」ボタンと同じ`.dummybuttons`内に並ぶ |
+| 更新ボタンのスタイル (#1024、#450) | GETリクエスト | 更新ボタンが名義の統一の確認画面と同様の`action-button`形式（`<button type="submit" class="action-button black-action-button">`）で「更新する」と表示され、「戻る」ボタンと同じ`.action-buttons`内に並ぶ。幅は共通の`.action-button`（`box-sizing: content-box`）で「戻る」と同じ140pxになるため、幅指定用のクラスは付けない |
 
 #### 7-8-4. `AuthorAliasDeleteView` (`/authors/<id>/aliases/<alias_id>/delete`)（#992）
 
@@ -757,7 +757,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 共著曲は重複表示されない | 同じSongが統一対象の複数のAuthorの共著になっている | そのSongタイトルは箇条書きに1回だけ表示される（`distinct()`によるSong単位の重複排除） |
 | 曲が10件以下の場合 | Songが10件以下 | 「全て表示」ボタン（`#unify-name-show-all-songs`）は表示されず、全曲が表示された状態になる |
 | 曲が11件以上の場合 | Songが11件以上 | 11件目以降が`class="unify-name-song-hidden"`で非表示になり、「全て表示」ボタンが表示される |
-| 統一するボタンのラベル・幅・送信先 | 確認画面の表示 | ボタンのラベルは「統一する」（「変更する」は含まれない）、`dummybutton-w140`クラス（width: 140px。author_alias_edit.htmlの更新ボタンと共通のクラス）が付与され、送信先は`AuthorUnifyNameSetView` |
+| 統一するボタンのラベル・要素・送信先 (#450) | 確認画面の表示 | ボタンのラベルは「統一する」（「変更する」は含まれない）、`<button type="submit" class="action-button black-action-button">`で、幅指定用のクラスは付かない（共通の`.action-button`で「戻る」と同じ幅になる）。送信先は`AuthorUnifyNameSetView` |
 | データを変更しない | GETリクエストのみ | `Author`・`AuthorAlias`・Songの作者等のデータは一切変更されない |
 
 #### 7-9. `ChannelView` (`/channel/<name>/`)
@@ -881,6 +881,21 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | month選択肢は対象author自身が実際に投稿した月のみ（回帰、コードレビュー指摘対応） | 対象authorがある年の6月にのみ投稿している | その年を選択した際の`month_choices`が`[6]`のみになる（投稿していない月は選択肢に出ない） |
 | year選択肢は投稿の無い間の年を除く（回帰、コードレビュー指摘対応） | 対象authorが2020年・2024年にのみ投稿（2021〜2023年は無し） | `year_choices`が`[2020, 2024]`になる（連続レンジにはならない） |
 | 年変更でその年に存在しない月を選んでいた場合はmonthが自動的に"all"に戻る（回帰） | `?year=2025&month=6`（2025年に6月の投稿が無い） | `month`が`"all"`にフォールバックする（`year`自体は`"2025"`のまま） |
+
+#### 7-16. action-buttonの要素（#450）
+
+`<a><div class="dummybutton">`のようにdivで作っていたdummybuttonを`action-button`（並べる枠は`action-buttons`）に改名し、画面遷移はhref付きの`<a class="action-button">`、JSで処理するボタンは`<button type="button" class="action-button">`で実装する（`<a>`の中に`<button>`を入れるのはHTMLの仕様違反のため、遷移は`<a>`のままにする）。`<button>`の中に`<p>`は入れられないため、ボタンの文言は`<a>`も含めて`<span>`に統一する。見た目（`button`のmargin・font-size・line-height・box-sizingの既定値の打ち消し）とキーボード操作時のフォーカス表示（`:focus-visible`）はDjangoテストでは確認できないため、Playwrightで確認する。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| divのaction-buttonが無い | トップ・曲・曲の編集履歴・曲の編集（`?toast`付き）・編集履歴一覧・編集者・作者・別名一覧・別名編集・別名削除・名義の統一の確認・歌詞の作成結果の各ページ | `<a href>`または`<button>`のaction-buttonが1つ以上あり、`<div class="action-button">`と旧クラス名の`dummybutton`は含まれない |
+| ボタンの文言はspan | 上記の各ページ | 全てのaction-buttonの文言が`<span>`で、`<p>`は含まれない |
+| 画面遷移のボタンはhref付きのa | 曲のページ | 「編集/削除申請」「編集履歴」が`<a href="..." class="action-button">`になる |
+| 画面遷移のボタン（黒）はhref付きのa | 別名削除ページ | 「キャンセル」が`<a href="/authors/<id>/aliases/" class="action-button black-action-button">`になる |
+| 編集履歴の操作ボタンはbutton | 編集履歴一覧・編集者・曲の編集履歴の各ページ | 「再読み込み」「全て開く/閉じる」が`<button type="button" id="history-reload" class="action-button">`・`<button type="button" id="history-open-all" class="action-button">`になる |
+| 別名一覧の再読み込みボタンはbutton | 別名一覧ページ | `<button type="button" id="alias-reload" class="action-button black-action-button">`になる |
+| 歌詞の作成結果のボタンはbutton | 歌詞の作成結果ページ | 「最高の行をコピー」「再作成」が`<button type="button" id="copy" class="action-button">`・`<button type="button" id="regenerate" class="action-button">`になる |
+| メンテナンス画面の再読み込みボタンはbutton | `IS_MAINTENANCE=True`（`_load_maintenance`をモック）で`/ai/result/`にアクセス | `maintenance.html`が使われ、`<button type="button" id="maintenance-reload" class="action-button">`（文言は`<span>再読み込み</span>`）になる |
 
 ---
 

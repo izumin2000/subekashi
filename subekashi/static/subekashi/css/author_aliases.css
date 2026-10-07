@@ -42,12 +42,12 @@
     text-align: center;
 }
 
-/* アイコンとテキストを上下中央寄せにする（共通のp{padding-top:5px}を打ち消す） */
-.dummybuttons .dummybutton {
+/* アイコンとテキストを上下中央寄せにする（共通のspan{padding-top:5px}を打ち消す） */
+.action-buttons .action-button {
     align-items: center;
 }
 
-.dummybuttons .dummybutton p {
+.action-buttons .action-button span {
     padding-top: 0;
 }
 
@@ -59,32 +59,20 @@
     margin-right: 8px;
 }
 
-/* delete画面: フォームを.dummybuttons内の他要素と並べるため、フォーム自体のボックスを消す */
-.dummybutton-form {
+/* delete画面: フォームを.action-buttons内の他要素と並べるため、フォーム自体のボックスを消す */
+.action-button-form {
     display: contents;
 }
 
-/* buttonタグのデフォルトスタイル(font-size/margin等)を打ち消し、.dummybuttonの見た目に揃える */
-.dummybuttons button.dummybutton {
-    font-size: inherit;
-    margin: 0;
-    border: none;
-}
-
-/* .dummybutton単体と同じ詳細度(0,1,0)のため、確実に上書きするクラスの組み合わせにする */
-.dummybutton.dummybutton-w140 {
-    width: 140px;
-}
-
-/* disabled時、.dummybutton.black-dummybuttonの背景色(#333)が.dummybutton:disabledの
+/* disabled時、.action-button.black-action-buttonの背景色(#333)が.action-button:disabledの
    背景色(#666)より詳細度が同じで後勝ちしてしまい、disabled状態の見た目にならない */
-.dummybutton.black-dummybutton:disabled {
+.action-button.black-action-button:disabled {
     background-color: #666;
     cursor: not-allowed;
 }
 
-.dummybuttons .dummybutton:disabled p,
-.dummybuttons .dummybutton:disabled i {
+.action-buttons .action-button:disabled span,
+.action-buttons .action-button:disabled i {
     color: #aaa;
 }
 

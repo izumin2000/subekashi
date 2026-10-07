@@ -1,8 +1,8 @@
 
-const defaultDummybuttonsEle = document.getElementsByClassName("dummybuttons")[0];
+const defaultActionButtonsEle = document.getElementsByClassName("action-buttons")[0];
 
 function special() {
-    defaultDummybuttonsEle.remove();
+    defaultActionButtonsEle.remove();
     dot_lyrics();
     initRain();
 }
