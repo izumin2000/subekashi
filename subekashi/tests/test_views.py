@@ -3089,6 +3089,21 @@ class SongGuessersViewTest(TestCase):
         titles = re.findall(r'<i class="fas fa-music"></i> (.*?)</p>', "".join(response.json()))
         self.assertEqual(titles, [many.title, few.title, none_new.title, none_old.title])
 
+    def test_message_by_count(self):
+        """候補の数に応じて末尾のメッセージが変わること（50件を超える場合は条件を絞るよう案内する）"""
+        for i in range(51):
+            Song.objects.create(title=f"候補メッセージ多{i}")
+        Song.objects.create(title="候補メッセージ少")
+        cases = [
+            ("候補メッセージ多", "これ以上の候補を表示する為には条件を絞ってください。"),
+            ("候補メッセージ少", "これ以上の検索結果はありません。"),
+            ("候補メッセージ該当なし", "検索結果はありません。"),
+        ]
+        for guesser, message in cases:
+            with self.subTest(guesser=guesser):
+                response = self.client.get(reverse("subekashi:song_guessers"), {"guesser": guesser})
+                self.assertTrue(response.json()[-1].startswith(f"<p>{message}"))
+
     def test_sort_query_overrides_default_sort(self):
         """sortを指定した場合はその並び順で表示されること"""
         Song.objects.create(title="候補ソート指定B")
