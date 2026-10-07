@@ -511,7 +511,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | デフォルト値のラジオボタンに`data-default` | GETリクエスト | フィルタバッジは`data-default`のラジオボタンをデフォルト値として判定するため、各フィルタで1つだけ付き、`songrange`・`jokerange` は `COOKIE_FORMS` のデフォルト値、真偽値のフィルタは `""`（指定なし）のラジオボタンに付く |
 | cookieの不正な値 | `search_songrange`・`search_jokerange`・`search_sort` に不正な値 (cookie) | デフォルト値（`all`・`on`・`-post_time`）のラジオボタンが選択される |
 | 並び替えのラジオボタン | `?sort=-view` | `select` ではなく `SORT_CHOICES` の数のラジオボタンが表示され、`-view` のみが選択される |
-| 並び替えのラベル | GETリクエスト | 「登録日/早い順」のように短く、YouTube関連の並び替え（`YOUTUBE_SORTS`）のみ文言の前にYouTubeのアイコンが付く（「YouTubeの」等の文言は含まない） |
+| 並び替えのラベル | GETリクエスト | 「登録日/早い順」のように短く、YouTube関連の並び替え（`YOUTUBE_SORTS`）のみ文言の前にYouTubeのアイコンが付く（「YouTubeの」等の文言は含まない）。高評価数の後に「模倣元の数」「模倣曲の数」（#542）、最後に「ランダム」が並ぶ |
 | 並び替えのデフォルト | URLクエリなし | `-post_time`（更新日が遅い順）が選択される |
 | YouTube関連のクエリをJSに渡す | GETリクエスト | context["youtube_queries"] が `query_utils` の `YOUTUBE_FILTERS`・`YOUTUBE_SORTS` と一致し、`json_script`（`#youtube-queries`）で出力される |
 | ラジオボタンを全て表示するボタン | GETリクエスト | `#search-form-radios-toggle`（`aria-controls="search-form-radios"`、`aria-expanded="false"`、「全て表示」）が表示される |
@@ -897,6 +897,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `is_lack=False`（#970） | URLあり・歌詞ありの曲とURLなしの曲が存在、`?is_lack=False` | 未完成の曲（URLなし）が除外される |
 | `is_special=True`（#939） | スペシャルデザインの曲と通常の曲が存在、`?is_special=True` | スペシャルデザインの曲のみ返される |
 | `is_collab=True`（#943） | 作者2人の曲と作者1人の曲が存在、`?is_collab=True` | 合作の曲のみ返される |
+| `sort=-imitated_count`（#542） | 曲1が曲2を模倣、`?sort=-imitated_count` | 模倣曲の数が多い曲2、曲1の順で返される |
 
 #### 8-2. `EditorIsOpenView` (`/api/editor/is_open`)
 
@@ -1069,6 +1070,19 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | is_collab=False | `{"is_collab": "False"}` / `"false"` | 合作の曲が除外される |
 | is_collab指定なし | `{}` | 全ての曲が返される |
 | authorフィルタとの組み合わせ | `{"is_collab": "True", "author": "合作検索作者"}` | 2人の作者の両方にヒットしても合作の曲が重複せず1件だけ返される |
+
+#### 10-8. 模倣元の数・模倣曲の数のソート（#542）
+
+曲Aが曲B・Cを、曲Dが曲Bを模倣しているシナリオで検証する（模倣元の数: A=2, D=1, B=C=0 / 模倣曲の数: B=2, C=1, A=D=0）。
+`imitates` をJOINすると曲が重複するため、中間テーブルで曲ごとに数えたサブクエリで並び替え、数が同じ曲は登録日の遅い順（`-id`）で並べる。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 模倣元の数が多い順 | `{"sort": "-imitate_count"}` | A, D, C, B の順 |
+| 模倣元の数が少ない順 | `{"sort": "imitate_count"}` | C, B, D, A の順 |
+| 模倣曲の数が多い順 | `{"sort": "-imitated_count"}` | B, C, D, A の順 |
+| 模倣曲の数が少ない順 | `{"sort": "imitated_count"}` | D, A, C, B の順 |
+| distinctが適用されるフィルタとの組み合わせ | `keyword` / `imitate` / `imitated` と組み合わせる | 重複せず、ソート順が維持される |
 
 ---
 

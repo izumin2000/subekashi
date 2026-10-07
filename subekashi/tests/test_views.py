@@ -430,7 +430,9 @@ class SongsViewTest(TestCase):
         self.assertEqual(labels["sort-5"], '<i class="fab fa-youtube"></i>投稿日/早い順')
         self.assertEqual(labels["sort-8"], '<i class="fab fa-youtube"></i>再生回数/多い順')
         self.assertEqual(labels["sort-10"], '<i class="fab fa-youtube"></i>高評価数/多い順')
-        self.assertEqual(labels["sort-11"], "ランダム")
+        self.assertEqual(labels["sort-12"], "模倣元の数/多い順")
+        self.assertEqual(labels["sort-14"], "模倣曲の数/多い順")
+        self.assertEqual(labels["sort-15"], "ランダム")
         self.assertNotIn("YouTubeの", "".join(labels.values()))
 
     def test_sort_defaults_to_post_time_desc(self):

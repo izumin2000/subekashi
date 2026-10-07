@@ -16,6 +16,10 @@ SORT_CHOICES = [
     {'value': '-view', 'icon': 'fas fa-play', 'label': '再生回数/多い順'},
     {'value': 'like', 'icon': 'far fa-thumbs-up', 'label': '高評価数/少ない順'},
     {'value': '-like', 'icon': 'far fa-thumbs-up', 'label': '高評価数/多い順'},
+    {'value': 'imitate_count', 'icon': 'fas fa-sitemap imitate', 'label': '模倣元の数/少ない順'},
+    {'value': '-imitate_count', 'icon': 'fas fa-sitemap imitate', 'label': '模倣元の数/多い順'},
+    {'value': 'imitated_count', 'icon': 'fas fa-sitemap', 'label': '模倣曲の数/少ない順'},
+    {'value': '-imitated_count', 'icon': 'fas fa-sitemap', 'label': '模倣曲の数/多い順'},
     {'value': 'random', 'icon': 'fas fa-random', 'label': 'ランダム'},
 ]
 

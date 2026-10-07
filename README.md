@@ -206,9 +206,10 @@ APIは全てのオリジンから利用できます（`Access-Control-Allow-Orig
 
 **ソート**
 - `sort`: ソート順を指定
-  - 利用可能な値: `id`, `-id`, `title`, `-title`, `author`, `-author`, `upload_time`, `-upload_time`, `view`, `-view`, `like`, `-like`, `post_time`, `-post_time`, `random`
+  - 利用可能な値: `id`, `-id`, `title`, `-title`, `author`, `-author`, `upload_time`, `-upload_time`, `view`, `-view`, `like`, `-like`, `post_time`, `-post_time`, `imitate_count`, `-imitate_count`, `imitated_count`, `-imitated_count`, `random`
   - `-`を付けると降順、付けないと昇順
   - `id`は登録日時順（登録が古い順）、`-id`は登録が新しい順
+  - `imitate_count`は模倣元の数（その曲が模倣している曲の数）、`imitated_count`は模倣曲の数（その曲を模倣している曲の数）の順。数が同じ曲は登録が新しい順
   - `random`を指定するとランダムソート
 
 **注意事項**

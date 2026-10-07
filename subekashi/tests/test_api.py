@@ -78,6 +78,13 @@ class SongAPIListTest(TestCase):
         self.assertEqual(data["count"], 1)
         self.assertEqual(data["result"][0]["title"], "APIテスト曲2")
 
+    def test_sort_by_imitated_count(self):
+        """sort=-imitated_count で模倣曲の数が多い順に返されること（#542）"""
+        self.song1.imitates.add(self.song2)
+        response = self.client.get("/api/song/", {"sort": "-imitated_count"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([song["title"] for song in response.json()["result"]], ["APIテスト曲2", "APIテスト曲1"])
+
     def test_is_collab_filter_narrows_results(self):
         """is_collab=True で合作の曲（作者が2人以上の曲）のみ返されること（#943）"""
         self.song2.authors.add(self.author, Author.objects.create(name="APIテスト作者2"))

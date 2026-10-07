@@ -1,7 +1,8 @@
 import django_filters
 from django import forms
 from django.core.exceptions import ValidationError
-from django.db.models import Subquery
+from django.db.models import Count, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from subekashi.models import Song
 from subekashi.lib.query_filters import (
     filter_by_keyword,
@@ -21,6 +22,26 @@ from subekashi.lib.query_utils import has_youtube_filter_or_sort, has_view_filte
 AUTHOR_SORT_MAP = {'author': 'authors__name', '-author': '-authors__name'}
 # URLパラメータ値をDjango ORM向けに変換する必要があるソートのマッピング
 DISTINCT_SORT_MAP = {'random': '?', **AUTHOR_SORT_MAP}
+# 模倣元の数・模倣曲の数のソート → 数える Song.imitates の中間テーブルのフィールド名（#542）
+IMITATE_COUNT_SORT_MAP = {'imitate_count': 'from_song', 'imitated_count': 'to_song'}
+
+
+def order_by_sort(queryset, sort):
+    """URLパラメータのソートをquerysetに適用する"""
+    field = sort.lstrip('-')
+    if field in IMITATE_COUNT_SORT_MAP:
+        # imitatesをJOINすると曲が重複するため、曲ごとに数えたサブクエリで並び替える
+        through_field = IMITATE_COUNT_SORT_MAP[field]
+        counts = (
+            Song.imitates.through.objects
+            .filter(**{through_field: OuterRef('pk')})
+            .values(through_field)
+            .annotate(count=Count('pk'))
+            .values('count')
+        )
+        # 同じ数の曲が多いため、ページをまたいでも順序が変わらないよう登録日の遅い順で並べる
+        return queryset.annotate(**{field: Coalesce(Subquery(counts), 0)}).order_by(sort, '-id')
+    return queryset.order_by(DISTINCT_SORT_MAP.get(sort, sort))
 
 
 def validate_positive_integer(value):
@@ -222,6 +243,8 @@ class SongFilter(django_filters.FilterSet):
             'view', '-view',
             'like', '-like',
             'post_time', '-post_time',
+            'imitate_count', '-imitate_count',
+            'imitated_count', '-imitated_count',
         }
 
         # バリデーションはフィールド名変換より前に行う必要がある。
@@ -230,10 +253,7 @@ class SongFilter(django_filters.FilterSet):
         if value not in allowed_fields:
             raise ValidationError(f'許可されていないソートフィールドです: {value}')
 
-        # URLパラメータのフィールド名をDjangoのORM向けに変換
-        value = AUTHOR_SORT_MAP.get(value, value)
-
-        return queryset.order_by(value)
+        return order_by_sort(queryset, value)
 
     @property
     def qs(self):
@@ -273,6 +293,6 @@ class SongFilter(django_filters.FilterSet):
             queryset = Song.objects.prefetch_related('links', 'authors').filter(id__in=Subquery(ids))
             sort = self.data.get('sort')
             if sort:
-                queryset = queryset.order_by(DISTINCT_SORT_MAP.get(sort, sort))
+                queryset = order_by_sort(queryset, sort)
 
         return queryset

@@ -271,6 +271,46 @@ class SongSearchIsCollabFilterTest(TestCase):
         self.assertEqual(self._search_ids({"is_collab": "True", "author": "合作検索作者"}), [self.collab.id])
 
 
+class SongSearchImitateCountSortTest(TestCase):
+    """模倣元の数・模倣曲の数のソートのテスト（#542）"""
+
+    def setUp(self):
+        # 模倣元の数: a=2, d=1, b=0, c=0 / 模倣曲の数: b=2, c=1, a=0, d=0
+        self.song_a = Song.objects.create(title="模倣ソートA")
+        self.song_b = Song.objects.create(title="模倣ソートB")
+        self.song_c = Song.objects.create(title="模倣ソートC")
+        self.song_d = Song.objects.create(title="模倣ソートD")
+        self.song_a.imitates.add(self.song_b, self.song_c)
+        self.song_d.imitates.add(self.song_b)
+
+    def _search_titles(self, params):
+        qs, _ = song_search({**params, "size": "100"})
+        return [s.title for s in qs]
+
+    def test_sort_by_imitate_count(self):
+        # 数が同じ曲は登録日の遅い順
+        cases = [
+            ("-imitate_count", ["模倣ソートA", "模倣ソートD", "模倣ソートC", "模倣ソートB"]),
+            ("imitate_count", ["模倣ソートC", "模倣ソートB", "模倣ソートD", "模倣ソートA"]),
+            ("-imitated_count", ["模倣ソートB", "模倣ソートC", "模倣ソートD", "模倣ソートA"]),
+            ("imitated_count", ["模倣ソートD", "模倣ソートA", "模倣ソートC", "模倣ソートB"]),
+        ]
+        for sort, expected in cases:
+            with self.subTest(sort=sort):
+                self.assertEqual(self._search_titles({"sort": sort}), expected)
+
+    def test_sort_by_imitate_count_with_distinct_filter(self):
+        """distinctが適用されるフィルタと組み合わせても、重複せずソート順が維持されること"""
+        cases = [
+            ({"keyword": "模倣ソート", "sort": "-imitate_count"}, ["模倣ソートA", "模倣ソートD", "模倣ソートC", "模倣ソートB"]),
+            ({"imitate": str(self.song_b.id), "sort": "-imitate_count"}, ["模倣ソートA", "模倣ソートD"]),
+            ({"imitated": str(self.song_a.id), "sort": "-imitated_count"}, ["模倣ソートB", "模倣ソートC"]),
+        ]
+        for params, expected in cases:
+            with self.subTest(params=params):
+                self.assertEqual(self._search_titles(params), expected)
+
+
 class SongSearchSortWithFilterTest(TestCase):
     """sort と他フィルターを組み合わせた場合のソート順テスト（distinct適用後も維持されることを確認）"""
 
