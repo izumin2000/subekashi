@@ -435,6 +435,26 @@ class SongsViewTest(TestCase):
         self.assertEqual(labels["sort-15"], "ランダム")
         self.assertNotIn("YouTubeの", "".join(labels.values()))
 
+    def test_imitate_count_sort_labels_and_icons(self):
+        """模倣元の数は上下反転した模倣のアイコン、模倣曲の数は通常の模倣のアイコンで表示されること（#542）"""
+        content = self.client.get(reverse("subekashi:songs")).content.decode()
+        expected = {
+            "imitate_count": ("fas fa-sitemap imitate", "模倣元の数/少ない順"),
+            "-imitate_count": ("fas fa-sitemap imitate", "模倣元の数/多い順"),
+            "imitated_count": ("fas fa-sitemap", "模倣曲の数/少ない順"),
+            "-imitated_count": ("fas fa-sitemap", "模倣曲の数/多い順"),
+        }
+        for value, (icon, label) in expected.items():
+            with self.subTest(value=value):
+                match = re.search(
+                    rf'<input type="radio" id="(sort-\d+)" name="sort" value="{re.escape(value)}"[^>]*>\s*'
+                    r'<label for="\1"><i class="([^"]+)"></i><span class="icon-p-big">(.*?)</span></label>',
+                    content,
+                )
+                self.assertIsNotNone(match)
+                self.assertEqual(match.group(2), icon)
+                self.assertEqual(match.group(3), label)
+
     def test_sort_defaults_to_post_time_desc(self):
         """並び替えを指定しない場合は「更新日が遅い順」が選択されること"""
         response = self.client.get(reverse("subekashi:songs"))

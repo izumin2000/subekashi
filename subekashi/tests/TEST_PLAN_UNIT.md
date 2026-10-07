@@ -512,6 +512,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | cookieの不正な値 | `search_songrange`・`search_jokerange`・`search_sort` に不正な値 (cookie) | デフォルト値（`all`・`on`・`-post_time`）のラジオボタンが選択される |
 | 並び替えのラジオボタン | `?sort=-view` | `select` ではなく `SORT_CHOICES` の数のラジオボタンが表示され、`-view` のみが選択される |
 | 並び替えのラベル | GETリクエスト | 「登録日/早い順」のように短く、YouTube関連の並び替え（`YOUTUBE_SORTS`）のみ文言の前にYouTubeのアイコンが付く（「YouTubeの」等の文言は含まない）。高評価数の後に「模倣元の数」「模倣曲の数」（#542）、最後に「ランダム」が並ぶ |
+| 模倣元の数・模倣曲の数の並び替えのアイコン（#542） | GETリクエスト | `imitate_count`・`-imitate_count` は `fas fa-sitemap imitate`（上下反転）、`imitated_count`・`-imitated_count` は `fas fa-sitemap` のアイコンで、それぞれ「模倣元の数/少ない順」等のラベルが表示される |
 | 並び替えのデフォルト | URLクエリなし | `-post_time`（更新日が遅い順）が選択される |
 | YouTube関連のクエリをJSに渡す | GETリクエスト | context["youtube_queries"] が `query_utils` の `YOUTUBE_FILTERS`・`YOUTUBE_SORTS` と一致し、`json_script`（`#youtube-queries`）で出力される |
 | ラジオボタンを全て表示するボタン | GETリクエスト | `#search-form-radios-toggle`（`aria-controls="search-form-radios"`、`aria-expanded="false"`、「全て表示」）が表示される |

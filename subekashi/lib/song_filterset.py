@@ -39,8 +39,11 @@ def order_by_sort(queryset, sort):
             .annotate(count=Count('pk'))
             .values('count')
         )
+        # Songに同名のフィールドが追加されても衝突しないよう、annotateの名前には"_"を付ける
+        annotation = f'_{field}'
+        order = f'-{annotation}' if sort.startswith('-') else annotation
         # 同じ数の曲が多いため、ページをまたいでも順序が変わらないよう登録日の遅い順で並べる
-        return queryset.annotate(**{field: Coalesce(Subquery(counts), 0)}).order_by(sort, '-id')
+        return queryset.annotate(**{annotation: Coalesce(Subquery(counts), 0)}).order_by(order, '-id')
     return queryset.order_by(DISTINCT_SORT_MAP.get(sort, sort))
 
 
