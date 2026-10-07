@@ -1087,6 +1087,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 模倣曲の数が多い順 | `{"sort": "-imitated_count"}` | B, C, D, A の順 |
 | 模倣曲の数が少ない順 | `{"sort": "imitated_count"}` | D, A, C, B の順 |
 | distinctが適用されるフィルタとの組み合わせ | `keyword` / `imitate` / `imitated` と組み合わせる | 重複せず、ソート順が維持される |
+| 件数の取得では並び替えない（#1124） | `{"keyword": "...", "sort": "-imitated_count", "count": True}` | 件数取得（`COUNT(*)`）のSQLに模倣曲の数のサブクエリと `ORDER BY` が含まれない |
 
 ---
 
