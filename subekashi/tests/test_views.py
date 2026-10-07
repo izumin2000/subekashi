@@ -1998,7 +1998,7 @@ class AuthorAliasEditViewTest(TestCase):
             reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id])
         )
         self.assertContains(response, "更新する")
-        self.assertContains(response, '<button type="submit" class="dummybutton black-dummybutton dummybutton-w140">')
+        self.assertContains(response, '<button type="submit" class="dummybutton black-dummybutton">')
 
     def test_alias_type_has_disabled_placeholder_option(self):
         response = self.client.get(
@@ -2756,10 +2756,12 @@ class AuthorUnifyNameConfirmViewTest(TestCase):
 
         self.assertEqual(response.content.decode().count("共著の曲"), 1)
 
-    def test_submit_button_is_labeled_unify_with_fixed_width(self):
+    def test_submit_button_is_labeled_unify(self):
+        # 幅は共通の.dummybuttonで「戻る」と揃うため、幅指定用のクラス(dummybutton-w140)は使わない（#450）
         response = self._get("以前の名義")
         self.assertContains(response, "統一する")
-        self.assertContains(response, "dummybutton-w140")
+        self.assertContains(response, '<button type="submit" class="dummybutton black-dummybutton">')
+        self.assertNotContains(response, "dummybutton-w140")
         self.assertNotContains(response, "変更する")
         self.assertContains(response, f'action="{reverse("subekashi:author_unify_name_set", args=[self.author.id])}"')
 
@@ -3231,3 +3233,81 @@ class AiResultViewTest(TestCase):
         lyric_match = re.search(r'<p class="lyric"[^>]*>(.*?)</p>', content, re.DOTALL)
         self.assertIsNotNone(lyric_match)
         self.assertNotRegex(lyric_match.group(1), r">\s+<")
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+class DummybuttonMarkupTest(TestCase):
+    """dummybuttonの要素のテスト（#450）
+
+    divで作っていたdummybuttonを、画面遷移はhref付きの<a class="dummybutton">、
+    JSで処理するボタンは<button type="button" class="dummybutton">で実装する。
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.author = Author.objects.create(name="dummybuttonテスト作者")
+        self.song = Song.objects.create(title="dummybuttonテスト曲")
+        self.song.authors.add(self.author)
+        self.alias = AuthorAlias.objects.create(name="dummybuttonテスト別名", author=self.author, alias_type="past")
+        self.editor = Editor.objects.create(ip="127.0.0.5", is_open=True)
+
+    def test_dummybutton_is_not_div(self):
+        pages = [
+            (reverse("subekashi:top"), {}),
+            (reverse("subekashi:song", args=[self.song.id]), {}),
+            (reverse("subekashi:song_history", args=[self.song.id]), {}),
+            (reverse("subekashi:song_edit", args=[self.song.id]), {"toast": "new"}),
+            (reverse("subekashi:histories"), {}),
+            (reverse("subekashi:editor", args=[self.editor.id]), {}),
+            (reverse("subekashi:author", args=[self.author.id]), {}),
+            (reverse("subekashi:author_aliases", args=[self.author.id]), {}),
+            (reverse("subekashi:author_alias_edit", args=[self.author.id, self.alias.id]), {}),
+            (reverse("subekashi:author_alias_delete", args=[self.author.id, self.alias.id]), {}),
+            (reverse("subekashi:author_unify_name_confirm", args=[self.author.id]), {"name": self.alias.name}),
+            (reverse("subekashi:ai_result"), {}),
+        ]
+        for url, params in pages:
+            with self.subTest(url=url):
+                response = self.client.get(url, params)
+                self.assertEqual(response.status_code, 200)
+                content = response.content.decode()
+                self.assertRegex(content, r'<(a href="[^"]*"|button type="(button|submit)"[^>]*) class="dummybutton[ "]')
+                self.assertNotRegex(content, r'<div class="dummybutton[ "]')
+
+    def test_link_dummybutton_is_a_with_href(self):
+        response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
+        edit_url = reverse("subekashi:song_edit", args=[self.song.id])
+        history_url = reverse("subekashi:song_history", args=[self.song.id])
+        self.assertContains(response, f'<a href="{edit_url}" class="dummybutton">')
+        self.assertContains(response, f'<a href="{history_url}" class="dummybutton">')
+
+    def test_black_link_dummybutton_is_a_with_href(self):
+        response = self.client.get(reverse("subekashi:author_alias_delete", args=[self.author.id, self.alias.id]))
+        aliases_url = reverse("subekashi:author_aliases", args=[self.author.id])
+        self.assertContains(response, f'<a href="{aliases_url}" class="dummybutton black-dummybutton">')
+
+    def test_history_action_buttons_are_button(self):
+        for url in [
+            reverse("subekashi:histories"),
+            reverse("subekashi:editor", args=[self.editor.id]),
+            reverse("subekashi:song_history", args=[self.song.id]),
+        ]:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertContains(response, '<button type="button" id="history-reload" class="dummybutton">')
+                self.assertContains(response, '<button type="button" id="history-open-all" class="dummybutton">')
+
+    def test_alias_reload_button_is_button(self):
+        response = self.client.get(reverse("subekashi:author_aliases", args=[self.author.id]))
+        self.assertContains(response, '<button type="button" id="alias-reload" class="dummybutton black-dummybutton">')
+
+    def test_ai_result_buttons_are_button(self):
+        response = self.client.get(reverse("subekashi:ai_result"))
+        self.assertContains(response, '<button type="button" id="copy" class="dummybutton">')
+        self.assertContains(response, '<button type="button" id="regenerate" class="dummybutton">')
+
+    @patch("subekashi.middleware.maintenance._load_maintenance", return_value={"IS_MAINTENANCE": True})
+    def test_maintenance_reload_button_is_button(self, _):
+        response = self.client.get(reverse("subekashi:ai_result"))
+        self.assertTemplateUsed(response, "subekashi/maintenance.html")
+        self.assertContains(response, '<button type="button" id="maintenance-reload" class="dummybutton">')

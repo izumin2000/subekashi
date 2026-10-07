@@ -683,7 +683,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `alias_type`のプレースホルダー (#996) | GETリクエスト | `<option value="" disabled>選択してください</option>`が含まれる（selectedではない） |
 | author_alias_form.jsの読み込み (#996) | GETリクエスト | スクリプトタグが含まれる |
 | 別名一覧画面へ戻るボタン (#1024) | GETリクエスト | 別名一覧画面（`/authors/<id>/aliases/`）へのリンク（`href`属性完全一致で判定。このページ自体のフォームaction`/authors/<id>/aliases/<alias_id>/edit/`との部分一致による誤検出を避けるため）と「戻る」の文言が含まれる |
-| 更新ボタンのスタイル (#1024) | GETリクエスト | 更新ボタンが名義の統一の確認画面と同様の`dummybutton`形式（`<button type="submit" class="dummybutton black-dummybutton dummybutton-w140">`、幅140px）で「更新する」と表示され、「戻る」ボタンと同じ`.dummybuttons`内に並ぶ |
+| 更新ボタンのスタイル (#1024、#450) | GETリクエスト | 更新ボタンが名義の統一の確認画面と同様の`dummybutton`形式（`<button type="submit" class="dummybutton black-dummybutton">`）で「更新する」と表示され、「戻る」ボタンと同じ`.dummybuttons`内に並ぶ。幅は共通の`.dummybutton`（`box-sizing: content-box`）で「戻る」と同じ140pxになるため、幅指定用のクラス（旧`dummybutton-w140`）は付けない |
 
 #### 7-8-4. `AuthorAliasDeleteView` (`/authors/<id>/aliases/<alias_id>/delete`)（#992）
 
@@ -756,7 +756,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 共著曲は重複表示されない | 同じSongが統一対象の複数のAuthorの共著になっている | そのSongタイトルは箇条書きに1回だけ表示される（`distinct()`によるSong単位の重複排除） |
 | 曲が10件以下の場合 | Songが10件以下 | 「全て表示」ボタン（`#unify-name-show-all-songs`）は表示されず、全曲が表示された状態になる |
 | 曲が11件以上の場合 | Songが11件以上 | 11件目以降が`class="unify-name-song-hidden"`で非表示になり、「全て表示」ボタンが表示される |
-| 統一するボタンのラベル・幅・送信先 | 確認画面の表示 | ボタンのラベルは「統一する」（「変更する」は含まれない）、`dummybutton-w140`クラス（width: 140px。author_alias_edit.htmlの更新ボタンと共通のクラス）が付与され、送信先は`AuthorUnifyNameSetView` |
+| 統一するボタンのラベル・要素・送信先 (#450) | 確認画面の表示 | ボタンのラベルは「統一する」（「変更する」は含まれない）、`<button type="submit" class="dummybutton black-dummybutton">`で、幅指定用の`dummybutton-w140`クラスは付かない（共通の`.dummybutton`で「戻る」と同じ幅になる）。送信先は`AuthorUnifyNameSetView` |
 | データを変更しない | GETリクエストのみ | `Author`・`AuthorAlias`・Songの作者等のデータは一切変更されない |
 
 #### 7-9. `ChannelView` (`/channel/<name>/`)
@@ -877,6 +877,20 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | month選択肢は対象author自身が実際に投稿した月のみ（回帰、コードレビュー指摘対応） | 対象authorがある年の6月にのみ投稿している | その年を選択した際の`month_choices`が`[6]`のみになる（投稿していない月は選択肢に出ない） |
 | year選択肢は投稿の無い間の年を除く（回帰、コードレビュー指摘対応） | 対象authorが2020年・2024年にのみ投稿（2021〜2023年は無し） | `year_choices`が`[2020, 2024]`になる（連続レンジにはならない） |
 | 年変更でその年に存在しない月を選んでいた場合はmonthが自動的に"all"に戻る（回帰） | `?year=2025&month=6`（2025年に6月の投稿が無い） | `month`が`"all"`にフォールバックする（`year`自体は`"2025"`のまま） |
+
+#### 7-16. dummybuttonの要素（#450）
+
+`<a><div class="dummybutton">`のようにdivで作っていたdummybuttonを、画面遷移はhref付きの`<a class="dummybutton">`、JSで処理するボタンは`<button type="button" class="dummybutton">`で実装する（`<a>`の中に`<button>`を入れるのはHTMLの仕様違反のため、遷移は`<a>`のままにする）。見た目（`button`のmargin・font-size・box-sizingの既定値の打ち消し）はDjangoテストでは確認できないため、Playwrightで確認する。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| divのdummybuttonが無い | トップ・曲・曲の編集履歴・曲の編集（`?toast`付き）・編集履歴一覧・編集者・作者・別名一覧・別名編集・別名削除・名義の統一の確認・歌詞の作成結果の各ページ | `<a href>`または`<button>`のdummybuttonが1つ以上あり、`<div class="dummybutton">`は含まれない |
+| 画面遷移のボタンはhref付きのa | 曲のページ | 「編集/削除申請」「編集履歴」が`<a href="..." class="dummybutton">`になる |
+| 画面遷移のボタン（黒）はhref付きのa | 別名削除ページ | 「キャンセル」が`<a href="/authors/<id>/aliases/" class="dummybutton black-dummybutton">`になる |
+| 編集履歴の操作ボタンはbutton | 編集履歴一覧・編集者・曲の編集履歴の各ページ | 「再読み込み」「全て開く/閉じる」が`<button type="button" id="history-reload" class="dummybutton">`・`<button type="button" id="history-open-all" class="dummybutton">`になる |
+| 別名一覧の再読み込みボタンはbutton | 別名一覧ページ | `<button type="button" id="alias-reload" class="dummybutton black-dummybutton">`になる |
+| 歌詞の作成結果のボタンはbutton | 歌詞の作成結果ページ | 「最高の行をコピー」「再作成」が`<button type="button" id="copy" class="dummybutton">`・`<button type="button" id="regenerate" class="dummybutton">`になる |
+| メンテナンス画面の再読み込みボタンはbutton | `IS_MAINTENANCE=True`（`_load_maintenance`をモック）で`/ai/result/`にアクセス | `maintenance.html`が使われ、`<button type="button" id="maintenance-reload" class="dummybutton">`になる |
 
 ---
 

@@ -9,9 +9,7 @@
     <h1>{{ author.name }}の別名『{{ alias.name }}』を削除</h1>
     <p>この別名を削除します。よろしいですか？</p>
     <div class="dummybuttons">
-        <a href="{% url 'subekashi:author_aliases' author.id %}">
-            <div class="dummybutton black-dummybutton"><i class="fas fa-times"></i><p class="icon-p-big">キャンセル</p></div>
-        </a>
+        <a href="{% url 'subekashi:author_aliases' author.id %}" class="dummybutton black-dummybutton"><i class="fas fa-times"></i><p class="icon-p-big">キャンセル</p></a>
         <form action="{% url 'subekashi:author_alias_delete' author.id alias.id %}" method="POST" class="dummybutton-form">{% csrf_token %}
             <button type="submit" class="dummybutton black-dummybutton"><i class="far fa-trash-alt"></i><p class="icon-p-big">削除する</p></button>
         </form>

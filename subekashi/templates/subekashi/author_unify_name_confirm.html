@@ -29,12 +29,10 @@
         <p>既存の作者『{{ target_author.name }}』が統一先となり、この作者の曲・別名・作者リンクは全てそちらに移動します</p>
     {% endif %}
     <div class="dummybuttons">
-        <a href="{% url 'subekashi:author_aliases' author.id %}">
-            <div class="dummybutton black-dummybutton"><i class="fas fa-times"></i><p class="icon-p-big">戻る</p></div>
-        </a>
+        <a href="{% url 'subekashi:author_aliases' author.id %}" class="dummybutton black-dummybutton"><i class="fas fa-times"></i><p class="icon-p-big">戻る</p></a>
         <form action="{% url 'subekashi:author_unify_name_set' author.id %}" method="POST" class="dummybutton-form">{% csrf_token %}
             <input type="hidden" name="name" value="{{ new_name }}">
-            <button type="submit" class="dummybutton black-dummybutton dummybutton-w140"><i class="fas fa-check"></i><p class="icon-p-big">統一する</p></button>
+            <button type="submit" class="dummybutton black-dummybutton"><i class="fas fa-check"></i><p class="icon-p-big">統一する</p></button>
         </form>
     </div>
 </section>

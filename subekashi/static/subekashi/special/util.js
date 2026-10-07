@@ -4,12 +4,8 @@ function add_special_button() {
     const designedDummybuttonsEle =
     `
     <div class="dummybuttons">
-        <a>
-            <div class="dummybutton" id="special-button"><i class="fas fa-magic"></i><p class="icon-p-big">スペシャルデザイン</p></div>
-        </a>
-        <a href="./history/">
-            <div class="dummybutton"><i class="fas fa-history"></i><p class="icon-p-big">編集履歴</p></div>
-        </a>
+        <button type="button" id="special-button" class="dummybutton"><i class="fas fa-magic"></i><p class="icon-p-big">スペシャルデザイン</p></button>
+        <a href="./history/" class="dummybutton"><i class="fas fa-history"></i><p class="icon-p-big">編集履歴</p></a>
     </div>
     `
     defaultDummybuttonsEle.innerHTML = stringToHTML(designedDummybuttonsEle).innerHTML;

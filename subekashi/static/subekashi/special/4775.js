@@ -64,9 +64,7 @@ async function play() {
     // 停止ボタンに変更
     const stopEle = `
     <div class="dummybuttons">
-        <a>
-            <div class="dummybutton" id="special-stop-button"><i class="fas fa-stop"></i><p class="icon-p-big">停止</p></div>
-        </a>
+        <button type="button" id="special-stop-button" class="dummybutton"><i class="fas fa-stop"></i><p class="icon-p-big">停止</p></button>
     </div>
     `;
     defaultDummybuttonsEle.innerHTML = stringToHTML(stopEle).innerHTML;
@@ -125,11 +123,9 @@ async function play() {
 
 function stop() {
     const playEle = `
-        < div class="dummybuttons" >
-            <a>
-                <div class="dummybutton" id="special-play-button"><i class="fas fa-play"></i><p class="icon-p-big">再生</p></div>
-            </a>
-        </ >
+        <div class="dummybuttons">
+            <button type="button" id="special-play-button" class="dummybutton"><i class="fas fa-play"></i><p class="icon-p-big">再生</p></button>
+        </div>
     `
     defaultDummybuttonsEle.innerHTML = stringToHTML(playEle).innerHTML;
     document.getElementById("special-play-button").addEventListener("click", play);
@@ -156,12 +152,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const designedDummybuttonsEle =
     `
     <div class="dummybuttons">
-        <a>
-            <div class="dummybutton" id="special-play-button"><i class="fas fa-play"></i><p class="icon-p-big">再生</p></div>
-        </a>
-        <a href="/songs/4775/history/">
-            <div class="dummybutton"><i class="fas fa-history"></i><p class="icon-p-big">編集履歴</p></div>
-        </a>
+        <button type="button" id="special-play-button" class="dummybutton"><i class="fas fa-play"></i><p class="icon-p-big">再生</p></button>
+        <a href="/songs/4775/history/" class="dummybutton"><i class="fas fa-history"></i><p class="icon-p-big">編集履歴</p></a>
     </div>
     `
     defaultDummybuttonsEle.innerHTML = stringToHTML(designedDummybuttonsEle).innerHTML;

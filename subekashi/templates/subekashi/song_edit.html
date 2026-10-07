@@ -10,12 +10,8 @@
 <section>
     {% if request.GET.toast %}
         <div class="dummybuttons">
-            <a href="{% url 'subekashi:song_new' %}">
-                <div class="dummybutton black-dummybutton"><i class="fa fa-plus"></i><p class="icon-p-big">続けて新規登録する</p></div>
-            </a>
-            <a href="{% url 'subekashi:song' song.id %}">
-                <div class="dummybutton black-dummybutton"><i class="fas fa-music"></i><p class="icon-p-big">登録した記事を見る</p></div>
-            </a>
+            <a href="{% url 'subekashi:song_new' %}" class="dummybutton black-dummybutton"><i class="fa fa-plus"></i><p class="icon-p-big">続けて新規登録する</p></a>
+            <a href="{% url 'subekashi:song' song.id %}" class="dummybutton black-dummybutton"><i class="fas fa-music"></i><p class="icon-p-big">登録した記事を見る</p></a>
         </div>
     {% endif %}
 

@@ -948,10 +948,7 @@ input[type=submit], button {
     gap: 10px;
 }
 
-.dummybuttons a {
-    text-decoration: none;
-}
-
+/* aタグの下線・buttonタグのデフォルトスタイル(box-sizing/margin/font-size等)を打ち消し、どちらも同じ見た目にする */
 .dummybutton {
     display: flex;
     justify-content: center;
@@ -961,6 +958,11 @@ input[type=submit], button {
     width: fit-content;
     min-width: 120px;
     padding: 0 10px;
+    box-sizing: content-box;
+    margin: 0;
+    border: none;
+    font-size: 22px;
+    text-decoration: none;
     cursor: pointer;
     border-radius: 10px;
     transition: all 0.25s;
