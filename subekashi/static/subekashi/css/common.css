@@ -1282,7 +1282,7 @@ input::placeholder {
     height: 100px;
 }
 
-footer {
+#footer-wrapper footer {
     position: absolute;
     bottom: 0;
     width: 100%;
@@ -1308,10 +1308,6 @@ footer a {
 @media(max-width: 960px) {
     #pc_version {
         display: none;
-    }
-
-    footer {
-        position: static;
     }
 
     footer a {
