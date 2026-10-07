@@ -40,6 +40,8 @@
         <label for="search-form-radio-questionable"><i class="fas fa-question"></i><span class="icon-p-big">界隈曲?</span></label>
         <input type="radio" id="search-form-radio-special" name="search-form" value="special" {% if search_form == "special" %}checked{% endif %}>
         <label for="search-form-radio-special"><i class="fas fa-magic"></i><span class="icon-p-big">スペシャルデザイン</span></label>
+        <input type="radio" id="search-form-radio-collab" name="search-form" value="collab" {% if search_form == "collab" %}checked{% endif %}>
+        <label for="search-form-radio-collab"><i class="fas fa-user-friends"></i><span class="icon-p-big">合作</span></label>
         <input type="radio" id="search-form-radio-deleted" name="search-form" value="deleted" {% if search_form == "deleted" %}checked{% endif %}>
         <label for="search-form-radio-deleted"><i class="far fa-eye-slash"></i><span class="icon-p-big">非公開/削除済み</span></label>
         <input type="radio" id="search-form-radio-lack" name="search-form" value="lack" {% if search_form == "lack" %}checked{% endif %}>
@@ -193,6 +195,9 @@
         </div>
         <div class="search-form" id="search-form-special" {% if search_form != "special" %}hidden{% endif %}>
             {% include "subekashi/components/bool_filter.html" with name="is_special" icon="fas fa-magic" label="スペシャルデザイン" value=is_special %}
+        </div>
+        <div class="search-form" id="search-form-collab" {% if search_form != "collab" %}hidden{% endif %}>
+            {% include "subekashi/components/bool_filter.html" with name="is_collab" icon="fas fa-user-friends" label="合作" value=is_collab %}
         </div>
         <div class="search-form" id="search-form-deleted" {% if search_form != "deleted" %}hidden{% endif %}>
             {% include "subekashi/components/bool_filter.html" with name="is_deleted" icon="far fa-eye-slash" label="非公開/削除済み" value=is_deleted %}

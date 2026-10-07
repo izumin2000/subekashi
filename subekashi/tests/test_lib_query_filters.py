@@ -11,6 +11,7 @@ from subekashi.lib.query_filters import (
     filter_by_imitated,
     filter_by_guesser,
     filter_by_lack,
+    filter_by_collab,
     filter_by_mediatypes,
     filter_by_author,
     filter_by_author_exact,
@@ -650,3 +651,26 @@ class MakeIsLackAnnotationTest(TestCase):
         qs = Song.objects.annotate(is_lack=make_is_lack_annotation())
         annotated = qs.get(pk=song.pk)
         self.assertFalse(annotated.is_lack)
+
+
+class FilterByCollabTest(TestCase):
+    """filter_by_collab() のテスト（作者が2人以上の曲を合作とする、#943）"""
+
+    def setUp(self):
+        authors = [Author.objects.create(name=f"合作テスト作者{i}") for i in range(3)]
+        self.no_author = Song.objects.create(title="作者なし曲")
+        self.single = Song.objects.create(title="単独曲")
+        self.single.authors.add(authors[0])
+        self.collab2 = Song.objects.create(title="2人の合作曲")
+        self.collab2.authors.add(authors[0], authors[1])
+        self.collab3 = Song.objects.create(title="3人の合作曲")
+        self.collab3.authors.add(*authors)
+
+    def test_songs_with_two_or_more_authors_are_collab(self):
+        # 作者数で集計したサブクエリで絞り込むため、作者が3人でも重複しない
+        ids = list(Song.objects.filter(filter_by_collab()).values_list("id", flat=True))
+        self.assertCountEqual(ids, [self.collab2.id, self.collab3.id])
+
+    def test_exclude_returns_songs_with_one_or_no_author(self):
+        ids = list(Song.objects.exclude(filter_by_collab()).values_list("id", flat=True))
+        self.assertCountEqual(ids, [self.no_author.id, self.single.id])

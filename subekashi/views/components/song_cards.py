@@ -40,6 +40,7 @@ def get_active_filters(query):
         'is_deleted': '非公開/削除済み',
         'is_questionable': '界隈曲?',
         'is_special': 'スペシャルデザイン',
+        'is_collab': '合作',
     }
 
     active = []

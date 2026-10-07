@@ -10,6 +10,7 @@ from subekashi.lib.query_filters import (
     filter_by_guesser,
     filter_by_mediatypes,
     filter_by_lack,
+    filter_by_collab,
     filter_by_author,
     filter_by_author_exact,
 )
@@ -146,6 +147,7 @@ class SongFilter(django_filters.FilterSet):
         validators=[validate_max_length(100)]
     )
     is_lack = django_filters.BooleanFilter(method='filter_is_lack')
+    is_collab = django_filters.BooleanFilter(method='filter_is_collab')
 
     # ソート (randomをサポートするためCharFilterを使用)
     sort = django_filters.CharFilter(
@@ -195,6 +197,12 @@ class SongFilter(django_filters.FilterSet):
         if value:
             return queryset.filter(filter_by_lack())
         return queryset.exclude(filter_by_lack())
+
+    def filter_is_collab(self, queryset, name, value):
+        """合作の曲（作者が2人以上の曲）をフィルタ（Falseの場合は合作の曲を除外）"""
+        if value:
+            return queryset.filter(filter_by_collab())
+        return queryset.exclude(filter_by_collab())
 
     def filter_sort(self, queryset, name, value):
         """ランダムソートを含むソート処理"""

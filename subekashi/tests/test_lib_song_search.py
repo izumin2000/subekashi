@@ -238,6 +238,39 @@ class SongSearchIsSpecialFilterTest(TestCase):
         self.assertCountEqual(self._search_ids({}), [self.special.id, self.normal.id])
 
 
+class SongSearchIsCollabFilterTest(TestCase):
+    """is_collab フィルターのテスト（True・False・フィルタなしの3値、#943）"""
+
+    def setUp(self):
+        self.author_a = Author.objects.create(name="合作検索作者A")
+        self.author_b = Author.objects.create(name="合作検索作者B")
+        self.collab = Song.objects.create(title="合作曲")
+        self.collab.authors.add(self.author_a, self.author_b)
+        self.single = Song.objects.create(title="単独曲")
+        self.single.authors.add(self.author_a)
+
+    def _search_ids(self, params):
+        qs, _ = song_search({**params, "size": "100"})
+        return [s.id for s in qs]
+
+    def test_is_collab_true_returns_only_collab_songs(self):
+        for value in ["True", "true"]:
+            with self.subTest(value=value):
+                self.assertEqual(self._search_ids({"is_collab": value}), [self.collab.id])
+
+    def test_is_collab_false_excludes_collab_songs(self):
+        for value in ["False", "false"]:
+            with self.subTest(value=value):
+                self.assertEqual(self._search_ids({"is_collab": value}), [self.single.id])
+
+    def test_is_collab_not_specified_returns_all_songs(self):
+        self.assertCountEqual(self._search_ids({}), [self.collab.id, self.single.id])
+
+    def test_is_collab_with_author_filter_does_not_duplicate(self):
+        """作者のフィルタ（authorsをJOINする）と組み合わせても合作の曲が重複しないこと"""
+        self.assertEqual(self._search_ids({"is_collab": "True", "author": "合作検索作者"}), [self.collab.id])
+
+
 class SongSearchSortWithFilterTest(TestCase):
     """sort と他フィルターを組み合わせた場合のソート順テスト（distinct適用後も維持されることを確認）"""
 

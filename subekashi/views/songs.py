@@ -36,7 +36,7 @@ COOKIE_FORMS = {
 }
 
 # 真偽値のフィルタ（True・False・フィルタなしの3値）
-BOOL_FORMS = ["is_subeana", "is_joke", "is_lack", "is_draft", "is_original", "is_inst", "is_deleted", "is_questionable", "is_special"]
+BOOL_FORMS = ["is_subeana", "is_joke", "is_lack", "is_draft", "is_original", "is_inst", "is_deleted", "is_questionable", "is_special", "is_collab"]
 
 # ラジオボタンで切り替えるフォームと、そのフォームに含まれるURLクエリ
 # URLクエリが指定されている場合は該当するフォームを初期表示する
@@ -56,6 +56,7 @@ SEARCH_FORM_QUERIES = {
     'inst': ['is_inst'],
     'questionable': ['is_questionable'],
     'special': ['is_special'],
+    'collab': ['is_collab'],
     'deleted': ['is_deleted'],
     'lack': ['is_lack'],
     'draft': ['is_draft'],
