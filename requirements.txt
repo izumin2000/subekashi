@@ -9,6 +9,7 @@ google-api-python-client==2.146.0
 google-auth==2.35.0
 Markdown==3.10.3
 mysqlclient==2.2.7
+Pillow==11.1.0
 pytz==2026.3.post1
 requests==2.34.2
 pycryptodome==3.21.0

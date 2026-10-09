@@ -1,5 +1,6 @@
 {% load static %}
 {% load description %}
+{% load ogp %}
 {% load toast %}
 
 <!DOCTYPE html>
@@ -11,13 +12,20 @@
         <meta meta="" name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
         <meta name="google-site-verification" content="eR2rQirPvuuodJbY8Hl69jTYF8DLflKaEPmHrYQABoo" />
         <meta name="author" content="全て歌詞の所為です。">
-        <meta name="og:type" content="website">
-        <meta name="og:url" content="https://lyrics.imicomweb.com/">
-        <meta name="og:image" content="{% static 'subekashi/image/icon.png' %}">
-        <meta name="twitter:image" content="{% static 'subekashi/image/icon.png' %}">
-        <meta name="og:description" content="{% get_description description %}">
+        <meta property="og:type" content="website">
+        <meta property="og:site_name" content="全て歌詞の所為です。">
+        <meta property="og:locale" content="ja_JP">
+        <meta property="og:url" content="{{ root_url }}{{ request.path }}">
+        {% get_ogp_image_url metatitle as ogp_image_url %}
+        <meta property="og:image" content="{{ ogp_image_url }}">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:image:alt" content="{% if metatitle %}{{ metatitle }} | {% endif %}全て歌詞の所為です。">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="{{ ogp_image_url }}">
+        <meta property="og:description" content="{% get_description description %}">
         <meta name="description" content="{% get_description description %}">
-        <meta name="og:title" content="{{ metatitle }} | 全て歌詞の所為です。">
+        <meta property="og:title" content="{{ metatitle }} | 全て歌詞の所為です。">
         {% block noindex %}{% endblock %}
         <title>{{ metatitle }} | 全て歌詞の所為です。</title>
         <link rel="stylesheet" type="text/css" href="{% static 'subekashi/css/common.css'%}">

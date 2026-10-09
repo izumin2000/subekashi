@@ -1,4 +1,4 @@
-from config.settings import BASE_DIR
+from config.settings import BASE_DIR, ROOT_URL
 from subekashi.constants.constants import CONST_ERROR, ASIDE_PAGES
 import json
 import os
@@ -21,6 +21,7 @@ def context_processors(request):
         maintenance = {}
 
     context = {
+        "root_url": ROOT_URL,
         "aside_pages": ASIDE_PAGES,
         "version": version,
         "is_maintenance": maintenance.get("IS_MAINTENANCE", False),

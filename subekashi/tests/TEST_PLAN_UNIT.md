@@ -910,6 +910,38 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 歌詞の作成結果のボタンはbutton | 歌詞の作成結果ページ | 「最高の行をコピー」「再作成」が`<button type="button" id="copy" class="action-button">`・`<button type="button" id="regenerate" class="action-button">`になる |
 | メンテナンス画面の再読み込みボタンはbutton | `IS_MAINTENANCE=True`（`_load_maintenance`をモック）で`/ai/result/`にアクセス | `maintenance.html`が使われ、`<button type="button" id="maintenance-reload" class="action-button">`（文言は`<span>再読み込み</span>`）になる |
 
+#### 7-17. OGPのメタタグ（#1058）
+
+全ページが継承する`base/base.html`のOGPのメタタグを確認する。OGPの画像はページごとに`/ogp/<token>.png`（`ogp_image`ビュー）で生成し、`token`は`metatitle`を署名したもの（`lib/ogp.py`の`make_ogp_token`）。SNS側で読み込めるよう、URLはcontext processorの`root_url`（`ROOT_URL`）を付けた絶対URLにする。SNSで実際にカードが表示されるかはDjangoテストでは確認できないため、デプロイ後にX・Discordで確認する。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| og:*はproperty属性 | トップページ | `<meta property="og:type" content="website">`が含まれ、`name="og:`は含まれない |
+| 画像はページごとのOGP画像のURL | トップページ | `og:image`が`{ROOT_URL}/ogp/<token>.png`で、`token`を`load_ogp_token`で復元すると`トップ`になる |
+| twitter:imageはog:imageと同じ | トップページ | `twitter:image`が`og:image`と同じURLになる |
+| 画像のタイトルは各ページのmetatitle | 曲・統計・編集者の各ページ | `token`を復元すると、それぞれ`{曲名} / {作者名}`・`統計`・`全て{id}の所為です。`（EditorViewは`metatitle`に`Editor`のインスタンスを渡す）になる |
+| og:imageのURLで画像が返る | 曲のページの`og:image`のパスにGET | ステータス200で、`Content-Type`が`image/png`になる |
+| metatitleが無いページは共通の画像 | 存在しない曲（`/songs/999999999/`、`SongView`が`metatitle`を渡さずに404.htmlを表示する） | `og:image`が`{ROOT_URL}/static/subekashi/image/ogp.png`、`og:image:alt`が`全て歌詞の所為です。`になる |
+| 共通の画像のファイルがある | — | `finders.find("subekashi/image/ogp.png")`が`None`でない |
+| 画像のサイズと代替テキスト | トップページ | `og:image:width`が`1200`、`og:image:height`が`630`、`og:image:alt`が`トップ \| 全て歌詞の所為です。`になる |
+| twitter:card | トップページ | `<meta name="twitter:card" content="summary_large_image">`が含まれる |
+| サイト名とロケール | トップページ | `og:site_name`が`全て歌詞の所為です。`、`og:locale`が`ja_JP`になる |
+| og:urlはページごとのURL | トップ・曲一覧・曲の各ページ | `og:url`が`{ROOT_URL}{ページのパス}`になる |
+| og:urlにクエリ文字列を含めない | `/songs/?keyword=OGP` | `og:url`が`{ROOT_URL}/songs/`になる |
+| og:titleとog:description | トップページ | `og:title`が`トップ \| 全て歌詞の所為です。`、`og:description`が`DEFAULT_DESCRIPTION`になる |
+| 404ページのog:url | 存在しない曲（`/songs/999999999/`） | ステータス404で、`og:url`が`{ROOT_URL}/songs/999999999/`になる |
+
+#### 7-18. `ogp_image` (`/ogp/<token>.png`)（#1058）
+
+ページごとのOGP画像を返す。画像はリクエストごとにメモリ上で生成し、サーバーには保存しない。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| PNGを返す | `make_ogp_token("トップ")`のトークン | ステータス200、`Content-Type`が`image/png`で、画像のサイズが1200×630 |
+| 長期間キャッシュさせる | 同上 | `Cache-Control`が`public, max-age={LONG_TERM_COOKIE_AGE}`（タイトルが変わるとURLも変わるため） |
+| 不正なトークン | `/ogp/invalid-token.png` | ステータス404 |
+| saltが異なるトークン | `signing.dumps("トップ", compress=True)`（saltなし）のトークン | ステータス404（署名の鍵が同じでも他の用途のトークンは受け付けない） |
+
 ---
 
 ### 8. REST API ビュー
@@ -1878,6 +1910,53 @@ YouTube Data API（`build`）はモック化する。「動画が存在しない
 
 ---
 
+### 22. `lib/ogp.py` — ページごとのOGP画像（#1058）
+
+**テストファイル**: `tests/test_lib_ogp.py`
+
+各ページの`metatitle`を中央に、下線の下にロゴと「全て歌詞の所為です。」を置いた1200×630のPNGをPillowで生成する。フォントはサイトと同じ`GenZenGothicKaiC.woff2`。画像の見た目（中央寄せ・余白）はDjangoテストでは確認しきれないため、開発サーバーで`/ogp/<token>.png`を開いて目視で確認する。
+
+#### 22-1. `make_ogp_token(title)` / `load_ogp_token(token)`
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 往復 | `全て歌詞の所為です。` | `load_ogp_token`で同じ文字列に戻る |
+| 文字列以外は文字列にする | `__str__`が`全て12の所為です。`を返すオブジェクト（EditorViewは`metatitle`に`Editor`を渡す） | `全て12の所為です。`に戻る |
+| 長いタイトルは切り詰める | `OGP_TITLE_MAX_LENGTH`+50文字 | `OGP_TITLE_MAX_LENGTH`文字に切り詰められる（URLの長さを抑えるため） |
+| URLに使える文字のみ | `全て歌詞の所為です。 / 全てあなたの所為です。` | トークンが`[A-Za-z0-9_.:-]`のみ |
+| 改ざんされたトークン | 末尾の1文字を変えたトークン | `BadSignature` |
+| saltが異なるトークン | `signing.dumps("トップ", compress=True)` | `BadSignature` |
+
+#### 22-2. `wrap_text(text, font, max_width)`
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 短い文字列は1行 | `トップ` | `["トップ"]` |
+| 各行が最大幅に収まる | `あ`×40 | 複数行で、各行の幅が`max_width`以下、連結すると元の文字列 |
+| 英単語は途中で折り返さない | `Quick Brown`（`max_width`は`Quick Bro`の幅） | `["Quick", "Brown"]` |
+| 最大幅を超える英単語は文字単位で折り返す | `Supercalifragilistic`（`max_width`は`Supercali`の幅） | 複数行で、各行の幅が`max_width`以下、連結すると元の文字列 |
+| 行頭禁則 | `あいうえお。かきくけこ、さしすせそ」たちつてと`（`max_width`を`あ`×3〜9の幅で変える） | どの行も`、`・`。`・`」`で始まらない |
+| 行の後半の空白で折り返す | `全て歌詞の所為です。 / 全てあなたの所為です。` | `["全て歌詞の所為です。 /", "全てあなたの所為です。"]` |
+| 行の前半の空白では折り返さない | `"A " + "あ" * 30` | 1行目が`A あ`で始まる |
+
+#### 22-3. `layout_title(title)`
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 短いタイトルは最大のフォントサイズ | `トップ` | フォントサイズが`TITLE_FONT_SIZES[0]`、`["トップ"]` |
+| 行数・高さ・幅が上限以内 | 英語の長いタイトル、`あ`×60 | 行数が`TITLE_MAX_LINES`以下、高さが`TITLE_MAX_HEIGHT`以下、各行の幅が`TITLE_MAX_WIDTH`以下 |
+| 収まらないタイトルは三点リーダーで省略 | `あ`×`OGP_TITLE_MAX_LENGTH` | 最小のフォントサイズで`TITLE_MAX_LINES`行、最終行が`…`で終わり幅が`TITLE_MAX_WIDTH`以下 |
+
+#### 22-4. `render_ogp_image(title)`
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 1200×630のPNG | `トップ` | PNGで、サイズが1200×630 |
+| タイトルごとに異なる画像 | `トップ`と`統計` | 異なるバイト列 |
+| タイトルとロゴが重ならない | 英語の長いタイトル、`あ`×`OGP_TITLE_MAX_LENGTH` | y=480〜520の帯がすべて背景色（タイトル・下線とロゴの間に何も描かれない） |
+
+---
+
 ## テスト優先度
 
 | 優先度 | 対象 | 理由 |
@@ -1928,6 +2007,7 @@ subekashi/tests/
 ├── test_models.py                  # 実装済み: モデル基本動作
 ├── test_converters.py              # 実装済み: URLコンバータ
 ├── test_lib_youtube.py             # 実装済み: YouTube Data API連携
+├── test_lib_ogp.py                 # 実装済み: ページごとのOGP画像
 ├── test_management_commands.py     # 実装済み: 管理コマンド
 └── test_templatetags_song_card.py  # 実装済み: song_card テンプレートタグ
 
