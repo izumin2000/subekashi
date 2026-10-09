@@ -196,6 +196,51 @@ class DefaultArticleViewTest(TestCase):
         self.assertContains(response, "<th>見出し1</th>")
         self.assertContains(response, "<td>値1</td>")
 
+    def _create_image_article(self, article_id, text, is_md=True):
+        return Article.objects.create(
+            article_id=article_id,
+            title="画像テスト記事",
+            author="テスト筆者",
+            tag="news",
+            text=text,
+            post_time=timezone.now(),
+            is_open=True,
+            is_md=is_md,
+        )
+
+    def test_markdown_image_is_wrapped_in_scroll_container(self):
+        # 狭い画面でも画像を縮小せず横スクロールで見られるよう、マークダウンの画像はspan.article-imageで囲む（#1167）
+        image_article = self._create_image_article("test-default-006", "本文\n![画像](/static/article/image/test.png)")
+
+        response = self.client.get(f"/articles/{image_article.article_id}/")
+
+        self.assertContains(response, '<span class="article-image"><img alt="画像" src="/static/article/image/test.png" /></span>')
+
+    def test_text_after_markdown_image_is_kept(self):
+        image_article = self._create_image_article("test-default-007", "![画像1](/static/article/image/test1.png)\n![画像2](/static/article/image/test2.png) 画像の後の本文")
+
+        response = self.client.get(f"/articles/{image_article.article_id}/")
+
+        self.assertContains(response, '<span class="article-image"><img alt="画像1" src="/static/article/image/test1.png" /></span>\n<span class="article-image">')
+        self.assertContains(response, '<img alt="画像2" src="/static/article/image/test2.png" /></span> 画像の後の本文')
+
+    def test_html_image_in_markdown_article_is_not_wrapped(self):
+        # Googleドキュメントから書き出した記事など、HTMLで直接書かれた画像は独自のレイアウトが崩れないよう囲まない
+        image_article = self._create_image_article("test-default-008", '<p><img src="/static/article/image/test.png"></p>')
+
+        response = self.client.get(f"/articles/{image_article.article_id}/")
+
+        self.assertContains(response, '<p><img src="/static/article/image/test.png"></p>')
+        self.assertNotContains(response, 'class="article-image"')
+
+    def test_image_in_html_article_is_not_wrapped(self):
+        image_article = self._create_image_article("test-default-009", '<p><img src="/static/article/image/test.png"></p>', is_md=False)
+
+        response = self.client.get(f"/articles/{image_article.article_id}/")
+
+        self.assertContains(response, '<p><img src="/static/article/image/test.png"></p>')
+        self.assertNotContains(response, 'class="article-image"')
+
     def test_nonexistent_article_returns_404(self):
         response = self.client.get("/articles/nonexistent-id-xyz/")
         self.assertEqual(response.status_code, 404)

@@ -41,6 +41,20 @@
     border: solid 2px #999;;
 }
 
+/* 画面幅が狭くても画像をPCと同じ幅（本文の幅）より小さくせず、はみ出した分は横スクロールで見られるようにする */
+#article-text .article-image {
+    display: block;
+    margin: 20px 0;
+    overflow-x: auto;
+    scrollbar-color: #09F #FFF;
+}
+
+#article-text .article-image img {
+    box-sizing: border-box;
+    margin: 0 auto;
+    min-width: 740px;
+}
+
 #article-text li {
     margin-left: 25px;
 }
