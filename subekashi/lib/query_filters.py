@@ -1,9 +1,9 @@
-from collections import deque
+from collections import defaultdict, deque
 from django.db.models import BooleanField, Case, Count, Exists, OuterRef, Q, Value, When
 from subekashi.constants.constants import ALL_MEDIAS
 from subekashi.lib.url import clean_url
 from subekashi.models import Author, AuthorAlias, Song, SongLink
-from subekashi.models.author import NON_BRIDGING_ALIAS_TYPES, get_alias_edges
+from subekashi.models.author import NON_BRIDGING_ALIAS_TYPES
 
 
 def _bridging_cluster(seed_names):
@@ -11,17 +11,24 @@ def _bridging_cluster(seed_names):
     関係のみを辿って到達できるAuthor名の集合を返す。
 
     #1005のAuthor.get_transitive_aliases()と同じ非中継ルールを、特定のAuthorに
-    紐付かない名前の集合に対して適用したもので、辺の取得自体はget_alias_edges()
-    を共通利用することでget_transitive_aliases()とロジックの二重化を避けている。
+    紐付かない名前の集合に対して適用したもの。辺はget_alias_edges()と同じく
+    正方向（作者 → その作者の別名）・逆方向（別名 → その別名を持つ作者）とする。
+
+    名前ごとにget_alias_edges()でクエリを発行すると、多くの作者名に含まれる短い語
+    （「。」等）の検索で起点が1000件を超え遅くなるため、中継点になる別名を1クエリで
+    まとめて読み込んでからPython側で探索する（#1162）。
     """
+    graph = defaultdict(set)
+    aliases = AuthorAlias.objects.exclude(alias_type__in=NON_BRIDGING_ALIAS_TYPES).values_list("name", "author__name")
+    for alias_name, owner_name in aliases:
+        graph[owner_name].add(alias_name)
+        graph[alias_name].add(owner_name)
+
     visited = set(seed_names)
     queue = deque(seed_names)
     while queue:
         name = queue.popleft()
-        author = Author.get_by_name(name)
-        for target_name, alias_type, _source, _is_reverse in get_alias_edges(name, author):
-            if alias_type in NON_BRIDGING_ALIAS_TYPES:
-                continue
+        for target_name in graph.get(name, ()):
             if target_name not in visited:
                 visited.add(target_name)
                 queue.append(target_name)
