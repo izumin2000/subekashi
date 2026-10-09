@@ -427,6 +427,65 @@ class FilterByAuthorAliasTransitiveResolutionTest(TestCase):
         self.assertEqual(self.search("watanabe"), {self.song_e})
 
 
+class FilterByAuthorAliasMultiHopTest(TestCase):
+    """中継点になる別名を複数ホップ、正方向・逆方向の両方で辿れることのテスト（#1162）
+
+    A -past-> B -spell-> C -abbr-> D とつながり、DとEは別名義（another）でのみつながる。
+    """
+
+    def setUp(self):
+        self.a = Author.objects.create(name="hop_a")
+        self.b = Author.objects.create(name="hop_b")
+        self.c = Author.objects.create(name="hop_c")
+        self.d = Author.objects.create(name="hop_d")
+        self.e = Author.objects.create(name="hop_e")
+        AuthorAlias.objects.create(name="hop_b", author=self.a, alias_type="past")
+        AuthorAlias.objects.create(name="hop_c", author=self.b, alias_type="spell")
+        AuthorAlias.objects.create(name="hop_d", author=self.c, alias_type="abbr")
+        AuthorAlias.objects.create(name="hop_e", author=self.d, alias_type="another")
+
+        self.songs = {}
+        for author in (self.a, self.b, self.c, self.d, self.e):
+            song = Song.objects.create(title=f"Song_{author.name}")
+            song.authors.add(author)
+            self.songs[author.name] = song
+
+    def search(self, value):
+        return set(Song.objects.filter(filter_by_author_exact(value)).distinct())
+
+    def test_forward_chain_reaches_d_not_e(self):
+        expected = {self.songs[name] for name in ("hop_a", "hop_b", "hop_c", "hop_d")}
+        self.assertEqual(self.search("hop_a"), expected)
+
+    def test_reverse_chain_reaches_a_not_e(self):
+        expected = {self.songs[name] for name in ("hop_a", "hop_b", "hop_c", "hop_d")}
+        self.assertEqual(self.search("hop_d"), expected)
+
+    def test_another_is_not_bridged(self):
+        self.assertEqual(self.search("hop_e"), {self.songs["hop_e"]})
+
+
+class FilterByAuthorAliasQueryCountTest(TestCase):
+    """別名を辿る処理のクエリ数が、起点の名前の数によらず一定であることのテスト（#1162）
+
+    検索語にマッチする作者名・別名の取得（2クエリ）と、中継点になる別名の一括取得（1クエリ）
+    のみで、起点の名前ごとにクエリを発行しない。
+    """
+
+    def test_single_seed(self):
+        author = Author.objects.create(name="seed_author_0")
+        AuthorAlias.objects.create(name="seed_alias_0", author=author, alias_type="past")
+        with self.assertNumQueries(3):
+            filter_by_author("seed_author")
+
+    def test_many_seeds(self):
+        for i in range(30):
+            author = Author.objects.create(name=f"seed_author_{i}")
+            AuthorAlias.objects.create(name=f"seed_alias_{i}", author=author, alias_type="past")
+        with self.assertNumQueries(3):
+            filter_by_author("seed_author")
+
+
 class FilterByLackTest(TestCase):
     """filter_by_lack() のテスト
 

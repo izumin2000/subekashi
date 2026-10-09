@@ -19,8 +19,10 @@ def get_alias_edges(name, author):
     `.exclude(author=author)`（`.exclude(author=None)`）は何も除外しない
     no-opとして働き、意図通りに動作する。
 
-    Author.get_transitive_aliases()（#1005）とsubekashi.lib.query_filtersの
-    検索フィルター（#1006）で共通利用する低レベルヘルパー。
+    Author.get_transitive_aliases()（#1005）で利用する低レベルヘルパー。
+    subekashi.lib.query_filtersの検索フィルター（#1006）は、名前ごとのクエリを
+    避けるため同じ辺を一括で読み込んで辿っている（#1162）。辺の定義を変更する場合は
+    query_filters._bridging_cluster()も合わせて更新すること。
     """
     edges = []
     if author is not None:
