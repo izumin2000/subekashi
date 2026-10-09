@@ -182,7 +182,7 @@ function renderSongGuesser() {
 
     songGuesserController = new AbortController();
     imitateTitle = document.getElementById("imitate").value;
-    getSongGuessers(imitateTitle, "song-guesser", songGuesserController.signal);
+    getSongGuessers(imitateTitle, "song-guesser", songGuesserController.signal, renderSongGuesser);
 }
 
 document.getElementById("imitate").addEventListener("input", renderSongGuesser);
