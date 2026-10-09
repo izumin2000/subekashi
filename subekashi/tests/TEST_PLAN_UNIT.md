@@ -1291,6 +1291,10 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 非公開記事 | `is_open=False` | HTTP 404 |
 | 本文中の`<script>`へのnonce付与（#1126） | `is_md=False`で本文に`<script>`を含む | `<script nonce="（CSPヘッダーと同じnonce）">`として出力される |
 | 本文が空 | `text=None` | HTTP 200 |
+| マークダウンの画像を横スクロールの枠で囲む（#1167） | `is_md=True`で本文に`![画像](...)`を含む | `<span class="article-image"><img ... /></span>`として出力される |
+| 画像の後の本文の保持（#1167） | `is_md=True`で画像2つの後に本文が続く | 各画像が`span.article-image`で囲まれ、画像の後の本文はそのまま出力される |
+| HTMLで書かれた画像は囲まない（#1167） | `is_md=True`で本文に`<img>`タグを直接含む | `<img>`はそのまま出力され、`span.article-image`で囲まれない |
+| HTML記事の画像は囲まない（#1167） | `is_md=False`で本文に`<img>`タグを含む | `<img>`はそのまま出力され、`span.article-image`で囲まれない |
 
 #### 12-3. `is_pinned_article` Cookie による並び替え (`ArticlesView`)
 
