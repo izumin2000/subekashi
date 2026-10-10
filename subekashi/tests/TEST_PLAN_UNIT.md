@@ -932,7 +932,18 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | フォームボタンの設定の保存 | `{"cookies": {"form_button": "icon"}}`・`{"cookies": {"form_button": "icon_text"}}` | HTTP 200、`form_button`のcookieが送信した値で保存される |
 | 許可されていない値は保存しない | `{"cookies": {"form_button": "text"}}`・`{"cookies": {"form_button": "<script>"}}` | HTTP 200、`form_button`のcookieは保存されない |
 
-#### 7-19. OGPのメタタグ（#1058）
+#### 7-19. `robots` (`/robots.txt`)（#1172）
+
+`subekashi/static/subekashi/robots.txt`の内容を、`/static/`へリダイレクトせず`/robots.txt`で直接返す。robots.txtの`Disallow`は完全なURLではなくパス（`/`から始まる値）で書かないとどのURLにもマッチしない。Disallowが巡回を制限するかの判定は、`*`を任意の文字列とみなした前方一致で行う。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| robots.txtを直接返す | GETリクエスト | HTTP 200、`Content-Type`が`text/plain; charset=utf-8`で、`User-agent: *`とSitemapの行が含まれる |
+| Disallowの値はパス | GETリクエスト | `Disallow`の行が1つ以上あり、全ての値が`/`から始まる |
+| Disallowが対象のページにマッチする | 曲の編集・曲の削除・編集者・設定の各ページのパス | いずれかの`Disallow`にマッチする |
+| Disallowが対象外のページにマッチしない | トップ・曲の検索・曲・曲の編集履歴の各ページのパス | どの`Disallow`にもマッチしない |
+
+#### 7-20. OGPのメタタグ（#1058）
 
 全ページが継承する`base/base.html`のOGPのメタタグを確認する。OGPの画像はページごとに`/ogp/<token>.png`（`ogp_image`ビュー）で生成し、`token`は`metatitle`を署名したもの（`lib/ogp.py`の`make_ogp_token`）。SNS側で読み込めるよう、URLはcontext processorの`root_url`（`django.conf.settings.ROOT_URL`）を付けた絶対URLにする。OGPのタグは`{% block ogp %}`にまとめ、404・500ページでは出さない。SNSで実際にカードが表示されるかはDjangoテストでは確認できないため、デプロイ後にX・Discordで確認する。
 
@@ -954,7 +965,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | og:urlにクエリ文字列を含めない | `/songs/?keyword=OGP` | `og:url`が`{ROOT_URL}/songs/`になる |
 | og:titleとog:description | トップページ | `og:title`が`トップ \| 全て歌詞の所為です。`、`og:description`が`DEFAULT_DESCRIPTION`になる |
 
-#### 7-20. `ogp_image` (`/ogp/<token>.png`)（#1058）
+#### 7-21. `ogp_image` (`/ogp/<token>.png`)（#1058）
 
 ページごとのOGP画像を返す。画像はリクエストごとにメモリ上で生成してDjangoのキャッシュ（設定が無いため既定のメモリ内キャッシュ）に1日保存し、ファイルには保存しない。各テストの前に`cache.clear()`する。
 
