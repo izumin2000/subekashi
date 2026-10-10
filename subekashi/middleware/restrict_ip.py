@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from config.settings import *
-from subekashi.lib.ip import get_ip
+from subekashi.lib.ip import get_ip, log_forwarded_ip_mismatch
 
 class RestrictIPMiddleware:
     def __init__(self, get_response):
@@ -13,6 +13,7 @@ class RestrictIPMiddleware:
             self.BAN_LIST = BAN_LIST
 
     def __call__(self, request):
+        log_forwarded_ip_mismatch(request)
         ip = get_ip(request, raw=True)
         if ip in self.BAN_LIST:
             return render(request, 'subekashi/500.html', status=500)
