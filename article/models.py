@@ -2,29 +2,11 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
+from django.utils.html import strip_tags
+from article.lib.html_utils import remove_links
+from article.lib.markdown_extensions import UnwrapParagraphExtension
+import html
 import markdown
-import re
-from markdown.extensions import Extension
-from markdown.treeprocessors import Treeprocessor
-
-
-# タイトルは見出しやリンクの中に表示するため、1つの段落だけのときはp要素で囲まない
-# （p要素のフォントサイズが適用されて記事ページの見出しが小さくなるのを防ぐ）
-class UnwrapParagraphTreeprocessor(Treeprocessor):
-    def run(self, root):
-        if len(root) != 1 or root[0].tag != "p":
-            return
-        paragraph = root[0]
-        children = list(paragraph)
-        root.remove(paragraph)
-        root.text = paragraph.text
-        root.extend(children)
-
-
-class UnwrapParagraphExtension(Extension):
-    def extendMarkdown(self, md):
-        # 太字やリンクの要素を生成するinline（優先度20）の後に実行する
-        md.treeprocessors.register(UnwrapParagraphTreeprocessor(md), "unwrap_paragraph", 15)
 
 
 class Article(models.Model) :
@@ -48,7 +30,12 @@ class Article(models.Model) :
     handle_as_news = models.BooleanField(default = False)
 
     def __str__(self):
-        return self.title
+        return self.plain_title
+
+    # タイトルはHTMLのため、管理画面やタブ・OGPのタイトルにはタグを除いた文字列を使う
+    @property
+    def plain_title(self):
+        return html.unescape(strip_tags(self.title))
 
     def convert_title(self):
         # マークダウンの記事はタイトルもHTMLへ変換する（#483）
@@ -71,7 +58,7 @@ class Article(models.Model) :
     @property
     def title_without_links(self):
         # 記事へのリンクの中にタイトルを表示するとき、<a>が入れ子にならないようタイトル中のリンクのタグだけを外す
-        return re.sub(r"</?a\b[^>]*>", "", self.title)
+        return remove_links(self.title)
 
     @classmethod
     def get_top_news_articles(cls):

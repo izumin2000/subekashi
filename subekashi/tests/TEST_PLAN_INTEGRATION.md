@@ -671,6 +671,8 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 | 検証1 | 一覧へリダイレクト (302)、保存されたタイトルが`<strong>太字</strong>` |
 | 操作2 | `POST /admin/article/article/add/` `{title="**a**"×100（500文字）, is_md="on", ...}` |
 | 検証2 | HTTP 200で「HTMLに変換すると1800文字になり、上限の500文字を超えます。」と表示され、記事は作成されない |
+| 操作3 | 操作1のあと`GET /admin/article/article/` |
+| 検証3 | 一覧に`__str__`のタグを除いたタイトル`太字`が表示され、`&lt;strong&gt;`は表示されない |
 
 ---
 

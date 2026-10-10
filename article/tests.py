@@ -8,9 +8,10 @@ from datetime import timedelta
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from django.test import TestCase, Client, override_settings
+from django.test import SimpleTestCase, TestCase, Client, override_settings
 from django.urls import reverse
 from django.utils import timezone
+from article.lib.html_utils import remove_links
 from article.models import Article
 
 
@@ -204,6 +205,29 @@ class ArticleTitleMarkdownTest(TestCase):
         article = self._create('[リンク](https://example.com)と**太字**<br><i class="fab fa-discord"></i>')
         self.assertEqual(article.title_without_links, 'リンクと<strong>太字</strong><br><i class="fab fa-discord"></i>')
 
+    def test_str_returns_title_without_tags(self):
+        # 管理画面の一覧や削除の確認画面にタグが文字列のまま表示されないよう、タグを除いて文字参照を戻す
+        article = self._create("**太字**の<br>タイトル & 記号")
+        self.assertEqual(str(article), "太字のタイトル & 記号")
+
+
+class RemoveLinksTest(SimpleTestCase):
+    """remove_links() のテスト（#483）"""
+
+    def test_link_with_gt_in_attribute_is_removed(self):
+        # 正規表現では属性値の>でタグが終わったとみなし、タグの残骸が出力されていた
+        self.assertEqual(remove_links('<a href="/x" title="a>b">リンク</a>の説明'), "リンクの説明")
+
+    def test_uppercase_link_is_removed(self):
+        self.assertEqual(remove_links('<A HREF="/x">リンク</A>'), "リンク")
+
+    def test_tags_inside_link_are_kept(self):
+        self.assertEqual(remove_links('<a href="/x">入れ子<strong>太字</strong></a>'), "入れ子<strong>太字</strong>")
+
+    def test_html_without_links_is_kept(self):
+        html = '<abbr title="略">略語</abbr><br><br/><i class="fab fa-discord"></i>A &amp; B &lt;c&gt; &#12354; <!-- コメント -->'
+        self.assertEqual(remove_links(html), html)
+
 
 @override_settings(STORAGES=STATIC_STORAGE)
 class ArticleAdminTest(TestCase):
@@ -236,6 +260,12 @@ class ArticleAdminTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "HTMLに変換すると1800文字になり、上限の500文字を超えます。")
         self.assertFalse(Article.objects.filter(pk="admin-001").exists())
+
+    def test_changelist_shows_title_without_tags(self):
+        self._post("**太字**")
+        response = self.client.get(reverse("admin:article_article_changelist"))
+        self.assertContains(response, '">太字</a>')
+        self.assertNotContains(response, "&lt;strong&gt;")
 
 
 @override_settings(STORAGES=STATIC_STORAGE)

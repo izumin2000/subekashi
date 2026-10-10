@@ -1473,7 +1473,7 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | 件数上限 | 該当記事が5件 | 最大3件までに絞られる |
 | 並び順 | 複数の該当記事 | `-post_time` の降順 |
 
-#### 12-5. `Article.save()`・`Article.clean()` — タイトルのマークダウン変換（#483）
+#### 12-5. `Article.save()`・`Article.clean()`・`Article.__str__()` — タイトルのマークダウン変換（#483）
 
 | テストケース | 前提条件 | 期待結果 |
 | --- | --- | --- |
@@ -1485,6 +1485,16 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | 変換後の文字数が上限を超える | `is_md=True`、`**a**`×100（500文字） | `clean()`が`title`の`ValidationError`を送出する |
 | HTMLの記事の文字数 | `is_md=False`、`**a**`×100（500文字） | 変換しないため、`clean()`は`ValidationError`を送出しない |
 | `title_without_links` | タイトルにリンク・太字・`<br>`・アイコン（`<i>`）を含む | リンクの`<a>`タグだけが外れ、ほかのタグは残る |
+| `__str__` | `is_md=True`、`**太字**の<br>タイトル & 記号` | タグを除いて文字参照を戻した`太字のタイトル & 記号`を返す（`plain_title`と同じ） |
+
+#### 12-6. `article/lib/html_utils.py` の `remove_links(html)`（#483）
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 属性値に`>`を含むリンク | `<a href="/x" title="a>b">リンク</a>の説明` | `リンクの説明`（タグの残骸が出ない） |
+| 大文字のタグ | `<A HREF="/x">リンク</A>` | `リンク` |
+| リンクの中のタグ | `<a href="/x">入れ子<strong>太字</strong></a>` | `入れ子<strong>太字</strong>` |
+| リンクを含まないHTML | `<abbr>`・`<br>`・`<br/>`・`<i>`・文字参照・コメントを含む | 入力のまま変わらない |
 
 ---
 
