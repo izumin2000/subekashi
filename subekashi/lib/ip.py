@@ -18,6 +18,6 @@ def log_forwarded_ip_mismatch(request):
     forwarded_list = forwarded_addresses.split(',')
     if forwarded_list[0].strip() != real_ip.strip():
         logger.warning(
-            "X-Forwarded-For の先頭と X-Real-IP が一致しません（%s %s、X-Forwarded-For の IP の数: %d）",
+            "X-Forwarded-For の先頭と X-Real-IP が一致しません（%s %r、X-Forwarded-For の IP の数: %d）",
             request.method, request.path, len(forwarded_list),
         )

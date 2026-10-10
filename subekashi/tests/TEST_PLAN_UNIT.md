@@ -1049,7 +1049,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
-| 先頭が一致しない | `X-Forwarded-For: 198.51.100.1, 203.0.113.1`、`X-Real-IP: 203.0.113.1`、`POST /songs/1/edit` | `subekashi.lib.ip` に WARNING が1件記録され、メソッド・パス・`X-Forwarded-For` の IP の数（2）を含み、IP を含まない。レスポンスはそのまま返す |
+| 先頭が一致しない | `X-Forwarded-For: 198.51.100.1, 203.0.113.1`、`X-Real-IP: 203.0.113.1`、`POST /songs/1/edit` | `subekashi.lib.ip` に WARNING が1件記録され、メソッド・パス（`repr` の形式）・`X-Forwarded-For` の IP の数（2）を含み、IP を含まない。レスポンスはそのまま返す |
+| パスに改行を含む（ログインジェクション） | パスが `/songs/%0d%0a...`、先頭が一致しない | 記録されたメッセージに改行（`\r`・`\n`）を含まず、`\r\n` とエスケープされている |
 | 一致する | `X-Forwarded-For` と `X-Real-IP` が同じ IP | 記録されない |
 | 先頭が一致し、後ろにプロキシの IP が続く | `X-Forwarded-For: 203.0.113.1, 10.0.0.1`、`X-Real-IP: 203.0.113.1` | 記録されない（先頭だけを比べる） |
 | `X-Real-IP` が無い | `X-Forwarded-For` のみ | 記録されない |

@@ -181,10 +181,10 @@ class RestrictIPMiddlewareTest(SimpleTestCase):
     def setUp(self):
         self.factory = RequestFactory()
 
-    def _call(self, **headers):
+    def _call(self, path="/songs/1/edit", **headers):
         middleware = RestrictIPMiddleware(lambda req: HttpResponse("OK"))
         middleware.BAN_LIST = []
-        request = self.factory.post("/songs/1/edit", **headers)
+        request = self.factory.post(path, **headers)
         return middleware(request)
 
     def test_mismatch_is_logged_without_ip(self):
@@ -196,10 +196,22 @@ class RestrictIPMiddlewareTest(SimpleTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(logs.records), 1)
         message = logs.records[0].getMessage()
-        self.assertIn("POST /songs/1/edit", message)
+        self.assertIn("POST '/songs/1/edit'", message)
         self.assertIn("X-Forwarded-For の IP の数: 2", message)
         self.assertNotIn("198.51.100.1", message)
         self.assertNotIn("203.0.113.1", message)
+
+    def test_newline_in_path_is_escaped(self):
+        with self.assertLogs("subekashi.lib.ip", level="WARNING") as logs:
+            self._call(
+                path="/songs/%0d%0aX-Forwarded-For の先頭と X-Real-IP が一致しません",
+                HTTP_X_FORWARDED_FOR="198.51.100.1, 203.0.113.1",
+                HTTP_X_REAL_IP="203.0.113.1",
+            )
+        message = logs.records[0].getMessage()
+        self.assertNotIn("\n", message)
+        self.assertNotIn("\r", message)
+        self.assertIn("/songs/\\r\\nX-Forwarded-For", message)
 
     def test_match_is_not_logged(self):
         with self.assertNoLogs("subekashi.lib.ip", level="WARNING"):
