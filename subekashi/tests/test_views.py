@@ -3307,6 +3307,56 @@ class RobotsViewTest(TestCase):
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
+class FaviconTest(TestCase):
+    """faviconとweb app manifestのテスト（#1171）"""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_favicon_redirects_to_ico(self):
+        response = self.client.get("/favicon.ico")
+        self.assertRedirects(response, f"{settings.ROOT_URL}/static/subekashi/image/favicon.ico", fetch_redirect_response=False)
+
+    def test_favicon_ico_has_sizes(self):
+        with Image.open(finders.find("subekashi/image/favicon.ico")) as ico:
+            self.assertEqual(ico.ico.sizes(), {(16, 16), (32, 32), (48, 48)})
+
+    def test_apple_touch_icon_size(self):
+        with Image.open(finders.find("subekashi/image/apple-touch-icon.png")) as image:
+            self.assertEqual(image.size, (180, 180))
+
+    def test_base_html_links(self):
+        response = self.client.get(reverse("subekashi:top"))
+        self.assertContains(response, '<link rel="icon" href="/static/subekashi/image/favicon.ico" sizes="16x16 32x32 48x48">')
+        self.assertContains(response, '<link rel="apple-touch-icon" href="/static/subekashi/image/apple-touch-icon.png" sizes="180x180">')
+        self.assertContains(response, '<link rel="manifest" href="/static/subekashi/site.webmanifest">')
+        self.assertNotContains(response, "shortcut icon")
+
+    def test_manifest(self):
+        with open(finders.find("subekashi/site.webmanifest"), encoding="utf-8") as f:
+            manifest = json.load(f)
+
+        self.assertEqual(manifest["name"], "全て歌詞の所為です。")
+        self.assertEqual(manifest["short_name"], "すべかし")
+        self.assertEqual(manifest["theme_color"], "#000000")
+        self.assertEqual(manifest["background_color"], "#111111")
+        self.assertEqual([icon["sizes"] for icon in manifest["icons"]], ["192x192", "512x512"])
+
+    def test_manifest_icons_exist_with_declared_size(self):
+        # iconsのsrcはmanifestのURL（/static/subekashi/）からの相対パス
+        with open(finders.find("subekashi/site.webmanifest"), encoding="utf-8") as f:
+            manifest = json.load(f)
+
+        for icon in manifest["icons"]:
+            with self.subTest(src=icon["src"]):
+                path = finders.find(f"subekashi/{icon['src']}")
+                self.assertIsNotNone(path)
+                with Image.open(path) as image:
+                    self.assertEqual(f"{image.width}x{image.height}", icon["sizes"])
+                    self.assertEqual(Image.MIME[image.format], icon["type"])
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
 class AdViewTest(TestCase):
     """AdView (/ad/) のテスト"""
 
