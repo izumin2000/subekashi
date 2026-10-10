@@ -105,6 +105,11 @@ i.icon-p-big, .small-icon {
     border-radius: 20px;
 }
 
+/* ラジオボタンが縦にはみ出ない場合はsongs.jsでhiddenにする */
+#search-form-radios-toggle[hidden] {
+    display: none;
+}
+
 #search-form-radios-toggle:hover, #search-form-radios-toggle:active {
     box-shadow: none;
     background-color: #555;

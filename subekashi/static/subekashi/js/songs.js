@@ -7,7 +7,6 @@ window.addEventListener('load', async function () {
     syncSearchForm();
     focusSearchForm(getSearchFormName());
     document.getElementById("search-form-radios").addEventListener('scroll', updateSearchFormRadiosScrollEnd);
-    window.addEventListener('resize', updateSearchFormRadiosScrollEnd);
     renderSearch();
 
     document.querySelectorAll('input[name="search-form"]').forEach((radioEle) => {
@@ -44,6 +43,13 @@ window.addEventListener('load', async function () {
         });
     });
 });
+
+// 画面幅の変更やフォントの読み込みでラジオボタンの行数が変わった場合に、全て表示するボタンの表示と下端のぼかしを更新する
+// ボタンの表示が遅れて切り替わらないよう、loadを待たずに監視する
+new ResizeObserver(() => {
+    updateSearchFormRadiosToggle();
+    updateSearchFormRadiosScrollEnd();
+}).observe(document.getElementById("search-form-radios"));
 
 window.addEventListener('pageshow', function (event) {
     if (event.persisted) {
@@ -140,6 +146,17 @@ function setSearchFormRadiosExpanded(isExpanded) {
     toggleEle.querySelector("i").className = isExpanded ? "fas fa-angle-up" : "fas fa-angle-down";
     toggleEle.querySelector("span").textContent = isExpanded ? "閉じる" : "全て表示";
     updateSearchFormRadiosScrollEnd();
+}
+
+// ラジオボタンが縦にはみ出る場合のみ、全て表示するボタンを表示する
+// 展開中ははみ出るかどうかを判定できないため、一時的に折りたたんだ状態にして判定する
+function updateSearchFormRadiosToggle() {
+    const radiosEle = document.getElementById("search-form-radios");
+    const isExpanded = radiosEle.classList.contains("expanded");
+    radiosEle.classList.remove("expanded");
+    const isOverflow = radiosEle.scrollHeight > radiosEle.clientHeight + 1;
+    radiosEle.classList.toggle("expanded", isExpanded);
+    document.getElementById("search-form-radios-toggle").hidden = !isOverflow;
 }
 
 // 一番下までスクロールした場合は下端のぼかしを外す
