@@ -1138,6 +1138,19 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | `X-Real-IP` が無い | `X-Forwarded-For` のみ | 記録されない |
 | `X-Forwarded-For` が無い | `X-Real-IP` のみ | 記録されない |
 
+#### 9-5. `RestrictIPMiddleware` — 確認用のパスへのリクエストの IP の記録（#1191）
+
+本番で `REMOTE_ADDR` がロードバランサーの IP になり、`X-Real-IP` がロードバランサーに付け直されているかを確認するための一時的な記録。`/x-real-ip-check` で始まるパスへのリクエストだけ、`subekashi.lib.ip` に WARNING を1件記録する。IP は記録せず、`REMOTE_ADDR`・`X-Real-IP` の種類（なし・IPでない・グローバル・グローバルでない）と、ヘッダー同士が一致するかだけを記録する。テストでグローバルな IP が必要な箇所は `8.8.8.8` を使う（ドキュメント用の `198.51.100.0/24`・`203.0.113.0/24` はグローバルでない）。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| ロードバランサーが付け直した | `POST /x-real-ip-check-1`、`REMOTE_ADDR: 10.0.0.1`、`X-Forwarded-For: 198.51.100.1, 8.8.8.8`、`X-Real-IP: 8.8.8.8` | `REMOTE_ADDR: グローバルでない`、`X-Real-IP: グローバル`、`REMOTE_ADDR` と `X-Real-IP` が一致: False、IP の数: 2、先頭が一致: False、末尾が一致: True。IP を含まない。レスポンスはそのまま返す |
+| クライアントが送った `X-Real-IP` がそのまま届いた | `POST /x-real-ip-check-2`、`REMOTE_ADDR: 10.0.0.1`、`X-Forwarded-For`・`X-Real-IP` が `198.51.100.1` | 1件だけ記録され、`X-Real-IP: グローバルでない`、IP の数: 1、先頭・末尾が一致: True。IP を含まない |
+| `REMOTE_ADDR` がクライアントの IP | `POST /x-real-ip-check-3`、`REMOTE_ADDR`・`X-Real-IP` が `8.8.8.8`、`X-Forwarded-For` なし | `REMOTE_ADDR: グローバル`、`REMOTE_ADDR` と `X-Real-IP` が一致: True、IP の数: 0、先頭・末尾が一致: False。IP を含まない |
+| `X-Real-IP` が無い・IP でない | `X-Real-IP` なし、`X-Real-IP: not-an-ip` | それぞれ `X-Real-IP: なし`・`X-Real-IP: IPでない`、`REMOTE_ADDR` と `X-Real-IP` が一致: False |
+| パスに改行を含む（ログインジェクション） | パスが `/x-real-ip-check-%0d%0a...` | 記録されたメッセージに改行（`\r`・`\n`）を含まず、`\r\n` とエスケープされている |
+| 確認用のパス以外 | `POST /songs/1/edit`、`X-Forwarded-For`・`X-Real-IP` が同じ IP | 記録されない |
+
 ---
 
 ### 10. `lib/song_search.py` — 検索機能
