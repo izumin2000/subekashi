@@ -1034,6 +1034,19 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | X-Real-IPごとに制限 | IP Aで5枚描画した後、IP B・IP Aで新しいタイトルにGET | IP Bは200、IP Aは429 |
 | HEADも回数に数える | 同じ`X-Real-IP`で異なる5つのタイトルにHEADした後、新しいタイトルにGET | 429 |
 
+#### 7-22. faviconとweb app manifest（#1171）
+
+faviconの画像は`icon_large.png`（800×800）から生成する。`site.webmanifest`の`icons`の`src`はmanifestのURL（`/static/subekashi/`）からの相対パス。本番では`ManifestStaticFilesStorage`がmanifestをハッシュ付きのファイル名で配信するが、manifestの中のパスは書き換えないため、`collectstatic`が残すハッシュなしの画像を参照する。ブラウザがfaviconやmanifestを読み込めるかはDjangoテストでは確認できないため、Playwrightで確認する。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| /favicon.icoのリダイレクト | `/favicon.ico`にGET | `{ROOT_URL}/static/subekashi/image/favicon.ico`へリダイレクト |
+| favicon.icoのサイズ | `favicon.ico` | 16×16・32×32・48×48の3つのサイズを含む |
+| apple-touch-iconのサイズ | `apple-touch-icon.png` | 180×180 |
+| base.htmlのlinkタグ | トップページ | `rel="icon"`（`sizes="16x16 32x32 48x48"`）・`rel="apple-touch-icon"`（`sizes="180x180"`）・`rel="manifest"`の`<link>`が含まれ、`shortcut icon`は含まれない |
+| manifestの内容 | `site.webmanifest` | `name`が`全て歌詞の所為です。`、`short_name`が`すべかし`、`theme_color`が`#000000`、`background_color`が`#111111`で、`icons`の`sizes`が`192x192`・`512x512` |
+| manifestのアイコンの画像 | `icons`の各要素 | `src`の画像があり、実際のサイズと形式が`sizes`・`type`と一致する |
+
 ---
 
 ### 8. REST API ビュー

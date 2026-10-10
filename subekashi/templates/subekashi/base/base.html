@@ -38,8 +38,9 @@
         {% block component_css %}{% endblock %}
         <link rel="stylesheet" type="text/css" href="{% block css %}{% endblock %}">
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" integrity="sha384-DyZ88mC6Up2uqS4h/KRgHuoeGwBcD4Ng9SiP4dIRy0EXTlnuz47vAwmeGwVChigm" crossorigin="anonymous"> <!-- font awesome -->
-        <link rel="shortcut icon" href="{% static 'subekashi/image/icon.ico' %}">
-        <link rel="apple-touch-icon" href="{% static 'subekashi/image/apple-touch-icon.png' %}">
+        <link rel="icon" href="{% static 'subekashi/image/favicon.ico' %}" sizes="16x16 32x32 48x48">
+        <link rel="apple-touch-icon" href="{% static 'subekashi/image/apple-touch-icon.png' %}" sizes="180x180">
+        <link rel="manifest" href="{% static 'subekashi/site.webmanifest' %}">
     </head>
     <body data-pc-menu="{{ pc_menu_position }}">
         {% include './header.html' %}
