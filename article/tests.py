@@ -142,6 +142,38 @@ class ArticleModelTest(TestCase):
         self.assertLess(result.index(newer), result.index(older))
 
 
+class ArticleTitleMarkdownTest(TestCase):
+    """Article.save() でのタイトルのマークダウン変換のテスト（#483）"""
+
+    def _create(self, title, is_md=True):
+        return Article.objects.create(article_id="title-md", title=title, is_md=is_md)
+
+    def test_markdown_title_is_converted_to_html(self):
+        article = self._create("**太字**と[リンク](https://example.com)")
+        self.assertEqual(article.title, '<strong>太字</strong>と<a href="https://example.com">リンク</a>')
+
+    def test_plain_title_is_not_wrapped_in_paragraph(self):
+        article = self._create("バージョン2579のアップデート内容")
+        self.assertEqual(article.title, "バージョン2579のアップデート内容")
+
+    def test_html_title_is_kept(self):
+        # マークダウン対応前にHTMLで書かれたタイトル（ニュースなど）は、保存し直しても変わらない
+        title = '<p><a href="/articles/discord/" target="_blank">Discordサーバー</a>の参加者が200人を突破</p>'
+        article = self._create(title)
+        self.assertEqual(article.title, title)
+
+    def test_resaving_converted_title_does_not_change_it(self):
+        article = self._create("**太字**のタイトル & 記号")
+        converted = article.title
+        article.save()
+        article.refresh_from_db()
+        self.assertEqual(article.title, converted)
+
+    def test_title_of_html_article_is_not_converted(self):
+        article = self._create("**太字**", is_md=False)
+        self.assertEqual(article.title, "**太字**")
+
+
 @override_settings(STORAGES=STATIC_STORAGE)
 class DefaultArticleViewTest(TestCase):
     """DefaultArticleView (/articles/<id>/) のテスト"""
@@ -175,6 +207,23 @@ class DefaultArticleViewTest(TestCase):
     def test_article_title_appears_in_response(self):
         response = self.client.get(f"/articles/{self.article.article_id}/")
         self.assertContains(response, "詳細テスト記事")
+
+    def test_markdown_title_is_rendered_as_html_and_page_title_has_no_tags(self):
+        # タイトルのマークダウンはHTMLで表示し、タブのタイトルにはタグを除いた文字列を使う（#483）
+        md_title_article = Article.objects.create(
+            article_id="test-default-010",
+            title="**太字** & 記号",
+            author="テスト筆者",
+            tag="blog",
+            post_time=timezone.now(),
+            is_open=True,
+            is_md=True,
+        )
+
+        response = self.client.get(f"/articles/{md_title_article.article_id}/")
+
+        self.assertContains(response, '<h1 id="article-title"><strong>太字</strong> &amp; 記号</h1>')
+        self.assertContains(response, "<title>太字 &amp; 記号 | 全て歌詞の所為です。</title>")
 
     def test_markdown_table_syntax_is_rendered_as_html_table(self):
         # markdown.markdown()にtables拡張を渡していないと、パイプ区切りのテーブル記法が

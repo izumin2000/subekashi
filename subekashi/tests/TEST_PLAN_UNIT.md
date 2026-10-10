@@ -1440,6 +1440,7 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | --- | --- | --- |
 | 存在する公開記事ID | 有効なarticle_id、`is_open=True` | HTTP 200 |
 | 記事タイトルの表示 | 有効なarticle_id | レスポンスにタイトルが含まれる |
+| マークダウンのタイトルの表示（#483） | `is_md=True`でタイトルが`**太字** & 記号` | 見出しは`<strong>太字</strong> &amp; 記号`、`<title>`はタグを除いた`太字 &amp; 記号` |
 | 存在しない記事ID | 無効なarticle_id | HTTP 404 |
 | 非公開記事 | `is_open=False` | HTTP 404 |
 | 本文中の`<script>`へのnonce付与（#1126） | `is_md=False`で本文に`<script>`を含む | `<script nonce="（CSPヘッダーと同じnonce）">`として出力される |
@@ -1468,6 +1469,16 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | 未来の`post_time` | `post_time` が未来日時 | 結果に含まれない |
 | 件数上限 | 該当記事が5件 | 最大3件までに絞られる |
 | 並び順 | 複数の該当記事 | `-post_time` の降順 |
+
+#### 12-5. `Article.save()` — タイトルのマークダウン変換（#483）
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| マークダウンのタイトル | `is_md=True`、`**太字**と[リンク](https://example.com)` | `<strong>太字</strong>と<a href="https://example.com">リンク</a>`に変換される |
+| プレーンテキストのタイトル | `is_md=True` | 変わらない（`<p>`で囲まない） |
+| HTMLで書かれた既存のタイトル | `is_md=True`、`<p><a ...>...</a>...</p>` | 変わらない |
+| 変換後の再保存 | `is_md=True`で保存したあと再度`save()` | 1回目の変換結果から変わらない |
+| HTMLの記事 | `is_md=False`、`**太字**` | 変換されない |
 
 ---
 

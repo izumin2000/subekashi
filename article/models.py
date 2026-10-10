@@ -1,6 +1,29 @@
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
+import markdown
+from markdown.extensions import Extension
+from markdown.treeprocessors import Treeprocessor
+
+
+# タイトルは見出しやリンクの中に表示するため、1つの段落だけのときはp要素で囲まない
+# （p要素のフォントサイズが適用されて記事ページの見出しが小さくなるのを防ぐ）
+class UnwrapParagraphTreeprocessor(Treeprocessor):
+    def run(self, root):
+        if len(root) != 1 or root[0].tag != "p":
+            return
+        paragraph = root[0]
+        children = list(paragraph)
+        root.remove(paragraph)
+        root.text = paragraph.text
+        root.extend(children)
+
+
+class UnwrapParagraphExtension(Extension):
+    def extendMarkdown(self, md):
+        # 太字やリンクの要素を生成するinline（優先度20）の後に実行する
+        md.treeprocessors.register(UnwrapParagraphTreeprocessor(md), "unwrap_paragraph", 15)
+
 
 class Article(models.Model) :
     TAGS = (
@@ -24,6 +47,13 @@ class Article(models.Model) :
 
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        # マークダウンの記事はタイトルも登録時にHTMLへ変換する（#483）
+        # 変換後のHTMLを再度変換しても変わらないため、保存し直してもタイトルは崩れない
+        if self.is_md:
+            self.title = markdown.markdown(self.title, extensions=[UnwrapParagraphExtension()])
+        super().save(*args, **kwargs)
 
     @classmethod
     def get_top_news_articles(cls):

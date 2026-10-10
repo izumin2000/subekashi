@@ -1,6 +1,8 @@
 from django.shortcuts import render
+from django.utils.html import strip_tags
 from django.views import View
 from article.models import Article
+import html
 import markdown
 from markdown.extensions import Extension
 from markdown.treeprocessors import Treeprocessor
@@ -48,7 +50,8 @@ class DefaultArticleView(View):
             text = add_csp_nonce(text, getattr(request, "csp_nonce", ""))
 
         context = {
-            "metatitle": article.title,
+            # タイトルはHTMLのため、タブやOGPのタイトルにはタグを除いた文字列を使う（#483）
+            "metatitle": html.unescape(strip_tags(article.title)),
             "article": article,
             "text": text
         }
