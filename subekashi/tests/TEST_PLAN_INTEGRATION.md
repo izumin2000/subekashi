@@ -641,6 +641,23 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 
 ---
 
+### 16. レート制限フロー（#1187）
+
+**テストファイル**: `tests/test_middleware.py`（`RatelimitMiddlewareClientTest`）
+
+`@ratelimit(key='ip', rate='2/second', block=True)`のビューが送出した`Ratelimited`（`PermissionDenied`のサブクラス）を、Djangoが403のレスポンスにする前に`RatelimitMiddleware`の`process_exception`が429にし、外側の`CacheControlMiddleware`がpublicのキャッシュを付けないことを検証する。1秒の区切りをまたいでカウントがリセットされないよう、`django_ratelimit.core.time`をモックして時刻を固定する。
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作1 | 同じ秒に`/api/html/song_cards`へ3回`GET` |
+| 検証1 | 2回目まではHTTP 200、3回目はHTTP 429で、`{"error": "Rate limit exceeded"}`、`Retry-After: 1`、`Cache-Control: no-store` |
+| 操作2 | 同じ秒に`/api/html/song_guessers?guesser=曲`へ3回`GET` |
+| 検証2 | 検証1と同じ |
+| 操作3 | 同じ秒に`/api/html/song_cards`へ3回`GET`した後、時刻を1秒進めて`GET` |
+| 検証3 | HTTP 200 |
+
+---
+
 ## テスト実装の方針
 
 ### ディレクトリ構成（案）

@@ -4,9 +4,12 @@
 RatelimitMiddleware・CacheControlMiddleware・ContentSecurityPolicyMiddleware・RestrictIPMiddleware の動作を検証する。
 """
 import json
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
+from django.core.cache import cache
+from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, JsonResponse
 from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
+from django.urls import reverse
 from django_ratelimit.exceptions import Ratelimited
 from subekashi.middleware.rate_limit import RatelimitMiddleware
 from subekashi.middleware.cache import CacheControlMiddleware
@@ -15,59 +18,101 @@ from subekashi.middleware.restrict_ip import RestrictIPMiddleware
 from subekashi.constants.constants import SHORT_TERM_COOKIE_AGE, LONG_TERM_COOKIE_AGE
 
 
+STATIC_STORAGE = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+
+
 class RatelimitMiddlewareTest(SimpleTestCase):
     """RatelimitMiddleware のテスト"""
 
     def setUp(self):
         self.factory = RequestFactory()
+        self.middleware = RatelimitMiddleware(lambda req: HttpResponse("OK"))
 
-    def _make_middleware(self, get_response):
-        return RatelimitMiddleware(get_response)
+    def _process_ratelimited(self):
+        return self.middleware.process_exception(self.factory.get("/"), Ratelimited())
 
     def test_normal_request_passes_through(self):
         expected_response = HttpResponse("OK")
-        middleware = self._make_middleware(lambda req: expected_response)
+        middleware = RatelimitMiddleware(lambda req: expected_response)
         request = self.factory.get("/")
         response = middleware(request)
         self.assertEqual(response, expected_response)
 
     def test_ratelimited_returns_429(self):
-        def raise_ratelimited(req):
-            raise Ratelimited()
-
-        middleware = self._make_middleware(raise_ratelimited)
-        request = self.factory.get("/")
-        response = middleware(request)
+        response = self._process_ratelimited()
         self.assertEqual(response.status_code, 429)
 
     def test_ratelimited_response_is_json(self):
-        def raise_ratelimited(req):
-            raise Ratelimited()
-
-        middleware = self._make_middleware(raise_ratelimited)
-        request = self.factory.get("/")
-        response = middleware(request)
+        response = self._process_ratelimited()
         self.assertIsInstance(response, JsonResponse)
 
     def test_ratelimited_response_contains_error_key(self):
-        def raise_ratelimited(req):
-            raise Ratelimited()
-
-        middleware = self._make_middleware(raise_ratelimited)
-        request = self.factory.get("/")
-        response = middleware(request)
+        response = self._process_ratelimited()
         data = json.loads(response.content)
         self.assertIn("error", data)
         self.assertEqual(data["error"], "Rate limit exceeded")
 
+    def test_ratelimited_response_has_retry_after(self):
+        response = self._process_ratelimited()
+        self.assertEqual(response["Retry-After"], "1")
 
-@override_settings(
-    STATIC_URL="/static/",
-    STORAGES={
-        "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-        "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
-    },
-)
+    def test_ratelimited_response_is_not_cached(self):
+        # CacheControlMiddlewareにpublicのCache-Controlを付けさせない
+        response = self._process_ratelimited()
+        self.assertEqual(response["Cache-Control"], "no-store")
+
+    def test_other_permission_denied_is_not_handled(self):
+        response = self.middleware.process_exception(self.factory.get("/"), PermissionDenied())
+        self.assertIsNone(response)
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+@patch("django_ratelimit.core.time")
+class RatelimitMiddlewareClientTest(TestCase):
+    """@ratelimit(block=True) のビューにClientでリクエストし、制限を超えると429になることのテスト（#1187）
+
+    RatelimitedはPermissionDeniedのサブクラスのため、ミドルウェアの__call__で捕まえようとしても届く前に403になる。
+    ミドルウェアにRatelimitedを直接渡すテストでは検出できないため、実際にリクエストして確認する。
+    1秒の区切りをまたいでカウントがリセットされないよう、django_ratelimitの時刻を固定する。
+    """
+
+    def setUp(self):
+        cache.clear()
+
+    def _assert_third_request_is_limited(self, url):
+        for _ in range(2):
+            self.assertEqual(self.client.get(url).status_code, 200)
+
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 429)
+        self.assertEqual(response.json(), {"error": "Rate limit exceeded"})
+        self.assertEqual(response["Retry-After"], "1")
+        self.assertEqual(response["Cache-Control"], "no-store")
+
+    def test_song_cards_returns_429_when_limited(self, mock_time):
+        mock_time.time.return_value = 1_800_000_000
+        self._assert_third_request_is_limited(reverse("subekashi:song_cards"))
+
+    def test_song_guessers_returns_429_when_limited(self, mock_time):
+        mock_time.time.return_value = 1_800_000_000
+        self._assert_third_request_is_limited(reverse("subekashi:song_guessers") + "?guesser=曲")
+
+    def test_limit_resets_in_next_second(self, mock_time):
+        url = reverse("subekashi:song_cards")
+        mock_time.time.return_value = 1_800_000_000
+        for _ in range(3):
+            self.client.get(url)
+
+        mock_time.time.return_value = 1_800_000_001
+
+        self.assertEqual(self.client.get(url).status_code, 200)
+
+
+@override_settings(STATIC_URL="/static/", STORAGES=STATIC_STORAGE)
 class CacheControlMiddlewareTest(SimpleTestCase):
     """CacheControlMiddleware のテスト"""
 
