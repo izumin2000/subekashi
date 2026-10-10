@@ -1,7 +1,5 @@
-// 検索の表示設定が「全て表示」の場合は、検索画面と同じフォームを表示する
+// 検索の表示設定が「全て表示」の場合（top.htmlのisShownAllSearch）は、検索画面と同じフォームを表示する
 // その場合のみtop.htmlでsearch_form.jsをこのファイルより先に読み込み、FORM_QUERIES・initSearchForm・collectFormQuery・renderFilterStatus・toQueryString・renderSongGuesserを使う
-const isShownAllSearch = document.getElementById("search-forms") !== null;
-
 const keywordElement = document.getElementById("keyword");
 const isPC = window.innerWidth > 960; 
 // 「全て表示」の場合は、表示したフォームの入力欄をsearch_form.jsで選択する

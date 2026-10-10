@@ -709,6 +709,8 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 | 検証5 | URLクエリなしの`/songs/`に遷移する |
 | 操作6 | `is_saved_select=off`で並び替え・界隈曲・ネタ曲のcookie（`-view`・`subeana`・`off`）がある状態で、トップ画面からキーワードのみ入力して検索した後、並び替え・界隈曲を変更して検索 |
 | 検証6 | トップ画面・検索画面ともにcookieではなくデフォルト値（`-post_time`・`all`・`on`）が選択され、URLクエリは`?keyword=...`のみ。変更した場合は`sort`・`songrange`がURLクエリに含まれて検索画面で選択されるが、cookieは変わらない |
+| 操作7 | `is_saved_select`がon・offそれぞれで、(a) 界隈曲を変更してから元に戻して検索、(b) 表示後に`search_sort`のcookieを変え、`restoreFormValuesFromCookies()`で選択を書き換えて（bfcacheから戻ったときと同じ）検索、(c) 検索画面で並び替えを変更してからブラウザバックでトップ画面に戻り、変更せずに検索 |
+| 検証7 | いずれもトップ画面で選択されていた値と検索画面で選択される値が一致する。(a) はURLクエリに含まれない。(b) はonの場合のみ書き換わり、`sort`がURLクエリに含まれる。(c) は`never_cache`のためbfcacheを使わずに再読み込みされ、onの場合は検索画面で保存した値が選択される。トップ画面のレスポンスで`search_*`のcookieは保存されない |
 | 共通 | コンソールにCSP違反・JSのエラーが出ない |
 
 ---

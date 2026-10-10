@@ -201,6 +201,16 @@ class TopViewTest(TestCase):
 
         self.assertLess(content.index("subekashi/js/search_form.js"), content.index("subekashi/js/top.js"))
 
+    def test_is_shown_all_search_matches_search_form_js(self):
+        """top.jsに渡すisShownAllSearchは、search_form.jsを読み込む場合のみtrueになる（#585）"""
+        for value, expected in [("all", "true"), ("on", "false"), ("off", "false"), ("invalid", "false")]:
+            with self.subTest(value=value):
+                self.client.cookies["is_shown_search"] = value
+                content = self.client.get(reverse("subekashi:top")).content.decode()
+
+                self.assertEqual(re.findall(r"const isShownAllSearch = (\w+);", content), [expected])
+                self.assertEqual("subekashi/js/search_form.js" in content, expected == "true")
+
     def test_search_form_css_is_loaded_only_when_all(self):
         """検索フォームのCSSは「全て表示」の場合のみ、トップ画面のCSSより先に読み込まれる（#585）"""
         for value, is_loaded in [("all", True), ("on", False), ("off", False)]:

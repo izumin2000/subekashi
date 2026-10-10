@@ -125,6 +125,8 @@
     const adClick = Number('{{ adIns.click }}');
     const adId = '{{ adIns.id }}';
     {% endif %}
+    // search_form.jsを読み込むかと同じ条件にする
+    const isShownAllSearch = {% if is_shown_search == "all" %}true{% else %}false{% endif %};
 </script>
 {# top.jsがsearch_form.jsの関数を使うため、top.jsより先に読み込む #}
 {% if is_shown_search == "all" %}

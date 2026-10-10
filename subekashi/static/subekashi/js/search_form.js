@@ -1,6 +1,8 @@
 // 検索フォーム（components/search_form.html）の操作。検索画面とトップ画面の検索で共通
 // 関数・定数はページのJS（songs.js・top.js）から使うため、ページのJSより先に読み込む
 // ページのJSでは、ここにある関数と同じ名前の関数を定義しない
+// base.jsのgetCookie・getSongGuessersを使う。また、ページのJSでsongGuesserClick・categoryClickを定義する（base.jsのクリックのイベントから呼ばれる）
+var songGuesserController;
 const FORM_QUERIES = '#search-forms input';
 
 window.addEventListener('DOMContentLoaded', function () {

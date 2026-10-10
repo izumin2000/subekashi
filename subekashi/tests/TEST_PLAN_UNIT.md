@@ -487,6 +487,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 検索の表示が非表示（#585） | `is_shown_search=off` | 「検索」の見出しと`#search-form`が無く、`search_form.js`も読み込まれない |
 | 検索の表示が全て表示（#585） | `is_shown_search=all` | `#search-form`の中に検索画面と同じフォーム（`components/search_form.html`）が表示される。ラジオボタンの並びは`SEARCH_FORM_QUERIES`のキーと一致し、キーワードのラジオボタンのみ選択され、キーワードのフォームのみ`hidden`が無い。`#search-form-radios-toggle`・`#youtube-queries`・送信ボタン（`#searchsubmit`）を含む |
 | 全て表示のJSの読み込み順（#585） | `is_shown_search=all` | `search_form.js`が`top.js`より先に読み込まれる |
+| top.jsに渡す全て表示の判定（#585） | `is_shown_search`が`all`・`on`・`off`・不正な値 | インラインのスクリプトの`const isShownAllSearch`は`all`の場合のみ`true`で、`search_form.js`は`true`の場合のみ読み込まれる（ずれると`top.js`がReferenceErrorになるため） |
 | 検索フォームのCSSの読み込み（#585） | `is_shown_search`が`all`・`on`・`off` | `css/components/search_form.css`は`all`の場合のみ、`top.css`より先に読み込まれる |
 | 全て表示のフォームにCSRFトークンを含めない（#585） | `is_shown_search=all` | GETで送信するため、`#search-form`の中に`csrfmiddlewaretoken`が無い |
 | 全て表示で検索の選択肢の保存を反映（#585） | `is_shown_search=all`, `is_saved_select=on`, `search_sort=-view`, `search_songrange=subeana`, `search_jokerange=off`, `form_button=icon` | 検索画面と同じく`-view`・`subeana`・`off`のラジオボタンが選択され、`#search-form-radios`に`icon-only`が付く |
