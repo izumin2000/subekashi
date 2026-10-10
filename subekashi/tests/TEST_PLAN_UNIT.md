@@ -530,7 +530,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | YouTube関連のクエリをJSに渡す | GETリクエスト | context["youtube_queries"] が `query_utils` の `YOUTUBE_FILTERS`・`YOUTUBE_SORTS` と一致し、`json_script`（`#youtube-queries`）で出力される |
 | ラジオボタンを全て表示するボタン | GETリクエスト | `#search-form-radios-toggle`（`aria-controls="search-form-radios"`、`aria-expanded="false"`、「全て表示」）が表示される |
 | フォームボタンの設定のデフォルト（#1164） | `form_button`クッキーなし | `#search-form-radios`は`<div class="radio-group" id="search-form-radios">`（アイコンと文字） |
-| フォームボタンの設定がアイコンのみ（#1164） | `form_button=icon` | `#search-form-radios`のみに`icon-only`クラスが付き、並び替え等のフォーム内のラジオボタンには付かない |
+| フォームボタンの設定がアイコンのみ（#1164） | `form_button=icon` | context["form_button"] = "icon"、`#search-form-radios`のみに`icon-only`クラスが付き、並び替え等のフォーム内のラジオボタンには付かない |
+| フォームボタンの設定のcookieの不正な値（#1164） | `form_button=text` | context["form_button"] = "icon_text"（デフォルト）にフォールバックし、`icon-only`クラスは付かない |
 | 「結果を表示」ボタンの廃止（#970） | GETリクエスト | `scroll-to-results` が含まれない |
 
 #### 7-3. `SongView` (`/songs/<id>/`)

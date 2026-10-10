@@ -481,10 +481,18 @@ class SongsViewTest(TestCase):
         """フォームボタンの設定がアイコンのみの場合、フォームを切り替えるラジオボタンにのみicon-onlyが付くこと（#1164）"""
         self.client.cookies["form_button"] = "icon"
         response = self.client.get(reverse("subekashi:songs"))
-        content = response.content.decode()
 
-        self.assertIn('<div class="radio-group icon-only" id="search-form-radios">', content)
-        self.assertEqual(content.count("icon-only"), 1)
+        self.assertEqual(response.context["form_button"], "icon")
+        self.assertContains(response, '<div class="radio-group icon-only" id="search-form-radios">')
+        self.assertContains(response, 'class="radio-group icon-only"', count=1)
+
+    def test_form_button_with_invalid_cookie_falls_back_to_default(self):
+        """フォームボタンの設定のcookieが不正な値の場合、デフォルトのアイコンと文字で表示されること（#1164）"""
+        self.client.cookies["form_button"] = "text"
+        response = self.client.get(reverse("subekashi:songs"))
+
+        self.assertEqual(response.context["form_button"], "icon_text")
+        self.assertContains(response, '<div class="radio-group" id="search-form-radios">')
 
     def test_scroll_to_results_button_is_removed(self):
         """「結果を表示」ボタン(scroll-to-results)が表示されないこと"""

@@ -183,6 +183,10 @@ ALL_MEDIAS = ALLOW_MEDIAS + [
 SHORT_TERM_COOKIE_AGE = 30 * 60
 LONG_TERM_COOKIE_AGE = 365 * 24 * 60 * 60
 
+# 検索画面のフォームを切り替えるラジオボタンの表示（設定画面のフォームボタン）
+FORM_BUTTON_CHOICES = {"icon", "icon_text"}
+FORM_BUTTON_DEFAULT = "icon_text"
+
 HISTORIES_PER_PAGE = 50
 
 RECOMEND_ARTICLES = [

@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from django.views import View
 from subekashi.lib.ip import get_ip
 from subekashi.models import Editor
-from subekashi.constants.constants import LONG_TERM_COOKIE_AGE
+from subekashi.constants.constants import LONG_TERM_COOKIE_AGE, FORM_BUTTON_CHOICES, FORM_BUTTON_DEFAULT
 import json
 
 # 設定可能なcookieキーのホワイトリスト
@@ -24,7 +24,7 @@ ALLOWED_SETTING_VALUES = {
     'is_shown_ai': {'on', 'off'},
     'is_shown_lack': {'0', '5', '10', '15'},
     'is_saved_select': {'on', 'off'},
-    'form_button': {'icon', 'icon_text'},
+    'form_button': FORM_BUTTON_CHOICES,
     'brlyrics': {'normal', 'pack', 'brless'},
     'pc_menu_position': {'header', 'aside'}
 }
@@ -45,7 +45,7 @@ class SettingView(View):
         is_shown_ai = request.COOKIES.get("is_shown_ai", "on")
         is_shown_lack = request.COOKIES.get("is_shown_lack", "5")
         is_saved_select = request.COOKIES.get("is_saved_select", "on")
-        form_button = request.COOKIES.get("form_button", "icon_text")
+        form_button = request.COOKIES.get("form_button", FORM_BUTTON_DEFAULT)
         brlyrics = request.COOKIES.get("brlyrics", "normal")
         pc_menu_position = request.COOKIES.get("pc_menu_position", "header")
 
