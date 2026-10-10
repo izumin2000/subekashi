@@ -1,7 +1,7 @@
 User-agent: *
-Disallow: https://lyrics.imicomweb.com/songs/*/edit
-Disallow: https://lyrics.imicomweb.com/songs/*/delete
-Disallow: https://lyrics.imicomweb.com/editor/*
-Disallow: https://lyrics.imicomweb.com/setting
+Disallow: /songs/*/edit
+Disallow: /songs/*/delete
+Disallow: /editor/
+Disallow: /setting/
 
 Sitemap: https://lyrics.imicomweb.com/static/subekashi/sitemap.xml

@@ -3155,6 +3155,54 @@ class RedirectViewTest(TestCase):
         self.assertRedirects(response, "/songs/new/", fetch_redirect_response=False)
 
 
+class RobotsViewTest(TestCase):
+    """robots (/robots.txt) のテスト"""
+
+    def setUp(self):
+        self.client = Client()
+
+    def _get_disallows(self):
+        response = self.client.get("/robots.txt")
+        lines = response.content.decode().splitlines()
+        return [line.split(":", 1)[1].strip() for line in lines if line.startswith("Disallow:")]
+
+    def _is_disallowed(self, path):
+        return any(re.match(re.escape(disallow).replace(r"\*", ".*"), path) for disallow in self._get_disallows())
+
+    def test_returns_robots_txt(self):
+        """/static/へリダイレクトせず、/robots.txtでrobots.txtの内容を返す（#1172）"""
+        response = self.client.get("/robots.txt")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/plain; charset=utf-8")
+        self.assertContains(response, "User-agent: *")
+        self.assertContains(response, "Sitemap: https://lyrics.imicomweb.com/static/subekashi/sitemap.xml")
+
+    def test_disallow_values_are_paths(self):
+        """Disallowの値は完全なURLではなく、/から始まるパスで書く（#1172）"""
+        disallows = self._get_disallows()
+        self.assertTrue(disallows)
+        for disallow in disallows:
+            self.assertTrue(disallow.startswith("/"), disallow)
+
+    def test_disallow_matches_target_pages(self):
+        """曲の編集・削除、編集者、設定のページは巡回を制限し、曲のページは制限しない（#1172）"""
+        for path in [
+            reverse("subekashi:song_edit", args=[1]),
+            reverse("subekashi:song_delete", args=[1]),
+            reverse("subekashi:editor", args=[1]),
+            reverse("subekashi:setting"),
+        ]:
+            self.assertTrue(self._is_disallowed(path), path)
+
+        for path in [
+            reverse("subekashi:top"),
+            reverse("subekashi:songs"),
+            reverse("subekashi:song", args=[1]),
+            reverse("subekashi:song_history", args=[1]),
+        ]:
+            self.assertFalse(self._is_disallowed(path), path)
+
+
 @override_settings(STORAGES=STATIC_STORAGE)
 class AdViewTest(TestCase):
     """AdView (/ad/) のテスト"""
