@@ -32,5 +32,5 @@ def get_client_ip(request):
     try:
         ipaddress.ip_address(real_ip)
     except ValueError:
-        return request.META.get('REMOTE_ADDR')
+        return request.META['REMOTE_ADDR']
     return real_ip

@@ -37,6 +37,13 @@ class GetClientIpTest(SimpleTestCase):
         request = self.factory.get("/", REMOTE_ADDR="10.0.0.1", HTTP_X_REAL_IP="2001:db8::1")
         self.assertEqual(get_client_ip(request), "2001:db8::1")
 
+    def test_raises_without_remote_addr(self):
+        # django_ratelimitの既定と同じく、REMOTE_ADDRは必ずある前提にし、Noneを返さない
+        request = self.factory.get("/")
+        del request.META["REMOTE_ADDR"]
+        with self.assertRaises(KeyError):
+            get_client_ip(request)
+
     def test_does_not_use_x_forwarded_for(self):
         # X-Forwarded-Forはクライアントが自由に付けられるため使わない
         request = self.factory.get("/", REMOTE_ADDR="10.0.0.1", HTTP_X_FORWARDED_FOR="198.51.100.1")

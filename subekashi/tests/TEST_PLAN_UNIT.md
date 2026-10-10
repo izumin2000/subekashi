@@ -2078,6 +2078,7 @@ YouTube Data API（`build`）はモック化する。「動画が存在しない
 | X-Real-IPが空 | `REMOTE_ADDR: 10.0.0.1`、`X-Real-IP: ""` | `10.0.0.1` |
 | X-Real-IPがIPでない | `REMOTE_ADDR: 10.0.0.1`、`X-Real-IP`が`not-an-ip`・`203.0.113.1, 198.51.100.1`・`203.0.113.1/24` | `10.0.0.1`（`django_ratelimit`がIPとして解析できず500になるため） |
 | IPv6のX-Real-IP | `REMOTE_ADDR: 10.0.0.1`、`X-Real-IP: 2001:db8::1` | `2001:db8::1` |
+| REMOTE_ADDRも無い | `REMOTE_ADDR`・`X-Real-IP`なし | `KeyError`（`django_ratelimit`の既定と同じく`request.META['REMOTE_ADDR']`を読み、`None`を返さない） |
 | X-Forwarded-Forは使わない | `REMOTE_ADDR: 10.0.0.1`、`X-Forwarded-For: 198.51.100.1` | `10.0.0.1`（クライアントが自由に付けられるため） |
 
 ---
