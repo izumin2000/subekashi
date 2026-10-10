@@ -3171,8 +3171,7 @@ class SongCardsRateLimitTest(TestCase):
         return self.client.get(reverse(url_name), **extra)
 
     def assertLimited(self, response):
-        # 制限を超えたときは今は403になり、#1187で429に変える予定のため、どちらも受け付ける
-        self.assertIn(response.status_code, (403, 429))
+        self.assertEqual(response.status_code, 429)
 
     def test_third_request_in_a_second_is_limited(self, mock_time):
         mock_time.time.return_value = 1_800_000_000

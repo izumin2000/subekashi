@@ -828,15 +828,15 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 #### 7-11-2. `song_cards`・`song_guessers` のレート制限（#1188）
 
-`@ratelimit(key='ip', rate='2/second')`でIPごとに毎秒2回までに制限する。PythonAnywhereでは`REMOTE_ADDR`がロードバランサーのIPになり、全ユーザーが1つのIPとして数えられるため、`settings.RATELIMIT_IP_META_KEY`（`lib/ip.py`の`get_client_ip`）で`X-Real-IP`（無ければ`REMOTE_ADDR`）を使う。テストクライアントの`REMOTE_ADDR`は常に同じため、`X-Real-IP`ごとに数えられていることを確認できる。制限を超えたときは今は403になり、#1187で429に変える予定のため、どちらも受け付ける。1秒の区切りをまたいでカウントがリセットされないよう、`django_ratelimit.core.time`をモックして時刻を固定する。各テストは両方のビューで確認する。
+`@ratelimit(key='ip', rate='2/second')`でIPごとに毎秒2回までに制限する。PythonAnywhereでは`REMOTE_ADDR`がロードバランサーのIPになり、全ユーザーが1つのIPとして数えられるため、`settings.RATELIMIT_IP_META_KEY`（`lib/ip.py`の`get_client_ip`）で`X-Real-IP`（無ければ`REMOTE_ADDR`）を使う。テストクライアントの`REMOTE_ADDR`は常に同じため、`X-Real-IP`ごとに数えられていることを確認できる。制限を超えたときのレスポンスの内容（429・`Retry-After`等）は結合テスト計画書の「16. レート制限フロー」で確認するため、ここではステータスだけを確認する。1秒の区切りをまたいでカウントがリセットされないよう、`django_ratelimit.core.time`をモックして時刻を固定する。各テストは両方のビューで確認する。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
-| 1秒に3回目で制限 | 同じ`X-Real-IP`で3回GET | 2回目まではステータス200、3回目は403か429 |
-| X-Real-IPごとに制限 | IP Aで2回GETした後、IP B・IP AでGET | IP Bは200、IP Aは403か429 |
-| X-Forwarded-Forでは回避できない | 同じ`X-Real-IP`で`X-Forwarded-For`を毎回変えて3回GET | 3回目は403か429（`X-Forwarded-For`はクライアントが自由に付けられるため使わない） |
-| X-Real-IPが無ければREMOTE_ADDRごとに制限 | `REMOTE_ADDR` Aで2回GETした後、`REMOTE_ADDR` B・AでGET | Bは200、Aは403か429 |
-| X-Real-IPがIPでない | `X-Real-IP: not-an-ip`で2回GETした後、`X-Real-IP`なしでGET | 2回とも200（500にならない）で、3回目は`REMOTE_ADDR`で数えて403か429 |
+| 1秒に3回目で制限 | 同じ`X-Real-IP`で3回GET | 2回目まではステータス200、3回目は429 |
+| X-Real-IPごとに制限 | IP Aで2回GETした後、IP B・IP AでGET | IP Bは200、IP Aは429 |
+| X-Forwarded-Forでは回避できない | 同じ`X-Real-IP`で`X-Forwarded-For`を毎回変えて3回GET | 3回目は429（`X-Forwarded-For`はクライアントが自由に付けられるため使わない） |
+| X-Real-IPが無ければREMOTE_ADDRごとに制限 | `REMOTE_ADDR` Aで2回GETした後、`REMOTE_ADDR` B・AでGET | Bは200、Aは429 |
+| X-Real-IPがIPでない | `X-Real-IP: not-an-ip`で2回GETした後、`X-Real-IP`なしでGET | 2回とも200（500にならない）で、3回目は`REMOTE_ADDR`で数えて429 |
 
 #### 7-12. `AiView` (`/ai/`)
 
