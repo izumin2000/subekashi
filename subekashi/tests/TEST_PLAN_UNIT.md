@@ -931,6 +931,17 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | フォームボタンの設定の保存 | `{"cookies": {"form_button": "icon"}}`・`{"cookies": {"form_button": "icon_text"}}` | HTTP 200、`form_button`のcookieが送信した値で保存される |
 | 許可されていない値は保存しない | `{"cookies": {"form_button": "text"}}`・`{"cookies": {"form_button": "<script>"}}` | HTTP 200、`form_button`のcookieは保存されない |
 
+#### 7-19. `robots` (`/robots.txt`)（#1172）
+
+`subekashi/static/subekashi/robots.txt`の内容を、`/static/`へリダイレクトせず`/robots.txt`で直接返す。robots.txtの`Disallow`は完全なURLではなくパス（`/`から始まる値）で書かないとどのURLにもマッチしない。Disallowが巡回を制限するかの判定は、`*`を任意の文字列とみなした前方一致で行う。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| robots.txtを直接返す | GETリクエスト | HTTP 200、`Content-Type`が`text/plain; charset=utf-8`で、`User-agent: *`とSitemapの行が含まれる |
+| Disallowの値はパス | GETリクエスト | `Disallow`の行が1つ以上あり、全ての値が`/`から始まる |
+| Disallowが対象のページにマッチする | 曲の編集・曲の削除・編集者・設定の各ページのパス | いずれかの`Disallow`にマッチする |
+| Disallowが対象外のページにマッチしない | トップ・曲の検索・曲・曲の編集履歴の各ページのパス | どの`Disallow`にもマッチしない |
+
 ---
 
 ### 8. REST API ビュー
