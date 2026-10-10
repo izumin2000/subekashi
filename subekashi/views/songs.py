@@ -96,6 +96,8 @@ class SongsView(View):
         # is_saved_selectの設定を確認
         is_saved_select = COOKIES.get('is_saved_select', 'on')
 
+        context["form_button"] = COOKIES.get('form_button', 'icon_text')
+
         for form_name, form_config in COOKIE_FORMS.items():
             default_value = form_config['default']
             allowed_values = form_config['values']

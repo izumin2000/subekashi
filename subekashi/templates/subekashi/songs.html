@@ -11,7 +11,7 @@
     {% csrf_token %}
     <h1>曲の一覧と検索</h1>
 
-    <div class="radio-group" id="search-form-radios">
+    <div class="radio-group{% if form_button == 'icon' %} icon-only{% endif %}" id="search-form-radios">
         <input type="radio" id="search-form-radio-keyword" name="search-form" value="keyword" {% if search_form == "keyword" %}checked{% endif %}>
         <label for="search-form-radio-keyword"><i class="fas fa-search"></i><span class="icon-p-big">キーワード</span></label>
         <input type="radio" id="search-form-radio-sort" name="search-form" value="sort" {% if search_form == "sort" %}checked{% endif %}>

@@ -609,6 +609,21 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 
 ---
 
+### 14. 検索画面のフォームボタンの設定フロー（#1164）
+
+**テストファイル**: `tests/test_views.py`（`SaveSettingsViewTest`）
+
+#### 14-1. 設定画面で保存したフォームボタンの設定が検索画面に反映される
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作1 | `POST /api/setting/save/`で`form_button=icon`を保存し、`GET /songs/` |
+| 検証1 | `#search-form-radios`に`icon-only`クラスが付く（`songs.css`でラベルの丸と文字が非表示になる） |
+| 操作2 | `POST /api/setting/save/`で`form_button=icon_text`を保存し、`GET /songs/` |
+| 検証2 | `#search-form-radios`に`icon-only`クラスが付かない |
+
+---
+
 ## テスト実装の方針
 
 ### ディレクトリ構成（案）

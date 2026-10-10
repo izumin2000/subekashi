@@ -10,7 +10,7 @@ import json
 ALLOWED_SETTING_KEYS = {
     'songrange', 'jokerange', 'news_type', 'is_shown_search',
     'is_shown_new', 'is_shown_ad', 'is_shown_ai', 'is_shown_lack',
-    'is_saved_select', 'brlyrics', 'pc_menu_position'
+    'is_saved_select', 'form_button', 'brlyrics', 'pc_menu_position'
 }
 
 # 各設定の許可される値
@@ -24,6 +24,7 @@ ALLOWED_SETTING_VALUES = {
     'is_shown_ai': {'on', 'off'},
     'is_shown_lack': {'0', '5', '10', '15'},
     'is_saved_select': {'on', 'off'},
+    'form_button': {'icon', 'icon_text'},
     'brlyrics': {'normal', 'pack', 'brless'},
     'pc_menu_position': {'header', 'aside'}
 }
@@ -44,6 +45,7 @@ class SettingView(View):
         is_shown_ai = request.COOKIES.get("is_shown_ai", "on")
         is_shown_lack = request.COOKIES.get("is_shown_lack", "5")
         is_saved_select = request.COOKIES.get("is_saved_select", "on")
+        form_button = request.COOKIES.get("form_button", "icon_text")
         brlyrics = request.COOKIES.get("brlyrics", "normal")
         pc_menu_position = request.COOKIES.get("pc_menu_position", "header")
 
@@ -124,9 +126,18 @@ class SettingView(View):
                 {
                     'label': '検索の選択肢の保存',
                     'id': 'is_saved_select',
+                    'tutorial': 'select',
                     'options': [
                         {'value': 'on', 'text': '保存', 'selected': is_saved_select == 'on'},
                         {'value': 'off', 'text': '未保存', 'selected': is_saved_select == 'off'},
+                    ]
+                },
+                {
+                    'label': 'フォームボタン',
+                    'id': 'form_button',
+                    'options': [
+                        {'value': 'icon', 'text': 'アイコンのみ', 'selected': form_button == 'icon'},
+                        {'value': 'icon_text', 'text': 'アイコンと文字', 'selected': form_button == 'icon_text'},
                     ]
                 },
             ],
