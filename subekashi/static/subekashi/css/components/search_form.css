@@ -1,0 +1,187 @@
+/* 検索フォーム（components/search_form.html）。検索画面とトップ画面の検索で共通 */
+/* トップ画面の他の要素に影響しないよう、要素・汎用のクラスへの指定は:where()でフォーム内に限定する（詳細度は変えない） */
+:where(#search-form-radios, #search-forms) .icon-p-big {
+    margin-left: 0;
+}
+
+:where(#search-forms) .small-icon {
+    margin-right: 5px;
+}
+
+:where(#search-forms) i.icon-p-big, :where(#search-forms) .small-icon {
+    margin-left: -5px;
+}
+
+#search-form-radios .icon-p-big {
+    margin-left: 8px;
+}
+
+#search-forms {
+    text-align: center;
+}
+
+/* details iと同じく、クラス指定のあるアイコンの余白より優先度を低くする */
+:where(#search-forms) i {
+    margin: 0 10px 0 0;
+}
+
+:where(#search-forms) .override-info {
+    margin-bottom: 20px;
+}
+
+/* ラジオボタンで選ぶフィルタ（.form-colと同じく、左に項目名・右に選択肢を並べる） */
+:where(#search-forms) .radio-col {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+:where(#search-forms) .radio-col-label {
+    flex-shrink: 0;
+    width: 9em;
+    margin-right: 5px;
+    line-height: 22px;
+}
+
+:where(#search-forms) .radio-col .radio-group {
+    flex: 1;
+    margin: 0;
+}
+
+/* 並び替えは早い順・遅い順(少ない順・多い順)が1行に2つずつ並ぶよう幅を制限し、中央に寄せる */
+#search-form-sort .radio-group {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+/* フォームを切り替えるラジオボタンは2.5行分(3行目の半分)までを表示し、残りは縦スクロールで表示する（バッジが切れないよう上と左右に余白を取る） */
+/* 高さはcommon.cssの.radio-groupのラジオボタンの高さ(40px)と間隔(10px)から計算する */
+/* 続きがあることが分かるよう下端をぼかす（一番下までスクロールした場合はぼかさない） */
+#search-form-radios {
+    max-height: calc(40px * 2.5 + 10px * 2);
+    overflow-x: hidden;
+    overflow-y: auto;
+    margin: 10px 0;
+    padding: 6px 6px 0 6px;
+    scrollbar-color: #555 transparent;
+    scrollbar-gutter: stable both-edges;     /* スクロールバーが幅を取る環境でも左右中央に揃える */
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 15px), rgba(0, 0, 0, 0.25));
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 15px), rgba(0, 0, 0, 0.25));
+}
+
+#search-form-radios.expanded {
+    max-height: none;
+}
+
+#search-form-radios.expanded, #search-form-radios.scroll-end {
+    -webkit-mask-image: none;
+    mask-image: none;
+}
+
+/* 設定でフォームボタンをアイコンのみにした場合は、丸と文字を表示せず、背景色のみで選択中であることを示す */
+#search-form-radios.icon-only label::before {
+    display: none;
+}
+
+/* 文字は読み上げでラジオボタンの名前として使われるよう、display: noneではなく見えない状態にする */
+#search-form-radios.icon-only .icon-p-big {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+/* ラジオボタンを全て表示するボタン */
+#search-form-radios-toggle {
+    display: block;
+    width: auto;
+    height: auto;
+    margin: 0 auto 10px auto;
+    padding: 0 12px;
+    font-size: 13px;
+    line-height: 24px;
+    color: #fff;
+    background-color: #333;
+    border-radius: 20px;
+}
+
+/* ラジオボタンが縦にはみ出ない場合はsearch_form.jsでhiddenにする */
+#search-form-radios-toggle[hidden] {
+    display: none;
+}
+
+#search-form-radios-toggle:hover, #search-form-radios-toggle:active {
+    box-shadow: none;
+    background-color: #555;
+}
+
+#search-form-radios-toggle i {
+    margin-right: 6px;
+    font-size: 13px;
+    line-height: 24px;
+}
+
+@media (max-width: 640px) {
+    :where(#search-forms) .radio-col {
+        display: block;
+    }
+
+    :where(#search-forms) .radio-col-label {
+        width: auto;
+        margin: 0 0 10px 0;
+    }
+}
+
+/* 3つの選択肢が1行に収まるよう余白を詰める（画面幅360pxや、項目名を左に並べると幅が足りない641〜700pxでも収まるようにする） */
+@media (max-width: 700px) {
+    :where(#search-forms) .radio-col .radio-group {
+        gap: 6px;
+    }
+
+    :where(#search-forms) .radio-col .radio-group label {
+        padding: 0 8px;
+    }
+
+    :where(#search-forms) .radio-col .radio-group label::before {
+        margin-right: 6px;
+    }
+
+    :where(#search-forms) .radio-col .radio-group label i {
+        margin-right: 4px;
+    }
+}
+
+:where(#search-forms) .override-info i {
+    margin-right: 8px;
+}
+
+:where(#search-forms) #imitate-div p {
+    margin: 0;
+}
+
+:where(#search-forms) details {
+    margin: 0;
+    padding: 0;
+}
+
+:where(#search-forms) summary {
+    list-style: revert;
+}
+
+#mediatype-wrapper {
+    background-color: #333;
+    margin-top: 5px;
+    padding: 5px 0;
+}
+
+#mediatype-wrapper details{
+    background-color: #555;
+    margin: 0 5px;
+}
+
+#mediatype-wrapper img {
+    height: 24px;
+    margin-right: 5px;
+}

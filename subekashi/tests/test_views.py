@@ -28,7 +28,7 @@ from subekashi.lib.query_utils import YOUTUBE_FILTERS, YOUTUBE_SORTS
 from subekashi.lib.youtube import YoutubeApiError
 from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song, Stats, Word
 from subekashi.models.author import TransitiveAlias
-from subekashi.views.songs import COOKIE_FORMS, SEARCH_FORM_QUERIES, SORT_CHOICES
+from subekashi.views.songs import COOKIE_FORMS, SEARCH_FORM_QUERIES, SORT_CHOICES, TEXT_FORMS
 
 
 STATIC_STORAGE = {
@@ -145,6 +145,176 @@ class TopViewTest(TestCase):
         self.assertEqual(content.count('id="pc-global-header"'), 1)
         self.assertNotIn('id="pc-header-menu"', content)
         self.assertLess(content.index('id="pc-global-header"'), content.index('id="subekashi-header"'))
+
+    def _get_search_form_html(self, response):
+        match = re.search(r'<form action="/songs/" method="GET" id="search-form">.*?</form>', response.content.decode(), re.DOTALL)
+        return match.group() if match else None
+
+    def test_search_shows_keyword_only_by_default(self):
+        """検索の表示設定のcookieが無い場合、キーワードのみの検索フォームが表示される（#585）"""
+        response = self.client.get(reverse("subekashi:top"))
+        form_html = self._get_search_form_html(response)
+
+        self.assertEqual(response.context["is_shown_search"], "on")
+        self.assertIn('<input type="text" id="keyword" name="keyword" placeholder="タイトル・チャンネル名・歌詞・URL">', form_html)
+        self.assertNotIn('id="search-form-radios"', form_html)
+        self.assertNotContains(response, "subekashi/js/search_form.js")
+
+    def test_search_shows_keyword_only_when_on(self):
+        """検索の表示設定が「キーワードのみ」(on)の場合、キーワードのみの検索フォームが表示される（#585）"""
+        self.client.cookies["is_shown_search"] = "on"
+        response = self.client.get(reverse("subekashi:top"))
+        form_html = self._get_search_form_html(response)
+
+        self.assertIn('id="keyword"', form_html)
+        self.assertNotIn('id="search-forms"', form_html)
+
+    def test_search_is_hidden_when_off(self):
+        """検索の表示設定が「非表示」(off)の場合、検索フォームは表示されない（#585）"""
+        self.client.cookies["is_shown_search"] = "off"
+        response = self.client.get(reverse("subekashi:top"))
+
+        self.assertNotContains(response, "<h1>検索</h1>")
+        self.assertIsNone(self._get_search_form_html(response))
+        self.assertNotContains(response, "subekashi/js/search_form.js")
+
+    def test_search_shows_all_forms_when_all(self):
+        """検索の表示設定が「全て表示」(all)の場合、検索画面と同じフォームが表示され、キーワードのフォームが初期表示される（#585）"""
+        self.client.cookies["is_shown_search"] = "all"
+        response = self.client.get(reverse("subekashi:top"))
+        form_html = self._get_search_form_html(response)
+
+        radios = re.findall(r'id="search-form-radio-(\w+)"', form_html)
+        self.assertEqual(radios, list(SEARCH_FORM_QUERIES))
+        self.assertEqual(re.findall(r'name="search-form" value="(\w+)" checked>', form_html), ["keyword"])
+        self.assertIn('<div class="search-form" id="search-form-keyword" >', form_html)
+        self.assertIn('<div class="search-form" id="search-form-title" hidden>', form_html)
+        self.assertIn('<input type="text" id="keyword" name="keyword" placeholder="タイトル・作者・歌詞・URL" value="">', form_html)
+        self.assertIn('id="search-form-radios-toggle"', form_html)
+        self.assertIn('<script id="youtube-queries" type="application/json">', form_html)
+        self.assertIn('<input type="submit" value="検索" id="searchsubmit">', form_html)
+
+    def test_all_search_loads_search_form_js_before_top_js(self):
+        """「全て表示」の場合、トップ画面のJSより先に検索フォームのJSが読み込まれる（#585）"""
+        self.client.cookies["is_shown_search"] = "all"
+        content = self.client.get(reverse("subekashi:top")).content.decode()
+
+        self.assertLess(content.index("subekashi/js/search_form.js"), content.index("subekashi/js/top.js"))
+
+    def test_is_shown_all_search_matches_search_form_js(self):
+        """top.jsに渡すisShownAllSearchは、search_form.jsを読み込む場合のみtrueになる（#585）"""
+        for value, expected in [("all", "true"), ("on", "false"), ("off", "false"), ("invalid", "false")]:
+            with self.subTest(value=value):
+                self.client.cookies["is_shown_search"] = value
+                content = self.client.get(reverse("subekashi:top")).content.decode()
+
+                self.assertEqual(re.findall(r"const isShownAllSearch = (\w+);", content), [expected])
+                self.assertEqual("subekashi/js/search_form.js" in content, expected == "true")
+
+    def test_search_form_css_is_loaded_only_when_all(self):
+        """検索フォームのCSSは「全て表示」の場合のみ、トップ画面のCSSより先に読み込まれる（#585）"""
+        for value, is_loaded in [("all", True), ("on", False), ("off", False)]:
+            with self.subTest(value=value):
+                self.client.cookies["is_shown_search"] = value
+                content = self.client.get(reverse("subekashi:top")).content.decode()
+
+                self.assertEqual("subekashi/css/components/search_form.css" in content, is_loaded)
+                if is_loaded:
+                    self.assertLess(content.index("subekashi/css/components/search_form.css"), content.index("subekashi/css/top.css"))
+
+    def test_all_search_has_no_csrf_token(self):
+        """「全て表示」の検索フォームはGETで送信するため、CSRFトークンを含まない（#585）"""
+        self.client.cookies["is_shown_search"] = "all"
+        response = self.client.get(reverse("subekashi:top"))
+
+        self.assertNotIn("csrfmiddlewaretoken", self._get_search_form_html(response))
+
+    def test_all_search_reflects_saved_select_cookies(self):
+        """「全て表示」の場合、検索画面と同じく保存された並び替え・界隈曲・ネタ曲の選択肢と、フォームボタンの設定が反映される（#585）"""
+        self.client.cookies["is_shown_search"] = "all"
+        self.client.cookies["is_saved_select"] = "on"
+        self.client.cookies["search_sort"] = "-view"
+        self.client.cookies["search_songrange"] = "subeana"
+        self.client.cookies["search_jokerange"] = "off"
+        self.client.cookies["form_button"] = "icon"
+        response = self.client.get(reverse("subekashi:top"))
+        form_html = self._get_search_form_html(response)
+
+        self.assertEqual(re.findall(r'name="sort" value="([^"]*)" checked>', form_html), ["-view"])
+        self.assertEqual(re.findall(r'name="songrange" value="([^"]*)"[^>]*checked>', form_html), ["subeana"])
+        self.assertEqual(re.findall(r'name="jokerange" value="([^"]*)"[^>]*checked>', form_html), ["off"])
+        self.assertIn('<div class="radio-group icon-only" id="search-form-radios">', form_html)
+
+    def test_all_search_uses_default_when_saved_select_is_off(self):
+        """「全て表示」の場合、検索の選択肢の保存がoffなら、保存された選択肢ではなくデフォルト値が選択される（#585）"""
+        self.client.cookies["is_shown_search"] = "all"
+        self.client.cookies["is_saved_select"] = "off"
+        self.client.cookies["search_sort"] = "-view"
+        self.client.cookies["search_songrange"] = "subeana"
+        response = self.client.get(reverse("subekashi:top"))
+        form_html = self._get_search_form_html(response)
+
+        self.assertEqual(re.findall(r'name="sort" value="([^"]*)" checked>', form_html), ["-post_time"])
+        self.assertEqual(re.findall(r'name="songrange" value="([^"]*)"[^>]*checked>', form_html), ["all"])
+
+    def test_all_search_ignores_url_query_and_does_not_save_cookies(self):
+        """「全て表示」の場合、トップ画面のURLクエリはフォームの選択・入力欄に使われず、検索の選択肢のcookieも保存されない（#585）"""
+        self.client.cookies["is_shown_search"] = "all"
+        self.client.cookies["is_saved_select"] = "on"
+        query = {"sort": "-view", "songrange": "xx", "is_lack": "True", "mediatypes": "youtube"}
+        query.update({name: "2024-01-01" for name in TEXT_FORMS})
+        response = self.client.get(reverse("subekashi:top"), query)
+        form_html = self._get_search_form_html(response)
+
+        self.assertEqual(response.context["search_form"], "keyword")
+        self.assertEqual(re.findall(r'name="sort" value="([^"]*)" checked>', form_html), ["-post_time"])
+        self.assertEqual(re.findall(r'name="is_lack" value="([^"]*)"[^>]*checked>', form_html), [""])
+        self.assertEqual(re.findall(r'id="media-[^"]+" checked>', form_html), [])
+        for name in TEXT_FORMS:
+            with self.subTest(name=name):
+                self.assertEqual(re.findall(rf'<input [^>]*name="{name}"[^>]*value="([^"]*)"', form_html), [""])
+        for name in ["search_sort", "search_songrange", "search_jokerange"]:
+            self.assertNotIn(name, response.cookies)
+
+    def test_all_search_selects_same_radios_as_songs_without_query(self):
+        """「全て表示」のフォームで表示時に選択されるラジオボタンは、URLクエリが無い検索画面と一致する（#585）
+
+        top.jsは表示時から選択を変更していないラジオボタンをURLクエリに含めないため、検索画面で同じ値が選択される必要がある
+        """
+        saved_cookies = {"search_sort": "-view", "search_songrange": "subeana", "search_jokerange": "off"}
+        invalid_cookies = {"search_sort": "invalid", "search_songrange": "invalid", "search_jokerange": "invalid"}
+        cases = [
+            ("cookieなし", {}),
+            ("保存on", {"is_saved_select": "on", **saved_cookies}),
+            ("保存off", {"is_saved_select": "off", **saved_cookies}),
+            ("保存onで不正な値", {"is_saved_select": "on", **invalid_cookies}),
+        ]
+        checked_pattern = r'name="(sort|songrange|jokerange|is_\w+)" value="([^"]*)"[^>]*checked>'
+        for label, cookies in cases:
+            with self.subTest(label):
+                self.client.cookies.clear()
+                for name, value in cookies.items():
+                    self.client.cookies[name] = value
+                self.client.cookies["is_shown_search"] = "all"
+                top_checked = re.findall(checked_pattern, self._get_search_form_html(self.client.get(reverse("subekashi:top"))))
+                songs_checked = re.findall(checked_pattern, self.client.get(reverse("subekashi:songs")).content.decode())
+
+                self.assertEqual(top_checked, songs_checked)
+                self.assertEqual(len(top_checked), 11)
+
+    def test_search_with_invalid_cookie_is_keyword_only(self):
+        """検索の表示設定のcookieが不正な値の場合、キーワードのみの検索フォームが表示される（#585）"""
+        for value in ["keyword", "ALL", "<script>"]:
+            with self.subTest(value=value):
+                self.client.cookies["is_shown_search"] = value
+                response = self.client.get(reverse("subekashi:top"))
+                form_html = self._get_search_form_html(response)
+
+                self.assertEqual(response.context["is_shown_search"], "on")
+                self.assertIn('id="keyword"', form_html)
+                self.assertNotIn('id="search-forms"', form_html)
+                self.assertNotContains(response, "subekashi/js/search_form.js")
+                self.assertNotContains(response, "subekashi/css/components/search_form.css")
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
@@ -531,6 +701,38 @@ class SongsViewTest(TestCase):
         """「結果を表示」ボタン(scroll-to-results)が表示されないこと"""
         response = self.client.get(reverse("subekashi:songs"))
         self.assertNotContains(response, "scroll-to-results")
+
+    def test_search_form_css_is_loaded_before_songs_css(self):
+        """検索フォームのCSSが、検索画面のCSSより先に読み込まれること（#585）"""
+        content = self.client.get(reverse("subekashi:songs")).content.decode()
+
+        self.assertLess(content.index("subekashi/css/components/search_form.css"), content.index("subekashi/css/songs.css"))
+
+    def test_search_form_css_is_not_loaded_on_other_pages(self):
+        """検索フォームのCSSは、検索フォームが無いページでは読み込まれないこと（#585）"""
+        for url in [reverse("subekashi:setting"), reverse("subekashi:song_new")]:
+            with self.subTest(url=url):
+                self.assertNotContains(self.client.get(url), "subekashi/css/components/search_form.css")
+
+    def test_text_forms_cover_all_inputs(self):
+        """URLクエリを初期値にする入力欄（TEXT_FORMS）が、フォームの文字・数値・日付の入力欄と一致すること（#585）"""
+        content = self.client.get(reverse("subekashi:songs")).content.decode()
+        inputs = re.findall(r'<input type="(?:text|number|date)" id="[^"]+" name="([^"]+)"', content)
+        self.assertCountEqual(inputs, TEXT_FORMS)
+
+    def test_text_forms_reflect_url_query(self):
+        """入力欄にURLクエリの値がエスケープされて入ること（#585）"""
+        response = self.client.get(reverse("subekashi:songs"), {name: f'{name}"<b>' for name in TEXT_FORMS})
+        content = response.content.decode()
+        for name in TEXT_FORMS:
+            with self.subTest(name=name):
+                self.assertEqual(response.context["form_values"][name], f'{name}"<b>')
+                self.assertEqual(re.findall(rf'<input [^>]*name="{name}"[^>]*value="([^"]*)"', content), [f"{name}&quot;&lt;b&gt;"])
+
+    def test_search_form_js_is_loaded_before_songs_js(self):
+        """トップ画面と共通の検索フォームのJSが、検索画面のJSより先に読み込まれること（#585）"""
+        content = self.client.get(reverse("subekashi:songs")).content.decode()
+        self.assertLess(content.index("subekashi/js/search_form.js"), content.index("subekashi/js/songs.js"))
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
@@ -3554,6 +3756,32 @@ class SettingViewTest(TestCase):
             ("icon_text", "アイコンと文字", False),
         ])
 
+    def _get_search_display_options(self, response):
+        setting = next(setting for setting in response.context["settings"]["top"] if setting["id"] == "is_shown_search")
+        return [(option["value"], option["text"], option["selected"]) for option in setting["options"]]
+
+    def test_search_display_defaults_to_keyword_only(self):
+        """トップ画面の検索の表示の設定は「全て表示」「キーワードのみ」「非表示」から選べ、cookieが無い場合は「キーワードのみ」が選択される（#585）"""
+        response = self.client.get(reverse("subekashi:setting"))
+
+        self.assertContains(response, '<select id="is_shown_search" class="setting-input">')
+        self.assertEqual(self._get_search_display_options(response), [
+            ("all", "全て表示", False),
+            ("on", "キーワードのみ", True),
+            ("off", "非表示", False),
+        ])
+
+    def test_search_display_reflects_cookie(self):
+        """トップ画面の検索の表示の設定は、cookieの値が選択される。以前の「表示」(on)は「キーワードのみ」になる（#585）"""
+        cases = [("all", "全て表示"), ("on", "キーワードのみ"), ("off", "非表示")]
+        for value, text in cases:
+            with self.subTest(value=value):
+                self.client.cookies["is_shown_search"] = value
+                response = self.client.get(reverse("subekashi:setting"))
+
+                selected = [option_text for _, option_text, is_selected in self._get_search_display_options(response) if is_selected]
+                self.assertEqual(selected, [text])
+
     def test_tutorial_icon_is_shown_only_for_saved_select(self):
         """検索画面のセクションで、選択肢の保存のチュートリアルのアイコンは「検索の選択肢の保存」にのみ付く（#1164）"""
         response = self.client.get(reverse("subekashi:setting"))
@@ -3605,6 +3833,39 @@ class SaveSettingsViewTest(TestCase):
         response = self.client.get(reverse("subekashi:songs"))
 
         self.assertContains(response, '<div class="radio-group" id="search-form-radios">')
+
+    def test_is_shown_search_is_saved(self):
+        """トップ画面の検索の表示の設定はcookieに保存される（#585）"""
+        for value in ["all", "on", "off"]:
+            with self.subTest(value=value):
+                response = self._post({"is_shown_search": value})
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.cookies["is_shown_search"].value, value)
+
+    def test_is_shown_search_with_invalid_value_is_not_saved(self):
+        """トップ画面の検索の表示の設定に許可されていない値を送信しても、cookieには保存されない（#585）"""
+        for value in ["keyword", "<script>"]:
+            with self.subTest(value=value):
+                response = self._post({"is_shown_search": value})
+
+                self.assertEqual(response.status_code, 200)
+                self.assertNotIn("is_shown_search", response.cookies)
+
+    def test_saved_is_shown_search_is_applied_to_top(self):
+        """設定画面で保存した検索の表示の設定が、トップ画面の検索フォームに反映される（#585）"""
+        self._post({"is_shown_search": "all"})
+        response = self.client.get(reverse("subekashi:top"))
+        self.assertContains(response, 'id="search-form-radios"')
+
+        self._post({"is_shown_search": "on"})
+        response = self.client.get(reverse("subekashi:top"))
+        self.assertContains(response, 'id="keyword"')
+        self.assertNotContains(response, 'id="search-form-radios"')
+
+        self._post({"is_shown_search": "off"})
+        response = self.client.get(reverse("subekashi:top"))
+        self.assertNotContains(response, 'id="search-form"')
 
 
 @override_settings(STORAGES=STATIC_STORAGE)

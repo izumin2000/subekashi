@@ -1,8 +1,47 @@
+// 検索の表示設定が「全て表示」の場合（top.htmlのisShownAllSearch）は、検索画面と同じフォームを表示する
+// その場合のみtop.htmlでsearch_form.jsをこのファイルより先に読み込み、FORM_QUERIES・initSearchForm・collectFormQuery・renderFilterStatus・toQueryString・renderSongGuesserを使う
 const keywordElement = document.getElementById("keyword");
 const isPC = window.innerWidth > 960; 
-if (keywordElement && isPC) {
+// 「全て表示」の場合は、表示したフォームの入力欄をsearch_form.jsで選択する
+if (keywordElement && isPC && !isShownAllSearch) {
     keywordElement.focus();
     keywordElement.click();
+}
+
+if (isShownAllSearch) {
+    window.addEventListener('load', function () {
+        initSearchForm();
+        renderFilterStatus();
+        document.querySelectorAll(FORM_QUERIES).forEach((formEle) => {
+            formEle.addEventListener('change', renderFilterStatus);
+        });
+    });
+
+    // 入力したフィルタで検索画面を開く
+    document.getElementById("search-form").addEventListener('submit', (event) => {
+        event.preventDefault();
+        location.href = event.target.action + toQueryString(formToSongsQuery());
+    });
+}
+
+// フォームの値を検索画面のURLクエリに変換する
+// ラジオボタンは表示時から選択を変更した場合のみ含める（並び替え・界隈曲・ネタ曲は表示時にcookieの値が選択されており、含めなくても検索画面で同じ値が選択されるため）
+function formToSongsQuery() {
+    return collectFormQuery((radioEle) => radioEle.defaultChecked ? {} : { [radioEle.name]: radioEle.value });
+}
+
+function songGuesserClick(id) {
+    const imitateEle = document.getElementById("imitate");
+    imitateEle.value = "";
+
+    renderSongGuesser();
+    imitateEle.value = id;
+    renderFilterStatus();
+}
+
+function categoryClick(song) {
+    document.getElementById("imitate").value = song.id;
+    renderFilterStatus();
 }
 
 const newsDisplayEle = document.getElementById('single-news-display');

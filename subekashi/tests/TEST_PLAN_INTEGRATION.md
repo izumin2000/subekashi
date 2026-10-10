@@ -618,7 +618,7 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 | 項目 | 内容 |
 | --- | --- |
 | 操作1 | `POST /api/setting/save/`で`form_button=icon`を保存し、`GET /songs/` |
-| 検証1 | `#search-form-radios`に`icon-only`クラスが付く（`songs.css`でラベルの丸と文字が非表示になる） |
+| 検証1 | `#search-form-radios`に`icon-only`クラスが付く（`css/components/search_form.css`でラベルの丸と文字が非表示になる） |
 | 操作2 | `POST /api/setting/save/`で`form_button=icon_text`を保存し、`GET /songs/` |
 | 検証2 | `#search-form-radios`に`icon-only`クラスが付かない |
 
@@ -673,6 +673,45 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 | 検証2 | HTTP 200で「HTMLに変換すると1800文字になり、上限の500文字を超えます。」と表示され、記事は作成されない |
 | 操作3 | 操作1のあと`GET /admin/article/article/` |
 | 検証3 | 一覧に`__str__`のタグを除いたタイトル`太字`が表示され、`&lt;strong&gt;`は表示されない |
+
+---
+
+### 18. トップ画面の検索の表示の設定フロー（#585）
+
+**テストファイル**: `tests/test_views.py`（`SaveSettingsViewTest`）
+
+#### 18-1. 設定画面で保存した検索の表示の設定がトップ画面に反映される
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作1 | `POST /api/setting/save/`で`is_shown_search=all`を保存し、`GET /` |
+| 検証1 | 検索画面と同じフォーム（`#search-form-radios`）が表示される |
+| 操作2 | `POST /api/setting/save/`で`is_shown_search=on`を保存し、`GET /` |
+| 検証2 | キーワードのみのフォーム（`#keyword`）が表示され、`#search-form-radios`は無い |
+| 操作3 | `POST /api/setting/save/`で`is_shown_search=off`を保存し、`GET /` |
+| 検証3 | 検索フォーム（`#search-form`）が表示されない |
+
+#### 18-2. トップ画面の「全て表示」の検索フォームから検索画面への遷移（Playwrightで確認）
+
+送信時のURLクエリへの変換はJS（`top.js`）で行うため、Djangoテストではなく開発サーバーとPlaywrightで確認する。
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作1 | `is_shown_search=all`でトップ画面を開き、歌詞・並び替え（再生回数/多い順）・未完成（のみ）・界隈曲（以外）・メディア（YouTube）を入力して検索 |
+| 検証1 | `/songs/?lyrics=...&sort=-view&is_lack=True&songrange=xx&mediatypes=youtube`に遷移し、検索画面で同じ値が選択・入力される。入力中はフィルタのバッジと自動で適用されるフィルタの案内が検索画面と同じく表示される |
+| 操作2 | 操作1の後にトップ画面を開き、キーワードのみ入力して検索 |
+| 検証2 | 検索画面で保存された並び替え・界隈曲がトップ画面でも選択されており、URLクエリは`?keyword=...`のみで、検索画面でも同じ並び替え・界隈曲が選択される |
+| 操作3 | 保存された界隈曲（以外）を「指定なし」に変更して検索 |
+| 検証3 | URLクエリに`songrange=all`が含まれ、検索画面でも「指定なし」が選択される |
+| 操作4 | 原曲ボタン・song guesserをクリック |
+| 検証4 | 模倣の曲IDが入力されるのみで遷移せず、検索すると`?imitate=<曲ID>`に遷移する |
+| 操作5 | 何も入力せずに検索 |
+| 検証5 | URLクエリなしの`/songs/`に遷移する |
+| 操作6 | `is_saved_select=off`で並び替え・界隈曲・ネタ曲のcookie（`-view`・`subeana`・`off`）がある状態で、トップ画面からキーワードのみ入力して検索した後、並び替え・界隈曲を変更して検索 |
+| 検証6 | トップ画面・検索画面ともにcookieではなくデフォルト値（`-post_time`・`all`・`on`）が選択され、URLクエリは`?keyword=...`のみ。変更した場合は`sort`・`songrange`がURLクエリに含まれて検索画面で選択されるが、cookieは変わらない |
+| 操作7 | `is_saved_select`がon・offそれぞれで、(a) 界隈曲を変更してから元に戻して検索、(b) 表示後に`search_sort`のcookieを変え、`restoreFormValuesFromCookies()`で選択を書き換えて（bfcacheから戻ったときと同じ）検索、(c) 検索画面で並び替えを変更してからブラウザバックでトップ画面に戻り、変更せずに検索 |
+| 検証7 | いずれもトップ画面で選択されていた値と検索画面で選択される値が一致する。(a) はURLクエリに含まれない。(b) はonの場合のみ書き換わり、`sort`がURLクエリに含まれる。(c) は`never_cache`のためbfcacheを使わずに再読み込みされ、onの場合は検索画面で保存した値が選択される。トップ画面のレスポンスで`search_*`のcookieは保存されない |
+| 共通 | コンソールにCSP違反・JSのエラーが出ない |
 
 ---
 

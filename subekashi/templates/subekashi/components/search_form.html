@@ -1,0 +1,201 @@
+{% load categorys %}
+
+<div class="radio-group{% if form_button == 'icon' %} icon-only{% endif %}" id="search-form-radios">
+    <input type="radio" id="search-form-radio-keyword" name="search-form" value="keyword" {% if search_form == "keyword" %}checked{% endif %}>
+    <label for="search-form-radio-keyword"><i class="fas fa-search"></i><span class="icon-p-big">キーワード</span></label>
+    <input type="radio" id="search-form-radio-sort" name="search-form" value="sort" {% if search_form == "sort" %}checked{% endif %}>
+    <label for="search-form-radio-sort"><i class="fas fa-sort-amount-down"></i><span class="icon-p-big">並び替え</span></label>
+    <input type="radio" id="search-form-radio-lyrics" name="search-form" value="lyrics" {% if search_form == "lyrics" %}checked{% endif %}>
+    <label for="search-form-radio-lyrics"><i class="fas fa-align-center"></i><span class="icon-p-big">歌詞</span></label>
+    <input type="radio" id="search-form-radio-youtube" name="search-form" value="youtube" {% if search_form == "youtube" %}checked{% endif %}>
+    <label for="search-form-radio-youtube"><i class="fab fa-youtube"></i><span class="icon-p-big">YouTube</span></label>
+    <input type="radio" id="search-form-radio-title" name="search-form" value="title" {% if search_form == "title" %}checked{% endif %}>
+    <label for="search-form-radio-title"><i class="fab fa-itunes-note"></i><span class="icon-p-big">タイトル</span></label>
+    <input type="radio" id="search-form-radio-author" name="search-form" value="author" {% if search_form == "author" %}checked{% endif %}>
+    <label for="search-form-radio-author"><i class="fas fa-user"></i><span class="icon-p-big">作者</span></label>
+    <input type="radio" id="search-form-radio-url" name="search-form" value="url" {% if search_form == "url" %}checked{% endif %}>
+    <label for="search-form-radio-url"><i class="fas fa-link"></i><span class="icon-p-big">URL</span></label>
+    <input type="radio" id="search-form-radio-imitate" name="search-form" value="imitate" {% if search_form == "imitate" %}checked{% endif %}>
+    <label for="search-form-radio-imitate"><i class="fas fa-sitemap"></i><span class="icon-p-big">模倣</span></label>
+    <input type="radio" id="search-form-radio-subeana" name="search-form" value="subeana" {% if search_form == "subeana" %}checked{% endif %}>
+    <label for="search-form-radio-subeana"><i class="fas fa-border-style"></i><span class="icon-p-big">界隈曲の種類</span></label>
+    <input type="radio" id="search-form-radio-joke" name="search-form" value="joke" {% if search_form == "joke" %}checked{% endif %}>
+    <label for="search-form-radio-joke"><i class="far fa-meh-rolling-eyes"></i><span class="icon-p-big">ネタ曲</span></label>
+    <input type="radio" id="search-form-radio-original" name="search-form" value="original" {% if search_form == "original" %}checked{% endif %}>
+    <label for="search-form-radio-original"><i class="fas fa-external-link-alt"></i><span class="icon-p-big">オリジナル模倣曲</span></label>
+    <input type="radio" id="search-form-radio-inst" name="search-form" value="inst" {% if search_form == "inst" %}checked{% endif %}>
+    <label for="search-form-radio-inst"><i class="fas fa-comment-slash"></i><span class="icon-p-big">インスト曲</span></label>
+    <input type="radio" id="search-form-radio-questionable" name="search-form" value="questionable" {% if search_form == "questionable" %}checked{% endif %}>
+    <label for="search-form-radio-questionable"><i class="fas fa-question"></i><span class="icon-p-big">界隈曲?</span></label>
+    <input type="radio" id="search-form-radio-special" name="search-form" value="special" {% if search_form == "special" %}checked{% endif %}>
+    <label for="search-form-radio-special"><i class="fas fa-magic"></i><span class="icon-p-big">スペシャルデザイン</span></label>
+    <input type="radio" id="search-form-radio-collab" name="search-form" value="collab" {% if search_form == "collab" %}checked{% endif %}>
+    <label for="search-form-radio-collab"><i class="fas fa-user-friends"></i><span class="icon-p-big">合作</span></label>
+    <input type="radio" id="search-form-radio-deleted" name="search-form" value="deleted" {% if search_form == "deleted" %}checked{% endif %}>
+    <label for="search-form-radio-deleted"><i class="far fa-eye-slash"></i><span class="icon-p-big">非公開/削除済み</span></label>
+    <input type="radio" id="search-form-radio-lack" name="search-form" value="lack" {% if search_form == "lack" %}checked{% endif %}>
+    <label for="search-form-radio-lack"><i class="fas fa-tasks"></i><span class="icon-p-big">未完成</span></label>
+    <input type="radio" id="search-form-radio-draft" name="search-form" value="draft" {% if search_form == "draft" %}checked{% endif %}>
+    <label for="search-form-radio-draft"><i class="fas fa-user-edit"></i><span class="icon-p-big">下書き</span></label>
+</div>
+<button type="button" id="search-form-radios-toggle" aria-controls="search-form-radios" aria-expanded="false"><i class="fas fa-angle-down"></i><span>全て表示</span></button>
+
+<div id="search-forms">
+    <div class="search-form" id="search-form-keyword" {% if search_form != "keyword" %}hidden{% endif %}>
+        <div class="form-col">
+            <label for="keyword"><i class="fas fa-search"></i><span class="icon-p-big">キーワード</span></label>
+            <input type="text" id="keyword" name="keyword" placeholder="タイトル・作者・歌詞・URL" value="{{ form_values.keyword }}">
+        </div>
+    </div>
+    <div class="search-form" id="search-form-sort" {% if search_form != "sort" %}hidden{% endif %}>
+        <div class="radio-col">
+            <p class="radio-col-label"><i class="fas fa-sort-amount-down"></i><span class="icon-p-big">並び替え</span></p>
+            <div class="radio-group">
+                {% for choice in SORT_CHOICES %}
+                    <input type="radio" id="sort-{{ forloop.counter }}" name="sort" value="{{ choice.value }}" {% if sort == choice.value %}checked{% endif %}>
+                    <label for="sort-{{ forloop.counter }}"><i class="{{ choice.icon }}"></i><span class="icon-p-big">{% if choice.value in youtube_queries.sorts %}<i class="fab fa-youtube"></i>{% endif %}{{ choice.label }}</span></label>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="search-form" id="search-form-lyrics" {% if search_form != "lyrics" %}hidden{% endif %}>
+        <div class="form-col">
+            <label for="lyrics"><i class="fas fa-align-center"></i><span class="icon-p-big">歌詞</span></label>
+            <input type="text" id="lyrics" name="lyrics" value="{{ form_values.lyrics }}">
+        </div>
+    </div>
+    <div class="search-form" id="search-form-youtube" {% if search_form != "youtube" %}hidden{% endif %}>
+        <div class="form-col">
+            <label for="view_gte"><i class="fas fa-play"></i><i class="fas fa-greater-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>再生回数/以上</span></label>
+            <input type="number" id="view_gte" name="view_gte" value="{{ form_values.view_gte }}" min="1">
+        </div>
+        <div class="form-col">
+            <label for="view_lte"><i class="fas fa-play"></i><i class="fas fa-less-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>再生回数/以下</span></label>
+            <input type="number" id="view_lte" name="view_lte" value="{{ form_values.view_lte }}" min="1">
+        </div>
+        <p class="info override-info" id="view-override-info" hidden><i class="fas fa-info-circle info"></i>再生回数のフィルタ/並び替えが有効なため、再生回数が1回以上の曲のみを表示しています</p>
+        <div class="form-col">
+            <label for="like_gte"><i class="far fa-thumbs-up"></i><i class="fas fa-greater-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>高評価数/以上</span></label>
+            <input type="number" id="like_gte" name="like_gte" value="{{ form_values.like_gte }}" min="1">
+        </div>
+        <div class="form-col">
+            <label for="like_lte"><i class="far fa-thumbs-up"></i><i class="fas fa-less-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>高評価数/以下</span></label>
+            <input type="number" id="like_lte" name="like_lte" value="{{ form_values.like_lte }}" min="1">
+        </div>
+        <p class="info override-info" id="like-override-info" hidden><i class="fas fa-info-circle info"></i>高評価数のフィルタ/並び替えが有効なため、高評価数が1以上の曲のみを表示しています</p>
+        <div class="form-col">
+            <label for="upload_time_gte"><i class="far fa-calendar-alt"></i><i class="fas fa-greater-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>投稿日/以降</span></label>
+            <input type="date" id="upload_time_gte" name="upload_time_gte" value="{{ form_values.upload_time_gte }}" min="2000-01-01" max="9999-12-31">
+        </div>
+        <div class="form-col">
+            <label for="upload_time_lte"><i class="far fa-calendar-alt"></i><i class="fas fa-less-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>投稿日/以前</span></label>
+            <input type="date" id="upload_time_lte" name="upload_time_lte" value="{{ form_values.upload_time_lte }}" min="2000-01-01" max="9999-12-31">
+        </div>
+        <p class="info override-info" id="upload_time-override-info" hidden><i class="fas fa-info-circle info"></i>投稿日の並び替えが有効なため、投稿日が登録されている曲のみを表示しています</p>
+    </div>
+    <div class="search-form" id="search-form-title" {% if search_form != "title" %}hidden{% endif %}>
+        <div class="form-col">
+            <label for="title"><i class="fab fa-itunes-note"></i><span class="icon-p-big">タイトル</span></label>
+            <input type="text" id="title" name="title" value="{{ form_values.title }}">
+        </div>
+    </div>
+    <div class="search-form" id="search-form-author" {% if search_form != "author" %}hidden{% endif %}>
+        <div class="form-col">
+            <label for="author"><i class="fas fa-user"></i><span class="icon-p-big">作者</span></label>
+            <input type="text" id="author" name="author" value="{{ form_values.author }}">
+        </div>
+    </div>
+    <div class="search-form" id="search-form-url" {% if search_form != "url" %}hidden{% endif %}>
+        <div class="form-col">
+            <label for="url"><i class="fas fa-link"></i><span class="icon-p-big">URL</span></label>
+            <input type="text" id="url" name="url" value="{{ form_values.url }}">
+        </div>
+        <label><i class="fas fa-photo-video"></i><span class="icon-p-big">メディア</span></label>
+        <div id="mediatype-wrapper">
+            {% for media in ALL_MEDIAS %}
+                {% if forloop.counter0 == display_media_index %}
+                    <details>
+                    <summary>もっと見る</summary>
+                {% endif %}
+
+                {% if forloop.counter0 >= display_media_index and forloop.counter0 < forloop.revcounter0|add:"-1" %}
+                    <div class="checkbox-col">
+                        <input type="checkbox" value="media-{{ media.id }}" id="media-{{ media.id }}" {% if media.id in mediatypes %}checked{% endif %}>
+                        <label for="media-{{ media.id }}">{{ media.icon|safe }}<span class="icon-p-big">{{ media.name }}</span></label>
+                    </div>
+                {% else %}
+                    <div class="checkbox-col">
+                        <input type="checkbox" value="media-{{ media.id }}" id="media-{{ media.id }}" {% if media.id in mediatypes %}checked{% endif %}>
+                        <label for="media-{{ media.id }}">{{ media.icon|safe }}<span class="icon-p-big">{{ media.name }}</span></label>
+                    </div>
+                {% endif %}
+
+                {% if forloop.revcounter0 == 1 %}
+                    </details>
+                {% endif %}
+            {% endfor %}
+        </div>
+        <p class="info override-info" id="media-override-info" hidden><i class="fas fa-info-circle info"></i>YouTube関連のフィルタ/並び替えが有効なため、YouTubeの曲のみを表示しています</p>
+    </div>
+    <div class="search-form" id="search-form-imitate" {% if search_form != "imitate" %}hidden{% endif %}>
+        <label for="imitate"><i class="fas fa-sitemap"></i><span class="icon-p-big">模倣</span></label>
+        <div id="imitate-div">
+            <p>曲ID</p>
+            <input type="text" id="imitate" name="imitate" value="{{ form_values.imitate }}" placeholder="タイトルか作者かURLを入力">
+            <div id="song-guesser" class="sansfont"></div>
+            <p id="imitate-sub">もしくは原曲から入力</p>
+            {% render_categorys %}
+        </div>
+    </div>
+    <div class="search-form" id="search-form-subeana" {% if search_form != "subeana" %}hidden{% endif %}>
+        <div class="radio-col">
+            <p class="radio-col-label"><i class="fas fa-border-style"></i><span class="icon-p-big">すべあな界隈曲</span></p>
+            <div class="radio-group">
+                <input type="radio" id="songrange-all" name="songrange" value="all" data-default {% if songrange == 'all' %}checked{% endif %}>
+                <label for="songrange-all"><i class="fas fa-expand"></i><span class="icon-p-big">指定なし</span></label>
+                <input type="radio" id="songrange-subeana" name="songrange" value="subeana" {% if songrange == 'subeana' %}checked{% endif %}>
+                <label for="songrange-subeana"><i class="fas fa-equals"></i><span class="icon-p-big">のみ</span></label>
+                <input type="radio" id="songrange-xx" name="songrange" value="xx" {% if songrange == 'xx' %}checked{% endif %}>
+                <label for="songrange-xx"><i class="fas fa-not-equal"></i><span class="icon-p-big">以外</span></label>
+            </div>
+        </div>
+    </div>
+    <div class="search-form" id="search-form-joke" {% if search_form != "joke" %}hidden{% endif %}>
+        <div class="radio-col">
+            <p class="radio-col-label"><i class="far fa-meh-rolling-eyes"></i><span class="icon-p-big">ネタ曲</span></p>
+            <div class="radio-group">
+                <input type="radio" id="jokerange-on" name="jokerange" value="on" data-default {% if jokerange == 'on' %}checked{% endif %}>
+                <label for="jokerange-on"><i class="fas fa-expand"></i><span class="icon-p-big">指定なし</span></label>
+                <input type="radio" id="jokerange-only" name="jokerange" value="only" {% if jokerange == 'only' %}checked{% endif %}>
+                <label for="jokerange-only"><i class="fas fa-equals"></i><span class="icon-p-big">のみ</span></label>
+                <input type="radio" id="jokerange-off" name="jokerange" value="off" {% if jokerange == 'off' %}checked{% endif %}>
+                <label for="jokerange-off"><i class="fas fa-not-equal"></i><span class="icon-p-big">以外</span></label>
+            </div>
+        </div>
+    </div>
+    <div class="search-form" id="search-form-original" {% if search_form != "original" %}hidden{% endif %}>
+        {% include "subekashi/components/bool_filter.html" with name="is_original" icon="fas fa-external-link-alt" label="オリジナル模倣曲" value=is_original %}
+    </div>
+    <div class="search-form" id="search-form-inst" {% if search_form != "inst" %}hidden{% endif %}>
+        {% include "subekashi/components/bool_filter.html" with name="is_inst" icon="fas fa-comment-slash" label="インスト曲" value=is_inst %}
+    </div>
+    <div class="search-form" id="search-form-questionable" {% if search_form != "questionable" %}hidden{% endif %}>
+        {% include "subekashi/components/bool_filter.html" with name="is_questionable" icon="fas fa-question" label="界隈曲?" value=is_questionable %}
+    </div>
+    <div class="search-form" id="search-form-special" {% if search_form != "special" %}hidden{% endif %}>
+        {% include "subekashi/components/bool_filter.html" with name="is_special" icon="fas fa-magic" label="スペシャルデザイン" value=is_special %}
+    </div>
+    <div class="search-form" id="search-form-collab" {% if search_form != "collab" %}hidden{% endif %}>
+        {% include "subekashi/components/bool_filter.html" with name="is_collab" icon="fas fa-user-friends" label="合作" value=is_collab %}
+    </div>
+    <div class="search-form" id="search-form-deleted" {% if search_form != "deleted" %}hidden{% endif %}>
+        {% include "subekashi/components/bool_filter.html" with name="is_deleted" icon="far fa-eye-slash" label="非公開/削除済み" value=is_deleted %}
+    </div>
+    <div class="search-form" id="search-form-lack" {% if search_form != "lack" %}hidden{% endif %}>
+        {% include "subekashi/components/bool_filter.html" with name="is_lack" icon="fas fa-tasks" label="未完成" value=is_lack %}
+    </div>
+    <div class="search-form" id="search-form-draft" {% if search_form != "draft" %}hidden{% endif %}>
+        {% include "subekashi/components/bool_filter.html" with name="is_draft" icon="fas fa-user-edit" label="下書き" value=is_draft %}
+    </div>
+</div>
+{{ youtube_queries|json_script:"youtube-queries" }}
