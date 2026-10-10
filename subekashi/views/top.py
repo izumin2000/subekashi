@@ -34,7 +34,7 @@ class TopView(View):
             should_link = article.handle_as_news or article.tag != "news"
             if should_link:
                 article_url = reverse('article:default_article', args=[article.article_id])
-                news_html = f"<a href='{article_url}'>{article.title}</a>"
+                news_html = f"<a href='{article_url}'>{article.title_without_links}</a>"
             else:
                 news_html = article.title
             news_htmls += f"<span>{news_html}</span>"

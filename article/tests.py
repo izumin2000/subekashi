@@ -6,7 +6,10 @@ ArticlesView・DefaultArticleView の HTTP レスポンスを検証する。
 import re
 from datetime import timedelta
 
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.test import TestCase, Client, override_settings
+from django.urls import reverse
 from django.utils import timezone
 from article.models import Article
 
@@ -49,6 +52,19 @@ class ArticlesViewTest(TestCase):
     def test_keyword_no_match_returns_200(self):
         response = self.client.get("/articles/", {"keyword": "存在しないキーワードXYZ"})
         self.assertEqual(response.status_code, 200)
+
+    def test_title_link_is_removed_inside_article_link(self):
+        # 記事へのリンクの中にタイトルを表示するため、<a>が入れ子にならないようタイトル中のリンクは外す（#483）
+        Article.objects.create(
+            article_id="test-articles-link",
+            title="[リンク](https://example.com)と**太字**",
+            tag="blog",
+            post_time=timezone.now(),
+            is_open=True,
+        )
+        response = self.client.get("/articles/")
+        self.assertContains(response, '<span class="article-title-wrapper">リンクと<strong>太字</strong></span>')
+        self.assertNotContains(response, 'href="https://example.com"')
 
     def test_is_pinned_article_default_pins_howto_article_first(self):
         Article.objects.create(
@@ -172,6 +188,54 @@ class ArticleTitleMarkdownTest(TestCase):
     def test_title_of_html_article_is_not_converted(self):
         article = self._create("**太字**", is_md=False)
         self.assertEqual(article.title, "**太字**")
+
+    def test_clean_raises_when_converted_title_exceeds_max_length(self):
+        # 入力は上限の500文字ちょうどでも、HTMLに変換すると上限を超える
+        article = Article(title="**a**" * 100, is_md=True)
+        with self.assertRaises(ValidationError) as cm:
+            article.clean()
+        self.assertIn("title", cm.exception.message_dict)
+
+    def test_clean_does_not_raise_for_html_article(self):
+        article = Article(title="**a**" * 100, is_md=False)
+        article.clean()
+
+    def test_title_without_links_removes_only_links(self):
+        article = self._create('[リンク](https://example.com)と**太字**<br><i class="fab fa-discord"></i>')
+        self.assertEqual(article.title_without_links, 'リンクと<strong>太字</strong><br><i class="fab fa-discord"></i>')
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+class ArticleAdminTest(TestCase):
+    """管理画面での記事の登録のテスト（#483）"""
+
+    def setUp(self):
+        self.client = Client()
+        self.client.force_login(User.objects.create_superuser("admin", password="password"))
+
+    def _post(self, title):
+        return self.client.post(reverse("admin:article_article_add"), {
+            "article_id": "admin-001",
+            "title": title,
+            "author": "テスト筆者",
+            "tag": "blog",
+            "text": "",
+            "post_time_0": "",
+            "post_time_1": "",
+            "is_open": "on",
+            "is_md": "on",
+        })
+
+    def test_markdown_title_is_saved_as_html(self):
+        response = self._post("**太字**")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Article.objects.get(pk="admin-001").title, "<strong>太字</strong>")
+
+    def test_title_over_max_length_after_conversion_shows_error(self):
+        response = self._post("**a**" * 100)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "HTMLに変換すると1800文字になり、上限の500文字を超えます。")
+        self.assertFalse(Article.objects.filter(pk="admin-001").exists())
 
 
 @override_settings(STORAGES=STATIC_STORAGE)

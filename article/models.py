@@ -1,7 +1,9 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 import markdown
+import re
 from markdown.extensions import Extension
 from markdown.treeprocessors import Treeprocessor
 
@@ -48,12 +50,28 @@ class Article(models.Model) :
     def __str__(self):
         return self.title
 
-    def save(self, *args, **kwargs):
-        # マークダウンの記事はタイトルも登録時にHTMLへ変換する（#483）
+    def convert_title(self):
+        # マークダウンの記事はタイトルもHTMLへ変換する（#483）
         # 変換後のHTMLを再度変換しても変わらないため、保存し直してもタイトルは崩れない
-        if self.is_md:
-            self.title = markdown.markdown(self.title, extensions=[UnwrapParagraphExtension()])
+        if not self.is_md:
+            return self.title
+        return markdown.markdown(self.title, extensions=[UnwrapParagraphExtension()])
+
+    def clean(self):
+        # HTMLに変換するとタグの分だけ文字数が増えるため、上限を超える場合は保存時のDBのエラーではなく入力エラーにする
+        max_length = self._meta.get_field("title").max_length
+        title_length = len(self.convert_title())
+        if title_length > max_length:
+            raise ValidationError({"title": f"HTMLに変換すると{title_length}文字になり、上限の{max_length}文字を超えます。"})
+
+    def save(self, *args, **kwargs):
+        self.title = self.convert_title()
         super().save(*args, **kwargs)
+
+    @property
+    def title_without_links(self):
+        # 記事へのリンクの中にタイトルを表示するとき、<a>が入れ子にならないようタイトル中のリンクのタグだけを外す
+        return re.sub(r"</?a\b[^>]*>", "", self.title)
 
     @classmethod
     def get_top_news_articles(cls):

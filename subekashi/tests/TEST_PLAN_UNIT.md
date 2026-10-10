@@ -475,6 +475,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | ニュース欄のリンク付与（#961） | `tag="release"`の記事 | `DefaultArticleView`へのURLでタイトル全体が`<a>`タグにくくられる |
 | ニュース欄のリンク付与（#961） | `handle_as_news=True`の記事（`tag`は`news`以外） | `DefaultArticleView`へのURLでタイトル全体が`<a>`タグにくくられる |
 | ニュース欄のリンク付与（#961） | `tag="news"`かつ`handle_as_news=True`の記事 | `handle_as_news`が優先され、リンクが付与される |
+| タイトル中のリンクの除去（#483） | `tag="release"`でタイトルが`[リンク](https://example.com)と**太字**` | `<a>`が入れ子にならないよう、タイトル中のリンクだけ外して`<a href='（記事のURL）'>リンクと<strong>太字</strong></a>`になる |
+| タイトル中のリンクの保持（#483） | `tag="news"`, `handle_as_news=False`でタイトルにリンクを含む | リンクでくくらないため、タイトル中のリンクはそのまま表示される |
 | 作成された歌詞の表示 | `genetype="janome", score=5`のAiレコードが存在 | 「作成された歌詞」欄に表示される |
 | レガシーgenetype="model"は対象外（GPTインポート廃止） | `genetype="model", score=5`のレコードが存在 | 「作成された歌詞」欄に表示されない（`get_top_scored()`も`genetype="janome"`のみ対象） |
 | PC向けグローバルヘッダーの配置（#1123） | `pc_menu_position`クッキーなし（トップ） | `#pc-global-header`が`#pc-header-menu`の中に1つだけ置かれる |
@@ -1433,6 +1435,7 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | タグフィルター | `?tag=news` | HTTP 200 |
 | キーワード検索 | `?keyword=テスト記事タイトル` | HTTP 200、該当記事が含まれる |
 | キーワード一致なし | 存在しないキーワード | HTTP 200 |
+| タイトル中のリンクの除去（#483） | `tag="blog"`でタイトルが`[リンク](https://example.com)と**太字**` | 記事へのリンクの中で`<a>`が入れ子にならないよう、`リンクと<strong>太字</strong>`と表示される |
 
 #### 12-2. `DefaultArticleView` (`/articles/<id>/`)
 
@@ -1470,7 +1473,7 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | 件数上限 | 該当記事が5件 | 最大3件までに絞られる |
 | 並び順 | 複数の該当記事 | `-post_time` の降順 |
 
-#### 12-5. `Article.save()` — タイトルのマークダウン変換（#483）
+#### 12-5. `Article.save()`・`Article.clean()` — タイトルのマークダウン変換（#483）
 
 | テストケース | 前提条件 | 期待結果 |
 | --- | --- | --- |
@@ -1479,6 +1482,9 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | HTMLで書かれた既存のタイトル | `is_md=True`、`<p><a ...>...</a>...</p>` | 変わらない |
 | 変換後の再保存 | `is_md=True`で保存したあと再度`save()` | 1回目の変換結果から変わらない |
 | HTMLの記事 | `is_md=False`、`**太字**` | 変換されない |
+| 変換後の文字数が上限を超える | `is_md=True`、`**a**`×100（500文字） | `clean()`が`title`の`ValidationError`を送出する |
+| HTMLの記事の文字数 | `is_md=False`、`**a**`×100（500文字） | 変換しないため、`clean()`は`ValidationError`を送出しない |
+| `title_without_links` | タイトルにリンク・太字・`<br>`・アイコン（`<i>`）を含む | リンクの`<a>`タグだけが外れ、ほかのタグは残る |
 
 ---
 
