@@ -3194,7 +3194,8 @@ class SongCardsRateLimitTest(TestCase):
         # X-Forwarded-Forはクライアントが自由に付けられるため、値を変えても別々に数えない
         mock_time.time.return_value = 1_800_000_000
         for url_name in self.URL_NAMES:
-            with self.subTest(url_name=url_name):
+            # X-Forwarded-Forの先頭とX-Real-IPの不一致の記録（#1189）が出力されないよう、ログを受け取る
+            with self.subTest(url_name=url_name), self.assertLogs("subekashi.lib.ip", level="WARNING"):
                 for i in range(2):
                     self._get(url_name, HTTP_X_REAL_IP="203.0.113.1", HTTP_X_FORWARDED_FOR=f"198.51.100.{i}")
                 self.assertLimited(

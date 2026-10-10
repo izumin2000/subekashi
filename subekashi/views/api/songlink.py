@@ -5,7 +5,7 @@ from subekashi.lib.query_filters import make_is_lack_annotation
 from ...serializer import SongLinkSerializer
 from rest_framework import viewsets
 from rest_framework.response import Response
-from rest_framework.throttling import UserRateThrottle
+from subekashi.lib.throttling import UserRateThrottle
 
 
 class SongLinkThrottle(UserRateThrottle):

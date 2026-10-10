@@ -3,7 +3,7 @@ from subekashi.lib.song_search import song_search
 from ...serializer import SongSerializer
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework.throttling import UserRateThrottle
+from subekashi.lib.throttling import UserRateThrottle
 from rest_framework.exceptions import ValidationError
 
 class SongThrottle(UserRateThrottle):

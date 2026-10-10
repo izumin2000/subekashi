@@ -3,7 +3,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, serializers, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.throttling import UserRateThrottle
+from subekashi.lib.throttling import UserRateThrottle
 from subekashi.models import Ai, Word
 from subekashi.lib.lyric_tokenizer import tokenize_ai_instances, tokenize_lyrics_with_index, REPLACEABLE_HINSHIS
 from ...serializer import AiSerializer, AiWordSwapSerializer

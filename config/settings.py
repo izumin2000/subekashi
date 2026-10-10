@@ -207,9 +207,11 @@ CORS_URLS_REGEX = r"^/api/.*$"
 # csrftokenはJSから読み取らず、ページ内の{% csrf_token %}から取得する（#1126）
 CSRF_COOKIE_HTTPONLY = True
 
+# DRFのスロットリングもX-Forwarded-Forではなく、X-Real-IP（無ければREMOTE_ADDR）で数える（#1192）。
+# 各ビューのthrottle_classesもsubekashi.lib.throttlingのクラスを継承する
 REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_CLASSES": [
-        "rest_framework.throttling.AnonRateThrottle",
+        "subekashi.lib.throttling.AnonRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
         "anon": "3600/hour",
