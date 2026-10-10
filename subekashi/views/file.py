@@ -18,7 +18,7 @@ def sitemap(request) :
 
 
 def favicon(request) :
-    return redirect(f"{ROOT_URL}/static/subekashi/image/icon.ico")
+    return redirect(f"{ROOT_URL}/static/subekashi/image/favicon.ico")
 
 
 def trafficAdvice(request) :
