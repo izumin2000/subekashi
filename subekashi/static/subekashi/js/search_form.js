@@ -1,5 +1,18 @@
 // 検索フォーム（components/search_form.html）の操作。検索画面とトップ画面の検索で共通
+// 関数・定数はページのJS（songs.js・top.js）から使うため、ページのJSより先に読み込む
+// ページのJSでは、ここにある関数と同じ名前の関数を定義しない
 const FORM_QUERIES = '#search-forms input';
+
+window.addEventListener('DOMContentLoaded', function () {
+    // 画面幅の変更やフォントの読み込みでラジオボタンの行数が変わった場合に、全て表示するボタンの表示と下端のぼかしを更新する
+    // ボタンの表示が遅れて切り替わらないよう、loadを待たずに監視する
+    new ResizeObserver(() => {
+        updateSearchFormRadiosToggle();
+        updateSearchFormRadiosScrollEnd();
+    }).observe(document.getElementById("search-form-radios"));
+
+    document.getElementById("imitate").addEventListener("input", renderSongGuesser);
+});
 
 window.addEventListener('load', function () {
     restoreFormValuesFromCookies();
@@ -27,13 +40,6 @@ window.addEventListener('load', function () {
         }
     });
 });
-
-// 画面幅の変更やフォントの読み込みでラジオボタンの行数が変わった場合に、全て表示するボタンの表示と下端のぼかしを更新する
-// ボタンの表示が遅れて切り替わらないよう、loadを待たずに監視する
-new ResizeObserver(() => {
-    updateSearchFormRadiosToggle();
-    updateSearchFormRadiosScrollEnd();
-}).observe(document.getElementById("search-form-radios"));
 
 window.addEventListener('pageshow', function (event) {
     if (event.persisted) {
@@ -168,8 +174,6 @@ function renderSongGuesser() {
     getSongGuessers(imitateTitle, "song-guesser", songGuesserController.signal, renderSongGuesser);
 }
 
-document.getElementById("imitate").addEventListener("input", renderSongGuesser);
-
 function songrangeToQuery(songrange) {
     if (songrange == "subeana") {
         return { "is_subeana": true };
@@ -198,7 +202,9 @@ function cleanQuery(query) {
     return query;
 }
 
-function formToQuery() {
+// フォームの値をクエリに変換する
+// 選択されているラジオボタンは、radioToQuery(ラジオボタン)が返すクエリに変換する（検索画面とトップ画面で変換が異なるため）
+function collectFormQuery(radioToQuery) {
     let query = {};
     const mediatypes = [];
     for (const formEle of document.querySelectorAll(FORM_QUERIES)) {
@@ -208,15 +214,10 @@ function formToQuery() {
             }
             continue;
         }
-        if (formEle.type == "radio" && !formEle.checked) {
-            continue;
-        }
-        if (formEle.name == "songrange") {
-            query = { ...query, ...songrangeToQuery(formEle.value) };
-            continue;
-        }
-        if (formEle.name == "jokerange") {
-            query = { ...query, ...isjokeToQuery(formEle.value) };
+        if (formEle.type == "radio") {
+            if (formEle.checked) {
+                query = { ...query, ...radioToQuery(formEle) };
+            }
             continue;
         }
         query[formEle.name] = formEle.value;
@@ -224,6 +225,19 @@ function formToQuery() {
     query.mediatypes = mediatypes.join(",");
     query = cleanQuery(query);
     return query;
+}
+
+// フォームの値を曲のAPI（html/song_cards）のクエリに変換する
+function formToQuery() {
+    return collectFormQuery((radioEle) => {
+        if (radioEle.name == "songrange") {
+            return songrangeToQuery(radioEle.value);
+        }
+        if (radioEle.name == "jokerange") {
+            return isjokeToQuery(radioEle.value);
+        }
+        return { [radioEle.name]: radioEle.value };
+    });
 }
 
 // フォームの値がデフォルト値から変更されているか

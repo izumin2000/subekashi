@@ -71,7 +71,8 @@ DEFAULT_SEARCH_FORM = 'keyword'
 DISPLAY_MEDIA_INDEX = 6
 
 
-# 検索フォームの表示に使うcontextと、URLクエリで変更されcookieに保存する値を返す（トップ画面の検索フォームでも使用する）
+# 検索フォームの表示に使うcontextと、URLクエリで変更されcookieに保存する値を返す
+# トップ画面の検索フォーム（TopView）でも使用する。トップ画面では検索の選択肢のcookieを保存しないため、request_dataに空の辞書を渡し、cookieに保存する値は使わない
 def get_search_form_context(request, request_data):
     context = {
         "ALL_MEDIAS": ALL_MEDIAS[:-1],     # 最後の許可されていないURLのドメイン情報は不要

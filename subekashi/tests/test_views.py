@@ -182,6 +182,17 @@ class TopViewTest(TestCase):
 
         self.assertLess(content.index("subekashi/js/search_form.js"), content.index("subekashi/js/top.js"))
 
+    def test_search_form_css_is_loaded_only_when_all(self):
+        """検索フォームのCSSは「全て表示」の場合のみ、トップ画面のCSSより先に読み込まれる（#585）"""
+        for value, is_loaded in [("all", True), ("on", False), ("off", False)]:
+            with self.subTest(value=value):
+                self.client.cookies["is_shown_search"] = value
+                content = self.client.get(reverse("subekashi:top")).content.decode()
+
+                self.assertEqual("subekashi/css/components/search_form.css" in content, is_loaded)
+                if is_loaded:
+                    self.assertLess(content.index("subekashi/css/components/search_form.css"), content.index("subekashi/css/top.css"))
+
     def test_all_search_has_no_csrf_token(self):
         """「全て表示」の検索フォームはGETで送信するため、CSRFトークンを含まない（#585）"""
         self.client.cookies["is_shown_search"] = "all"
@@ -615,6 +626,18 @@ class SongsViewTest(TestCase):
         """「結果を表示」ボタン(scroll-to-results)が表示されないこと"""
         response = self.client.get(reverse("subekashi:songs"))
         self.assertNotContains(response, "scroll-to-results")
+
+    def test_search_form_css_is_loaded_before_songs_css(self):
+        """検索フォームのCSSが、検索画面のCSSより先に読み込まれること（#585）"""
+        content = self.client.get(reverse("subekashi:songs")).content.decode()
+
+        self.assertLess(content.index("subekashi/css/components/search_form.css"), content.index("subekashi/css/songs.css"))
+
+    def test_search_form_css_is_not_loaded_on_other_pages(self):
+        """検索フォームのCSSは、検索フォームが無いページでは読み込まれないこと（#585）"""
+        for url in [reverse("subekashi:setting"), reverse("subekashi:song_new")]:
+            with self.subTest(url=url):
+                self.assertNotContains(self.client.get(url), "subekashi/css/components/search_form.css")
 
     def test_search_form_js_is_loaded_before_songs_js(self):
         """トップ画面と共通の検索フォームのJSが、検索画面のJSより先に読み込まれること（#585）"""

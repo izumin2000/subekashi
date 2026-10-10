@@ -1,5 +1,5 @@
 /* 検索フォーム（components/search_form.html）。検索画面とトップ画面の検索で共通 */
-/* 全てのページで読み込むため、要素・汎用のクラスへの指定は:where()でフォーム内に限定する（詳細度は変えない） */
+/* トップ画面の他の要素に影響しないよう、要素・汎用のクラスへの指定は:where()でフォーム内に限定する（詳細度は変えない） */
 :where(#search-form-radios, #search-forms) .icon-p-big {
     margin-left: 0;
 }
@@ -25,25 +25,25 @@
     margin: 0 10px 0 0;
 }
 
-.override-info {
+:where(#search-forms) .override-info {
     margin-bottom: 20px;
 }
 
 /* ラジオボタンで選ぶフィルタ（.form-colと同じく、左に項目名・右に選択肢を並べる） */
-.radio-col {
+:where(#search-forms) .radio-col {
     display: flex;
     align-items: center;
     margin-bottom: 20px;
 }
 
-.radio-col-label {
+:where(#search-forms) .radio-col-label {
     flex-shrink: 0;
     width: 9em;
     margin-right: 5px;
     line-height: 22px;
 }
 
-.radio-col .radio-group {
+:where(#search-forms) .radio-col .radio-group {
     flex: 1;
     margin: 0;
 }
@@ -124,11 +124,11 @@
 }
 
 @media (max-width: 640px) {
-    .radio-col {
+    :where(#search-forms) .radio-col {
         display: block;
     }
 
-    .radio-col-label {
+    :where(#search-forms) .radio-col-label {
         width: auto;
         margin: 0 0 10px 0;
     }
@@ -136,24 +136,24 @@
 
 /* 3つの選択肢が1行に収まるよう余白を詰める（画面幅360pxや、項目名を左に並べると幅が足りない641〜700pxでも収まるようにする） */
 @media (max-width: 700px) {
-    .radio-col .radio-group {
+    :where(#search-forms) .radio-col .radio-group {
         gap: 6px;
     }
 
-    .radio-col .radio-group label {
+    :where(#search-forms) .radio-col .radio-group label {
         padding: 0 8px;
     }
 
-    .radio-col .radio-group label::before {
+    :where(#search-forms) .radio-col .radio-group label::before {
         margin-right: 6px;
     }
 
-    .radio-col .radio-group label i {
+    :where(#search-forms) .radio-col .radio-group label i {
         margin-right: 4px;
     }
 }
 
-.override-info i {
+:where(#search-forms) .override-info i {
     margin-right: 8px;
 }
 

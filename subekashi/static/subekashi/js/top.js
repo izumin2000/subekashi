@@ -1,4 +1,5 @@
-// 検索の表示設定が「全て表示」の場合は、検索画面と同じフォーム（search_form.js）を表示する
+// 検索の表示設定が「全て表示」の場合は、検索画面と同じフォームを表示する
+// その場合のみtop.htmlでsearch_form.jsをこのファイルより先に読み込み、FORM_QUERIES・collectFormQuery・renderFilterStatus・toQueryString・renderSongGuesserを使う
 const isShownAllSearch = document.getElementById("search-forms") !== null;
 
 const keywordElement = document.getElementById("keyword");
@@ -27,25 +28,7 @@ if (isShownAllSearch) {
 // フォームの値を検索画面のURLクエリに変換する
 // ラジオボタンは表示時から選択を変更した場合のみ含める（並び替え・界隈曲・ネタ曲は表示時にcookieの値が選択されており、含めなくても検索画面で同じ値が選択されるため）
 function formToSongsQuery() {
-    const query = {};
-    const mediatypes = [];
-    for (const formEle of document.querySelectorAll(FORM_QUERIES)) {
-        if (formEle.id.startsWith("media-")) {
-            if (formEle.checked) {
-                mediatypes.push(formEle.id.split("-")[1]);
-            }
-            continue;
-        }
-        if (formEle.type == "radio") {
-            if (formEle.checked && !formEle.defaultChecked) {
-                query[formEle.name] = formEle.value;
-            }
-            continue;
-        }
-        query[formEle.name] = formEle.value;
-    }
-    query.mediatypes = mediatypes.join(",");
-    return cleanQuery(query);
+    return collectFormQuery((radioEle) => radioEle.defaultChecked ? {} : { [radioEle.name]: radioEle.value });
 }
 
 function songGuesserClick(id) {

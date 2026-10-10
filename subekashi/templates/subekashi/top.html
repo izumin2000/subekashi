@@ -1,6 +1,7 @@
 {% extends "subekashi/base/base.html" %}
 {% load static %}
 {% load song_card %}
+{% block component_css %}{% if is_shown_search == "all" %}<link rel="stylesheet" type="text/css" href="{% static 'subekashi/css/components/search_form.css'%}">{% endif %}{% endblock %}
 {% block css %}{% static 'subekashi/css/top.css' %}{% endblock %}
 
 {% block content %}
@@ -125,6 +126,7 @@
     const adId = '{{ adIns.id }}';
     {% endif %}
 </script>
+{# top.jsがsearch_form.jsの関数を使うため、top.jsより先に読み込む #}
 {% if is_shown_search == "all" %}
 <script defer src="{% static 'subekashi/js/search_form.js' %}"></script>
 {% endif %}

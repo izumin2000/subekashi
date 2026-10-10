@@ -485,6 +485,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 検索の表示が非表示（#585） | `is_shown_search=off` | 「検索」の見出しと`#search-form`が無く、`search_form.js`も読み込まれない |
 | 検索の表示が全て表示（#585） | `is_shown_search=all` | `#search-form`の中に検索画面と同じフォーム（`components/search_form.html`）が表示される。ラジオボタンの並びは`SEARCH_FORM_QUERIES`のキーと一致し、キーワードのラジオボタンのみ選択され、キーワードのフォームのみ`hidden`が無い。`#search-form-radios-toggle`・`#youtube-queries`・送信ボタン（`#searchsubmit`）を含む |
 | 全て表示のJSの読み込み順（#585） | `is_shown_search=all` | `search_form.js`が`top.js`より先に読み込まれる |
+| 検索フォームのCSSの読み込み（#585） | `is_shown_search`が`all`・`on`・`off` | `css/components/search_form.css`は`all`の場合のみ、`top.css`より先に読み込まれる |
 | 全て表示のフォームにCSRFトークンを含めない（#585） | `is_shown_search=all` | GETで送信するため、`#search-form`の中に`csrfmiddlewaretoken`が無い |
 | 全て表示で検索の選択肢の保存を反映（#585） | `is_shown_search=all`, `is_saved_select=on`, `search_sort=-view`, `search_songrange=subeana`, `search_jokerange=off`, `form_button=icon` | 検索画面と同じく`-view`・`subeana`・`off`のラジオボタンが選択され、`#search-form-radios`に`icon-only`が付く |
 | 全て表示で検索の選択肢の保存がoff（#585） | `is_shown_search=all`, `is_saved_select=off`, `search_sort=-view`, `search_songrange=subeana` | 保存された値ではなくデフォルト値（`-post_time`・`all`）のラジオボタンが選択される |
@@ -494,7 +495,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 #### 7-2. `SongsView` (`/songs/`)
 
-検索フォームは`components/search_form.html`・`search_form.js`・`css/components/search_form.css`に切り出し、トップ画面の「全て表示」の検索と共通で使う。contextは`get_search_form_context`で作る。
+検索フォームは`components/search_form.html`・`search_form.js`・`css/components/search_form.css`に切り出し、トップ画面の「全て表示」の検索と共通で使う。contextは`get_search_form_context`で作る。`search_form.css`は全ページでは読み込まず、使うページだけが`base.html`の`component_css`ブロックで読み込む。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
@@ -547,6 +548,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | フォームボタンの設定がアイコンのみ（#1164） | `form_button=icon` | context["form_button"] = "icon"、`#search-form-radios`のみに`icon-only`クラスが付き、並び替え等のフォーム内のラジオボタンには付かない |
 | フォームボタンの設定のcookieの不正な値（#1164） | `form_button=text` | context["form_button"] = "icon_text"（デフォルト）にフォールバックし、`icon-only`クラスは付かない |
 | 「結果を表示」ボタンの廃止（#970） | GETリクエスト | `scroll-to-results` が含まれない |
+| 検索フォームのCSSの読み込み（#585） | GETリクエスト | `css/components/search_form.css`が`songs.css`より先に読み込まれる |
+| 検索フォームが無いページ（#585） | 設定画面・曲の新規作成画面にGETリクエスト | `css/components/search_form.css`が読み込まれない |
 | 検索フォームのJSの読み込み順（#585） | GETリクエスト | トップ画面と共通の`search_form.js`が`songs.js`より先に読み込まれる |
 
 #### 7-3. `SongView` (`/songs/<id>/`)
