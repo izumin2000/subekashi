@@ -108,7 +108,9 @@ def layout_title(title):
         if len(lines) <= TITLE_MAX_LINES and get_text_height(font, len(lines)) <= TITLE_MAX_HEIGHT:
             return font, lines
 
-    lines = lines[:TITLE_MAX_LINES]
+    # どのサイズでも収まらない場合は、最小のサイズで最大の行数までにし、最終行を「…」で省略する
+    font = get_font(TITLE_FONT_SIZES[-1])
+    lines = wrap_text(title, font, TITLE_MAX_WIDTH)[:TITLE_MAX_LINES]
     last_line = lines[-1]
     while last_line and font.getlength(last_line + "…") > TITLE_MAX_WIDTH:
         last_line = last_line[:-1]

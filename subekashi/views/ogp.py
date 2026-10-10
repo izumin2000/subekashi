@@ -13,7 +13,9 @@ STATIC_OGP_IMAGE_PATH = os.path.join(settings.BASE_DIR, "subekashi/static/subeka
 OGP_CACHE_TIMEOUT = 24 * 60 * 60
 
 
-# PythonAnywhereではREMOTE_ADDRがロードバランサーのIPになるため、ロードバランサーが付けるX-Real-IPで制限する
+# PythonAnywhereではREMOTE_ADDRがロードバランサーのIPになるため、ロードバランサーが付けるX-Real-IPで制限する。
+# ロードバランサーがX-Real-IPを付け直す前提のため、別の環境に移す場合は見直す
+# （クライアントが送ったX-Real-IPがそのまま届くと、値を変えるだけで制限を回避できる）
 def get_client_ip(group, request):
     return request.META.get("HTTP_X_REAL_IP") or request.META.get("REMOTE_ADDR", "")
 
