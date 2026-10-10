@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 from django.core import signing
 from django.test import SimpleTestCase
-from PIL import Image
+from PIL import Image, ImageDraw
 from subekashi.lib.ogp import (
     BACKGROUND_COLOR,
     OGP_TITLE_MAX_LENGTH,
@@ -86,6 +86,30 @@ class OgpTokenTest(SimpleTestCase):
         token = signing.dumps("トップ", compress=True)
         with self.assertRaises(signing.BadSignature):
             load_ogp_token(token)
+
+
+class GetFontTest(SimpleTestCase):
+    """get_font() のテスト"""
+
+    # 文字を描き、描かれた範囲で切り抜く
+    def draw_char(self, font, char):
+        image = Image.new("L", (font.size * 2, font.size * 2), 0)
+        ImageDraw.Draw(image).text((0, 0), char, font=font, fill=255)
+        return image.crop(image.getbbox())
+
+    def test_unsupported_char_is_drawn_as_tofu(self):
+        # フォントに無い文字は.notdefのグリフで描かれる。.notdefが「ぎ」の形だったため豆腐にした（#212）
+        font = get_font(TITLE_FONT_SIZES[0])
+        # ハングル・絵文字・私用領域・未割り当て
+        for char in ["한", "🎵", "\ue000", "\u0378"]:
+            with self.subTest(char=hex(ord(char))):
+                tofu = self.draw_char(font, char)
+
+                # 中抜きの四角: 中央は描かれず、上下左右の辺の中点は描かれる
+                width, height = tofu.size
+                self.assertEqual(tofu.getpixel((width // 2, height // 2)), 0)
+                for point in [(3, height // 2), (width - 4, height // 2), (width // 2, 3), (width // 2, height - 4)]:
+                    self.assertEqual(tofu.getpixel(point), 255, point)
 
 
 class WrapTextTest(SimpleTestCase):
