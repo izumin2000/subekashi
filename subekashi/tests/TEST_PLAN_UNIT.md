@@ -996,7 +996,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 ##### レート制限
 
-新しく描画するときだけ、`X-Real-IP`ごとに毎秒5回までに制限する（キャッシュ済みの画像は数えない）。PythonAnywhereでは`REMOTE_ADDR`がロードバランサーのIPになるため、ロードバランサーが付ける`X-Real-IP`を使う（`key="ip"`で、`settings.RATELIMIT_IP_META_KEY`の`get_client_ip`から取る。#1188）。制限には`django_ratelimit`の`is_ratelimited`を使い、制限を超えたら429を返す（デコレーターの`block=True`は`PermissionDenied`を送出し、`RatelimitMiddleware`に届く前に403になるため使わない）。1秒の区切りをまたいでカウントがリセットされないよう、`django_ratelimit.core.time`をモックして時刻を固定する。
+新しく描画するときだけ、`X-Real-IP`ごとに毎秒5回までに制限する（キャッシュ済みの画像は数えない）。PythonAnywhereでは`REMOTE_ADDR`がロードバランサーのIPになるため、ロードバランサーが付ける`X-Real-IP`を使う（`key="ip"`で、`settings.RATELIMIT_IP_META_KEY`の`get_client_ip`から取る。#1188）。制限には`django_ratelimit`の`is_ratelimited`を使い、制限を超えたら429を返す（キャッシュ済みの画像は数えないため、デコレーターではなくビューの中で判定する）。1秒の区切りをまたいでカウントがリセットされないよう、`django_ratelimit.core.time`をモックして時刻を固定する。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
@@ -1081,10 +1081,15 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 #### 9-1. `RatelimitMiddleware`
 
+`@ratelimit(block=True)`が送出する`Ratelimited`は`PermissionDenied`のサブクラスで、ミドルウェアの`__call__`に届く前に403のレスポンスになるため、`process_exception`で429にする（#1187）。
+
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | 通常リクエスト | Ratelimited例外なし | 通常のレスポンスを返す |
-| レート制限を超えた場合 | Ratelimited例外が発生 | HTTP 429、`{"error": "Rate limit exceeded"}` |
+| レート制限を超えた場合 | `process_exception`に`Ratelimited`を渡す | HTTP 429、`{"error": "Rate limit exceeded"}`、`Retry-After`が`1`、`Cache-Control`が`no-store`（`CacheControlMiddleware`にpublicのキャッシュを付けさせない） |
+| Ratelimited以外のPermissionDenied | `process_exception`に`PermissionDenied`を渡す | `None`（Djangoの通常の処理で403になる） |
+
+ミドルウェアに例外を直接渡すテストでは403になる不具合を検出できないため、Clientで実際にリクエストするテストを結合テスト計画書の「16. レート制限フロー」に記載している。
 
 #### 9-2. `CacheControlMiddleware`
 
