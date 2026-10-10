@@ -707,6 +707,8 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 | 検証4 | 模倣の曲IDが入力されるのみで遷移せず、検索すると`?imitate=<曲ID>`に遷移する |
 | 操作5 | 何も入力せずに検索 |
 | 検証5 | URLクエリなしの`/songs/`に遷移する |
+| 操作6 | `is_saved_select=off`で並び替え・界隈曲・ネタ曲のcookie（`-view`・`subeana`・`off`）がある状態で、トップ画面からキーワードのみ入力して検索した後、並び替え・界隈曲を変更して検索 |
+| 検証6 | トップ画面・検索画面ともにcookieではなくデフォルト値（`-post_time`・`all`・`on`）が選択され、URLクエリは`?keyword=...`のみ。変更した場合は`sort`・`songrange`がURLクエリに含まれて検索画面で選択されるが、cookieは変わらない |
 | 共通 | コンソールにCSP違反・JSのエラーが出ない |
 
 ---

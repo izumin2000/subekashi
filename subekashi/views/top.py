@@ -7,6 +7,7 @@ from subekashi.models import Song, Ai, Ad
 from subekashi.lib.query_filters import filter_by_lack
 from subekashi.constants.constants import RECOMEND_ARTICLES
 from subekashi.views.songs import get_search_form_context
+from subekashi.views.setting import ALLOWED_SETTING_VALUES
 from article.models import Article
 import random
 
@@ -43,6 +44,9 @@ class TopView(View):
 
         # 検索の表示設定（all: 検索画面と同じフォーム、on: キーワードのみ、off: 非表示）
         is_shown_search = request.COOKIES.get("is_shown_search", "on")
+        # cookieが不正な値の場合はデフォルトのキーワードのみとする
+        if is_shown_search not in ALLOWED_SETTING_VALUES["is_shown_search"]:
+            is_shown_search = "on"
         context["is_shown_search"] = is_shown_search
         if is_shown_search == "all":
             # トップ画面では検索の選択肢のcookieを保存しないため、URLクエリは渡さない

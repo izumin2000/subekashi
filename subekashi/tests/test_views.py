@@ -260,6 +260,46 @@ class TopViewTest(TestCase):
         for name in ["search_sort", "search_songrange", "search_jokerange"]:
             self.assertNotIn(name, response.cookies)
 
+    def test_all_search_selects_same_radios_as_songs_without_query(self):
+        """「全て表示」のフォームで表示時に選択されるラジオボタンは、URLクエリが無い検索画面と一致する（#585）
+
+        top.jsは表示時から選択を変更していないラジオボタンをURLクエリに含めないため、検索画面で同じ値が選択される必要がある
+        """
+        saved_cookies = {"search_sort": "-view", "search_songrange": "subeana", "search_jokerange": "off"}
+        invalid_cookies = {"search_sort": "invalid", "search_songrange": "invalid", "search_jokerange": "invalid"}
+        cases = [
+            ("cookieなし", {}),
+            ("保存on", {"is_saved_select": "on", **saved_cookies}),
+            ("保存off", {"is_saved_select": "off", **saved_cookies}),
+            ("保存onで不正な値", {"is_saved_select": "on", **invalid_cookies}),
+        ]
+        checked_pattern = r'name="(sort|songrange|jokerange|is_\w+)" value="([^"]*)"[^>]*checked>'
+        for label, cookies in cases:
+            with self.subTest(label):
+                self.client.cookies.clear()
+                for name, value in cookies.items():
+                    self.client.cookies[name] = value
+                self.client.cookies["is_shown_search"] = "all"
+                top_checked = re.findall(checked_pattern, self._get_search_form_html(self.client.get(reverse("subekashi:top"))))
+                songs_checked = re.findall(checked_pattern, self.client.get(reverse("subekashi:songs")).content.decode())
+
+                self.assertEqual(top_checked, songs_checked)
+                self.assertEqual(len(top_checked), 11)
+
+    def test_search_with_invalid_cookie_is_keyword_only(self):
+        """検索の表示設定のcookieが不正な値の場合、キーワードのみの検索フォームが表示される（#585）"""
+        for value in ["keyword", "ALL", "<script>"]:
+            with self.subTest(value=value):
+                self.client.cookies["is_shown_search"] = value
+                response = self.client.get(reverse("subekashi:top"))
+                form_html = self._get_search_form_html(response)
+
+                self.assertEqual(response.context["is_shown_search"], "on")
+                self.assertIn('id="keyword"', form_html)
+                self.assertNotIn('id="search-forms"', form_html)
+                self.assertNotContains(response, "subekashi/js/search_form.js")
+                self.assertNotContains(response, "subekashi/css/components/search_form.css")
+
 
 @override_settings(STORAGES=STATIC_STORAGE)
 class SongsViewTest(TestCase):
