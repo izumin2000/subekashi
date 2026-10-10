@@ -6,8 +6,12 @@ ArticlesView・DefaultArticleView の HTTP レスポンスを検証する。
 import re
 from datetime import timedelta
 
-from django.test import TestCase, Client, override_settings
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.test import SimpleTestCase, TestCase, Client, override_settings
+from django.urls import reverse
 from django.utils import timezone
+from article.lib.html_utils import remove_links
 from article.models import Article
 
 
@@ -49,6 +53,19 @@ class ArticlesViewTest(TestCase):
     def test_keyword_no_match_returns_200(self):
         response = self.client.get("/articles/", {"keyword": "存在しないキーワードXYZ"})
         self.assertEqual(response.status_code, 200)
+
+    def test_title_link_is_removed_inside_article_link(self):
+        # 記事へのリンクの中にタイトルを表示するため、<a>が入れ子にならないようタイトル中のリンクは外す（#483）
+        Article.objects.create(
+            article_id="test-articles-link",
+            title="[リンク](https://example.com)と**太字**",
+            tag="blog",
+            post_time=timezone.now(),
+            is_open=True,
+        )
+        response = self.client.get("/articles/")
+        self.assertContains(response, '<span class="article-title-wrapper">リンクと<strong>太字</strong></span>')
+        self.assertNotContains(response, 'href="https://example.com"')
 
     def test_is_pinned_article_default_pins_howto_article_first(self):
         Article.objects.create(
@@ -142,6 +159,115 @@ class ArticleModelTest(TestCase):
         self.assertLess(result.index(newer), result.index(older))
 
 
+class ArticleTitleMarkdownTest(TestCase):
+    """Article.save() でのタイトルのマークダウン変換のテスト（#483）"""
+
+    def _create(self, title, is_md=True):
+        return Article.objects.create(article_id="title-md", title=title, is_md=is_md)
+
+    def test_markdown_title_is_converted_to_html(self):
+        article = self._create("**太字**と[リンク](https://example.com)")
+        self.assertEqual(article.title, '<strong>太字</strong>と<a href="https://example.com">リンク</a>')
+
+    def test_plain_title_is_not_wrapped_in_paragraph(self):
+        article = self._create("バージョン2579のアップデート内容")
+        self.assertEqual(article.title, "バージョン2579のアップデート内容")
+
+    def test_html_title_is_kept(self):
+        # マークダウン対応前にHTMLで書かれたタイトル（ニュースなど）は、保存し直しても変わらない
+        title = '<p><a href="/articles/discord/" target="_blank">Discordサーバー</a>の参加者が200人を突破</p>'
+        article = self._create(title)
+        self.assertEqual(article.title, title)
+
+    def test_resaving_converted_title_does_not_change_it(self):
+        article = self._create("**太字**のタイトル & 記号")
+        converted = article.title
+        article.save()
+        article.refresh_from_db()
+        self.assertEqual(article.title, converted)
+
+    def test_title_of_html_article_is_not_converted(self):
+        article = self._create("**太字**", is_md=False)
+        self.assertEqual(article.title, "**太字**")
+
+    def test_clean_raises_when_converted_title_exceeds_max_length(self):
+        # 入力は上限の500文字ちょうどでも、HTMLに変換すると上限を超える
+        article = Article(title="**a**" * 100, is_md=True)
+        with self.assertRaises(ValidationError) as cm:
+            article.clean()
+        self.assertIn("title", cm.exception.message_dict)
+
+    def test_clean_does_not_raise_for_html_article(self):
+        article = Article(title="**a**" * 100, is_md=False)
+        article.clean()
+
+    def test_title_without_links_removes_only_links(self):
+        article = self._create('[リンク](https://example.com)と**太字**<br><i class="fab fa-discord"></i>')
+        self.assertEqual(article.title_without_links, 'リンクと<strong>太字</strong><br><i class="fab fa-discord"></i>')
+
+    def test_str_returns_title_without_tags(self):
+        # 管理画面の一覧や削除の確認画面にタグが文字列のまま表示されないよう、タグを除いて文字参照を戻す
+        article = self._create("**太字**の<br>タイトル & 記号")
+        self.assertEqual(str(article), "太字のタイトル & 記号")
+
+
+class RemoveLinksTest(SimpleTestCase):
+    """remove_links() のテスト（#483）"""
+
+    def test_link_with_gt_in_attribute_is_removed(self):
+        # 正規表現では属性値の>でタグが終わったとみなし、タグの残骸が出力されていた
+        self.assertEqual(remove_links('<a href="/x" title="a>b">リンク</a>の説明'), "リンクの説明")
+
+    def test_uppercase_link_is_removed(self):
+        self.assertEqual(remove_links('<A HREF="/x">リンク</A>'), "リンク")
+
+    def test_tags_inside_link_are_kept(self):
+        self.assertEqual(remove_links('<a href="/x">入れ子<strong>太字</strong></a>'), "入れ子<strong>太字</strong>")
+
+    def test_html_without_links_is_kept(self):
+        html = '<abbr title="略">略語</abbr><br><br/><i class="fab fa-discord"></i>A &amp; B &lt;c&gt; &#12354; <!-- コメント -->'
+        self.assertEqual(remove_links(html), html)
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+class ArticleAdminTest(TestCase):
+    """管理画面での記事の登録のテスト（#483）"""
+
+    def setUp(self):
+        self.client = Client()
+        self.client.force_login(User.objects.create_superuser("admin", password="password"))
+
+    def _post(self, title):
+        return self.client.post(reverse("admin:article_article_add"), {
+            "article_id": "admin-001",
+            "title": title,
+            "author": "テスト筆者",
+            "tag": "blog",
+            "text": "",
+            "post_time_0": "",
+            "post_time_1": "",
+            "is_open": "on",
+            "is_md": "on",
+        })
+
+    def test_markdown_title_is_saved_as_html(self):
+        response = self._post("**太字**")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Article.objects.get(pk="admin-001").title, "<strong>太字</strong>")
+
+    def test_title_over_max_length_after_conversion_shows_error(self):
+        response = self._post("**a**" * 100)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "HTMLに変換すると1800文字になり、上限の500文字を超えます。")
+        self.assertFalse(Article.objects.filter(pk="admin-001").exists())
+
+    def test_changelist_shows_title_without_tags(self):
+        self._post("**太字**")
+        response = self.client.get(reverse("admin:article_article_changelist"))
+        self.assertContains(response, '">太字</a>')
+        self.assertNotContains(response, "&lt;strong&gt;")
+
+
 @override_settings(STORAGES=STATIC_STORAGE)
 class DefaultArticleViewTest(TestCase):
     """DefaultArticleView (/articles/<id>/) のテスト"""
@@ -175,6 +301,23 @@ class DefaultArticleViewTest(TestCase):
     def test_article_title_appears_in_response(self):
         response = self.client.get(f"/articles/{self.article.article_id}/")
         self.assertContains(response, "詳細テスト記事")
+
+    def test_markdown_title_is_rendered_as_html_and_page_title_has_no_tags(self):
+        # タイトルのマークダウンはHTMLで表示し、タブのタイトルにはタグを除いた文字列を使う（#483）
+        md_title_article = Article.objects.create(
+            article_id="test-default-010",
+            title="**太字** & 記号",
+            author="テスト筆者",
+            tag="blog",
+            post_time=timezone.now(),
+            is_open=True,
+            is_md=True,
+        )
+
+        response = self.client.get(f"/articles/{md_title_article.article_id}/")
+
+        self.assertContains(response, '<h1 id="article-title"><strong>太字</strong> &amp; 記号</h1>')
+        self.assertContains(response, "<title>太字 &amp; 記号 | 全て歌詞の所為です。</title>")
 
     def test_markdown_table_syntax_is_rendered_as_html_table(self):
         # markdown.markdown()にtables拡張を渡していないと、パイプ区切りのテーブル記法が

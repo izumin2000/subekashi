@@ -108,6 +108,25 @@ class TopViewTest(TestCase):
         url = reverse("article:default_article", args=[article.article_id])
         self.assertContains(response, f"<span><a href='{url}'>扱い指定ニュース</a></span>")
 
+    def test_linked_article_title_link_is_removed(self):
+        """リンクでくくる記事は、<a>が入れ子にならないようタイトル中のリンクを外す（#483）"""
+        article = Article.objects.create(
+            article_id="release-link", title="[リンク](https://example.com)と**太字**", tag="release",
+            post_time=timezone.now(), is_open=True,
+        )
+        response = self.client.get(reverse("subekashi:top"))
+        url = reverse("article:default_article", args=[article.article_id])
+        self.assertContains(response, f"<span><a href='{url}'>リンクと<strong>太字</strong></a></span>")
+
+    def test_news_tag_article_title_link_is_kept(self):
+        """リンクでくくらないニュースは、タイトル中のリンクをそのまま表示する（#483）"""
+        Article.objects.create(
+            article_id="news-link", title="[リンク](https://example.com)のニュース", tag="news",
+            post_time=timezone.now(), is_open=True,
+        )
+        response = self.client.get(reverse("subekashi:top"))
+        self.assertContains(response, '<span><a href="https://example.com">リンク</a>のニュース</span>')
+
     def test_pc_global_header_is_in_pc_header_menu(self):
         """メニュー位置がトップの場合、PC向けグローバルヘッダーは#pc-header-menuの中に1つだけ置かれる（#1123）"""
         response = self.client.get(reverse("subekashi:top"))
