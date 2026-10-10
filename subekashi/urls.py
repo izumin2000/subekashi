@@ -43,6 +43,7 @@ urlpatterns = [
     path('robots.txt', robots, name='robots'),
     path('sitemap.xml', sitemap, name='sitemap'),
     path('favicon.ico', favicon, name='favicon'),
+    path('ogp/<str:token>.png', ogp_image, name='ogp_image'),
     path('.well-known/traffic-advice', trafficAdvice, name='traffic-advice'),
     path('api/ai/swap/', AiWordSwapView.as_view(), name='ai-word-swap'),
     path('api/',include(defaultRouter.urls)),

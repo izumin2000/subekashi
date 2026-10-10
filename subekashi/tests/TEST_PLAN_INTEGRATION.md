@@ -624,6 +624,23 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 
 ---
 
+### 15. ページごとのOGP画像フロー（#1058）
+
+**テストファイル**: `tests/test_views.py`（`OgpMetaTagTest`）
+
+`base.html`のテンプレートタグ（`get_ogp_image_url`）が`metatitle`を署名したトークンで`og:image`のURLを作り、そのURLの`ogp_image`ビューがトークンを検証してPillowで画像を生成する流れを検証する。SNSで実際にカードが表示されるかはDjangoテストの対象外のため、デプロイ後にX・Discordで確認する。
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作1 | 曲のページを`GET`し、`og:image`のURL（末尾に`?v={OGP_VERSION}`）から`ROOT_URL`を除いたパスを`GET` |
+| 検証1 | HTTP 200、`Content-Type: image/png` |
+| 操作2 | 曲・統計・編集者のページを`GET`し、`og:image`のURLのトークンを`load_ogp_token`で復元 |
+| 検証2 | 各ページの`metatitle`（編集者のページは`Editor`のインスタンスを文字列にしたもの）に戻る |
+| 操作3 | 存在しない曲・存在しないURLを`GET`（404.htmlを表示する） |
+| 検証3 | OGPのタグ（`og:*`・`twitter:*`）が出ない |
+
+---
+
 ## テスト実装の方針
 
 ### ディレクトリ構成（案）

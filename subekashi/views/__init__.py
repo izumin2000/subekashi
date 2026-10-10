@@ -22,6 +22,7 @@ from subekashi.views.histories import HistoriesView
 from subekashi.views.api.editor import EditorIsOpenView
 from subekashi.views.errors import *
 from subekashi.views.file import *
+from subekashi.views.ogp import ogp_image
 from subekashi.views.songs import SongsView
 from subekashi.views.stats import StatsView
 from subekashi.views.setting import SettingView, SaveSettingsView

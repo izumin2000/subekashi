@@ -1,10 +1,10 @@
-from config.settings import BASE_DIR
+from django.conf import settings
 from subekashi.constants.constants import CONST_ERROR, ASIDE_PAGES
 import json
 import os
 
-MAINTENANCE_JSON_PATH = os.path.join(BASE_DIR, 'subekashi/constants/dynamic/maintenance.json')
-VERSION_JSON_PATH = os.path.join(BASE_DIR, 'subekashi/constants/dynamic/version.json')
+MAINTENANCE_JSON_PATH = os.path.join(settings.BASE_DIR, 'subekashi/constants/dynamic/maintenance.json')
+VERSION_JSON_PATH = os.path.join(settings.BASE_DIR, 'subekashi/constants/dynamic/version.json')
 
 def context_processors(request):
     if os.path.exists(VERSION_JSON_PATH):
@@ -21,6 +21,7 @@ def context_processors(request):
         maintenance = {}
 
     context = {
+        "root_url": settings.ROOT_URL,
         "aside_pages": ASIDE_PAGES,
         "version": version,
         "is_maintenance": maintenance.get("IS_MAINTENANCE", False),
