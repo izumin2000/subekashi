@@ -493,7 +493,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 全て表示で検索の選択肢の保存がoff（#585） | `is_shown_search=all`, `is_saved_select=off`, `search_sort=-view`, `search_songrange=subeana` | 保存された値ではなくデフォルト値（`-post_time`・`all`）のラジオボタンが選択される |
 | 全て表示の初期の選択が検索画面と一致する（#585） | `is_shown_search=all`で、cookieなし・`is_saved_select=on`と保存された選択肢・`is_saved_select=off`と保存された選択肢・`is_saved_select=on`と不正な値の4通り | トップ画面と、URLクエリが無い検索画面で、選択されているラジオボタン（並び替え・界隈曲・ネタ曲・真偽値のフィルタの11個）が一致する（`top.js`は表示時から変更していないラジオボタンをURLクエリに含めないため） |
 | 検索の表示設定のcookieの不正な値（#585） | `is_shown_search`が`keyword`・`ALL`・`<script>` | context["is_shown_search"] = "on"、キーワードのみの検索フォームが表示され、`search_form.js`・`search_form.css`は読み込まれない |
-| 全て表示はトップ画面のURLクエリを使わない（#585） | `is_shown_search=all`, `is_saved_select=on`, `/?sort=-view&songrange=xx&is_lack=True` | context["search_form"] = "keyword"、`-post_time`と未完成の「指定なし」が選択され、`search_sort`・`search_songrange`・`search_jokerange`のcookieは保存されない |
+| 全て表示はトップ画面のURLクエリを使わない（#585） | `is_shown_search=all`, `is_saved_select=on`, `/?sort=-view&songrange=xx&is_lack=True&mediatypes=youtube`と`TEXT_FORMS`の全ての入力欄の値 | context["search_form"] = "keyword"、`-post_time`と未完成の「指定なし」が選択され、メディアは選択されず、入力欄は全て空（気づかないまま検索に送られないように）。`search_sort`・`search_songrange`・`search_jokerange`のcookieは保存されない |
 
 トップ画面の「全て表示」の検索フォームは、`top.js`で送信時に検索画面（`/songs/`）のURLクエリに変換して遷移する。テキスト等の入力欄・メディアは値がある場合のみ、ラジオボタン（並び替え・界隈曲・ネタ曲・真偽値のフィルタ）は表示時から選択を変更した場合のみURLクエリに含める。並び替え・界隈曲・ネタ曲は表示時に検索画面と同じcookieの値が選択されており、含めなくても検索画面で同じ値が選択されるため。song guesser・原曲ボタンのクリックでは模倣の曲IDを入力するのみで、遷移しない。JSの動作はDjangoテストでは確認できないため、Playwrightで確認する。
 
@@ -554,6 +554,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 「結果を表示」ボタンの廃止（#970） | GETリクエスト | `scroll-to-results` が含まれない |
 | 検索フォームのCSSの読み込み（#585） | GETリクエスト | `css/components/search_form.css`が`songs.css`より先に読み込まれる |
 | 検索フォームが無いページ（#585） | 設定画面・曲の新規作成画面にGETリクエスト | `css/components/search_form.css`が読み込まれない |
+| 入力欄の一覧（#585） | GETリクエスト | フォームの文字・数値・日付の入力欄（`input type="text"`・`number`・`date`）の`name`が`TEXT_FORMS`と一致する（入力欄の初期値は`request.GET`ではなく`get_search_form_context`の`form_values`から入れるため） |
+| 入力欄のURLクエリ（#585） | `TEXT_FORMS`の全ての入力欄に`<name>"<b>` | context["form_values"]にURLクエリの値が入り、各入力欄の`value`にエスケープされて（`&quot;&lt;b&gt;`）入る |
 | 検索フォームのJSの読み込み順（#585） | GETリクエスト | トップ画面と共通の`search_form.js`が`songs.js`より先に読み込まれる |
 
 #### 7-3. `SongView` (`/songs/<id>/`)

@@ -39,6 +39,9 @@ COOKIE_FORMS = {
     }
 }
 
+# 文字・数値・日付を入力するフォーム（URLクエリの値を入力欄の初期値にする）
+TEXT_FORMS = ["keyword", "lyrics", *YOUTUBE_FILTERS, "title", "author", "url", "imitate"]
+
 # 真偽値のフィルタ（True・False・フィルタなしの3値）
 BOOL_FORMS = ["is_subeana", "is_joke", "is_lack", "is_draft", "is_original", "is_inst", "is_deleted", "is_questionable", "is_special", "is_collab"]
 
@@ -138,6 +141,9 @@ def get_search_form_context(request, request_data):
             context[filter] = "True"
         elif value_lower in ["false", "0"]:
             context[filter] = "False"
+
+    # 入力欄のURLクエリ対応
+    context["form_values"] = {name: request_data.get(name, "") for name in TEXT_FORMS}
 
     # メディアのチェックボックスのURLクエリ対応（カンマ区切り）
     context["mediatypes"] = request_data.get("mediatypes", "").split(",")

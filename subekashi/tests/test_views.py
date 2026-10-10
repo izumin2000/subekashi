@@ -28,7 +28,7 @@ from subekashi.lib.query_utils import YOUTUBE_FILTERS, YOUTUBE_SORTS
 from subekashi.lib.youtube import YoutubeApiError
 from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song, Stats, Word
 from subekashi.models.author import TransitiveAlias
-from subekashi.views.songs import COOKIE_FORMS, SEARCH_FORM_QUERIES, SORT_CHOICES
+from subekashi.views.songs import COOKIE_FORMS, SEARCH_FORM_QUERIES, SORT_CHOICES, TEXT_FORMS
 
 
 STATIC_STORAGE = {
@@ -248,15 +248,21 @@ class TopViewTest(TestCase):
         self.assertEqual(re.findall(r'name="songrange" value="([^"]*)"[^>]*checked>', form_html), ["all"])
 
     def test_all_search_ignores_url_query_and_does_not_save_cookies(self):
-        """「全て表示」の場合、トップ画面のURLクエリはフォームの選択に使われず、検索の選択肢のcookieも保存されない（#585）"""
+        """「全て表示」の場合、トップ画面のURLクエリはフォームの選択・入力欄に使われず、検索の選択肢のcookieも保存されない（#585）"""
         self.client.cookies["is_shown_search"] = "all"
         self.client.cookies["is_saved_select"] = "on"
-        response = self.client.get(reverse("subekashi:top"), {"sort": "-view", "songrange": "xx", "is_lack": "True"})
+        query = {"sort": "-view", "songrange": "xx", "is_lack": "True", "mediatypes": "youtube"}
+        query.update({name: "2024-01-01" for name in TEXT_FORMS})
+        response = self.client.get(reverse("subekashi:top"), query)
         form_html = self._get_search_form_html(response)
 
         self.assertEqual(response.context["search_form"], "keyword")
         self.assertEqual(re.findall(r'name="sort" value="([^"]*)" checked>', form_html), ["-post_time"])
         self.assertEqual(re.findall(r'name="is_lack" value="([^"]*)"[^>]*checked>', form_html), [""])
+        self.assertEqual(re.findall(r'id="media-[^"]+" checked>', form_html), [])
+        for name in TEXT_FORMS:
+            with self.subTest(name=name):
+                self.assertEqual(re.findall(rf'<input [^>]*name="{name}"[^>]*value="([^"]*)"', form_html), [""])
         for name in ["search_sort", "search_songrange", "search_jokerange"]:
             self.assertNotIn(name, response.cookies)
 
@@ -697,6 +703,21 @@ class SongsViewTest(TestCase):
         for url in [reverse("subekashi:setting"), reverse("subekashi:song_new")]:
             with self.subTest(url=url):
                 self.assertNotContains(self.client.get(url), "subekashi/css/components/search_form.css")
+
+    def test_text_forms_cover_all_inputs(self):
+        """URLクエリを初期値にする入力欄（TEXT_FORMS）が、フォームの文字・数値・日付の入力欄と一致すること（#585）"""
+        content = self.client.get(reverse("subekashi:songs")).content.decode()
+        inputs = re.findall(r'<input type="(?:text|number|date)" id="[^"]+" name="([^"]+)"', content)
+        self.assertCountEqual(inputs, TEXT_FORMS)
+
+    def test_text_forms_reflect_url_query(self):
+        """入力欄にURLクエリの値がエスケープされて入ること（#585）"""
+        response = self.client.get(reverse("subekashi:songs"), {name: f'{name}"<b>' for name in TEXT_FORMS})
+        content = response.content.decode()
+        for name in TEXT_FORMS:
+            with self.subTest(name=name):
+                self.assertEqual(response.context["form_values"][name], f'{name}"<b>')
+                self.assertEqual(re.findall(rf'<input [^>]*name="{name}"[^>]*value="([^"]*)"', content), [f"{name}&quot;&lt;b&gt;"])
 
     def test_search_form_js_is_loaded_before_songs_js(self):
         """トップ画面と共通の検索フォームのJSが、検索画面のJSより先に読み込まれること（#585）"""
