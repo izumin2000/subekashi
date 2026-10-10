@@ -6,6 +6,7 @@ from django.views.decorators.cache import never_cache
 from subekashi.models import Song, Ai, Ad
 from subekashi.lib.query_filters import filter_by_lack
 from subekashi.constants.constants import RECOMEND_ARTICLES
+from subekashi.views.songs import get_search_form_context
 from article.models import Article
 import random
 
@@ -39,6 +40,14 @@ class TopView(View):
                 news_html = article.title
             news_htmls += f"<span>{news_html}</span>"
         context["news_htmls"] = news_htmls
+
+        # 検索の表示設定（all: 検索画面と同じフォーム、on: キーワードのみ、off: 非表示）
+        is_shown_search = request.COOKIES.get("is_shown_search", "on")
+        context["is_shown_search"] = is_shown_search
+        if is_shown_search == "all":
+            # トップ画面では検索の選択肢のcookieを保存しないため、URLクエリは渡さない
+            search_form_context, _ = get_search_form_context(request, {})
+            context.update(search_form_context)
 
         songrange = request.COOKIES.get("songrange", "subeana")
         jokerange = request.COOKIES.get("jokerange", "off")

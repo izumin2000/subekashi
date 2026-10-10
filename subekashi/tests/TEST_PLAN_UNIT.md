@@ -354,7 +354,7 @@ A -`past`-> B -`spell`-> C -`abbr`-> D とつながり、DとEは`another`での
 
 #### 4-5. `has_youtube_filter_or_sort(query_data)`（#970）
 
-`YOUTUBE_FILTERS`・`YOUTUBE_SORTS` は `SongFilter.qs()` と曲の検索画面（songs.js）の案内表示で共通して使用する。
+`YOUTUBE_FILTERS`・`YOUTUBE_SORTS` は `SongFilter.qs()` と曲の検索フォーム（search_form.js）の案内表示で共通して使用する。
 
 | テストケース | 入力 | 期待結果 |
 | --- | --- | --- |
@@ -480,8 +480,21 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | PC向けグローバルヘッダーの配置（#1123） | `pc_menu_position`クッキーなし（トップ） | `#pc-global-header`が`#pc-header-menu`の中に1つだけ置かれる |
 | PC向けグローバルヘッダーの配置（#1123） | `pc_menu_position=aside`（サイド） | `#pc-header-menu`は無く、`#pc-global-header`が`#subekashi-header`より前に1つだけ置かれる |
 | viewportのmetaタグ（#1058） | GETリクエスト | `<meta name="viewport" content="width=device-width,...">`が含まれ、余分な`meta=""`属性が無い |
+| 検索の表示のデフォルト（#585） | `is_shown_search`クッキーなし | context["is_shown_search"] = "on"、キーワードのみの検索フォーム（`#keyword`、placeholderは「タイトル・チャンネル名・歌詞・URL」）が表示され、`#search-form-radios`・`search_form.js`は無い |
+| 検索の表示がキーワードのみ（#585） | `is_shown_search=on` | キーワードのみの検索フォームが表示され、`#search-forms`は無い |
+| 検索の表示が非表示（#585） | `is_shown_search=off` | 「検索」の見出しと`#search-form`が無く、`search_form.js`も読み込まれない |
+| 検索の表示が全て表示（#585） | `is_shown_search=all` | `#search-form`の中に検索画面と同じフォーム（`components/search_form.html`）が表示される。ラジオボタンの並びは`SEARCH_FORM_QUERIES`のキーと一致し、キーワードのラジオボタンのみ選択され、キーワードのフォームのみ`hidden`が無い。`#search-form-radios-toggle`・`#youtube-queries`・送信ボタン（`#searchsubmit`）を含む |
+| 全て表示のJSの読み込み順（#585） | `is_shown_search=all` | `search_form.js`が`top.js`より先に読み込まれる |
+| 全て表示のフォームにCSRFトークンを含めない（#585） | `is_shown_search=all` | GETで送信するため、`#search-form`の中に`csrfmiddlewaretoken`が無い |
+| 全て表示で検索の選択肢の保存を反映（#585） | `is_shown_search=all`, `is_saved_select=on`, `search_sort=-view`, `search_songrange=subeana`, `search_jokerange=off`, `form_button=icon` | 検索画面と同じく`-view`・`subeana`・`off`のラジオボタンが選択され、`#search-form-radios`に`icon-only`が付く |
+| 全て表示で検索の選択肢の保存がoff（#585） | `is_shown_search=all`, `is_saved_select=off`, `search_sort=-view`, `search_songrange=subeana` | 保存された値ではなくデフォルト値（`-post_time`・`all`）のラジオボタンが選択される |
+| 全て表示はトップ画面のURLクエリを使わない（#585） | `is_shown_search=all`, `is_saved_select=on`, `/?sort=-view&songrange=xx&is_lack=True` | context["search_form"] = "keyword"、`-post_time`と未完成の「指定なし」が選択され、`search_sort`・`search_songrange`・`search_jokerange`のcookieは保存されない |
+
+トップ画面の「全て表示」の検索フォームは、`top.js`で送信時に検索画面（`/songs/`）のURLクエリに変換して遷移する。テキスト等の入力欄・メディアは値がある場合のみ、ラジオボタン（並び替え・界隈曲・ネタ曲・真偽値のフィルタ）は表示時から選択を変更した場合のみURLクエリに含める。並び替え・界隈曲・ネタ曲は表示時に検索画面と同じcookieの値が選択されており、含めなくても検索画面で同じ値が選択されるため。song guesser・原曲ボタンのクリックでは模倣の曲IDを入力するのみで、遷移しない。JSの動作はDjangoテストでは確認できないため、Playwrightで確認する。
 
 #### 7-2. `SongsView` (`/songs/`)
+
+検索フォームは`components/search_form.html`・`search_form.js`・`css/components/search_form.css`に切り出し、トップ画面の「全て表示」の検索と共通で使う。contextは`get_search_form_context`で作る。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
@@ -534,6 +547,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | フォームボタンの設定がアイコンのみ（#1164） | `form_button=icon` | context["form_button"] = "icon"、`#search-form-radios`のみに`icon-only`クラスが付き、並び替え等のフォーム内のラジオボタンには付かない |
 | フォームボタンの設定のcookieの不正な値（#1164） | `form_button=text` | context["form_button"] = "icon_text"（デフォルト）にフォールバックし、`icon-only`クラスは付かない |
 | 「結果を表示」ボタンの廃止（#970） | GETリクエスト | `scroll-to-results` が含まれない |
+| 検索フォームのJSの読み込み順（#585） | GETリクエスト | トップ画面と共通の`search_form.js`が`songs.js`より先に読み込まれる |
 
 #### 7-3. `SongView` (`/songs/<id>/`)
 
@@ -928,11 +942,15 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 #### 7-17. `SettingView` (`/setting/`)（#1164）
 
-検索画面のセクションの「フォームボタン」（`form_button`）で、検索画面のフォームを切り替えるラジオボタン（`#search-form-radios`）を「アイコンのみ」（`icon`）か「アイコンと文字」（`icon_text`、デフォルト）にできる。「アイコンのみ」の場合は`#search-form-radios`に`icon-only`クラスを付け、`songs.css`でラベルの`::before`（丸）と`.icon-p-big`（文字）を非表示にする。文字は読み上げでラジオボタンの名前として使われるよう、`display: none`ではなく見えない状態にする。並び替え等のフォーム内のラジオボタンや、検索画面以外のラジオボタンには影響しない。見た目はDjangoテストでは確認できないため、Playwrightで確認する。
+検索画面のセクションの「フォームボタン」（`form_button`）で、検索画面のフォームを切り替えるラジオボタン（`#search-form-radios`）を「アイコンのみ」（`icon`）か「アイコンと文字」（`icon_text`、デフォルト）にできる。「アイコンのみ」の場合は`#search-form-radios`に`icon-only`クラスを付け、`css/components/search_form.css`でラベルの`::before`（丸）と`.icon-p-big`（文字）を非表示にする。文字は読み上げでラジオボタンの名前として使われるよう、`display: none`ではなく見えない状態にする。並び替え等のフォーム内のラジオボタンや、検索フォーム以外のラジオボタンには影響しない（トップ画面の「全て表示」の検索フォームにも反映される）。見た目はDjangoテストでは確認できないため、Playwrightで確認する。
+
+トップ画面のセクションの「検索の表示」（`is_shown_search`）は「全て表示」（`all`）・「キーワードのみ」（`on`）・「非表示」（`off`）から選べる（#585）。以前の「表示」の設定を引き継ぐため、「キーワードのみ」の値は`on`とする。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | 正常アクセス | GETリクエスト | HTTP 200 |
+| 検索の表示の設定のデフォルト（#585） | cookie無し | 「検索の表示」の`<select id="is_shown_search">`が表示され、選択肢は「全て表示」（`all`）・「キーワードのみ」（`on`）・「非表示」（`off`）の順で、「キーワードのみ」が選択される |
+| 検索の表示の設定のcookieを反映（#585） | `is_shown_search`に`all`・`on`・`off`のcookieを送信 | それぞれ「全て表示」・「キーワードのみ」・「非表示」のみが選択される |
 | フォームボタンの設定のデフォルト | cookie無し | 「フォームボタン」の`<select id="form_button">`が表示され、選択肢は「アイコンのみ」（`icon`）・「アイコンと文字」（`icon_text`）の順で、「アイコンと文字」が選択される |
 | フォームボタンの設定のcookieを反映 | `form_button=icon`のcookieを送信 | 「アイコンのみ」が選択される |
 | チュートリアルのアイコン | GETリクエスト | 選択肢の保存のチュートリアル（`data-tutorial="select"`）のアイコンは「検索の選択肢の保存」にのみ付き、「フォームボタン」には付かない |
@@ -943,6 +961,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | フォームボタンの設定の保存 | `{"cookies": {"form_button": "icon"}}`・`{"cookies": {"form_button": "icon_text"}}` | HTTP 200、`form_button`のcookieが送信した値で保存される |
 | 許可されていない値は保存しない | `{"cookies": {"form_button": "text"}}`・`{"cookies": {"form_button": "<script>"}}` | HTTP 200、`form_button`のcookieは保存されない |
+| 検索の表示の設定の保存（#585） | `{"cookies": {"is_shown_search": "all"}}`・`"on"`・`"off"` | HTTP 200、`is_shown_search`のcookieが送信した値で保存される |
+| 検索の表示の設定の許可されていない値は保存しない（#585） | `{"cookies": {"is_shown_search": "keyword"}}`・`{"cookies": {"is_shown_search": "<script>"}}` | HTTP 200、`is_shown_search`のcookieは保存されない |
 
 #### 7-19. `robots` (`/robots.txt`)（#1172）
 

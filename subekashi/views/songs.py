@@ -71,6 +71,84 @@ DEFAULT_SEARCH_FORM = 'keyword'
 DISPLAY_MEDIA_INDEX = 6
 
 
+# 検索フォームの表示に使うcontextと、URLクエリで変更されcookieに保存する値を返す（トップ画面の検索フォームでも使用する）
+def get_search_form_context(request, request_data):
+    context = {
+        "ALL_MEDIAS": ALL_MEDIAS[:-1],     # 最後の許可されていないURLのドメイン情報は不要
+        "display_media_index": DISPLAY_MEDIA_INDEX,
+        "SORT_CHOICES": SORT_CHOICES,
+        # 自動で適用されるフィルタの案内に使用する（search_form.js）
+        "youtube_queries": {"filters": YOUTUBE_FILTERS, "sorts": YOUTUBE_SORTS},
+    }
+
+    COOKIES = request.COOKIES
+    cookies_to_set = {}
+
+    # is_saved_selectの設定を確認
+    is_saved_select = COOKIES.get('is_saved_select', 'on')
+
+    # cookieが不正な値の場合はデフォルト値を使用
+    form_button = COOKIES.get('form_button', FORM_BUTTON_DEFAULT)
+    context["form_button"] = form_button if form_button in FORM_BUTTON_CHOICES else FORM_BUTTON_DEFAULT
+
+    for form_name, form_config in COOKIE_FORMS.items():
+        default_value = form_config['default']
+        allowed_values = form_config['values']
+
+        if request_data.get(form_name):
+            value = request_data[form_name]
+            # 許可された値に対してバリデーションを実行
+            if value not in allowed_values:
+                context[form_name] = default_value  # 不正な値の場合はデフォルト値を使用
+            else:       # URLクエリやユーザーのCOOKIE_FORMSの変更の場合はcookieに値を保存するcookies_to_setに書き込む
+                context[form_name] = value
+                # is_saved_selectがonの場合のみcookieに保存
+                if is_saved_select == 'on':
+                    cookies_to_set[f"search_{form_name}"] = value
+        else:
+            # is_saved_selectがoffの場合はcookieを無視してデフォルト値を使用
+            if is_saved_select == 'off':
+                context[form_name] = default_value
+            else:
+                cookie_value = COOKIES.get(f"search_{form_name}", default_value)
+                # cookieが不正な値の場合はデフォルト値を使用
+                context[form_name] = cookie_value if cookie_value in allowed_values else default_value
+
+    # 真偽値のフィルタのURLクエリ対応
+    for filter in BOOL_FORMS:
+        raw = request_data.get(filter)
+        if raw is None:
+            continue
+        value_lower = raw.lower()
+        # is_subeana/is_joke は曲詳細ページのタグリンク等からの一時的な絞り込み用パラメータのため、
+        # その表示にのみ反映し、検索の保存設定(cookie)は上書きしない
+        if filter == "is_subeana":
+            songrange_value = "subeana" if value_lower in ["true", "1"] else "xx"
+            context["songrange"] = songrange_value
+        elif filter == "is_joke":
+            if value_lower in ["true", "1", "only"]:
+                jokerange_value = "only"
+            elif value_lower in ["all", "on"]:
+                jokerange_value = "on"
+            else:
+                jokerange_value = "off"
+            context["jokerange"] = jokerange_value
+        elif value_lower in ["true", "1"]:
+            context[filter] = "True"
+        elif value_lower in ["false", "0"]:
+            context[filter] = "False"
+
+    # メディアのチェックボックスのURLクエリ対応（カンマ区切り）
+    context["mediatypes"] = request_data.get("mediatypes", "").split(",")
+
+    context["search_form"] = next(
+        (form for form, queries in SEARCH_FORM_QUERIES.items() if any(request_data.get(query) for query in queries)),
+        DEFAULT_SEARCH_FORM
+    )
+
+    return context, cookies_to_set
+
+
 class SongsView(View):
     def get(self, request):
         return self._handle(request)
@@ -79,81 +157,10 @@ class SongsView(View):
         return self._handle(request)
 
     def _handle(self, request):
-        context = {
-            "metatitle": "一覧と検索",
-            "ALL_MEDIAS": ALL_MEDIAS[:-1],     # 最後の許可されていないURLのドメイン情報は不要
-            "display_media_index": DISPLAY_MEDIA_INDEX,
-            "SORT_CHOICES": SORT_CHOICES,
-            # 自動で適用されるフィルタの案内に使用する（songs.js）
-            "youtube_queries": {"filters": YOUTUBE_FILTERS, "sorts": YOUTUBE_SORTS},
-        }
-
         # POSTリクエストの場合はPOST、それ以外はGET
         REQUEST_DATA = request.POST if request.method == 'POST' else request.GET
-        COOKIES = request.COOKIES
-        cookies_to_set = {}
-
-        # is_saved_selectの設定を確認
-        is_saved_select = COOKIES.get('is_saved_select', 'on')
-
-        # cookieが不正な値の場合はデフォルト値を使用
-        form_button = COOKIES.get('form_button', FORM_BUTTON_DEFAULT)
-        context["form_button"] = form_button if form_button in FORM_BUTTON_CHOICES else FORM_BUTTON_DEFAULT
-
-        for form_name, form_config in COOKIE_FORMS.items():
-            default_value = form_config['default']
-            allowed_values = form_config['values']
-
-            if REQUEST_DATA.get(form_name):
-                value = REQUEST_DATA[form_name]
-                # 許可された値に対してバリデーションを実行
-                if value not in allowed_values:
-                    context[form_name] = default_value  # 不正な値の場合はデフォルト値を使用
-                else:       # URLクエリやユーザーのCOOKIE_FORMSの変更の場合はcookieに値を保存するcookies_to_setに書き込む
-                    context[form_name] = value
-                    # is_saved_selectがonの場合のみcookieに保存
-                    if is_saved_select == 'on':
-                        cookies_to_set[f"search_{form_name}"] = value
-            else:
-                # is_saved_selectがoffの場合はcookieを無視してデフォルト値を使用
-                if is_saved_select == 'off':
-                    context[form_name] = default_value
-                else:
-                    cookie_value = COOKIES.get(f"search_{form_name}", default_value)
-                    # cookieが不正な値の場合はデフォルト値を使用
-                    context[form_name] = cookie_value if cookie_value in allowed_values else default_value
-
-        # 真偽値のフィルタのURLクエリ対応
-        for filter in BOOL_FORMS:
-            raw = REQUEST_DATA.get(filter)
-            if raw is None:
-                continue
-            value_lower = raw.lower()
-            # is_subeana/is_joke は曲詳細ページのタグリンク等からの一時的な絞り込み用パラメータのため、
-            # その表示にのみ反映し、検索の保存設定(cookie)は上書きしない
-            if filter == "is_subeana":
-                songrange_value = "subeana" if value_lower in ["true", "1"] else "xx"
-                context["songrange"] = songrange_value
-            elif filter == "is_joke":
-                if value_lower in ["true", "1", "only"]:
-                    jokerange_value = "only"
-                elif value_lower in ["all", "on"]:
-                    jokerange_value = "on"
-                else:
-                    jokerange_value = "off"
-                context["jokerange"] = jokerange_value
-            elif value_lower in ["true", "1"]:
-                context[filter] = "True"
-            elif value_lower in ["false", "0"]:
-                context[filter] = "False"
-
-        # メディアのチェックボックスのURLクエリ対応（カンマ区切り）
-        context["mediatypes"] = REQUEST_DATA.get("mediatypes", "").split(",")
-
-        context["search_form"] = next(
-            (form for form, queries in SEARCH_FORM_QUERIES.items() if any(REQUEST_DATA.get(query) for query in queries)),
-            DEFAULT_SEARCH_FORM
-        )
+        context, cookies_to_set = get_search_form_context(request, REQUEST_DATA)
+        context["metatitle"] = "一覧と検索"
 
         response = render(request, "subekashi/songs.html", context)
 

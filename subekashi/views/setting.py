@@ -18,7 +18,7 @@ ALLOWED_SETTING_VALUES = {
     'songrange': {'all', 'subeana', 'xx'},
     'jokerange': {'on', 'off'},
     'news_type': {'single', 'all', 'off'},
-    'is_shown_search': {'on', 'off'},
+    'is_shown_search': {'all', 'on', 'off'},
     'is_shown_new': {'0', '5', '10', '15'},
     'is_shown_ad': {'on', 'off'},
     'is_shown_ai': {'on', 'off'},
@@ -80,8 +80,10 @@ class SettingView(View):
                 {
                     'label': '検索の表示',
                     'id': 'is_shown_search',
+                    # キーワードのみは、以前の「表示」の設定を引き継ぐためonとする
                     'options': [
-                        {'value': 'on', 'text': '表示', 'selected': is_shown_search == 'on'},
+                        {'value': 'all', 'text': '全て表示', 'selected': is_shown_search == 'all'},
+                        {'value': 'on', 'text': 'キーワードのみ', 'selected': is_shown_search == 'on'},
                         {'value': 'off', 'text': '非表示', 'selected': is_shown_search == 'off'},
                     ]
                 },

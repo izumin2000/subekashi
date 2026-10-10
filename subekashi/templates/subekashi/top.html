@@ -19,13 +19,17 @@
             </div>
         {% endif %}
     {% endif %}
-    {% if request.COOKIES.is_shown_search != "off" %}
+    {% if is_shown_search != "off" %}
         <h1>検索</h1>
         <form action="{% url 'subekashi:songs' %}" method="GET" id="search-form">
-            <div class="form-col">
-                <label for="keyword"><i class="fas fa-search"></i><span class="icon-p-big">キーワード</span></label>
-                <input type="text" id="keyword" name="keyword" placeholder="タイトル・チャンネル名・歌詞・URL">
-            </div>
+            {% if is_shown_search == "all" %}
+                {% include "subekashi/components/search_form.html" %}
+            {% else %}
+                <div class="form-col">
+                    <label for="keyword"><i class="fas fa-search"></i><span class="icon-p-big">キーワード</span></label>
+                    <input type="text" id="keyword" name="keyword" placeholder="タイトル・チャンネル名・歌詞・URL">
+                </div>
+            {% endif %}
             <input type="submit" value="検索" id="searchsubmit">
         </form>
     {% endif %}
@@ -121,6 +125,9 @@
     const adId = '{{ adIns.id }}';
     {% endif %}
 </script>
+{% if is_shown_search == "all" %}
+<script defer src="{% static 'subekashi/js/search_form.js' %}"></script>
+{% endif %}
 <script defer src="{% static 'subekashi/js/top.js' %}"></script>
 <script defer src="https://www.youtube.com/iframe_api"></script>
 {% endblock %}
