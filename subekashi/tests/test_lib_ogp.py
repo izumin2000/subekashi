@@ -5,6 +5,8 @@ lib/ogp.py のテスト
 タイトルの折り返し・フォントサイズの決定、画像の生成を検証する。
 """
 import io
+from concurrent.futures import ThreadPoolExecutor
+from unittest.mock import patch
 from django.core import signing
 from django.test import SimpleTestCase
 from PIL import Image
@@ -147,6 +149,20 @@ class RenderOgpImageTest(SimpleTestCase):
 
     def test_different_titles_make_different_images(self):
         self.assertNotEqual(render_ogp_image("トップ"), render_ogp_image("統計"))
+
+    def test_drawing_is_serialized_by_lock(self):
+        # FreeTypeのフォントを複数のスレッドから同時に使わないよう、描画はロックの中で行う
+        with patch("subekashi.lib.ogp.RENDER_LOCK") as lock:
+            render_ogp_image("トップ")
+        lock.__enter__.assert_called_once()
+        lock.__exit__.assert_called_once()
+
+    def test_concurrent_rendering_makes_same_image(self):
+        title = "全て歌詞の所為です。 / 全てあなたの所為です。"
+        expected = render_ogp_image(title)
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            results = list(executor.map(render_ogp_image, [title] * 8))
+        self.assertEqual(results, [expected] * 8)
 
     def test_title_does_not_overlap_logo(self):
         # タイトルが最大の高さでも、タイトル・下線とロゴの間に何も描かれない帯が残る

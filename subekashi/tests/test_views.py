@@ -12,6 +12,7 @@ from PIL import Image
 from django.conf import settings
 from django.contrib.staticfiles import finders
 from django.core import signing
+from django.core.cache import cache
 from django.db import connection
 from django.test import TestCase, Client, override_settings
 from django.test.utils import CaptureQueriesContext
@@ -20,7 +21,7 @@ from django.utils import timezone
 from article.models import Article
 from subekashi.forms import AuthorAliasForm
 from subekashi.constants.constants import LONG_TERM_COOKIE_AGE
-from subekashi.lib.ogp import load_ogp_token, make_ogp_token
+from subekashi.lib.ogp import OGP_VERSION, load_ogp_token, make_ogp_token
 from subekashi.lib.query_utils import YOUTUBE_FILTERS, YOUTUBE_SORTS
 from subekashi.lib.youtube import YoutubeApiError
 from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song, Stats, Word
@@ -44,6 +45,11 @@ class TopViewTest(TestCase):
     def test_get_returns_200(self):
         response = self.client.get(reverse("subekashi:top"))
         self.assertEqual(response.status_code, 200)
+
+    def test_viewport_meta_has_no_stray_attribute(self):
+        response = self.client.get(reverse("subekashi:top"))
+        self.assertContains(response, '<meta name="viewport" content="width=device-width,')
+        self.assertNotContains(response, 'meta=""')
 
     def test_created_lyrics_shows_high_scored_janome(self):
         Ai.objects.create(lyrics="作成された歌詞サンプル", score=5, genetype="janome")
@@ -3397,7 +3403,7 @@ class ActionButtonMarkupTest(TestCase):
         self.assertContains(response, '<button type="button" id="maintenance-reload" class="action-button"><i class="fas fa-redo"></i><span>再読み込み</span></button>')
 
 
-@override_settings(STORAGES=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE, RATELIMIT_ENABLE=False)
 class OgpMetaTagTest(TestCase):
     """OGPのメタタグのテスト（#1058）"""
 
@@ -3412,7 +3418,10 @@ class OgpMetaTagTest(TestCase):
         return match.group(1)
 
     def _get_og_image_title(self, response):
-        match = re.fullmatch(rf"{re.escape(settings.ROOT_URL)}/ogp/([^/]+)\.png", self._get_og_image_url(response))
+        match = re.fullmatch(
+            rf"{re.escape(settings.ROOT_URL)}/ogp/([^/]+)\.png\?v={OGP_VERSION}",
+            self._get_og_image_url(response),
+        )
         self.assertIsNotNone(match)
         return load_ogp_token(match.group(1))
 
@@ -3422,6 +3431,7 @@ class OgpMetaTagTest(TestCase):
         self.assertNotContains(response, 'name="og:')
 
     def test_og_image_is_page_ogp_image_url(self):
+        # URLの末尾に画像のバージョン（?v=）が付く
         response = self.client.get(reverse("subekashi:top"))
         self.assertEqual(self._get_og_image_title(response), "トップ")
 
@@ -3432,8 +3442,9 @@ class OgpMetaTagTest(TestCase):
 
     def test_og_image_title_is_each_page_metatitle(self):
         editor = Editor.objects.create(ip="127.0.0.9")
+        self.song.authors.add(Author.objects.create(name="OGPテスト作者"))
         for url, title in [
-            (reverse("subekashi:song", args=[self.song.id]), f"OGPテスト曲 / {self.song.authors_str()}"),
+            (reverse("subekashi:song", args=[self.song.id]), "OGPテスト曲 / OGPテスト作者"),
             (reverse("subekashi:stats"), "統計"),
             # EditorViewはmetatitleにEditorのインスタンスを渡している
             (reverse("subekashi:editor", args=[editor.id]), f"全て{editor.id}の所為です。"),
@@ -3500,12 +3511,26 @@ class OgpMetaTagTest(TestCase):
         self.assertContains(response, f'<meta property="og:url" content="{settings.ROOT_URL}/songs/999999999/">', status_code=404)
 
 
-@override_settings(STORAGES=STATIC_STORAGE)
+@override_settings(STORAGES=STATIC_STORAGE, RATELIMIT_ENABLE=False)
 class OgpImageViewTest(TestCase):
     """ogp_image (/ogp/<token>.png) のテスト（#1058）"""
 
     def setUp(self):
         self.client = Client()
+
+    def test_version_query_is_accepted(self):
+        url = reverse("subekashi:ogp_image", args=[make_ogp_token("トップ")])
+        response = self.client.get(url, {"v": OGP_VERSION})
+        self.assertEqual(response.status_code, 200)
+
+    @patch("subekashi.lib.ogp.get_font", side_effect=OSError("unknown file format"))
+    def test_redirects_to_static_image_when_font_cannot_be_loaded(self, _):
+        response = self.client.get(reverse("subekashi:ogp_image", args=[make_ogp_token("トップ")]))
+        self.assertRedirects(
+            response,
+            f"{settings.ROOT_URL}/static/subekashi/image/ogp.png",
+            fetch_redirect_response=False,
+        )
 
     def test_returns_1200x630_png(self):
         response = self.client.get(reverse("subekashi:ogp_image", args=[make_ogp_token("トップ")]))
@@ -3527,3 +3552,41 @@ class OgpImageViewTest(TestCase):
         token = signing.dumps("トップ", compress=True)
         response = self.client.get(f"/ogp/{token}.png")
         self.assertEqual(response.status_code, 404)
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+@patch("django_ratelimit.core.time")
+class OgpImageRateLimitTest(TestCase):
+    """ogp_image (/ogp/<token>.png) のレート制限のテスト（#1058）
+
+    PythonAnywhereではREMOTE_ADDRがロードバランサーのIPになるため、X-Real-IPごとに毎秒5回までに制限する。
+    1秒の区切りをまたいでカウントがリセットされないよう、django_ratelimitの時刻を固定する。
+    制限を超えると送出されるRatelimited（PermissionDeniedのサブクラス）は、RatelimitMiddlewareに届く前に
+    Djangoが403のレスポンスにするため、ステータスは429ではなく403になる。
+    """
+
+    def setUp(self):
+        cache.clear()
+        self.url = reverse("subekashi:ogp_image", args=[make_ogp_token("トップ")])
+
+    def _get(self, ip):
+        return self.client.get(self.url, HTTP_X_REAL_IP=ip)
+
+    def test_sixth_request_in_a_second_is_rejected(self, mock_time):
+        mock_time.time.return_value = 1_800_000_000
+        for _ in range(5):
+            self.assertEqual(self._get("203.0.113.1").status_code, 200)
+        self.assertEqual(self._get("203.0.113.1").status_code, 403)
+
+    def test_limit_is_per_x_real_ip(self, mock_time):
+        mock_time.time.return_value = 1_800_000_000
+        for _ in range(5):
+            self._get("203.0.113.1")
+        self.assertEqual(self._get("203.0.113.2").status_code, 200)
+        self.assertEqual(self._get("203.0.113.1").status_code, 403)
+
+    def test_head_request_is_also_limited(self, mock_time):
+        mock_time.time.return_value = 1_800_000_000
+        for _ in range(5):
+            self.client.head(self.url, HTTP_X_REAL_IP="203.0.113.1")
+        self.assertEqual(self._get("203.0.113.1").status_code, 403)

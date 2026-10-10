@@ -617,7 +617,7 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 
 | 項目 | 内容 |
 | --- | --- |
-| 操作1 | 曲のページを`GET`し、`og:image`のURLから`ROOT_URL`を除いたパスを`GET` |
+| 操作1 | 曲のページを`GET`し、`og:image`のURL（末尾に`?v={OGP_VERSION}`）から`ROOT_URL`を除いたパスを`GET` |
 | 検証1 | HTTP 200、`Content-Type: image/png` |
 | 操作2 | 曲・統計・編集者のページを`GET`し、`og:image`のURLのトークンを`load_ogp_token`で復元 |
 | 検証2 | 各ページの`metatitle`（編集者のページは`Editor`のインスタンスを文字列にしたもの）に戻る |

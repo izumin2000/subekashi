@@ -1,6 +1,7 @@
 import io
 import os
 import re
+import threading
 from functools import lru_cache
 from django.conf import settings
 from django.core import signing
@@ -8,6 +9,8 @@ from PIL import Image, ImageDraw, ImageFont
 
 OGP_SALT = "subekashi.ogp"
 OGP_TITLE_MAX_LENGTH = 100
+# 画像のURLに付けるバージョン。画像は1年間キャッシュさせるため、デザインを変えたら上げる
+OGP_VERSION = 1
 
 WIDTH, HEIGHT = 1200, 630
 BACKGROUND_COLOR = "#111"
@@ -30,6 +33,9 @@ LOGO_CENTER_Y = 562
 
 FONT_PATH = os.path.join(settings.BASE_DIR, "subekashi/static/subekashi/fonts/GenZenGothicKaiC.woff2")
 ICON_PATH = os.path.join(settings.BASE_DIR, "subekashi/static/subekashi/image/icon_large.png")
+
+# FreeTypeのフォントは複数のスレッドから同時に使うと安全でないため、描画は1枚ずつ行う（runserverはスレッドで動く）
+RENDER_LOCK = threading.Lock()
 
 # 英数字の連続は単語として扱い途中で折り返さない。行頭禁則の約物は直前の文字とまとめる
 TOKEN_PATTERN = re.compile(r"\s+|(?:[!-~]+|.)[、。，．」』）】！？ー…]*")
@@ -103,6 +109,15 @@ def layout_title(title):
 
 
 def render_ogp_image(title):
+    with RENDER_LOCK:
+        image = draw_ogp_image(title)
+
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+def draw_ogp_image(title):
     image = Image.new("RGB", (WIDTH, HEIGHT), BACKGROUND_COLOR)
     draw = ImageDraw.Draw(image)
 
@@ -127,7 +142,4 @@ def render_ogp_image(title):
     icon, mask = get_logo_icon()
     image.paste(icon, (logo_left, LOGO_CENTER_Y - LOGO_ICON_SIZE // 2), mask)
     draw.text((logo_left + LOGO_ICON_SIZE + LOGO_GAP, LOGO_CENTER_Y), SITE_NAME, font=logo_font, fill=TEXT_COLOR, anchor="lm")
-
-    buffer = io.BytesIO()
-    image.save(buffer, format="PNG")
-    return buffer.getvalue()
+    return image

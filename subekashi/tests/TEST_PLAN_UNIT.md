@@ -479,6 +479,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | レガシーgenetype="model"は対象外（GPTインポート廃止） | `genetype="model", score=5`のレコードが存在 | 「作成された歌詞」欄に表示されない（`get_top_scored()`も`genetype="janome"`のみ対象） |
 | PC向けグローバルヘッダーの配置（#1123） | `pc_menu_position`クッキーなし（トップ） | `#pc-global-header`が`#pc-header-menu`の中に1つだけ置かれる |
 | PC向けグローバルヘッダーの配置（#1123） | `pc_menu_position=aside`（サイド） | `#pc-header-menu`は無く、`#pc-global-header`が`#subekashi-header`より前に1つだけ置かれる |
+| viewportのmetaタグ（#1058） | GETリクエスト | `<meta name="viewport" content="width=device-width,...">`が含まれ、余分な`meta=""`属性が無い |
 
 #### 7-2. `SongsView` (`/songs/`)
 
@@ -917,7 +918,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | og:*はproperty属性 | トップページ | `<meta property="og:type" content="website">`が含まれ、`name="og:`は含まれない |
-| 画像はページごとのOGP画像のURL | トップページ | `og:image`が`{ROOT_URL}/ogp/<token>.png`で、`token`を`load_ogp_token`で復元すると`トップ`になる |
+| 画像はページごとのOGP画像のURL | トップページ | `og:image`が`{ROOT_URL}/ogp/<token>.png?v={OGP_VERSION}`で、`token`を`load_ogp_token`で復元すると`トップ`になる |
 | twitter:imageはog:imageと同じ | トップページ | `twitter:image`が`og:image`と同じURLになる |
 | 画像のタイトルは各ページのmetatitle | 曲・統計・編集者の各ページ | `token`を復元すると、それぞれ`{曲名} / {作者名}`・`統計`・`全て{id}の所為です。`（EditorViewは`metatitle`に`Editor`のインスタンスを渡す）になる |
 | og:imageのURLで画像が返る | 曲のページの`og:image`のパスにGET | ステータス200で、`Content-Type`が`image/png`になる |
@@ -939,8 +940,20 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | PNGを返す | `make_ogp_token("トップ")`のトークン | ステータス200、`Content-Type`が`image/png`で、画像のサイズが1200×630 |
 | 長期間キャッシュさせる | 同上 | `Cache-Control`が`public, max-age={LONG_TERM_COOKIE_AGE}`（タイトルが変わるとURLも変わるため） |
+| バージョンのクエリを受け付ける | `?v={OGP_VERSION}`付き | ステータス200（ビューではクエリを使わない） |
+| フォントを読み込めない | `get_font`が`OSError`を送出（モック） | `{ROOT_URL}/static/subekashi/image/ogp.png`にリダイレクトする（FreeTypeがwoff2に対応していない環境で500にしないため） |
 | 不正なトークン | `/ogp/invalid-token.png` | ステータス404 |
 | saltが異なるトークン | `signing.dumps("トップ", compress=True)`（saltなし）のトークン | ステータス404（署名の鍵が同じでも他の用途のトークンは受け付けない） |
+
+##### レート制限
+
+PythonAnywhereでは`REMOTE_ADDR`がロードバランサーのIPになるため、ロードバランサーが付ける`X-Real-IP`ごとに毎秒5回までに制限する。1秒の区切りをまたいでカウントがリセットされないよう、`django_ratelimit.core.time`をモックして時刻を固定する。制限を超えると送出される`Ratelimited`（`PermissionDenied`のサブクラス）は、`RatelimitMiddleware`に届く前にDjangoが403のレスポンスにするため、ステータスは429ではなく403になる。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 1秒に6回目で制限 | 同じ`X-Real-IP`で6回GET | 5回目まではステータス200、6回目は403 |
+| X-Real-IPごとに制限 | IP Aで5回GETした後、IP B・IP AでGET | IP Bは200、IP Aは403 |
+| HEADも回数に数える | 同じ`X-Real-IP`でHEADを5回した後にGET | 403 |
 
 ---
 
@@ -1954,6 +1967,23 @@ YouTube Data API（`build`）はモック化する。「動画が存在しない
 | 1200×630のPNG | `トップ` | PNGで、サイズが1200×630 |
 | タイトルごとに異なる画像 | `トップ`と`統計` | 異なるバイト列 |
 | タイトルとロゴが重ならない | 英語の長いタイトル、`あ`×`OGP_TITLE_MAX_LENGTH` | y=480〜520の帯がすべて背景色（タイトル・下線とロゴの間に何も描かれない） |
+| 描画はロックの中で行う | `RENDER_LOCK`をモック | `__enter__`・`__exit__`が1回ずつ呼ばれる（FreeTypeのフォントを複数のスレッドから同時に使わないため。runserverはスレッドで動く） |
+| 複数のスレッドから同時に生成しても同じ画像 | 同じタイトルを4スレッドで8回生成 | すべて1スレッドで生成した画像と同じバイト列 |
+
+---
+
+### 23. `templatetags/ogp.py` — OGP画像のURL（#1058）
+
+**テストファイル**: `tests/test_templatetags_ogp.py`
+
+#### 23-1. `get_ogp_image_url(metatitle)`
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| metatitleから画像のURLを作る | `トップ` | `{ROOT_URL}/ogp/<token>.png?v={OGP_VERSION}`で、`token`を復元すると`トップ` |
+| 前後の空白を除く | `"  トップ　"` | `token`を復元すると`トップ` |
+| metatitleが無い・空白のみ | `None`・`""`・`" "`・全角空白と改行 | 共通の画像`{ROOT_URL}/static/subekashi/image/ogp.png` |
+| `ROOT_URL`の設定を使う | `override_settings(ROOT_URL="https://example.com")` | 画像のURLが`https://example.com/ogp/`・`https://example.com/static/...`から始まる（`config.settings`ではなく`django.conf.settings`から読むため、テストで差し替えられる） |
 
 ---
 
@@ -2009,7 +2039,8 @@ subekashi/tests/
 ├── test_lib_youtube.py             # 実装済み: YouTube Data API連携
 ├── test_lib_ogp.py                 # 実装済み: ページごとのOGP画像
 ├── test_management_commands.py     # 実装済み: 管理コマンド
-└── test_templatetags_song_card.py  # 実装済み: song_card テンプレートタグ
+├── test_templatetags_song_card.py  # 実装済み: song_card テンプレートタグ
+└── test_templatetags_ogp.py        # 実装済み: ogp テンプレートタグ
 
 article/
 └── tests.py                        # 実装済み: ArticlesView・DefaultArticleView
