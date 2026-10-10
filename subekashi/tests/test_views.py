@@ -4,6 +4,7 @@
 各ページの基本的なアクセス可否・ステータスコード・リダイレクト先を検証する。
 ManifestStaticFilesStorage はテストに不要なため StaticFilesStorage に差し替える。
 """
+import json
 import re
 from datetime import datetime, timezone as dt_timezone
 from unittest.mock import patch, MagicMock
@@ -470,6 +471,28 @@ class SongsViewTest(TestCase):
         """フォームを切り替えるラジオボタンを全て表示するボタンが、閉じた状態で表示されること"""
         response = self.client.get(reverse("subekashi:songs"))
         self.assertContains(response, '<button type="button" id="search-form-radios-toggle" aria-controls="search-form-radios" aria-expanded="false"><i class="fas fa-angle-down"></i><span>全て表示</span></button>')
+
+    def test_form_button_shows_icon_and_text_by_default(self):
+        """フォームボタンの設定のcookieが無い場合、フォームを切り替えるラジオボタンはアイコンと文字で表示されること（#1164）"""
+        response = self.client.get(reverse("subekashi:songs"))
+        self.assertContains(response, '<div class="radio-group" id="search-form-radios">')
+
+    def test_form_button_shows_icon_only_when_set(self):
+        """フォームボタンの設定がアイコンのみの場合、フォームを切り替えるラジオボタンにのみicon-onlyが付くこと（#1164）"""
+        self.client.cookies["form_button"] = "icon"
+        response = self.client.get(reverse("subekashi:songs"))
+
+        self.assertEqual(response.context["form_button"], "icon")
+        self.assertContains(response, '<div class="radio-group icon-only" id="search-form-radios">')
+        self.assertContains(response, 'class="radio-group icon-only"', count=1)
+
+    def test_form_button_with_invalid_cookie_falls_back_to_default(self):
+        """フォームボタンの設定のcookieが不正な値の場合、デフォルトのアイコンと文字で表示されること（#1164）"""
+        self.client.cookies["form_button"] = "text"
+        response = self.client.get(reverse("subekashi:songs"))
+
+        self.assertEqual(response.context["form_button"], "icon_text")
+        self.assertContains(response, '<div class="radio-group" id="search-form-radios">')
 
     def test_scroll_to_results_button_is_removed(self):
         """「結果を表示」ボタン(scroll-to-results)が表示されないこと"""
@@ -3292,6 +3315,95 @@ class AiResultViewTest(TestCase):
         lyric_match = re.search(r'<p class="lyric"[^>]*>(.*?)</p>', content, re.DOTALL)
         self.assertIsNotNone(lyric_match)
         self.assertNotRegex(lyric_match.group(1), r">\s+<")
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+class SettingViewTest(TestCase):
+    """SettingView (/setting/) のテスト"""
+
+    def setUp(self):
+        self.client = Client()
+
+    def _get_form_button_options(self, response):
+        setting = next(setting for setting in response.context["settings"]["search"] if setting["id"] == "form_button")
+        return [(option["value"], option["text"], option["selected"]) for option in setting["options"]]
+
+    def test_get_returns_200(self):
+        response = self.client.get(reverse("subekashi:setting"))
+        self.assertEqual(response.status_code, 200)
+
+    def test_form_button_defaults_to_icon_and_text(self):
+        """検索画面のフォームボタンの設定は、cookieが無い場合「アイコンと文字」が選択される（#1164）"""
+        response = self.client.get(reverse("subekashi:setting"))
+
+        self.assertContains(response, '<label>フォームボタン</label>')
+        self.assertContains(response, '<select id="form_button" class="setting-input">')
+        self.assertEqual(self._get_form_button_options(response), [
+            ("icon", "アイコンのみ", False),
+            ("icon_text", "アイコンと文字", True),
+        ])
+
+    def test_form_button_reflects_cookie(self):
+        """検索画面のフォームボタンの設定は、cookieの値が選択される（#1164）"""
+        self.client.cookies["form_button"] = "icon"
+        response = self.client.get(reverse("subekashi:setting"))
+
+        self.assertEqual(self._get_form_button_options(response), [
+            ("icon", "アイコンのみ", True),
+            ("icon_text", "アイコンと文字", False),
+        ])
+
+    def test_tutorial_icon_is_shown_only_for_saved_select(self):
+        """検索画面のセクションで、選択肢の保存のチュートリアルのアイコンは「検索の選択肢の保存」にのみ付く（#1164）"""
+        response = self.client.get(reverse("subekashi:setting"))
+
+        self.assertContains(response, '<label>検索の選択肢の保存<i class="fas fa-info-circle" data-tutorial="select"></i></label>')
+        self.assertContains(response, 'data-tutorial="select"', count=1)
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+class SaveSettingsViewTest(TestCase):
+    """SaveSettingsView (/api/setting/save/) のテスト"""
+
+    def setUp(self):
+        self.client = Client()
+
+    def _post(self, cookies):
+        return self.client.post(
+            reverse("subekashi:save_settings"),
+            data=json.dumps({"cookies": cookies}),
+            content_type="application/json",
+        )
+
+    def test_form_button_is_saved(self):
+        """検索画面のフォームボタンの設定はcookieに保存される（#1164）"""
+        for value in ["icon", "icon_text"]:
+            with self.subTest(value=value):
+                response = self._post({"form_button": value})
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.cookies["form_button"].value, value)
+
+    def test_form_button_with_invalid_value_is_not_saved(self):
+        """検索画面のフォームボタンの設定に許可されていない値を送信しても、cookieには保存されない（#1164）"""
+        for value in ["text", "<script>"]:
+            with self.subTest(value=value):
+                response = self._post({"form_button": value})
+
+                self.assertEqual(response.status_code, 200)
+                self.assertNotIn("form_button", response.cookies)
+
+    def test_saved_form_button_is_applied_to_songs(self):
+        """設定画面で保存したフォームボタンの設定は、検索画面のフォームを切り替えるラジオボタンに反映される（#1164）"""
+        self._post({"form_button": "icon"})
+        response = self.client.get(reverse("subekashi:songs"))
+
+        self.assertContains(response, '<div class="radio-group icon-only" id="search-form-radios">')
+
+        self._post({"form_button": "icon_text"})
+        response = self.client.get(reverse("subekashi:songs"))
+
+        self.assertContains(response, '<div class="radio-group" id="search-form-radios">')
 
 
 @override_settings(STORAGES=STATIC_STORAGE)

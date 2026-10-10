@@ -529,6 +529,9 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 並び替えのデフォルト | URLクエリなし | `-post_time`（更新日が遅い順）が選択される |
 | YouTube関連のクエリをJSに渡す | GETリクエスト | context["youtube_queries"] が `query_utils` の `YOUTUBE_FILTERS`・`YOUTUBE_SORTS` と一致し、`json_script`（`#youtube-queries`）で出力される |
 | ラジオボタンを全て表示するボタン | GETリクエスト | `#search-form-radios-toggle`（`aria-controls="search-form-radios"`、`aria-expanded="false"`、「全て表示」）が表示される |
+| フォームボタンの設定のデフォルト（#1164） | `form_button`クッキーなし | `#search-form-radios`は`<div class="radio-group" id="search-form-radios">`（アイコンと文字） |
+| フォームボタンの設定がアイコンのみ（#1164） | `form_button=icon` | context["form_button"] = "icon"、`#search-form-radios`のみに`icon-only`クラスが付き、並び替え等のフォーム内のラジオボタンには付かない |
+| フォームボタンの設定のcookieの不正な値（#1164） | `form_button=text` | context["form_button"] = "icon_text"（デフォルト）にフォールバックし、`icon-only`クラスは付かない |
 | 「結果を表示」ボタンの廃止（#970） | GETリクエスト | `scroll-to-results` が含まれない |
 
 #### 7-3. `SongView` (`/songs/<id>/`)
@@ -909,6 +912,24 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 別名一覧の再読み込みボタンはbutton | 別名一覧ページ | `<button type="button" id="alias-reload" class="action-button black-action-button">`になる |
 | 歌詞の作成結果のボタンはbutton | 歌詞の作成結果ページ | 「最高の行をコピー」「再作成」が`<button type="button" id="copy" class="action-button">`・`<button type="button" id="regenerate" class="action-button">`になる |
 | メンテナンス画面の再読み込みボタンはbutton | `IS_MAINTENANCE=True`（`_load_maintenance`をモック）で`/ai/result/`にアクセス | `maintenance.html`が使われ、`<button type="button" id="maintenance-reload" class="action-button">`（文言は`<span>再読み込み</span>`）になる |
+
+#### 7-17. `SettingView` (`/setting/`)（#1164）
+
+検索画面のセクションの「フォームボタン」（`form_button`）で、検索画面のフォームを切り替えるラジオボタン（`#search-form-radios`）を「アイコンのみ」（`icon`）か「アイコンと文字」（`icon_text`、デフォルト）にできる。「アイコンのみ」の場合は`#search-form-radios`に`icon-only`クラスを付け、`songs.css`でラベルの`::before`（丸）と`.icon-p-big`（文字）を非表示にする。文字は読み上げでラジオボタンの名前として使われるよう、`display: none`ではなく見えない状態にする。並び替え等のフォーム内のラジオボタンや、検索画面以外のラジオボタンには影響しない。見た目はDjangoテストでは確認できないため、Playwrightで確認する。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 正常アクセス | GETリクエスト | HTTP 200 |
+| フォームボタンの設定のデフォルト | cookie無し | 「フォームボタン」の`<select id="form_button">`が表示され、選択肢は「アイコンのみ」（`icon`）・「アイコンと文字」（`icon_text`）の順で、「アイコンと文字」が選択される |
+| フォームボタンの設定のcookieを反映 | `form_button=icon`のcookieを送信 | 「アイコンのみ」が選択される |
+| チュートリアルのアイコン | GETリクエスト | 選択肢の保存のチュートリアル（`data-tutorial="select"`）のアイコンは「検索の選択肢の保存」にのみ付き、「フォームボタン」には付かない |
+
+#### 7-18. `SaveSettingsView` (`/api/setting/save/`)（#1164）
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| フォームボタンの設定の保存 | `{"cookies": {"form_button": "icon"}}`・`{"cookies": {"form_button": "icon_text"}}` | HTTP 200、`form_button`のcookieが送信した値で保存される |
+| 許可されていない値は保存しない | `{"cookies": {"form_button": "text"}}`・`{"cookies": {"form_button": "<script>"}}` | HTTP 200、`form_button`のcookieは保存されない |
 
 ---
 
