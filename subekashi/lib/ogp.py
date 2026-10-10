@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw, ImageFont
 OGP_SALT = "subekashi.ogp"
 OGP_TITLE_MAX_LENGTH = 100
 # 画像のURLに付けるバージョン。画像は1年間キャッシュさせるため、デザインを変えたら上げる
-OGP_VERSION = 1
+OGP_VERSION = 2
 
 WIDTH, HEIGHT = 1200, 630
 BACKGROUND_COLOR = "#111"
