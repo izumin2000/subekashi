@@ -3,6 +3,7 @@ var page = 1;
 const COOKIE_FORMS = ["songrange", "jokerange", "sort"];
 
 window.addEventListener('load', async function () {
+    initSearchForm();
     renderSearch();
 
     document.querySelectorAll(FORM_QUERIES).forEach((formEle) => {

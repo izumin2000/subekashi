@@ -14,7 +14,9 @@ window.addEventListener('DOMContentLoaded', function () {
     document.getElementById("imitate").addEventListener("input", renderSongGuesser);
 });
 
-window.addEventListener('load', function () {
+// フォームの選択をcookie・ブラウザが復元した状態に合わせ、操作のイベントを登録する
+// ページのJSのloadで、フォームの値を使う処理（検索・バッジの表示）より先に呼ぶ
+function initSearchForm() {
     restoreFormValuesFromCookies();
     syncSearchForm();
     focusSearchForm(getSearchFormName());
@@ -39,7 +41,7 @@ window.addEventListener('load', function () {
             scrollToSearchFormRadio(getSearchFormName(), "auto");
         }
     });
-});
+}
 
 window.addEventListener('pageshow', function (event) {
     if (event.persisted) {
@@ -97,7 +99,7 @@ function restoreFormValuesFromCookies() {
 
 // フィルタの値に該当するラジオボタンを選択する
 function setFormValue(filter, value) {
-    const radioEle = Array.from(document.querySelectorAll(`#search-forms input[name="${filter}"]`)).find((ele) => ele.value === value);
+    const radioEle = Array.from(document.querySelectorAll(FORM_QUERIES)).find((ele) => ele.name === filter && ele.value === value);
     if (radioEle) {
         radioEle.checked = true;
     }
@@ -170,7 +172,7 @@ function renderSongGuesser() {
     }
 
     songGuesserController = new AbortController();
-    imitateTitle = document.getElementById("imitate").value;
+    const imitateTitle = document.getElementById("imitate").value;
     getSongGuessers(imitateTitle, "song-guesser", songGuesserController.signal, renderSongGuesser);
 }
 

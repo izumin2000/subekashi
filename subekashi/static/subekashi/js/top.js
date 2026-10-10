@@ -1,5 +1,5 @@
 // 検索の表示設定が「全て表示」の場合は、検索画面と同じフォームを表示する
-// その場合のみtop.htmlでsearch_form.jsをこのファイルより先に読み込み、FORM_QUERIES・collectFormQuery・renderFilterStatus・toQueryString・renderSongGuesserを使う
+// その場合のみtop.htmlでsearch_form.jsをこのファイルより先に読み込み、FORM_QUERIES・initSearchForm・collectFormQuery・renderFilterStatus・toQueryString・renderSongGuesserを使う
 const isShownAllSearch = document.getElementById("search-forms") !== null;
 
 const keywordElement = document.getElementById("keyword");
@@ -12,6 +12,7 @@ if (keywordElement && isPC && !isShownAllSearch) {
 
 if (isShownAllSearch) {
     window.addEventListener('load', function () {
+        initSearchForm();
         renderFilterStatus();
         document.querySelectorAll(FORM_QUERIES).forEach((formEle) => {
             formEle.addEventListener('change', renderFilterStatus);
