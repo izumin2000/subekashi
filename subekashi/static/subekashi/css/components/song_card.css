@@ -38,9 +38,8 @@
 }
 
 .song-card-col1 {
-    display: block;
-    width: fit-content;
-    max-width: 14em;
+    width: 100%;
+    max-width: 0;
     padding-left: 5px;
 }
 
@@ -56,10 +55,6 @@
 }
 
 @media (max-width: 480px) {
-    .song-card-col1 {
-        width: 8em;
-    }
-
     .song-card-like {
         display: none;
     }
