@@ -3152,6 +3152,76 @@ class SongGuessersViewTest(TestCase):
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
+@patch("django_ratelimit.core.time")
+class SongCardsRateLimitTest(TestCase):
+    """song_cards・song_guessers のレート制限のテスト（#1188）
+
+    IPごとに毎秒2回までに制限する。PythonAnywhereではREMOTE_ADDRがロードバランサーのIPになり、全ユーザーが
+    1つのIPとして数えられるため、settings.RATELIMIT_IP_META_KEYでX-Real-IP（無ければREMOTE_ADDR）を使う。
+    テストクライアントのREMOTE_ADDRは常に同じため、X-Real-IPごとに数えられていることを確認できる。
+    1秒の区切りをまたいでカウントがリセットされないよう、django_ratelimitの時刻を固定する。
+    """
+
+    URL_NAMES = ["subekashi:song_cards", "subekashi:song_guessers"]
+
+    def setUp(self):
+        cache.clear()
+
+    def _get(self, url_name, **extra):
+        return self.client.get(reverse(url_name), **extra)
+
+    def assertLimited(self, response):
+        # 制限を超えたときは今は403になり、#1187で429に変える予定のため、どちらも受け付ける
+        self.assertIn(response.status_code, (403, 429))
+
+    def test_third_request_in_a_second_is_limited(self, mock_time):
+        mock_time.time.return_value = 1_800_000_000
+        for url_name in self.URL_NAMES:
+            with self.subTest(url_name=url_name):
+                for _ in range(2):
+                    self.assertEqual(self._get(url_name, HTTP_X_REAL_IP="203.0.113.1").status_code, 200)
+                self.assertLimited(self._get(url_name, HTTP_X_REAL_IP="203.0.113.1"))
+
+    def test_limit_is_per_x_real_ip(self, mock_time):
+        mock_time.time.return_value = 1_800_000_000
+        for url_name in self.URL_NAMES:
+            with self.subTest(url_name=url_name):
+                for _ in range(2):
+                    self._get(url_name, HTTP_X_REAL_IP="203.0.113.1")
+                self.assertEqual(self._get(url_name, HTTP_X_REAL_IP="203.0.113.2").status_code, 200)
+                self.assertLimited(self._get(url_name, HTTP_X_REAL_IP="203.0.113.1"))
+
+    def test_x_forwarded_for_does_not_bypass_limit(self, mock_time):
+        # X-Forwarded-Forはクライアントが自由に付けられるため、値を変えても別々に数えない
+        mock_time.time.return_value = 1_800_000_000
+        for url_name in self.URL_NAMES:
+            with self.subTest(url_name=url_name):
+                for i in range(2):
+                    self._get(url_name, HTTP_X_REAL_IP="203.0.113.1", HTTP_X_FORWARDED_FOR=f"198.51.100.{i}")
+                self.assertLimited(
+                    self._get(url_name, HTTP_X_REAL_IP="203.0.113.1", HTTP_X_FORWARDED_FOR="198.51.100.9")
+                )
+
+    def test_remote_addr_is_used_without_x_real_ip(self, mock_time):
+        mock_time.time.return_value = 1_800_000_000
+        for url_name in self.URL_NAMES:
+            with self.subTest(url_name=url_name):
+                for _ in range(2):
+                    self._get(url_name, REMOTE_ADDR="198.51.100.1")
+                self.assertEqual(self._get(url_name, REMOTE_ADDR="198.51.100.2").status_code, 200)
+                self.assertLimited(self._get(url_name, REMOTE_ADDR="198.51.100.1"))
+
+    def test_invalid_x_real_ip_uses_remote_addr(self, mock_time):
+        # IPでないX-Real-IPで500にならず、REMOTE_ADDRで数える
+        mock_time.time.return_value = 1_800_000_000
+        for url_name in self.URL_NAMES:
+            with self.subTest(url_name=url_name):
+                for _ in range(2):
+                    self.assertEqual(self._get(url_name, HTTP_X_REAL_IP="not-an-ip").status_code, 200)
+                self.assertLimited(self._get(url_name))
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
 class RedirectViewTest(TestCase):
     """/search/ と /new/ のリダイレクトテスト"""
 

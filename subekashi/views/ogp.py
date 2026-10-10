@@ -13,13 +13,6 @@ STATIC_OGP_IMAGE_PATH = os.path.join(settings.BASE_DIR, "subekashi/static/subeka
 OGP_CACHE_TIMEOUT = 24 * 60 * 60
 
 
-# PythonAnywhereではREMOTE_ADDRがロードバランサーのIPになるため、ロードバランサーが付けるX-Real-IPで制限する。
-# ロードバランサーがX-Real-IPを付け直す前提のため、別の環境に移す場合は見直す
-# （クライアントが送ったX-Real-IPがそのまま届くと、値を変えるだけで制限を回避できる）
-def get_client_ip(group, request):
-    return request.META.get("HTTP_X_REAL_IP") or request.META.get("REMOTE_ADDR", "")
-
-
 def set_image_headers(response, image_etag):
     response["ETag"] = image_etag
     response["Cache-Control"] = f"public, max-age={LONG_TERM_COOKIE_AGE}"
@@ -44,8 +37,9 @@ def ogp_image(request, token):
     cache_key = f"ogp_image:{digest}"
     image = cache.get(cache_key)
     if image is None:
-        # 新しく描画するときだけ回数を数える。SNSのクローラーに失敗をキャッシュされないよう、429はキャッシュさせない
-        if is_ratelimited(request, group="ogp_image", key=get_client_ip, rate="5/s", increment=True):
+        # 新しく描画するときだけ回数を数える。SNSのクローラーに失敗をキャッシュされないよう、429はキャッシュさせない。
+        # IPはsettings.RATELIMIT_IP_META_KEYでX-Real-IPから取る
+        if is_ratelimited(request, group="ogp_image", key="ip", rate="5/s", increment=True):
             response = HttpResponse("Too Many Requests", status=429, content_type="text/plain")
             response["Retry-After"] = "1"
             response["Cache-Control"] = "no-store"

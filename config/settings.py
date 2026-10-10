@@ -186,6 +186,10 @@ LOGGING = {
     },
 }
 
+# django_ratelimitのkey='ip'で使うIP。PythonAnywhereではREMOTE_ADDRがロードバランサーのIPになり、
+# 全ユーザーが1つのIPとして数えられるため、X-Real-IP（無ければREMOTE_ADDR）を使う（#1188）
+RATELIMIT_IP_META_KEY = "subekashi.lib.ip.get_client_ip"
+
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",

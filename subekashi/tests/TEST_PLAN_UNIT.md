@@ -826,6 +826,18 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | sort指定時の並び順 | `sort=title` | 指定した並び順（タイトル順）で表示される |
 | 末尾のメッセージ | 候補が51件・1件・0件 | 51件は「これ以上の候補を表示する為には条件を絞ってください。」、1件は「これ以上の検索結果はありません。」、0件は「検索結果はありません。」で始まる |
 
+#### 7-11-2. `song_cards`・`song_guessers` のレート制限（#1188）
+
+`@ratelimit(key='ip', rate='2/second')`でIPごとに毎秒2回までに制限する。PythonAnywhereでは`REMOTE_ADDR`がロードバランサーのIPになり、全ユーザーが1つのIPとして数えられるため、`settings.RATELIMIT_IP_META_KEY`（`lib/ip.py`の`get_client_ip`）で`X-Real-IP`（無ければ`REMOTE_ADDR`）を使う。テストクライアントの`REMOTE_ADDR`は常に同じため、`X-Real-IP`ごとに数えられていることを確認できる。制限を超えたときは今は403になり、#1187で429に変える予定のため、どちらも受け付ける。1秒の区切りをまたいでカウントがリセットされないよう、`django_ratelimit.core.time`をモックして時刻を固定する。各テストは両方のビューで確認する。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 1秒に3回目で制限 | 同じ`X-Real-IP`で3回GET | 2回目まではステータス200、3回目は403か429 |
+| X-Real-IPごとに制限 | IP Aで2回GETした後、IP B・IP AでGET | IP Bは200、IP Aは403か429 |
+| X-Forwarded-Forでは回避できない | 同じ`X-Real-IP`で`X-Forwarded-For`を毎回変えて3回GET | 3回目は403か429（`X-Forwarded-For`はクライアントが自由に付けられるため使わない） |
+| X-Real-IPが無ければREMOTE_ADDRごとに制限 | `REMOTE_ADDR` Aで2回GETした後、`REMOTE_ADDR` B・AでGET | Bは200、Aは403か429 |
+| X-Real-IPがIPでない | `X-Real-IP: not-an-ip`で2回GETした後、`X-Real-IP`なしでGET | 2回とも200（500にならない）で、3回目は`REMOTE_ADDR`で数えて403か429 |
+
 #### 7-12. `AiView` (`/ai/`)
 
 | テストケース | 条件 | 期待結果 |
@@ -984,7 +996,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 ##### レート制限
 
-新しく描画するときだけ、`X-Real-IP`ごとに毎秒5回までに制限する（キャッシュ済みの画像は数えない）。PythonAnywhereでは`REMOTE_ADDR`がロードバランサーのIPになるため、ロードバランサーが付ける`X-Real-IP`を使う。制限には`django_ratelimit`の`is_ratelimited`を使い、制限を超えたら429を返す（デコレーターの`block=True`は`PermissionDenied`を送出し、`RatelimitMiddleware`に届く前に403になるため使わない）。1秒の区切りをまたいでカウントがリセットされないよう、`django_ratelimit.core.time`をモックして時刻を固定する。
+新しく描画するときだけ、`X-Real-IP`ごとに毎秒5回までに制限する（キャッシュ済みの画像は数えない）。PythonAnywhereでは`REMOTE_ADDR`がロードバランサーのIPになるため、ロードバランサーが付ける`X-Real-IP`を使う（`key="ip"`で、`settings.RATELIMIT_IP_META_KEY`の`get_client_ip`から取る。#1188）。制限には`django_ratelimit`の`is_ratelimited`を使い、制限を超えたら429を返す（デコレーターの`block=True`は`PermissionDenied`を送出し、`RatelimitMiddleware`に届く前に403になるため使わない）。1秒の区切りをまたいでカウントがリセットされないよう、`django_ratelimit.core.time`をモックして時刻を固定する。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
@@ -2051,6 +2063,25 @@ YouTube Data API（`build`）はモック化する。「動画が存在しない
 
 ---
 
+### 24. `lib/ip.py` — クライアントのIP（#1188）
+
+**テストファイル**: `tests/test_lib_ip.py`
+
+#### 24-1. `get_client_ip(request)`
+
+`django_ratelimit`の`key='ip'`で使うIP（`settings.RATELIMIT_IP_META_KEY`）。PythonAnywhereでは`REMOTE_ADDR`がロードバランサーのIPになるため、ロードバランサーが付ける`X-Real-IP`を使う。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| X-Real-IPを使う | `REMOTE_ADDR: 10.0.0.1`、`X-Real-IP: 203.0.113.1` | `203.0.113.1` |
+| X-Real-IPが無い | `REMOTE_ADDR: 10.0.0.1` のみ | `10.0.0.1` |
+| X-Real-IPが空 | `REMOTE_ADDR: 10.0.0.1`、`X-Real-IP: ""` | `10.0.0.1` |
+| X-Real-IPがIPでない | `REMOTE_ADDR: 10.0.0.1`、`X-Real-IP`が`not-an-ip`・`203.0.113.1, 198.51.100.1`・`203.0.113.1/24` | `10.0.0.1`（`django_ratelimit`がIPとして解析できず500になるため） |
+| IPv6のX-Real-IP | `REMOTE_ADDR: 10.0.0.1`、`X-Real-IP: 2001:db8::1` | `2001:db8::1` |
+| X-Forwarded-Forは使わない | `REMOTE_ADDR: 10.0.0.1`、`X-Forwarded-For: 198.51.100.1` | `10.0.0.1`（クライアントが自由に付けられるため） |
+
+---
+
 ## テスト優先度
 
 | 優先度 | 対象 | 理由 |
@@ -2102,6 +2133,7 @@ subekashi/tests/
 ├── test_converters.py              # 実装済み: URLコンバータ
 ├── test_lib_youtube.py             # 実装済み: YouTube Data API連携
 ├── test_lib_ogp.py                 # 実装済み: ページごとのOGP画像
+├── test_lib_ip.py                  # 実装済み: クライアントのIP
 ├── test_management_commands.py     # 実装済み: 管理コマンド
 ├── test_templatetags_song_card.py  # 実装済み: song_card テンプレートタグ
 └── test_templatetags_ogp.py        # 実装済み: ogp テンプレートタグ
