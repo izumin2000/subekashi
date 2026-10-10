@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.views import View
-from subekashi.constants.constants import ALL_MEDIAS, LONG_TERM_COOKIE_AGE
+from subekashi.constants.constants import ALL_MEDIAS, LONG_TERM_COOKIE_AGE, FORM_BUTTON_CHOICES, FORM_BUTTON_DEFAULT
 from subekashi.lib.query_utils import YOUTUBE_FILTERS, YOUTUBE_SORTS
 
 
@@ -95,6 +95,10 @@ class SongsView(View):
 
         # is_saved_selectの設定を確認
         is_saved_select = COOKIES.get('is_saved_select', 'on')
+
+        # cookieが不正な値の場合はデフォルト値を使用
+        form_button = COOKIES.get('form_button', FORM_BUTTON_DEFAULT)
+        context["form_button"] = form_button if form_button in FORM_BUTTON_CHOICES else FORM_BUTTON_DEFAULT
 
         for form_name, form_config in COOKIE_FORMS.items():
             default_value = form_config['default']

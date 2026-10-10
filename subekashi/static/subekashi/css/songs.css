@@ -76,6 +76,21 @@ i.icon-p-big, .small-icon {
     mask-image: none;
 }
 
+/* 設定でフォームボタンをアイコンのみにした場合は、丸と文字を表示せず、背景色のみで選択中であることを示す */
+#search-form-radios.icon-only label::before {
+    display: none;
+}
+
+/* 文字は読み上げでラジオボタンの名前として使われるよう、display: noneではなく見えない状態にする */
+#search-form-radios.icon-only .icon-p-big {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
 /* ラジオボタンを全て表示するボタン */
 #search-form-radios-toggle {
     display: block;
@@ -88,6 +103,11 @@ i.icon-p-big, .small-icon {
     color: #fff;
     background-color: #333;
     border-radius: 20px;
+}
+
+/* ラジオボタンが縦にはみ出ない場合はsongs.jsでhiddenにする */
+#search-form-radios-toggle[hidden] {
+    display: none;
 }
 
 #search-form-radios-toggle:hover, #search-form-radios-toggle:active {
