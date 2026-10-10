@@ -166,11 +166,21 @@ LOGGING = {
             "level": "DEBUG",
             "class": "logging.NullHandler",
         },
+        # 標準エラー出力（PythonAnywhereではエラーログ）に出力する
+        "stderr": {
+            "level": "WARNING",
+            "class": "logging.StreamHandler",
+        },
     },
     "loggers": {
         "django_ratelimit": {
             "handlers": ["null"],
             "level": "ERROR",  # もしくは "CRITICAL" にしてログを抑制
+            "propagate": False,
+        },
+        "subekashi.lib.ip": {
+            "handlers": ["stderr"],
+            "level": "WARNING",
             "propagate": False,
         },
     },

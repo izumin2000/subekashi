@@ -1,7 +1,7 @@
 """
 ミドルウェアのテスト
 
-RatelimitMiddleware・CacheControlMiddleware・ContentSecurityPolicyMiddleware の動作を検証する。
+RatelimitMiddleware・CacheControlMiddleware・ContentSecurityPolicyMiddleware・RestrictIPMiddleware の動作を検証する。
 """
 import json
 from unittest.mock import MagicMock
@@ -11,6 +11,7 @@ from django_ratelimit.exceptions import Ratelimited
 from subekashi.middleware.rate_limit import RatelimitMiddleware
 from subekashi.middleware.cache import CacheControlMiddleware
 from subekashi.middleware.csp import ContentSecurityPolicyMiddleware
+from subekashi.middleware.restrict_ip import RestrictIPMiddleware
 from subekashi.constants.constants import SHORT_TERM_COOKIE_AGE, LONG_TERM_COOKIE_AGE
 
 
@@ -172,3 +173,58 @@ class ContentSecurityPolicyMiddlewareTest(SimpleTestCase):
         self.assertEqual(directives["base-uri"], ["'self'"])
         self.assertEqual(directives["form-action"], ["'self'"])
         self.assertEqual(directives["frame-ancestors"], ["'none'"])
+
+
+class RestrictIPMiddlewareTest(SimpleTestCase):
+    """RestrictIPMiddleware のテスト（X-Forwarded-For の先頭と X-Real-IP の不一致の記録、#1189）"""
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    def _call(self, path="/songs/1/edit", **headers):
+        middleware = RestrictIPMiddleware(lambda req: HttpResponse("OK"))
+        middleware.BAN_LIST = []
+        request = self.factory.post(path, **headers)
+        return middleware(request)
+
+    def test_mismatch_is_logged_without_ip(self):
+        with self.assertLogs("subekashi.lib.ip", level="WARNING") as logs:
+            response = self._call(
+                HTTP_X_FORWARDED_FOR="198.51.100.1, 203.0.113.1",
+                HTTP_X_REAL_IP="203.0.113.1",
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(logs.records), 1)
+        message = logs.records[0].getMessage()
+        self.assertIn("POST '/songs/1/edit'", message)
+        self.assertIn("X-Forwarded-For の IP の数: 2", message)
+        self.assertNotIn("198.51.100.1", message)
+        self.assertNotIn("203.0.113.1", message)
+
+    def test_newline_in_path_is_escaped(self):
+        with self.assertLogs("subekashi.lib.ip", level="WARNING") as logs:
+            self._call(
+                path="/songs/%0d%0aX-Forwarded-For の先頭と X-Real-IP が一致しません",
+                HTTP_X_FORWARDED_FOR="198.51.100.1, 203.0.113.1",
+                HTTP_X_REAL_IP="203.0.113.1",
+            )
+        message = logs.records[0].getMessage()
+        self.assertNotIn("\n", message)
+        self.assertNotIn("\r", message)
+        self.assertIn("/songs/\\r\\nX-Forwarded-For", message)
+
+    def test_match_is_not_logged(self):
+        with self.assertNoLogs("subekashi.lib.ip", level="WARNING"):
+            self._call(HTTP_X_FORWARDED_FOR="203.0.113.1", HTTP_X_REAL_IP="203.0.113.1")
+
+    def test_match_with_proxy_addresses_is_not_logged(self):
+        with self.assertNoLogs("subekashi.lib.ip", level="WARNING"):
+            self._call(HTTP_X_FORWARDED_FOR="203.0.113.1, 10.0.0.1", HTTP_X_REAL_IP="203.0.113.1")
+
+    def test_without_real_ip_is_not_logged(self):
+        with self.assertNoLogs("subekashi.lib.ip", level="WARNING"):
+            self._call(HTTP_X_FORWARDED_FOR="198.51.100.1")
+
+    def test_without_forwarded_for_is_not_logged(self):
+        with self.assertNoLogs("subekashi.lib.ip", level="WARNING"):
+            self._call(HTTP_X_REAL_IP="203.0.113.1")

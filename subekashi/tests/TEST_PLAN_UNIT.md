@@ -1094,6 +1094,19 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | インラインスクリプトの禁止 | `script-src` | `'unsafe-inline'`・`'unsafe-eval'`・`*`を含まない |
 | 制限的なディレクティブ | - | `default-src 'self'`・`object-src 'none'`・`base-uri 'self'`・`form-action 'self'`・`frame-ancestors 'none'` |
 
+#### 9-4. `RestrictIPMiddleware` — `X-Forwarded-For` の先頭と `X-Real-IP` の不一致の記録（#1189）
+
+`get_ip` を `X-Real-IP` に切り替える前に、編集者が変わるリクエストの件数を本番で確認するための一時的な記録。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 先頭が一致しない | `X-Forwarded-For: 198.51.100.1, 203.0.113.1`、`X-Real-IP: 203.0.113.1`、`POST /songs/1/edit` | `subekashi.lib.ip` に WARNING が1件記録され、メソッド・パス（`repr` の形式）・`X-Forwarded-For` の IP の数（2）を含み、IP を含まない。レスポンスはそのまま返す |
+| パスに改行を含む（ログインジェクション） | パスが `/songs/%0d%0a...`、先頭が一致しない | 記録されたメッセージに改行（`\r`・`\n`）を含まず、`\r\n` とエスケープされている |
+| 一致する | `X-Forwarded-For` と `X-Real-IP` が同じ IP | 記録されない |
+| 先頭が一致し、後ろにプロキシの IP が続く | `X-Forwarded-For: 203.0.113.1, 10.0.0.1`、`X-Real-IP: 203.0.113.1` | 記録されない（先頭だけを比べる） |
+| `X-Real-IP` が無い | `X-Forwarded-For` のみ | 記録されない |
+| `X-Forwarded-For` が無い | `X-Real-IP` のみ | 記録されない |
+
 ---
 
 ### 10. `lib/song_search.py` — 検索機能
