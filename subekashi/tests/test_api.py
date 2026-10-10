@@ -3,13 +3,19 @@ REST API ビューのテスト
 
 SongAPI・EditorIsOpenView のレスポンス形式・ステータスコードを検証する。
 SongThrottle はビュークラスに直接定義されているため、patch で無効化する。
+ApiThrottleClientIPTest・ApiThrottleIdentTest では、スロットリングを X-Real-IP ごとに数えることを検証する（#1192）。
 """
 import json
 from unittest.mock import patch
-from django.test import TestCase, override_settings
+from django.core.cache import cache
+from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
+from django.urls import URLResolver
 from rest_framework.test import APIClient
+from rest_framework.views import APIView
+from subekashi import urls as subekashi_urls
 from subekashi.lib.song_search import DEFAULT_SIZE
 from subekashi.models import Ai, Author, Song, SongLink, Word
+from subekashi.views.api.song import SongAPI
 
 
 STATIC_STORAGE = {
@@ -457,3 +463,78 @@ class AiWordSwapViewTest(TestCase):
         self.assertEqual(new_ai.genetype, "janome")
         self.assertEqual(new_ai.score, 0)
         self.assertEqual(Ai.objects.filter(lyrics="私は駆ける").count(), 2)
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+@patch("rest_framework.throttling.SimpleRateThrottle.timer", return_value=1_800_000_000)
+class ApiThrottleClientIPTest(TestCase):
+    """APIのスロットリングを X-Real-IP ごとに数えることのテスト（#1192）
+
+    DRFの既定のget_identはX-Forwarded-Forの全体を識別子にするため、クライアントが値を変えるだけで制限を回避できる。
+    subekashi.lib.throttlingのクラスでX-Real-IP（無ければREMOTE_ADDR）を使うことを、SongAPI（毎秒2回まで）で確認する。
+    1秒の区切りをまたいでカウントがリセットされないよう、DRFのスロットリングの時刻を固定する。
+    """
+
+    def setUp(self):
+        cache.clear()
+        self.client = APIClient()
+
+    def _get(self, **extra):
+        return self.client.get("/api/song/", **extra)
+
+    def assertLimited(self, response):
+        self.assertEqual(response.status_code, 429)
+
+    def test_third_request_in_a_second_is_limited(self, mock_timer):
+        for _ in range(2):
+            self.assertEqual(self._get(HTTP_X_REAL_IP="203.0.113.1").status_code, 200)
+        self.assertLimited(self._get(HTTP_X_REAL_IP="203.0.113.1"))
+
+    def test_limit_is_per_x_real_ip(self, mock_timer):
+        for _ in range(2):
+            self._get(HTTP_X_REAL_IP="203.0.113.1")
+        self.assertEqual(self._get(HTTP_X_REAL_IP="203.0.113.2").status_code, 200)
+        self.assertLimited(self._get(HTTP_X_REAL_IP="203.0.113.1"))
+
+    def test_x_forwarded_for_does_not_bypass_limit(self, mock_timer):
+        # X-Forwarded-Forの先頭とX-Real-IPの不一致の記録（#1189）が出力されないよう、ログを受け取る
+        with self.assertLogs("subekashi.lib.ip", level="WARNING"):
+            for i in range(2):
+                self._get(HTTP_X_REAL_IP="203.0.113.1", HTTP_X_FORWARDED_FOR=f"198.51.100.{i}")
+            self.assertLimited(self._get(HTTP_X_REAL_IP="203.0.113.1", HTTP_X_FORWARDED_FOR="198.51.100.9"))
+
+    def test_remote_addr_is_used_without_x_real_ip(self, mock_timer):
+        for _ in range(2):
+            self._get(REMOTE_ADDR="198.51.100.1")
+        self.assertEqual(self._get(REMOTE_ADDR="198.51.100.2").status_code, 200)
+        self.assertLimited(self._get(REMOTE_ADDR="198.51.100.1"))
+
+
+class ApiThrottleIdentTest(SimpleTestCase):
+    """subekashi.urls の全てのDRFのビューのスロットリングが X-Real-IP で数えることのテスト（#1192）
+
+    ビューを追加したときに、DRFのスロットリングのクラスをそのまま使っていないかを確認する。
+    """
+
+    def _api_view_classes(self, patterns):
+        classes = set()
+        for pattern in patterns:
+            if isinstance(pattern, URLResolver):
+                classes |= self._api_view_classes(pattern.url_patterns)
+                continue
+            view_class = getattr(pattern.callback, "cls", None)
+            if view_class and issubclass(view_class, APIView):
+                classes.add(view_class)
+        return classes
+
+    def test_all_throttles_identify_by_x_real_ip(self):
+        view_classes = self._api_view_classes(subekashi_urls.urlpatterns)
+        self.assertIn(SongAPI, view_classes)
+        request = RequestFactory().get(
+            "/api/", REMOTE_ADDR="10.0.0.1", HTTP_X_REAL_IP="203.0.113.1", HTTP_X_FORWARDED_FOR="198.51.100.1",
+        )
+        for view_class in view_classes:
+            self.assertTrue(view_class.throttle_classes, view_class.__name__)
+            for throttle_class in view_class.throttle_classes:
+                with self.subTest(view=view_class.__name__, throttle=throttle_class.__name__):
+                    self.assertEqual(throttle_class().get_ident(request), "203.0.113.1")

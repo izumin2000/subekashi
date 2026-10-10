@@ -834,7 +834,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | 1秒に3回目で制限 | 同じ`X-Real-IP`で3回GET | 2回目まではステータス200、3回目は429 |
 | X-Real-IPごとに制限 | IP Aで2回GETした後、IP B・IP AでGET | IP Bは200、IP Aは429 |
-| X-Forwarded-Forでは回避できない | 同じ`X-Real-IP`で`X-Forwarded-For`を毎回変えて3回GET | 3回目は429（`X-Forwarded-For`はクライアントが自由に付けられるため使わない） |
+| X-Forwarded-Forでは回避できない | 同じ`X-Real-IP`で`X-Forwarded-For`を毎回変えて3回GET | 3回目は429（`X-Forwarded-For`はクライアントが自由に付けられるため使わない。#1189の不一致の記録は`assertLogs`で受け取る） |
 | X-Real-IPが無ければREMOTE_ADDRごとに制限 | `REMOTE_ADDR` Aで2回GETした後、`REMOTE_ADDR` B・AでGET | Bは200、Aは429 |
 | X-Real-IPがIPでない | `X-Real-IP: not-an-ip`で2回GETした後、`X-Real-IP`なしでGET | 2回とも200（500にならない）で、3回目は`REMOTE_ADDR`で数えて429 |
 
@@ -1072,6 +1072,20 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 数値でないsong_id | `?song_id=abc&fetch_imitate=1` | HTTP 200（500にならない）、`imitate_songs`が`None` |
 | 上付き数字のsong_id | `?song_id=²&fetch_imitate=1` | HTTP 200（500にならない）、`imitate_songs`が`None`（`str.isdigit()`はTrueだが`int()`で変換できない） |
 | 範囲外のsong_id | 30桁の数字 | HTTP 200（500にならない）、`imitate_songs`が`None` |
+
+#### 8-6. スロットリングのIP（`lib/throttling.py`）（#1192）
+
+**テストクラス**: `ApiThrottleClientIPTest`・`ApiThrottleIdentTest`（`tests/test_api.py`）
+
+DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするため、クライアントが値を変えるだけで制限を回避できる。`subekashi.lib.throttling`の`AnonRateThrottle`・`UserRateThrottle`は`get_ident`を`lib/ip.py`の`get_client_ip`で上書きし、`X-Real-IP`（無ければ`REMOTE_ADDR`）で数える。`ApiThrottleClientIPTest`は`SongAPI`（毎秒2回まで）で確認し、1秒の区切りをまたいでカウントがリセットされないよう、`rest_framework.throttling.SimpleRateThrottle.timer`をモックして時刻を固定する。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 1秒に3回目で制限 | 同じ`X-Real-IP`で`/api/song/`に3回GET | 2回目まではHTTP 200、3回目は429 |
+| X-Real-IPごとに制限 | IP Aで2回GETした後、IP B・IP AでGET | IP Bは200、IP Aは429 |
+| X-Forwarded-Forでは回避できない | 同じ`X-Real-IP`で`X-Forwarded-For`を毎回変えて3回GET | 3回目は429（#1189の不一致の記録は`assertLogs`で受け取る） |
+| X-Real-IPが無ければREMOTE_ADDRごとに制限 | `REMOTE_ADDR` Aで2回GETした後、`REMOTE_ADDR` B・AでGET | Bは200、Aは429 |
+| 全てのAPIのビューのスロットリング | `subekashi.urls`から集めたDRFのビュー（`APIRootView`・既定の`AnonRateThrottle`を使うビューを含む）の全ての`throttle_classes`で、`REMOTE_ADDR: 10.0.0.1`・`X-Real-IP: 203.0.113.1`・`X-Forwarded-For: 198.51.100.1`のリクエストの`get_ident` | 全て`203.0.113.1`（ビューを追加したときにDRFのクラスをそのまま使っていないかを確認する） |
 
 ---
 
