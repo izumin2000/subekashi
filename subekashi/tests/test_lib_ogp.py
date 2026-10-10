@@ -22,9 +22,31 @@ from subekashi.lib.ogp import (
     layout_title,
     load_ogp_token,
     make_ogp_token,
+    normalize_title,
     render_ogp_image,
     wrap_text,
 )
+
+
+class NormalizeTitleTest(SimpleTestCase):
+    """normalize_title() のテスト"""
+
+    def test_collapses_whitespace_and_newlines(self):
+        self.assertEqual(normalize_title(" 曲名\n\t作者  名　前 "), "曲名 作者 名 前")
+
+    def test_removes_invisible_format_characters(self):
+        # ソフトハイフン・ゼロ幅スペース・ゼロ幅非接合子
+        self.assertEqual(normalize_title("曲­名​‌"), "曲名")
+
+    def test_invisible_only_title_becomes_empty(self):
+        self.assertEqual(normalize_title("­ ­ ​"), "")
+
+    def test_non_str_title_is_converted_to_str(self):
+        class Title:
+            def __str__(self):
+                return "全て12の所為です。"
+
+        self.assertEqual(normalize_title(Title()), "全て12の所為です。")
 
 
 class OgpTokenTest(SimpleTestCase):
@@ -41,6 +63,10 @@ class OgpTokenTest(SimpleTestCase):
                 return "全て12の所為です。"
 
         self.assertEqual(load_ogp_token(make_ogp_token(Title())), "全て12の所為です。")
+
+    def test_title_is_normalized(self):
+        self.assertEqual(load_ogp_token(make_ogp_token("曲名\n­ 作者")), "曲名 作者")
+        self.assertEqual(make_ogp_token("曲名\n作者"), make_ogp_token("曲名 作者"))
 
     def test_long_title_is_truncated(self):
         token = make_ogp_token("あ" * (OGP_TITLE_MAX_LENGTH + 50))
@@ -149,6 +175,10 @@ class RenderOgpImageTest(SimpleTestCase):
 
     def test_different_titles_make_different_images(self):
         self.assertNotEqual(render_ogp_image("トップ"), render_ogp_image("統計"))
+
+    def test_title_is_normalized_before_drawing(self):
+        # 改行を含む文字列をそのまま描くと複数行のテキストとして扱われ、位置がずれるため
+        self.assertEqual(render_ogp_image("曲名\n­作者"), render_ogp_image("曲名 作者"))
 
     def test_drawing_is_serialized_by_lock(self):
         # FreeTypeのフォントを複数のスレッドから同時に使わないよう、描画はロックの中で行う

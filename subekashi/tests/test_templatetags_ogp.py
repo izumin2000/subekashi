@@ -29,12 +29,13 @@ class GetOgpImageUrlTest(SimpleTestCase):
     def test_metatitle_makes_ogp_image_url_with_version(self):
         self.assertEqual(self._get_title(get_ogp_image_url("トップ")), "トップ")
 
-    def test_metatitle_is_stripped(self):
+    def test_metatitle_is_normalized(self):
         self.assertEqual(self._get_title(get_ogp_image_url("  トップ　")), "トップ")
+        self.assertEqual(self._get_title(get_ogp_image_url("曲名\n­作者")), "曲名 作者")
 
     def test_empty_metatitle_returns_static_image_url(self):
         static_url = f"{settings.ROOT_URL}/static/subekashi/image/ogp.png"
-        for metatitle in [None, "", " ", "　\n"]:
+        for metatitle in [None, "", " ", "　\n", "­ ​"]:
             with self.subTest(metatitle=metatitle):
                 self.assertEqual(get_ogp_image_url(metatitle), static_url)
 

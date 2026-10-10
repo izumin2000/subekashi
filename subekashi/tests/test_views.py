@@ -14,14 +14,15 @@ from django.contrib.staticfiles import finders
 from django.core import signing
 from django.core.cache import cache
 from django.db import connection
-from django.test import TestCase, Client, override_settings
+from django.template.loader import render_to_string
+from django.test import TestCase, Client, RequestFactory, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 from article.models import Article
 from subekashi.forms import AuthorAliasForm
-from subekashi.constants.constants import LONG_TERM_COOKIE_AGE
-from subekashi.lib.ogp import OGP_VERSION, load_ogp_token, make_ogp_token
+from subekashi.constants.constants import LONG_TERM_COOKIE_AGE, SHORT_TERM_COOKIE_AGE
+from subekashi.lib.ogp import OGP_SALT, OGP_VERSION, load_ogp_token, make_ogp_token, render_ogp_image
 from subekashi.lib.query_utils import YOUTUBE_FILTERS, YOUTUBE_SORTS
 from subekashi.lib.youtube import YoutubeApiError
 from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song, Stats, Word
@@ -3410,7 +3411,6 @@ class OgpMetaTagTest(TestCase):
     def setUp(self):
         self.client = Client()
         self.song = Song.objects.create(title="OGPテスト曲")
-        self.static_ogp_image_url = f"{settings.ROOT_URL}/static/subekashi/image/ogp.png"
 
     def _get_og_image_url(self, response):
         match = re.search(r'<meta property="og:image" content="([^"]+)">', response.content.decode())
@@ -3462,11 +3462,25 @@ class OgpMetaTagTest(TestCase):
         self.assertEqual(image_response.status_code, 200)
         self.assertEqual(image_response["Content-Type"], "image/png")
 
-    def test_og_image_falls_back_to_static_image_without_metatitle(self):
-        # SongViewは存在しない曲の場合にmetatitleを渡さずに404.htmlを表示する
-        response = self.client.get("/songs/999999999/")
-        self.assertContains(response, f'<meta property="og:image" content="{self.static_ogp_image_url}">', status_code=404)
-        self.assertContains(response, '<meta property="og:image:alt" content="全て歌詞の所為です。">', status_code=404)
+    def test_404_page_has_no_ogp_tags(self):
+        # SongViewが表示する404.htmlと、存在しないURLでhandler404が表示する404.html
+        for url in ["/songs/999999999/", "/no-such-page/"]:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 404)
+                self.assertNotContains(response, 'property="og:', status_code=404)
+                self.assertNotContains(response, 'name="twitter:', status_code=404)
+                self.assertContains(response, '<meta name="description"', status_code=404)
+
+    def test_500_page_has_no_ogp_tags(self):
+        html = render_to_string("subekashi/500.html", {"metatitle": "全て五百の所為です。"}, request=RequestFactory().get("/"))
+        self.assertNotIn('property="og:', html)
+        self.assertNotIn('name="twitter:', html)
+
+    @override_settings(ROOT_URL="https://example.com")
+    def test_og_url_uses_root_url_setting(self):
+        response = self.client.get(reverse("subekashi:top"))
+        self.assertContains(response, '<meta property="og:url" content="https://example.com/">')
 
     def test_static_og_image_file_exists(self):
         self.assertIsNotNone(finders.find("subekashi/image/ogp.png"))
@@ -3505,43 +3519,71 @@ class OgpMetaTagTest(TestCase):
         self.assertContains(response, '<meta property="og:title" content="トップ | 全て歌詞の所為です。">')
         self.assertContains(response, '<meta property="og:description" content="全て歌詞の所為です。は界隈曲をまとめたサイトです。">')
 
-    def test_og_url_on_404_page(self):
-        response = self.client.get("/songs/999999999/")
-        self.assertEqual(response.status_code, 404)
-        self.assertContains(response, f'<meta property="og:url" content="{settings.ROOT_URL}/songs/999999999/">', status_code=404)
-
 
 @override_settings(STORAGES=STATIC_STORAGE, RATELIMIT_ENABLE=False)
 class OgpImageViewTest(TestCase):
     """ogp_image (/ogp/<token>.png) のテスト（#1058）"""
 
     def setUp(self):
-        self.client = Client()
-
-    def test_version_query_is_accepted(self):
-        url = reverse("subekashi:ogp_image", args=[make_ogp_token("トップ")])
-        response = self.client.get(url, {"v": OGP_VERSION})
-        self.assertEqual(response.status_code, 200)
-
-    @patch("subekashi.lib.ogp.get_font", side_effect=OSError("unknown file format"))
-    def test_redirects_to_static_image_when_font_cannot_be_loaded(self, _):
-        response = self.client.get(reverse("subekashi:ogp_image", args=[make_ogp_token("トップ")]))
-        self.assertRedirects(
-            response,
-            f"{settings.ROOT_URL}/static/subekashi/image/ogp.png",
-            fetch_redirect_response=False,
-        )
+        cache.clear()
+        self.url = reverse("subekashi:ogp_image", args=[make_ogp_token("トップ")])
 
     def test_returns_1200x630_png(self):
-        response = self.client.get(reverse("subekashi:ogp_image", args=[make_ogp_token("トップ")]))
+        response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "image/png")
         self.assertEqual(Image.open(io.BytesIO(response.content)).size, (1200, 630))
 
     def test_cache_control_is_long_term(self):
-        response = self.client.get(reverse("subekashi:ogp_image", args=[make_ogp_token("トップ")]))
+        response = self.client.get(self.url)
         self.assertEqual(response["Cache-Control"], f"public, max-age={LONG_TERM_COOKIE_AGE}")
+
+    def test_version_query_is_accepted(self):
+        response = self.client.get(self.url, {"v": OGP_VERSION})
+        self.assertEqual(response.status_code, 200)
+
+    def test_rendered_image_is_cached(self):
+        with patch("subekashi.views.ogp.render_ogp_image", wraps=render_ogp_image) as render:
+            first = self.client.get(self.url)
+            second = self.client.get(self.url)
+
+        self.assertEqual(render.call_count, 1)
+        self.assertEqual(first.content, second.content)
+
+    def test_if_none_match_returns_304(self):
+        image_etag = self.client.get(self.url)["ETag"]
+
+        with patch("subekashi.views.ogp.render_ogp_image") as render:
+            response = self.client.get(self.url, HTTP_IF_NONE_MATCH=image_etag)
+
+        self.assertEqual(response.status_code, 304)
+        self.assertEqual(response["ETag"], image_etag)
+        self.assertEqual(response["Cache-Control"], f"public, max-age={LONG_TERM_COOKIE_AGE}")
+        render.assert_not_called()
+
+    def test_etag_differs_by_title(self):
+        other_url = reverse("subekashi:ogp_image", args=[make_ogp_token("統計")])
+        self.assertNotEqual(self.client.get(self.url)["ETag"], self.client.get(other_url)["ETag"])
+
+    def test_returns_static_image_when_font_cannot_be_loaded(self):
+        with patch("subekashi.lib.ogp.get_font", side_effect=OSError("unknown file format")):
+            response = self.client.get(self.url)
+
+        with open(finders.find("subekashi/image/ogp.png"), "rb") as f:
+            self.assertEqual(response.content, f.read())
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "image/png")
+        self.assertEqual(response["Cache-Control"], f"public, max-age={SHORT_TERM_COOKIE_AGE}")
+        self.assertFalse(response.has_header("ETag"))
+
+        # 共通の画像はキャッシュしないため、フォントを読めるようになれば次のリクエストで生成される
+        self.assertNotEqual(self.client.get(self.url).content, response.content)
+
+    def test_empty_title_returns_404(self):
+        token = signing.dumps("", salt=OGP_SALT, compress=True)
+        response = self.client.get(f"/ogp/{token}.png")
+        self.assertEqual(response.status_code, 404)
 
     def test_invalid_token_returns_404(self):
         response = self.client.get("/ogp/invalid-token.png")
@@ -3559,34 +3601,46 @@ class OgpImageViewTest(TestCase):
 class OgpImageRateLimitTest(TestCase):
     """ogp_image (/ogp/<token>.png) のレート制限のテスト（#1058）
 
-    PythonAnywhereではREMOTE_ADDRがロードバランサーのIPになるため、X-Real-IPごとに毎秒5回までに制限する。
+    新しく描画するときだけ、X-Real-IPごとに毎秒5回までに制限する（キャッシュ済みの画像は数えない）。
+    PythonAnywhereではREMOTE_ADDRがロードバランサーのIPになるため、X-Real-IPを使う。
     1秒の区切りをまたいでカウントがリセットされないよう、django_ratelimitの時刻を固定する。
-    制限を超えると送出されるRatelimited（PermissionDeniedのサブクラス）は、RatelimitMiddlewareに届く前に
-    Djangoが403のレスポンスにするため、ステータスは429ではなく403になる。
     """
 
     def setUp(self):
         cache.clear()
-        self.url = reverse("subekashi:ogp_image", args=[make_ogp_token("トップ")])
+        self.urls = [reverse("subekashi:ogp_image", args=[make_ogp_token(f"曲{i}")]) for i in range(7)]
 
-    def _get(self, ip):
-        return self.client.get(self.url, HTTP_X_REAL_IP=ip)
+    def _get(self, url, ip):
+        return self.client.get(url, HTTP_X_REAL_IP=ip)
 
-    def test_sixth_request_in_a_second_is_rejected(self, mock_time):
+    def test_sixth_new_image_in_a_second_returns_429(self, mock_time):
         mock_time.time.return_value = 1_800_000_000
-        for _ in range(5):
-            self.assertEqual(self._get("203.0.113.1").status_code, 200)
-        self.assertEqual(self._get("203.0.113.1").status_code, 403)
+        for url in self.urls[:5]:
+            self.assertEqual(self._get(url, "203.0.113.1").status_code, 200)
+
+        response = self._get(self.urls[5], "203.0.113.1")
+
+        # SNSのクローラーに失敗をキャッシュされないよう、キャッシュさせない
+        self.assertEqual(response.status_code, 429)
+        self.assertEqual(response["Retry-After"], "1")
+        self.assertEqual(response["Cache-Control"], "no-store")
+
+    def test_cached_image_is_not_limited(self, mock_time):
+        mock_time.time.return_value = 1_800_000_000
+        for url in self.urls[:5]:
+            self._get(url, "203.0.113.1")
+        self.assertEqual(self._get(self.urls[5], "203.0.113.1").status_code, 429)
+        self.assertEqual(self._get(self.urls[0], "203.0.113.1").status_code, 200)
 
     def test_limit_is_per_x_real_ip(self, mock_time):
         mock_time.time.return_value = 1_800_000_000
-        for _ in range(5):
-            self._get("203.0.113.1")
-        self.assertEqual(self._get("203.0.113.2").status_code, 200)
-        self.assertEqual(self._get("203.0.113.1").status_code, 403)
+        for url in self.urls[:5]:
+            self._get(url, "203.0.113.1")
+        self.assertEqual(self._get(self.urls[5], "203.0.113.2").status_code, 200)
+        self.assertEqual(self._get(self.urls[6], "203.0.113.1").status_code, 429)
 
     def test_head_request_is_also_limited(self, mock_time):
         mock_time.time.return_value = 1_800_000_000
-        for _ in range(5):
-            self.client.head(self.url, HTTP_X_REAL_IP="203.0.113.1")
-        self.assertEqual(self._get("203.0.113.1").status_code, 403)
+        for url in self.urls[:5]:
+            self.client.head(url, HTTP_X_REAL_IP="203.0.113.1")
+        self.assertEqual(self._get(self.urls[5], "203.0.113.1").status_code, 429)

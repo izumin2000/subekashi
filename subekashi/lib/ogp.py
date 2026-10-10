@@ -2,6 +2,7 @@ import io
 import os
 import re
 import threading
+import unicodedata
 from functools import lru_cache
 from django.conf import settings
 from django.core import signing
@@ -41,8 +42,15 @@ RENDER_LOCK = threading.Lock()
 TOKEN_PATTERN = re.compile(r"\s+|(?:[!-~]+|.)[、。，．」』）】！？ー…]*")
 
 
+# 改行や連続した空白は1つの空白にまとめ、ソフトハイフン・ゼロ幅スペースなどの見えない文字（書式文字）は取り除く。
+# 見えない文字はブラウザでは表示されないが、フォントによっては画像に記号として描かれるため
+def normalize_title(title):
+    visible = "".join(char for char in str(title) if unicodedata.category(char) != "Cf")
+    return " ".join(visible.split())
+
+
 def make_ogp_token(title):
-    return signing.dumps(str(title)[:OGP_TITLE_MAX_LENGTH], salt=OGP_SALT, compress=True)
+    return signing.dumps(normalize_title(title)[:OGP_TITLE_MAX_LENGTH], salt=OGP_SALT, compress=True)
 
 
 def load_ogp_token(token):
@@ -110,7 +118,7 @@ def layout_title(title):
 
 def render_ogp_image(title):
     with RENDER_LOCK:
-        image = draw_ogp_image(title)
+        image = draw_ogp_image(normalize_title(title))
 
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")

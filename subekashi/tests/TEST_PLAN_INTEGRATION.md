@@ -621,8 +621,8 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 | 検証1 | HTTP 200、`Content-Type: image/png` |
 | 操作2 | 曲・統計・編集者のページを`GET`し、`og:image`のURLのトークンを`load_ogp_token`で復元 |
 | 検証2 | 各ページの`metatitle`（編集者のページは`Editor`のインスタンスを文字列にしたもの）に戻る |
-| 操作3 | `metatitle`を渡さずに404.htmlを表示するページ（存在しない曲）を`GET` |
-| 検証3 | `og:image`が共通の画像（`/static/subekashi/image/ogp.png`）になる |
+| 操作3 | 存在しない曲・存在しないURLを`GET`（404.htmlを表示する） |
+| 検証3 | OGPのタグ（`og:*`・`twitter:*`）が出ない |
 
 ---
 

@@ -913,7 +913,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 #### 7-17. OGPのメタタグ（#1058）
 
-全ページが継承する`base/base.html`のOGPのメタタグを確認する。OGPの画像はページごとに`/ogp/<token>.png`（`ogp_image`ビュー）で生成し、`token`は`metatitle`を署名したもの（`lib/ogp.py`の`make_ogp_token`）。SNS側で読み込めるよう、URLはcontext processorの`root_url`（`ROOT_URL`）を付けた絶対URLにする。SNSで実際にカードが表示されるかはDjangoテストでは確認できないため、デプロイ後にX・Discordで確認する。
+全ページが継承する`base/base.html`のOGPのメタタグを確認する。OGPの画像はページごとに`/ogp/<token>.png`（`ogp_image`ビュー）で生成し、`token`は`metatitle`を署名したもの（`lib/ogp.py`の`make_ogp_token`）。SNS側で読み込めるよう、URLはcontext processorの`root_url`（`django.conf.settings.ROOT_URL`）を付けた絶対URLにする。OGPのタグは`{% block ogp %}`にまとめ、404・500ページでは出さない。SNSで実際にカードが表示されるかはDjangoテストでは確認できないため、デプロイ後にX・Discordで確認する。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
@@ -922,7 +922,9 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | twitter:imageはog:imageと同じ | トップページ | `twitter:image`が`og:image`と同じURLになる |
 | 画像のタイトルは各ページのmetatitle | 曲・統計・編集者の各ページ | `token`を復元すると、それぞれ`{曲名} / {作者名}`・`統計`・`全て{id}の所為です。`（EditorViewは`metatitle`に`Editor`のインスタンスを渡す）になる |
 | og:imageのURLで画像が返る | 曲のページの`og:image`のパスにGET | ステータス200で、`Content-Type`が`image/png`になる |
-| metatitleが無いページは共通の画像 | 存在しない曲（`/songs/999999999/`、`SongView`が`metatitle`を渡さずに404.htmlを表示する） | `og:image`が`{ROOT_URL}/static/subekashi/image/ogp.png`、`og:image:alt`が`全て歌詞の所為です。`になる |
+| 404ページにはOGPのタグを出さない | 存在しない曲（`/songs/999999999/`、`SongView`が404.htmlを表示）・存在しないURL（`/no-such-page/`、handler404が404.htmlを表示） | ステータス404で、`property="og:`・`name="twitter:`は含まれず、`<meta name="description">`は含まれる |
+| 500ページにはOGPのタグを出さない | `subekashi/500.html`を`render_to_string`で描画 | `property="og:`・`name="twitter:`は含まれない |
+| `ROOT_URL`の設定を使う | `override_settings(ROOT_URL="https://example.com")`でトップページ | `og:url`が`https://example.com/`になる（context processorが`config.settings`ではなく`django.conf.settings`から読むため） |
 | 共通の画像のファイルがある | — | `finders.find("subekashi/image/ogp.png")`が`None`でない |
 | 画像のサイズと代替テキスト | トップページ | `og:image:width`が`1200`、`og:image:height`が`630`、`og:image:alt`が`トップ \| 全て歌詞の所為です。`になる |
 | twitter:card | トップページ | `<meta name="twitter:card" content="summary_large_image">`が含まれる |
@@ -930,30 +932,34 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | og:urlはページごとのURL | トップ・曲一覧・曲の各ページ | `og:url`が`{ROOT_URL}{ページのパス}`になる |
 | og:urlにクエリ文字列を含めない | `/songs/?keyword=OGP` | `og:url`が`{ROOT_URL}/songs/`になる |
 | og:titleとog:description | トップページ | `og:title`が`トップ \| 全て歌詞の所為です。`、`og:description`が`DEFAULT_DESCRIPTION`になる |
-| 404ページのog:url | 存在しない曲（`/songs/999999999/`） | ステータス404で、`og:url`が`{ROOT_URL}/songs/999999999/`になる |
 
 #### 7-18. `ogp_image` (`/ogp/<token>.png`)（#1058）
 
-ページごとのOGP画像を返す。画像はリクエストごとにメモリ上で生成し、サーバーには保存しない。
+ページごとのOGP画像を返す。画像はリクエストごとにメモリ上で生成してDjangoのキャッシュ（設定が無いため既定のメモリ内キャッシュ）に1日保存し、ファイルには保存しない。各テストの前に`cache.clear()`する。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | PNGを返す | `make_ogp_token("トップ")`のトークン | ステータス200、`Content-Type`が`image/png`で、画像のサイズが1200×630 |
 | 長期間キャッシュさせる | 同上 | `Cache-Control`が`public, max-age={LONG_TERM_COOKIE_AGE}`（タイトルが変わるとURLも変わるため） |
 | バージョンのクエリを受け付ける | `?v={OGP_VERSION}`付き | ステータス200（ビューではクエリを使わない） |
-| フォントを読み込めない | `get_font`が`OSError`を送出（モック） | `{ROOT_URL}/static/subekashi/image/ogp.png`にリダイレクトする（FreeTypeがwoff2に対応していない環境で500にしないため） |
+| 生成した画像をキャッシュする | 同じURLに2回GET（`render_ogp_image`を`wraps`でモック） | 描画は1回だけで、2回とも同じ画像 |
+| 条件付きリクエスト | 1回目の`ETag`を`If-None-Match`に付けてGET | ステータス304で、`ETag`と`Cache-Control`（1年）が付き、描画しない |
+| ETagはタイトルごとに異なる | `トップ`と`統計` | 異なる`ETag` |
+| フォントを読み込めない | `get_font`が`OSError`を送出（モック） | ステータス200で共通の画像（`ogp.png`）の中身を返し、`Cache-Control`は`public, max-age={SHORT_TERM_COOKIE_AGE}`、`ETag`は付けない。共通の画像はキャッシュしないため、次のリクエストでは生成した画像を返す（リダイレクトをたどらないクローラーがあるため、リダイレクトにはしない） |
+| タイトルが空 | `signing.dumps("", salt=OGP_SALT, compress=True)`のトークン | ステータス404 |
 | 不正なトークン | `/ogp/invalid-token.png` | ステータス404 |
 | saltが異なるトークン | `signing.dumps("トップ", compress=True)`（saltなし）のトークン | ステータス404（署名の鍵が同じでも他の用途のトークンは受け付けない） |
 
 ##### レート制限
 
-PythonAnywhereでは`REMOTE_ADDR`がロードバランサーのIPになるため、ロードバランサーが付ける`X-Real-IP`ごとに毎秒5回までに制限する。1秒の区切りをまたいでカウントがリセットされないよう、`django_ratelimit.core.time`をモックして時刻を固定する。制限を超えると送出される`Ratelimited`（`PermissionDenied`のサブクラス）は、`RatelimitMiddleware`に届く前にDjangoが403のレスポンスにするため、ステータスは429ではなく403になる。
+新しく描画するときだけ、`X-Real-IP`ごとに毎秒5回までに制限する（キャッシュ済みの画像は数えない）。PythonAnywhereでは`REMOTE_ADDR`がロードバランサーのIPになるため、ロードバランサーが付ける`X-Real-IP`を使う。制限には`django_ratelimit`の`is_ratelimited`を使い、制限を超えたら429を返す（デコレーターの`block=True`は`PermissionDenied`を送出し、`RatelimitMiddleware`に届く前に403になるため使わない）。1秒の区切りをまたいでカウントがリセットされないよう、`django_ratelimit.core.time`をモックして時刻を固定する。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
-| 1秒に6回目で制限 | 同じ`X-Real-IP`で6回GET | 5回目まではステータス200、6回目は403 |
-| X-Real-IPごとに制限 | IP Aで5回GETした後、IP B・IP AでGET | IP Bは200、IP Aは403 |
-| HEADも回数に数える | 同じ`X-Real-IP`でHEADを5回した後にGET | 403 |
+| 1秒に6枚目の描画で制限 | 同じ`X-Real-IP`で異なる6つのタイトルにGET | 5回目まではステータス200、6回目は429で、`Retry-After`が`1`、`Cache-Control`が`no-store`（SNSのクローラーに失敗をキャッシュさせない） |
+| キャッシュ済みの画像は制限しない | 制限に達した後、描画済みのタイトルにGET | ステータス200 |
+| X-Real-IPごとに制限 | IP Aで5枚描画した後、IP B・IP Aで新しいタイトルにGET | IP Bは200、IP Aは429 |
+| HEADも回数に数える | 同じ`X-Real-IP`で異なる5つのタイトルにHEADした後、新しいタイトルにGET | 429 |
 
 ---
 
@@ -1935,6 +1941,7 @@ YouTube Data API（`build`）はモック化する。「動画が存在しない
 | --- | --- | --- |
 | 往復 | `全て歌詞の所為です。` | `load_ogp_token`で同じ文字列に戻る |
 | 文字列以外は文字列にする | `__str__`が`全て12の所為です。`を返すオブジェクト（EditorViewは`metatitle`に`Editor`を渡す） | `全て12の所為です。`に戻る |
+| タイトルを正規化する | `"曲名\n­ 作者"` | `曲名 作者`に戻り、`曲名\n作者`と`曲名 作者`のトークンが同じになる |
 | 長いタイトルは切り詰める | `OGP_TITLE_MAX_LENGTH`+50文字 | `OGP_TITLE_MAX_LENGTH`文字に切り詰められる（URLの長さを抑えるため） |
 | URLに使える文字のみ | `全て歌詞の所為です。 / 全てあなたの所為です。` | トークンが`[A-Za-z0-9_.:-]`のみ |
 | 改ざんされたトークン | 末尾の1文字を変えたトークン | `BadSignature` |
@@ -1969,6 +1976,18 @@ YouTube Data API（`build`）はモック化する。「動画が存在しない
 | タイトルとロゴが重ならない | 英語の長いタイトル、`あ`×`OGP_TITLE_MAX_LENGTH` | y=480〜520の帯がすべて背景色（タイトル・下線とロゴの間に何も描かれない） |
 | 描画はロックの中で行う | `RENDER_LOCK`をモック | `__enter__`・`__exit__`が1回ずつ呼ばれる（FreeTypeのフォントを複数のスレッドから同時に使わないため。runserverはスレッドで動く） |
 | 複数のスレッドから同時に生成しても同じ画像 | 同じタイトルを4スレッドで8回生成 | すべて1スレッドで生成した画像と同じバイト列 |
+| 描画の前にタイトルを正規化する | `"曲名\n­作者"`と`曲名 作者` | 同じバイト列（改行をそのまま描くと複数行のテキストとして扱われ、位置がずれるため） |
+
+#### 22-5. `normalize_title(title)`
+
+改行や連続した空白を1つの空白にまとめ、ソフトハイフン・ゼロ幅スペースなどの見えない文字（Unicodeの書式文字`Cf`）を取り除く。見えない文字はブラウザでは表示されないが、フォントによっては画像に記号として描かれる（開発用DBに、曲名がソフトハイフンと空白の繰り返しの曲がある）。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 空白・改行をまとめる | `" 曲名\n\t作者  名　前 "` | `曲名 作者 名 前` |
+| 見えない文字を取り除く | `"曲­名​‌"` | `曲名` |
+| 見えない文字だけなら空 | `"­ ­ ​"` | `""` |
+| 文字列以外は文字列にする | `__str__`が`全て12の所為です。`を返すオブジェクト | `全て12の所為です。` |
 
 ---
 
@@ -1981,8 +2000,8 @@ YouTube Data API（`build`）はモック化する。「動画が存在しない
 | テストケース | 入力 | 期待結果 |
 | --- | --- | --- |
 | metatitleから画像のURLを作る | `トップ` | `{ROOT_URL}/ogp/<token>.png?v={OGP_VERSION}`で、`token`を復元すると`トップ` |
-| 前後の空白を除く | `"  トップ　"` | `token`を復元すると`トップ` |
-| metatitleが無い・空白のみ | `None`・`""`・`" "`・全角空白と改行 | 共通の画像`{ROOT_URL}/static/subekashi/image/ogp.png` |
+| metatitleを正規化する | `"  トップ　"`・`"曲名\n­作者"` | `token`を復元すると、それぞれ`トップ`・`曲名 作者` |
+| metatitleが無い・空白や見えない文字のみ | `None`・`""`・`" "`・全角空白と改行・ソフトハイフンとゼロ幅スペース | 共通の画像`{ROOT_URL}/static/subekashi/image/ogp.png` |
 | `ROOT_URL`の設定を使う | `override_settings(ROOT_URL="https://example.com")` | 画像のURLが`https://example.com/ogp/`・`https://example.com/static/...`から始まる（`config.settings`ではなく`django.conf.settings`から読むため、テストで差し替えられる） |
 
 ---
