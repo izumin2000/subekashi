@@ -6,7 +6,10 @@ ManifestStaticFilesStorage はテストに不要なため StaticFilesStorage に
 """
 import io
 import json
+import os
 import re
+import tempfile
+from contextlib import contextmanager
 from datetime import datetime, timezone as dt_timezone
 from unittest.mock import patch, MagicMock
 from PIL import Image
@@ -34,6 +37,11 @@ from subekashi.views.songs import COOKIE_FORMS, SEARCH_FORM_QUERIES, SORT_CHOICE
 STATIC_STORAGE = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
+
+MANIFEST_STORAGE = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage"},
 }
 
 
@@ -3508,6 +3516,26 @@ class RobotsViewTest(TestCase):
             self.assertFalse(self._is_disallowed(path), path)
 
 
+@contextmanager
+def manifest_static_storage(paths):
+    # 本番と同じManifestStaticFilesStorageにし、pathsをハッシュ付きのファイル名としてmanifestに持たせる
+    with tempfile.TemporaryDirectory() as static_root:
+        with open(os.path.join(static_root, "staticfiles.json"), "w", encoding="utf-8") as f:
+            json.dump({"version": "1.1", "paths": paths}, f)
+        with override_settings(STATIC_ROOT=static_root, STORAGES=MANIFEST_STORAGE):
+            yield
+
+
+class SitemapViewTest(TestCase):
+    """sitemap (/sitemap.xml) のテスト"""
+
+    def test_redirects_to_unhashed_sitemap(self):
+        """sitemap.xmlは起動中に再生成されるため、manifestにハッシュ付きのファイル名があってもハッシュなしのURLへリダイレクトする（#834）"""
+        with manifest_static_storage({"subekashi/sitemap.xml": "subekashi/sitemap.0123456789ab.xml"}):
+            response = self.client.get("/sitemap.xml")
+        self.assertRedirects(response, f"{settings.ROOT_URL}/static/subekashi/sitemap.xml", fetch_redirect_response=False)
+
+
 @override_settings(STORAGES=STATIC_STORAGE)
 class FaviconTest(TestCase):
     """faviconとweb app manifestのテスト（#1171）"""
@@ -3517,7 +3545,13 @@ class FaviconTest(TestCase):
 
     def test_favicon_redirects_to_ico(self):
         response = self.client.get("/favicon.ico")
-        self.assertRedirects(response, f"{settings.ROOT_URL}/static/subekashi/image/favicon.ico", fetch_redirect_response=False)
+        self.assertRedirects(response, "/static/subekashi/image/favicon.ico", fetch_redirect_response=False)
+
+    def test_favicon_redirects_to_hashed_ico_in_production(self):
+        """本番のManifestStaticFilesStorageでは、base.htmlの<link rel="icon">と同じハッシュ付きのURLへリダイレクトする（#834）"""
+        with manifest_static_storage({"subekashi/image/favicon.ico": "subekashi/image/favicon.0123456789ab.ico"}):
+            response = self.client.get("/favicon.ico")
+        self.assertRedirects(response, "/static/subekashi/image/favicon.0123456789ab.ico", fetch_redirect_response=False)
 
     def test_favicon_ico_has_sizes(self):
         with Image.open(finders.find("subekashi/image/favicon.ico")) as ico:

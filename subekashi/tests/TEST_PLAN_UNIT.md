@@ -985,6 +985,14 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | Disallowが対象のページにマッチする | 曲の編集・曲の削除・編集者・設定の各ページのパス | いずれかの`Disallow`にマッチする |
 | Disallowが対象外のページにマッチしない | トップ・曲の検索・曲・曲の編集履歴の各ページのパス | どの`Disallow`にもマッチしない |
 
+#### 7-19-1. `sitemap` (`/sitemap.xml`)（#834）
+
+sitemap.xmlは本番で`const`コマンド（`sitemap`コマンドと`collectstatic`）により起動中に再生成される。`static()`が返すハッシュ付きのファイル名は起動時に読み込んだmanifestから決まり、再生成後も古いファイルを指したままになるため、`static()`を使わずハッシュなしのURLへリダイレクトする。本番と同じ`ManifestStaticFilesStorage`にし、一時ディレクトリの`STATIC_ROOT`に置いたmanifest（`staticfiles.json`）にハッシュ付きのファイル名を持たせて確認する。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| ハッシュなしのURLへリダイレクト | manifestに`subekashi/sitemap.xml`のハッシュ付きのファイル名がある状態で`/sitemap.xml`にGET | `{ROOT_URL}/static/subekashi/sitemap.xml`へリダイレクト |
+
 #### 7-20. OGPのメタタグ（#1058）
 
 全ページが継承する`base/base.html`のOGPのメタタグを確認する。OGPの画像はページごとに`/ogp/<token>.png`（`ogp_image`ビュー）で生成し、`token`は`metatitle`を署名したもの（`lib/ogp.py`の`make_ogp_token`）。SNS側で読み込めるよう、URLはcontext processorの`root_url`（`django.conf.settings.ROOT_URL`）を付けた絶対URLにする。OGPのタグは`{% block ogp %}`にまとめ、404・500ページでは出さない。SNSで実際にカードが表示されるかはDjangoテストでは確認できないため、デプロイ後にX・Discordで確認する。
@@ -1041,7 +1049,8 @@ faviconの画像は`icon_large.png`（800×800）から生成する。`site.webm
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
-| /favicon.icoのリダイレクト | `/favicon.ico`にGET | `{ROOT_URL}/static/subekashi/image/favicon.ico`へリダイレクト |
+| /favicon.icoのリダイレクト | `/favicon.ico`にGET | `/static/subekashi/image/favicon.ico`へリダイレクト |
+| 本番では/favicon.icoからハッシュ付きのURLへリダイレクト（#834） | 本番と同じ`ManifestStaticFilesStorage`にし、manifestに`subekashi/image/favicon.ico`のハッシュ付きのファイル名がある状態で`/favicon.ico`にGET | `static()`で、base.htmlの`<link rel="icon">`と同じハッシュ付きのURL（`/static/subekashi/image/favicon.<hash>.ico`）へリダイレクト |
 | favicon.icoのサイズ | `favicon.ico` | 16×16・32×32・48×48の3つのサイズを含む |
 | apple-touch-iconのサイズ | `apple-touch-icon.png` | 180×180 |
 | base.htmlのlinkタグ | トップページ | `rel="icon"`（`sizes="16x16 32x32 48x48"`）・`rel="apple-touch-icon"`（`sizes="180x180"`）・`rel="manifest"`の`<link>`が含まれ、`shortcut icon`は含まれない |
