@@ -1,3 +1,4 @@
+import ipaddress
 import logging
 from subekashi.lib.security import encrypt
 
@@ -21,3 +22,15 @@ def log_forwarded_ip_mismatch(request):
             "X-Forwarded-For の先頭と X-Real-IP が一致しません（%s %r、X-Forwarded-For の IP の数: %d）",
             request.method, request.path, len(forwarded_list),
         )
+
+# PythonAnywhereではREMOTE_ADDRがロードバランサーのIPになるため、ロードバランサーが付けるX-Real-IPを使う（#1188）。
+# ロードバランサーがX-Real-IPを付け直す前提のため、別の環境に移す場合は見直す
+# （クライアントが送ったX-Real-IPがそのまま届くと、値を変えるだけでレート制限を回避できる）。
+# IPでない値はdjango_ratelimitが解析できず500になるため、REMOTE_ADDRを使う
+def get_client_ip(request):
+    real_ip = request.META.get('HTTP_X_REAL_IP', '')
+    try:
+        ipaddress.ip_address(real_ip)
+    except ValueError:
+        return request.META['REMOTE_ADDR']
+    return real_ip
