@@ -29,6 +29,7 @@ from subekashi.forms import AuthorAliasForm
 from subekashi.constants.constants import LONG_TERM_COOKIE_AGE, SHORT_TERM_COOKIE_AGE
 from subekashi.lib.ogp import OGP_SALT, OGP_VERSION, load_ogp_token, make_ogp_token, render_ogp_image
 from subekashi.lib.query_utils import YOUTUBE_FILTERS, YOUTUBE_SORTS
+from subekashi.lib.security import encrypt
 from subekashi.lib.youtube import YoutubeApiError
 from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song, SongLink, Stats, Word
 from subekashi.models.author import TransitiveAlias
@@ -1251,6 +1252,23 @@ class EditorViewTest(TestCase):
 
         self.assertContains(response, "編集者履歴テスト作者")
         self.assertNotContains(response, "この曲は削除されました")
+
+    def test_is_me_uses_x_real_ip(self):
+        editor = Editor.objects.create(ip=encrypt("203.0.113.1"))
+        response = self.client.get(
+            reverse("subekashi:editor", args=[editor.id]),
+            HTTP_X_REAL_IP="203.0.113.1", HTTP_X_FORWARDED_FOR="198.51.100.1",
+        )
+        self.assertTrue(response.context["is_me"])
+
+    def test_x_forwarded_for_cannot_impersonate_editor(self):
+        # X-Forwarded-Forで他人のIPを名乗っても、その人の編集者にならない（#1189）
+        editor = Editor.objects.create(ip=encrypt("203.0.113.1"))
+        response = self.client.get(
+            reverse("subekashi:editor", args=[editor.id]),
+            HTTP_X_REAL_IP="203.0.113.2", HTTP_X_FORWARDED_FOR="203.0.113.1",
+        )
+        self.assertFalse(response.context["is_me"])
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
@@ -3509,8 +3527,7 @@ class SongCardsRateLimitTest(TestCase):
         # X-Forwarded-Forはクライアントが自由に付けられるため、値を変えても別々に数えない
         mock_time.time.return_value = 1_800_000_000
         for url_name in self.URL_NAMES:
-            # X-Forwarded-Forの先頭とX-Real-IPの不一致の記録（#1189）が出力されないよう、ログを受け取る
-            with self.subTest(url_name=url_name), self.assertLogs("subekashi.lib.ip", level="WARNING"):
+            with self.subTest(url_name=url_name):
                 for i in range(2):
                     self._get(url_name, HTTP_X_REAL_IP="203.0.113.1", HTTP_X_FORWARDED_FOR=f"198.51.100.{i}")
                 self.assertLimited(

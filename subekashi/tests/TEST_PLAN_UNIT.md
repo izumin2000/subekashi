@@ -832,6 +832,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | 存在するeditor | 有効なeditor_id | HTTP 200 |
 | author向けHistory | `History.create_for_author()`で作成したHistoryが存在 | 作者名が表示され、「この曲は削除されました」は表示されない |
+| 本人の判定はX-Real-IP（#1189） | `ip`が`encrypt("203.0.113.1")`のeditor、`X-Real-IP: 203.0.113.1`・`X-Forwarded-For: 198.51.100.1` | `is_me`がTrue |
+| X-Forwarded-Forではなりすませない（#1189） | `ip`が`encrypt("203.0.113.1")`のeditor、`X-Real-IP: 203.0.113.2`・`X-Forwarded-For: 203.0.113.1` | `is_me`がFalse（他人のIPを名乗ってその人の編集者になれない） |
 
 #### 7-11. `SongCardsView` (`/api/html/song_cards`)
 
@@ -867,7 +869,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | 1秒に3回目で制限 | 同じ`X-Real-IP`で3回GET | 2回目まではステータス200、3回目は429 |
 | X-Real-IPごとに制限 | IP Aで2回GETした後、IP B・IP AでGET | IP Bは200、IP Aは429 |
-| X-Forwarded-Forでは回避できない | 同じ`X-Real-IP`で`X-Forwarded-For`を毎回変えて3回GET | 3回目は429（`X-Forwarded-For`はクライアントが自由に付けられるため使わない。#1189の不一致の記録は`assertLogs`で受け取る） |
+| X-Forwarded-Forでは回避できない | 同じ`X-Real-IP`で`X-Forwarded-For`を毎回変えて3回GET | 3回目は429（`X-Forwarded-For`はクライアントが自由に付けられるため使わない） |
 | X-Real-IPが無ければREMOTE_ADDRごとに制限 | `REMOTE_ADDR` Aで2回GETした後、`REMOTE_ADDR` B・AでGET | Bは200、Aは429 |
 | X-Real-IPがIPでない | `X-Real-IP: not-an-ip`で2回GETした後、`X-Real-IP`なしでGET | 2回とも200（500にならない）で、3回目は`REMOTE_ADDR`で数えて429 |
 
@@ -1144,7 +1146,7 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | --- | --- | --- |
 | 1秒に3回目で制限 | 同じ`X-Real-IP`で`/api/song/`に3回GET | 2回目まではHTTP 200、3回目は429 |
 | X-Real-IPごとに制限 | IP Aで2回GETした後、IP B・IP AでGET | IP Bは200、IP Aは429 |
-| X-Forwarded-Forでは回避できない | 同じ`X-Real-IP`で`X-Forwarded-For`を毎回変えて3回GET | 3回目は429（#1189の不一致の記録は`assertLogs`で受け取る） |
+| X-Forwarded-Forでは回避できない | 同じ`X-Real-IP`で`X-Forwarded-For`を毎回変えて3回GET | 3回目は429 |
 | X-Real-IPが無ければREMOTE_ADDRごとに制限 | `REMOTE_ADDR` Aで2回GETした後、`REMOTE_ADDR` B・AでGET | Bは200、Aは429 |
 | 全てのAPIのビューのスロットリング | `subekashi.urls`から集めたDRFのビュー（`APIRootView`・既定の`AnonRateThrottle`を使うビューを含む）の全ての`throttle_classes`で、`REMOTE_ADDR: 10.0.0.1`・`X-Real-IP: 203.0.113.1`・`X-Forwarded-For: 198.51.100.1`のリクエストの`get_ident` | 全て`203.0.113.1`（ビューを追加したときにDRFのクラスをそのまま使っていないかを確認する） |
 
@@ -1186,31 +1188,17 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | インラインスクリプトの禁止 | `script-src` | `'unsafe-inline'`・`'unsafe-eval'`・`*`を含まない |
 | 制限的なディレクティブ | - | `default-src 'self'`・`object-src 'none'`・`base-uri 'self'`・`form-action 'self'`・`frame-ancestors 'none'` |
 
-#### 9-4. `RestrictIPMiddleware` — `X-Forwarded-For` の先頭と `X-Real-IP` の不一致の記録（#1189）
+#### 9-4. `RestrictIPMiddleware` — BAN の判定（#1189）
 
-`get_ip` を `X-Real-IP` に切り替える前に、編集者が変わるリクエストの件数を本番で確認するための一時的な記録。
-
-| テストケース | 条件 | 期待結果 |
-| --- | --- | --- |
-| 先頭が一致しない | `X-Forwarded-For: 198.51.100.1, 203.0.113.1`、`X-Real-IP: 203.0.113.1`、`POST /songs/1/edit` | `subekashi.lib.ip` に WARNING が1件記録され、メソッド・パス（`repr` の形式）・`X-Forwarded-For` の IP の数（2）を含み、IP を含まない。レスポンスはそのまま返す |
-| パスに改行を含む（ログインジェクション） | パスが `/songs/%0d%0a...`、先頭が一致しない | 記録されたメッセージに改行（`\r`・`\n`）を含まず、`\r\n` とエスケープされている |
-| 一致する | `X-Forwarded-For` と `X-Real-IP` が同じ IP | 記録されない |
-| 先頭が一致し、後ろにプロキシの IP が続く | `X-Forwarded-For: 203.0.113.1, 10.0.0.1`、`X-Real-IP: 203.0.113.1` | 記録されない（先頭だけを比べる） |
-| `X-Real-IP` が無い | `X-Forwarded-For` のみ | 記録されない |
-| `X-Forwarded-For` が無い | `X-Real-IP` のみ | 記録されない |
-
-#### 9-5. `RestrictIPMiddleware` — 確認用のパスへのリクエストの IP の記録（#1191）
-
-本番で `REMOTE_ADDR` がロードバランサーの IP になり、`X-Real-IP` がロードバランサーに付け直されているかを確認するための一時的な記録。`/x-real-ip-check` で始まるパスへのリクエストだけ、`subekashi.lib.ip` に WARNING を1件記録する。IP は記録せず、`REMOTE_ADDR`・`X-Real-IP` の種類（なし・IPでない・グローバル・グローバルでない）と、ヘッダー同士が一致するかだけを記録する。テストでグローバルな IP が必要な箇所は `8.8.8.8` を使う（ドキュメント用の `198.51.100.0/24`・`203.0.113.0/24` はグローバルでない）。
+`BAN_LIST` の判定には、`lib/ip.py` の `get_ip`（`X-Real-IP`、無ければ `REMOTE_ADDR`）を使う。`X-Forwarded-For` はクライアントが自由に付けられるため使わない。テストでは `BAN_LIST` を `["203.0.113.1"]` にし、`REMOTE_ADDR` は `10.0.0.1` にする。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
-| ロードバランサーが付け直した | `POST /x-real-ip-check-1`、`REMOTE_ADDR: 10.0.0.1`、`X-Forwarded-For: 198.51.100.1, 8.8.8.8`、`X-Real-IP: 8.8.8.8` | `REMOTE_ADDR: グローバルでない`、`X-Real-IP: グローバル`、`REMOTE_ADDR` と `X-Real-IP` が一致: False、IP の数: 2、先頭が一致: False、末尾が一致: True。IP を含まない。レスポンスはそのまま返す |
-| クライアントが送った `X-Real-IP` がそのまま届いた | `POST /x-real-ip-check-2`、`REMOTE_ADDR: 10.0.0.1`、`X-Forwarded-For`・`X-Real-IP` が `198.51.100.1` | 1件だけ記録され、`X-Real-IP: グローバルでない`、IP の数: 1、先頭・末尾が一致: True。IP を含まない |
-| `REMOTE_ADDR` がクライアントの IP | `POST /x-real-ip-check-3`、`REMOTE_ADDR`・`X-Real-IP` が `8.8.8.8`、`X-Forwarded-For` なし | `REMOTE_ADDR: グローバル`、`REMOTE_ADDR` と `X-Real-IP` が一致: True、IP の数: 0、先頭・末尾が一致: False。IP を含まない |
-| `X-Real-IP` が無い・IP でない | `X-Real-IP` なし、`X-Real-IP: not-an-ip` | それぞれ `X-Real-IP: なし`・`X-Real-IP: IPでない`、`REMOTE_ADDR` と `X-Real-IP` が一致: False |
-| パスに改行を含む（ログインジェクション） | パスが `/x-real-ip-check-%0d%0a...` | 記録されたメッセージに改行（`\r`・`\n`）を含まず、`\r\n` とエスケープされている |
-| 確認用のパス以外 | `POST /songs/1/edit`、`X-Forwarded-For`・`X-Real-IP` が同じ IP | 記録されない |
+| BANされたX-Real-IP | `X-Real-IP: 203.0.113.1` | HTTP 500 |
+| BANされていないX-Real-IP | `X-Real-IP: 203.0.113.2` | HTTP 200 |
+| X-Forwarded-ForではBANを回避できない | `X-Real-IP: 203.0.113.1`、`X-Forwarded-For: 198.51.100.1` | HTTP 500 |
+| X-Forwarded-ForでBANされたIPを名乗っても制限されない | `X-Real-IP: 198.51.100.1`、`X-Forwarded-For: 203.0.113.1` | HTTP 200 |
+| X-Real-IPが無ければREMOTE_ADDRで判定 | `REMOTE_ADDR: 203.0.113.1`、`X-Real-IP` なし | HTTP 500 |
 
 ---
 
@@ -2189,7 +2177,7 @@ YouTube Data API（`build`）はモック化する。「動画が存在しない
 
 ---
 
-### 24. `lib/ip.py` — クライアントのIP（#1188）
+### 24. `lib/ip.py` — クライアントのIP（#1188、#1189）
 
 **テストファイル**: `tests/test_lib_ip.py`
 
@@ -2206,6 +2194,17 @@ YouTube Data API（`build`）はモック化する。「動画が存在しない
 | IPv6のX-Real-IP | `REMOTE_ADDR: 10.0.0.1`、`X-Real-IP: 2001:db8::1` | `2001:db8::1` |
 | REMOTE_ADDRも無い | `REMOTE_ADDR`・`X-Real-IP`なし | `KeyError`（`django_ratelimit`の既定と同じく`request.META['REMOTE_ADDR']`を読み、`None`を返さない） |
 | X-Forwarded-Forは使わない | `REMOTE_ADDR: 10.0.0.1`、`X-Forwarded-For: 198.51.100.1` | `10.0.0.1`（クライアントが自由に付けられるため） |
+
+#### 24-2. `get_ip(request, raw=False)`（#1189）
+
+編集者（`Editor`）の識別・お問い合わせのIP・BANの判定に使うIP。`get_client_ip`と同じIPを使い、`raw=False`の場合は`encrypt`した値を返す。以前は`X-Forwarded-For`の先頭を使っており、他人のIPを名乗ってその人の編集者として編集できた。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| X-Real-IPを使う | `REMOTE_ADDR: 10.0.0.1`、`X-Real-IP: 203.0.113.1` | `raw=True`で`203.0.113.1`、`raw=False`で`encrypt("203.0.113.1")` |
+| X-Forwarded-Forは使わない | `REMOTE_ADDR: 10.0.0.1`、`X-Real-IP: 203.0.113.1`、`X-Forwarded-For: 198.51.100.1, 203.0.113.1` | `raw=True`で`203.0.113.1`、`raw=False`で`encrypt("203.0.113.1")` |
+| X-Real-IPが無い | `REMOTE_ADDR: 10.0.0.1`、`X-Forwarded-For: 198.51.100.1` | `raw=True`で`10.0.0.1`、`raw=False`で`encrypt("10.0.0.1")` |
+| X-Real-IPがIPでない | `REMOTE_ADDR: 10.0.0.1`、`X-Real-IP: not-an-ip` | `encrypt("10.0.0.1")`（IPでない値は`encrypt`で扱えないため） |
 
 ---
 

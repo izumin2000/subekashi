@@ -220,136 +220,34 @@ class ContentSecurityPolicyMiddlewareTest(SimpleTestCase):
         self.assertEqual(directives["frame-ancestors"], ["'none'"])
 
 
-class RestrictIPMiddlewareTest(SimpleTestCase):
-    """RestrictIPMiddleware のテスト（X-Forwarded-For の先頭と X-Real-IP の不一致の記録 #1189、確認用のパスへのリクエストの IP の記録 #1191）"""
+@override_settings(STORAGES=STATIC_STORAGE)
+class RestrictIPMiddlewareTest(TestCase):
+    """RestrictIPMiddleware のテスト（BAN の判定に X-Real-IP を使う #1189）"""
 
     def setUp(self):
         self.factory = RequestFactory()
 
-    def _call(self, path="/songs/1/edit", **headers):
+    def _call(self, remote_addr="10.0.0.1", **headers):
         middleware = RestrictIPMiddleware(lambda req: HttpResponse("OK"))
-        middleware.BAN_LIST = []
-        request = self.factory.post(path, **headers)
+        middleware.BAN_LIST = ["203.0.113.1"]
+        request = self.factory.get("/", REMOTE_ADDR=remote_addr, **headers)
         return middleware(request)
 
-    def test_mismatch_is_logged_without_ip(self):
-        with self.assertLogs("subekashi.lib.ip", level="WARNING") as logs:
-            response = self._call(
-                HTTP_X_FORWARDED_FOR="198.51.100.1, 203.0.113.1",
-                HTTP_X_REAL_IP="203.0.113.1",
-            )
+    def test_banned_x_real_ip_is_restricted(self):
+        self.assertEqual(self._call(HTTP_X_REAL_IP="203.0.113.1").status_code, 500)
+
+    def test_not_banned_x_real_ip_is_not_restricted(self):
+        self.assertEqual(self._call(HTTP_X_REAL_IP="203.0.113.2").status_code, 200)
+
+    def test_x_forwarded_for_does_not_bypass_ban(self):
+        # BANされた利用者がX-Forwarded-Forで別のIPを名乗っても回避できない
+        response = self._call(HTTP_X_REAL_IP="203.0.113.1", HTTP_X_FORWARDED_FOR="198.51.100.1")
+        self.assertEqual(response.status_code, 500)
+
+    def test_x_forwarded_for_of_banned_ip_is_not_restricted(self):
+        # X-Forwarded-ForでBANされたIPを名乗っても、別の利用者は制限されない
+        response = self._call(HTTP_X_REAL_IP="198.51.100.1", HTTP_X_FORWARDED_FOR="203.0.113.1")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(logs.records), 1)
-        message = logs.records[0].getMessage()
-        self.assertIn("POST '/songs/1/edit'", message)
-        self.assertIn("X-Forwarded-For の IP の数: 2", message)
-        self.assertNotIn("198.51.100.1", message)
-        self.assertNotIn("203.0.113.1", message)
 
-    def test_newline_in_path_is_escaped(self):
-        with self.assertLogs("subekashi.lib.ip", level="WARNING") as logs:
-            self._call(
-                path="/songs/%0d%0aX-Forwarded-For の先頭と X-Real-IP が一致しません",
-                HTTP_X_FORWARDED_FOR="198.51.100.1, 203.0.113.1",
-                HTTP_X_REAL_IP="203.0.113.1",
-            )
-        message = logs.records[0].getMessage()
-        self.assertNotIn("\n", message)
-        self.assertNotIn("\r", message)
-        self.assertIn("/songs/\\r\\nX-Forwarded-For", message)
-
-    def test_match_is_not_logged(self):
-        with self.assertNoLogs("subekashi.lib.ip", level="WARNING"):
-            self._call(HTTP_X_FORWARDED_FOR="203.0.113.1", HTTP_X_REAL_IP="203.0.113.1")
-
-    def test_match_with_proxy_addresses_is_not_logged(self):
-        with self.assertNoLogs("subekashi.lib.ip", level="WARNING"):
-            self._call(HTTP_X_FORWARDED_FOR="203.0.113.1, 10.0.0.1", HTTP_X_REAL_IP="203.0.113.1")
-
-    def test_without_real_ip_is_not_logged(self):
-        with self.assertNoLogs("subekashi.lib.ip", level="WARNING"):
-            self._call(HTTP_X_FORWARDED_FOR="198.51.100.1")
-
-    def test_without_forwarded_for_is_not_logged(self):
-        with self.assertNoLogs("subekashi.lib.ip", level="WARNING"):
-            self._call(HTTP_X_REAL_IP="203.0.113.1")
-
-    def assertNoIP(self, logs, *ips):
-        for record in logs.records:
-            for ip in ips:
-                self.assertNotIn(ip, record.getMessage())
-
-    def test_client_ip_check_behind_load_balancer(self):
-        # 本番の前提どおり、ロードバランサーがX-Real-IPを付け直し、X-Forwarded-Forの末尾にクライアントのIPを追加した場合
-        with self.assertLogs("subekashi.lib.ip", level="WARNING") as logs:
-            response = self._call(
-                path="/x-real-ip-check-1",
-                REMOTE_ADDR="10.0.0.1",
-                HTTP_X_FORWARDED_FOR="198.51.100.1, 8.8.8.8",
-                HTTP_X_REAL_IP="8.8.8.8",
-            )
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(
-            "IP の確認（POST '/x-real-ip-check-1'、REMOTE_ADDR: グローバルでない、X-Real-IP: グローバル、"
-            "REMOTE_ADDR と X-Real-IP が一致: False、X-Forwarded-For の IP の数: 2、"
-            "X-Real-IP と X-Forwarded-For の先頭が一致: False、末尾が一致: True）",
-            [record.getMessage() for record in logs.records],
-        )
-        self.assertNoIP(logs, "10.0.0.1", "198.51.100.1", "8.8.8.8")
-
-    def test_client_ip_check_with_x_real_ip_from_client(self):
-        # クライアントが送ったX-Real-IPがそのまま届いた場合
-        with self.assertLogs("subekashi.lib.ip", level="WARNING") as logs:
-            self._call(
-                path="/x-real-ip-check-2",
-                REMOTE_ADDR="10.0.0.1",
-                HTTP_X_FORWARDED_FOR="198.51.100.1",
-                HTTP_X_REAL_IP="198.51.100.1",
-            )
-        self.assertEqual(
-            [record.getMessage() for record in logs.records],
-            [
-                "IP の確認（POST '/x-real-ip-check-2'、REMOTE_ADDR: グローバルでない、X-Real-IP: グローバルでない、"
-                "REMOTE_ADDR と X-Real-IP が一致: False、X-Forwarded-For の IP の数: 1、"
-                "X-Real-IP と X-Forwarded-For の先頭が一致: True、末尾が一致: True）",
-            ],
-        )
-        self.assertNoIP(logs, "10.0.0.1", "198.51.100.1")
-
-    def test_client_ip_check_without_load_balancer(self):
-        # REMOTE_ADDRがクライアントのIPになっている場合
-        with self.assertLogs("subekashi.lib.ip", level="WARNING") as logs:
-            self._call(path="/x-real-ip-check-3", REMOTE_ADDR="8.8.8.8", HTTP_X_REAL_IP="8.8.8.8")
-        self.assertEqual(
-            [record.getMessage() for record in logs.records],
-            [
-                "IP の確認（POST '/x-real-ip-check-3'、REMOTE_ADDR: グローバル、X-Real-IP: グローバル、"
-                "REMOTE_ADDR と X-Real-IP が一致: True、X-Forwarded-For の IP の数: 0、"
-                "X-Real-IP と X-Forwarded-For の先頭が一致: False、末尾が一致: False）",
-            ],
-        )
-        self.assertNoIP(logs, "8.8.8.8")
-
-    def test_client_ip_check_without_valid_x_real_ip(self):
-        for headers, expected in [
-            ({}, "X-Real-IP: なし"),
-            ({"HTTP_X_REAL_IP": "not-an-ip"}, "X-Real-IP: IPでない"),
-        ]:
-            with self.subTest(expected=expected):
-                with self.assertLogs("subekashi.lib.ip", level="WARNING") as logs:
-                    self._call(path="/x-real-ip-check-4", REMOTE_ADDR="10.0.0.1", **headers)
-                message = logs.records[0].getMessage()
-                self.assertIn(expected, message)
-                self.assertIn("REMOTE_ADDR と X-Real-IP が一致: False", message)
-
-    def test_client_ip_check_newline_in_path_is_escaped(self):
-        with self.assertLogs("subekashi.lib.ip", level="WARNING") as logs:
-            self._call(path="/x-real-ip-check-%0d%0aIP の確認", REMOTE_ADDR="10.0.0.1")
-        message = logs.records[0].getMessage()
-        self.assertNotIn("\n", message)
-        self.assertNotIn("\r", message)
-        self.assertIn("'/x-real-ip-check-\\r\\nIP の確認'", message)
-
-    def test_client_ip_check_is_not_logged_for_other_paths(self):
-        with self.assertNoLogs("subekashi.lib.ip", level="WARNING"):
-            self._call(REMOTE_ADDR="10.0.0.1", HTTP_X_FORWARDED_FOR="8.8.8.8", HTTP_X_REAL_IP="8.8.8.8")
+    def test_banned_remote_addr_without_x_real_ip_is_restricted(self):
+        self.assertEqual(self._call(remote_addr="203.0.113.1").status_code, 500)
