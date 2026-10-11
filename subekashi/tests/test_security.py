@@ -27,6 +27,16 @@ def get_nonce(response):
     return match.group(1)
 
 
+def get_csp_directives(response):
+    # 値を持たないディレクティブ（upgrade-insecure-requests等）や末尾の;があっても扱えるようにする
+    directives = {}
+    for directive in response["Content-Security-Policy"].split(";"):
+        name, _, sources = directive.strip().partition(" ")
+        if name:
+            directives[name] = sources.split()
+    return directives
+
+
 @override_settings(STORAGES=STATIC_STORAGE)
 class ContentSecurityPolicyIntegrationTest(TestCase):
     """各ページにCSPが付与され、インラインスクリプトにnonceが付いていることのテスト"""
@@ -203,10 +213,8 @@ class SubresourceIntegrityTest(TestCase):
     def test_font_awesome_origin_is_allowed_by_csp(self):
         # webfontsもCSSと同じjsDelivrから読み込まれる
         response = self.client.get(reverse("subekashi:top"))
-        directives = dict(
-            directive.strip().split(" ", 1) for directive in response["Content-Security-Policy"].split(";")
-        )
+        directives = get_csp_directives(response)
         for name in ("style-src", "font-src"):
             with self.subTest(directive=name):
-                self.assertIn("https://cdn.jsdelivr.net", directives[name].split())
-                self.assertNotIn("https://use.fontawesome.com", directives[name].split())
+                self.assertIn("https://cdn.jsdelivr.net", directives[name])
+                self.assertNotIn("https://use.fontawesome.com", directives[name])
