@@ -583,7 +583,11 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | GETアクセス | GETリクエスト | HTTP 200、フォームが表示される |
 | POST: YouTube以外のURL | `url="https://example.com/..."` | HTTP 200、"YouTube" を含むエラー |
-| POST: YouTube APIの呼び出しに失敗（#1146） | YouTubeのURL・`get_youtube_api` が `YoutubeApiError` を送出 | 500エラーにならずHTTP 200でエラーを表示し、Songは作成されない（動画が削除・非公開の場合と同様に扱う） |
+| POST: YouTube APIの呼び出しに失敗（#1146、#886） | YouTubeのURL・`get_youtube_api` が `YoutubeApiError` を送出 | 500エラーにならずHTTP 200で、「インターネットに接続できなかった」「YouTubeから動画の情報を取得できませんでした」を含むエラーをトーストで表示し、Songは作成されない（動画が削除・非公開とは限らないため、「削除」は含まない） |
+| POST: インターネットに接続できない（#886） | YouTubeのURL・`get_youtube_api`内のAPIの呼び出し（`build`をモック）が`socket.timeout`を送出 | HTTP 200、「インターネットに接続できなかった」を含み「削除」を含まないエラー。Songは作成されない |
+| POST: 動画が削除・非公開（#886） | YouTubeのURL・`get_youtube_api` が `{}` を返す | HTTP 200、「作者は空白にできません」ではなく、「YouTube上で削除されたか非公開になっている」「「タイトルと作者から登録」で「非公開/削除済み」にチェックを入れて」を含むエラーをトーストで表示し、Songは作成されない |
+| POST: 既に登録されているYouTubeのURL | 曲に紐づく`SongLink`と同じURL | HTTP 200、"既に登録されています" を含むエラー。`get_youtube_api`は呼び出されない（クォータを消費しない） |
+| POST: YouTubeのURLから登録 | `get_youtube_api` がタイトル・チャンネル名を返す | `/songs/<id>/edit`へリダイレクト（302）。Songのタイトル・作者・URLがAPIの結果・入力したURLで保存される |
 | POST: 作者が空白 | `url=""`, `authors="  "` | HTTP 200、"作者" を含むエラー |
 | POST: タイトルが空 | `url=""`, `authors="テスト作者"`, `title=""` | HTTP 200、"タイトル" を含むエラー |
 | POST: タイトルが`Song.title`のmax_length超（#1085） | `title`がmax_length+1文字 | HTTP 200、"タイトル" を含むエラー、Songは作成されない（フォームを経由せず保存するため直接バリデーションが必要） |

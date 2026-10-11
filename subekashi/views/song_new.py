@@ -53,18 +53,6 @@ class SongNewView(View):
         if is_questionable:
             is_original = False
 
-        # YouTube APIから情報取得
-        youtube_res = {}
-        if is_youtube_url(url):
-            youtube_id = get_youtube_id(url)
-            # 呼び出しに失敗した場合は、動画が削除・非公開の場合と同様に扱う
-            try:
-                youtube_res = get_youtube_api(youtube_id)
-            except YoutubeApiError:
-                pass
-            title = youtube_res.get("title", "")
-            authors_input = youtube_res.get("author", "")       # 現状、YouTube Data APIの仕様上,1チャンネルしか取得できない。
-
         # URLがYouTubeのURLでない場合はエラー
         if not is_youtube_url(url) and url:
             context["error"] = "URLがYouTubeのURLではありません。"
@@ -82,6 +70,25 @@ class SongNewView(View):
             if error:
                 context["error"] = error
                 return render(request, 'subekashi/song_new.html', context)
+
+        # YouTube APIから情報取得
+        youtube_res = {}
+        if is_youtube_url(url):
+            youtube_id = get_youtube_id(url)
+            # インターネットに接続できなかった場合なども含め、呼び出しに失敗した場合は動画が削除・非公開であるとは限らない
+            try:
+                youtube_res = get_youtube_api(youtube_id)
+            except YoutubeApiError:
+                context["error"] = "インターネットに接続できなかったなどの理由で、YouTubeから動画の情報を取得できませんでした。時間をおいて再度お試しいただくか、タイトルと作者から登録してください。"
+                return render(request, 'subekashi/song_new.html', context)
+
+            # 動画が削除・非公開の場合は、タイトルと作者から登録するよう案内する
+            if not youtube_res:
+                context["error"] = "この動画はYouTube上で削除されたか非公開になっているため、タイトルと作者を取得できませんでした。「タイトルと作者から登録」で「非公開/削除済み」にチェックを入れて登録してください。URLは登録後に編集画面で追加できます。"
+                return render(request, 'subekashi/song_new.html', context)
+
+            title = youtube_res.get("title", "")
+            authors_input = youtube_res.get("author", "")       # 現状、YouTube Data APIの仕様上,1チャンネルしか取得できない。
 
         # 作者が空または空白のみの場合はエラー
         if not authors_input.strip():

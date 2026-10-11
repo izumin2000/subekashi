@@ -8,6 +8,7 @@ import io
 import json
 import os
 import re
+import socket
 import tempfile
 from contextlib import contextmanager
 from datetime import datetime, timezone as dt_timezone
@@ -29,7 +30,7 @@ from subekashi.constants.constants import LONG_TERM_COOKIE_AGE, SHORT_TERM_COOKI
 from subekashi.lib.ogp import OGP_SALT, OGP_VERSION, load_ogp_token, make_ogp_token, render_ogp_image
 from subekashi.lib.query_utils import YOUTUBE_FILTERS, YOUTUBE_SORTS
 from subekashi.lib.youtube import YoutubeApiError
-from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song, Stats, Word
+from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song, SongLink, Stats, Word
 from subekashi.models.author import TransitiveAlias
 from subekashi.views.songs import COOKIE_FORMS, SEARCH_FORM_QUERIES, SORT_CHOICES, TEXT_FORMS
 
@@ -840,16 +841,72 @@ class SongNewViewTest(TestCase):
 
     @patch("subekashi.views.song_new.get_youtube_api")
     def test_post_youtube_url_with_api_error_returns_error(self, mock_api):
-        # #1146: get_youtube_apiは呼び出しに失敗すると例外を送出するようになったため、
-        # 500エラーにならず、動画が削除・非公開の場合と同様にエラーを表示することを確認する
+        # #1146: get_youtube_apiは呼び出しに失敗すると例外を送出するようになったため、500エラーにならないことを確認する
+        # #886: 動画が削除・非公開であるとは限らないため、削除・非公開とは伝えず、インターネットに接続できなかった可能性を伝える
         mock_api.side_effect = YoutubeApiError("YouTube Data APIの呼び出しに失敗しました")
         response = self.client.post(
             reverse("subekashi:song_new"),
             {"url": "https://youtu.be/aaaaaaaaaaa", "authors": "", "title": ""},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertIn("error", response.context)
+        self.assertIn("インターネットに接続できなかった", response.context["error"])
+        self.assertIn("YouTubeから動画の情報を取得できませんでした", response.context["error"])
+        self.assertNotIn("削除", response.context["error"])
+        self.assertContains(response, f'showToast("error", "{response.context["error"]}")')
         self.assertFalse(Song.objects.exists())
+
+    @patch("subekashi.lib.youtube.YOUTUBE_API_KEY", "dummy-key")
+    @patch("subekashi.lib.youtube.build")
+    def test_post_youtube_url_without_internet_connection_returns_error(self, mock_build):
+        # #886: インターネットに接続できなかった場合は、動画が削除・非公開であるとは伝えない
+        mock_build.return_value.videos.return_value.list.return_value.execute.side_effect = socket.timeout("timed out")
+        response = self.client.post(reverse("subekashi:song_new"), {"url": "https://youtu.be/aaaaaaaaaaa"})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("インターネットに接続できなかった", response.context["error"])
+        self.assertNotIn("削除", response.context["error"])
+        self.assertFalse(Song.objects.exists())
+
+    @patch("subekashi.views.song_new.get_youtube_api", return_value={})
+    def test_post_deleted_youtube_url_returns_error(self, mock_api):
+        # #886: 動画が削除・非公開の場合は「作者は空白にできません。」ではなく、その趣旨のトーストを表示する
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "https://youtu.be/aaaaaaaaaaa", "is-deleted-auto": "on"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("YouTube上で削除されたか非公開になっている", response.context["error"])
+        self.assertIn("「タイトルと作者から登録」で「非公開/削除済み」にチェックを入れて", response.context["error"])
+        self.assertNotIn("作者は空白にできません", response.context["error"])
+        self.assertContains(response, f'showToast("error", "{response.context["error"]}")')
+        self.assertFalse(Song.objects.exists())
+
+    @patch("subekashi.views.song_new.get_youtube_api")
+    def test_post_duplicate_youtube_url_does_not_call_api(self, mock_api):
+        # 既に登録されているURLの場合は、YouTube Data APIのクォータを消費しないよう呼び出さずにエラーにする
+        link = SongLink.objects.create(url="https://youtu.be/aaaaaaaaaaa")
+        link.songs.add(Song.objects.create(title="既存曲"))
+        response = self.client.post(reverse("subekashi:song_new"), {"url": "https://youtu.be/aaaaaaaaaaa"})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("既に登録されています", response.context["error"])
+        mock_api.assert_not_called()
+
+    @patch("subekashi.views.song_new.get_youtube_api")
+    def test_post_youtube_url_registers_song_with_api_result(self, mock_api):
+        mock_api.return_value = {
+            "title": "YT動画タイトル",
+            "author": "YTチャンネル名",
+            "upload_time": None,
+            "view": 100,
+            "like": 10,
+        }
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "https://youtu.be/aaaaaaaaaaa", "authors": "", "title": ""},
+        )
+        self.assertEqual(response.status_code, 302)
+        song = Song.objects.get(title="YT動画タイトル")
+        self.assertEqual(list(song.authors.values_list("name", flat=True)), ["YTチャンネル名"])
+        self.assertEqual(list(song.links.values_list("url", flat=True)), ["https://youtu.be/aaaaaaaaaaa"])
 
     def test_post_empty_authors_returns_error(self):
         # URL なし・作者空白 → 作者バリデーションエラー

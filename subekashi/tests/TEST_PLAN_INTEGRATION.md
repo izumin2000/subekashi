@@ -403,6 +403,28 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 | 検証 | `Song.objects.get(...).title == "YT動画タイトル"` |
 | 検証 | `Author.objects.filter(name="YTチャンネル名").count() == 1` |
 
+#### 10-2. YouTube上で削除・非公開の動画のURLで登録するとその趣旨のトーストを表示（#886）
+
+**テストファイル**: `tests/test_views.py`（`SongNewViewTest`）
+
+| 項目 | 内容 |
+| --- | --- |
+| モック対象 | `subekashi.views.song_new.get_youtube_api` → `{}`（削除・非公開）を返す |
+| 操作 | `POST /songs/new/` `{url="https://youtu.be/aaaaaaaaaaa", is-deleted-auto="on"}` |
+| 検証: レスポンス | HTTP 200、「作者は空白にできません。」ではなく、動画が削除・非公開であることと「タイトルと作者から登録」で「非公開/削除済み」にチェックを入れて登録するよう案内するエラーがトーストで表示される |
+| 検証: DB | Song は作成されていない |
+
+#### 10-3. インターネットに接続できずYouTubeから動画の情報を取得できない場合（#886）
+
+**テストファイル**: `tests/test_views.py`（`SongNewViewTest`）
+
+| 項目 | 内容 |
+| --- | --- |
+| モック対象 | `subekashi.lib.youtube.build`（APIの呼び出しが`socket.timeout`を送出）。`get_youtube_api`はモックせず、`YoutubeApiError`に変換されることも含めて確認する |
+| 操作 | `POST /songs/new/` `{url="https://youtu.be/aaaaaaaaaaa"}` |
+| 検証: レスポンス | HTTP 200、インターネットに接続できなかった可能性を伝えるエラーが表示され、動画が削除・非公開であるとは伝えない（「削除」を含まない） |
+| 検証: DB | Song は作成されていない |
+
 ---
 
 ### 11. 別名（AuthorAlias）管理フロー（#992）
