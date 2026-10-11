@@ -5,7 +5,6 @@
 /* 全てのニュースを同じ位置に重ね、高さを一番高いニュースに合わせる */
 #single-news-display {
     display: grid;
-    background-color: #555;
     width: 100%;
     box-sizing: border-box;
     padding: 5px;
@@ -134,7 +133,7 @@ h2 {
 }
 
 #subekashi-links + h2 {
-    margin-top: 20px;
+    margin-top: 40px;
 }
 
 #subekashi-links {
