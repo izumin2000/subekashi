@@ -483,6 +483,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | レガシーgenetype="model"は対象外（GPTインポート廃止） | `genetype="model", score=5`のレコードが存在 | 「作成された歌詞」欄に表示されない（`get_top_scored()`も`genetype="janome"`のみ対象） |
 | PC向けグローバルヘッダーの配置（#1123） | `pc_menu_position`クッキーなし（トップ） | `#pc-global-header`が`#pc-header-menu`の中に1つだけ置かれる |
 | PC向けグローバルヘッダーの配置（#1123） | `pc_menu_position=aside`（サイド） | `#pc-header-menu`は無く、`#pc-global-header`が`#subekashi-header`より前に1つだけ置かれる |
+| フッターのプライバシーポリシーのリンク（#1170） | GETリクエスト | PCのフッター（`#footer-wrapper`）とスマホメニューのフッター（`#sp_menu_footer`）のそれぞれに、記事`privacy`（`/articles/privacy/`）へのリンクがある。記事は管理画面から作成するため、記事があるかは確認しない |
 | viewportのmetaタグ（#1058） | GETリクエスト | `<meta name="viewport" content="width=device-width,...">`が含まれ、余分な`meta=""`属性が無い |
 | 検索の表示のデフォルト（#585） | `is_shown_search`クッキーなし | context["is_shown_search"] = "on"、キーワードのみの検索フォーム（`#keyword`、placeholderは「タイトル・チャンネル名・歌詞・URL」）が表示され、`#search-form-radios`・`search_form.js`は無い |
 | 検索の表示がキーワードのみ（#585） | `is_shown_search=on` | キーワードのみの検索フォームが表示され、`#search-forms`は無い |
@@ -499,6 +500,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 全て表示はトップ画面のURLクエリを使わない（#585） | `is_shown_search=all`, `is_saved_select=on`, `/?sort=-view&songrange=xx&is_lack=True&mediatypes=youtube`と`TEXT_FORMS`の全ての入力欄の値 | context["search_form"] = "keyword"、`-post_time`と未完成の「指定なし」が選択され、メディアは選択されず、入力欄は全て空（気づかないまま検索に送られないように）。`search_sort`・`search_songrange`・`search_jokerange`のcookieは保存されない |
 
 トップ画面の「全て表示」の検索フォームは、`top.js`で送信時に検索画面（`/songs/`）のURLクエリに変換して遷移する。テキスト等の入力欄・メディアは値がある場合のみ、ラジオボタン（並び替え・界隈曲・ネタ曲・真偽値のフィルタ）は表示時から選択を変更した場合のみURLクエリに含める。並び替え・界隈曲・ネタ曲は表示時に検索画面と同じcookieの値が選択されており、含めなくても検索画面で同じ値が選択されるため。song guesser・原曲ボタンのクリックでは模倣の曲IDを入力するのみで、遷移しない。JSの動作はDjangoテストでは確認できないため、Playwrightで確認する。
+
+スマホメニューのフッターは、幅が狭い画面（幅320〜390px）では「プライバシーポリシー」のリンクが2行目に回る（#1170）。リンクの途中で改行せず、フッターの高さが広がってリンクがはみ出さないことはDjangoテストでは確認できないため、Playwrightで確認する。
 
 #### 7-2. `SongsView` (`/songs/`)
 
