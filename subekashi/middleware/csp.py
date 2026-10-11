@@ -26,10 +26,10 @@ CSP_DIRECTIVES = {
     "style-src": [
         "'self'",
         "'unsafe-inline'",
-        "https://use.fontawesome.com",
+        "https://cdn.jsdelivr.net",                 # Font Awesome
         "https://themes.googleusercontent.com",     # Googleドキュメントから書き出した記事（peper記事）のフォント
     ],
-    "font-src": ["'self'", "https://use.fontawesome.com", "https://fonts.gstatic.com"],
+    "font-src": ["'self'", "https://cdn.jsdelivr.net", "https://fonts.gstatic.com"],
     "img-src": ["'self'", "data:", *GOOGLE_ANALYTICS_SOURCES],
     "connect-src": [
         "'self'",

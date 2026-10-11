@@ -27,6 +27,16 @@ def get_nonce(response):
     return match.group(1)
 
 
+def get_csp_directives(response):
+    # 値を持たないディレクティブ（upgrade-insecure-requests等）や末尾の;があっても扱えるようにする
+    directives = {}
+    for directive in response["Content-Security-Policy"].split(";"):
+        name, _, sources = directive.strip().partition(" ")
+        if name:
+            directives[name] = sources.split()
+    return directives
+
+
 @override_settings(STORAGES=STATIC_STORAGE)
 class ContentSecurityPolicyIntegrationTest(TestCase):
     """各ページにCSPが付与され、インラインスクリプトにnonceが付いていることのテスト"""
@@ -190,12 +200,21 @@ class CsrfTokenTest(TestCase):
 
 @override_settings(STORAGES=STATIC_STORAGE)
 class SubresourceIntegrityTest(TestCase):
-    """外部CDNから読み込むスタイルシートにintegrity属性が付いていることのテスト"""
+    """外部CDNから読み込むスタイルシートにintegrity属性が付き、CSPで許可されていることのテスト"""
 
     def test_font_awesome_has_integrity(self):
         response = self.client.get(reverse("subekashi:top"))
         self.assertContains(
             response,
-            'href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" '
+            'href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" '
             'integrity="sha384-DyZ88mC6Up2uqS4h/KRgHuoeGwBcD4Ng9SiP4dIRy0EXTlnuz47vAwmeGwVChigm" crossorigin="anonymous"',
         )
+
+    def test_font_awesome_origin_is_allowed_by_csp(self):
+        # webfontsもCSSと同じjsDelivrから読み込まれる
+        response = self.client.get(reverse("subekashi:top"))
+        directives = get_csp_directives(response)
+        for name in ("style-src", "font-src"):
+            with self.subTest(directive=name):
+                self.assertIn("https://cdn.jsdelivr.net", directives[name])
+                self.assertNotIn("https://use.fontawesome.com", directives[name])
