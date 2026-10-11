@@ -1,5 +1,14 @@
 // 検索の表示設定が「全て表示」の場合（top.htmlのisShownAllSearch）は、検索画面と同じフォームを表示する
 // その場合のみtop.htmlでsearch_form.jsをこのファイルより先に読み込み、FORM_QUERIES・initSearchForm・collectFormQuery・renderFilterStatus・toQueryString・renderSongGuesserを使う
+const keywordElement = document.getElementById("keyword");
+const isPC = window.innerWidth > 960;
+// 設定で入力欄の自動選択を「する」にしている場合のみ選択する（#1208）
+// 「全て表示」の場合は、表示したフォームの入力欄をsearch_form.jsで選択する
+if (keywordElement && isPC && !isShownAllSearch && getCookie()['search_autofocus'] === 'on') {
+    keywordElement.focus();
+    keywordElement.click();
+}
+
 if (isShownAllSearch) {
     window.addEventListener('load', function () {
         initSearchForm();

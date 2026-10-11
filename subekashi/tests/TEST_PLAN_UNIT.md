@@ -958,6 +958,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 トップ画面のセクションの「検索の表示」（`is_shown_search`）は「全て表示」（`all`）・「キーワードのみ」（`on`）・「非表示」（`off`）から選べる（#585）。以前の「表示」の設定を引き継ぐため、「キーワードのみ」の値は`on`とする。
 
+検索画面のセクションの「入力欄の自動選択」（`search_autofocus`）は「する（PCのみ）」（`on`）・「しない」（`off`、デフォルト）から選べる（#1208）。トップ画面と検索画面を開いたときに入力欄を自動で選択する処理は#1208で削除したが、キーボードで操作する人が元の動作に戻せるよう設定で選べるようにした。「する」の場合は、画面幅が960pxより広いときに、トップ画面の「キーワードのみ」の検索ではキーワードの入力欄（`top.js`）、検索画面とトップ画面の「全て表示」の検索では表示中のフォームの入力欄（`search_form.js`の`initSearchForm`）を選択する。JSが`getCookie()`でcookieを読むため、cookieはHttpOnlyにしない。入力欄が選択されるかはDjangoテストでは確認できないため、Playwrightで確認する。
+
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | 正常アクセス | GETリクエスト | HTTP 200 |
@@ -965,6 +967,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 検索の表示の設定のcookieを反映（#585） | `is_shown_search`に`all`・`on`・`off`のcookieを送信 | それぞれ「全て表示」・「キーワードのみ」・「非表示」のみが選択される |
 | フォームボタンの設定のデフォルト | cookie無し | 「フォームボタン」の`<select id="form_button">`が表示され、選択肢は「アイコンのみ」（`icon`）・「アイコンと文字」（`icon_text`）の順で、「アイコンと文字」が選択される |
 | フォームボタンの設定のcookieを反映 | `form_button=icon`のcookieを送信 | 「アイコンのみ」が選択される |
+| 入力欄の自動選択の設定のデフォルト（#1208） | cookie無し | 「入力欄の自動選択」の`<select id="search_autofocus">`が表示され、選択肢は「する（PCのみ）」（`on`）・「しない」（`off`）の順で、「しない」が選択される |
+| 入力欄の自動選択の設定のcookieを反映（#1208） | `search_autofocus=on`のcookieを送信 | 「する（PCのみ）」が選択される |
 | チュートリアルのアイコン | GETリクエスト | 選択肢の保存のチュートリアル（`data-tutorial="select"`）のアイコンは「検索の選択肢の保存」にのみ付き、「フォームボタン」には付かない |
 
 #### 7-18. `SaveSettingsView` (`/api/setting/save/`)（#1164）
@@ -975,6 +979,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 許可されていない値は保存しない | `{"cookies": {"form_button": "text"}}`・`{"cookies": {"form_button": "<script>"}}` | HTTP 200、`form_button`のcookieは保存されない |
 | 検索の表示の設定の保存（#585） | `{"cookies": {"is_shown_search": "all"}}`・`"on"`・`"off"` | HTTP 200、`is_shown_search`のcookieが送信した値で保存される |
 | 検索の表示の設定の許可されていない値は保存しない（#585） | `{"cookies": {"is_shown_search": "keyword"}}`・`{"cookies": {"is_shown_search": "<script>"}}` | HTTP 200、`is_shown_search`のcookieは保存されない |
+| 入力欄の自動選択の設定の保存（#1208） | `{"cookies": {"search_autofocus": "on"}}`・`"off"` | HTTP 200、`search_autofocus`のcookieが送信した値で保存され、JSから読めるようHttpOnlyが付かない |
+| 入力欄の自動選択の設定の許可されていない値は保存しない（#1208） | `{"cookies": {"search_autofocus": "true"}}`・`{"cookies": {"search_autofocus": "<script>"}}` | HTTP 200、`search_autofocus`のcookieは保存されない |
 
 #### 7-19. `robots` (`/robots.txt`)（#1172）
 

@@ -3803,6 +3803,31 @@ class SettingViewTest(TestCase):
             ("icon_text", "アイコンと文字", False),
         ])
 
+    def _get_search_autofocus_options(self, response):
+        setting = next(setting for setting in response.context["settings"]["search"] if setting["id"] == "search_autofocus")
+        return [(option["value"], option["text"], option["selected"]) for option in setting["options"]]
+
+    def test_search_autofocus_defaults_to_off(self):
+        """検索画面の入力欄の自動選択の設定は、cookieが無い場合「しない」が選択される（#1208）"""
+        response = self.client.get(reverse("subekashi:setting"))
+
+        self.assertContains(response, '<label>入力欄の自動選択</label>')
+        self.assertContains(response, '<select id="search_autofocus" class="setting-input">')
+        self.assertEqual(self._get_search_autofocus_options(response), [
+            ("on", "する（PCのみ）", False),
+            ("off", "しない", True),
+        ])
+
+    def test_search_autofocus_reflects_cookie(self):
+        """検索画面の入力欄の自動選択の設定は、cookieの値が選択される（#1208）"""
+        self.client.cookies["search_autofocus"] = "on"
+        response = self.client.get(reverse("subekashi:setting"))
+
+        self.assertEqual(self._get_search_autofocus_options(response), [
+            ("on", "する（PCのみ）", True),
+            ("off", "しない", False),
+        ])
+
     def _get_search_display_options(self, response):
         setting = next(setting for setting in response.context["settings"]["top"] if setting["id"] == "is_shown_search")
         return [(option["value"], option["text"], option["selected"]) for option in setting["options"]]
@@ -3880,6 +3905,25 @@ class SaveSettingsViewTest(TestCase):
         response = self.client.get(reverse("subekashi:songs"))
 
         self.assertContains(response, '<div class="radio-group" id="search-form-radios">')
+
+    def test_search_autofocus_is_saved(self):
+        """検索画面の入力欄の自動選択の設定は、JS（top.js・search_form.js）から読めるcookieに保存される（#1208）"""
+        for value in ["on", "off"]:
+            with self.subTest(value=value):
+                response = self._post({"search_autofocus": value})
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.cookies["search_autofocus"].value, value)
+                self.assertFalse(response.cookies["search_autofocus"]["httponly"])
+
+    def test_search_autofocus_with_invalid_value_is_not_saved(self):
+        """検索画面の入力欄の自動選択の設定に許可されていない値を送信しても、cookieには保存されない（#1208）"""
+        for value in ["true", "<script>"]:
+            with self.subTest(value=value):
+                response = self._post({"search_autofocus": value})
+
+                self.assertEqual(response.status_code, 200)
+                self.assertNotIn("search_autofocus", response.cookies)
 
     def test_is_shown_search_is_saved(self):
         """トップ画面の検索の表示の設定はcookieに保存される（#585）"""
