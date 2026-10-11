@@ -135,6 +135,19 @@ class TopViewTest(TestCase):
         response = self.client.get(reverse("subekashi:top"))
         self.assertContains(response, '<span><a href="https://example.com">リンク</a>のニュース</span>')
 
+    def test_single_news_has_dots(self):
+        """ニュースの「1つずつ表示」では、top.jsで切り替えのボタンを入れる要素を置く（#1116）"""
+        response = self.client.get(reverse("subekashi:top"))
+        self.assertContains(response, '<div id="single-news-display">')
+        self.assertContains(response, '<div id="single-news-dots"></div>')
+
+    def test_all_news_has_no_dots(self):
+        """ニュースの「一度に全て表示」では、切り替えのボタンを入れる要素を置かない（#1116）"""
+        self.client.cookies["news_type"] = "all"
+        response = self.client.get(reverse("subekashi:top"))
+        self.assertContains(response, '<div id="all-news-display">')
+        self.assertNotContains(response, 'id="single-news-dots"')
+
     def test_pc_global_header_is_in_pc_header_menu(self):
         """メニュー位置がトップの場合、PC向けグローバルヘッダーは#pc-header-menuの中に1つだけ置かれる（#1123）"""
         response = self.client.get(reverse("subekashi:top"))

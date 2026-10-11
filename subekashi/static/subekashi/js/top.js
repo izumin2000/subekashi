@@ -44,44 +44,79 @@ function categoryClick(song) {
     renderFilterStatus();
 }
 
+// ニュースの「1つずつ表示」
+// setTimeout・setIntervalは非表示のタブで間引かれ、切り替えとアニメーションの順番が崩れるため、requestAnimationFrameで経過時間を数えて切り替える
 const newsDisplayEle = document.getElementById('single-news-display');
 if (newsDisplayEle) {
-    const newsArreyEle = document.createElement("div");
-    newsArreyEle.innerHTML = newsDisplayEle.innerHTML;
-    const newsEles = newsArreyEle.children;
-    let currentIndex = 0;
+    // 前のニュースが上に消え始めてから、次のニュースを下から表示し終えるまでの時間（top.cssのtransitionと合わせる）
+    const NEWS_ENTER_DURATION = 2000;
+    // 下から表示し終えてから、上に消え始めるまでの時間
+    const NEWS_SHOWN_DURATION = 8000;
+    const newsEles = Array.from(newsDisplayEle.children);
+    const newsDotsEle = document.getElementById('single-news-dots');
+    let currentIndex = -1;
+    let elapsed = 0;
+    let lastTime = null;
 
-    function showNews(newsEle_) {
-        if(!newsEle_) return;
+    // ニュースが1つの場合は切り替えないため、ボタンを表示しない
+    const newsDotEles = newsEles.length > 1 ? newsEles.map((_, index) => {
+        const newsDotEle = document.createElement('button');
+        newsDotEle.type = 'button';
+        newsDotEle.setAttribute('aria-label', `${index + 1}つ目のニュースを表示`);
+        newsDotEle.addEventListener('click', () => showNews(index));
+        newsDotsEle.appendChild(newsDotEle);
+        return newsDotEle;
+    }) : [];
 
-        const newsEle = newsEle_.cloneNode(true)
-        newsDisplayEle.innerHTML = '';
-        newsDisplayEle.appendChild(newsEle);
-        const height = newsEle.clientHeight;
-        newsDisplayEle.style.height = `${height}px`;
+    function showNews(index) {
+        if (index === currentIndex) return;
 
-        setTimeout(() => {
-            newsEle.style.opacity = '1';
-            newsEle.style.transform = 'translateY(0px)';
-        }, 1000);
+        const prevNewsEle = newsEles[currentIndex];
+        if (prevNewsEle) {
+            prevNewsEle.classList.replace('is-active', 'is-leaving');
+        }
 
-        setTimeout(() => {
-            newsEle.style.opacity = '0';
-            newsEle.style.transform = 'translateY(-50px)';
-        }, 10000);
+        // 上に消えたニュースを下の位置に戻してから、下から表示する
+        const newsEle = newsEles[index];
+        newsEle.classList.remove('is-leaving');
+        void newsEle.offsetWidth;
+        newsEle.classList.add('is-active');
 
-        setTimeout(() => {
-            newsEle.style.transform = 'translateY(50px)';
-        }, 11000);
+        newsDotEles.forEach((newsDotEle, dotIndex) => {
+            newsDotEle.style.removeProperty('--progress');
+            if (dotIndex === index) {
+                newsDotEle.setAttribute('aria-current', 'true');
+            } else {
+                newsDotEle.removeAttribute('aria-current');
+            }
+        });
+
+        currentIndex = index;
+        elapsed = 0;
     }
 
-    function showNextNews() {
-        showNews(newsEles[currentIndex % newsEles.length])
-        currentIndex++;
+    function updateNews(time) {
+        // 非表示のタブではrequestAnimationFrameが止まるため、戻ったときに経過時間が飛ばないように1フレームの経過時間に上限を設ける
+        if (lastTime !== null) {
+            elapsed += Math.min(time - lastTime, 100);
+        }
+        lastTime = time;
+
+        if (elapsed >= NEWS_ENTER_DURATION + NEWS_SHOWN_DURATION) {
+            showNews((currentIndex + 1) % newsEles.length);
+        }
+        // 進捗は下から表示し終えてから、上に消え始めるまでの間で表示する
+        const progress = Math.max(elapsed - NEWS_ENTER_DURATION, 0) / NEWS_SHOWN_DURATION;
+        newsDotEles[currentIndex].style.setProperty('--progress', progress);
+        requestAnimationFrame(updateNews);
     }
 
-    showNextNews();
-    setInterval(showNextNews, 11000);
+    if (newsEles.length) {
+        showNews(0);
+    }
+    if (newsEles.length > 1) {
+        requestAnimationFrame(updateNews);
+    }
 }
 
 

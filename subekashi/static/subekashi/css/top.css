@@ -1,23 +1,64 @@
 #single-news-wrapper {
     margin-top: 20px;
-    height: 100px;
 }
 
+/* 全てのニュースを同じ位置に重ね、高さを一番高いニュースに合わせる */
 #single-news-display {
+    display: grid;
     background-color: #555;
     width: 100%;
+    box-sizing: border-box;
     padding: 5px;
-    overflow-y: hidden;
+    overflow: hidden;
 }
 
-#single-news-display span {
+/* 表示前は下に、表示を終えたら上に移動する（切り替えはtop.jsでis-active・is-leavingを付けて行う） */
+/* 上に消えてから下から表示し終えるまでの時間は、top.jsのNEWS_ENTER_DURATIONと合わせる */
+#single-news-display > span {
+    grid-area: 1 / 1;
+    align-self: center;
     color: #fff;
     display: block;
     text-align: center;
     font-size: 18px;
     opacity: 0;
-    transform: translateY(50px); 
-    transition: opacity 1s, transform 1s;
+    transform: translateY(50px);
+    visibility: hidden;
+}
+
+#single-news-display > span.is-active {
+    opacity: 1;
+    transform: translateY(0px);
+    visibility: visible;
+    transition: opacity 1s 1s, transform 1s 1s;
+}
+
+#single-news-display > span.is-leaving {
+    transform: translateY(-50px);
+    transition: opacity 1s, transform 1s, visibility 1s;
+}
+
+#single-news-dots {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+/* 表示中のニュースのボタンは、次の切り替えまでの進捗を扇形で表示する（--progressはtop.jsで設定する） */
+#single-news-dots button {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    padding: 0;
+    border: 2px solid #eee;
+    border-radius: 50%;
+    background: conic-gradient(#eee calc(var(--progress, 0) * 1turn), transparent 0);
+    transition: none;
+}
+
+#single-news-dots button:hover {
+    background-color: #888;
 }
 
 #single-news-display a {
