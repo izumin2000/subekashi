@@ -167,6 +167,22 @@ class TopViewTest(TestCase):
         self.assertNotIn('id="pc-header-menu"', content)
         self.assertLess(content.index('id="pc-global-header"'), content.index('id="subekashi-header"'))
 
+    def test_footers_have_privacy_policy_link(self):
+        """PCのフッターとスマホメニューのフッターに、プライバシーポリシーの記事へのリンクがある（#1170）"""
+        response = self.client.get(reverse("subekashi:top"))
+        content = response.content.decode()
+        privacy_url = reverse("article:default_article", args=["privacy"])
+        self.assertEqual(privacy_url, "/articles/privacy/")
+
+        footers = {
+            "pc": r'<div id="footer-wrapper">.*?</footer>',
+            "sp": r'<footer id="sp_menu_footer">.*?</footer>',
+        }
+        for name, pattern in footers.items():
+            with self.subTest(footer=name):
+                footer = re.search(pattern, content, re.DOTALL).group()
+                self.assertIn(f'<a href="{privacy_url}"><i class="fas fa-shield-alt"></i>プライバシーポリシー</a>', footer)
+
     def _get_search_form_html(self, response):
         match = re.search(r'<form action="/songs/" method="GET" id="search-form">.*?</form>', response.content.decode(), re.DOTALL)
         return match.group() if match else None

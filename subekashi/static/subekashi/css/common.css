@@ -457,9 +457,11 @@ body[data-pc-menu="aside"] aside a:hover p {
     cursor: pointer;
 }
 
+/* 画面の幅が狭いとリンクが2行目に回るため、高さは固定しない。#sp_menuはflexのため、縮まないようにする */
 #sp_menu_footer {
     width: 100%;
-    height: 32px;
+    min-height: 32px;
+    flex-shrink: 0;
     background-color: #2f3a44;
     display: flex;
     justify-content: center;
@@ -471,6 +473,10 @@ body[data-pc-menu="aside"] aside a:hover p {
     font-size: 15px;
     line-height: 15px;
     margin: 5px 5px;
+}
+
+#sp_menu_footer a {
+    white-space: nowrap;
 }
 
 #sp-global-header {
