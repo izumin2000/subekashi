@@ -117,12 +117,13 @@ h2 {
 }
 
 #top-article {
-    background-color: #333;
     padding: 5px 0;
 }
 
 #top-article a {
     display: block;
+    width: fit-content;
+    margin: 0 auto;
     text-align: center;
     line-height: 50px;
 }
@@ -130,7 +131,10 @@ h2 {
 #subekashi-links, #other-links, #special-thanks-links {
     padding: 8px;
     text-align: center;
-    background-color: #333;
+}
+
+#subekashi-links + h2 {
+    margin-top: 20px;
 }
 
 #subekashi-links {
@@ -162,10 +166,12 @@ h2 {
 }
 
 #special-thanks-links a {
-    display: inline-block;
+    display: block;
+    width: fit-content;
+    margin: 0 auto;
     text-decoration: none;
     font-size: min(36px, 8.5vw);
-    margin: 0 10px;
+    line-height: 50px;
     white-space: nowrap;
 }
 
