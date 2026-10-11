@@ -13,6 +13,7 @@
                 <div id="single-news-display">
                     {{ news_htmls|safe }}
                 </div>
+                <div id="single-news-dots"></div>
             </div>
         {% elif request.COOKIES.news_type == "all" %}
             <div id="all-news-display">
