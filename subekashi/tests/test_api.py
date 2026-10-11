@@ -497,11 +497,9 @@ class ApiThrottleClientIPTest(TestCase):
         self.assertLimited(self._get(HTTP_X_REAL_IP="203.0.113.1"))
 
     def test_x_forwarded_for_does_not_bypass_limit(self, mock_timer):
-        # X-Forwarded-Forの先頭とX-Real-IPの不一致の記録（#1189）が出力されないよう、ログを受け取る
-        with self.assertLogs("subekashi.lib.ip", level="WARNING"):
-            for i in range(2):
-                self._get(HTTP_X_REAL_IP="203.0.113.1", HTTP_X_FORWARDED_FOR=f"198.51.100.{i}")
-            self.assertLimited(self._get(HTTP_X_REAL_IP="203.0.113.1", HTTP_X_FORWARDED_FOR="198.51.100.9"))
+        for i in range(2):
+            self._get(HTTP_X_REAL_IP="203.0.113.1", HTTP_X_FORWARDED_FOR=f"198.51.100.{i}")
+        self.assertLimited(self._get(HTTP_X_REAL_IP="203.0.113.1", HTTP_X_FORWARDED_FOR="198.51.100.9"))
 
     def test_remote_addr_is_used_without_x_real_ip(self, mock_timer):
         for _ in range(2):

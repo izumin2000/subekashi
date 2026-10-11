@@ -21,7 +21,7 @@
 | --- | --- |
 | `send_discord()` | `SEND_DISCORD=False`（local_settings）により自動でスキップ。モック不要 |
 | `get_youtube_api()` | YouTube URL を POST しないシナリオで回避。YouTube URL を使う場合は `@patch` でモック |
-| `get_ip()` | Django テストクライアントの `REMOTE_ADDR` を利用 |
+| `get_ip()` | `X-Real-IP` を付けない場合は Django テストクライアントの `REMOTE_ADDR` を利用（#1189） |
 
 ---
 

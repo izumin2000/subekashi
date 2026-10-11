@@ -3,9 +3,11 @@ lib/ip.py のテスト
 
 get_client_ip(): レート制限で使うクライアントのIP（settings.RATELIMIT_IP_META_KEY、#1188）。
 PythonAnywhereではREMOTE_ADDRがロードバランサーのIPになるため、ロードバランサーが付けるX-Real-IPを使う。
+get_ip(): 編集者の識別・お問い合わせのIP・BANの判定に使うIP。get_client_ipと同じIPを使う（#1189）。
 """
 from django.test import RequestFactory, SimpleTestCase
-from subekashi.lib.ip import get_client_ip
+from subekashi.lib.ip import get_client_ip, get_ip
+from subekashi.lib.security import encrypt
 
 
 class GetClientIpTest(SimpleTestCase):
@@ -48,3 +50,33 @@ class GetClientIpTest(SimpleTestCase):
         # X-Forwarded-Forはクライアントが自由に付けられるため使わない
         request = self.factory.get("/", REMOTE_ADDR="10.0.0.1", HTTP_X_FORWARDED_FOR="198.51.100.1")
         self.assertEqual(get_client_ip(request), "10.0.0.1")
+
+
+class GetIpTest(SimpleTestCase):
+    """get_ip() のテスト（#1189）"""
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    def test_uses_x_real_ip(self):
+        request = self.factory.get("/", REMOTE_ADDR="10.0.0.1", HTTP_X_REAL_IP="203.0.113.1")
+        self.assertEqual(get_ip(request, raw=True), "203.0.113.1")
+        self.assertEqual(get_ip(request), encrypt("203.0.113.1"))
+
+    def test_does_not_use_x_forwarded_for(self):
+        # X-Forwarded-Forの先頭を使うと、他人のIPを名乗ってその人の編集者になりすませる
+        request = self.factory.get(
+            "/", REMOTE_ADDR="10.0.0.1", HTTP_X_REAL_IP="203.0.113.1", HTTP_X_FORWARDED_FOR="198.51.100.1, 203.0.113.1",
+        )
+        self.assertEqual(get_ip(request, raw=True), "203.0.113.1")
+        self.assertEqual(get_ip(request), encrypt("203.0.113.1"))
+
+    def test_falls_back_to_remote_addr_without_x_real_ip(self):
+        request = self.factory.get("/", REMOTE_ADDR="10.0.0.1", HTTP_X_FORWARDED_FOR="198.51.100.1")
+        self.assertEqual(get_ip(request, raw=True), "10.0.0.1")
+        self.assertEqual(get_ip(request), encrypt("10.0.0.1"))
+
+    def test_falls_back_to_remote_addr_with_invalid_x_real_ip(self):
+        # IPでない値はencryptで扱えないため使わない
+        request = self.factory.get("/", REMOTE_ADDR="10.0.0.1", HTTP_X_REAL_IP="not-an-ip")
+        self.assertEqual(get_ip(request), encrypt("10.0.0.1"))
