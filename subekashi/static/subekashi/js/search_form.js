@@ -21,6 +21,7 @@ window.addEventListener('DOMContentLoaded', function () {
 function initSearchForm() {
     restoreFormValuesFromCookies();
     syncSearchForm();
+    focusSearchForm(getSearchFormName());
     document.getElementById("search-form-radios").addEventListener('scroll', updateSearchFormRadiosScrollEnd);
 
     document.querySelectorAll('input[name="search-form"]').forEach((radioEle) => {
