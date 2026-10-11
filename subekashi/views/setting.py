@@ -10,7 +10,7 @@ import json
 ALLOWED_SETTING_KEYS = {
     'songrange', 'jokerange', 'news_type', 'is_shown_search',
     'is_shown_new', 'is_shown_ad', 'is_shown_ai', 'is_shown_lack',
-    'is_saved_select', 'form_button', 'search_autofocus', 'brlyrics', 'pc_menu_position'
+    'is_saved_select', 'form_button', 'brlyrics', 'pc_menu_position'
 }
 
 # 各設定の許可される値
@@ -25,7 +25,6 @@ ALLOWED_SETTING_VALUES = {
     'is_shown_lack': {'0', '5', '10', '15'},
     'is_saved_select': {'on', 'off'},
     'form_button': FORM_BUTTON_CHOICES,
-    'search_autofocus': {'on', 'off'},
     'brlyrics': {'normal', 'pack', 'brless'},
     'pc_menu_position': {'header', 'aside'}
 }
@@ -47,7 +46,6 @@ class SettingView(View):
         is_shown_lack = request.COOKIES.get("is_shown_lack", "5")
         is_saved_select = request.COOKIES.get("is_saved_select", "on")
         form_button = request.COOKIES.get("form_button", FORM_BUTTON_DEFAULT)
-        search_autofocus = request.COOKIES.get("search_autofocus", "off")
         brlyrics = request.COOKIES.get("brlyrics", "normal")
         pc_menu_position = request.COOKIES.get("pc_menu_position", "header")
 
@@ -142,14 +140,6 @@ class SettingView(View):
                     'options': [
                         {'value': 'icon', 'text': 'アイコンのみ', 'selected': form_button == 'icon'},
                         {'value': 'icon_text', 'text': 'アイコンと文字', 'selected': form_button == 'icon_text'},
-                    ]
-                },
-                {
-                    'label': '入力欄の自動選択',
-                    'id': 'search_autofocus',
-                    'options': [
-                        {'value': 'on', 'text': 'する（PCのみ）', 'selected': search_autofocus == 'on'},
-                        {'value': 'off', 'text': 'しない', 'selected': search_autofocus == 'off'},
                     ]
                 },
             ],

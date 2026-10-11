@@ -21,10 +21,6 @@ window.addEventListener('DOMContentLoaded', function () {
 function initSearchForm() {
     restoreFormValuesFromCookies();
     syncSearchForm();
-    // 設定で入力欄の自動選択を「する」にしている場合のみ、表示中のフォームの入力欄を選択する（#1208）
-    if (getCookie()['search_autofocus'] === 'on') {
-        focusSearchForm(getSearchFormName());
-    }
     document.getElementById("search-form-radios").addEventListener('scroll', updateSearchFormRadiosScrollEnd);
 
     document.querySelectorAll('input[name="search-form"]').forEach((radioEle) => {
