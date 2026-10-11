@@ -190,12 +190,23 @@ class CsrfTokenTest(TestCase):
 
 @override_settings(STORAGES=STATIC_STORAGE)
 class SubresourceIntegrityTest(TestCase):
-    """外部CDNから読み込むスタイルシートにintegrity属性が付いていることのテスト"""
+    """外部CDNから読み込むスタイルシートにintegrity属性が付き、CSPで許可されていることのテスト"""
 
     def test_font_awesome_has_integrity(self):
         response = self.client.get(reverse("subekashi:top"))
         self.assertContains(
             response,
-            'href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" '
+            'href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" '
             'integrity="sha384-DyZ88mC6Up2uqS4h/KRgHuoeGwBcD4Ng9SiP4dIRy0EXTlnuz47vAwmeGwVChigm" crossorigin="anonymous"',
         )
+
+    def test_font_awesome_origin_is_allowed_by_csp(self):
+        # webfontsもCSSと同じjsDelivrから読み込まれる
+        response = self.client.get(reverse("subekashi:top"))
+        directives = dict(
+            directive.strip().split(" ", 1) for directive in response["Content-Security-Policy"].split(";")
+        )
+        for name in ("style-src", "font-src"):
+            with self.subTest(directive=name):
+                self.assertIn("https://cdn.jsdelivr.net", directives[name].split())
+                self.assertNotIn("https://use.fontawesome.com", directives[name].split())

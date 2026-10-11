@@ -627,7 +627,10 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 | 項目 | 内容 |
 | --- | --- |
 | 操作 | `GET /` |
-| 検証 | Font Awesomeの`<link>`に`integrity`と`crossorigin="anonymous"`が付与されている |
+| 検証1 | Font Awesomeの`<link>`がjsDelivr（`cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css`）を参照し、`integrity`と`crossorigin="anonymous"`が付与されている |
+| 検証2 | CSPヘッダーの`style-src`・`font-src`に`https://cdn.jsdelivr.net`が含まれ、`https://use.fontawesome.com`が含まれない |
+
+`use.fontawesome.com`は`Origin`ヘッダーがないリクエストにCORSヘッダーを返さず1年キャッシュさせるため、`crossorigin`なしで読み込んでいた頃のキャッシュが残るブラウザでアイコンが表示されなかった（#1215）。jsDelivrは常に`Access-Control-Allow-Origin: *`を返すため、読み込み元をjsDelivrに変更した。古いキャッシュがある状態での表示はDjangoテストでは検証できないため、Playwright（Chrome）で確認した。
 
 ---
 
