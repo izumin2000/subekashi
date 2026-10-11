@@ -1227,27 +1227,28 @@ input::placeholder {
 /* トースト */
 @keyframes slideIn {
     from {
-        top: -340px;
+        bottom: -340px;
     }
 
     to {
-        top: 34px;
+        bottom: var(--toast-bottom);
     }
 }
 
 @keyframes slideOut {
     from {
-        top: 34px;
+        bottom: var(--toast-bottom);
     }
 
     to {
-        top: -340px;
+        bottom: -340px;
     }
 }
 
 .toast {
+    --toast-bottom: 16px;
     position: fixed;
-    top: -50px;
+    bottom: -340px;
     left: 50%;
     transform: translateX(-50%);
     width: 90vw;
@@ -1258,11 +1259,17 @@ input::placeholder {
     text-align: center;
     font-family: Arial, sans-serif;
     z-index: 1000;
-    animation: slideIn 0.5s forwards, slideOut 0.5s 8s forwards;
+    animation: slideIn 0.5s forwards, slideOut 0.5s 10s forwards;
 }
 
 .long-time {
-    animation: slideIn 0.5s forwards, slideOut 0.5s 16s forwards;
+    animation: slideIn 0.5s forwards, slideOut 0.5s 20s forwards;
+}
+
+@media (max-width: 960px) {
+    .toast {
+        --toast-bottom: 66px; /* #tab_bar 50px + 16px */
+    }
 }
 
 .toast p, .toast a {
