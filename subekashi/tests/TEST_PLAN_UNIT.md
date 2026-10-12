@@ -1029,6 +1029,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 トップ画面のセクションの「検索の表示」（`is_shown_search`）は「全て表示」（`all`）・「キーワードのみ」（`on`）・「非表示」（`off`）から選べる（#585）。以前の「表示」の設定を引き継ぐため、「キーワードのみ」の値は`on`とする。
 
+Google検索のセクションの「ニュースの提供元」は、当サイトをGoogleの優先するソース（Google検索のトップニュースで優先して表示するサイト）に追加するGoogleのページへのリンクを表示する（#1151）。設定はGoogleのアカウントに保存されるため、cookieには保存しない。
+
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | 正常アクセス | GETリクエスト | HTTP 200 |
@@ -1037,6 +1039,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | フォームボタンの設定のデフォルト | cookie無し | 「フォームボタン」の`<select id="form_button">`が表示され、選択肢は「アイコンのみ」（`icon`）・「アイコンと文字」（`icon_text`）の順で、「アイコンと文字」が選択される |
 | フォームボタンの設定のcookieを反映 | `form_button=icon`のcookieを送信 | 「アイコンのみ」が選択される |
 | チュートリアルのアイコン | GETリクエスト | 選択肢の保存のチュートリアル（`data-tutorial="select"`）のアイコンは「検索の選択肢の保存」にのみ付き、「フォームボタン」には付かない |
+| Googleの優先するソースへのリンク（#1151） | GETリクエスト | 「Google検索」のセクションに、`https://www.google.com/preferences/source?q=lyrics.imicomweb.com`へのリンクが`target="_blank" rel="noopener noreferrer"`付きの`action-button black-action-button`で表示される |
 
 #### 7-18. `SaveSettingsView` (`/api/setting/save/`)（#1164）
 
