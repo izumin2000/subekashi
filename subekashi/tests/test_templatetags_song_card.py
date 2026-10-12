@@ -71,23 +71,23 @@ class GetUrlTest(TestCase):
 
     def test_flag_icons(self):
         cases = [
-            ({"is_questionable": True}, "fa-question", "界隈曲?"),
-            ({"is_draft": True}, "fa-user-edit", "下書き"),
-            ({"is_original": True}, "fa-external-link-alt", "オリジナル模倣"),
-            ({"is_joke": True}, "fa-meh-rolling-eyes", "ネタ曲"),
-            ({"is_inst": True}, "fa-comment-slash", "インスト曲"),
-            ({"is_subeana": False}, "fa-fish", "非すべあな模倣曲"),
-            ({"is_deleted": True}, "fa-eye-slash", "非公開/削除済み"),
-            ({"is_special": True}, "fa-magic", "スペシャルデザイン"),
-            ({"is_limited": True}, "fa-low-vision", "限定公開"),
+            ({"is_questionable": True}, "fas fa-question", "界隈曲?"),
+            ({"is_draft": True}, "fas fa-user-edit", "下書き"),
+            ({"is_original": True}, "fas fa-external-link-alt", "オリジナル模倣"),
+            ({"is_joke": True}, "far fa-meh-rolling-eyes", "ネタ曲"),
+            ({"is_inst": True}, "fas fa-comment-slash", "インスト曲"),
+            ({"is_subeana": False}, "fas fa-fish", "非すべあな模倣曲"),
+            ({"is_deleted": True}, "far fa-eye-slash", "非公開/削除済み"),
+            ({"is_special": True}, "fas fa-magic", "スペシャルデザイン"),
+            ({"is_limited": True}, "fas fa-low-vision", "限定公開"),
         ]
         for fields, icon, label in cases:
             with self.subTest(fields=fields):
                 song = Song.objects.create(title="フラグの曲", **fields)
                 self._add_link(song, f"https://youtu.be/song{song.id:07d}")
                 result = get_url(song)
-                self.assertIn(icon, result)
-                self.assertIn(f'title="{label}"', result)
+                self.assertIn(f'<i class="{icon}" title="{label}"></i>', result)
+                self.assertEqual(result.count("title="), 1)
 
     def test_no_flag_has_no_flag_icon(self):
         song = Song.objects.create(title="フラグなしの曲")
@@ -129,6 +129,25 @@ class GetUrlTest(TestCase):
         self.assertEqual(result.count("song-card-separator"), 1)
         self.assertLess(result.index("fa-user-edit"), result.index("song-card-separator"))
         self.assertLess(result.index("song-card-separator"), result.index("fa-youtube"))
+
+    def test_separator_between_deleted_and_link(self):
+        song = Song.objects.create(title="非公開でURLありの曲", is_deleted=True)
+        self._add_link(song)
+        result = get_url(song)
+        self.assertEqual(result.count("song-card-separator"), 1)
+        self.assertLess(result.index("fa-eye-slash"), result.index("song-card-separator"))
+        self.assertLess(result.index("song-card-separator"), result.index("fa-youtube"))
+        self.assertNotIn("URL未登録", result)
+
+    def test_separator_with_multiple_links(self):
+        song = Song.objects.create(title="複数URLの下書き", is_draft=True)
+        youtube = self._add_link(song)
+        x = self._add_link(song, "https://x.com/subekashi/status/1")
+        result = get_url(song)
+        self.assertEqual(result.count("song-card-separator"), 1)
+        self.assertLess(result.index("fa-user-edit"), result.index("song-card-separator"))
+        self.assertLess(result.index("song-card-separator"), result.index(f'href="{youtube.url}"'))
+        self.assertLess(result.index("song-card-separator"), result.index(f'href="{x.url}"'))
 
     def test_separator_between_flag_and_unregistered(self):
         song = Song.objects.create(title="URL未登録の下書き", is_draft=True)
