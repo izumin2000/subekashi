@@ -13,7 +13,7 @@
                 </tbody>
             </table>
         {% else %}
-            <table>
+            <table{% if is_edit %} class="diff-table"{% endif %}>
                 <thead>
                     <tr>
                         {% for cell in changes.0 %}

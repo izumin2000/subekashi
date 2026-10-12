@@ -89,6 +89,24 @@ details h1, details h2 {
     width: 100px;
 }
 
+.diff-table del, .diff-table ins {
+    text-decoration: none;
+    border-radius: 2px;
+}
+
+.diff-table del {
+    background-color: #f8514966;
+}
+
+.diff-table ins {
+    background-color: #2ea04366;
+}
+
+.diff-blank::before {
+    content: "\21B5";
+    opacity: 0.7;
+}
+
 .pagination {
     text-align: center;
 }

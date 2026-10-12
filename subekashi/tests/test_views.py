@@ -1254,6 +1254,23 @@ class SongHistoryViewTest(TestCase):
         response = self.client.get(reverse("subekashi:song_history", args=[99999]))
         self.assertEqual(response.status_code, 404)
 
+    def test_edit_history_has_diff_table(self):
+        # 編集の変更履歴は、編集前と編集後の差分をeditor.jsで表示する（#608）
+        editor = Editor.objects.create(ip="127.0.0.11")
+        History.create_for_song(
+            song=self.song, title="履歴テスト曲のタイトルを編集", history_type="edit",
+            changes=[["種類", "編集前", "編集後"], ["タイトル", "旧タイトル", "履歴テスト曲"]], editor=editor,
+        )
+        History.create_for_song(
+            song=self.song, title="履歴テスト曲を新規作成", history_type="new",
+            changes=[["種類", "内容"], ["タイトル", "旧タイトル"]], editor=editor,
+        )
+
+        response = self.client.get(reverse("subekashi:song_history", args=[self.song.id]))
+
+        self.assertContains(response, '<table class="diff-table">', count=1)
+        self.assertContains(response, "subekashi/js/editor.js")
+
 
 @override_settings(STORAGES=STATIC_STORAGE)
 class SongDeleteViewTest(TestCase):
