@@ -1,6 +1,7 @@
 """
 Author関連のヘルパー関数
 """
+from django.db.models import Q
 from subekashi.models import Author, AuthorAlias
 
 
@@ -75,3 +76,33 @@ def author_names_were_normalized(author_names, authors):
     """
     non_empty_names = _non_empty_names(author_names)
     return any(name != author.name for name, author in zip(non_empty_names, authors))
+
+
+def get_same_person_author_ids(authors):
+    """
+    authorsと、AuthorAliasで直接つながっている（正方向・逆方向）Authorのidの集合を返す（#667）
+
+    alias_type="group"（複数人で運用している名義）は同一人物とは限らないため対象外とする。
+
+    Args:
+        authors: Authorオブジェクトのイテラブル
+
+    Returns:
+        set[int]: Authorのidの集合
+    """
+    author_ids = {author.id for author in authors}
+    author_names = {author.name for author in authors}
+    if not author_ids:
+        return author_ids
+
+    alias_names = set()
+    aliases = AuthorAlias.objects.filter(
+        Q(author__in=author_ids) | Q(name__in=author_names)
+    ).exclude(alias_type="group").values_list("author_id", "name")
+    for owner_id, alias_name in aliases:
+        author_ids.add(owner_id)
+        alias_names.add(alias_name)
+
+    if alias_names:
+        author_ids |= set(Author.objects.filter(name__in=alias_names).values_list("id", flat=True))
+    return author_ids
