@@ -4,14 +4,19 @@ REST API ビューのテスト
 SongAPI・EditorIsOpenView のレスポンス形式・ステータスコードを検証する。
 SongThrottle はビュークラスに直接定義されているため、patch で無効化する。
 ApiThrottleClientIPTest・ApiThrottleIdentTest では、スロットリングを X-Real-IP ごとに数えることを検証する（#1192）。
+NewsAPIViewTest では、API_KEY を知っている人だけがニュースを登録できることを検証する（#925）。
 """
 import json
+from datetime import timedelta
 from unittest.mock import patch
+from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
 from django.urls import URLResolver
+from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework.views import APIView
+from article.models import Article
 from subekashi import urls as subekashi_urls
 from subekashi.lib.song_search import DEFAULT_SIZE
 from subekashi.models import Ai, Author, Song, SongLink, Word
@@ -246,6 +251,118 @@ class EditorIsOpenViewTest(TestCase):
             format="json",
         )
         self.assertEqual(response.status_code, 400)
+
+
+@override_settings(STORAGES=STATIC_STORAGE, API_KEY="test-api-key")
+class NewsAPIViewTest(TestCase):
+    """NewsAPIView POST /api/news/ のテスト（#925）"""
+
+    def setUp(self):
+        self.client = APIClient()
+
+    def _post(self, data, api_key="test-api-key", client=None):
+        headers = {} if api_key is None else {"HTTP_X_API_KEY": api_key}
+        return (client or self.client).post("/api/news/", data=data, format="json", **headers)
+
+    def test_post_creates_news(self):
+        before = timezone.now()
+        response = self._post({"article_id": "testNews", "title": "テストのニュース\n"})
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json(), {"article_id": "testNews", "title": "テストのニュース"})
+        article = Article.objects.get(article_id="testNews")
+        self.assertEqual(article.title, "テストのニュース")
+        self.assertEqual(article.tag, "news")
+        self.assertEqual(article.author, "全て歌詞の所為です。")
+        self.assertTrue(article.is_open)
+        self.assertTrue(article.is_md)
+        self.assertFalse(article.handle_as_news)
+        self.assertGreaterEqual(article.post_time, before)
+        self.assertIn(article, Article.get_top_news_articles())
+
+    def test_markdown_title_is_converted_to_html(self):
+        response = self._post({"article_id": "testNews", "title": "[リンク](https://example.com)が公開される"})
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            Article.objects.get(article_id="testNews").title,
+            '<a href="https://example.com">リンク</a>が公開される',
+        )
+
+    def test_posted_news_is_shown_on_top(self):
+        self._post({"article_id": "testNews", "title": "[リンク](https://example.com)が公開される"})
+
+        response = self.client.get("/")
+
+        self.assertContains(response, '<span><a href="https://example.com">リンク</a>が公開される</span>')
+
+    def test_post_without_csrf_token(self):
+        client = APIClient(enforce_csrf_checks=True)
+        response = self._post({"article_id": "testNews", "title": "テストのニュース"}, client=client)
+        self.assertEqual(response.status_code, 201)
+
+    def test_without_api_key_returns_403(self):
+        response = self._post({"article_id": "testNews", "title": "テストのニュース"}, api_key=None)
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Article.objects.filter(article_id="testNews").exists())
+
+    def test_wrong_api_key_returns_403(self):
+        response = self._post({"article_id": "testNews", "title": "テストのニュース"}, api_key="wrong-api-key")
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Article.objects.filter(article_id="testNews").exists())
+
+    def test_logged_in_superuser_without_api_key_returns_403(self):
+        user = User.objects.create_superuser("admin", "admin@example.com", "password")
+        self.client.force_login(user)
+        response = self._post({"article_id": "testNews", "title": "テストのニュース"}, api_key=None)
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Article.objects.filter(article_id="testNews").exists())
+
+    @override_settings(API_KEY="")
+    def test_empty_api_key_setting_rejects_empty_header(self):
+        response = self._post({"article_id": "testNews", "title": "テストのニュース"}, api_key="")
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Article.objects.filter(article_id="testNews").exists())
+
+    def test_get_returns_405(self):
+        response = self.client.get("/api/news/", HTTP_X_API_KEY="test-api-key")
+        self.assertEqual(response.status_code, 405)
+
+    def test_existing_article_id_returns_400(self):
+        post_time = timezone.now() - timedelta(days=1)
+        Article.objects.create(article_id="testNews", title="既存の記事", tag="blog", post_time=post_time)
+
+        response = self._post({"article_id": "testNews", "title": "テストのニュース"})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("article_id", response.json())
+        article = Article.objects.get(article_id="testNews")
+        self.assertEqual(article.title, "既存の記事")
+        self.assertEqual(article.tag, "blog")
+        self.assertEqual(article.post_time, post_time)
+
+    def test_invalid_article_id_returns_400(self):
+        for article_id in ["", "test/news", "テスト", "a" * 101]:
+            with self.subTest(article_id=article_id):
+                response = self._post({"article_id": article_id, "title": "テストのニュース"})
+                self.assertEqual(response.status_code, 400)
+                self.assertIn("article_id", response.json())
+        self.assertFalse(Article.objects.exists())
+
+    def test_blank_title_returns_400(self):
+        for data in [{"article_id": "testNews"}, {"article_id": "testNews", "title": " \n"}]:
+            with self.subTest(data=data):
+                response = self._post(data)
+                self.assertEqual(response.status_code, 400)
+                self.assertIn("title", response.json())
+        self.assertFalse(Article.objects.exists())
+
+    def test_title_too_long_after_conversion_returns_400(self):
+        response = self._post({"article_id": "testNews", "title": "**a**" * 100})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("title", response.json())
+        self.assertFalse(Article.objects.exists())
 
 
 @patch("subekashi.views.api.word.WordCandidatesView.throttle_classes", [])

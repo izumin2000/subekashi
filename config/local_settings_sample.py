@@ -18,6 +18,11 @@ VENV_PATH = ''
 
 YOUTUBE_API_KEY = ''
 
+# /api/news/ にニュースをPOSTするときのX-API-Keyヘッダーの値。空文字列の場合はPOSTを受け付けない
+# import secrets
+# secrets.token_urlsafe(32)
+API_KEY = ''
+
 DEBUG = True
 
 SEND_DISCORD = False

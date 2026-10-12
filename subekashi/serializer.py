@@ -67,3 +67,9 @@ class AiWordSwapSerializer(serializers.Serializer):
     base_id = serializers.IntegerField()
     token_index = serializers.IntegerField(min_value=0)
     candidate = serializers.CharField(max_length=100)
+
+
+class NewsSerializer(serializers.Serializer):
+    # article_idは記事のURL（/articles/<article_id>/）になるため、英数字・_・-のみ許可する
+    article_id = serializers.SlugField(max_length=100)
+    title = serializers.CharField()

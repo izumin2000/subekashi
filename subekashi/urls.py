@@ -48,6 +48,7 @@ urlpatterns = [
     path('api/ai/swap/', AiWordSwapView.as_view(), name='ai-word-swap'),
     path('api/',include(defaultRouter.urls)),
     path('api/editor/is_open', EditorIsOpenView.as_view(), name='editor-is-open'),
+    path('api/news/', NewsAPIView.as_view(), name='news'),
     path('api/song_edit_init/', SongEditInitView.as_view(), name='song-edit-init'),
     path('api/word/candidates/', WordCandidatesView.as_view(), name='word-candidates'),
     path('api/html/song_cards', song_cards, name='song_cards'),
