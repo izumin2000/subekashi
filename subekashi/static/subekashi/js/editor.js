@@ -113,9 +113,15 @@ function pushPart(parts, text, isChanged) {
 function diffLine(before, after) {
     const beforeChars = Array.from(before);
     const afterChars = Array.from(after);
+    const threshold = (beforeChars.length + afterChars.length) * DIFF_LINE_SIMILARITY;
+    // 共通する文字は短い方の行の文字数以下のため、長さが大きく違う行は差分を求めずにnullを返す
+    if (Math.min(beforeChars.length, afterChars.length) * 2 < threshold) {
+        return null;
+    }
+
     const ops = diffSequence(beforeChars, afterChars);
     const equalCount = ops.filter(([type]) => type === "equal").length;
-    if (equalCount * 2 < (beforeChars.length + afterChars.length) * DIFF_LINE_SIMILARITY) {
+    if (equalCount * 2 < threshold) {
         return null;
     }
 
