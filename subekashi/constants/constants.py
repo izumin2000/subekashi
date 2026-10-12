@@ -189,6 +189,9 @@ FORM_BUTTON_DEFAULT = "icon_text"
 
 HISTORIES_PER_PAGE = 50
 
+# 編集の変更履歴（History.changes）の見出しの行
+EDIT_CHANGES_HEADER = ["種類", "編集前", "編集後"]
+
 RECOMEND_ARTICLES = [
     {
         "url_name": "article:default_article",

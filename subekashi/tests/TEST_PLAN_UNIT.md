@@ -897,6 +897,14 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 本人の判定はX-Real-IP（#1189） | `ip`が`encrypt("203.0.113.1")`のeditor、`X-Real-IP: 203.0.113.1`・`X-Forwarded-For: 198.51.100.1` | `is_me`がTrue |
 | X-Forwarded-Forではなりすませない（#1189） | `ip`が`encrypt("203.0.113.1")`のeditor、`X-Real-IP: 203.0.113.2`・`X-Forwarded-For: 203.0.113.1` | `is_me`がFalse（他人のIPを名乗ってその人の編集者になれない） |
 
+#### 7-10-2. `SongHistoryView` (`/songs/<id>/history/`)
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 存在する曲 | 有効なsong_id | HTTP 200 |
+| 存在しない曲 | `song_id=99999` | HTTP 404 |
+| 編集の差分の表示（#608） | 編集（`changes`の見出しが`["種類", "編集前", "編集後"]`）と新規作成（見出しが`["種類", "内容"]`）のHistoryが存在 | `<table class="diff-table">`が編集のHistoryの分だけ（1つ）含まれ、差分を表示する`subekashi/js/editor.js`が読み込まれる |
+
 #### 7-11. `SongCardsView` (`/api/html/song_cards`)
 
 | テストケース | 条件 | 期待結果 |
@@ -2294,6 +2302,25 @@ YouTube Data API（`build`）はモック化する。「動画が存在しない
 
 ---
 
+### 25. `templatetags/changes.py` — 変更履歴の表（#608）
+
+**テストファイル**: `tests/test_templatetags_changes.py`
+
+#### 25-1. `render_changes(history)`
+
+編集の変更履歴の表には`diff-table`クラスを付け、`editor.js`が編集前と編集後のセルに差分（削除は`<del>`、追加は`<ins>`）を表示する。保存するデータ（`History.changes`）は変えない。2026/4/11以前は編集も`history_type="new"`で保存されていたため、`history_type`ではなく`changes`の見出し（`EDIT_CHANGES_HEADER`）で判定する。差分の求め方と表示はDjangoテストでは確認できないため、Playwrightで確認する（結合テスト計画書の21-2）。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 編集 | `history_type="edit"`、`changes`の見出しが`["種類", "編集前", "編集後"]` | `<table class="diff-table">`になり、編集前・編集後のセルが出力される |
+| 以前の形式の編集 | `history_type="new"`、`changes`の見出しが`["種類", "編集前", "編集後"]` | `<table class="diff-table">`になる |
+| 新規作成 | `history_type="new"`、`changes`の見出しが`["種類", "内容"]` | `<table>`のままで、`diff-table`は含まれない |
+| 削除申請 | `history_type="delete"`、`changes=["理由", "削除理由"]` | `<table class="delete-table">`のままで、`diff-table`は含まれない |
+| changesが無い | `changes=None` | 表を出力しない |
+| セルの改行とエスケープ | 編集前`"<b>1行目\n2行目"`、編集後`"1行目\r\n2行目"` | `<td>&lt;b&gt;1行目<br>2行目</td>`・`<td>1行目<br>2行目</td>`（JSはセルのテキストと`<br>`から元の文字列を取り出す） |
+
+---
+
 ## テスト優先度
 
 | 優先度 | 対象 | 理由 |
@@ -2348,7 +2375,8 @@ subekashi/tests/
 ├── test_lib_ip.py                  # 実装済み: クライアントのIP
 ├── test_management_commands.py     # 実装済み: 管理コマンド
 ├── test_templatetags_song_card.py  # 実装済み: song_card テンプレートタグ
-└── test_templatetags_ogp.py        # 実装済み: ogp テンプレートタグ
+├── test_templatetags_ogp.py        # 実装済み: ogp テンプレートタグ
+└── test_templatetags_changes.py    # 実装済み: changes テンプレートタグ
 
 article/
 └── tests.py                        # 実装済み: ArticlesView・DefaultArticleView
