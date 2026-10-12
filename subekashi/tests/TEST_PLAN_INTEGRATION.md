@@ -327,6 +327,16 @@
 | 操作 | `GET /channel/テストチャンネル/` |
 | 検証 | `/authors/<id>/` へリダイレクト (302) |
 
+#### 6-4. 作者ページの並び替えの保存（#606）
+
+実装: `tests/test_views.py` の `AuthorViewTest.test_selected_sort_applies_to_other_authors`
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | 作者 A・B が存在し、「検索の選択肢の保存」の設定が未設定（保存） |
+| 操作 | `GET /authors/<A.id>/?sort=-like` の後、同じクライアントで `GET /authors/<B.id>/` |
+| 検証 | 1回目のレスポンスで `author_sort` cookie が保存され、2回目は URL クエリなしでも高評価数の多い順で表示される |
+
 ---
 
 ### 7. 模倣関係フロー

@@ -26,14 +26,14 @@ from django.urls import reverse
 from django.utils import timezone
 from article.models import Article
 from subekashi.forms import AuthorAliasForm
-from subekashi.constants.constants import LONG_TERM_COOKIE_AGE, SHORT_TERM_COOKIE_AGE
+from subekashi.constants.constants import LONG_TERM_COOKIE_AGE, SHORT_TERM_COOKIE_AGE, SORT_CHOICES
 from subekashi.lib.ogp import OGP_SALT, OGP_VERSION, load_ogp_token, make_ogp_token, render_ogp_image
 from subekashi.lib.query_utils import YOUTUBE_FILTERS, YOUTUBE_SORTS
 from subekashi.lib.security import encrypt
 from subekashi.lib.youtube import YoutubeApiError
 from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song, SongLink, Stats, Word
 from subekashi.models.author import TransitiveAlias
-from subekashi.views.songs import COOKIE_FORMS, SEARCH_FORM_QUERIES, SORT_CHOICES, TEXT_FORMS
+from subekashi.views.songs import COOKIE_FORMS, SEARCH_FORM_QUERIES, TEXT_FORMS
 
 
 STATIC_STORAGE = {
@@ -1433,6 +1433,106 @@ class AuthorViewTest(TestCase):
         response = self.client.get(reverse("subekashi:author", args=[no_song_author.id]))
         self.assertIsNone(response.context["kenreki"])
         self.assertNotContains(response, 'id="author-stats-summary"')
+
+    def _create_sort_songs(self):
+        # 登録日（id）・投稿日（upload_time）の順序が逆になる曲（setUpの曲は投稿日なし）
+        for title, year in [("並び替え2024年", 2024), ("並び替え2020年", 2020)]:
+            song = Song.objects.create(title=title, upload_time=datetime(year, 1, 1, tzinfo=dt_timezone.utc))
+            song.authors.add(self.author)
+
+    def _song_titles(self, response):
+        return [song.title for song in response.context["songInsL"]]
+
+    def test_default_sort_is_newest_registration(self):
+        # URLクエリ・cookieが無い場合は、従来通り登録日の遅い順（#606）
+        self._create_sort_songs()
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
+        self.assertEqual(response.context["sort"], "-id")
+        self.assertEqual(self._song_titles(response), ["並び替え2020年", "並び替え2024年", "作者ビューテスト曲"])
+        self.assertContains(response, '<option value="-id" selected>')
+
+    def test_sort_query_orders_songs(self):
+        # 投稿日の並び替えでは、投稿日が無い曲を除外せず末尾に表示する（#606）
+        self._create_sort_songs()
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]), {"sort": "upload_time"})
+        self.assertEqual(self._song_titles(response), ["並び替え2020年", "並び替え2024年", "作者ビューテスト曲"])
+        self.assertContains(response, '<option value="upload_time" selected>')
+
+    def test_sort_form_lists_same_choices_as_songs_page(self):
+        self._create_sort_songs()
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
+        self.assertContains(response, '<form method="get" id="author-sort" data-auto-submit>')
+        options = re.findall(r'<option value="([^"]*)"', response.content.decode())
+        self.assertEqual(options, [choice["value"] for choice in SORT_CHOICES])
+
+    def test_sort_form_hidden_when_author_has_one_song(self):
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
+        self.assertNotContains(response, 'id="author-sort"')
+
+    def test_youtube_sort_note_shown_only_for_youtube_sorts(self):
+        self._create_sort_songs()
+        for sort in [choice["value"] for choice in SORT_CHOICES]:
+            with self.subTest(sort=sort):
+                response = self.client.get(reverse("subekashi:author", args=[self.author.id]), {"sort": sort})
+                if sort in YOUTUBE_SORTS:
+                    self.assertContains(response, 'id="author-sort-note"')
+                else:
+                    self.assertNotContains(response, 'id="author-sort-note"')
+
+    def test_invalid_sort_query_uses_default_and_is_not_saved(self):
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]), {"sort": "invalid"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["sort"], "-id")
+        self.assertNotIn("author_sort", response.cookies)
+
+    def test_sort_query_is_saved_to_cookie(self):
+        # 曲の検索画面と同様に、選択した並び替えをcookieに保存する（#606）
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]), {"sort": "-view"})
+        self.assertEqual(response.cookies["author_sort"].value, "-view")
+        self.assertEqual(response.cookies["author_sort"]["max-age"], LONG_TERM_COOKIE_AGE)
+
+    def test_sort_query_is_not_saved_when_saved_select_is_off(self):
+        self.client.cookies["is_saved_select"] = "off"
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]), {"sort": "-view"})
+        self.assertEqual(response.context["sort"], "-view")
+        self.assertNotIn("author_sort", response.cookies)
+
+    def test_saved_sort_cookie_is_used_without_query(self):
+        self._create_sort_songs()
+        self.client.cookies["author_sort"] = "-upload_time"
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
+        self.assertEqual(self._song_titles(response), ["並び替え2024年", "並び替え2020年", "作者ビューテスト曲"])
+
+    def test_selected_sort_applies_to_other_authors(self):
+        # ある作者ページで選んだ並び替えが、別の作者ページでも使われる
+        other_author = Author.objects.create(name="並び替え別作者")
+        self.client.get(reverse("subekashi:author", args=[self.author.id]), {"sort": "-like"})
+        response = self.client.get(reverse("subekashi:author", args=[other_author.id]))
+        self.assertEqual(response.context["sort"], "-like")
+
+    def test_saved_sort_cookie_is_ignored_when_saved_select_is_off(self):
+        self.client.cookies["is_saved_select"] = "off"
+        self.client.cookies["author_sort"] = "-upload_time"
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
+        self.assertEqual(response.context["sort"], "-id")
+
+    def test_invalid_sort_cookie_uses_default(self):
+        self.client.cookies["author_sort"] = "invalid"
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
+        self.assertEqual(response.context["sort"], "-id")
+
+    def test_not_cached_by_browser(self):
+        # 並び替えはcookieによって変わるため、別の並び替えを選んだ後にキャッシュされた古い並び順を表示しない
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
+        self.assertIn("no-store", response["Cache-Control"])
+        self.assertNotIn("public", response["Cache-Control"])
+
+    def test_description_does_not_depend_on_sort(self):
+        # 説明文（meta description）は並び替えによって変わらない
+        self._create_sort_songs()
+        url = reverse("subekashi:author", args=[self.author.id])
+        descriptions = {self.client.get(url, {"sort": sort}).context["description"] for sort in ["-id", "upload_time", "random"]}
+        self.assertEqual(descriptions, {"ビューテスト作者の曲一覧：並び替え2020年, 並び替え2024年, 作者ビューテスト曲"})
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
