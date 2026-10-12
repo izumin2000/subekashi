@@ -1150,6 +1150,27 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | X-Real-IPが無ければREMOTE_ADDRごとに制限 | `REMOTE_ADDR` Aで2回GETした後、`REMOTE_ADDR` B・AでGET | Bは200、Aは429 |
 | 全てのAPIのビューのスロットリング | `subekashi.urls`から集めたDRFのビュー（`APIRootView`・既定の`AnonRateThrottle`を使うビューを含む）の全ての`throttle_classes`で、`REMOTE_ADDR: 10.0.0.1`・`X-Real-IP: 203.0.113.1`・`X-Forwarded-For: 198.51.100.1`のリクエストの`get_ident` | 全て`203.0.113.1`（ビューを追加したときにDRFのクラスをそのまま使っていないかを確認する） |
 
+#### 8-7. `NewsAPIView` (`/api/news/`)（#925）
+
+**テストクラス**: `NewsAPIViewTest`（`tests/test_api.py`）
+
+`X-API-Key`ヘッダーの値が`local_settings.py`の`API_KEY`と一致する場合のみ、トップ画面に表示するニュース（`tag="news"`の`Article`）を登録する。Cookieのセッションでは認証しないため、管理画面にログインしていてもAPIキーが無ければ登録できない。テストでは`override_settings(API_KEY="test-api-key")`で設定する。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 正しいAPIキー | `X-API-Key: test-api-key`、`{"article_id": "testNews", "title": "テストのニュース\n"}` | HTTP 201、`{"article_id": "testNews", "title": "テストのニュース"}`（末尾の改行は除く）。`tag="news"`・`author="全て歌詞の所為です。"`・`is_open=True`・`is_md=True`・`handle_as_news=False`・`post_time`がPOST時刻の記事が作成され、`get_top_news_articles()`に含まれる |
+| マークダウンのタイトル | `title="[リンク](https://example.com)が公開される"` | `<a href="https://example.com">リンク</a>が公開される`に変換して保存される |
+| CSRFトークンなし | `APIClient(enforce_csrf_checks=True)`で正しいAPIキー | HTTP 201（スクリプトからCSRFトークンなしでPOSTできる） |
+| APIキーなし | `X-API-Key`ヘッダーなし | HTTP 403、記事は作成されない |
+| 間違ったAPIキー | `X-API-Key: wrong-api-key` | HTTP 403、記事は作成されない |
+| 管理画面にログイン済み | スーパーユーザーでログインし、`X-API-Key`ヘッダーなし | HTTP 403、記事は作成されない |
+| `API_KEY`が未設定 | `API_KEY=""`、`X-API-Key: `（空文字列） | HTTP 403、記事は作成されない（空文字列同士で一致させない） |
+| GET | 正しいAPIキーでGET | HTTP 405 |
+| 既存のarticle_id | `tag="blog"`の記事と同じ`article_id` | HTTP 400（`article_id`のエラー）、既存の記事のタイトル・タグ・`post_time`は変わらない |
+| 不正なarticle_id | 空文字列・`/`を含む・日本語・101文字 | HTTP 400（`article_id`のエラー）、記事は作成されない |
+| タイトルが空 | `title`なし・空白と改行のみ | HTTP 400（`title`のエラー）、記事は作成されない |
+| 変換後のタイトルが上限を超える | `title="**a**"×100`（500文字） | HTTP 400（`title`のエラー）、記事は作成されない |
+
 ---
 
 ### 9. ミドルウェア

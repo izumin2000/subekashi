@@ -740,6 +740,20 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 
 ---
 
+### 19. APIでのニュースの登録フロー（#925）
+
+**テストファイル**: `tests/test_api.py`（`NewsAPIViewTest`）
+
+`X-API-Key`ヘッダー付きで`/api/news/`にPOSTしたニュースが、`Article.save()`でタイトルをHTMLに変換して保存され、`TopView`のニュースに表示される流れを検証する。
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `API_KEY="test-api-key"` |
+| 操作1 | `X-API-Key: test-api-key`で`POST /api/news/` `{"article_id": "testNews", "title": "[リンク](https://example.com)が公開される"}`のあと`GET /` |
+| 検証1 | トップ画面のニュースに`<span><a href="https://example.com">リンク</a>が公開される</span>`が表示される |
+
+---
+
 ## テスト実装の方針
 
 ### ディレクトリ構成（案）

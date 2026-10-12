@@ -20,6 +20,7 @@ from subekashi.views.contact import ContactView
 from subekashi.views.editor import EditorView
 from subekashi.views.histories import HistoriesView
 from subekashi.views.api.editor import EditorIsOpenView
+from subekashi.views.api.news import NewsAPIView
 from subekashi.views.errors import *
 from subekashi.views.file import *
 from subekashi.views.ogp import ogp_image
