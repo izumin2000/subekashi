@@ -1,7 +1,7 @@
 import django_filters
 from django import forms
 from django.core.exceptions import ValidationError
-from django.db.models import Count, OuterRef, Subquery
+from django.db.models import Case, Count, OuterRef, Q, Subquery, Value, When
 from django.db.models.functions import Coalesce
 from subekashi.models import Song
 from subekashi.lib.query_filters import (
@@ -45,6 +45,23 @@ def order_by_sort(queryset, sort):
         # 同じ数の曲が多いため、ページをまたいでも順序が変わらないよう登録日の遅い順で並べる
         return queryset.annotate(**{annotation: Coalesce(Subquery(counts), 0)}).order_by(order, '-id')
     return queryset.order_by(DISTINCT_SORT_MAP.get(sort, sort))
+
+
+# YouTube関連の並び替えで、検索では除外される曲（SongFilter.qs）と同じ条件
+YOUTUBE_SORT_VALID_CONDITIONS = {
+    'upload_time': Q(upload_time__isnull=False),
+    'view': Q(view__gte=1),
+    'like': Q(like__gte=1),
+}
+
+
+def order_by_sort_with_missing_last(queryset, sort):
+    """検索では除外される曲も除外せず、末尾に並べて並び替える（作者ページ、#606）"""
+    condition = YOUTUBE_SORT_VALID_CONDITIONS.get(sort.lstrip('-'))
+    if condition is None:
+        return order_by_sort(queryset, sort)
+    is_missing = Case(When(condition, then=Value(0)), default=Value(1))
+    return queryset.order_by(is_missing, sort, '-id')
 
 
 def validate_positive_integer(value):

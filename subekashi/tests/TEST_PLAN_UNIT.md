@@ -703,6 +703,19 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 統計ボタンのアイコン (#334) | 正常アクセス | `fa-chart-line`アイコンが含まれる |
 | 統計ボタン下のメッセージ (#334、#968で鍵歴表示に変更。#1099でpt表示に変更) | 曲にview=1234を設定 | 鍵歴(`context["kenreki"]["points"]`、1234は7段階到達で7pt）がそのまま表示される（鍵盤数(7//2=3)には変換しない） |
 | 統計ボタン下のメッセージの非表示 (#968) | authorに曲が1件も無い | `#author-stats-summary`自体が表示されない（`context["kenreki"]`が`None`） |
+| 並び替えのデフォルト (#606) | URLクエリ・cookieなし | 従来通り登録日の遅い順（`-id`）で、`-id`の`<option>`が選択される |
+| URLクエリの並び替え (#606) | `?sort=upload_time` | 投稿日の早い順で、投稿日の無い曲は末尾に表示される |
+| 並び替えの選択肢 (#606) | 曲が2件以上 | `data-auto-submit`のGETフォームに、曲の検索画面と同じ`SORT_CHOICES`の`<option>`が同じ順で並ぶ |
+| 並び替えの非表示 (#606) | 曲が1件 | 並び替えのフォーム（`#author-sort`）が表示されない |
+| YouTubeの並び替えの案内 (#606) | `SORT_CHOICES`の各値で`?sort=` | `YOUTUBE_SORTS`の場合のみ`#author-sort-note`（YouTubeの情報が無い曲は最後に表示される旨）が表示される |
+| 不正な並び替え (#606) | `?sort=invalid` | HTTP 200、デフォルト（`-id`）で表示し、cookieは保存しない |
+| 並び替えのcookie保存 (#606) | `?sort=-view`（`is_saved_select`未設定） | `author_sort`に`-view`が`max-age=LONG_TERM_COOKIE_AGE`で保存される |
+| 並び替えのcookieを保存しない (#606) | `is_saved_select=off`で`?sort=-view` | `-view`で表示するが、`author_sort`は保存しない |
+| 保存された並び替え (#606) | `author_sort=-upload_time`のcookie、URLクエリなし | 投稿日の遅い順で表示される |
+| 保存された並び替えを使わない (#606) | `is_saved_select=off`、`author_sort=-upload_time` | デフォルト（`-id`）で表示される |
+| 不正なcookie (#606) | `author_sort=invalid` | デフォルト（`-id`）で表示される |
+| ブラウザにキャッシュさせない (#606) | 正常アクセス | `Cache-Control`に`no-store`が含まれ、`public`は含まれない（cookieで並び順が変わるため、キャッシュされた古い並び順を表示しない） |
+| 説明文は並び替えに依存しない (#606) | `?sort=-id`・`upload_time`・`random` | `context["description"]`が全て同じ（登録日の遅い順の曲名） |
 
 #### 7-8-1. `AuthorAliasesView` (`/authors/<id>/aliases`)（#992、#1007、#1024）
 
@@ -1399,6 +1412,23 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | 模倣曲の数が少ない順 | `{"sort": "imitated_count"}` | D, A, C, B の順 |
 | distinctが適用されるフィルタとの組み合わせ | `keyword` / `imitate` / `imitated` と組み合わせる | 重複せず、ソート順が維持される |
 | 件数の取得では並び替えない（#1124） | `{"keyword": "...", "sort": "-imitated_count", "count": True}` | 件数取得（`COUNT(*)`）のSQLに模倣曲の数のサブクエリと `ORDER BY` が含まれない |
+
+#### 10-9. `lib/song_filterset.py` の `order_by_sort_with_missing_last(queryset, sort)`（作者ページの並び替え、#606）
+
+**テストファイル**: `tests/test_lib_song_filterset.py`
+
+曲の検索ではYouTube関連の並び替えで情報が無い曲を除外する（`SongFilter.qs`）が、作者ページでは除外せず末尾に並べる。末尾に並べる条件は検索の除外条件（`upload_time`がNULL・`view`/`like`が1未満）に合わせる。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 投稿日の並び替え | 投稿日なし・2020年・2024年の曲で`upload_time` / `-upload_time` | 2020年→2024年→投稿日なし / 2024年→2020年→投稿日なし |
+| 再生回数の並び替え | 再生回数なし・0・10・100の曲で`view` / `-view` | 10→100 / 100→10 の後に、再生回数なし・0の曲が並ぶ |
+| 高評価数の並び替え | 高評価数なし・0・5・50の曲で`like` / `-like` | 5→50 / 50→5 の後に、高評価数なし・0の曲が並ぶ |
+| 情報が無い曲同士の順序 | YouTubeの情報が無い2曲で`YOUTUBE_SORTS`の各値 | 登録日の遅い順 |
+| 同じ値の曲同士の順序 | 再生回数が同じ2曲で`-view` / `view` | どちらも登録日の遅い順 |
+| YouTube以外の並び替え | `id` / `-id` | 曲の検索（`order_by_sort`）と同じ順序 |
+| 模倣曲の数・模倣元の数 | 模倣元と模倣曲で`-imitated_count` / `-imitate_count` | 模倣元→模倣曲 / 模倣曲→模倣元 |
+| ランダム | `random` | 全曲が含まれる |
 
 ---
 
@@ -2363,6 +2393,7 @@ subekashi/tests/
 ├── test_lib_query_utils.py         # 実装済み: クエリユーティリティ
 ├── test_lib_author_helpers.py      # 実装済み: 作者ヘルパー
 ├── test_lib_song_search.py         # 実装済み: 検索機能
+├── test_lib_song_filterset.py      # 実装済み: 作者ページの並び替え
 ├── test_forms.py                   # 実装済み: フォームバリデーション
 ├── test_views.py                   # 実装済み: ビュー（GET・POST）
 ├── test_api.py                     # 実装済み: REST API

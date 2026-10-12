@@ -21,6 +21,17 @@
             {% endif %}
         </div>
     </div>
+    {% if songInsL|length >= 2 %}
+        <form method="get" id="author-sort" data-auto-submit>
+            <label for="author-sort-select"><i class="fas fa-sort-amount-down"></i><span class="icon-p-big">並び替え</span></label>
+            <select name="sort" id="author-sort-select">
+                {% for choice in SORT_CHOICES %}
+                    <option value="{{ choice.value }}" {% if sort == choice.value %}selected{% endif %}>{{ choice.label }}</option>
+                {% endfor %}
+            </select>
+            {% if is_youtube_sort %}<p id="author-sort-note"><i class="fab fa-youtube"></i>YouTubeの情報が無い曲は最後に表示されます</p>{% endif %}
+        </form>
+    {% endif %}
     {% for songIns in songInsL %}
         {% render_song_card songIns %}
     {% empty %}
