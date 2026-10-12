@@ -187,6 +187,26 @@ LONG_TERM_COOKIE_AGE = 365 * 24 * 60 * 60
 FORM_BUTTON_CHOICES = {"icon", "icon_text"}
 FORM_BUTTON_DEFAULT = "icon_text"
 
+# 曲の並び替えの選択肢（曲の検索画面・作者ページ、#606）
+# 曲の検索画面では、YouTube関連の並び替え(YOUTUBE_SORTS)はラベルにYouTubeのアイコンを付ける
+SORT_CHOICES = [
+    {'value': 'id', 'icon': 'fa fa-plus', 'label': '登録日/早い順'},
+    {'value': '-id', 'icon': 'fa fa-plus', 'label': '登録日/遅い順'},
+    {'value': 'post_time', 'icon': 'fas fa-file-signature', 'label': '更新日/早い順'},
+    {'value': '-post_time', 'icon': 'fas fa-file-signature', 'label': '更新日/遅い順'},
+    {'value': 'upload_time', 'icon': 'far fa-calendar-alt', 'label': '投稿日/早い順'},
+    {'value': '-upload_time', 'icon': 'far fa-calendar-alt', 'label': '投稿日/遅い順'},
+    {'value': 'view', 'icon': 'fas fa-play', 'label': '再生回数/少ない順'},
+    {'value': '-view', 'icon': 'fas fa-play', 'label': '再生回数/多い順'},
+    {'value': 'like', 'icon': 'far fa-thumbs-up', 'label': '高評価数/少ない順'},
+    {'value': '-like', 'icon': 'far fa-thumbs-up', 'label': '高評価数/多い順'},
+    {'value': 'imitate_count', 'icon': 'fas fa-sitemap imitate', 'label': '模倣元の数/少ない順'},
+    {'value': '-imitate_count', 'icon': 'fas fa-sitemap imitate', 'label': '模倣元の数/多い順'},
+    {'value': 'imitated_count', 'icon': 'fas fa-sitemap', 'label': '模倣曲の数/少ない順'},
+    {'value': '-imitated_count', 'icon': 'fas fa-sitemap', 'label': '模倣曲の数/多い順'},
+    {'value': 'random', 'icon': 'fas fa-random', 'label': 'ランダム'},
+]
+
 HISTORIES_PER_PAGE = 50
 
 # 編集の変更履歴（History.changes）の見出しの行

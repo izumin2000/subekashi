@@ -2,16 +2,14 @@ from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.cache import never_cache
-from subekashi.constants.constants import LONG_TERM_COOKIE_AGE
+from subekashi.constants.constants import LONG_TERM_COOKIE_AGE, SORT_CHOICES
 from subekashi.lib.kenreki_service import compute_kenreki_for_songs
 from subekashi.lib.query_utils import YOUTUBE_SORTS
 from subekashi.lib.song_filterset import order_by_sort_with_missing_last
 from subekashi.lib.stats_service import get_view_like_pairs
 from subekashi.models import Author, Song
-from subekashi.views.songs import SORT_CHOICES
 
 
-# 曲の並び替えの選択肢は曲の検索画面と同じ（#606）
 SORT_VALUES = {choice['value'] for choice in SORT_CHOICES}
 DEFAULT_SORT = '-id'
 SORT_COOKIE_NAME = 'author_sort'

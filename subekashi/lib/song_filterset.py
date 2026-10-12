@@ -47,8 +47,9 @@ def order_by_sort(queryset, sort):
     return queryset.order_by(DISTINCT_SORT_MAP.get(sort, sort))
 
 
-# YouTube関連の並び替えで、検索では除外される曲（SongFilter.qs）と同じ条件
-YOUTUBE_SORT_VALID_CONDITIONS = {
+# YouTubeの情報がある曲の条件
+# 曲の検索（SongFilter.qs）ではYouTube関連のフィルタ・並び替えで条件を満たさない曲を除外し、作者ページ（#606）では除外せず末尾に並べる
+YOUTUBE_DATA_CONDITIONS = {
     'upload_time': Q(upload_time__isnull=False),
     'view': Q(view__gte=1),
     'like': Q(like__gte=1),
@@ -57,7 +58,7 @@ YOUTUBE_SORT_VALID_CONDITIONS = {
 
 def order_by_sort_with_missing_last(queryset, sort):
     """検索では除外される曲も除外せず、末尾に並べて並び替える（作者ページ、#606）"""
-    condition = YOUTUBE_SORT_VALID_CONDITIONS.get(sort.lstrip('-'))
+    condition = YOUTUBE_DATA_CONDITIONS.get(sort.lstrip('-'))
     if condition is None:
         return order_by_sort(queryset, sort)
     is_missing = Case(When(condition, then=Value(0)), default=Value(1))
@@ -292,15 +293,15 @@ class SongFilter(django_filters.FilterSet):
 
         # upload_timeソートがある場合、upload_time が null の曲を除外
         if has_upload_time_sort(self.data):
-            queryset = queryset.filter(upload_time__isnull=False)
+            queryset = queryset.filter(YOUTUBE_DATA_CONDITIONS['upload_time'])
 
         # view関連のフィルタまたはソートがある場合、view >= 1 を適用
         if has_view_filter_or_sort(self.data):
-            queryset = queryset.filter(view__gte=1)
+            queryset = queryset.filter(YOUTUBE_DATA_CONDITIONS['view'])
 
         # like関連のフィルタまたはソートがある場合、like >= 1 を適用
         if has_like_filter_or_sort(self.data):
-            queryset = queryset.filter(like__gte=1)
+            queryset = queryset.filter(YOUTUBE_DATA_CONDITIONS['like'])
 
         # フィルタ使用時、またはrandom/authorソート時にdistinct()を適用
         # auto_youtube_applied の場合も links JOIN による重複が発生するため distinct が必要

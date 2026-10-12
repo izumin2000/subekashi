@@ -1417,7 +1417,7 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 
 **テストファイル**: `tests/test_lib_song_filterset.py`
 
-曲の検索ではYouTube関連の並び替えで情報が無い曲を除外する（`SongFilter.qs`）が、作者ページでは除外せず末尾に並べる。末尾に並べる条件は検索の除外条件（`upload_time`がNULL・`view`/`like`が1未満）に合わせる。
+曲の検索ではYouTube関連の並び替えで情報が無い曲を除外する（`SongFilter.qs`）が、作者ページでは除外せず末尾に並べる。末尾に並べる条件は検索の除外条件（`upload_time`がNULL・`view`/`like`が1未満）と同じ定数`YOUTUBE_DATA_CONDITIONS`を使い、片方だけが変わらないようにする。
 
 | テストケース | 入力 | 期待結果 |
 | --- | --- | --- |

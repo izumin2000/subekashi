@@ -1,27 +1,8 @@
 from django.shortcuts import render
 from django.views import View
-from subekashi.constants.constants import ALL_MEDIAS, LONG_TERM_COOKIE_AGE, FORM_BUTTON_CHOICES, FORM_BUTTON_DEFAULT
+from subekashi.constants.constants import ALL_MEDIAS, LONG_TERM_COOKIE_AGE, FORM_BUTTON_CHOICES, FORM_BUTTON_DEFAULT, SORT_CHOICES
 from subekashi.lib.query_utils import YOUTUBE_FILTERS, YOUTUBE_SORTS
 
-
-# 並び替えの選択肢（YouTube関連の並び替え(YOUTUBE_SORTS)はラベルにYouTubeのアイコンを付ける）
-SORT_CHOICES = [
-    {'value': 'id', 'icon': 'fa fa-plus', 'label': '登録日/早い順'},
-    {'value': '-id', 'icon': 'fa fa-plus', 'label': '登録日/遅い順'},
-    {'value': 'post_time', 'icon': 'fas fa-file-signature', 'label': '更新日/早い順'},
-    {'value': '-post_time', 'icon': 'fas fa-file-signature', 'label': '更新日/遅い順'},
-    {'value': 'upload_time', 'icon': 'far fa-calendar-alt', 'label': '投稿日/早い順'},
-    {'value': '-upload_time', 'icon': 'far fa-calendar-alt', 'label': '投稿日/遅い順'},
-    {'value': 'view', 'icon': 'fas fa-play', 'label': '再生回数/少ない順'},
-    {'value': '-view', 'icon': 'fas fa-play', 'label': '再生回数/多い順'},
-    {'value': 'like', 'icon': 'far fa-thumbs-up', 'label': '高評価数/少ない順'},
-    {'value': '-like', 'icon': 'far fa-thumbs-up', 'label': '高評価数/多い順'},
-    {'value': 'imitate_count', 'icon': 'fas fa-sitemap imitate', 'label': '模倣元の数/少ない順'},
-    {'value': '-imitate_count', 'icon': 'fas fa-sitemap imitate', 'label': '模倣元の数/多い順'},
-    {'value': 'imitated_count', 'icon': 'fas fa-sitemap', 'label': '模倣曲の数/少ない順'},
-    {'value': '-imitated_count', 'icon': 'fas fa-sitemap', 'label': '模倣曲の数/多い順'},
-    {'value': 'random', 'icon': 'fas fa-random', 'label': 'ランダム'},
-]
 
 # Cookieに保存するフォームの設定
 COOKIE_FORMS = {
