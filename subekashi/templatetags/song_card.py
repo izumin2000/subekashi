@@ -46,26 +46,41 @@ def get_view(song):
     
     return mark_safe(f'<i class="fas fa-play"></i>{view}')
 
+# 曲ページのタグと同じ順・同じアイコン
+def get_flag_icons(song):
+    flags = [
+        (song.is_questionable, "fas fa-question", "界隈曲?"),
+        (song.is_draft, "fas fa-user-edit", "下書き"),
+        (song.is_original, "fas fa-external-link-alt", "オリジナル模倣"),
+        (song.is_joke, "far fa-meh-rolling-eyes", "ネタ曲"),
+        (song.is_inst, "fas fa-comment-slash", "インスト曲"),
+        (not song.is_subeana and not song.is_questionable, "fas fa-fish", "非すべあな模倣曲"),
+        (song.is_deleted, "far fa-eye-slash", "非公開/削除済み"),
+        (song.is_special, "fas fa-magic", "スペシャルデザイン"),
+        (song.is_limited, "fas fa-low-vision", "限定公開"),
+    ]
+    return "".join(f'<i class="{icon}" title="{label}"></i>' for is_flag, icon, label in flags if is_flag)
+
+
 @register.simple_tag
 def get_url(song):
     active_links = song.links.all()
-    i_tags = ""
-    
-    # 非公開なら
-    if song.is_deleted:
-        i_tags += "<i class='far fa-eye-slash'></i>"
-    
-    # 未登録なら
-    elif not active_links.exists():
+    flag_tags = get_flag_icons(song)
+    link_tags = ""
+
+    # 非公開でなく、URLが未登録なら
+    if not song.is_deleted and not active_links.exists():
         edit_url = reverse('subekashi:song_edit', args=[song.id])
-        return mark_safe(f'<object><a href="{edit_url}">URL未登録</a></object>')
-    
+        link_tags = f'<a href="{edit_url}">URL未登録</a>'
+
     # URLを登録しているのなら
     for link in active_links:
         icon = get_all_media(link.url)["icon"]
-        i_tags += f'<a href="{link.url}" target="_blank">{icon}</a>'
-        
-    return mark_safe(f'<object>{i_tags}</object>')
+        link_tags += f'<a href="{link.url}" target="_blank">{icon}</a>'
+
+    # フラグとリンクの両方があれば縦線で区切る
+    separator = '<span class="song-card-separator"></span>' if flag_tags and link_tags else ""
+    return mark_safe(f'<object>{flag_tags}{separator}{link_tags}</object>')
         
 
 @register.simple_tag

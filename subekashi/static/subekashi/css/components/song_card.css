@@ -48,6 +48,15 @@
     padding-right: 0 !important;
 }
 
+.song-card-separator {
+    display: inline-block;
+    width: 1px;
+    height: 1em;
+    margin: 0 7px 0 2px;
+    background-color: #888;
+    vertical-align: middle;
+}
+
 .song-card-lyrics {
     text-align: right;
     max-width: 18vw;

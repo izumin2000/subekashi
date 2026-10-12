@@ -1803,6 +1803,23 @@ URL生成は`get_urls()`に分離しており、ファイル出力・`collectsta
 | 作者2人以上 | `song.authors` に2件以上 | 「合作」を表示 |
 | 作者名の特殊文字 | `name="<script>"` | HTMLエスケープされる |
 
+#### 15-2. `get_url(song)`（#1218）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| URL未登録 | フラグなし・`song.links` が空 | 「URL未登録」と曲の編集ページへのリンクを表示し、フラグのアイコンは出ない |
+| URLあり | `song.links` にYouTubeのURL | URLへのリンクとYouTubeのアイコンを表示し、「URL未登録」は出ない |
+| 各フラグのアイコン | `is_questionable`・`is_draft`・`is_original`・`is_joke`・`is_inst`・`is_deleted`・`is_special`・`is_limited` のいずれかが `True`、または `is_subeana=False` | 曲ページのタグと同じアイコンと、`title` にタグ名が出る |
+| フラグなし | すべてのフラグが既定値・URLあり | フラグのアイコンは出ない |
+| 界隈曲?の非すべあな曲 | `is_questionable=True`・`is_subeana=False` | 界隈曲?のアイコンだけが出て、非すべあな模倣曲のアイコンは出ない |
+| アイコンの順番 | `is_draft=True`・`is_limited=True`・URLあり | 曲ページのタグと同じ順で並び、フラグのアイコンはURLのアイコンより前に出る |
+| 非公開でURL未登録 | `is_deleted=True`・`song.links` が空 | 非公開のアイコンを表示し、「URL未登録」は出ない |
+| フラグありでURL未登録 | `is_draft=True`・`song.links` が空 | 下書きのアイコンの後に「URL未登録」を表示する |
+| フラグとURLの間の縦線 | `is_draft=True`・URLあり | フラグのアイコンとURLのアイコンの間に縦線（`song-card-separator`）が1つ入る |
+| フラグとURL未登録の間の縦線 | `is_draft=True`・`song.links` が空 | 「URL未登録」の前に縦線が入る |
+| フラグなしは縦線なし | フラグなし・URLあり | 縦線は入らない |
+| リンクなしは縦線なし | `is_deleted=True`・`song.links` が空 | 非公開のアイコンだけで、縦線は入らない |
+
 ---
 
 ### 16. `lib/author_alias_service.py` — 別名Discord通知・名義の統一サービス（#992、#1137）
