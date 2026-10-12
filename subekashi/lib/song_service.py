@@ -1,8 +1,30 @@
+import re
+import string
 from django.utils import timezone
 from django.db import transaction
 from config.settings import ROOT_URL
 from subekashi.models import Song, SongLink, SongFields
+from subekashi.lib.author_helpers import get_same_person_author_ids
 from subekashi.lib.url import get_all_media
+
+
+# short版のタイトルに付く「short」の部分（#667）
+# shortを含む括弧（例：[short]・(Short Ver.)・【very short】）か、括弧がなければ区切り文字を含むshortの語（例：「 - short」「.short」）
+SHORT_TOKEN_REGEX = re.compile(
+    r"[\[(（【［{][^\[\]()（）【】［］{}]*?short[^\[\]()（）【】［］{}]*?[\])）】］}]|[\s.\-_/]*short",
+    re.IGNORECASE,
+)
+
+# full版のタイトルの末尾に付く「full」の部分（#667）
+# fullで始まる括弧（例：[full]・（Full）・(Full ver.)）か、英字の直後ではないfullの語（例：「死んだらしいfull」「　FULLスギ」）
+FULL_TOKEN_REGEX = re.compile(
+    r"\s*(?:[\[(（【［{]\s*full[^\[\]()（）【】［］{}]*[\])）】］}]|(?<![a-z])full\S*)\s*$",
+    re.IGNORECASE,
+)
+
+# full版・short版のタイトルの比較では、英字の大文字小文字のみ区別しない（#667）
+# 「Λ」と「λ」のように記号として使われる文字は別のタイトルとして扱う
+ASCII_LOWERCASE_TABLE = str.maketrans(string.ascii_uppercase, string.ascii_lowercase)
 
 
 def check_reject_list(authors):
@@ -135,6 +157,60 @@ def get_song_links_with_media(song):
             "name": media["name"],
         })
     return links
+
+
+def get_short_base_title(title):
+    """short版のタイトルから「short」の部分以降を除いたタイトルを返す。short版でなければNone（#667）
+
+    例：「微細構造[short] (旧:▇)」→「微細構造」、「NNN - short ver.」→「NNN」
+    """
+    match = SHORT_TOKEN_REGEX.search(title)
+    if match is None:
+        return None
+    return title[:match.start()].strip()
+
+
+def get_full_base_title(title):
+    """タイトルの末尾の「full」の部分を除いたタイトルを返す（#667）
+
+    例：「relix[full]」→「relix」、「チェーン（Full）」→「チェーン」
+    """
+    return FULL_TOKEN_REGEX.sub("", title).strip()
+
+
+def get_short_and_full_songs(song):
+    """名義が一致し、タイトルからshort版・full版の関係にあると判断できる曲を返す（#667）
+
+    songがshort版ならfull版の候補を、そうでなければshort版の候補を全て返す。
+    タイトルは英字の大文字小文字を区別せずに比較する。全角・半角や英字以外の大文字小文字は、
+    記号だけのタイトルを取り違えないよう（例：「﹣[short]」と「-」、「Λ [short]」と「λ」）区別する。
+    名義は、別名（AuthorAlias）で直接つながっている名義も一致しているとみなす。
+
+    Returns:
+        tuple[list[Song], list[Song]]: (full版の曲のリスト, short版の曲のリスト)
+    """
+    short_base_title = get_short_base_title(song.title)
+    base_title = short_base_title if short_base_title is not None else get_full_base_title(song.title)
+    if not base_title:
+        return [], []
+
+    author_ids = get_same_person_author_ids(song.authors.all())
+    candidates = Song.objects.filter(authors__in=author_ids).exclude(id=song.id).distinct().order_by("id").only("id", "title")
+    base_title = base_title.translate(ASCII_LOWERCASE_TABLE)
+
+    if short_base_title is not None:
+        full_songs = [
+            candidate for candidate in candidates
+            if get_short_base_title(candidate.title) is None
+            and get_full_base_title(candidate.title).translate(ASCII_LOWERCASE_TABLE) == base_title
+        ]
+        return full_songs, []
+
+    short_songs = [
+        candidate for candidate in candidates.filter(title__icontains="short")
+        if (get_short_base_title(candidate.title) or "").translate(ASCII_LOWERCASE_TABLE) == base_title
+    ]
+    return [], short_songs
 
 
 def build_new_song_discord_text(song_id, fields: SongFields, authors, cleaned_url, editor):

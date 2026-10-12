@@ -160,6 +160,51 @@
 | 複数フィールドの変更 | 複数の差分 | 全変更が `changes` に含まれ、`edit_title` に反映 |
 | `is_questionable` の変更 | before/after で `is_questionable` が異なる | `changed_labels` に「界隈曲?」が含まれる |
 
+#### 2-8. `get_short_base_title(title)`（#667）
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 角括弧の short | `"鏡[short]"`、`"鏡 [short]"` | `"鏡"`（直前の空白も除く） |
+| 大文字を含む short | `"痕跡[Short]"`、`"濛（SHORT）"` | `"痕跡"`、`"濛"`（大文字小文字を区別しない） |
+| short 以外の語を含む括弧 | `"00C(Short Ver.)"`、`"夜雨[very short]"`、`"無常【short】"` | 括弧ごと除いたタイトル |
+| short の後ろに注記がある | `"微細構造[short] (旧:▇)"`、`"#40 [short] [Demo]"` | `"微細構造"`、`"#40"`（short の部分以降を除く） |
+| 括弧のない short | `"NNN - short ver."`、`"死んだらしいshort"`、`"炭酸 short. (off vocal)"` | `"NNN"`、`"死んだらしい"`、`"炭酸"` |
+| short が2か所にある | `"目 short.(旧:👁 short.)"` | `"目"`（最初の short で切る） |
+| タイトルが short だけ | `"short"`、`"[short]"` | `""` |
+| short 版でない | `"鏡"`、`"relix[full]"` | `None` |
+
+#### 2-9. `get_full_base_title(title)`（#667）
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 末尾の full の括弧 | `"relix[full]"`、`"ʓ [Full]"`、`"チェーン（Full）"`、`"///[FULL]"`、`"曲 (Full ver.)"` | 括弧ごと除いたタイトル |
+| 末尾の full の語 | `"死んだらしいfull"`、`"淫夢グミ　FULLスギ"` | `"死んだらしい"`、`"淫夢グミ"` |
+| 英単語の一部の full | `"Beautiful"` | そのまま |
+| 末尾でない full | `"Full Moon"` | そのまま |
+| full を含まない | `" 鏡 "` | 前後の空白を除いた `"鏡"` |
+
+#### 2-10. `get_short_and_full_songs(song)`（#667）
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| short 版の曲 | 同じ名義の `"鏡"` と `"鏡[short]"` | `"鏡[short]"` に対して `([鏡], [])` |
+| full 版の曲 | 同じ名義の `"鏡"` と `"鏡[short]"` | `"鏡"` に対して `([], [鏡[short]])` |
+| full 版の候補が複数 | 同じ名義の `"≡"` が2曲 | 2曲とも返す |
+| short 版の候補が複数 | `"鏡[short]"` と `"鏡(very short)"` | 2曲とも返す |
+| 名義が違う | 別の名義の `"鏡"` | リンクしない |
+| 別名でつながっている名義 | `alias_type="another"` で直接つながっている名義の `"鏡"` | 双方向にリンクする |
+| グループの別名 | `alias_type="group"` でつながっている名義の `"鏡"` | リンクしない |
+| 作者のうち1人が一致 | short 版の作者が2人で、うち1人が full 版の作者 | リンクする |
+| full 版に full が付いている | `"relix[full]"` と `"relix[short]"` | 双方向にリンクする |
+| 英字の大文字小文字の違い | `"00c"` と `"00C(Short Ver.)"` | 双方向にリンクする |
+| 英字以外の大文字小文字の違い | `"λ"`・`"Λ"` と `"Λ [short]"` | `"Λ"` のみ返す |
+| 全角・半角の違い | `"-"` と `"﹣[short]"` | リンクしない |
+| 記号の数が違う | `"⬚"` と `"⬚⬚[short]"` | リンクしない |
+| short 版どうし | `"鏡[very short]"` と `"鏡[short]"` | リンクしない |
+| タイトルが short だけ | `""` と `"short"` | リンクしない |
+| 関係する曲がない | `"鏡"` のみ | `([], [])` |
+| 作者がいない | 作者が未設定の `"鏡"` と `"鏡[short]"` | `([], [])` |
+
 ---
 
 ### 3. `lib/query_filters.py` — クエリフィルター
@@ -390,6 +435,19 @@ A -`past`-> B -`spell`-> C -`abbr`-> D とつながり、DとEは`another`での
 | `Author.name`のmax_length超過 | `len(name) == max_length + 1` | エラーメッセージ文字列を返す（MySQL移行時のData too long for column対策） |
 | 空文字列はスキップ | `["", "作者A", ""]` | `None` を返す |
 
+#### 5-2. `get_same_person_author_ids(authors)`（#667）
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 別名がない | 作者A | 作者Aのidのみ |
+| 作者が空 | `[]` | 空の集合 |
+| 正方向の別名 | 作者Aが別名「作者B」（`another`）を持つ | 作者A・作者Bのid |
+| 逆方向の別名 | 作者Bが別名「作者A」（`past`）を持つ | 作者A・作者Bのid |
+| グループの別名 | `alias_type="group"` でつながっている | 作者Aのidのみ |
+| 別名に対応する作者がいない | 別名「存在しない作者」 | 作者Aのidのみ |
+| 別名の別名 | 作者A→作者B→作者C | 作者Cは含まない（直接つながっている作者のみ） |
+| 複数の作者 | 作者A・作者B | 両方のid |
+
 ---
 
 ### 6. `forms.py` — フォームバリデーション
@@ -576,6 +634,10 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | デフォルトの曲 | `is_questionable=False`, `is_limited=False` | レスポンスに `<meta name="robots">` が含まれない |
 | is_questionable=True の曲 | `is_questionable=True` の曲 | レスポンスに `<meta name="robots" content="noindex, nofollow">` が含まれる |
 | is_limited=True の曲 | `is_limited=True` の曲 | レスポンスに `<meta name="robots" content="noindex, nofollow">` が含まれる |
+| full 版の曲（#667） | 同じ名義の short 版が2曲ある | song-info に「short版」の行が2つあり、それぞれの曲へのリンクが表示される。「full版」の行は表示されない |
+| short 版の曲（#667） | 同じ名義の full 版がある | song-info に「full版」の行があり、full 版の曲へのリンクが表示される |
+| short 版・full 版がない曲（#667） | 関係する曲がない | 「full版」「short版」の行が表示されない |
+| タイトルのエスケープ（#667） | full 版のタイトルが `<b>曲</b>` | リンクのタイトルがエスケープされて表示される |
 
 #### 7-4. `SongNewView` (`/songs/new/`)
 

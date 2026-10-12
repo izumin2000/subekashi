@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.views import View
 from subekashi.models import Song
-from subekashi.lib.song_service import get_song_links_with_media
+from subekashi.lib.song_service import get_song_links_with_media, get_short_and_full_songs
 import re
 
 
@@ -28,6 +28,9 @@ class SongView(View):
 
         # 模倣songリストを取得
         imitated_list = song.imitateds.all()
+
+        # タイトルと名義から判断したfull版・short版のリストを取得
+        full_songs, short_songs = get_short_and_full_songs(song)
 
         # 模倣元曲数と模倣曲数の数をdescriptionに記述
         description = ""
@@ -59,6 +62,8 @@ class SongView(View):
             "links": links,
             "imitate_list": imitate_list,
             "imitated_list": imitated_list,
+            "full_songs": full_songs,
+            "short_songs": short_songs,
             "has_tag": has_tag,
             "is_questionable": song.is_questionable,
         }

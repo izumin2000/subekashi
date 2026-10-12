@@ -1,12 +1,12 @@
 """
 lib/song_service.py のテスト
 
-曲作成・更新・削除申請・Discord テキスト生成のサービス関数を検証する。
+曲作成・更新・削除申請・Discord テキスト生成・short版/full版の判定のサービス関数を検証する。
 """
 from unittest.mock import patch
 from django.test import TestCase
 from django.utils import timezone
-from subekashi.models import Author, Song, SongLink, SongFields
+from subekashi.models import Author, AuthorAlias, Song, SongLink, SongFields
 from subekashi.lib.song_service import (
     check_reject_list,
     validate_song_url,
@@ -19,6 +19,9 @@ from subekashi.lib.song_service import (
     build_new_song_discord_text,
     build_edit_song_discord_text,
     yes_no,
+    get_short_base_title,
+    get_full_base_title,
+    get_short_and_full_songs,
 )
 
 
@@ -422,3 +425,174 @@ class BuildEditSongDiscordTextTest(TestCase):
             self.song.id, self.song, fields, [self.author], "", []
         )
         self.assertIn("界隈曲?", changed_labels)
+
+
+class GetShortBaseTitleTest(TestCase):
+    """get_short_base_title() のテスト（#667）"""
+
+    def test_square_bracket(self):
+        self.assertEqual(get_short_base_title("鏡[short]"), "鏡")
+
+    def test_space_before_bracket_is_removed(self):
+        self.assertEqual(get_short_base_title("鏡 [short]"), "鏡")
+
+    def test_capitalized_short(self):
+        self.assertEqual(get_short_base_title("痕跡[Short]"), "痕跡")
+
+    def test_upper_case_short(self):
+        self.assertEqual(get_short_base_title("濛（SHORT）"), "濛")
+
+    def test_bracket_with_other_words(self):
+        self.assertEqual(get_short_base_title("00C(Short Ver.)"), "00C")
+        self.assertEqual(get_short_base_title("夜雨[very short]"), "夜雨")
+        self.assertEqual(get_short_base_title("無常【short】"), "無常")
+
+    def test_text_after_short_is_removed(self):
+        self.assertEqual(get_short_base_title("微細構造[short] (旧:▇)"), "微細構造")
+        self.assertEqual(get_short_base_title("#40 [short] [Demo]"), "#40")
+
+    def test_without_bracket(self):
+        self.assertEqual(get_short_base_title("NNN - short ver."), "NNN")
+        self.assertEqual(get_short_base_title("死んだらしいshort"), "死んだらしい")
+        self.assertEqual(get_short_base_title("炭酸 short. (off vocal)"), "炭酸")
+
+    def test_first_short_is_used(self):
+        self.assertEqual(get_short_base_title("目 short.(旧:👁 short.)"), "目")
+
+    def test_title_of_only_short_returns_empty_string(self):
+        self.assertEqual(get_short_base_title("short"), "")
+        self.assertEqual(get_short_base_title("[short]"), "")
+
+    def test_non_short_title_returns_none(self):
+        self.assertIsNone(get_short_base_title("鏡"))
+        self.assertIsNone(get_short_base_title("relix[full]"))
+
+
+class GetFullBaseTitleTest(TestCase):
+    """get_full_base_title() のテスト（#667）"""
+
+    def test_bracket_full_is_removed(self):
+        self.assertEqual(get_full_base_title("relix[full]"), "relix")
+        self.assertEqual(get_full_base_title("ʓ [Full]"), "ʓ")
+        self.assertEqual(get_full_base_title("チェーン（Full）"), "チェーン")
+        self.assertEqual(get_full_base_title("///[FULL]"), "///")
+        self.assertEqual(get_full_base_title("曲 (Full ver.)"), "曲")
+
+    def test_full_word_at_end_is_removed(self):
+        self.assertEqual(get_full_base_title("死んだらしいfull"), "死んだらしい")
+        self.assertEqual(get_full_base_title("淫夢グミ　FULLスギ"), "淫夢グミ")
+
+    def test_full_in_english_word_is_kept(self):
+        self.assertEqual(get_full_base_title("Beautiful"), "Beautiful")
+
+    def test_full_not_at_end_is_kept(self):
+        self.assertEqual(get_full_base_title("Full Moon"), "Full Moon")
+
+    def test_title_without_full_is_unchanged(self):
+        self.assertEqual(get_full_base_title(" 鏡 "), "鏡")
+
+
+class GetShortAndFullSongsTest(TestCase):
+    """get_short_and_full_songs() のテスト（#667）"""
+
+    def setUp(self):
+        self.author = Author.objects.create(name="作者A")
+        self.other_author = Author.objects.create(name="作者B")
+
+    def create_song(self, title, author=None):
+        song = Song.objects.create(title=title)
+        song.authors.set([author or self.author])
+        return song
+
+    def test_short_song_returns_full_song(self):
+        full = self.create_song("鏡")
+        short = self.create_song("鏡[short]")
+        self.assertEqual(get_short_and_full_songs(short), ([full], []))
+
+    def test_full_song_returns_short_song(self):
+        full = self.create_song("鏡")
+        short = self.create_song("鏡[short]")
+        self.assertEqual(get_short_and_full_songs(full), ([], [short]))
+
+    def test_all_full_candidates_are_returned(self):
+        full1 = self.create_song("≡")
+        full2 = self.create_song("≡")
+        short = self.create_song("≡[short]")
+        self.assertEqual(get_short_and_full_songs(short), ([full1, full2], []))
+
+    def test_all_short_candidates_are_returned(self):
+        full = self.create_song("鏡")
+        short1 = self.create_song("鏡[short]")
+        short2 = self.create_song("鏡(very short)")
+        self.assertEqual(get_short_and_full_songs(full), ([], [short1, short2]))
+
+    def test_different_author_is_not_linked(self):
+        self.create_song("鏡", self.other_author)
+        short = self.create_song("鏡[short]")
+        self.assertEqual(get_short_and_full_songs(short), ([], []))
+
+    def test_author_linked_by_alias_is_linked(self):
+        AuthorAlias.objects.create(author=self.author, name="作者B", alias_type="another")
+        full = self.create_song("鏡", self.other_author)
+        short = self.create_song("鏡[short]")
+        self.assertEqual(get_short_and_full_songs(short), ([full], []))
+        self.assertEqual(get_short_and_full_songs(full), ([], [short]))
+
+    def test_author_linked_by_group_alias_is_not_linked(self):
+        AuthorAlias.objects.create(author=self.author, name="作者B", alias_type="group")
+        self.create_song("鏡", self.other_author)
+        short = self.create_song("鏡[short]")
+        self.assertEqual(get_short_and_full_songs(short), ([], []))
+
+    def test_one_of_multiple_authors_matches(self):
+        full = self.create_song("鏡")
+        short = self.create_song("鏡[short]")
+        short.authors.add(self.other_author)
+        self.assertEqual(get_short_and_full_songs(short), ([full], []))
+
+    def test_full_song_with_full_tag_is_linked(self):
+        full = self.create_song("relix[full]")
+        short = self.create_song("relix[short]")
+        self.assertEqual(get_short_and_full_songs(short), ([full], []))
+        self.assertEqual(get_short_and_full_songs(full), ([], [short]))
+
+    def test_ascii_case_is_ignored(self):
+        full = self.create_song("00c")
+        short = self.create_song("00C(Short Ver.)")
+        self.assertEqual(get_short_and_full_songs(short), ([full], []))
+        self.assertEqual(get_short_and_full_songs(full), ([], [short]))
+
+    def test_non_ascii_case_is_not_ignored(self):
+        self.create_song("λ")
+        full = self.create_song("Λ")
+        short = self.create_song("Λ [short]")
+        self.assertEqual(get_short_and_full_songs(short), ([full], []))
+
+    def test_full_width_and_half_width_are_distinguished(self):
+        self.create_song("-")
+        short = self.create_song("﹣[short]")
+        self.assertEqual(get_short_and_full_songs(short), ([], []))
+
+    def test_symbol_count_must_match(self):
+        self.create_song("⬚")
+        short = self.create_song("⬚⬚[short]")
+        self.assertEqual(get_short_and_full_songs(short), ([], []))
+
+    def test_short_songs_are_not_linked_to_each_other(self):
+        self.create_song("鏡[very short]")
+        short = self.create_song("鏡[short]")
+        self.assertEqual(get_short_and_full_songs(short), ([], []))
+
+    def test_title_of_only_short_is_not_linked(self):
+        self.create_song("")
+        short = self.create_song("short")
+        self.assertEqual(get_short_and_full_songs(short), ([], []))
+
+    def test_song_without_related_songs_returns_empty_lists(self):
+        song = self.create_song("鏡")
+        self.assertEqual(get_short_and_full_songs(song), ([], []))
+
+    def test_song_without_authors_returns_empty_lists(self):
+        Song.objects.create(title="鏡")
+        short = Song.objects.create(title="鏡[short]")
+        self.assertEqual(get_short_and_full_songs(short), ([], []))
