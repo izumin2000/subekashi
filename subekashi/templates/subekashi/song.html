@@ -60,6 +60,26 @@
                 </td>
             </tr>
         {% endfor %}
+        {% for full_song in full_songs %}
+            <tr>
+                <td>
+                    <i class="fas fa-expand-alt"></i><p class="icon-p">full版</p>
+                </td>
+                <td class="sansfont">
+                    <a href="{% url 'subekashi:song' full_song.id %}">{{ full_song.title }}</a>
+                </td>
+            </tr>
+        {% endfor %}
+        {% for short_song in short_songs %}
+            <tr>
+                <td>
+                    <i class="fas fa-compress-alt"></i><p class="icon-p">short版</p>
+                </td>
+                <td class="sansfont">
+                    <a href="{% url 'subekashi:song' short_song.id %}">{{ short_song.title }}</a>
+                </td>
+            </tr>
+        {% endfor %}
         {% if has_tag %}
             <tr id="tags">
                 <td>

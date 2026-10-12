@@ -820,6 +820,68 @@ class SongViewTest(TestCase):
         response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
         self.assertContains(response, '<meta name="robots" content="noindex, nofollow">')
 
+    def create_short_and_full_songs(self):
+        author = Author.objects.create(name="short作者")
+        self.song.authors.set([author])
+        short1 = Song.objects.create(title="詳細テスト曲[short]")
+        short2 = Song.objects.create(title="詳細テスト曲 (Short Ver.)")
+        short1.authors.set([author])
+        short2.authors.set([author])
+        return short1, short2
+
+    def test_full_song_shows_all_short_songs_in_song_info(self):
+        """#667: full版の曲には、short版の曲へのリンクが全てsong-infoに表示されること"""
+        short1, short2 = self.create_short_and_full_songs()
+        response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
+        self.assertEqual(response.context["short_songs"], [short1, short2])
+        self.assertEqual(response.context["full_songs"], [])
+        content = response.content.decode()
+        start = content.index('<table id="song-info">')
+        song_info = content[start:content.index("</table>", start)]
+        self.assertIn("short版", song_info)
+        self.assertNotIn("full版", song_info)
+        self.assertIn(f'<a href="{reverse("subekashi:song", args=[short1.id])}">詳細テスト曲[short]</a>', song_info)
+        self.assertIn(f'<a href="{reverse("subekashi:song", args=[short2.id])}">詳細テスト曲 (Short Ver.)</a>', song_info)
+
+    def test_short_song_shows_full_song_in_song_info(self):
+        """#667: short版の曲には、full版の曲へのリンクがsong-infoに表示されること"""
+        short1, _ = self.create_short_and_full_songs()
+        response = self.client.get(reverse("subekashi:song", args=[short1.id]))
+        self.assertEqual(response.context["full_songs"], [self.song])
+        self.assertEqual(response.context["short_songs"], [])
+        content = response.content.decode()
+        start = content.index('<table id="song-info">')
+        song_info = content[start:content.index("</table>", start)]
+        self.assertIn("full版", song_info)
+        self.assertIn(f'<a href="{reverse("subekashi:song", args=[self.song.id])}">詳細テスト曲</a>', song_info)
+
+    def test_song_by_aliased_author_is_shown_in_song_info(self):
+        """#667: 別名でつながっている名義のfull版・short版も双方向に表示されること"""
+        author = Author.objects.create(name="short作者")
+        sub_author = Author.objects.create(name="short作者の別名義")
+        AuthorAlias.objects.create(author=author, name="short作者の別名義", alias_type="another")
+        self.song.authors.set([author])
+        short = Song.objects.create(title="詳細テスト曲[short]")
+        short.authors.set([sub_author])
+        self.assertEqual(self.client.get(reverse("subekashi:song", args=[short.id])).context["full_songs"], [self.song])
+        self.assertEqual(self.client.get(reverse("subekashi:song", args=[self.song.id])).context["short_songs"], [short])
+
+    def test_short_and_full_rows_not_shown_without_related_songs(self):
+        response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
+        self.assertNotContains(response, "full版")
+        self.assertNotContains(response, "short版")
+
+    def test_related_song_title_is_escaped(self):
+        """#667: full版・short版の曲のタイトルはエスケープして表示すること"""
+        author = Author.objects.create(name="short作者")
+        full = Song.objects.create(title="<b>曲</b>")
+        short = Song.objects.create(title="<b>曲</b>[short]")
+        full.authors.set([author])
+        short.authors.set([author])
+        response = self.client.get(reverse("subekashi:song", args=[short.id]))
+        self.assertContains(response, "&lt;b&gt;曲&lt;/b&gt;</a>")
+        self.assertNotContains(response, "<b>曲</b></a>")
+
 
 @override_settings(STORAGES=STATIC_STORAGE)
 class SongNewViewTest(TestCase):

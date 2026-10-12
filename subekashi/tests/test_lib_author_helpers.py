@@ -1,14 +1,14 @@
 """
 lib/author_helpers.py のテスト
 
-get_or_create_authors() の動作を検証する。
+get_or_create_authors()・validate_author_name_lengths()・get_same_person_author_ids() の動作を検証する。
 test_author_migration.py の AuthorHelpersTest と重複する部分があるが、
 こちらはエッジケースをより詳細にカバーする。
 """
 from unittest.mock import MagicMock, patch
 from django.test import TestCase
 from subekashi.models import Author, AuthorAlias
-from subekashi.lib.author_helpers import get_or_create_authors, validate_author_name_lengths
+from subekashi.lib.author_helpers import get_or_create_authors, get_same_person_author_ids, validate_author_name_lengths
 from subekashi.lib.song_service import check_reject_list
 
 
@@ -144,3 +144,44 @@ class ValidateAuthorNameLengthsTest(TestCase):
 
     def test_empty_strings_are_skipped(self):
         self.assertIsNone(validate_author_name_lengths(["", "作者A", ""]))
+
+
+class GetSamePersonAuthorIdsTest(TestCase):
+    """get_same_person_author_ids() のテスト（#667）"""
+
+    def setUp(self):
+        self.author = Author.objects.create(name="作者A")
+        self.other = Author.objects.create(name="作者B")
+
+    def test_returns_own_ids_without_aliases(self):
+        self.assertEqual(get_same_person_author_ids([self.author]), {self.author.id})
+
+    def test_empty_authors_returns_empty_set(self):
+        self.assertEqual(get_same_person_author_ids([]), set())
+
+    def test_forward_alias_includes_aliased_author(self):
+        AuthorAlias.objects.create(author=self.author, name="作者B", alias_type="another")
+        self.assertEqual(get_same_person_author_ids([self.author]), {self.author.id, self.other.id})
+
+    def test_reverse_alias_includes_alias_owner(self):
+        AuthorAlias.objects.create(author=self.other, name="作者A", alias_type="past")
+        self.assertEqual(get_same_person_author_ids([self.author]), {self.author.id, self.other.id})
+
+    def test_group_alias_is_excluded(self):
+        AuthorAlias.objects.create(author=self.author, name="作者B", alias_type="group")
+        AuthorAlias.objects.create(author=self.other, name="作者A", alias_type="group")
+        self.assertEqual(get_same_person_author_ids([self.author]), {self.author.id})
+
+    def test_alias_without_author_is_ignored(self):
+        AuthorAlias.objects.create(author=self.author, name="存在しない作者", alias_type="another")
+        self.assertEqual(get_same_person_author_ids([self.author]), {self.author.id})
+
+    def test_alias_of_alias_is_not_followed(self):
+        third = Author.objects.create(name="作者C")
+        AuthorAlias.objects.create(author=self.author, name="作者B", alias_type="another")
+        AuthorAlias.objects.create(author=self.other, name="作者C", alias_type="another")
+        result = get_same_person_author_ids([self.author])
+        self.assertNotIn(third.id, result)
+
+    def test_multiple_authors(self):
+        self.assertEqual(get_same_person_author_ids([self.author, self.other]), {self.author.id, self.other.id})

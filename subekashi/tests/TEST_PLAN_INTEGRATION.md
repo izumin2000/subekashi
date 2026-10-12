@@ -740,6 +740,32 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 
 ---
 
+### 19. 曲ページのfull版・short版のリンクフロー（#667）
+
+**テストファイル**: `tests/test_views.py`（`SongViewTest`）、`tests/test_lib_song_service.py`（`GetShortAndFullSongsTest`）、`tests/test_lib_author_helpers.py`（`GetSamePersonAuthorIdsTest`）
+
+#### 19-1. 別名でつながっている名義の曲が曲ページに表示される
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `Song(title="曲", author=foo)`・`Song(title="曲[short]", author=foo_sub)` が存在し、`foo`に別名`foo_sub`(`alias_type="another"`)を登録 |
+| 操作1 | `GET /songs/<曲[short]のid>/` |
+| 検証1 | song-infoの「full版」の行に`曲`へのリンクが表示される |
+| 操作2 | `GET /songs/<曲のid>/` |
+| 検証2 | song-infoの「short版」の行に`曲[short]`へのリンクが表示される |
+| 操作3 | 別名の`alias_type`を`group`にして操作1・2 |
+| 検証3 | 「full版」「short版」の行が表示されない |
+
+#### 19-2. 曲ページの表示（Playwrightで確認）
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作 | full版の候補が複数ある曲・short版の曲・full版の曲の曲ページを開く |
+| 検証 | song-infoに「full版」「short版」の行が候補の数だけ表示され、アイコンが表示される。リンクから相手の曲ページに遷移できる |
+| 共通 | コンソールにCSP違反・JSのエラーが出ない |
+
+---
+
 ## テスト実装の方針
 
 ### ディレクトリ構成（案）
