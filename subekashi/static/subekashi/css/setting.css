@@ -7,3 +7,15 @@ h2 {
 .warning {
     margin: -20px 0 20px 0;
 }
+
+/* セレクトボックスと同じく、項目名の右の幅いっぱいに広げる */
+.form-col .action-button {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.setting-note {
+    margin: -10px 0 20px 0;
+    font-size: 16px;
+    text-align: center;
+}

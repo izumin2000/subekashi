@@ -3988,6 +3988,13 @@ class SettingViewTest(TestCase):
         self.assertContains(response, '<label>検索の選択肢の保存<i class="fas fa-info-circle" data-tutorial="select"></i></label>')
         self.assertContains(response, 'data-tutorial="select"', count=1)
 
+    def test_google_preferred_source_link(self):
+        """Google検索のセクションに、当サイトをGoogleの優先するソースに追加するページへのリンクが新しいタブで開くように表示される（#1151）"""
+        response = self.client.get(reverse("subekashi:setting"))
+
+        self.assertContains(response, '<h2>Google検索</h2>')
+        self.assertContains(response, '<a href="https://www.google.com/preferences/source?q=lyrics.imicomweb.com" target="_blank" rel="noopener noreferrer" class="action-button black-action-button">')
+
 
 @override_settings(STORAGES=STATIC_STORAGE)
 class SaveSettingsViewTest(TestCase):
