@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Optional
 from django.db import models
 from django.utils import timezone
+from subekashi.constants.constants import SONG_FLAGS
 from .author import Author
 from .base import GetOrNoneMixin
 
@@ -84,6 +85,20 @@ class Song(GetOrNoneMixin, models.Model):
     def has_subekashi_author(self):
         """Songにid=1（すべあな）作者が紐づいているかを返す"""
         return self.authors.filter(id=1).exists()
+
+    def get_flags(self, is_lack=False):
+        """SONG_FLAGSのうち、この曲に当てはまるフラグを順に返す。未完成かどうかはクエリで求めるため引数で受け取る"""
+        values = {
+            "is_lack": is_lack,
+            # 界隈曲?の曲には付けない
+            "is_xx": not self.is_subeana and not self.is_questionable,
+        }
+        flags = []
+        for flag in SONG_FLAGS:
+            name = flag["name"]
+            if values[name] if name in values else getattr(self, name):
+                flags.append(flag)
+        return flags
 
 
 @dataclass
