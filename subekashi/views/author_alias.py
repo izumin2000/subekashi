@@ -17,6 +17,7 @@ from subekashi.lib.author_alias_service import (
     build_delete_alias_discord_text,
     build_unify_name_discord_text,
     build_unify_name_plan,
+    get_ununified_source_authors,
 )
 
 
@@ -90,15 +91,31 @@ class AuthorAliasesView(View):
                 "next_alias_author_id": next_alias_author_id,
             })
 
+        # 名義の統一先の選択肢（#1008、#1137）。候補は現在の名前 + alias_type="past"の別名のみで、
+        # ここでは現在の名前以外を渡す
+        unify_name_sources = list(
+            author.aliases.filter(alias_type="past").values_list("name", flat=True)
+        )
+        ununified_source_authors, ununified_song_count = (
+            get_ununified_source_authors(author) if unify_name_sources else ([], 0)
+        )
+
+        # この作者の名前を以前の名称として登録している作者（その後の名称）。この作者に
+        # 曲が残っていれば、まだその作者に名義が統一されていない（#1230）
+        unify_name_successor = next(
+            (ta.source.author for ta in transitive_aliases if ta.is_direct and ta.is_reverse and ta.alias_type == "past"),
+            None,
+        )
+
         context = {
             "metatitle": f"{author.name}の別名一覧",
             "author": author,
             "alias_rows": alias_rows,
-            # 名義の統一先の選択肢（#1008、#1137）。候補は現在の名前 + alias_type="past"の別名のみで、
-            # ここでは現在の名前以外を渡す
-            "unify_name_sources": list(
-                author.aliases.filter(alias_type="past").values_list("name", flat=True)
-            ),
+            "unify_name_sources": unify_name_sources,
+            "ununified_source_authors": ununified_source_authors,
+            "ununified_song_count": ununified_song_count,
+            "unify_name_successor": unify_name_successor,
+            "successor_ununified_song_count": author.songs.count() if unify_name_successor else 0,
         }
         return render(request, 'subekashi/author_aliases.html', context)
 

@@ -90,6 +90,12 @@
     width: auto;
 }
 
+/* 名義が統一されているかどうか（#1230）。候補の名義と同じく中央寄せで表示する */
+.unify-name-status {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
 /* 統一元の名義（上）と統一先の名義（下）の間に中央寄せで表示する */
 #unify-name-arrow {
     display: block;

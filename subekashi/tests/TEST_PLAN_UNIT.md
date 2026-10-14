@@ -765,8 +765,32 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
-| クエリ数の回帰防止 | Cの一覧を表示（A・Dはauthor_id解決済み、B・Eは未解決） | ビューの総クエリ数が想定通り（9件）に収まる |
+| クエリ数の回帰防止 | Cの一覧を表示（A・Dはauthor_id解決済み、B・Eは未解決） | ビューの総クエリ数が想定通り（11件。10件目は#1008の名義の統一先の候補一覧の取得、11件目は#1230の、Cの名前を以前の名称として登録しているAへ名義が統一されているかどうかの判定用のCの曲数の取得）に収まる |
 | 補完クエリの対象範囲 | 同上 | 補完クエリのIN句にB・Eの名前のみが含まれ、解決済みのA・Dの名前は含まれない |
+
+##### 名義が統一されているかどうかの表示（#1230）
+
+**テストクラス**: `AuthorAliasesUnifyNameStatusTest`
+
+「名義を統一する」の見出しの下に、名義が統一されているかどうかを表示する。統一するボタンを押さなくても（押して「既に名義は統一されています。」のトーストが出るかどうかで確かめなくても）分かるようにするため。
+
+- 統一先側（`#unify-name-status`）: authorがpast別名を持つ場合に、統一するフォームの上に表示する。判定は`get_ununified_source_authors()`（16-4-2）で、`AuthorUnifyNameSetView`で`unify_noop`になる条件と同じ
+- 統一元側（`#unify-name-successor-status`）: 他のauthorがこのauthorの名前をpast別名として登録している（別名一覧に「その後の名称」として表示される）場合に表示する。このauthorに曲が残っていれば、まだその作者に統一されていない。統一はその作者の別名一覧で行うため、統一するフォームは表示しない
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| past別名と同名のAuthorが無い | past別名のみ登録 | `#unify-name-status`に`fa-check-circle`と「名義は統一されています」 |
+| past別名と同名のAuthorが曲を持たない | 統一済みで曲数0のAuthorが残っている状態（#1137） | 「名義は統一されています」 |
+| past別名と同名のAuthorが曲を持つ | そのAuthorが2曲を持つ | `fa-exclamation-triangle`と「名義が統一されていません」、「2曲」、そのAuthorの作者ページへのリンク |
+| 複数のAuthorが曲を持つ | 1曲が2つのpast別名のAuthorの共著、3つ目のpast別名のAuthorは曲を持たない | 「1曲」（共著は1曲として数える）。曲を持つ2つのAuthorへのリンクを含み、曲を持たないAuthorへのリンクは含まない |
+| 統一するフォームと同じ順に並べる | 別名の登録順と、Authorのid順・名前順が逆になるようにする | 統一されていないAuthorが別名の登録順（統一するフォームの候補の順）に並ぶ |
+| past以外の別名と同名のAuthorは対象外 | `another`別名と同名のAuthorがSongを持つ | 「名義は統一されています」 |
+| 統一すると表示が変わる | 「統一されていません」の状態から、現在の名義のまま`AuthorUnifyNameSetView`へPOST | 「名義は統一されています」に変わる |
+| 統一に関係しないauthor | past別名を持たず、他のauthorのpast別名にもなっていない | 状態の表示も「名義を統一する」の見出し（`data-tutorial="unify-name"`）も表示しない |
+| 統一元側・曲が残っている | 他のauthorがこのauthorの名前をpast別名として登録し、このauthorが1曲を持つ | `#unify-name-successor-status`に「この作者の曲が1曲あり、名義が『<その作者>』に統一されていません」と、その作者の別名一覧へのリンク。「名義を統一する」の見出しは表示するが、統一するフォームと`#unify-name-status`は表示しない |
+| 統一元側・曲が無い | 同上で、このauthorが曲を持たない | 「名義は『<その作者>』に統一されています」と、その作者の作者ページへのリンク |
+| 統一元側・past以外は対象外 | 他のauthorがこのauthorの名前を`another`別名として登録 | `#unify-name-successor-status`は表示しない |
+| 統一元側・作者名のエスケープ | その作者の名前が`<b>その後の名義</b>` | エスケープされて表示される |
 
 #### 7-8-2. `AuthorAliasNewView` (`/authors/<id>/aliases/new`)（#992）
 
@@ -1854,7 +1878,7 @@ URL生成は`get_urls()`に分離しており、ファイル出力・`collectsta
 
 ---
 
-### 16. `lib/author_alias_service.py` — 別名Discord通知・名義の統一サービス（#992、#1137）
+### 16. `lib/author_alias_service.py` — 別名Discord通知・名義の統一サービス（#992、#1137、#1230）
 
 **テストファイル**: `tests/test_lib_author_alias_service.py`
 
@@ -1892,8 +1916,22 @@ URL生成は`get_urls()`に分離しており、ファイル出力・`collectsta
 | 同名のAuthorがないpast別名を選択 | `new_name=`past別名のname | `target_author`はauthor自身、`source_authors`は空、`renames_author=True` |
 | 同名のAuthorがあるpast別名を選択 | `new_name=`past別名のname、同名のAuthorが存在 | `target_author`はその既存Author、`source_authors`はauthor自身、`moves_to_existing_author=True` |
 | past以外の別名と同名のAuthorは対象外 | `another`別名と同名のAuthorが存在 | `source_authors`に含まれない |
+| `source_authors`の順（#1230） | 別名の登録順と、Authorのid順・名前順が逆になるようにする | 別名の登録順（別名一覧画面の統一するフォームの候補の順）に並ぶ |
 | `song_author_pairs()`・`affected_source_authors()` | past別名と同名のAuthorのうち、一方だけがSongを持つ | `song_author_pairs()`は`(song_id, author_id)`の一覧を返し、`affected_source_authors()`は曲を持つAuthorのみを返す |
 | 統一先が既存Authorの場合の`affected_source_authors()` | 統一先が既存Authorで、authorがSongを持たない | 別名・リンクを移すため、曲が無くてもauthor自身が含まれる |
+
+#### 16-4-2. `get_ununified_source_authors(author)`（#1230）
+
+以前の名称と同名で、まだ曲が残っている別のAuthorと、その曲数を`(Authorのリスト, 曲数)`で返す。現在の名義のまま統一した場合に曲を移すAuthorで、`build_unify_name_plan(author, author.name)`から算出するため、`AuthorUnifyNameSetView`で`unify_noop`になる条件と一致する。別名一覧画面の「名義を統一する」の状態の表示に使う。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| past別名と同名のAuthorが無い | past別名のみ登録 | `([], 0)`（統一済み） |
+| past別名と同名のAuthorが曲を持たない | 統一済みで曲数0のAuthorが残っている状態（#1137） | `([], 0)`（統一済み） |
+| past別名と同名のAuthorが曲を持つ | 2曲を持つAuthorと、曲を持たないAuthor | `([曲を持つAuthor], 2)`。曲を持たないAuthorは含まない |
+| 共著の曲は1曲として数える | 1曲が2つのpast別名のAuthorの共著 | 両方のAuthorを含み、曲数は1 |
+| author自身の曲は数えない | authorのみがSongを持つ | `([], 0)` |
+| past以外の別名と同名のAuthorは対象外 | `another`別名と同名のAuthorがSongを持つ | `([], 0)` |
 
 #### 16-5. `build_unify_name_discord_text(target_author, old_name, new_name, editor, source_authors=())`（#1137）
 

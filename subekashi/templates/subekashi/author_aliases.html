@@ -40,8 +40,22 @@
         <p id="alias-not-found">別名が見つかりませんでした</p>
     {% endfor %}
 
-    {% if unify_name_sources %}
+    {% if unify_name_sources or unify_name_successor %}
         <h1>名義を統一する<i class="fas fa-info-circle" data-tutorial="unify-name"></i></h1>
+    {% endif %}
+    {% if unify_name_successor %}
+        {% if successor_ununified_song_count %}
+            <p class="unify-name-status warning" id="unify-name-successor-status"><i class="fas fa-exclamation-triangle warning"></i>この作者の曲が{{ successor_ununified_song_count }}曲あり、名義が『{{ unify_name_successor.name }}』に統一されていません。『{{ unify_name_successor.name }}』の<a href="{% url 'subekashi:author_aliases' unify_name_successor.id %}">別名一覧</a>から統一できます</p>
+        {% else %}
+            <p class="unify-name-status ok" id="unify-name-successor-status"><i class="fas fa-check-circle ok"></i>名義は『<a href="{% url 'subekashi:author' unify_name_successor.id %}">{{ unify_name_successor.name }}</a>』に統一されています</p>
+        {% endif %}
+    {% endif %}
+    {% if unify_name_sources %}
+        {% if ununified_source_authors %}
+            <p class="unify-name-status warning" id="unify-name-status"><i class="fas fa-exclamation-triangle warning"></i>以前の名称{% for source_author in ununified_source_authors %}『<a href="{% url 'subekashi:author' source_author.id %}">{{ source_author.name }}</a>』{% if not forloop.last %}・{% endif %}{% endfor %}の曲が{{ ununified_song_count }}曲あり、名義が統一されていません</p>
+        {% else %}
+            <p class="unify-name-status ok" id="unify-name-status"><i class="fas fa-check-circle ok"></i>名義は統一されています</p>
+        {% endif %}
         <form method="GET" action="{% url 'subekashi:author_unify_name_confirm' author.id %}" id="unify-name-form">
             <div id="unify-name-sources">
                 {% for source in unify_name_sources %}

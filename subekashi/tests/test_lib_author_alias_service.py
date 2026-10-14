@@ -1,7 +1,7 @@
 """
 lib/author_alias_service.py のテスト
 
-別名のDiscord通知テキスト構築関数と、名義の統一（#1137）の変更内容の算出を検証する。
+別名のDiscord通知テキスト構築関数と、名義の統一（#1137）の変更内容・統一の状態（#1230）の算出を検証する。
 """
 from django.test import TestCase
 from subekashi.models import Author, AuthorAlias, Song
@@ -11,6 +11,7 @@ from subekashi.lib.author_alias_service import (
     build_delete_alias_discord_text,
     build_unify_name_discord_text,
     build_unify_name_plan,
+    get_ununified_source_authors,
 )
 
 
@@ -114,6 +115,16 @@ class BuildUnifyNamePlanTest(TestCase):
         plan = build_unify_name_plan(self.author, "現在の名義")
         self.assertEqual(plan.source_authors, [])
 
+    def test_source_authors_are_in_past_alias_order(self):
+        # 別名一覧画面の統一するフォームの候補と同じ順に並べる（#1230）。作者のid順・名前順の
+        # どちらとも異なる順になるよう、後に登録した別名ほど作者のidと名前が小さくなるようにする
+        AuthorAlias.objects.create(name="ん以前の名義", author=self.author, alias_type="past")
+        AuthorAlias.objects.create(name="あ以前の名義", author=self.author, alias_type="past")
+        first_author = Author.objects.create(name="あ以前の名義")
+        second_author = Author.objects.create(name="ん以前の名義")
+        plan = build_unify_name_plan(self.author, "現在の名義")
+        self.assertEqual(plan.source_authors, [second_author, first_author])
+
     def test_affected_source_authors_excludes_authors_without_songs(self):
         past_author = Author.objects.create(name="以前の名義")
         Author.objects.create(name="以前の名義2")
@@ -129,6 +140,51 @@ class BuildUnifyNamePlanTest(TestCase):
         Author.objects.create(name="以前の名義")
         plan = build_unify_name_plan(self.author, "以前の名義")
         self.assertEqual(plan.affected_source_authors(plan.song_author_pairs()), [self.author])
+
+
+class GetUnunifiedSourceAuthorsTest(TestCase):
+    """get_ununified_source_authors() のテスト（#1230）"""
+
+    def setUp(self):
+        self.author = Author.objects.create(name="現在の名義")
+        AuthorAlias.objects.create(name="以前の名義", author=self.author, alias_type="past")
+        AuthorAlias.objects.create(name="以前の名義2", author=self.author, alias_type="past")
+
+    def test_no_author_matching_past_alias_is_unified(self):
+        self.assertEqual(get_ununified_source_authors(self.author), ([], 0))
+
+    def test_author_matching_past_alias_without_songs_is_unified(self):
+        # 統一済みの作者は削除されず、曲数0で残る（#1137）
+        Author.objects.create(name="以前の名義")
+        self.assertEqual(get_ununified_source_authors(self.author), ([], 0))
+
+    def test_author_matching_past_alias_with_songs_is_not_unified(self):
+        past_author = Author.objects.create(name="以前の名義")
+        Author.objects.create(name="以前の名義2")
+        for title in ["以前の名義の曲1", "以前の名義の曲2"]:
+            Song.objects.create(title=title).authors.add(past_author)
+
+        self.assertEqual(get_ununified_source_authors(self.author), ([past_author], 2))
+
+    def test_song_co_authored_by_multiple_past_alias_authors_is_counted_once(self):
+        past_author = Author.objects.create(name="以前の名義")
+        past_author2 = Author.objects.create(name="以前の名義2")
+        Song.objects.create(title="共著の曲").authors.add(past_author, past_author2)
+
+        source_authors, song_count = get_ununified_source_authors(self.author)
+
+        self.assertCountEqual(source_authors, [past_author, past_author2])
+        self.assertEqual(song_count, 1)
+
+    def test_own_songs_are_not_counted(self):
+        Song.objects.create(title="現在の名義の曲").authors.add(self.author)
+        self.assertEqual(get_ununified_source_authors(self.author), ([], 0))
+
+    def test_authors_matching_non_past_aliases_are_not_counted(self):
+        # 別名義（another）等、past以外の種別は統一の対象外
+        AuthorAlias.objects.create(name="別名義", author=self.author, alias_type="another")
+        Song.objects.create(title="別名義の曲").authors.add(Author.objects.create(name="別名義"))
+        self.assertEqual(get_ununified_source_authors(self.author), ([], 0))
 
 
 class BuildUnifyNameDiscordTextTest(TestCase):

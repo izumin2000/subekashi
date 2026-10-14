@@ -84,7 +84,11 @@ class UnifyNamePlan:
 
 def build_unify_name_plan(author, new_name):
     past_names = list(author.aliases.filter(alias_type="past").values_list("name", flat=True))
-    other_authors = list(Author.objects.filter(name__in=past_names).exclude(pk=author.pk))
+    # 別名一覧画面の統一するフォームの候補と同じ、以前の名称の順に並べる（#1230）
+    other_authors = sorted(
+        Author.objects.filter(name__in=past_names).exclude(pk=author.pk),
+        key=lambda a: past_names.index(a.name),
+    )
     target_author = next((a for a in other_authors if a.name == new_name), author)
     source_authors = [a for a in [author] + other_authors if a.pk != target_author.pk]
     return UnifyNamePlan(
@@ -94,6 +98,17 @@ def build_unify_name_plan(author, new_name):
         target_author=target_author,
         source_authors=source_authors,
     )
+
+
+def get_ununified_source_authors(author):
+    """以前の名称と同名で、まだ曲が残っている別のAuthorと、その曲数を返す（#1230）
+
+    現在の名義のまま統一した場合に曲を移すAuthor。1件も無ければ名義は統一済みとみなす
+    （AuthorUnifyNameSetViewでunify_noopになる条件と同じ）。曲数は共著の重複を除いた数
+    """
+    plan = build_unify_name_plan(author, author.name)
+    song_author_pairs = plan.song_author_pairs()
+    return plan.affected_source_authors(song_author_pairs), len({song_id for song_id, _ in song_author_pairs})
 
 
 def build_unify_name_discord_text(target_author, old_name, new_name, editor, source_authors=()):
