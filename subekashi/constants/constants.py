@@ -209,6 +209,9 @@ SORT_CHOICES = [
 
 HISTORIES_PER_PAGE = 50
 
+# スマホ幅の曲カードに並べるフラグのアイコンの上限。超えるときは、残りを「+N」にまとめて、「+N」も含めてこの数に収める（#1229）
+SONG_CARD_SP_MAX_FLAG_ICONS = 2
+
 # 編集の変更履歴（History.changes）の見出しの行
 EDIT_CHANGES_HEADER = ["種類", "編集前", "編集後"]
 

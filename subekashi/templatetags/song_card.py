@@ -4,6 +4,7 @@ from django.utils.safestring import mark_safe
 from django.template.loader import render_to_string
 from subekashi.lib.url import get_all_media
 from subekashi.lib.discord import send_discord
+from subekashi.constants.constants import SONG_CARD_SP_MAX_FLAG_ICONS
 from config.settings import *
 
 
@@ -47,7 +48,7 @@ def get_view(song):
     return mark_safe(f'<i class="fas fa-play"></i>{view}')
 
 # 曲ページのタグと同じ順・同じアイコン
-def get_flag_icons(song):
+def get_flags(song):
     flags = [
         (song.is_questionable, "fas fa-question", "界隈曲?"),
         (song.is_draft, "fas fa-user-edit", "下書き"),
@@ -59,13 +60,54 @@ def get_flag_icons(song):
         (song.is_special, "fas fa-magic", "スペシャルデザイン"),
         (song.is_limited, "fas fa-low-vision", "限定公開"),
     ]
-    return "".join(f'<i class="{icon}" title="{label}"></i>' for is_flag, icon, label in flags if is_flag)
+    return [(icon, label) for is_flag, icon, label in flags if is_flag]
+
+
+# PC幅で歌詞の欄に「インスト曲」と表示される曲か（スマホ幅では歌詞の欄を隠す）
+def is_inst_in_lyrics(song):
+    return song.is_inst and not song.lyrics and not song.is_questionable
+
+
+# PC幅・スマホ幅の片方だけで表示するときのクラス
+def get_display_class(is_pc, is_sp):
+    if is_pc and not is_sp:
+        return " song-card-pc-only"
+    if is_sp and not is_pc:
+        return " song-card-sp-only"
+    return ""
+
+
+def get_flag_icons(song, has_link):
+    flags = get_flags(song)
+    if not flags:
+        return ""
+
+    # PC幅では、歌詞の欄の「インスト曲」と重なるため、インスト曲のアイコンを出さない
+    pc_flags = [(icon, label) for icon, label in flags if not (label == "インスト曲" and is_inst_in_lyrics(song))]
+    # スマホ幅では、アイコンが多いときは「+N」にまとめる
+    sp_flags = flags if len(flags) <= SONG_CARD_SP_MAX_FLAG_ICONS else flags[:SONG_CARD_SP_MAX_FLAG_ICONS - 1]
+
+    tags = ""
+    for icon, label in flags:
+        is_pc = (icon, label) in pc_flags
+        is_sp = (icon, label) in sp_flags
+        if is_pc or is_sp:
+            tags += f'<i class="{icon}{get_display_class(is_pc, is_sp)}" title="{label}"></i>'
+
+    folded_flags = flags[len(sp_flags):]
+    if folded_flags:
+        folded_labels = "・".join(label for icon, label in folded_flags)
+        tags += f'<span class="song-card-more-flags song-card-sp-only" title="{folded_labels}">+{len(folded_flags)}</span>'
+
+    # リンクとの間を縦線で区切る
+    if has_link:
+        tags += f'<span class="song-card-separator{get_display_class(bool(pc_flags), True)}"></span>'
+    return tags
 
 
 @register.simple_tag
 def get_url(song):
     active_links = song.links.all()
-    flag_tags = get_flag_icons(song)
     link_tags = ""
 
     # 非公開でなく、URLが未登録なら
@@ -78,9 +120,8 @@ def get_url(song):
         icon = get_all_media(link.url)["icon"]
         link_tags += f'<a href="{link.url}" target="_blank">{icon}</a>'
 
-    # フラグとリンクの両方があれば縦線で区切る
-    separator = '<span class="song-card-separator"></span>' if flag_tags and link_tags else ""
-    return mark_safe(f'<object>{flag_tags}{separator}{link_tags}</object>')
+    flag_tags = get_flag_icons(song, bool(link_tags))
+    return mark_safe(f'<object>{flag_tags}{link_tags}</object>')
         
 
 @register.simple_tag
