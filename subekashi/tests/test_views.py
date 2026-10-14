@@ -820,6 +820,62 @@ class SongViewTest(TestCase):
         response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
         self.assertContains(response, '<meta name="robots" content="noindex, nofollow">')
 
+    def _make_complete(self):
+        """未完成でない曲にする（URL・歌詞・模倣元がある）"""
+        link = SongLink.objects.create(url="https://youtu.be/abcdefghijk")
+        link.songs.add(self.song)
+        self.song.imitates.add(Song.objects.create(title="模倣元の曲"))
+
+    def _get_tags_html(self, **fields):
+        Song.objects.filter(pk=self.song.pk).update(**fields)
+        content = self.client.get(reverse("subekashi:song", args=[self.song.id])).content.decode()
+        if '<tr id="tags">' not in content:
+            return None
+        start = content.index('<tr id="tags">')
+        return content[start:content.index("</tr>", start)]
+
+    def test_tags_not_shown_without_flags(self):
+        """#1228: フラグがない曲はタグ欄を表示しないこと"""
+        self._make_complete()
+        self.assertIsNone(self._get_tags_html())
+
+    def test_tags_shown_with_only_special(self):
+        """#1228: スペシャルデザインのフラグだけの曲もタグ欄を表示すること"""
+        self._make_complete()
+        tags = self._get_tags_html(is_special=True)
+        self.assertIn('<p id="special-tag"><i class="fas fa-magic"></i><span class="icon-p-big">スペシャルデザイン</span></p>', tags)
+
+    def test_lack_tag_links_to_search(self):
+        """#1228: 未完成の曲は、未完成の曲の検索へのリンクをタグに表示すること"""
+        tags = self._get_tags_html()
+        self.assertIn(f'<a href="{reverse("subekashi:songs")}?is_lack=True"><i class="fas fa-tasks"></i><span class="icon-p-big">未完成</span></a>', tags)
+
+    def test_field_tag_links_to_search(self):
+        """#1228: フィールドのフラグは、検索へのリンクをタグに表示すること"""
+        self._make_complete()
+        tags = self._get_tags_html(is_draft=True, is_subeana=False)
+        self.assertIn(f'<a href="{reverse("subekashi:songs")}?is_draft=True"><i class="fas fa-user-edit"></i><span class="icon-p-big">下書き</span></a>', tags)
+        self.assertIn(f'<a href="{reverse("subekashi:songs")}?is_subeana=xx"><i class="fas fa-fish"></i><span class="icon-p-big">非すべあな模倣曲</span></a>', tags)
+
+    def test_tutorial_tags(self):
+        """#1228: 界隈曲?・限定公開のタグには説明のアイコンを付け、リンクにしないこと"""
+        tags = self._get_tags_html(is_questionable=True, is_limited=True)
+        self.assertIn('<p id="special-tag"><i class="fas fa-question"></i><span class="icon-p-big">界隈曲?</span><i class="fas fa-info-circle" data-tutorial="is_questionable"></i></p>', tags)
+        self.assertIn('<p id="special-tag"><i class="fas fa-low-vision"></i><span class="icon-p-big">限定公開</span><i class="fas fa-info-circle" data-tutorial="is_limited"></i></p>', tags)
+
+    def test_questionable_non_subeana_has_no_xx_tag(self):
+        """#1228: 界隈曲?の非すべあな曲には、非すべあな模倣曲のタグを表示しないこと"""
+        tags = self._get_tags_html(is_questionable=True, is_subeana=False)
+        self.assertIn("界隈曲?", tags)
+        self.assertNotIn("非すべあな模倣曲", tags)
+
+    def test_tags_order(self):
+        """#1228: タグは界隈曲?・未完成・下書き・限定公開の順に並ぶこと"""
+        tags = self._get_tags_html(is_questionable=True, is_draft=True, is_limited=True)
+        self.assertLess(tags.index("界隈曲?"), tags.index("未完成"))
+        self.assertLess(tags.index("未完成"), tags.index("下書き"))
+        self.assertLess(tags.index("下書き"), tags.index("限定公開"))
+
     def create_short_and_full_songs(self):
         author = Author.objects.create(name="short作者")
         self.song.authors.set([author])

@@ -634,6 +634,13 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | デフォルトの曲 | `is_questionable=False`, `is_limited=False` | レスポンスに `<meta name="robots">` が含まれない |
 | is_questionable=True の曲 | `is_questionable=True` の曲 | レスポンスに `<meta name="robots" content="noindex, nofollow">` が含まれる |
 | is_limited=True の曲 | `is_limited=True` の曲 | レスポンスに `<meta name="robots" content="noindex, nofollow">` が含まれる |
+| フラグがない曲のタグ欄（#1228） | 未完成でなく、フラグがすべて既定値 | タグ欄（`<tr id="tags">`）が表示されない |
+| スペシャルデザインだけの曲のタグ欄（#1228） | 未完成でなく、`is_special=True` だけ | タグ欄が表示され、スペシャルデザインのタグ（リンクなし）が出る |
+| 未完成のタグ（#1228） | URL未登録の曲 | `?is_lack=True` の検索へのリンクのタグが出る |
+| フィールドのフラグのタグ（#1228） | `is_draft=True`・`is_subeana=False` | `?is_draft=True`・`?is_subeana=xx` の検索へのリンクのタグが出る |
+| 説明付きのタグ（#1228） | `is_questionable=True`・`is_limited=True` | リンクではなく、`data-tutorial` の説明のアイコン付きのタグが出る |
+| 界隈曲?の非すべあな曲のタグ（#1228） | `is_questionable=True`・`is_subeana=False` | 界隈曲?のタグは出て、非すべあな模倣曲のタグは出ない |
+| タグの順番（#1228） | `is_questionable=True`・`is_draft=True`・`is_limited=True`・URL未登録 | 界隈曲?・未完成・下書き・限定公開の順に並ぶ |
 | full 版の曲（#667） | 同じ名義の short 版が2曲ある | song-info に「short版」の行が2つあり、それぞれの曲へのリンクが表示される。「full版」の行は表示されない |
 | short 版の曲（#667） | 同じ名義の full 版がある | song-info に「full版」の行があり、full 版の曲へのリンクが表示される |
 | short 版・full 版がない曲（#667） | 関係する曲がない | 「full版」「short版」の行が表示されない |
@@ -1446,6 +1453,18 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | `is_deleted=True` の曲 | 削除フラグを立てる | DBに残るが削除済みとして扱われる |
 | ManyToMany: authors | `song.authors.add(author)` | 作者が曲に紐付く |
 | ManyToMany: imitates (自己参照) | `song.imitates.add(other_song)` | 模倣関係が成立する |
+
+#### 11-1-1. `Song.get_flags(is_lack=False)`（#1228）
+
+曲ページのタグ・曲カードのアイコンに出すフラグを、`SONG_FLAGS`（`constants/constants.py`）から選んで返す。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| フラグなし | すべてのフラグが既定値 | 空のリストを返す |
+| 各フィールドのフラグ | `is_questionable`・`is_draft`・`is_original`・`is_joke`・`is_inst`・`is_deleted`・`is_special`・`is_limited` のいずれかが `True`、または `is_subeana=False` | 対応するフラグ（`is_subeana=False` は `is_xx`）だけを返す |
+| 未完成は引数で受け取る | `is_lack=True` を渡す／渡さない | 渡したときだけ `is_lack` のフラグを返す |
+| 界隈曲?の非すべあな曲 | `is_questionable=True`・`is_subeana=False` | `is_questionable` だけを返し、`is_xx` は返さない |
+| フラグの順番 | 界隈曲?以外のすべてのフラグ・`is_lack=True` | `SONG_FLAGS` と同じ順に返す |
 
 #### 11-2. `Author` モデル
 
