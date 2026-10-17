@@ -230,6 +230,14 @@ class TransitiveAlias:
     author_id: int = None
 
     @property
+    def is_direct_successor(self):
+        """呼び出し元のauthorの名前を、直接以前の名称（past）として登録しているauthorかどうか（#1230）
+
+        別名一覧画面で「その後の名称」として表示される行のうち、直接の関係のもの
+        """
+        return self.is_direct and self.is_reverse and self.alias_type == "past"
+
+    @property
     def alias_type_display(self):
         if self.alias_type == "group":
             return "所属している名義" if self.is_reverse else "所属グループ"

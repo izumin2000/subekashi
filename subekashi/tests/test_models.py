@@ -382,6 +382,28 @@ class AuthorTransitiveAliasesTest(TestCase):
 
         self.assertEqual(transitive_alias.alias_type_display, "その後の名称")
 
+    def test_is_direct_successor_only_for_direct_reverse_past(self):
+        # #1230: Cの一覧では、Cの名前を以前の名称として直接登録しているAだけが該当する。
+        # Aの一覧のC・D（正方向のpast）、Eの一覧のA（逆方向のgroup）は該当しない
+        self.assertEqual([t.name for t in self.c.get_transitive_aliases() if t.is_direct_successor], ["author_a"])
+        self.assertEqual([t for t in self.a.get_transitive_aliases() if t.is_direct_successor], [])
+        self.assertEqual([t for t in self.e.get_transitive_aliases() if t.is_direct_successor], [])
+
+    def test_is_direct_successor_excludes_indirect_reverse_past(self):
+        # #1230: 以前の名称を2段階で辿った先（その後の名称のさらにその後の名称）は、
+        # 「その後の名称」と表示されるが、直接の関係ではないため該当しない
+        newest = Author.objects.create(name="successor_newest")
+        AuthorAlias.objects.create(name="successor_middle", author=newest, alias_type="past")
+        middle = Author.objects.create(name="successor_middle")
+        AuthorAlias.objects.create(name="successor_oldest", author=middle, alias_type="past")
+        oldest = Author.objects.create(name="successor_oldest")
+
+        transitive_aliases = {t.name: t for t in oldest.get_transitive_aliases()}
+
+        self.assertTrue(transitive_aliases["successor_middle"].is_direct_successor)
+        self.assertEqual(transitive_aliases["successor_newest"].alias_type_display, "その後の名称")
+        self.assertFalse(transitive_aliases["successor_newest"].is_direct_successor)
+
 
 class SongModelTest(TestCase):
     """Song モデルのテスト"""
