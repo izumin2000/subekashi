@@ -90,7 +90,7 @@
                         {% if flag.query %}
                             <a href="{% url 'subekashi:songs' %}?{{ flag.query }}"><i class="{{ flag.icon }}"></i><span class="icon-p-big">{{ flag.label }}</span></a>
                         {% else %}
-                            <p id="special-tag"><i class="{{ flag.icon }}"></i><span class="icon-p-big">{{ flag.label }}</span>{% if flag.tutorial %}<i class="fas fa-info-circle" data-tutorial="{{ flag.tutorial }}"></i>{% endif %}</p>
+                            <p class="special-tag"><i class="{{ flag.icon }}"></i><span class="icon-p-big">{{ flag.label }}</span>{% if flag.tutorial %}<i class="fas fa-info-circle" data-tutorial="{{ flag.tutorial }}"></i>{% endif %}</p>
                         {% endif %}
                     {% endfor %}
                 </td>

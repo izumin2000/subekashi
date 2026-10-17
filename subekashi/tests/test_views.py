@@ -843,7 +843,7 @@ class SongViewTest(TestCase):
         """#1228: スペシャルデザインのフラグだけの曲もタグ欄を表示すること"""
         self._make_complete()
         tags = self._get_tags_html(is_special=True)
-        self.assertIn('<p id="special-tag"><i class="fas fa-magic"></i><span class="icon-p-big">スペシャルデザイン</span></p>', tags)
+        self.assertIn('<p class="special-tag"><i class="fas fa-magic"></i><span class="icon-p-big">スペシャルデザイン</span></p>', tags)
 
     def test_lack_tag_links_to_search(self):
         """#1228: 未完成の曲は、未完成の曲の検索へのリンクをタグに表示すること"""
@@ -860,8 +860,8 @@ class SongViewTest(TestCase):
     def test_tutorial_tags(self):
         """#1228: 界隈曲?・限定公開のタグには説明のアイコンを付け、リンクにしないこと"""
         tags = self._get_tags_html(is_questionable=True, is_limited=True)
-        self.assertIn('<p id="special-tag"><i class="fas fa-question"></i><span class="icon-p-big">界隈曲?</span><i class="fas fa-info-circle" data-tutorial="is_questionable"></i></p>', tags)
-        self.assertIn('<p id="special-tag"><i class="fas fa-low-vision"></i><span class="icon-p-big">限定公開</span><i class="fas fa-info-circle" data-tutorial="is_limited"></i></p>', tags)
+        self.assertIn('<p class="special-tag"><i class="fas fa-question"></i><span class="icon-p-big">界隈曲?</span><i class="fas fa-info-circle" data-tutorial="is_questionable"></i></p>', tags)
+        self.assertIn('<p class="special-tag"><i class="fas fa-low-vision"></i><span class="icon-p-big">限定公開</span><i class="fas fa-info-circle" data-tutorial="is_limited"></i></p>', tags)
 
     def test_questionable_non_subeana_has_no_xx_tag(self):
         """#1228: 界隈曲?の非すべあな曲には、非すべあな模倣曲のタグを表示しないこと"""
