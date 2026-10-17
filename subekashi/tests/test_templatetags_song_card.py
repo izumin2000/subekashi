@@ -3,7 +3,7 @@ song_card テンプレートタグのテスト
 
 get_author(): 作者0人・1人・2人以上（合作）の表示分岐を検証する。
 get_url(): 曲のフラグのアイコンと、URLのアイコン・URL未登録の表示分岐、両者の間の縦線を検証する。
-PC幅で隠すインスト曲のアイコンと、スマホ幅で「+N」にまとめるアイコンのクラスも検証する（#1229）。
+PC幅で隠すインスト曲のアイコンと、スマホ幅で三点リーダーにまとめるアイコンのクラスも検証する（#1229）。
 SEND_DISCORD=False のためDiscordへの実送信は発生しない。
 """
 from django.test import TestCase
@@ -194,7 +194,7 @@ class GetUrlTest(TestCase):
         result = get_url(song)
         self.assertIn('<i class="fas fa-user-edit" title="下書き"></i>', result)
         self.assertIn('<i class="fas fa-low-vision" title="限定公開"></i>', result)
-        self.assertNotIn("song-card-more-flags", result)
+        self.assertNotIn("fa-ellipsis-h", result)
         self.assertNotIn("song-card-pc-only", result)
 
     def test_three_flags_are_folded_on_sp(self):
@@ -204,16 +204,16 @@ class GetUrlTest(TestCase):
         self.assertIn('<i class="fas fa-user-edit" title="下書き"></i>', result)
         self.assertIn('<i class="far fa-meh-rolling-eyes song-card-pc-only" title="ネタ曲"></i>', result)
         self.assertIn('<i class="fas fa-low-vision song-card-pc-only" title="限定公開"></i>', result)
-        self.assertIn('<span class="song-card-more-flags song-card-sp-only" title="ネタ曲・限定公開">+2</span>', result)
-        self.assertLess(result.index("fa-low-vision"), result.index("song-card-more-flags"))
-        self.assertLess(result.index("song-card-more-flags"), result.index('<span class="song-card-separator"></span>'))
+        self.assertIn('<i class="fas fa-ellipsis-h song-card-sp-only" title="ネタ曲・限定公開"></i>', result)
+        self.assertLess(result.index("fa-low-vision"), result.index("fa-ellipsis-h"))
+        self.assertLess(result.index("fa-ellipsis-h"), result.index('<span class="song-card-separator"></span>'))
 
     def test_four_flags_are_folded_on_sp(self):
         song = Song.objects.create(title="フラグが4個の曲", is_original=True, is_joke=True, is_deleted=True, is_subeana=False)
         self._add_link(song)
         result = get_url(song)
         self.assertIn('<i class="fas fa-external-link-alt" title="オリジナル模倣"></i>', result)
-        self.assertIn('<span class="song-card-more-flags song-card-sp-only" title="ネタ曲・非すべあな模倣曲・非公開/削除済み">+3</span>', result)
+        self.assertIn('<i class="fas fa-ellipsis-h song-card-sp-only" title="ネタ曲・非すべあな模倣曲・非公開/削除済み"></i>', result)
 
     def test_folded_inst_icon_in_lyrics_is_not_rendered(self):
         song = Song.objects.create(title="歌詞なしの非公開のインスト曲", is_original=True, is_inst=True, is_deleted=True)
@@ -222,12 +222,12 @@ class GetUrlTest(TestCase):
         self.assertIn('<i class="fas fa-external-link-alt" title="オリジナル模倣"></i>', result)
         self.assertNotIn("fa-comment-slash", result)
         self.assertIn('<i class="far fa-eye-slash song-card-pc-only" title="非公開/削除済み"></i>', result)
-        self.assertIn('<span class="song-card-more-flags song-card-sp-only" title="インスト曲・非公開/削除済み">+2</span>', result)
+        self.assertIn('<i class="fas fa-ellipsis-h song-card-sp-only" title="インスト曲・非公開/削除済み"></i>', result)
         self.assertIn('<span class="song-card-separator"></span>', result)
 
     def test_folded_without_link_has_no_separator(self):
         song = Song.objects.create(title="URLなしの非公開の曲", is_original=True, is_joke=True, is_deleted=True)
         result = get_url(song)
-        self.assertIn("+2</span>", result)
+        self.assertIn("fa-ellipsis-h", result)
         self.assertNotIn("song-card-separator", result)
         self.assertNotIn("URL未登録", result)

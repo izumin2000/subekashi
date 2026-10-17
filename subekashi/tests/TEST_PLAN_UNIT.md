@@ -1855,11 +1855,11 @@ URL生成は`get_urls()`に分離しており、ファイル出力・`collectsta
 | 界隈曲?のインスト曲 | `is_inst=True`・`is_questionable=True`・歌詞が空 | 歌詞の欄が出ないため、インスト曲のアイコンに `song-card-sp-only` は付かない |
 | インスト曲だけのときの縦線 | `is_inst=True`・歌詞が空・URLあり | 縦線にも `song-card-sp-only` が付く |
 | インスト曲とほかのフラグがあるときの縦線 | `is_joke=True`・`is_inst=True`・歌詞が空・URLあり | 縦線には `song-card-sp-only` が付かない |
-| フラグが2個 | `is_draft=True`・`is_limited=True`・URLあり | どちらのアイコンにもクラスは付かず、「+N」は出ない |
-| フラグが3個 | `is_draft=True`・`is_joke=True`・`is_limited=True`・URLあり | 下書きのアイコンはそのまま、ネタ曲・限定公開のアイコンに `song-card-pc-only`（スマホ幅では隠す）が付く。その後に `title` がネタ曲・限定公開の「+2」（`song-card-sp-only`）が出て、縦線の前に入る |
-| フラグが4個 | `is_original=True`・`is_joke=True`・`is_deleted=True`・`is_subeana=False`・URLあり | オリジナル模倣のアイコンの後に「+3」が出る |
-| まとめられる、歌詞の欄に「インスト曲」と出る曲 | `is_original=True`・`is_inst=True`・`is_deleted=True`・歌詞が空・URLあり | PC幅でもスマホ幅でも出ないインスト曲のアイコンは出力しない。「+2」の `title` にはインスト曲を含め、縦線にはクラスが付かない |
-| まとめられる、リンクなし | `is_original=True`・`is_joke=True`・`is_deleted=True`・`song.links` が空 | 「+2」が出て、縦線と「URL未登録」は出ない |
+| フラグが2個 | `is_draft=True`・`is_limited=True`・URLあり | どちらのアイコンにもクラスは付かず、三点リーダー（`fa-ellipsis-h`）のアイコンは出ない |
+| フラグが3個 | `is_draft=True`・`is_joke=True`・`is_limited=True`・URLあり | 下書きのアイコンはそのまま、ネタ曲・限定公開のアイコンに `song-card-pc-only`（スマホ幅では隠す）が付く。その後に `title` がネタ曲・限定公開の三点リーダーのアイコン（`song-card-sp-only`）が出て、縦線の前に入る |
+| フラグが4個 | `is_original=True`・`is_joke=True`・`is_deleted=True`・`is_subeana=False`・URLあり | オリジナル模倣のアイコンの後に、`title` がネタ曲・非すべあな模倣曲・非公開/削除済みの三点リーダーのアイコンが出る |
+| まとめられる、歌詞の欄に「インスト曲」と出る曲 | `is_original=True`・`is_inst=True`・`is_deleted=True`・歌詞が空・URLあり | PC幅でもスマホ幅でも出ないインスト曲のアイコンは出力しない。三点リーダーの `title` にはインスト曲を含め、縦線にはクラスが付かない |
+| まとめられる、リンクなし | `is_original=True`・`is_joke=True`・`is_deleted=True`・`song.links` が空 | 三点リーダーのアイコンが出て、縦線と「URL未登録」は出ない |
 
 ---
 

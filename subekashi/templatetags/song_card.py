@@ -84,7 +84,7 @@ def get_flag_icons(song, has_link):
 
     # PC幅では、歌詞の欄の「インスト曲」と重なるため、インスト曲のアイコンを出さない
     pc_flags = [(icon, label) for icon, label in flags if not (label == "インスト曲" and is_inst_in_lyrics(song))]
-    # スマホ幅では、アイコンが多いときは「+N」にまとめる
+    # スマホ幅では、アイコンが多いときは三点リーダーにまとめる
     sp_flags = flags if len(flags) <= SONG_CARD_SP_MAX_FLAG_ICONS else flags[:SONG_CARD_SP_MAX_FLAG_ICONS - 1]
 
     tags = ""
@@ -97,7 +97,7 @@ def get_flag_icons(song, has_link):
     folded_flags = flags[len(sp_flags):]
     if folded_flags:
         folded_labels = "・".join(label for icon, label in folded_flags)
-        tags += f'<span class="song-card-more-flags song-card-sp-only" title="{folded_labels}">+{len(folded_flags)}</span>'
+        tags += f'<i class="fas fa-ellipsis-h song-card-sp-only" title="{folded_labels}"></i>'
 
     # リンクとの間を縦線で区切る
     if has_link:
