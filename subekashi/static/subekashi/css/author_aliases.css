@@ -96,6 +96,13 @@
     margin-bottom: 15px;
 }
 
+/* 共通の.fa-info-circleはチュートリアルを開くアイコン用（左の余白・ポインター）のため、
+   クリックできない状態の表示のアイコンでは打ち消す */
+.unify-name-status .fa-info-circle {
+    margin-left: 0;
+    cursor: auto;
+}
+
 /* 統一元の名義（上）と統一先の名義（下）の間に中央寄せで表示する */
 #unify-name-arrow {
     display: block;

@@ -779,16 +779,16 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
-| past別名と同名のAuthorが無い | past別名のみ登録 | `#unify-name-status`に`fa-check-circle`と「名義は統一されています」 |
+| past別名と同名のAuthorが無い | past別名のみ登録 | `#unify-name-status`が`.ok`で、`fa-check-circle`と「名義は統一されています」 |
 | past別名と同名のAuthorが曲を持たない | 統一済みで曲数0のAuthorが残っている状態（#1137） | 「名義は統一されています」 |
-| past別名と同名のAuthorが曲を持つ | そのAuthorが2曲を持つ | `fa-exclamation-triangle`と「名義が統一されていません」、「2曲」、そのAuthorの作者ページへのリンク |
+| past別名と同名のAuthorが曲を持つ | そのAuthorが2曲を持つ | `.info`で`fa-info-circle`と「名義が統一されていません」、「2曲」、そのAuthorの作者ページへのリンク。統一されていないことは誤りではないため、`.warning`は使わない |
 | 複数のAuthorが曲を持つ | 1曲が2つのpast別名のAuthorの共著、3つ目のpast別名のAuthorは曲を持たない | 「1曲」（共著は1曲として数える）。曲を持つ2つのAuthorへのリンクを含み、曲を持たないAuthorへのリンクは含まない |
 | 統一するフォームと同じ順に並べる | 別名の登録順と、Authorのid順・名前順が逆になるようにする | 統一されていないAuthorが別名の登録順（統一するフォームの候補の順）に並ぶ |
 | past以外の別名と同名のAuthorは対象外 | `another`別名と同名のAuthorがSongを持つ | 「名義は統一されています」 |
 | 統一すると表示が変わる | 「統一されていません」の状態から、現在の名義のまま`AuthorUnifyNameSetView`へPOST | 「名義は統一されています」に変わる |
 | 統一に関係しないauthor | past別名を持たず、他のauthorのpast別名にもなっていない | 状態の表示も「名義を統一する」の見出し（`data-tutorial="unify-name"`）も表示しない |
-| 統一元側・曲が残っている | 他のauthorがこのauthorの名前をpast別名として登録し、このauthorが1曲を持つ | `#unify-name-successor-status`に「この作者の曲が1曲あり、名義が『<その作者>』に統一されていません」と、その作者の別名一覧へのリンク。「名義を統一する」の見出しは表示するが、統一するフォームと`#unify-name-status`は表示しない |
-| 統一元側・曲が無い | 同上で、このauthorが曲を持たない | 「名義は『<その作者>』に統一されています」と、その作者の作者ページへのリンク |
+| 統一元側・曲が残っている | 他のauthorがこのauthorの名前をpast別名として登録し、このauthorが1曲を持つ | `#unify-name-successor-status`が`.info`で、`fa-info-circle`と「この作者の曲が1曲あり、名義が『<その作者>』に統一されていません」、その作者の別名一覧へのリンク。「名義を統一する」の見出しは表示するが、統一するフォームと`#unify-name-status`は表示しない |
+| 統一元側・曲が無い | 同上で、このauthorが曲を持たない | `.ok`で、「名義は『<その作者>』に統一されています」と、その作者の作者ページへのリンク |
 | 統一元側・past以外は対象外 | 他のauthorがこのauthorの名前を`another`別名として登録 | `#unify-name-successor-status`は表示しない |
 | 統一元側・作者名のエスケープ | その作者の名前が`<b>その後の名義</b>` | エスケープされて表示される |
 

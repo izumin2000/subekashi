@@ -3234,13 +3234,15 @@ class AuthorAliasesUnifyNameStatusTest(TestCase):
         return self.client.get(reverse("subekashi:author_aliases", args=[author.id]))
 
     def _status(self, response, status_id="unify-name-status"):
+        # class属性も確かめられるよう、id属性を持つ<p>タグの先頭から切り出す
         content = response.content.decode()
-        start = content.index(f'id="{status_id}"')
+        start = content.rindex("<p ", 0, content.index(f'id="{status_id}"'))
         return content[start:content.index("</p>", start)]
 
     def test_shows_unified_when_no_author_matches_past_alias(self):
         status = self._status(self._get())
         self.assertIn("名義は統一されています", status)
+        self.assertIn('class="unify-name-status ok"', status)
         self.assertIn("fa-check-circle", status)
 
     def test_shows_unified_when_author_matching_past_alias_has_no_songs(self):
@@ -3256,7 +3258,10 @@ class AuthorAliasesUnifyNameStatusTest(TestCase):
         status = self._status(self._get())
 
         self.assertIn("名義が統一されていません", status)
-        self.assertIn("fa-exclamation-triangle", status)
+        # 統一されていないことは誤りではないため、warningではなくinfoで表示する
+        self.assertIn('class="unify-name-status info"', status)
+        self.assertIn("fa-info-circle", status)
+        self.assertNotIn("warning", status)
         self.assertIn("2曲", status)
         self.assertIn(f'href="{reverse("subekashi:author", args=[past_author.id])}"', status)
 
@@ -3326,6 +3331,8 @@ class AuthorAliasesUnifyNameStatusTest(TestCase):
 
         status = self._status(response, "unify-name-successor-status")
         self.assertIn("この作者の曲が1曲あり、名義が『現在の名義』に統一されていません", status)
+        self.assertIn('class="unify-name-status info"', status)
+        self.assertIn("fa-info-circle", status)
         self.assertIn(f'href="{reverse("subekashi:author_aliases", args=[self.author.id])}"', status)
         self.assertContains(response, 'data-tutorial="unify-name"')
         # この作者自身は以前の名称を持たないため、統一するフォームは表示しない
@@ -3339,6 +3346,7 @@ class AuthorAliasesUnifyNameStatusTest(TestCase):
 
         self.assertIn("名義は『", status)
         self.assertIn("』に統一されています", status)
+        self.assertIn('class="unify-name-status ok"', status)
         self.assertIn(f'href="{reverse("subekashi:author", args=[self.author.id])}"', status)
 
     def test_no_successor_status_for_non_past_reverse_alias(self):
