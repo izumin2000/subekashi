@@ -8,6 +8,7 @@ from django.db import IntegrityError, connection
 from django.db.utils import DataError
 from django.test import TestCase
 from django.utils import timezone
+from subekashi.constants.constants import SONG_FLAGS
 from subekashi.models import Ai, Author, AuthorAlias, Contact, Editor, History, Song, SongLink, Stats, Word
 from subekashi.models.author import EffectiveAlias, TransitiveAlias
 
@@ -508,6 +509,51 @@ class SongModelTest(TestCase):
         qs = Song.get_for_range("all", "off")
         self.assertIn(normal_song, qs)
         self.assertNotIn(joke_song, qs)
+
+
+class SongGetFlagsTest(TestCase):
+    """Song.get_flags() のテスト（#1228）"""
+
+    def _get_names(self, song, **kwargs):
+        return [flag["name"] for flag in song.get_flags(**kwargs)]
+
+    def test_no_flag_returns_empty_list(self):
+        song = Song.objects.create(title="フラグなしの曲")
+        self.assertEqual(song.get_flags(), [])
+
+    def test_each_field_flag(self):
+        cases = [
+            ({"is_questionable": True}, "is_questionable"),
+            ({"is_draft": True}, "is_draft"),
+            ({"is_original": True}, "is_original"),
+            ({"is_joke": True}, "is_joke"),
+            ({"is_inst": True}, "is_inst"),
+            ({"is_subeana": False}, "is_xx"),
+            ({"is_deleted": True}, "is_deleted"),
+            ({"is_special": True}, "is_special"),
+            ({"is_limited": True}, "is_limited"),
+        ]
+        for fields, name in cases:
+            with self.subTest(fields=fields):
+                song = Song.objects.create(title="フラグの曲", **fields)
+                self.assertEqual(self._get_names(song), [name])
+
+    def test_is_lack_is_given_by_argument(self):
+        song = Song.objects.create(title="未完成の曲")
+        self.assertEqual(self._get_names(song, is_lack=True), ["is_lack"])
+        self.assertEqual(self._get_names(song), [])
+
+    def test_questionable_non_subeana_has_no_xx_flag(self):
+        song = Song.objects.create(title="界隈曲?の曲", is_questionable=True, is_subeana=False)
+        self.assertEqual(self._get_names(song), ["is_questionable"])
+
+    def test_flags_follow_song_flags_order(self):
+        song = Song.objects.create(
+            title="すべてのフラグの曲", is_draft=True, is_original=True, is_joke=True, is_inst=True,
+            is_subeana=False, is_deleted=True, is_special=True, is_limited=True,
+        )
+        expected = [flag["name"] for flag in SONG_FLAGS if flag["name"] != "is_questionable"]
+        self.assertEqual(self._get_names(song, is_lack=True), expected)
 
 
 class SongLinkModelTest(TestCase):

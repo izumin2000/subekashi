@@ -80,42 +80,19 @@
                 </td>
             </tr>
         {% endfor %}
-        {% if has_tag %}
+        {% if flags %}
             <tr id="tags">
                 <td>
                     <i class="fas fa-tags"></i><p class="icon-p">タグ</p>
                 </td>
                 <td>
-                    {% if is_questionable %}
-                        <p id="special-tag"><i class="fas fa-question"></i><span class="icon-p-big">界隈曲?</span><i class="fas fa-info-circle" data-tutorial="is_questionable"></i></p>
-                    {% endif %}
-                    {% if is_lack %}
-                        <a href="{% url 'subekashi:songs' %}?is_lack=True"><i class="fas fa-tasks"></i><span class="icon-p-big">未完成</span></a>
-                    {% endif %}
-                    {% if song.is_draft %}
-                        <a href="{% url 'subekashi:songs' %}?is_draft=True"><i class="fas fa-user-edit"></i><span class="icon-p-big">下書き</span></a>
-                    {% endif %}
-                    {% if song.is_original %}
-                        <a href="{% url 'subekashi:songs' %}?is_original=True"><i class="fas fa-external-link-alt"></i><span class="icon-p-big">オリジナル模倣</span></a>
-                    {% endif %}
-                    {% if song.is_joke %}
-                        <a href="{% url 'subekashi:songs' %}?is_joke=only"><i class="far fa-meh-rolling-eyes"></i><span class="icon-p-big">ネタ曲</span></a>
-                    {% endif %}
-                    {% if song.is_inst %}
-                        <a href="{% url 'subekashi:songs' %}?is_inst=True"><i class="fas fa-comment-slash"></i><span class="icon-p-big">インスト曲</span></a>
-                    {% endif %}
-                    {% if not song.is_subeana and not is_questionable %}
-                        <a href="{% url 'subekashi:songs' %}?is_subeana=xx"><i class="fas fa-fish"></i><span class="icon-p-big">非すべあな模倣曲</span></a>
-                    {% endif %}
-                    {% if song.is_deleted %}
-                        <a href="{% url 'subekashi:songs' %}?is_deleted=True"><i class="far fa-eye-slash"></i><span class="icon-p-big">非公開/削除済み</span></a>
-                    {% endif %}
-                    {% if song.is_special %}
-                        <p id="special-tag"><i class="fas fa-magic"></i><span class="icon-p-big">スペシャルデザイン</span></p>
-                    {% endif %}
-                    {% if song.is_limited %}
-                        <p id="special-tag"><i class="fas fa-low-vision"></i><span class="icon-p-big">限定公開</span><i class="fas fa-info-circle" data-tutorial="is_limited"></i></p>
-                    {% endif %}
+                    {% for flag in flags %}
+                        {% if flag.query %}
+                            <a href="{% url 'subekashi:songs' %}?{{ flag.query }}"><i class="{{ flag.icon }}"></i><span class="icon-p-big">{{ flag.label }}</span></a>
+                        {% else %}
+                            <p class="special-tag"><i class="{{ flag.icon }}"></i><span class="icon-p-big">{{ flag.label }}</span>{% if flag.tutorial %}<i class="fas fa-info-circle" data-tutorial="{{ flag.tutorial }}"></i>{% endif %}</p>
+                        {% endif %}
+                    {% endfor %}
                 </td>
             </tr>
         {% endif %}

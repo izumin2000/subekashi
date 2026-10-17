@@ -46,20 +46,9 @@ def get_view(song):
     
     return mark_safe(f'<i class="fas fa-play"></i>{view}')
 
-# 曲ページのタグと同じ順・同じアイコン
+# 曲ページのタグと同じ順・同じアイコン（未完成は曲カードには出さない）
 def get_flag_icons(song):
-    flags = [
-        (song.is_questionable, "fas fa-question", "界隈曲?"),
-        (song.is_draft, "fas fa-user-edit", "下書き"),
-        (song.is_original, "fas fa-external-link-alt", "オリジナル模倣"),
-        (song.is_joke, "far fa-meh-rolling-eyes", "ネタ曲"),
-        (song.is_inst, "fas fa-comment-slash", "インスト曲"),
-        (not song.is_subeana and not song.is_questionable, "fas fa-fish", "非すべあな模倣曲"),
-        (song.is_deleted, "far fa-eye-slash", "非公開/削除済み"),
-        (song.is_special, "fas fa-magic", "スペシャルデザイン"),
-        (song.is_limited, "fas fa-low-vision", "限定公開"),
-    ]
-    return "".join(f'<i class="{icon}" title="{label}"></i>' for is_flag, icon, label in flags if is_flag)
+    return "".join(f'<i class="{flag["icon"]}" title="{flag["label"]}"></i>' for flag in song.get_flags())
 
 
 @register.simple_tag
