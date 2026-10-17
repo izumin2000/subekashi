@@ -57,6 +57,10 @@
     vertical-align: middle;
 }
 
+.song-card .song-card-sp-only {
+    display: none;
+}
+
 .song-card-lyrics {
     text-align: right;
     max-width: 18vw;
@@ -75,5 +79,13 @@
 
     .song-card-lyrics {
         display: none;
+    }
+
+    .song-card .song-card-pc-only {
+        display: none;
+    }
+
+    .song-card .song-card-sp-only {
+        display: inline-block;
     }
 }
