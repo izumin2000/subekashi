@@ -177,6 +177,23 @@ ALL_MEDIAS = ALLOW_MEDIAS + [
     }
 ]
 
+# 曲のフラグ（曲ページのタグ・曲カードのアイコン、#1228）。曲ページ・曲カードともにこの順に並べる
+# name: Songのフィールド名。is_lack（未完成）とis_xx（非すべあな模倣曲）はSong.get_flags()で求める
+# query: 曲ページのタグから検索画面に移るときのクエリ（Noneならリンクにしない）
+# tutorial: 曲ページのタグに付ける説明（data-tutorial）
+SONG_FLAGS = [
+    {'name': 'is_questionable', 'icon': 'fas fa-question', 'label': '界隈曲?', 'query': None, 'tutorial': 'is_questionable'},
+    {'name': 'is_lack', 'icon': 'fas fa-tasks', 'label': '未完成', 'query': 'is_lack=True', 'tutorial': None},
+    {'name': 'is_draft', 'icon': 'fas fa-user-edit', 'label': '下書き', 'query': 'is_draft=True', 'tutorial': None},
+    {'name': 'is_original', 'icon': 'fas fa-external-link-alt', 'label': 'オリジナル模倣', 'query': 'is_original=True', 'tutorial': None},
+    {'name': 'is_joke', 'icon': 'far fa-meh-rolling-eyes', 'label': 'ネタ曲', 'query': 'is_joke=only', 'tutorial': None},
+    {'name': 'is_inst', 'icon': 'fas fa-comment-slash', 'label': 'インスト曲', 'query': 'is_inst=True', 'tutorial': None},
+    {'name': 'is_xx', 'icon': 'fas fa-fish', 'label': '非すべあな模倣曲', 'query': 'is_subeana=xx', 'tutorial': None},
+    {'name': 'is_deleted', 'icon': 'far fa-eye-slash', 'label': '非公開/削除済み', 'query': 'is_deleted=True', 'tutorial': None},
+    {'name': 'is_special', 'icon': 'fas fa-magic', 'label': 'スペシャルデザイン', 'query': None, 'tutorial': None},
+    {'name': 'is_limited', 'icon': 'fas fa-low-vision', 'label': '限定公開', 'query': None, 'tutorial': 'is_limited'},
+]
+
 # cookieとキャッシュの保存期間
 # SHORT_TERM: 30分（一般ページのキャッシュ用）
 # LONG_TERM: 365日（静的ファイルのキャッシュ、ユーザー設定のcookie用）

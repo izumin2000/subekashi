@@ -43,14 +43,8 @@ class SongView(View):
         description_lyrics = song.lyrics[:50]
         description += f"歌詞: {description_lyrics}" if description_lyrics else ""
 
-        # 未完成かどうか
-        is_lack = Song.is_lack(song_id)
-
-        # タグを持っているかどうかの確認
-        has_tag = any([
-            is_lack, song.is_draft, song.is_original, song.is_joke, song.is_inst, song.is_deleted, song.is_limited,
-            song.is_questionable, not song.is_subeana
-        ])
+        # タグに表示するフラグ
+        flags = song.get_flags(is_lack=Song.is_lack(song_id))
 
         context = {
             "description": description,
@@ -58,13 +52,11 @@ class SongView(View):
             "song": song,
             "br_cleaned_lyrics": br_cleaned_lyrics,
             "authors": song.authors.all(),
-            "is_lack": is_lack,
             "links": links,
             "imitate_list": imitate_list,
             "imitated_list": imitated_list,
             "full_songs": full_songs,
             "short_songs": short_songs,
-            "has_tag": has_tag,
-            "is_questionable": song.is_questionable,
+            "flags": flags,
         }
         return render(request, "subekashi/song.html", context)

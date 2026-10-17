@@ -820,6 +820,62 @@ class SongViewTest(TestCase):
         response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
         self.assertContains(response, '<meta name="robots" content="noindex, nofollow">')
 
+    def _make_complete(self):
+        """未完成でない曲にする（URL・歌詞・模倣元がある）"""
+        link = SongLink.objects.create(url="https://youtu.be/abcdefghijk")
+        link.songs.add(self.song)
+        self.song.imitates.add(Song.objects.create(title="模倣元の曲"))
+
+    def _get_tags_html(self, **fields):
+        Song.objects.filter(pk=self.song.pk).update(**fields)
+        content = self.client.get(reverse("subekashi:song", args=[self.song.id])).content.decode()
+        if '<tr id="tags">' not in content:
+            return None
+        start = content.index('<tr id="tags">')
+        return content[start:content.index("</tr>", start)]
+
+    def test_tags_not_shown_without_flags(self):
+        """#1228: フラグがない曲はタグ欄を表示しないこと"""
+        self._make_complete()
+        self.assertIsNone(self._get_tags_html())
+
+    def test_tags_shown_with_only_special(self):
+        """#1228: スペシャルデザインのフラグだけの曲もタグ欄を表示すること"""
+        self._make_complete()
+        tags = self._get_tags_html(is_special=True)
+        self.assertIn('<p class="special-tag"><i class="fas fa-magic"></i><span class="icon-p-big">スペシャルデザイン</span></p>', tags)
+
+    def test_lack_tag_links_to_search(self):
+        """#1228: 未完成の曲は、未完成の曲の検索へのリンクをタグに表示すること"""
+        tags = self._get_tags_html()
+        self.assertIn(f'<a href="{reverse("subekashi:songs")}?is_lack=True"><i class="fas fa-tasks"></i><span class="icon-p-big">未完成</span></a>', tags)
+
+    def test_field_tag_links_to_search(self):
+        """#1228: フィールドのフラグは、検索へのリンクをタグに表示すること"""
+        self._make_complete()
+        tags = self._get_tags_html(is_draft=True, is_subeana=False)
+        self.assertIn(f'<a href="{reverse("subekashi:songs")}?is_draft=True"><i class="fas fa-user-edit"></i><span class="icon-p-big">下書き</span></a>', tags)
+        self.assertIn(f'<a href="{reverse("subekashi:songs")}?is_subeana=xx"><i class="fas fa-fish"></i><span class="icon-p-big">非すべあな模倣曲</span></a>', tags)
+
+    def test_tutorial_tags(self):
+        """#1228: 界隈曲?・限定公開のタグには説明のアイコンを付け、リンクにしないこと"""
+        tags = self._get_tags_html(is_questionable=True, is_limited=True)
+        self.assertIn('<p class="special-tag"><i class="fas fa-question"></i><span class="icon-p-big">界隈曲?</span><i class="fas fa-info-circle" data-tutorial="is_questionable"></i></p>', tags)
+        self.assertIn('<p class="special-tag"><i class="fas fa-low-vision"></i><span class="icon-p-big">限定公開</span><i class="fas fa-info-circle" data-tutorial="is_limited"></i></p>', tags)
+
+    def test_questionable_non_subeana_has_no_xx_tag(self):
+        """#1228: 界隈曲?の非すべあな曲には、非すべあな模倣曲のタグを表示しないこと"""
+        tags = self._get_tags_html(is_questionable=True, is_subeana=False)
+        self.assertIn("界隈曲?", tags)
+        self.assertNotIn("非すべあな模倣曲", tags)
+
+    def test_tags_order(self):
+        """#1228: タグは界隈曲?・未完成・下書き・限定公開の順に並ぶこと"""
+        tags = self._get_tags_html(is_questionable=True, is_draft=True, is_limited=True)
+        self.assertLess(tags.index("界隈曲?"), tags.index("未完成"))
+        self.assertLess(tags.index("未完成"), tags.index("下書き"))
+        self.assertLess(tags.index("下書き"), tags.index("限定公開"))
+
     def create_short_and_full_songs(self):
         author = Author.objects.create(name="short作者")
         self.song.authors.set([author])
@@ -2308,8 +2364,9 @@ class AuthorAliasesViewTransitiveResolutionTest(TestCase):
         # #1023: 遷移先author idの補完的な問い合わせが、クラスタ全体ではなく
         # 未解決の名前(B・E)のみを対象にした1クエリに収まっていることの回帰防止テスト。
         # クエリ数が増えた場合はこの値を更新しつつ、原因を確認すること
-        # （10クエリ目は#1008で追加した名義の統一先の候補一覧取得）
-        with self.assertNumQueries(10):
+        # （10クエリ目は#1008で追加した名義の統一先の候補一覧取得、11クエリ目は#1230で追加した、
+        # Cの名前を以前の名称として登録しているAへ名義が統一されているかどうかの判定用のCの曲数取得）
+        with self.assertNumQueries(11):
             self.client.get(reverse("subekashi:author_aliases", args=[self.c.id]))
 
     def test_author_c_list_unresolved_query_scope_excludes_resolved_names(self):
@@ -3217,6 +3274,154 @@ class AuthorUnifyNameSetViewTest(TestCase):
         submit_button = content[submit_index:content.index("</button>", submit_index)]
         self.assertNotIn("disabled", submit_button)
         self.assertIn("統一する", submit_button)
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+class AuthorAliasesUnifyNameStatusTest(TestCase):
+    """別名一覧画面の、名義が統一されているかどうかの表示のテスト（#1230）"""
+
+    def setUp(self):
+        self.client = Client()
+        self.author = Author.objects.create(name="現在の名義")
+        AuthorAlias.objects.create(name="以前の名義", author=self.author, alias_type="past")
+
+    def _get(self, author=None):
+        author = author or self.author
+        return self.client.get(reverse("subekashi:author_aliases", args=[author.id]))
+
+    def _status(self, response, status_id="unify-name-status"):
+        # class属性も確かめられるよう、id属性を持つ<p>タグの先頭から切り出す
+        content = response.content.decode()
+        start = content.rindex("<p ", 0, content.index(f'id="{status_id}"'))
+        return content[start:content.index("</p>", start)]
+
+    def test_shows_unified_when_no_author_matches_past_alias(self):
+        status = self._status(self._get())
+        self.assertIn("名義は統一されています", status)
+        self.assertIn('class="unify-name-status ok"', status)
+        self.assertIn("fa-check-circle", status)
+
+    def test_shows_unified_when_author_matching_past_alias_has_no_songs(self):
+        # 統一済みの作者は削除されず、曲数0で残る（#1137）
+        Author.objects.create(name="以前の名義")
+        self.assertIn("名義は統一されています", self._status(self._get()))
+
+    def test_shows_not_unified_with_past_alias_author_and_song_count(self):
+        past_author = Author.objects.create(name="以前の名義")
+        for title in ["以前の名義の曲1", "以前の名義の曲2"]:
+            Song.objects.create(title=title).authors.add(past_author)
+
+        status = self._status(self._get())
+
+        self.assertIn("名義が統一されていません", status)
+        # 統一されていないことは誤りではないため、warningではなくinfoで表示する
+        self.assertIn('class="unify-name-status info"', status)
+        self.assertIn("fa-info-circle", status)
+        self.assertNotIn("warning", status)
+        self.assertIn("2曲", status)
+        self.assertIn(f'href="{reverse("subekashi:author", args=[past_author.id])}"', status)
+
+    def test_lists_all_past_alias_authors_with_songs_and_counts_co_authored_song_once(self):
+        AuthorAlias.objects.create(name="以前の名義2", author=self.author, alias_type="past")
+        AuthorAlias.objects.create(name="以前の名義3", author=self.author, alias_type="past")
+        past_author = Author.objects.create(name="以前の名義")
+        past_author2 = Author.objects.create(name="以前の名義2")
+        past_author3 = Author.objects.create(name="以前の名義3")
+        Song.objects.create(title="共著の曲").authors.add(past_author, past_author2)
+
+        status = self._status(self._get())
+
+        self.assertIn("1曲", status)
+        self.assertIn(reverse("subekashi:author", args=[past_author.id]), status)
+        self.assertIn(reverse("subekashi:author", args=[past_author2.id]), status)
+        # 曲の無い作者は統一されていない作者として表示しない
+        self.assertNotIn(reverse("subekashi:author", args=[past_author3.id]), status)
+
+    def test_lists_past_alias_authors_in_unify_form_order(self):
+        # 統一するフォームの候補（別名の登録順）と同じ順に並べる。作者のid順・名前順のどちらとも
+        # 異なる順になるよう、後に登録した別名ほど作者のidと名前が小さくなるようにする
+        AuthorAlias.objects.create(name="ん以前の名義", author=self.author, alias_type="past")
+        AuthorAlias.objects.create(name="あ以前の名義", author=self.author, alias_type="past")
+        first_author = Author.objects.create(name="あ以前の名義")
+        second_author = Author.objects.create(name="ん以前の名義")
+        for past_author in [first_author, second_author]:
+            Song.objects.create(title=f"{past_author.name}の曲").authors.add(past_author)
+
+        status = self._status(self._get())
+
+        self.assertLess(
+            status.index(reverse("subekashi:author", args=[second_author.id])),
+            status.index(reverse("subekashi:author", args=[first_author.id])),
+        )
+
+    def test_authors_matching_non_past_aliases_do_not_affect_status(self):
+        # 別名義（another）等、past以外の種別は統一の対象外
+        AuthorAlias.objects.create(name="別名義", author=self.author, alias_type="another")
+        Song.objects.create(title="別名義の曲").authors.add(Author.objects.create(name="別名義"))
+        self.assertIn("名義は統一されています", self._status(self._get()))
+
+    def test_status_matches_unify_noop_after_unifying(self):
+        # 表示が「統一されていない」の状態から実際に統一すると、「統一されています」に変わる
+        past_author = Author.objects.create(name="以前の名義")
+        Song.objects.create(title="以前の名義の曲").authors.add(past_author)
+        self.assertIn("名義が統一されていません", self._status(self._get()))
+
+        with patch("subekashi.views.author_alias.send_discord", return_value=True):
+            self.client.post(reverse("subekashi:author_unify_name_set", args=[self.author.id]), {"name": self.author.name})
+
+        self.assertIn("名義は統一されています", self._status(self._get()))
+
+    def test_no_status_when_no_past_alias_and_not_past_alias_of_others(self):
+        author = Author.objects.create(name="別名なし作者")
+        response = self._get(author)
+        self.assertNotContains(response, "unify-name-status")
+        self.assertNotContains(response, 'data-tutorial="unify-name"')
+
+    def test_successor_status_shows_not_unified_when_author_has_songs(self):
+        # この作者の名前を以前の名称として登録している作者（その後の名称）がいる場合、
+        # この作者に曲が残っていればまだ統一されていない。統一は統一先の別名一覧で行う
+        old_author = Author.objects.create(name="以前の名義")
+        Song.objects.create(title="以前の名義の曲").authors.add(old_author)
+
+        response = self._get(old_author)
+
+        status = self._status(response, "unify-name-successor-status")
+        self.assertIn("この作者の曲が1曲あり、名義が『現在の名義』に統一されていません", status)
+        self.assertIn('class="unify-name-status info"', status)
+        self.assertIn("fa-info-circle", status)
+        self.assertIn(f'href="{reverse("subekashi:author_aliases", args=[self.author.id])}"', status)
+        self.assertContains(response, 'data-tutorial="unify-name"')
+        # この作者自身は以前の名称を持たないため、統一するフォームは表示しない
+        self.assertNotContains(response, 'id="unify-name-form"')
+        self.assertNotContains(response, 'id="unify-name-status"')
+
+    def test_successor_status_shows_unified_when_author_has_no_songs(self):
+        old_author = Author.objects.create(name="以前の名義")
+
+        status = self._status(self._get(old_author), "unify-name-successor-status")
+
+        self.assertIn("名義は『", status)
+        self.assertIn("』に統一されています", status)
+        self.assertIn('class="unify-name-status ok"', status)
+        self.assertIn(f'href="{reverse("subekashi:author", args=[self.author.id])}"', status)
+
+    def test_no_successor_status_for_non_past_reverse_alias(self):
+        # 別名義（another）として登録されている作者は統一の対象外
+        other = Author.objects.create(name="別名義の作者")
+        AuthorAlias.objects.create(name=other.name, author=self.author, alias_type="another")
+        Song.objects.create(title="別名義の作者の曲").authors.add(other)
+
+        self.assertNotContains(self._get(other), "unify-name-successor-status")
+
+    def test_successor_status_escapes_successor_name(self):
+        successor = Author.objects.create(name="<b>その後の名義</b>")
+        AuthorAlias.objects.create(name="エスケープ確認用の以前の名義", author=successor, alias_type="past")
+        old_author = Author.objects.create(name="エスケープ確認用の以前の名義")
+
+        response = self._get(old_author)
+
+        self.assertContains(response, "&lt;b&gt;その後の名義&lt;/b&gt;")
+        self.assertNotContains(response, "<b>その後の名義</b>")
 
 
 @override_settings(STORAGES=STATIC_STORAGE)

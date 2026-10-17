@@ -634,6 +634,13 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | デフォルトの曲 | `is_questionable=False`, `is_limited=False` | レスポンスに `<meta name="robots">` が含まれない |
 | is_questionable=True の曲 | `is_questionable=True` の曲 | レスポンスに `<meta name="robots" content="noindex, nofollow">` が含まれる |
 | is_limited=True の曲 | `is_limited=True` の曲 | レスポンスに `<meta name="robots" content="noindex, nofollow">` が含まれる |
+| フラグがない曲のタグ欄（#1228） | 未完成でなく、フラグがすべて既定値 | タグ欄（`<tr id="tags">`）が表示されない |
+| スペシャルデザインだけの曲のタグ欄（#1228） | 未完成でなく、`is_special=True` だけ | タグ欄が表示され、スペシャルデザインのタグ（リンクなし）が出る |
+| 未完成のタグ（#1228） | URL未登録の曲 | `?is_lack=True` の検索へのリンクのタグが出る |
+| フィールドのフラグのタグ（#1228） | `is_draft=True`・`is_subeana=False` | `?is_draft=True`・`?is_subeana=xx` の検索へのリンクのタグが出る |
+| 説明付きのタグ（#1228） | `is_questionable=True`・`is_limited=True` | リンクではなく、`data-tutorial` の説明のアイコン付きのタグが出る |
+| 界隈曲?の非すべあな曲のタグ（#1228） | `is_questionable=True`・`is_subeana=False` | 界隈曲?のタグは出て、非すべあな模倣曲のタグは出ない |
+| タグの順番（#1228） | `is_questionable=True`・`is_draft=True`・`is_limited=True`・URL未登録 | 界隈曲?・未完成・下書き・限定公開の順に並ぶ |
 | full 版の曲（#667） | 同じ名義の short 版が2曲ある | song-info に「short版」の行が2つあり、それぞれの曲へのリンクが表示される。「full版」の行は表示されない |
 | short 版の曲（#667） | 同じ名義の full 版がある | song-info に「full版」の行があり、full 版の曲へのリンクが表示される |
 | short 版・full 版がない曲（#667） | 関係する曲がない | 「full版」「short版」の行が表示されない |
@@ -765,8 +772,32 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
-| クエリ数の回帰防止 | Cの一覧を表示（A・Dはauthor_id解決済み、B・Eは未解決） | ビューの総クエリ数が想定通り（9件）に収まる |
+| クエリ数の回帰防止 | Cの一覧を表示（A・Dはauthor_id解決済み、B・Eは未解決） | ビューの総クエリ数が想定通り（11件。10件目は#1008の名義の統一先の候補一覧の取得、11件目は#1230の、Cの名前を以前の名称として登録しているAへ名義が統一されているかどうかの判定用のCの曲数の取得）に収まる |
 | 補完クエリの対象範囲 | 同上 | 補完クエリのIN句にB・Eの名前のみが含まれ、解決済みのA・Dの名前は含まれない |
+
+##### 名義が統一されているかどうかの表示（#1230）
+
+**テストクラス**: `AuthorAliasesUnifyNameStatusTest`
+
+「名義を統一する」の見出しの下に、名義が統一されているかどうかを表示する。統一するボタンを押さなくても（押して「既に名義は統一されています。」のトーストが出るかどうかで確かめなくても）分かるようにするため。
+
+- 統一先側（`#unify-name-status`）: authorがpast別名を持つ場合に、統一するフォームの上に表示する。判定は`get_ununified_source_authors()`（16-4-2）で、`AuthorUnifyNameSetView`で`unify_noop`になる条件と同じ
+- 統一元側（`#unify-name-successor-status`）: 他のauthorがこのauthorの名前をpast別名として登録している（別名一覧に「その後の名称」として表示される）場合に表示する。このauthorに曲が残っていれば、まだその作者に統一されていない。統一はその作者の別名一覧で行うため、統一するフォームは表示しない。判定には`TransitiveAlias.is_direct_successor`（11-3-3）を使う。`group`以外の別名の名前はDB制約で全体でユニークなため、このauthorの名前をpast別名として登録できる作者は1人までで、表示も1件になる
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| past別名と同名のAuthorが無い | past別名のみ登録 | `#unify-name-status`が`.ok`で、`fa-check-circle`と「名義は統一されています」 |
+| past別名と同名のAuthorが曲を持たない | 統一済みで曲数0のAuthorが残っている状態（#1137） | 「名義は統一されています」 |
+| past別名と同名のAuthorが曲を持つ | そのAuthorが2曲を持つ | `.info`で`fa-info-circle`と「名義が統一されていません」、「2曲」、そのAuthorの作者ページへのリンク。統一されていないことは誤りではないため、`.warning`は使わない |
+| 複数のAuthorが曲を持つ | 1曲が2つのpast別名のAuthorの共著、3つ目のpast別名のAuthorは曲を持たない | 「1曲」（共著は1曲として数える）。曲を持つ2つのAuthorへのリンクを含み、曲を持たないAuthorへのリンクは含まない |
+| 統一するフォームと同じ順に並べる | 別名の登録順と、Authorのid順・名前順が逆になるようにする | 統一されていないAuthorが別名の登録順（統一するフォームの候補の順）に並ぶ |
+| past以外の別名と同名のAuthorは対象外 | `another`別名と同名のAuthorがSongを持つ | 「名義は統一されています」 |
+| 統一すると表示が変わる | 「統一されていません」の状態から、現在の名義のまま`AuthorUnifyNameSetView`へPOST | 「名義は統一されています」に変わる |
+| 統一に関係しないauthor | past別名を持たず、他のauthorのpast別名にもなっていない | 状態の表示も「名義を統一する」の見出し（`data-tutorial="unify-name"`）も表示しない |
+| 統一元側・曲が残っている | 他のauthorがこのauthorの名前をpast別名として登録し、このauthorが1曲を持つ | `#unify-name-successor-status`が`.info`で、`fa-info-circle`と「この作者の曲が1曲あり、名義が『<その作者>』に統一されていません」、その作者の別名一覧へのリンク。「名義を統一する」の見出しは表示するが、統一するフォームと`#unify-name-status`は表示しない |
+| 統一元側・曲が無い | 同上で、このauthorが曲を持たない | `.ok`で、「名義は『<その作者>』に統一されています」と、その作者の作者ページへのリンク |
+| 統一元側・past以外は対象外 | 他のauthorがこのauthorの名前を`another`別名として登録 | `#unify-name-successor-status`は表示しない |
+| 統一元側・作者名のエスケープ | その作者の名前が`<b>その後の名義</b>` | エスケープされて表示される |
 
 #### 7-8-2. `AuthorAliasNewView` (`/authors/<id>/aliases/new`)（#992）
 
@@ -1447,6 +1478,18 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | ManyToMany: authors | `song.authors.add(author)` | 作者が曲に紐付く |
 | ManyToMany: imitates (自己参照) | `song.imitates.add(other_song)` | 模倣関係が成立する |
 
+#### 11-1-1. `Song.get_flags(is_lack=False)`（#1228）
+
+曲ページのタグ・曲カードのアイコンに出すフラグを、`SONG_FLAGS`（`constants/constants.py`）から選んで返す。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| フラグなし | すべてのフラグが既定値 | 空のリストを返す |
+| 各フィールドのフラグ | `is_questionable`・`is_draft`・`is_original`・`is_joke`・`is_inst`・`is_deleted`・`is_special`・`is_limited` のいずれかが `True`、または `is_subeana=False` | 対応するフラグ（`is_subeana=False` は `is_xx`）だけを返す |
+| 未完成は引数で受け取る | `is_lack=True` を渡す／渡さない | 渡したときだけ `is_lack` のフラグを返す |
+| 界隈曲?の非すべあな曲 | `is_questionable=True`・`is_subeana=False` | `is_questionable` だけを返し、`is_xx` は返さない |
+| フラグの順番 | 界隈曲?以外のすべてのフラグ・`is_lack=True` | `SONG_FLAGS` と同じ順に返す |
+
 #### 11-2. `Author` モデル
 
 `icontains`/`iexact`はDB照合順序に依存しないよう`subekashi/lib/db_lookups.py`でUPPER()を使った
@@ -1515,6 +1558,8 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | `TransitiveAlias.alias_type_display`（CHOICESに存在しない値） | `alias_type="unknown_type"` | 生の値をそのまま返す（フォールバック） |
 | `TransitiveAlias.alias_type_display`（`past`・正方向、#1019） | `alias_type="past"`, `is_reverse=False` | `"以前の名称"` を返す |
 | `TransitiveAlias.alias_type_display`（`past`・逆方向、#1019） | `alias_type="past"`, `is_reverse=True` | `"その後の名称"` を返す |
+| `TransitiveAlias.is_direct_successor`（#1230） | 上記のA〜Eで、C・A・Eの`get_transitive_aliases()` | Cの一覧のA（直接・逆方向・past）だけが`True`。Aの一覧のC・D（正方向のpast）、Eの一覧のA（逆方向のgroup）は`False` |
+| `TransitiveAlias.is_direct_successor`・間接的な逆方向のpast（#1230） | newestがmiddleを、middleがoldestをpast別名として登録し、oldestの`get_transitive_aliases()` | middleは`True`。newestは「その後の名称」と表示されるが、直接の関係ではないため`False` |
 | `TransitiveAlias.author_id`（逆方向・正方向かつ中継可能、#1023） | AのA.get_transitive_aliases()でC/D（past、正方向）、CのC.get_transitive_aliases()でA（past、逆方向）等 | 追加クエリなしに解決済みのauthor idが設定される |
 | `TransitiveAlias.author_id`（正方向かつ中継不可、#1023） | AのA.get_transitive_aliases()でB（another）・E（group）、CのC.get_transitive_aliases()でB・E（間接的） | `None`のまま（get_transitive_aliases()内では解決されない） |
 | 同じグループ名を複数authorが共有する場合 (#1044) | 別々のauthor（x, y）が同じ名前・`alias_type="group"`の別名をそれぞれ登録 | `x.get_transitive_aliases()`にはxが登録した1件のみが表示され、`y.get_transitive_aliases()`にはyが登録した1件のみが表示される。`group`は中継不可のため、xの一覧からyの存在は辿れない（グループメンバー一覧UIは#1044のスコープ外として意図的に非対応） |
@@ -1863,7 +1908,7 @@ URL生成は`get_urls()`に分離しており、ファイル出力・`collectsta
 
 ---
 
-### 16. `lib/author_alias_service.py` — 別名Discord通知・名義の統一サービス（#992、#1137）
+### 16. `lib/author_alias_service.py` — 別名Discord通知・名義の統一サービス（#992、#1137、#1230）
 
 **テストファイル**: `tests/test_lib_author_alias_service.py`
 
@@ -1901,8 +1946,26 @@ URL生成は`get_urls()`に分離しており、ファイル出力・`collectsta
 | 同名のAuthorがないpast別名を選択 | `new_name=`past別名のname | `target_author`はauthor自身、`source_authors`は空、`renames_author=True` |
 | 同名のAuthorがあるpast別名を選択 | `new_name=`past別名のname、同名のAuthorが存在 | `target_author`はその既存Author、`source_authors`はauthor自身、`moves_to_existing_author=True` |
 | past以外の別名と同名のAuthorは対象外 | `another`別名と同名のAuthorが存在 | `source_authors`に含まれない |
+| `source_authors`の順（#1230） | 別名の登録順と、Authorのid順・名前順が逆になるようにする | 別名の登録順（別名一覧画面の統一するフォームの候補の順）に並ぶ |
 | `song_author_pairs()`・`affected_source_authors()` | past別名と同名のAuthorのうち、一方だけがSongを持つ | `song_author_pairs()`は`(song_id, author_id)`の一覧を返し、`affected_source_authors()`は曲を持つAuthorのみを返す |
 | 統一先が既存Authorの場合の`affected_source_authors()` | 統一先が既存Authorで、authorがSongを持たない | 別名・リンクを移すため、曲が無くてもauthor自身が含まれる |
+
+#### 16-4-2. `get_ununified_source_authors(author)`（#1230）
+
+以前の名称と同名で、まだ曲が残っている別のAuthorと、その曲数を`(Authorのリスト, 曲数)`で返す。現在の名義のまま統一した場合に曲を移すAuthorで、`build_unify_name_plan(author, author.name)`から算出するため、`AuthorUnifyNameSetView`で`unify_noop`になる条件と一致する。別名一覧画面の「名義を統一する」の状態の表示に使う。
+
+別名一覧画面を開くたびに呼ばれるため、統一元の曲を全件取得する`song_author_pairs()`は使わず、曲を持つAuthorのid（`DISTINCT author_id`）と曲数（`COUNT(DISTINCT song_id)`）だけを集計する。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| past別名と同名のAuthorが無い | past別名のみ登録 | `([], 0)`（統一済み） |
+| past別名と同名のAuthorが曲を持たない | 統一済みで曲数0のAuthorが残っている状態（#1137） | `([], 0)`（統一済み） |
+| past別名と同名のAuthorが曲を持つ | 2曲を持つAuthorと、曲を持たないAuthor | `([曲を持つAuthor], 2)`。曲を持たないAuthorは含まない |
+| 共著の曲は1曲として数える | 1曲が2つのpast別名のAuthorの共著 | 両方のAuthorを含み、曲数は1 |
+| author自身の曲は数えない | authorのみがSongを持つ | `([], 0)` |
+| past以外の別名と同名のAuthorは対象外 | `another`別名と同名のAuthorがSongを持つ | `([], 0)` |
+| 曲を1曲ずつ取得しない | past別名と同名のAuthorが5曲を持つ | `([そのAuthor], 5)`。曲と作者の中間テーブルへのクエリは2件で、どちらも`DISTINCT`による集計（曲を1行ずつ取得するクエリを発行しない） |
+| 統一済みなら曲数を集計しない | past別名と同名のAuthorが曲を持たない | `([], 0)`。`COUNT`のクエリを発行しない |
 
 #### 16-5. `build_unify_name_discord_text(target_author, old_name, new_name, editor, source_authors=())`（#1137）
 

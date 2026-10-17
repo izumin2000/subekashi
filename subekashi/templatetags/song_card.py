@@ -47,22 +47,6 @@ def get_view(song):
     
     return mark_safe(f'<i class="fas fa-play"></i>{view}')
 
-# 曲ページのタグと同じ順・同じアイコン
-def get_flags(song):
-    flags = [
-        (song.is_questionable, "fas fa-question", "界隈曲?"),
-        (song.is_draft, "fas fa-user-edit", "下書き"),
-        (song.is_original, "fas fa-external-link-alt", "オリジナル模倣"),
-        (song.is_joke, "far fa-meh-rolling-eyes", "ネタ曲"),
-        (song.is_inst, "fas fa-comment-slash", "インスト曲"),
-        (not song.is_subeana and not song.is_questionable, "fas fa-fish", "非すべあな模倣曲"),
-        (song.is_deleted, "far fa-eye-slash", "非公開/削除済み"),
-        (song.is_special, "fas fa-magic", "スペシャルデザイン"),
-        (song.is_limited, "fas fa-low-vision", "限定公開"),
-    ]
-    return [(icon, label) for is_flag, icon, label in flags if is_flag]
-
-
 # PC幅で歌詞の欄に「インスト曲」と表示される曲か（スマホ幅では歌詞の欄を隠す）
 def is_inst_in_lyrics(song):
     return song.is_inst and not song.lyrics and not song.is_questionable
@@ -77,26 +61,27 @@ def get_display_class(is_pc, is_sp):
     return ""
 
 
+# 曲ページのタグと同じ順・同じアイコン（未完成は曲カードには出さない）
 def get_flag_icons(song, has_link):
-    flags = get_flags(song)
+    flags = song.get_flags()
     if not flags:
         return ""
 
     # PC幅では、歌詞の欄の「インスト曲」と重なるため、インスト曲のアイコンを出さない
-    pc_flags = [(icon, label) for icon, label in flags if not (label == "インスト曲" and is_inst_in_lyrics(song))]
+    pc_flags = [flag for flag in flags if not (flag["name"] == "is_inst" and is_inst_in_lyrics(song))]
     # スマホ幅では、アイコンが多いときは三点リーダーにまとめる
     sp_flags = flags if len(flags) <= SONG_CARD_SP_MAX_FLAG_ICONS else flags[:SONG_CARD_SP_MAX_FLAG_ICONS - 1]
 
     tags = ""
-    for icon, label in flags:
-        is_pc = (icon, label) in pc_flags
-        is_sp = (icon, label) in sp_flags
+    for flag in flags:
+        is_pc = flag in pc_flags
+        is_sp = flag in sp_flags
         if is_pc or is_sp:
-            tags += f'<i class="{icon}{get_display_class(is_pc, is_sp)}" title="{label}"></i>'
+            tags += f'<i class="{flag["icon"]}{get_display_class(is_pc, is_sp)}" title="{flag["label"]}"></i>'
 
     folded_flags = flags[len(sp_flags):]
     if folded_flags:
-        folded_labels = "・".join(label for icon, label in folded_flags)
+        folded_labels = "・".join(flag["label"] for flag in folded_flags)
         tags += f'<i class="fas fa-ellipsis-h song-card-sp-only" title="{folded_labels}"></i>'
 
     # リンクとの間を縦線で区切る

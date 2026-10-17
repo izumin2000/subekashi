@@ -8,6 +8,7 @@ from django.db import IntegrityError, connection
 from django.db.utils import DataError
 from django.test import TestCase
 from django.utils import timezone
+from subekashi.constants.constants import SONG_FLAGS
 from subekashi.models import Ai, Author, AuthorAlias, Contact, Editor, History, Song, SongLink, Stats, Word
 from subekashi.models.author import EffectiveAlias, TransitiveAlias
 
@@ -382,6 +383,28 @@ class AuthorTransitiveAliasesTest(TestCase):
 
         self.assertEqual(transitive_alias.alias_type_display, "その後の名称")
 
+    def test_is_direct_successor_only_for_direct_reverse_past(self):
+        # #1230: Cの一覧では、Cの名前を以前の名称として直接登録しているAだけが該当する。
+        # Aの一覧のC・D（正方向のpast）、Eの一覧のA（逆方向のgroup）は該当しない
+        self.assertEqual([t.name for t in self.c.get_transitive_aliases() if t.is_direct_successor], ["author_a"])
+        self.assertEqual([t for t in self.a.get_transitive_aliases() if t.is_direct_successor], [])
+        self.assertEqual([t for t in self.e.get_transitive_aliases() if t.is_direct_successor], [])
+
+    def test_is_direct_successor_excludes_indirect_reverse_past(self):
+        # #1230: 以前の名称を2段階で辿った先（その後の名称のさらにその後の名称）は、
+        # 「その後の名称」と表示されるが、直接の関係ではないため該当しない
+        newest = Author.objects.create(name="successor_newest")
+        AuthorAlias.objects.create(name="successor_middle", author=newest, alias_type="past")
+        middle = Author.objects.create(name="successor_middle")
+        AuthorAlias.objects.create(name="successor_oldest", author=middle, alias_type="past")
+        oldest = Author.objects.create(name="successor_oldest")
+
+        transitive_aliases = {t.name: t for t in oldest.get_transitive_aliases()}
+
+        self.assertTrue(transitive_aliases["successor_middle"].is_direct_successor)
+        self.assertEqual(transitive_aliases["successor_newest"].alias_type_display, "その後の名称")
+        self.assertFalse(transitive_aliases["successor_newest"].is_direct_successor)
+
 
 class SongModelTest(TestCase):
     """Song モデルのテスト"""
@@ -486,6 +509,51 @@ class SongModelTest(TestCase):
         qs = Song.get_for_range("all", "off")
         self.assertIn(normal_song, qs)
         self.assertNotIn(joke_song, qs)
+
+
+class SongGetFlagsTest(TestCase):
+    """Song.get_flags() のテスト（#1228）"""
+
+    def _get_names(self, song, **kwargs):
+        return [flag["name"] for flag in song.get_flags(**kwargs)]
+
+    def test_no_flag_returns_empty_list(self):
+        song = Song.objects.create(title="フラグなしの曲")
+        self.assertEqual(song.get_flags(), [])
+
+    def test_each_field_flag(self):
+        cases = [
+            ({"is_questionable": True}, "is_questionable"),
+            ({"is_draft": True}, "is_draft"),
+            ({"is_original": True}, "is_original"),
+            ({"is_joke": True}, "is_joke"),
+            ({"is_inst": True}, "is_inst"),
+            ({"is_subeana": False}, "is_xx"),
+            ({"is_deleted": True}, "is_deleted"),
+            ({"is_special": True}, "is_special"),
+            ({"is_limited": True}, "is_limited"),
+        ]
+        for fields, name in cases:
+            with self.subTest(fields=fields):
+                song = Song.objects.create(title="フラグの曲", **fields)
+                self.assertEqual(self._get_names(song), [name])
+
+    def test_is_lack_is_given_by_argument(self):
+        song = Song.objects.create(title="未完成の曲")
+        self.assertEqual(self._get_names(song, is_lack=True), ["is_lack"])
+        self.assertEqual(self._get_names(song), [])
+
+    def test_questionable_non_subeana_has_no_xx_flag(self):
+        song = Song.objects.create(title="界隈曲?の曲", is_questionable=True, is_subeana=False)
+        self.assertEqual(self._get_names(song), ["is_questionable"])
+
+    def test_flags_follow_song_flags_order(self):
+        song = Song.objects.create(
+            title="すべてのフラグの曲", is_draft=True, is_original=True, is_joke=True, is_inst=True,
+            is_subeana=False, is_deleted=True, is_special=True, is_limited=True,
+        )
+        expected = [flag["name"] for flag in SONG_FLAGS if flag["name"] != "is_questionable"]
+        self.assertEqual(self._get_names(song, is_lack=True), expected)
 
 
 class SongLinkModelTest(TestCase):
