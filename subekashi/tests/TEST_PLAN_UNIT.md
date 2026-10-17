@@ -775,7 +775,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 「名義を統一する」の見出しの下に、名義が統一されているかどうかを表示する。統一するボタンを押さなくても（押して「既に名義は統一されています。」のトーストが出るかどうかで確かめなくても）分かるようにするため。
 
 - 統一先側（`#unify-name-status`）: authorがpast別名を持つ場合に、統一するフォームの上に表示する。判定は`get_ununified_source_authors()`（16-4-2）で、`AuthorUnifyNameSetView`で`unify_noop`になる条件と同じ
-- 統一元側（`#unify-name-successor-status`）: 他のauthorがこのauthorの名前をpast別名として登録している（別名一覧に「その後の名称」として表示される）場合に表示する。このauthorに曲が残っていれば、まだその作者に統一されていない。統一はその作者の別名一覧で行うため、統一するフォームは表示しない
+- 統一元側（`#unify-name-successor-status`）: 他のauthorがこのauthorの名前をpast別名として登録している（別名一覧に「その後の名称」として表示される）場合に表示する。このauthorに曲が残っていれば、まだその作者に統一されていない。統一はその作者の別名一覧で行うため、統一するフォームは表示しない。判定には`TransitiveAlias.is_direct_successor`（11-3-3）を使う。`group`以外の別名の名前はDB制約で全体でユニークなため、このauthorの名前をpast別名として登録できる作者は1人までで、表示も1件になる
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
@@ -1539,6 +1539,8 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | `TransitiveAlias.alias_type_display`（CHOICESに存在しない値） | `alias_type="unknown_type"` | 生の値をそのまま返す（フォールバック） |
 | `TransitiveAlias.alias_type_display`（`past`・正方向、#1019） | `alias_type="past"`, `is_reverse=False` | `"以前の名称"` を返す |
 | `TransitiveAlias.alias_type_display`（`past`・逆方向、#1019） | `alias_type="past"`, `is_reverse=True` | `"その後の名称"` を返す |
+| `TransitiveAlias.is_direct_successor`（#1230） | 上記のA〜Eで、C・A・Eの`get_transitive_aliases()` | Cの一覧のA（直接・逆方向・past）だけが`True`。Aの一覧のC・D（正方向のpast）、Eの一覧のA（逆方向のgroup）は`False` |
+| `TransitiveAlias.is_direct_successor`・間接的な逆方向のpast（#1230） | newestがmiddleを、middleがoldestをpast別名として登録し、oldestの`get_transitive_aliases()` | middleは`True`。newestは「その後の名称」と表示されるが、直接の関係ではないため`False` |
 | `TransitiveAlias.author_id`（逆方向・正方向かつ中継可能、#1023） | AのA.get_transitive_aliases()でC/D（past、正方向）、CのC.get_transitive_aliases()でA（past、逆方向）等 | 追加クエリなしに解決済みのauthor idが設定される |
 | `TransitiveAlias.author_id`（正方向かつ中継不可、#1023） | AのA.get_transitive_aliases()でB（another）・E（group）、CのC.get_transitive_aliases()でB・E（間接的） | `None`のまま（get_transitive_aliases()内では解決されない） |
 | 同じグループ名を複数authorが共有する場合 (#1044) | 別々のauthor（x, y）が同じ名前・`alias_type="group"`の別名をそれぞれ登録 | `x.get_transitive_aliases()`にはxが登録した1件のみが表示され、`y.get_transitive_aliases()`にはyが登録した1件のみが表示される。`group`は中継不可のため、xの一覧からyの存在は辿れない（グループメンバー一覧UIは#1044のスコープ外として意図的に非対応） |
@@ -1924,6 +1926,8 @@ URL生成は`get_urls()`に分離しており、ファイル出力・`collectsta
 
 以前の名称と同名で、まだ曲が残っている別のAuthorと、その曲数を`(Authorのリスト, 曲数)`で返す。現在の名義のまま統一した場合に曲を移すAuthorで、`build_unify_name_plan(author, author.name)`から算出するため、`AuthorUnifyNameSetView`で`unify_noop`になる条件と一致する。別名一覧画面の「名義を統一する」の状態の表示に使う。
 
+別名一覧画面を開くたびに呼ばれるため、統一元の曲を全件取得する`song_author_pairs()`は使わず、曲を持つAuthorのid（`DISTINCT author_id`）と曲数（`COUNT(DISTINCT song_id)`）だけを集計する。
+
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | past別名と同名のAuthorが無い | past別名のみ登録 | `([], 0)`（統一済み） |
@@ -1932,6 +1936,8 @@ URL生成は`get_urls()`に分離しており、ファイル出力・`collectsta
 | 共著の曲は1曲として数える | 1曲が2つのpast別名のAuthorの共著 | 両方のAuthorを含み、曲数は1 |
 | author自身の曲は数えない | authorのみがSongを持つ | `([], 0)` |
 | past以外の別名と同名のAuthorは対象外 | `another`別名と同名のAuthorがSongを持つ | `([], 0)` |
+| 曲を1曲ずつ取得しない | past別名と同名のAuthorが5曲を持つ | `([そのAuthor], 5)`。曲と作者の中間テーブルへのクエリは2件で、どちらも`DISTINCT`による集計（曲を1行ずつ取得するクエリを発行しない） |
+| 統一済みなら曲数を集計しない | past別名と同名のAuthorが曲を持たない | `([], 0)`。`COUNT`のクエリを発行しない |
 
 #### 16-5. `build_unify_name_discord_text(target_author, old_name, new_name, editor, source_authors=())`（#1137）
 

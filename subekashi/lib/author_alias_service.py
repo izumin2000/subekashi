@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from django.db.models import Count
 from config.settings import ROOT_URL
 from subekashi.models import Author, Song
 
@@ -85,9 +86,10 @@ class UnifyNamePlan:
 def build_unify_name_plan(author, new_name):
     past_names = list(author.aliases.filter(alias_type="past").values_list("name", flat=True))
     # 別名一覧画面の統一するフォームの候補と同じ、以前の名称の順に並べる（#1230）
+    past_name_order = {name: i for i, name in enumerate(past_names)}
     other_authors = sorted(
         Author.objects.filter(name__in=past_names).exclude(pk=author.pk),
-        key=lambda a: past_names.index(a.name),
+        key=lambda a: past_name_order[a.name],
     )
     target_author = next((a for a in other_authors if a.name == new_name), author)
     source_authors = [a for a in [author] + other_authors if a.pk != target_author.pk]
@@ -105,10 +107,17 @@ def get_ununified_source_authors(author):
 
     現在の名義のまま統一した場合に曲を移すAuthor。1件も無ければ名義は統一済みとみなす
     （AuthorUnifyNameSetViewでunify_noopになる条件と同じ）。曲数は共著の重複を除いた数
+
+    別名一覧画面を開くたびに呼ばれるため、統一元の曲を全件取得するsong_author_pairs()は使わず、
+    曲を持つAuthorのidと曲数だけを集計する。どちらも結果の大きさは曲数によらない
     """
     plan = build_unify_name_plan(author, author.name)
-    song_author_pairs = plan.song_author_pairs()
-    return plan.affected_source_authors(song_author_pairs), len({song_id for song_id, _ in song_author_pairs})
+    song_authors = Song.authors.through.objects.filter(author__in=plan.source_authors)
+    moved_author_ids = set(song_authors.values_list("author_id", flat=True).distinct())
+    if not moved_author_ids:
+        return [], 0
+    song_count = song_authors.aggregate(count=Count("song_id", distinct=True))["count"]
+    return [a for a in plan.source_authors if a.pk in moved_author_ids], song_count
 
 
 def build_unify_name_discord_text(target_author, old_name, new_name, editor, source_authors=()):

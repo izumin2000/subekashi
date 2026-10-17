@@ -101,9 +101,11 @@ class AuthorAliasesView(View):
         )
 
         # この作者の名前を以前の名称として登録している作者（その後の名称）。この作者に
-        # 曲が残っていれば、まだその作者に名義が統一されていない（#1230）
+        # 曲が残っていれば、まだその作者に名義が統一されていない（#1230）。
+        # group以外の別名の名前はDB制約で全体でユニーク（AuthorAlias.Meta参照）なため、
+        # この作者の名前を以前の名称として登録できる作者は1人までで、next()で取れば足りる
         unify_name_successor = next(
-            (ta.source.author for ta in transitive_aliases if ta.is_direct and ta.is_reverse and ta.alias_type == "past"),
+            (ta.source.author for ta in transitive_aliases if ta.is_direct_successor),
             None,
         )
 
