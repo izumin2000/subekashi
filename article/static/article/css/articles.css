@@ -43,6 +43,7 @@ form {
     color: #fff;
     text-align: center;
     font-size: 24px;
+    overflow-wrap: anywhere;
 }
 
 .article-title-wrapper h1, .article-title-wrapper h2 {

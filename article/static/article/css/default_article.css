@@ -17,8 +17,15 @@
     margin-left: 20px;
 }
 
+/* URLや長い英単語も画面幅で折り返し、横にはみ出さないようにする */
+#article-title {
+    overflow-wrap: anywhere;
+}
+
+/* anywhereは表の列幅まで変えてしまうため、本文ではbreak-wordにする（表は横スクロールで見る） */
 #article-text {
     margin: 0 30px;
+    overflow-wrap: break-word;
 }
 
 #article-text p, #article-text a, #article-text h2 {
