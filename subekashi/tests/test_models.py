@@ -526,6 +526,10 @@ class SongModelTest(TestCase):
         """#423: カテゴリに「その他」は無い"""
         self.assertNotIn("other", dict(Song.CHOICES))
 
+    def test_notice_category_label(self):
+        """#423: "notice"の表示名は「予告」"""
+        self.assertEqual(dict(Song.CHOICES)["notice"], "予告")
+
     def test_meme_icon_differs_from_joke_flag_icon(self):
         """#423: ネタ動画のアイコンは、ネタ曲のフラグのアイコンと別にする"""
         joke_icon = next(flag["icon"] for flag in SONG_FLAGS if flag["name"] == "is_joke")
