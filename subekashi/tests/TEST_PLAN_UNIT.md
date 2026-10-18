@@ -1562,7 +1562,7 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | `authors_str()` メソッド | 複数作者を持つ曲 | 作者名がカンマ区切りで返される |
 | `is_questionable` のデフォルト値 | フラグ未指定で作成 | `is_questionable == False` |
 | `category` のデフォルト値（#423） | カテゴリ未指定で作成 | `category == "song"` |
-| カテゴリの選択肢（#423） | `Song.CHOICES` | ネタ動画は `"meme"`（ネタ曲の `is_joke` とは無関係）で、`"joke"` は無い。「その他」（`"other"`）も無い |
+| カテゴリの選択肢（#423） | `Song.CHOICES` | ネタ動画は `"meme"`（ネタ曲の `is_joke` とは無関係）で、`"joke"` は無い。「その他」（`"other"`）も無い。`"notice"` の表示名は「予告」 |
 | ネタ動画のアイコン（#423） | `SONG_CATEGORIES` のネタ動画・`SONG_FLAGS` のネタ曲 | アイコンが異なる |
 | カテゴリの選択肢は `SONG_CATEGORIES` から作る（#423） | `Song.CHOICES` | `SONG_CATEGORIES` の順・表示名と一致し、先頭は `("song", "曲")`。全てのカテゴリにFont Awesomeのアイコンがある |
 | `get_category()`（#423） | `category="meme"` の曲 / `category="joke"`（変更前の値）の曲 | `{"value": "meme", "label": "ネタ動画", "icon": "far fa-laugh-squint"}` / `None` |

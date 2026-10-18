@@ -765,7 +765,7 @@ class MakeIsLackAnnotationTest(TestCase):
 
     def test_non_song_category_without_lyrics_annotated_false(self):
         # #423: カテゴリが曲以外なら、歌詞がなくても条件(C)に該当しない
-        song = Song.objects.create(title="告知アノテーションテスト", category="notice", is_inst=False, lyrics="", is_original=True)
+        song = Song.objects.create(title="予告アノテーションテスト", category="notice", is_inst=False, lyrics="", is_original=True)
         link = SongLink.objects.create(url="https://youtu.be/noticenolyr01")
         link.songs.add(song)
         qs = Song.objects.annotate(is_lack=make_is_lack_annotation())

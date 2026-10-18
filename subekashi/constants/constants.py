@@ -202,7 +202,7 @@ SONG_CATEGORIES = [
     {'value': 'otomad', 'label': '音MAD', 'icon': 'fas fa-cut'},
     {'value': 'medley', 'label': 'メドレー', 'icon': 'fas fa-stream'},
     {'value': 'omnibus', 'label': '総集編', 'icon': 'fas fa-archive'},
-    {'value': 'notice', 'label': '告知', 'icon': 'fas fa-bell'},
+    {'value': 'notice', 'label': '予告', 'icon': 'fas fa-bell'},
     {'value': 'dec', 'label': '解読', 'icon': 'fas fa-key'},
     {'value': 'offv', 'label': 'オフボ', 'icon': 'fas fa-microphone-slash'},
     {'value': 'cover', 'label': 'カバー', 'icon': 'fas fa-microphone'},
