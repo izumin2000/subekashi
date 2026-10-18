@@ -203,7 +203,6 @@ SONG_CATEGORIES = [
     {'value': 'medley', 'label': 'メドレー', 'icon': 'fas fa-stream'},
     {'value': 'omnibus', 'label': '総集編', 'icon': 'fas fa-archive'},
     {'value': 'notice', 'label': '予告', 'icon': 'fas fa-bell'},
-    {'value': 'dec', 'label': '解読', 'icon': 'fas fa-key'},
     {'value': 'offv', 'label': 'オフボ', 'icon': 'fas fa-microphone-slash'},
     {'value': 'cover', 'label': 'カバー', 'icon': 'fas fa-microphone'},
     {'value': 'meme', 'label': 'ネタ動画', 'icon': 'far fa-laugh-squint'},

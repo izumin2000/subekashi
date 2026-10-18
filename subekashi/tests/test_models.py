@@ -522,9 +522,10 @@ class SongModelTest(TestCase):
         self.assertEqual(choices["meme"], "ネタ動画")
         self.assertNotIn("joke", choices)
 
-    def test_category_choices_has_no_other(self):
-        """#423: カテゴリに「その他」は無い"""
+    def test_category_choices_has_no_other_and_dec(self):
+        """#423: カテゴリに「その他」「解読」は無い"""
         self.assertNotIn("other", dict(Song.CHOICES))
+        self.assertNotIn("dec", dict(Song.CHOICES))
 
     def test_notice_category_label(self):
         """#423: "notice"の表示名は「予告」"""

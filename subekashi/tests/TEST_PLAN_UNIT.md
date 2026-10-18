@@ -752,7 +752,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | POST: is_questionable時も非公開/削除済み・ネタ曲・インスト・すべあな界隈曲は保存される | `is_questionable=True`, `is_deleted=True`, `is_joke=True`, `is_inst=True`, `is_subeana=True` | 各フラグがそれぞれ `True` のまま保存される |
 | GET: カテゴリの選択欄（#423） | `category="medley"` の曲 | `<select id="category" name="category">` が表示され、メドレーの選択肢のみ `selected` |
 | GET: 歌詞の入力欄（#423） | GETリクエスト | 歌詞の `.form-col` に `data-hide-if-not-song` が付く（カテゴリが曲以外のときに `song_edit.js` で非表示にする） |
-| POST: カテゴリの変更（#423） | `category="dec"` | 302、`category == "dec"`、Historyの `changes` に `["カテゴリ", "曲", "解読"]` |
+| POST: カテゴリの変更（#423） | `category="omnibus"` | 302、`category == "omnibus"`、Historyの `changes` に `["カテゴリ", "曲", "総集編"]` |
 | POST: カテゴリを送らない（#423） | `category="offv"` の曲に `category` なしで送信 | 302、`category == "offv"` のまま（カテゴリの選択欄がない古いページから送信された場合に変えない） |
 | POST: 不正なカテゴリ（#423） | `category="joke"` | HTTP 200、`"カテゴリが不正です。"` のエラー、カテゴリは変わらない |
 | POST: カテゴリが曲以外でも歌詞は保存（#423） | `category="medley"`, `lyrics="歌詞"` | 302、`lyrics == "歌詞"`（歌詞の入力欄は非表示にするだけで消さない） |
@@ -1562,7 +1562,7 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | `authors_str()` メソッド | 複数作者を持つ曲 | 作者名がカンマ区切りで返される |
 | `is_questionable` のデフォルト値 | フラグ未指定で作成 | `is_questionable == False` |
 | `category` のデフォルト値（#423） | カテゴリ未指定で作成 | `category == "song"` |
-| カテゴリの選択肢（#423） | `Song.CHOICES` | ネタ動画は `"meme"`（ネタ曲の `is_joke` とは無関係）で、`"joke"` は無い。「その他」（`"other"`）も無い。`"notice"` の表示名は「予告」 |
+| カテゴリの選択肢（#423） | `Song.CHOICES` | ネタ動画は `"meme"`（ネタ曲の `is_joke` とは無関係）で、`"joke"` は無い。「その他」（`"other"`）・「解読」（`"dec"`）も無い。`"notice"` の表示名は「予告」 |
 | ネタ動画のアイコン（#423） | `SONG_CATEGORIES` のネタ動画・`SONG_FLAGS` のネタ曲 | アイコンが異なる |
 | カテゴリの選択肢は `SONG_CATEGORIES` から作る（#423） | `Song.CHOICES` | `SONG_CATEGORIES` の順・表示名と一致し、先頭は `("song", "曲")`。全てのカテゴリにFont Awesomeのアイコンがある |
 | `get_category()`（#423） | `category="meme"` の曲 / `category="joke"`（変更前の値）の曲 | `{"value": "meme", "label": "ネタ動画", "icon": "far fa-laugh-squint"}` / `None` |
