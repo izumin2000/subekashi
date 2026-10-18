@@ -67,6 +67,27 @@ class ArticlesViewTest(TestCase):
         self.assertContains(response, '<span class="article-title-wrapper">リンクと<strong>太字</strong></span>')
         self.assertNotContains(response, 'href="https://example.com"')
 
+    def test_article_wrapper_divs_are_balanced(self):
+        # 記事の投稿方法・ニュース・それ以外の記事のいずれでも、記事ごとの<div>を余計に閉じない（#1244）
+        Article.objects.create(
+            article_id="howToArticle",
+            title="使い方記事",
+            tag="howto",
+            post_time=timezone.now() - timedelta(days=1),
+            is_open=True,
+        )
+        Article.objects.create(
+            article_id="test-articles-blog",
+            title="ブログ記事",
+            tag="blog",
+            post_time=timezone.now(),
+            is_open=True,
+        )
+        content = self.client.get("/articles/").content.decode()
+        start = content.index('<article id="mainarticle">')
+        main = content[start:content.index("</article>", start)]
+        self.assertEqual(main.count("<div"), main.count("</div>"))
+
     def test_is_pinned_article_default_pins_howto_article_first(self):
         Article.objects.create(
             article_id="howToArticle",
