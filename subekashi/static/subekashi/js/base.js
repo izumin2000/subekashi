@@ -375,7 +375,8 @@ function getCookie() {
     if (document.cookie != '') cookies.forEach(function(cookie) {
         var parts = cookie.split("=");
         var name = decodeURIComponent(parts[0]);
-        var value = decodeURIComponent(parts[1].replace(/"/g, ''));
+        // Djangoはカンマ等を含む値を「"a\054b"」のように8進数でエスケープして保存するため、元の文字に戻す
+        var value = decodeURIComponent(parts[1].replace(/"/g, '')).replace(/\\([0-7]{3})/g, (_, code) => String.fromCharCode(parseInt(code, 8)));
         cookieDict[name] = value;
     });
     
@@ -407,6 +408,7 @@ const TUTORIALS = {
     "is-joke": "ネタに走っている曲の場合にチェックしてください。<br>ネタ曲かどうかの判断は個人の判断に任せます。",
     "is-inst": "歌詞の無い曲の場合にチェックしてください。<br>例）<a href='https://youtu.be/6-h8cW_Han8' target='_blank'>明日へ降る雨</a> <a href='https://youtu.be/2P62pozC9Zc' target='_blank'>またの御アクセスをお待ちしております。</a>",
     "is-subeana": "すべあな界隈曲の場合はチェックしてください。<br>すべあな界隈曲かどうかの判断は個人の判断に任せます。",
+    "category": "動画の種類を選択してください。<br>曲以外を選択した場合、歌詞の入力は不要です。",
     "title": "タイトルを入力してください。<br>曲によっては複数のタイトルがある場合もあるので、その場合は一般的に知られているタイトルを入力することをオススメします。<span style='font-size: 10px'>将来的に曲の別名を入力できる機能を実装予定です。</span>",
     "authors": "作者やアーティスト名を入力してください。<br>複数のアーティストが関わっている場合はコンマ(,)で区切って入力してください。<br>複数の名義がある場合は、現在使われている名義・作者を入力してください。<span style='font-size: 10px'>将来的に名義に関する情報を入力できる機能を実装予定です。</span>",
     "url": "URLを入力してください。<br>半角コンマ(,)で区切ることで複数のURLを登録することができます。<br>転載動画のURLの記載はお控えください。",
@@ -414,7 +416,7 @@ const TUTORIALS = {
     "lyrics": "歌詞を入力してください。<br>インスト曲の場合は入力は不要です。<br>形式は特に決まっていませんが、できるだけMVと同じように記述してくれると助かります。",
     "is-draft": "下書きとして投稿したい場合はチェックしてください。<br>入力途中だけど投稿したいときに利用してください。<br>下書きした内容は誰でも閲覧できる状態になります。",
     "delete": "開発者に記事の削除依頼を送ります。<br>実際に削除の対応をするまでに時間がかかる場合があります。",
-    "select": "詳細検索の選択肢である界隈曲の種類・ネタ曲・並び替えの状態を保存します。保存しない場合、選択肢は上から、「全て表示」、「全て表示」、「更新日が遅い順」になります。",
+    "select": "詳細検索の選択肢である界隈曲の種類・ネタ曲・カテゴリ・並び替えの状態を保存します。保存しない場合、選択肢は上から、「全て表示」、「全て表示」、「指定なし」、「更新日が遅い順」になります。",
     "is_limited": "作者の要望により全て歌詞の所為です。上で、検索にヒットしない状態になっています。<br>YouTubeの限定公開とは別のものです。",
     "is_questionable": "界隈曲かどうか議論の余地があり、人それぞれ認識が異なる曲に表示されるタグです。",
     "unify-name": "この作者の名義を、選択した名義に統一します。<br>「以前の名称」と同じ名前で別の作者として登録されている曲も、選択した名義の作者にまとめられます。<br>曲の登録・編集時に「以前の名称」を入力すると、自動的に統一した名義に変換されて保存されます。"
@@ -478,7 +480,7 @@ function isLack(song) {
         return true;
     }
 
-    if (!song.is_questionable && !song.is_inst && song.lyrics === "") {
+    if (!song.is_questionable && !song.is_inst && song.lyrics === "" && song.category === "song") {
         return true;
     }
 

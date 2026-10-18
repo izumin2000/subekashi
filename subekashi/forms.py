@@ -1,6 +1,6 @@
 from django import forms
 from django.db.models import Q
-from subekashi.models import AuthorAlias
+from subekashi.models import AuthorAlias, Song
 
 
 CONTACT_CATEGORY_CHOICES = [
@@ -135,3 +135,9 @@ class SongEditForm(forms.Form):
     is_subeana = forms.BooleanField(required=False)
     is_draft = forms.BooleanField(required=False)
     is_questionable = forms.BooleanField(required=False)
+    # 未指定の場合は編集前のカテゴリのままにする（#423）
+    category = forms.ChoiceField(
+        choices=Song.CHOICES,
+        required=False,
+        error_messages={'invalid_choice': 'カテゴリが不正です。'},
+    )

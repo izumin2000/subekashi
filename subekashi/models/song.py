@@ -3,26 +3,14 @@ from datetime import datetime
 from typing import Optional
 from django.db import models
 from django.utils import timezone
-from subekashi.constants.constants import SONG_FLAGS
+from subekashi.constants.constants import SONG_CATEGORIES, SONG_FLAGS
 from .author import Author
 from .base import GetOrNoneMixin
 
 
 # 楽曲のメイン情報
 class Song(GetOrNoneMixin, models.Model):
-    CHOICES = (
-        ("song", "曲"),
-        ("arrange", "アレンジ"),
-        ("otomad", "音MAD"),
-        ("medley", "メドレー"),
-        ("omnibus", "総集編"),
-        ("notice", "告知"),
-        ("dec", "解読"),
-        ("offv", "オフボ"),
-        ("cover", "カバー"),
-        ("joke", "ネタ動画"),
-        ("other", "その他"),
-    )
+    CHOICES = tuple((category["value"], category["label"]) for category in SONG_CATEGORIES)
 
     title = models.CharField(default = "", max_length = 500)
     authors = models.ManyToManyField(Author, related_name='songs', blank=True)
@@ -82,6 +70,10 @@ class Song(GetOrNoneMixin, models.Model):
         from subekashi.lib.query_filters import filter_by_lack
         return cls.objects.filter(pk=pk).filter(filter_by_lack()).exists()
 
+    def get_category(self):
+        """SONG_CATEGORIESのうち、この曲のカテゴリを返す。選択肢にないカテゴリならNone"""
+        return next((category for category in SONG_CATEGORIES if category["value"] == self.category), None)
+
     def has_subekashi_author(self):
         """Songにid=1（すべあな）作者が紐づいているかを返す"""
         return self.authors.filter(id=1).exists()
@@ -113,6 +105,7 @@ class SongFields:
     is_subeana: bool = True
     is_draft: bool = False
     is_questionable: bool = False
+    category: str = "song"
     upload_time: Optional[datetime] = None
     view: Optional[int] = None
     like: Optional[int] = None

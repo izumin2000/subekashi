@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.views import View
-from subekashi.constants.constants import ALL_MEDIAS, LONG_TERM_COOKIE_AGE, FORM_BUTTON_CHOICES, FORM_BUTTON_DEFAULT, SORT_CHOICES
+from subekashi.constants.constants import ALL_MEDIAS, LONG_TERM_COOKIE_AGE, FORM_BUTTON_CHOICES, FORM_BUTTON_DEFAULT, SORT_CHOICES, SONG_CATEGORIES
+from subekashi.lib.query_filters import split_categorys
 from subekashi.lib.query_utils import YOUTUBE_FILTERS, YOUTUBE_SORTS
 
 
@@ -38,6 +39,7 @@ SEARCH_FORM_QUERIES = {
     'author': ['author'],
     'url': ['url', 'mediatypes'],
     'imitate': ['imitate'],
+    'category': ['categorys'],
     'subeana': ['songrange', 'is_subeana'],
     'joke': ['jokerange', 'is_joke'],
     'original': ['is_original'],
@@ -128,6 +130,30 @@ def get_search_form_context(request, request_data):
 
     # メディアのチェックボックスのURLクエリ対応（カンマ区切り）
     context["mediatypes"] = request_data.get("mediatypes", "").split(",")
+
+    # カテゴリごとの指定なし・のみ・以外のラジオボタン（#423）。categorysはカンマ区切りで、「以外」のカテゴリは先頭に~を付ける
+    # URLクエリで指定されていない場合は保存した選択を使う。URLクエリのcategorysは曲ページのタグのリンク（一時的な絞り込み）でも使うため、
+    # 表示にのみ反映し、cookieには検索画面で選択を変更したとき（songs.jsのPOST）にのみ保存する
+    if "categorys" in request_data:
+        categorys = request_data["categorys"]
+    elif is_saved_select == 'on':
+        categorys = COOKIES.get("search_categorys", "")
+    else:
+        categorys = ""
+    include, exclude = split_categorys(categorys)
+    context["category_filters"] = [
+        {
+            "category": category,
+            "name": f"category_{category['value']}",
+            "value": "True" if category["value"] in include else "False" if category["value"] in exclude else "",
+        }
+        for category in SONG_CATEGORIES
+    ]
+    if "categorys" in request_data and request.method == "POST" and is_saved_select == 'on':
+        cookies_to_set["search_categorys"] = ",".join(
+            ("" if category_filter["value"] == "True" else "~") + category_filter["category"]["value"]
+            for category_filter in context["category_filters"] if category_filter["value"]
+        )
 
     context["search_form"] = next(
         (form for form, queries in SEARCH_FORM_QUERIES.items() if any(request_data.get(query) for query in queries)),

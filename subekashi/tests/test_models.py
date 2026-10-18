@@ -3,12 +3,14 @@
 
 Song, Author, AuthorAlias, SongLink の CRUD・制約・メソッドを検証する。
 """
+import importlib
 import unittest
+from django.apps import apps
 from django.db import IntegrityError, connection
 from django.db.utils import DataError
 from django.test import TestCase
 from django.utils import timezone
-from subekashi.constants.constants import SONG_FLAGS
+from subekashi.constants.constants import SONG_CATEGORIES, SONG_FLAGS
 from subekashi.models import Ai, Author, AuthorAlias, Contact, Editor, History, Song, SongLink, Stats, Word
 from subekashi.models.author import EffectiveAlias, TransitiveAlias
 
@@ -509,6 +511,65 @@ class SongModelTest(TestCase):
         qs = Song.get_for_range("all", "off")
         self.assertIn(normal_song, qs)
         self.assertNotIn(joke_song, qs)
+
+    def test_default_category_is_song(self):
+        song = Song.objects.create(title="カテゴリ未指定曲")
+        self.assertEqual(song.category, "song")
+
+    def test_category_choices_has_meme_instead_of_joke(self):
+        """#423: ネタ動画のカテゴリは"joke"ではなく"meme"とする（ネタ曲のis_jokeとは無関係）"""
+        choices = dict(Song.CHOICES)
+        self.assertEqual(choices["meme"], "ネタ動画")
+        self.assertNotIn("joke", choices)
+
+    def test_category_choices_has_no_other(self):
+        """#423: カテゴリに「その他」は無い"""
+        self.assertNotIn("other", dict(Song.CHOICES))
+
+    def test_meme_icon_differs_from_joke_flag_icon(self):
+        """#423: ネタ動画のアイコンは、ネタ曲のフラグのアイコンと別にする"""
+        joke_icon = next(flag["icon"] for flag in SONG_FLAGS if flag["name"] == "is_joke")
+        meme_icon = next(category["icon"] for category in SONG_CATEGORIES if category["value"] == "meme")
+        self.assertNotEqual(meme_icon, joke_icon)
+
+    def test_category_choices_follow_song_categories(self):
+        """#423: カテゴリの選択肢はSONG_CATEGORIESの順・表示名で、全てのカテゴリにアイコンがある"""
+        self.assertEqual(Song.CHOICES, tuple((category["value"], category["label"]) for category in SONG_CATEGORIES))
+        self.assertEqual(Song.CHOICES[0], ("song", "曲"))
+        for category in SONG_CATEGORIES:
+            with self.subTest(category=category["value"]):
+                self.assertRegex(category["icon"], r"^fa[rsb] fa-[\w-]+$")
+
+    def test_get_category(self):
+        """#423: get_category()はSONG_CATEGORIESのうち、曲のカテゴリを返す"""
+        song = Song.objects.create(title="ネタ動画", category="meme")
+        self.assertEqual(song.get_category(), {"value": "meme", "label": "ネタ動画", "icon": "far fa-laugh-squint"})
+
+    def test_get_category_returns_none_for_unknown_category(self):
+        song = Song.objects.create(title="移行前のネタ動画", category="joke")
+        self.assertIsNone(song.get_category())
+
+
+class SongCategoryMigrationTest(TestCase):
+    """0050_song_category_meme のデータ移行のテスト（#423）"""
+
+    def setUp(self):
+        self.migration = importlib.import_module("subekashi.migrations.0050_song_category_meme")
+
+    def test_joke_to_meme(self):
+        joke = Song.objects.create(title="ネタ動画", category="joke")
+        song = Song.objects.create(title="曲")
+        self.migration.joke_to_meme(apps, None)
+        joke.refresh_from_db()
+        song.refresh_from_db()
+        self.assertEqual(joke.category, "meme")
+        self.assertEqual(song.category, "song")
+
+    def test_meme_to_joke(self):
+        meme = Song.objects.create(title="ネタ動画", category="meme")
+        self.migration.meme_to_joke(apps, None)
+        meme.refresh_from_db()
+        self.assertEqual(meme.category, "joke")
 
 
 class SongGetFlagsTest(TestCase):

@@ -123,6 +123,7 @@
 | `post_time` が自動設定される | fields に `post_time` なし | `timezone.now()` に近い時刻が設定される |
 | 各フラグが正しく設定される | `is_original=True`, `is_joke=False` など | Song属性がfieldsと一致する |
 | `is_questionable` が正しく設定される | `is_questionable=True` | `song.is_questionable` が `True` |
+| `category` が正しく設定される（#423） | `category="otomad"` | `song.category` が `"otomad"` |
 
 #### 2-4. `get_imitate_songs(imitates_str, self_id)`
 
@@ -143,6 +144,7 @@
 | 新しいURLの追加 | 新しいURL | SongLinkが作成・紐付けられる |
 | 作者の更新 | 新しい author_objects | Song.authors が更新される |
 | `is_questionable` の更新 | `is_questionable=True` | `song.is_questionable` が `True` に更新される |
+| `category` の更新（#423） | `category="medley"` | `song.category` が `"medley"` に更新される |
 | トランザクション失敗時のロールバック | DB エラーを模擬 | 変更が元に戻る |
 
 #### 2-6. `build_delete_discord_text(song, reason, editor)`
@@ -159,6 +161,8 @@
 | 変更なし | before と after が同じ | `changed_labels` が空リスト |
 | 複数フィールドの変更 | 複数の差分 | 全変更が `changes` に含まれ、`edit_title` に反映 |
 | `is_questionable` の変更 | before/after で `is_questionable` が異なる | `changed_labels` に「界隈曲?」が含まれる |
+| `category` の変更（#423） | `song` → `cover` | `changed_labels` に「カテゴリ」が含まれ、`changes` に `["カテゴリ", "曲", "カバー"]`（選択肢の表示名）が含まれる |
+| `category` が同じ（#423） | before/after で `category` が同じ | `changed_labels` に「カテゴリ」が含まれない |
 
 #### 2-8. `get_short_base_title(title)`（#667）
 
@@ -204,6 +208,34 @@
 | タイトルが short だけ | `""` と `"short"` | リンクしない |
 | 関係する曲がない | `"鏡"` のみ | `([], [])` |
 | 作者がいない | 作者が未設定の `"鏡"` と `"鏡[short]"` | `([], [])` |
+
+#### 2-11. `category_label(category)`（#423）
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 選択肢にあるカテゴリ | `"arrange"` | `"アレンジ"`（`Song.CHOICES` の表示名） |
+| 選択肢にないカテゴリ | `"unknown"` | `"unknown"`（そのまま返す） |
+
+#### 2-12. `build_new_song_discord_text(song_id, fields, authors, cleaned_url, editor)`
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 戻り値 | 有効な `SongFields` | `changes`（リスト）とDiscordのテキスト（文字列）を返す |
+| `changes` の見出し | 有効な `SongFields` | `changes[0] == ["種類", "内容"]` |
+| タイトル・作者 | タイトルと作者 | テキストにタイトル・作者名が含まれる |
+| `is_questionable=True` | `is_questionable=True` | テキストに「界隈曲?」が含まれる |
+| カテゴリ（#423） | `category="medley"` | `changes` に `["カテゴリ", "メドレー"]`、テキストに `**カテゴリ**：`メドレー`` が含まれる（選択肢の表示名） |
+
+#### 2-13. `split_songs_by_category(songs)`（#423）
+
+曲ページの模倣元・模倣曲の一覧で、ネタ曲と曲以外のカテゴリの曲をdetailsにまとめるために使う。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 曲・ネタ曲・カテゴリごとに分ける | カテゴリが曲の曲・ネタ曲、カバー1曲・アレンジ2曲 | `songs` に曲、`joke_songs` にネタ曲、`category_groups` にアレンジ（2曲）・カバーの順（`SONG_CATEGORIES` の順）で入る |
+| 曲以外のカテゴリのネタ曲 | `category="meme"`, `is_joke=True` | `joke_songs` ではなく、ネタ動画の `category_groups` に入る |
+| 選択肢にないカテゴリ | `category="joke"`（変更前の値） | `songs` に入り、`category_groups` は空 |
+| 曲がない | 空のQuerySet | すべて空 |
 
 ---
 
@@ -319,6 +351,7 @@ A -`past`-> B -`spell`-> C -`abbr`-> D とつながり、DとEは`another`での
 | `is_subeana=False` の曲 | `is_original=False`, `is_subeana=False` | 結果に含まれない |
 | `is_questionable=True` かつURLなし・削除されていない曲 | `is_questionable=True`, `is_deleted=False`, SongLink なし | 結果に含まれる（URLなし条件は `is_questionable` を問わない） |
 | `is_questionable=True` かつ歌詞なし/模倣なし等の曲 | `is_questionable=True`, URLあり、歌詞なし等 | 結果に含まれない（歌詞なし・模倣なし条件は `is_questionable=False` が必須） |
+| カテゴリが曲以外で歌詞なしの曲（#423） | `category="arrange"`, `is_inst=False`, `lyrics=""`, URLあり, `is_original=True` | 結果に含まれない（歌詞なし条件は `category="song"` が必須。歌詞を入力するのは曲の場合のみ） |
 
 #### 3-3. `filter_by_mediatypes(mediatypes)`
 
@@ -332,6 +365,23 @@ A -`past`-> B -`spell`-> C -`abbr`-> D とつながり、DとEは`another`での
 | `vimesis`（DB REGEXP経由の境界チェック確認） | `https://main.vimesis.com/channel/@subekashi` のSongLinkが紐付いている曲 | 結果に含まれる。YouTube曲は含まれない（Issue #1056） |
 | `vimesis`（なりすましドメインの除外確認） | `https://vimesis.com.attacker.example/` のSongLinkが紐付いている曲 | 結果に含まれない（Issue #1056 レビュー指摘） |
 
+#### 3-3-1. `filter_by_categorys(categorys)`（#423）
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| 1つ指定 | `"arrange"` | カテゴリがアレンジの曲のみ含まれる |
+| 複数指定（カンマ区切り） | `"song,meme"` | カテゴリが曲・ネタ動画の曲が含まれる |
+| 存在しないカテゴリ | `"joke"` | 結果が空 |
+| 「以外」の指定（先頭に~） | `"~song,~meme"` | カテゴリが曲・ネタ動画の曲を除き、アレンジの曲のみ含まれる |
+| 「のみ」と「以外」の両方 | `"song,arrange,~arrange"` | 「のみ」のカテゴリのうち「以外」でない、カテゴリが曲の曲のみ含まれる |
+
+#### 3-3-2. `split_categorys(categorys)`（#423）
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 「のみ」と「以外」に分ける | `"arrange,~meme,cover,~song"` | `(["arrange", "cover"], ["meme", "song"])`（「以外」は先頭の~を除く） |
+| 空の値 | `""`・`"arrange,,~meme"` | 空の値は無視する（`([], [])`・`(["arrange"], ["meme"])`） |
+
 #### 3-4. `make_is_lack_annotation()`
 
 | テストケース | 前提条件 | 期待結果 |
@@ -342,6 +392,7 @@ A -`past`-> B -`spell`-> C -`abbr`-> D とつながり、DとEは`another`での
 | 特殊作者(id=1)が紐づいている曲に annotate | 上記に加え特殊作者(id=1)を紐付け | `is_lack=False` がアノテートされる |
 | `is_questionable=True` かつURLなし・削除されていない曲に annotate | `is_questionable=True`, SongLink なし | `is_lack=True` がアノテートされる（URLなし条件は `is_questionable` を問わない） |
 | `is_questionable=True` かつ歌詞なし等の曲に annotate | `is_questionable=True`, URLあり、歌詞なし等 | `is_lack=False` がアノテートされる（歌詞なし条件は `is_questionable=False` が必須） |
+| カテゴリが曲以外で歌詞なしの曲に annotate（#423） | `category="notice"`, URLあり、歌詞なし | `is_lack=False` がアノテートされる（歌詞なし条件は `category="song"` が必須） |
 
 #### 3-5. `filter_by_collab()`（#943）
 
@@ -485,6 +536,9 @@ A -`past`-> B -`spell`-> C -`abbr`-> D とつながり、DとEは`another`での
 | titleが500文字超 | `title="あ" * 501` | `is_valid() == False` |
 | lyricsが10000文字丁度 (#1085) | `lyrics="あ" * 10000` | `is_valid() == True` |
 | lyricsが10000文字超 (#1085) | `lyrics="あ" * 10001` | `is_valid() == False` |
+| categoryは任意（#423） | `category` 省略 | `is_valid() == True`、`cleaned_data["category"] == ""`（ビューで編集前のカテゴリのままにする） |
+| 正しいcategory（#423） | `category="arrange"` | `cleaned_data["category"] == "arrange"` |
+| 不正なcategory（#423） | `category="joke"`（変更前の値） | `is_valid() == False`、`"カテゴリが不正です。"` |
 
 #### 6-4. `AuthorAliasForm`（#992）
 
@@ -551,6 +605,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | top.jsに渡す全て表示の判定（#585） | `is_shown_search`が`all`・`on`・`off`・不正な値 | インラインのスクリプトの`const isShownAllSearch`は`all`の場合のみ`true`で、`search_form.js`は`true`の場合のみ読み込まれる（ずれると`top.js`がReferenceErrorになるため） |
 | 検索フォームのCSSの読み込み（#585） | `is_shown_search`が`all`・`on`・`off` | `css/components/search_form.css`は`all`の場合のみ、`top.css`より先に読み込まれる |
 | 全て表示のフォームにCSRFトークンを含めない（#585） | `is_shown_search=all` | GETで送信するため、`#search-form`の中に`csrfmiddlewaretoken`が無い |
+| 全て表示で保存したカテゴリを反映（#423） | `is_shown_search=all`, `is_saved_select=on`, `search_categorys=arrange,~meme` | 検索画面と同じく、アレンジの「のみ」・ネタ動画の「以外」のラジオボタンが選択される |
 | 全て表示で検索の選択肢の保存を反映（#585） | `is_shown_search=all`, `is_saved_select=on`, `search_sort=-view`, `search_songrange=subeana`, `search_jokerange=off`, `form_button=icon` | 検索画面と同じく`-view`・`subeana`・`off`のラジオボタンが選択され、`#search-form-radios`に`icon-only`が付く |
 | 全て表示で検索の選択肢の保存がoff（#585） | `is_shown_search=all`, `is_saved_select=off`, `search_sort=-view`, `search_songrange=subeana` | 保存された値ではなくデフォルト値（`-post_time`・`all`）のラジオボタンが選択される |
 | 全て表示の初期の選択が検索画面と一致する（#585） | `is_shown_search=all`で、cookieなし・`is_saved_select=on`と保存された選択肢・`is_saved_select=off`と保存された選択肢・`is_saved_select=on`と不正な値の4通り | トップ画面と、URLクエリが無い検索画面で、選択されているラジオボタン（並び替え・界隈曲・ネタ曲・真偽値のフィルタの11個）が一致する（`top.js`は表示時から変更していないラジオボタンをURLクエリに含めないため） |
@@ -564,6 +619,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 #### 7-2. `SongsView` (`/songs/`)
 
 検索フォームは`components/search_form.html`・`search_form.js`・`css/components/search_form.css`に切り出し、トップ画面の「全て表示」の検索と共通で使う。contextは`get_search_form_context`で作る。`search_form.css`は全ページでは読み込まず、使うページだけが`base.html`の`component_css`ブロックで読み込む。
+
+カテゴリのフォーム（#423）は、カテゴリごとに「すべあな界隈曲」と同じ指定なし・のみ・以外のラジオボタン（`components/bool_filter.html`、`name="category_<カテゴリ>"`）を並べる。選択はまとめて`categorys`のクエリ（カンマ区切りで、「以外」のカテゴリは先頭に~を付ける。例：`arrange,~meme`）にし、`search_categorys` cookieにも同じ形式で保存する。Djangoはカンマを含むcookieの値を`"arrange\054~meme"`のように8進数でエスケープするため、`base.js`の`getCookie()`で元の文字に戻す。選択の変更時の保存（`songs.js`）・ブラウザバック時の復元（`search_form.js`の`restoreFormValuesFromCookies()`）はDjangoテストでは確認できないため、Playwrightで確認する。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
@@ -596,13 +653,23 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | songrangeクエリ(検索フォーム経由)は引き続きcookieに保存される | `is_saved_select=on`, `?songrange=xx` | `search_songrange` cookieに "xx" が保存される |
 | 検索フォームの初期表示（デフォルト） | URLクエリなし | context["search_form"] = "keyword"、キーワードのラジオボタンが選択され、他のフォームは `hidden` |
 | 検索フォームのラジオボタンは必ず1つ選択される | URLクエリなし・各フォームのURLクエリ | `name="search-form"` のラジオボタンが常に1つだけ選択される（JSはこれを前提にしている） |
-| 全てのフォームにURLクエリが対応づけられている | GETリクエスト | 18個のラジオボタンの並びが `SEARCH_FORM_QUERIES` のキーの並びと一致する |
+| 全てのフォームにURLクエリが対応づけられている | GETリクエスト | 19個のラジオボタンの並びが `SEARCH_FORM_QUERIES` のキーの並びと一致する |
 | 真偽値のフィルタの不正な値 | `?is_lack=foo` | 「未完成」のフォームが表示され、「指定なし」のラジオボタンが選択される |
 | mediatypesのURLクエリ | `?mediatypes=youtube,nicovideo,unknown` | URLのフォームが表示され、YouTube・ニコニコ動画のチェックボックスのみ選択される（存在しないメディアは無視） |
 | mediatypes未指定 | URLクエリなし | メディアのチェックボックスは選択されない |
-| 検索フォームの初期表示（URLクエリ指定） | `?title=テスト` `?mediatypes=youtube` `?view_gte=100` `?is_subeana=xx` `?jokerange=off` `?is_original=True` `?is_inst=True` `?is_questionable=True` `?is_special=True` `?is_collab=True` `?is_lack=True` `?sort=-view` など | URLクエリを含むフォーム（title/url/youtube/subeana/joke/original/inst/questionable/special/collab/lack/sortなど）が表示される |
+| カテゴリのフォーム（#423） | URLクエリなし | `Song.CHOICES` の順に全てのカテゴリの指定なし・のみ・以外のラジオボタンが表示され、全て指定なし（`data-default`）が選択される。チェックボックスは無い |
+| カテゴリのラジオボタンのアイコン（#423） | GETリクエスト | 見出しに `SONG_CATEGORIES` のアイコンが付く（ネタ動画は `far fa-laugh-squint`） |
+| categorysのURLクエリ（#423） | `?categorys=arrange,~meme,unknown,~unknown` | アレンジの「のみ」・ネタ動画の「以外」が選択され、`context["category_filters"]` の値と一致する（存在しないカテゴリは無視） |
+| 保存したカテゴリの選択（#423） | `is_saved_select=on`, `search_categorys=arrange,~meme,unknown` (cookie) | アレンジの「のみ」・ネタ動画の「以外」が選択される。表示するフォームはキーワードのまま |
+| 保存がoffのカテゴリの選択（#423） | `is_saved_select=off`, `search_categorys=arrange` (cookie) | 全て指定なし |
+| categorysのURLクエリはcookieを上書きしない（#423） | `is_saved_select=on`, `search_categorys=meme` (cookie), `?categorys=~arrange` | アレンジの「以外」のみ選択され、`search_categorys` cookieは保存されない（曲ページのタグのリンク等の一時的な絞り込みのため） |
+| カテゴリの選択の変更を保存（#423） | `is_saved_select=on`, `POST {categorys="~meme,unknown,arrange"}`（songs.jsのPOST） | `search_categorys` cookieに、選択肢にあるカテゴリのみを `SONG_CATEGORIES` の順にした `"arrange,~meme"` が `LONG_TERM_COOKIE_AGE` で保存される |
+| 全て指定なしにした選択を保存（#423） | `is_saved_select=on`, `search_categorys=arrange` (cookie), `POST {categorys=""}` | `search_categorys` cookieに `""` が保存され、全て指定なし |
+| 保存がoffのカテゴリの選択の変更（#423） | `is_saved_select=off`, `POST {categorys="arrange"}` | `search_categorys` cookieは保存されない |
+| 並び替え等の変更（#423） | `is_saved_select=on`, `search_categorys=~arrange` (cookie), `POST {sort="-view"}` | `search_categorys` cookieは保存されず、アレンジの「以外」が選択される |
+| 検索フォームの初期表示（URLクエリ指定） | `?title=テスト` `?mediatypes=youtube` `?categorys=arrange` `?view_gte=100` `?is_subeana=xx` `?jokerange=off` `?is_original=True` `?is_inst=True` `?is_questionable=True` `?is_special=True` `?is_collab=True` `?is_lack=True` `?sort=-view` など | URLクエリを含むフォーム（title/url/category/youtube/subeana/joke/original/inst/questionable/special/collab/lack/sortなど）が表示される |
 | 検索フォームの初期表示（複数指定） | `?is_lack=True&keyword=テスト` / `?title=テスト&sort=-view` / `?title=テスト&view_gte=100` / `?view_gte=100&lyrics=テスト` | ラジオボタンの並び順で先の "keyword" / "sort" / "youtube" / "lyrics" が表示される |
-| ラジオボタンの並び順 | GETリクエスト | よく利用するため、先頭からキーワード・並び替え・歌詞・YouTubeの順に並ぶ（全18個） |
+| ラジオボタンの並び順 | GETリクエスト | よく利用するため、先頭からキーワード・並び替え・歌詞・YouTubeの順に並ぶ（全19個） |
 | 検索フォームの初期表示（空の値） | `?title=` | "keyword" が表示される |
 | デフォルト値のラジオボタンに`data-default` | GETリクエスト | フィルタバッジは`data-default`のラジオボタンをデフォルト値として判定するため、各フィルタで1つだけ付き、`songrange`・`jokerange` は `COOKIE_FORMS` のデフォルト値、真偽値のフィルタは `""`（指定なし）のラジオボタンに付く |
 | cookieの不正な値 | `search_songrange`・`search_jokerange`・`search_sort` に不正な値 (cookie) | デフォルト値（`all`・`on`・`-post_time`）のラジオボタンが選択される |
@@ -641,6 +708,11 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 説明付きのタグ（#1228） | `is_questionable=True`・`is_limited=True` | リンクではなく、`data-tutorial` の説明のアイコン付きのタグが出る |
 | 界隈曲?の非すべあな曲のタグ（#1228） | `is_questionable=True`・`is_subeana=False` | 界隈曲?のタグは出て、非すべあな模倣曲のタグは出ない |
 | タグの順番（#1228） | `is_questionable=True`・`is_draft=True`・`is_limited=True`・URL未登録 | 界隈曲?・未完成・下書き・限定公開の順に並ぶ |
+| カテゴリのタグ（#423） | `category="arrange"`・`is_questionable=True` | `?categorys=arrange` の検索へのリンクのタグ（カテゴリのアイコン `fas fa-sliders-h`、「アレンジ」）が、界隈曲?のタグより前に出る |
+| カテゴリだけの曲のタグ欄（#423） | 未完成でなく、`category="meme"` だけ | タグ欄が表示され、`?categorys=meme` のリンクのタグ（`far fa-laugh-squint`、「ネタ動画」）が出る |
+| カテゴリが曲の曲（#423） | `category="song"`（既定値）・URL未登録 | カテゴリのタグは出ない（未完成のタグは出る） |
+| 模倣元のdetails（#423） | 模倣元にカテゴリが曲の曲・ネタ曲・カバー・ネタ曲のアレンジ | 模倣元のdetailsの直下にカテゴリが曲の曲を並べ、ネタ曲（`far fa-meh-rolling-eyes`）・アレンジ（`fas fa-sliders-h`）・カバー（`fas fa-microphone`）の順に、それぞれのdetailsにまとめる。ネタ曲のアレンジはアレンジの方に入る |
+| 模倣曲のdetails（#423） | 模倣曲にメドレーの曲 | 模倣曲のdetailsの中に、メドレー（`fas fa-stream`）のdetailsが出る |
 | full 版の曲（#667） | 同じ名義の short 版が2曲ある | song-info に「short版」の行が2つあり、それぞれの曲へのリンクが表示される。「full版」の行は表示されない |
 | short 版の曲（#667） | 同じ名義の full 版がある | song-info に「full版」の行があり、full 版の曲へのリンクが表示される |
 | short 版・full 版がない曲（#667） | 関係する曲がない | 「full版」「short版」の行が表示されない |
@@ -664,6 +736,10 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | POST: is-questionable時、オリジナル模倣は強制OFF・その他フラグの入力値はそのまま保存される | `is-questionable-manual=on`, `is-original-manual=on`, `is-subeana-manual=on` | 保存されたSongの `is_questionable=True`、`is_original=False`、`is_subeana=True` |
 | POST: 作者名がpast別名と一致し統一した名義へ正規化される（#1029、#1137） | `authors=`past別名のname | 保存後、redirect先URLに`name_unified=1`が付与される |
 | POST: 正規化が発生しない | `authors=`通常の作者名 | redirect先URLに`name_unified`は付与されない |
+| GET: カテゴリの選択欄（#423） | GETリクエスト | 2つのフォームそれぞれに `<select id="category-auto/manual" name="category" data-sync="category">` が表示され、`Song.CHOICES` の全ての選択肢が2つずつある |
+| POST: カテゴリを指定（#423） | `category="otomad"` | 302、保存されたSongの `category == "otomad"` |
+| POST: カテゴリを指定しない（#423） | `category` なし | 302、保存されたSongの `category == "song"` |
+| POST: 不正なカテゴリ（#423） | YouTubeのURL・`category="joke"` | HTTP 200、`"カテゴリが不正です。"` のエラー。`get_youtube_api` は呼び出されず、Songは作成されない |
 
 #### 7-5. `SongEditView` (`/songs/<id>/edit/`)
 
@@ -674,6 +750,12 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | GET: ブラウザにキャッシュさせない（#1135） | 有効なsong_id | `Cache-Control`に`no-store`が含まれ、`public`は含まれない（キャッシュされた古いフォームの送信で、その間の編集が巻き戻るのを防ぐ） |
 | POST: is_questionable時に歌詞・模倣・下書き・オリジナル模倣が強制的に空/OFF | `is_questionable=True`, `lyrics="..."`, `imitate="<id>"`, `is_draft=True`, `is_original=True` | 保存されたSongの `lyrics=""`、`imitates`が空、`is_draft=False`、`is_original=False`、`is_questionable=True` |
 | POST: is_questionable時も非公開/削除済み・ネタ曲・インスト・すべあな界隈曲は保存される | `is_questionable=True`, `is_deleted=True`, `is_joke=True`, `is_inst=True`, `is_subeana=True` | 各フラグがそれぞれ `True` のまま保存される |
+| GET: カテゴリの選択欄（#423） | `category="medley"` の曲 | `<select id="category" name="category">` が表示され、メドレーの選択肢のみ `selected` |
+| GET: 歌詞の入力欄（#423） | GETリクエスト | 歌詞の `.form-col` に `data-hide-if-not-song` が付く（カテゴリが曲以外のときに `song_edit.js` で非表示にする） |
+| POST: カテゴリの変更（#423） | `category="dec"` | 302、`category == "dec"`、Historyの `changes` に `["カテゴリ", "曲", "解読"]` |
+| POST: カテゴリを送らない（#423） | `category="offv"` の曲に `category` なしで送信 | 302、`category == "offv"` のまま（カテゴリの選択欄がない古いページから送信された場合に変えない） |
+| POST: 不正なカテゴリ（#423） | `category="joke"` | HTTP 200、`"カテゴリが不正です。"` のエラー、カテゴリは変わらない |
+| POST: カテゴリが曲以外でも歌詞は保存（#423） | `category="medley"`, `lyrics="歌詞"` | 302、`lyrics == "歌詞"`（歌詞の入力欄は非表示にするだけで消さない） |
 | POST: 作者名が`Author.name`のmax_length超（#1085） | `authors`がmax_length+1文字 | HTTP 200、"作者名" を含むエラー |
 | POST: 作者名がpast別名と一致し統一した名義へ正規化される（#1029、#1137） | `authors=`past別名のname | 保存後、redirect先URLに`name_unified=1`が付与される |
 | POST: 正規化が発生しない | `authors=`通常の作者名 | redirect先URLに`name_unified`は付与されない |
@@ -965,6 +1047,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `is_special=True` の絞り込み（#939） | `is_special=True` の曲と通常の曲が存在 | スペシャルデザインの曲のカードのみが返される |
 | `is_collab=True` / `False`（#943） | GETリクエスト | 「合作が有効です」が含まれる |
 | `is_collab=True` の絞り込み（#943） | 作者2人の曲と通常の曲が存在 | 合作の曲のカードのみが返される |
+| `categorys` の絞り込み（#423） | カテゴリが曲・アレンジ・音MADの曲が存在、`categorys=arrange,otomad` | 「カテゴリが有効です」「3件中2件ヒットしました」が含まれ、アレンジ・音MADの曲のカードのみが返される |
+| `categorys` の「以外」（#423） | カテゴリが曲・アレンジの曲が存在、`categorys=~song` | 「カテゴリが有効です」「2件中1件ヒットしました」が含まれ、アレンジの曲のカードのみが返される |
 
 #### 7-11-1. `song_guessers` (`/api/html/song_guessers`)（#1126、#1124）
 
@@ -1204,6 +1288,9 @@ faviconの画像は`icon_large.png`（800×800）から生成する。`site.webm
 | `is_lack=False`（#970） | URLあり・歌詞ありの曲とURLなしの曲が存在、`?is_lack=False` | 未完成の曲（URLなし）が除外される |
 | `is_special=True`（#939） | スペシャルデザインの曲と通常の曲が存在、`?is_special=True` | スペシャルデザインの曲のみ返される |
 | `is_collab=True`（#943） | 作者2人の曲と作者1人の曲が存在、`?is_collab=True` | 合作の曲のみ返される |
+| `categorys`（#423） | カテゴリがアレンジ・ネタ動画・曲の曲が存在、`?categorys=arrange,meme` | アレンジ・ネタ動画の曲のみ返される（`mediatypes` と同様にカンマ区切りで複数指定できる） |
+| `categorys` の「以外」（#423） | カテゴリがアレンジ・ネタ動画・曲の曲が存在、`?categorys=~song,~meme` | 先頭に~を付けたカテゴリの曲を除き、アレンジの曲のみ返される |
+| レスポンスの `category`（#423） | `?categorys=song` | 各曲に `category` が含まれる |
 | `sort=-imitated_count`（#542） | 曲1が曲2を模倣、`?sort=-imitated_count` | 模倣曲の数が多い曲2、曲1の順で返される |
 
 #### 8-2. `EditorIsOpenView` (`/api/editor/is_open`)
@@ -1474,6 +1561,12 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | 曲の作成 | `Song.objects.create(title="テスト曲", ...)` | DBに保存される |
 | `authors_str()` メソッド | 複数作者を持つ曲 | 作者名がカンマ区切りで返される |
 | `is_questionable` のデフォルト値 | フラグ未指定で作成 | `is_questionable == False` |
+| `category` のデフォルト値（#423） | カテゴリ未指定で作成 | `category == "song"` |
+| カテゴリの選択肢（#423） | `Song.CHOICES` | ネタ動画は `"meme"`（ネタ曲の `is_joke` とは無関係）で、`"joke"` は無い。「その他」（`"other"`）も無い |
+| ネタ動画のアイコン（#423） | `SONG_CATEGORIES` のネタ動画・`SONG_FLAGS` のネタ曲 | アイコンが異なる |
+| カテゴリの選択肢は `SONG_CATEGORIES` から作る（#423） | `Song.CHOICES` | `SONG_CATEGORIES` の順・表示名と一致し、先頭は `("song", "曲")`。全てのカテゴリにFont Awesomeのアイコンがある |
+| `get_category()`（#423） | `category="meme"` の曲 / `category="joke"`（変更前の値）の曲 | `{"value": "meme", "label": "ネタ動画", "icon": "far fa-laugh-squint"}` / `None` |
+| マイグレーション `0050_song_category_meme`（#423） | `category="joke"` の曲と `category="song"` の曲に `joke_to_meme` を実行 / `category="meme"` の曲に `meme_to_joke` を実行 | `"joke"` は `"meme"` に変わり、`"song"` は変わらない / `"meme"` は `"joke"` に戻る |
 | `is_deleted=True` の曲 | 削除フラグを立てる | DBに残るが削除済みとして扱われる |
 | ManyToMany: authors | `song.authors.add(author)` | 作者が曲に紐付く |
 | ManyToMany: imitates (自己参照) | `song.imitates.add(other_song)` | 模倣関係が成立する |

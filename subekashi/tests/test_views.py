@@ -284,6 +284,15 @@ class TopViewTest(TestCase):
         self.assertEqual(re.findall(r'name="jokerange" value="([^"]*)"[^>]*checked>', form_html), ["off"])
         self.assertIn('<div class="radio-group icon-only" id="search-form-radios">', form_html)
 
+    def test_all_search_reflects_saved_categorys_cookie(self):
+        """「全て表示」の場合、検索画面と同じく保存されたカテゴリの選択が反映される（#423）"""
+        self.client.cookies["is_shown_search"] = "all"
+        self.client.cookies["is_saved_select"] = "on"
+        self.client.cookies["search_categorys"] = "arrange,~meme"
+        response = self.client.get(reverse("subekashi:top"))
+        form_html = self._get_search_form_html(response)
+        self.assertEqual(re.findall(r'name="category_(\w+)" value="(True|False)" checked>', form_html), [("arrange", "True"), ("meme", "False")])
+
     def test_all_search_uses_default_when_saved_select_is_off(self):
         """「全て表示」の場合、検索の選択肢の保存がoffなら、保存された選択肢ではなくデフォルト値が選択される（#585）"""
         self.client.cookies["is_shown_search"] = "all"
@@ -555,6 +564,7 @@ class SongsViewTest(TestCase):
             ({"url": "https://youtu.be/xxx"}, "url"),
             ({"mediatypes": "youtube"}, "url"),
             ({"imitate": "1"}, "imitate"),
+            ({"categorys": "arrange"}, "category"),
             ({"view_gte": "100"}, "youtube"),
             ({"upload_time_lte": "2024-01-01"}, "youtube"),
             ({"is_subeana": "xx"}, "subeana"),
@@ -604,6 +614,87 @@ class SongsViewTest(TestCase):
         content = self.client.get(reverse("subekashi:songs")).content.decode()
         self.assertEqual(re.findall(r'id="media-[^"]+" checked>', content), [])
 
+    def _get_category_selection(self, response):
+        """カテゴリのラジオボタンで「のみ」（True）・「以外」（False）が選択されているカテゴリ（#423）"""
+        selection = dict(re.findall(r'name="category_(\w+)" value="(True|False)" checked>', response.content.decode()))
+        context_selection = {
+            category_filter["category"]["value"]: category_filter["value"]
+            for category_filter in response.context["category_filters"] if category_filter["value"]
+        }
+        self.assertEqual(selection, context_selection)
+        return selection
+
+    def test_category_form_shows_all_categorys(self):
+        """#423: カテゴリのフォームに全てのカテゴリの指定なし・のみ・以外のラジオボタンを表示し、指定しない場合は指定なしを選択すること"""
+        content = self.client.get(reverse("subekashi:songs")).content.decode()
+        category_values = [value for value, _ in Song.CHOICES]
+        self.assertEqual(re.findall(r'<input type="radio" id="category_\w+-all" name="category_(\w+)" value="" data-default checked>', content), category_values)
+        self.assertEqual(re.findall(r'<input type="radio" id="category_\w+-true" name="category_(\w+)" value="True" >', content), category_values)
+        self.assertEqual(re.findall(r'<input type="radio" id="category_\w+-false" name="category_(\w+)" value="False" >', content), category_values)
+        self.assertNotIn('type="checkbox" value="category-', content)
+
+    def test_category_radio_has_icon(self):
+        """#423: カテゴリのラジオボタンの見出しには、カテゴリのアイコンを付けること"""
+        response = self.client.get(reverse("subekashi:songs"))
+        self.assertContains(response, '<p class="radio-col-label"><i class="far fa-laugh-squint"></i><span class="icon-p-big">ネタ動画</span></p>')
+
+    def test_categorys_query_selects_category(self):
+        """#423: categorysで「のみ」のカテゴリと、先頭に~を付けた「以外」のカテゴリを選択した状態で表示すること（存在しないカテゴリは無視）"""
+        response = self.client.get(reverse("subekashi:songs"), {"categorys": "arrange,~meme,unknown,~unknown"})
+        self.assertEqual(self._get_category_selection(response), {"arrange": "True", "meme": "False"})
+
+    def test_saved_categorys_cookie_selects_category(self):
+        """#423: 検索の選択肢の保存がonの場合、URLクエリが無ければ保存したカテゴリの選択を表示すること"""
+        self.client.cookies["is_saved_select"] = "on"
+        self.client.cookies["search_categorys"] = "arrange,~meme,unknown"
+        response = self.client.get(reverse("subekashi:songs"))
+        self.assertEqual(self._get_category_selection(response), {"arrange": "True", "meme": "False"})
+        # 保存した選択を表示しただけでは、表示するフォームは切り替えない（並び替え等の保存した選択と同じ）
+        self.assertEqual(response.context["search_form"], "keyword")
+
+    def test_saved_categorys_cookie_ignored_when_saved_select_is_off(self):
+        """#423: 検索の選択肢の保存がoffの場合、保存したカテゴリの選択は使わないこと"""
+        self.client.cookies["is_saved_select"] = "off"
+        self.client.cookies["search_categorys"] = "arrange"
+        response = self.client.get(reverse("subekashi:songs"))
+        self.assertEqual(self._get_category_selection(response), {})
+
+    def test_categorys_query_overrides_saved_cookie_without_saving(self):
+        """#423: URLクエリのcategorys（曲ページのタグのリンク等）は表示にのみ反映し、保存したカテゴリの選択を上書きしないこと"""
+        self.client.cookies["is_saved_select"] = "on"
+        self.client.cookies["search_categorys"] = "meme"
+        response = self.client.get(reverse("subekashi:songs"), {"categorys": "~arrange"})
+        self.assertEqual(self._get_category_selection(response), {"arrange": "False"})
+        self.assertNotIn("search_categorys", response.cookies)
+
+    def test_post_categorys_saves_cookie(self):
+        """#423: 検索画面でカテゴリの選択を変更したとき（songs.jsのPOST）は、選択肢にあるカテゴリのみをSONG_CATEGORIESの順でcookieに保存すること"""
+        self.client.cookies["is_saved_select"] = "on"
+        response = self.client.post(reverse("subekashi:songs"), {"categorys": "~meme,unknown,arrange"})
+        self.assertEqual(response.cookies["search_categorys"].value, "arrange,~meme")
+        self.assertEqual(response.cookies["search_categorys"]["max-age"], LONG_TERM_COOKIE_AGE)
+
+    def test_post_empty_categorys_saves_empty_cookie(self):
+        """#423: 全てのカテゴリを指定なしにしたときは、空の選択を保存すること（保存した選択に戻らないように）"""
+        self.client.cookies["is_saved_select"] = "on"
+        self.client.cookies["search_categorys"] = "arrange"
+        response = self.client.post(reverse("subekashi:songs"), {"categorys": ""})
+        self.assertEqual(response.cookies["search_categorys"].value, "")
+        self.assertEqual(self._get_category_selection(response), {})
+
+    def test_post_categorys_not_saved_when_saved_select_is_off(self):
+        self.client.cookies["is_saved_select"] = "off"
+        response = self.client.post(reverse("subekashi:songs"), {"categorys": "arrange"})
+        self.assertNotIn("search_categorys", response.cookies)
+
+    def test_post_other_form_does_not_save_categorys(self):
+        """#423: 並び替え等の変更では、カテゴリの選択を保存しないこと"""
+        self.client.cookies["is_saved_select"] = "on"
+        self.client.cookies["search_categorys"] = "~arrange"
+        response = self.client.post(reverse("subekashi:songs"), {"sort": "-view"})
+        self.assertNotIn("search_categorys", response.cookies)
+        self.assertEqual(self._get_category_selection(response), {"arrange": "False"})
+
     def test_search_form_prefers_earlier_form(self):
         """複数のフォームのURLクエリが指定された場合はラジオボタンの並び順で先のフォームが表示されること"""
         cases = [
@@ -622,7 +713,7 @@ class SongsViewTest(TestCase):
         response = self.client.get(reverse("subekashi:songs"))
         radios = re.findall(r'id="search-form-radio-(\w+)"', response.content.decode())
         self.assertEqual(radios[:4], ["keyword", "sort", "lyrics", "youtube"])
-        self.assertEqual(len(radios), 18)
+        self.assertEqual(len(radios), 19)
 
     def test_search_form_ignores_empty_query(self):
         """値が空のURLクエリではフォームが切り替わらないこと"""
@@ -869,12 +960,68 @@ class SongViewTest(TestCase):
         self.assertIn("界隈曲?", tags)
         self.assertNotIn("非すべあな模倣曲", tags)
 
+    def test_category_tag_links_to_search(self):
+        """#423: カテゴリが曲以外の曲は、そのカテゴリの検索へのリンクをタグの先頭に表示すること"""
+        tags = self._get_tags_html(category="arrange", is_questionable=True)
+        category_tag = f'<a href="{reverse("subekashi:songs")}?categorys=arrange"><i class="fas fa-sliders-h"></i><span class="icon-p-big">アレンジ</span></a>'
+        self.assertIn(category_tag, tags)
+        self.assertLess(tags.index(category_tag), tags.index("界隈曲?"))
+
+    def test_tags_shown_with_only_category(self):
+        """#423: フラグがなくても、カテゴリが曲以外の曲はタグ欄を表示すること"""
+        self._make_complete()
+        tags = self._get_tags_html(category="meme")
+        self.assertIn(f'<a href="{reverse("subekashi:songs")}?categorys=meme"><i class="far fa-laugh-squint"></i><span class="icon-p-big">ネタ動画</span></a>', tags)
+
+    def test_song_category_tag_not_shown(self):
+        """#423: カテゴリが曲の曲には、カテゴリのタグを表示しないこと"""
+        tags = self._get_tags_html()
+        self.assertIn("未完成", tags)
+        self.assertNotIn("categorys=", tags)
+
     def test_tags_order(self):
         """#1228: タグは界隈曲?・未完成・下書き・限定公開の順に並ぶこと"""
         tags = self._get_tags_html(is_questionable=True, is_draft=True, is_limited=True)
         self.assertLess(tags.index("界隈曲?"), tags.index("未完成"))
         self.assertLess(tags.index("未完成"), tags.index("下書き"))
         self.assertLess(tags.index("下書き"), tags.index("限定公開"))
+
+    def _get_imitate_details_html(self, summary):
+        """模倣元・模倣曲のdetailsの見出しから、次の模倣曲のdetails・歌詞の手前までのHTML"""
+        content = self.client.get(reverse("subekashi:song", args=[self.song.id])).content.decode()
+        start = content.index(f'<span class="icon-p">{summary}</span>')
+        ends = [content.find(marker, start + 1) for marker in ['<span class="icon-p">模倣曲</span>', '<div id="lyrics-wrapper">', '</section>']]
+        return content[start:min(end for end in ends if end != -1)]
+
+    def test_imitate_songs_are_grouped_by_joke_and_category(self):
+        """#423: 模倣元のうち、ネタ曲と曲以外のカテゴリの曲は、それぞれdetailsにまとめること"""
+        song = Song.objects.create(title="模倣元の曲")
+        joke = Song.objects.create(title="模倣元のネタ曲", is_joke=True)
+        cover = Song.objects.create(title="模倣元のカバー", category="cover")
+        arrange = Song.objects.create(title="模倣元のアレンジ", category="arrange", is_joke=True)
+        self.song.imitates.add(song, joke, cover, arrange)
+        details = self._get_imitate_details_html("模倣元")
+        self.assertIn("4曲", details)
+        nested = re.findall(r'<details[^>]*>\s*<summary><i class="([^"]+)"></i><span class="icon-p">([^<]+)</span></summary>(.*?)</details>', details, re.DOTALL)
+        self.assertEqual(
+            [(icon, label, re.findall(r'>([^<]+)</a>', links)) for icon, label, links in nested],
+            [
+                ("far fa-meh-rolling-eyes", "ネタ曲", ["模倣元のネタ曲"]),
+                # 曲以外のカテゴリの曲は、ネタ曲でもカテゴリの方にまとめ、SONG_CATEGORIESの順に並べる
+                ("fas fa-sliders-h", "アレンジ", ["模倣元のアレンジ"]),
+                ("fas fa-microphone", "カバー", ["模倣元のカバー"]),
+            ],
+        )
+        # カテゴリが曲でネタ曲でない曲は、detailsにまとめずに並べる
+        self.assertEqual(re.findall(r'>([^<]+)</a>', details.split("<details")[0]), ["模倣元の曲"])
+
+    def test_imitated_songs_are_grouped_by_category(self):
+        """#423: 模倣曲も、曲以外のカテゴリの曲はdetailsにまとめること"""
+        medley = Song.objects.create(title="模倣曲のメドレー", category="medley")
+        medley.imitates.add(self.song)
+        details = self._get_imitate_details_html("模倣曲")
+        self.assertIn('<summary><i class="fas fa-stream"></i><span class="icon-p">メドレー</span></summary>', details)
+        self.assertNotIn("ネタ曲", details)
 
     def create_short_and_full_songs(self):
         author = Author.objects.create(name="short作者")
@@ -949,6 +1096,42 @@ class SongNewViewTest(TestCase):
     def test_get_returns_200(self):
         response = self.client.get(reverse("subekashi:song_new"))
         self.assertEqual(response.status_code, 200)
+
+    def test_get_shows_category_select_in_both_forms(self):
+        """#423: 2つのフォームそれぞれに、全てのカテゴリを選べる選択欄を表示すること"""
+        response = self.client.get(reverse("subekashi:song_new"))
+        for suffix in ["auto", "manual"]:
+            self.assertContains(response, f'<select id="category-{suffix}" name="category" data-sync="category">')
+        for value, label in Song.CHOICES:
+            self.assertContains(response, f'<option value="{value}">{label}</option>', count=2)
+
+    def test_post_with_category_saves_category(self):
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "", "authors": "カテゴリテスト作者", "title": "カテゴリテスト曲", "category": "otomad"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Song.objects.get(title="カテゴリテスト曲").category, "otomad")
+
+    def test_post_without_category_defaults_to_song(self):
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "", "authors": "カテゴリテスト作者", "title": "カテゴリ未指定テスト曲"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Song.objects.get(title="カテゴリ未指定テスト曲").category, "song")
+
+    @patch("subekashi.views.song_new.get_youtube_api")
+    def test_post_invalid_category_returns_error(self, mock_api):
+        """#423: 選択肢にないカテゴリはエラーにし、YouTube Data APIを呼び出さないこと"""
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "https://youtu.be/aaaaaaaaaaa", "category": "joke"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["error"], "カテゴリが不正です。")
+        mock_api.assert_not_called()
+        self.assertFalse(Song.objects.exists())
 
     def test_post_non_youtube_url_returns_error(self):
         response = self.client.post(
@@ -1143,6 +1326,60 @@ class SongEditViewTest(TestCase):
     def test_nonexistent_song_returns_404(self):
         response = self.client.get(reverse("subekashi:song_edit", args=[99999]))
         self.assertEqual(response.status_code, 404)
+
+    def test_get_selects_current_category(self):
+        """#423: カテゴリの選択欄は、曲のカテゴリを選択した状態で表示すること"""
+        Song.objects.filter(pk=self.song.pk).update(category="medley")
+        content = self.client.get(reverse("subekashi:song_edit", args=[self.song.id])).content.decode()
+        self.assertIn('<select id="category" name="category">', content)
+        self.assertEqual(re.findall(r'<option value="(\w+)" selected>', content), ["medley"])
+
+    def test_get_lyrics_is_hidden_if_not_song(self):
+        """#423: 歌詞の入力欄は、カテゴリが曲以外のときにJS（song_edit.js）で非表示にする対象であること"""
+        content = self.client.get(reverse("subekashi:song_edit", args=[self.song.id])).content.decode()
+        self.assertRegex(content, r'<div class="form-col" data-hide-if-questionable data-hide-if-not-song>\s*<label for="lyrics">')
+
+    def test_post_category_is_saved_and_recorded_in_history(self):
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {"title": "編集テスト曲", "authors": "編集テスト作者", "url": "", "category": "dec"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.song.refresh_from_db()
+        self.assertEqual(self.song.category, "dec")
+        self.assertIn(["カテゴリ", "曲", "解読"], History.objects.get(song=self.song).changes)
+
+    def test_post_without_category_keeps_current_category(self):
+        """#423: categoryを送らない場合（カテゴリの選択欄がない古いページからの送信等）は、編集前のカテゴリのままにすること"""
+        Song.objects.filter(pk=self.song.pk).update(category="offv")
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {"title": "編集テスト曲", "authors": "編集テスト作者", "url": ""},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.song.refresh_from_db()
+        self.assertEqual(self.song.category, "offv")
+
+    def test_post_invalid_category_returns_error(self):
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {"title": "編集テスト曲", "authors": "編集テスト作者", "url": "", "category": "joke"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["error"], "カテゴリが不正です。")
+        self.song.refresh_from_db()
+        self.assertEqual(self.song.category, "song")
+
+    def test_post_non_song_category_keeps_lyrics(self):
+        """#423: カテゴリが曲以外の場合、歌詞の入力欄は非表示にするだけで、送信された歌詞はそのまま保存すること"""
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {"title": "編集テスト曲", "authors": "編集テスト作者", "url": "", "lyrics": "歌詞", "category": "medley"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.song.refresh_from_db()
+        self.assertEqual(self.song.category, "medley")
+        self.assertEqual(self.song.lyrics, "歌詞")
 
     def test_get_response_is_not_cached(self):
         # #1135: ブラウザにキャッシュされた古いフォームが送信されると、その間の編集（模倣の追加等）が巻き戻ってしまう
@@ -3723,6 +3960,29 @@ class SongCardsViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         content = "".join(response.json())
         self.assertNotIn("YouTubeの曲を表示しています", content)
+
+    def test_categorys_filter(self):
+        """#423: categorysで指定したカテゴリの曲のみを表示し、カテゴリのフィルタが有効であることを表示すること"""
+        Song.objects.create(title="アレンジのカード", category="arrange")
+        Song.objects.create(title="音MADのカード", category="otomad")
+        response = self.client.get(reverse("subekashi:song_cards"), {"categorys": "arrange,otomad"})
+        self.assertEqual(response.status_code, 200)
+        content = "".join(response.json())
+        self.assertIn("カテゴリが有効です", content)
+        self.assertIn("3件中2件ヒットしました", content)
+        self.assertIn("アレンジのカード", content)
+        self.assertIn("音MADのカード", content)
+        self.assertNotIn("カードテスト曲", content)
+
+    def test_categorys_filter_excludes_category(self):
+        """#423: categorysで先頭に~を付けたカテゴリの曲は表示しないこと"""
+        Song.objects.create(title="アレンジのカード", category="arrange")
+        response = self.client.get(reverse("subekashi:song_cards"), {"categorys": "~song"})
+        content = "".join(response.json())
+        self.assertIn("カテゴリが有効です", content)
+        self.assertIn("2件中1件ヒットしました", content)
+        self.assertIn("アレンジのカード", content)
+        self.assertNotIn("カードテスト曲", content)
 
     def test_questionable_song_card_hides_lyrics(self):
         """is_questionable=True の曲のカードには .song-card-lyrics が含まれないこと"""

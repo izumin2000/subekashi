@@ -194,6 +194,21 @@ SONG_FLAGS = [
     {'name': 'is_limited', 'icon': 'fas fa-low-vision', 'label': '限定公開', 'query': None, 'tutorial': 'is_limited'},
 ]
 
+# 曲のカテゴリ（#423）。Song.CHOICESはこの順・表示名で作る
+# icon: 曲ページのタグ・模倣の一覧と、検索画面のカテゴリのフォームのアイコン
+SONG_CATEGORIES = [
+    {'value': 'song', 'label': '曲', 'icon': 'fas fa-music'},
+    {'value': 'arrange', 'label': 'アレンジ', 'icon': 'fas fa-sliders-h'},
+    {'value': 'otomad', 'label': '音MAD', 'icon': 'fas fa-cut'},
+    {'value': 'medley', 'label': 'メドレー', 'icon': 'fas fa-stream'},
+    {'value': 'omnibus', 'label': '総集編', 'icon': 'fas fa-archive'},
+    {'value': 'notice', 'label': '告知', 'icon': 'fas fa-bell'},
+    {'value': 'dec', 'label': '解読', 'icon': 'fas fa-key'},
+    {'value': 'offv', 'label': 'オフボ', 'icon': 'fas fa-microphone-slash'},
+    {'value': 'cover', 'label': 'カバー', 'icon': 'fas fa-microphone'},
+    {'value': 'meme', 'label': 'ネタ動画', 'icon': 'far fa-laugh-squint'},
+]
+
 # cookieとキャッシュの保存期間
 # SHORT_TERM: 30分（一般ページのキャッシュ用）
 # LONG_TERM: 365日（静的ファイルのキャッシュ、ユーザー設定のcookie用）

@@ -120,6 +120,24 @@ def filter_by_mediatypes(mediatypes):
         query |= Q(links__url__regex=media_regex)
     return query
 
+# カンマ区切りのカテゴリを、「のみ」のカテゴリと、先頭に~を付けた「以外」のカテゴリ（~は除く）に分ける（#423）
+def split_categorys(categorys):
+    values = [value for value in categorys.split(",") if value]
+    include = [value for value in values if not value.startswith("~")]
+    exclude = [value[1:] for value in values if value.startswith("~")]
+    return include, exclude
+
+# カテゴリの検索に利用するフィルター（カンマ区切りで複数指定、#423）
+# 例: "arrange,cover,~meme" はアレンジかカバーのいずれかで、ネタ動画ではない曲
+def filter_by_categorys(categorys):
+    include, exclude = split_categorys(categorys)
+    query = Q()
+    if include:
+        query &= Q(category__in=include)
+    if exclude:
+        query &= ~Q(category__in=exclude)
+    return query
+
 # 未完成フィルター
 def filter_by_lack():
     any_links = SongLink.objects.filter(songs=OuterRef('pk'))
@@ -127,7 +145,8 @@ def filter_by_lack():
     return (
         (Q(is_deleted=False) & ~Exists(any_links)) |
         (Q(is_questionable=False, is_original=False, is_subeana=True, imitates__isnull=True) & ~Exists(has_author_1)) |
-        Q(is_questionable=False, is_inst=False, lyrics="")
+        # 歌詞を入力するのはカテゴリが曲の場合のみ（#423）
+        Q(is_questionable=False, is_inst=False, lyrics="", category="song")
     )
 
 
@@ -138,7 +157,7 @@ def make_is_lack_annotation():
     return Case(
         When(Q(is_deleted=False) & ~Exists(any_links), then=Value(True)),
         When(Q(is_questionable=False, is_original=False, is_subeana=True, imitates__isnull=True) & ~Exists(has_author_1), then=Value(True)),
-        When(Q(is_questionable=False, is_inst=False, lyrics=''), then=Value(True)),
+        When(Q(is_questionable=False, is_inst=False, lyrics='', category='song'), then=Value(True)),
         default=Value(False),
         output_field=BooleanField(),
     )

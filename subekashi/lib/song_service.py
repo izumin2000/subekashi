@@ -3,6 +3,7 @@ import string
 from django.utils import timezone
 from django.db import transaction
 from config.settings import ROOT_URL
+from subekashi.constants.constants import SONG_CATEGORIES
 from subekashi.models import Song, SongLink, SongFields
 from subekashi.lib.author_helpers import get_same_person_author_ids
 from subekashi.lib.url import get_all_media
@@ -43,6 +44,10 @@ def yes_no(value):
     return "はい" if value else "いいえ"
 
 
+def category_label(category):
+    return dict(Song.CHOICES).get(category, category)
+
+
 def validate_song_url(cleaned_url, exclude_song_id=None):
     """URLの長さ・重複チェック。エラーメッセージを返す。問題なければNone。"""
     max_length = SongLink._meta.get_field('url').max_length
@@ -68,6 +73,7 @@ def create_song(fields: SongFields):
         is_inst=fields.is_inst,
         is_subeana=fields.is_subeana,
         is_questionable=fields.is_questionable,
+        category=fields.category,
         upload_time=fields.upload_time,
         view=fields.view,
         like=fields.like,
@@ -117,6 +123,7 @@ def update_song(song, fields: SongFields, author_objects, imitate_songs, cleaned
         song.is_subeana = fields.is_subeana
         song.is_draft = fields.is_draft
         song.is_questionable = fields.is_questionable
+        song.category = fields.category
         song.post_time = timezone.now()
         song.save()
         song.imitates.set(imitate_songs)
@@ -144,6 +151,33 @@ def build_delete_discord_text(song, reason, editor):
         f"理由：{reason}\n"
         f"編集者：{editor}"
     )
+
+
+def split_songs_by_category(songs):
+    """模倣元・模倣曲の一覧を、そのまま並べる曲・ネタ曲・曲以外のカテゴリごとの曲に分ける（#423）
+
+    曲以外のカテゴリの曲は、ネタ曲かどうかに関わらずカテゴリごとにまとめ、SONG_CATEGORIESの順に並べる。
+
+    Returns:
+        dict: songs（そのまま並べる曲）・joke_songs（ネタ曲）・
+        category_groups（{"category": SONG_CATEGORIESの要素, "songs": 曲のリスト}のリスト）
+    """
+    category_songs = {category["value"]: [] for category in SONG_CATEGORIES if category["value"] != "song"}
+    main_songs = []
+    joke_songs = []
+    for song in songs:
+        if song.category in category_songs:
+            category_songs[song.category].append(song)
+        elif song.is_joke:
+            joke_songs.append(song)
+        else:
+            main_songs.append(song)
+    category_groups = [
+        {"category": category, "songs": category_songs[category["value"]]}
+        for category in SONG_CATEGORIES
+        if category_songs.get(category["value"])
+    ]
+    return {"songs": main_songs, "joke_songs": joke_songs, "category_groups": category_groups}
 
 
 def get_song_links_with_media(song):
@@ -219,6 +253,7 @@ def build_new_song_discord_text(song_id, fields: SongFields, authors, cleaned_ur
         {"label": "タイトル", "value": fields.title},
         {"label": "作者", "value": ", ".join([a.name for a in authors])},
         {"label": "URL", "value": cleaned_url},
+        {"label": "カテゴリ", "value": category_label(fields.category)},
         {"label": "オリジナル", "value": yes_no(fields.is_original)},
         {"label": "削除済み", "value": yes_no(fields.is_deleted)},
         {"label": "ネタ曲", "value": yes_no(fields.is_joke)},
@@ -250,6 +285,7 @@ def build_edit_song_discord_text(song_id, song, fields: SongFields, author_objec
         {"label": "タイトル", "before": song.title, "after": fields.title},
         {"label": "作者", "before": song.authors_str(), "after": ", ".join([a.name for a in author_objects])},
         {"label": "URL", "before": before_urls, "after": cleaned_url},
+        {"label": "カテゴリ", "before": category_label(song.category), "after": category_label(fields.category)},
         {"label": "オリジナル", "before": yes_no(song.is_original), "after": yes_no(fields.is_original)},
         {"label": "削除済み", "before": yes_no(song.is_deleted), "after": yes_no(fields.is_deleted)},
         {"label": "ネタ曲", "before": yes_no(song.is_joke), "after": yes_no(fields.is_joke)},

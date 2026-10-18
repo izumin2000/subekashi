@@ -1,0 +1,20 @@
+{% comment %} 曲ページの模倣元・模倣曲の一覧。ネタ曲と、曲以外のカテゴリの曲はdetailsにまとめる（#423） {% endcomment %}
+{% for imitate in groups.songs %}
+    <a class="songimitate sansfont" href="{% url 'subekashi:song' imitate.id %}">{{ imitate.title }}</a>
+{% endfor %}
+{% if groups.joke_songs %}
+    <details {% if request.COOKIES.jokerange == "on" %}open{% endif %}>
+        <summary><i class="far fa-meh-rolling-eyes"></i><span class="icon-p">ネタ曲</span></summary>
+        {% for imitate in groups.joke_songs %}
+            <a class="songimitate sansfont" href="{% url 'subekashi:song' imitate.id %}">{{ imitate.title }}</a>
+        {% endfor %}
+    </details>
+{% endif %}
+{% for group in groups.category_groups %}
+    <details>
+        <summary><i class="{{ group.category.icon }}"></i><span class="icon-p">{{ group.category.label }}</span></summary>
+        {% for imitate in group.songs %}
+            <a class="songimitate sansfont" href="{% url 'subekashi:song' imitate.id %}">{{ imitate.title }}</a>
+        {% endfor %}
+    </details>
+{% endfor %}

@@ -8,12 +8,15 @@ window.addEventListener('load', async function () {
 
     document.querySelectorAll(FORM_QUERIES).forEach((formEle) => {
         formEle.addEventListener('change', async () => {
-            if (COOKIE_FORMS.includes(formEle.name)) {
-                // is_saved_selectがonの場合のみcookieに保存
-                const cookies = getCookie();
-                const isSavedSelect = cookies['is_saved_select'] || 'on';
-                if (isSavedSelect === 'on') {
+            // is_saved_selectがonの場合のみcookieに保存
+            const cookies = getCookie();
+            const isSavedSelect = cookies['is_saved_select'] || 'on';
+            if (isSavedSelect === 'on') {
+                if (COOKIE_FORMS.includes(formEle.name)) {
                     await saveCookieToBackend(formEle.name, formEle.value);
+                } else if (formEle.name.startsWith("category_")) {
+                    // カテゴリは、全てのカテゴリの選択をまとめて保存する（#423）
+                    await saveCookieToBackend("categorys", getCategorysQuery());
                 }
             }
             renderSearch();

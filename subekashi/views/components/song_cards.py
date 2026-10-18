@@ -33,6 +33,7 @@ def get_active_filters(query):
         'is_subeana': '界隈曲の種類',
         'is_joke': 'ネタ曲',
         'mediatypes': 'メディア',
+        'categorys': 'カテゴリ',
         'is_lack': '未完成',
         'is_draft': '下書き',
         'is_original': 'オリジナル模倣曲',

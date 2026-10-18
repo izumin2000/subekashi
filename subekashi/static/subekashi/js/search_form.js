@@ -4,6 +4,7 @@
 // base.jsのgetCookie・getSongGuessersを使う。また、ページのJSでsongGuesserClick・categoryClickを定義する（base.jsのクリックのイベントから呼ばれる）
 var songGuesserController;
 const FORM_QUERIES = '#search-forms input';
+const CATEGORY_QUERIES = '#search-form-category input[type="radio"]';
 
 window.addEventListener('DOMContentLoaded', function () {
     // 画面幅の変更やフォントの読み込みでラジオボタンの行数が変わった場合に、全て表示するボタンの表示と下端のぼかしを更新する
@@ -97,6 +98,17 @@ function restoreFormValuesFromCookies() {
             setFormValue(filter, cookieValue);
         }
     });
+
+    // カテゴリは複数のカテゴリの選択を1つのcookieに保存しているため、カテゴリごとに選択を戻す（保存した選択が空の場合は全て指定なし、#423）
+    const savedCategorys = cookies['search_categorys'];
+    if (!urlParams.has('categorys') && savedCategorys !== undefined) {
+        const categorys = savedCategorys.split(",");
+        document.querySelectorAll(CATEGORY_QUERIES).forEach((radioEle) => {
+            const category = radioEle.name.replace("category_", "");
+            const value = categorys.includes(category) ? "True" : categorys.includes(`~${category}`) ? "False" : "";
+            radioEle.checked = radioEle.value === value;
+        });
+    }
 }
 
 // フィルタの値に該当するラジオボタンを選択する
@@ -218,6 +230,10 @@ function collectFormQuery(radioToQuery) {
             }
             continue;
         }
+        // カテゴリのラジオボタンは、まとめてcategorysのクエリにする
+        if (formEle.name.startsWith("category_")) {
+            continue;
+        }
         if (formEle.type == "radio") {
             if (formEle.checked) {
                 query = { ...query, ...radioToQuery(formEle) };
@@ -227,8 +243,17 @@ function collectFormQuery(radioToQuery) {
         query[formEle.name] = formEle.value;
     }
     query.mediatypes = mediatypes.join(",");
+    query.categorys = getCategorysQuery();
     query = cleanQuery(query);
     return query;
+}
+
+// カテゴリのラジオボタンの選択を、categorysのクエリ（カンマ区切りで、「以外」のカテゴリは先頭に~を付ける）に変換する
+function getCategorysQuery() {
+    return Array.from(document.querySelectorAll(CATEGORY_QUERIES))
+        .filter((radioEle) => radioEle.checked && radioEle.value)
+        .map((radioEle) => (radioEle.value === "True" ? "" : "~") + radioEle.name.replace("category_", ""))
+        .join(",");
 }
 
 // フォームの値を曲のAPI（html/song_cards）のクエリに変換する

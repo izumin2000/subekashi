@@ -10,6 +10,7 @@ function normalizeSongUrl(url) {
 
 // 初期化
 const lyricsEle = document.getElementById("lyrics")
+const categoryEle = document.getElementById("category")
 async function init() {
     openDeleteDetails();
     song_id = window.location.pathname.split("/")[2];
@@ -52,7 +53,7 @@ async function init() {
     document.getElementById("song-guesser").innerHTML = "";
     checkButton();
     checkDeleteForm();
-    updateQuestionableVisibility();
+    updateFormVisibility();
 };
 window.addEventListener('load', init);
 
@@ -386,15 +387,18 @@ async function checkUrlForm(prefetchedLinks = undefined) {
 }
 urlEle.addEventListener('input', checkUrlForm);
 
-// 界隈曲?チェック時タイトル/作者/URL以外のフォームを非表示にする
-function updateQuestionableVisibility() {
-    const checked = document.getElementById('is-questionable').checked;
-    document.querySelectorAll('[data-hide-if-questionable]').forEach(el => {
-        el.style.display = checked ? 'none' : '';
+// 界隈曲?チェック時タイトル/作者/URL以外のフォームを、カテゴリが曲以外のとき歌詞を非表示にする
+function updateFormVisibility() {
+    const isQuestionable = document.getElementById('is-questionable').checked;
+    const isSong = categoryEle.value === "song";
+    document.querySelectorAll('[data-hide-if-questionable], [data-hide-if-not-song]').forEach(el => {
+        const isHidden = (isQuestionable && el.hasAttribute('data-hide-if-questionable')) || (!isSong && el.hasAttribute('data-hide-if-not-song'));
+        el.style.display = isHidden ? 'none' : '';
     });
     checkButton();
 }
-document.getElementById('is-questionable').addEventListener('change', updateQuestionableVisibility);
+document.getElementById('is-questionable').addEventListener('change', updateFormVisibility);
+categoryEle.addEventListener('change', updateFormVisibility);
 
 // 登録ボタン
 function checkButton() {
@@ -429,8 +433,8 @@ function checkButton() {
             is_lack = true;
         }
 
-        // 歌詞の未完成
-        if (!document.getElementById("is-inst").checked && (lyricsEle.value == "")) {
+        // 歌詞の未完成（歌詞を入力するのはカテゴリが曲の場合のみ）
+        if (!document.getElementById("is-inst").checked && (lyricsEle.value == "") && (categoryEle.value === "song")) {
             message += "<li>「インスト」にチェックをつけるか、歌詞を入力してください。</li>"
             is_lack = true;
         }
@@ -454,7 +458,7 @@ imitateTitleEle.addEventListener("keydown", function (event) {
 
 // フォームに変更があったかを検知
 var isFormDirty = false;
-document.querySelectorAll('input:not([type="submit"]), textarea').forEach((input) => {
+document.querySelectorAll('input:not([type="submit"]), textarea, select').forEach((input) => {
     input.addEventListener('change', () => {
         isFormDirty = true;
     });
