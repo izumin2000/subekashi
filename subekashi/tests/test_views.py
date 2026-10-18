@@ -1342,12 +1342,12 @@ class SongEditViewTest(TestCase):
     def test_post_category_is_saved_and_recorded_in_history(self):
         response = self.client.post(
             reverse("subekashi:song_edit", args=[self.song.id]),
-            {"title": "編集テスト曲", "authors": "編集テスト作者", "url": "", "category": "dec"},
+            {"title": "編集テスト曲", "authors": "編集テスト作者", "url": "", "category": "omnibus"},
         )
         self.assertEqual(response.status_code, 302)
         self.song.refresh_from_db()
-        self.assertEqual(self.song.category, "dec")
-        self.assertIn(["カテゴリ", "曲", "解読"], History.objects.get(song=self.song).changes)
+        self.assertEqual(self.song.category, "omnibus")
+        self.assertIn(["カテゴリ", "曲", "総集編"], History.objects.get(song=self.song).changes)
 
     def test_post_without_category_keeps_current_category(self):
         """#423: categoryを送らない場合（カテゴリの選択欄がない古いページからの送信等）は、編集前のカテゴリのままにすること"""

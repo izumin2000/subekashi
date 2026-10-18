@@ -180,10 +180,10 @@
 
 | 項目 | 内容 |
 | --- | --- |
-| 操作 | `POST /songs/<id>/edit/` `{title=..., authors=..., category="dec"}` |
+| 操作 | `POST /songs/<id>/edit/` `{title=..., authors=..., category="omnibus"}` |
 | 検証: レスポンス | `/songs/<id>?toast=edit` へリダイレクト (302) |
-| 検証: Song | `category == "dec"`。`category` を送らない場合は編集前のカテゴリのまま。カテゴリが曲以外でも、送信された歌詞はそのまま保存される（歌詞の入力欄は `song_edit.js` で非表示にするだけ） |
-| 検証: History | `changes` に `["カテゴリ", "曲", "解読"]`（選択肢の表示名）が含まれる |
+| 検証: Song | `category == "omnibus"`。`category` を送らない場合は編集前のカテゴリのまま。カテゴリが曲以外でも、送信された歌詞はそのまま保存される（歌詞の入力欄は `song_edit.js` で非表示にするだけ） |
+| 検証: History | `changes` に `["カテゴリ", "曲", "総集編"]`（選択肢の表示名）が含まれる |
 
 ---
 

@@ -3,7 +3,7 @@
 from django.db import migrations, models
 
 
-# categoryの"joke"を"meme"に変更し、"other"（その他）を選択肢から削除する（#423）
+# categoryの"joke"を"meme"に変更し、"other"（その他）・"dec"（解読）を選択肢から削除する（#423）
 # "notice"の表示名は「告知」から「予告」に変える（値は変えない）
 def joke_to_meme(apps, schema_editor):
     Song = apps.get_model('subekashi', 'Song')
@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='song',
             name='category',
-            field=models.CharField(choices=[('song', '曲'), ('arrange', 'アレンジ'), ('otomad', '音MAD'), ('medley', 'メドレー'), ('omnibus', '総集編'), ('notice', '予告'), ('dec', '解読'), ('offv', 'オフボ'), ('cover', 'カバー'), ('meme', 'ネタ動画')], default='song', max_length=10),
+            field=models.CharField(choices=[('song', '曲'), ('arrange', 'アレンジ'), ('otomad', '音MAD'), ('medley', 'メドレー'), ('omnibus', '総集編'), ('notice', '予告'), ('offv', 'オフボ'), ('cover', 'カバー'), ('meme', 'ネタ動画')], default='song', max_length=10),
         ),
         migrations.RunPython(joke_to_meme, meme_to_joke),
     ]
