@@ -7,6 +7,7 @@ from django.views import View
 from django.views.decorators.cache import never_cache
 from config.settings import ROOT_URL
 from config.local_settings import NEW_DISCORD_URL, CONTACT_DISCORD_URL
+from subekashi.constants.constants import SONG_CATEGORIES
 from subekashi.forms import SongEditForm
 from subekashi.models import Song, Editor, History, SongLink, SongFields
 from subekashi.lib.url import clean_url, get_allow_media
@@ -38,6 +39,7 @@ class SongEditView(View):
         return {
             "metatitle": f"{self.song.title}の編集",
             "song": self.song,
+            "SONG_CATEGORIES": SONG_CATEGORIES,
         }
 
     def get(self, request, song_id):
@@ -76,6 +78,7 @@ class SongEditView(View):
         is_subeana = form.cleaned_data['is_subeana']
         is_draft = form.cleaned_data['is_draft']
         is_questionable = form.cleaned_data['is_questionable']
+        category = form.cleaned_data['category'] or self.song.category
 
         # is_questionableの場合、模倣・歌詞・下書き・オリジナル模倣はユーザーの入力値に関わらず空にする
         if is_questionable:
@@ -144,6 +147,7 @@ class SongEditView(View):
             is_subeana=is_subeana,
             is_draft=is_draft,
             is_questionable=is_questionable,
+            category=category,
         )
 
         # Discordテキストとchangesを構築（song更新前に実行）

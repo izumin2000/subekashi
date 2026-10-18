@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.views import View
 from subekashi.models import Song
-from subekashi.lib.song_service import get_song_links_with_media, get_short_and_full_songs
+from subekashi.lib.song_service import get_song_links_with_media, get_short_and_full_songs, split_songs_by_category
 import re
 
 
@@ -46,6 +46,9 @@ class SongView(View):
         # タグに表示するフラグ
         flags = song.get_flags(is_lack=Song.is_lack(song_id))
 
+        # タグに表示するカテゴリ（カテゴリが曲の場合は表示しない）
+        category = song.get_category() if song.category != "song" else None
+
         context = {
             "description": description,
             "metatitle": f"{song.title} / {song.authors_str()}",
@@ -55,8 +58,12 @@ class SongView(View):
             "links": links,
             "imitate_list": imitate_list,
             "imitated_list": imitated_list,
+            # 模倣元・模倣曲のうち、ネタ曲と曲以外のカテゴリの曲はdetailsにまとめる
+            "imitate_groups": split_songs_by_category(imitate_list),
+            "imitated_groups": split_songs_by_category(imitated_list),
             "full_songs": full_songs,
             "short_songs": short_songs,
             "flags": flags,
+            "category": category,
         }
         return render(request, "subekashi/song.html", context)

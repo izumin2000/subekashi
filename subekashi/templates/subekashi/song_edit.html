@@ -58,9 +58,17 @@
             <div id="imitate-list"></div>
             <input type="text" id="imitate" name="imitate" value="{% for s in song.imitates.all %}{{ s.id }}{% if not forloop.last %},{% endif %}{% endfor %}" hidden>
         </div>
-        <div class="form-col" data-hide-if-questionable>
+        <div class="form-col" data-hide-if-questionable data-hide-if-not-song>
             <label for="lyrics"><i class="fas fa-align-center"></i><span class="icon-p-big">歌詞</span><i class="fas fa-info-circle" data-tutorial="lyrics"></i></label>
             <textarea id="lyrics" name="lyrics" maxlength="10000">{{ song.lyrics }}</textarea>
+        </div>
+        <div class="form-col">
+            <label for="category"><i class="fas fa-shapes"></i><span class="icon-p-big">カテゴリ</span><i class="fas fa-info-circle" data-tutorial="category"></i></label>
+            <select id="category" name="category">
+                {% for category in SONG_CATEGORIES %}
+                    <option value="{{ category.value }}" {% if song.category == category.value %}selected{% endif %}>{{ category.label }}</option>
+                {% endfor %}
+            </select>
         </div>
         <div class="checkbox-col" data-hide-if-questionable>
             <input type="checkbox" id="is-original" name="is_original" {% if song.is_original %}checked{% endif %}>

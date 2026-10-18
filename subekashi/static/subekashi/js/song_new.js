@@ -21,6 +21,16 @@ document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
     });
 });
 
+// カテゴリの同期
+document.querySelectorAll('select[data-sync]').forEach(select => {
+    select.addEventListener('change', function() {
+        const syncGroup = this.getAttribute('data-sync');
+        document.querySelectorAll(`select[data-sync="${syncGroup}"]`).forEach(syncSelect => {
+            syncSelect.value = this.value;
+        });
+    });
+});
+
 // 界隈曲?チェック時、オリジナル模倣を非表示にする
 function updateQuestionableVisibility() {
     const checked = document.querySelectorAll('input[data-sync="questionable"]:checked').length > 0;

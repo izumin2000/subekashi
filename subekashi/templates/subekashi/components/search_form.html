@@ -17,6 +17,8 @@
     <label for="search-form-radio-url"><i class="fas fa-link"></i><span class="icon-p-big">URL</span></label>
     <input type="radio" id="search-form-radio-imitate" name="search-form" value="imitate" {% if search_form == "imitate" %}checked{% endif %}>
     <label for="search-form-radio-imitate"><i class="fas fa-sitemap"></i><span class="icon-p-big">模倣</span></label>
+    <input type="radio" id="search-form-radio-category" name="search-form" value="category" {% if search_form == "category" %}checked{% endif %}>
+    <label for="search-form-radio-category"><i class="fas fa-shapes"></i><span class="icon-p-big">カテゴリ</span></label>
     <input type="radio" id="search-form-radio-subeana" name="search-form" value="subeana" {% if search_form == "subeana" %}checked{% endif %}>
     <label for="search-form-radio-subeana"><i class="fas fa-border-style"></i><span class="icon-p-big">界隈曲の種類</span></label>
     <input type="radio" id="search-form-radio-joke" name="search-form" value="joke" {% if search_form == "joke" %}checked{% endif %}>
@@ -146,6 +148,11 @@
             <p id="imitate-sub">もしくは原曲から入力</p>
             {% render_categorys %}
         </div>
+    </div>
+    <div class="search-form" id="search-form-category" {% if search_form != "category" %}hidden{% endif %}>
+        {% for category_filter in category_filters %}
+            {% include "subekashi/components/bool_filter.html" with name=category_filter.name icon=category_filter.category.icon label=category_filter.category.label value=category_filter.value %}
+        {% endfor %}
     </div>
     <div class="search-form" id="search-form-subeana" {% if search_form != "subeana" %}hidden{% endif %}>
         <div class="radio-col">

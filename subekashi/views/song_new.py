@@ -3,6 +3,7 @@ from django.db import transaction
 from django.views import View
 from config.settings import ROOT_URL
 from config.local_settings import CONTACT_DISCORD_URL, NEW_DISCORD_URL
+from subekashi.constants.constants import SONG_CATEGORIES
 from subekashi.models import Editor, History, Song, SongLink, SongFields
 from subekashi.lib.url import clean_url, is_youtube_url, get_youtube_id
 from subekashi.lib.ip import get_ip
@@ -19,7 +20,7 @@ from subekashi.lib.song_service import (
 
 class SongNewView(View):
     def get_base_context(self):
-        return {"metatitle": "曲の登録"}
+        return {"metatitle": "曲の登録", "SONG_CATEGORIES": SONG_CATEGORIES}
 
     def get(self, request):
         allow_dup_url = request.GET.get('allow_dup_url', '')
@@ -48,10 +49,16 @@ class SongNewView(View):
         is_inst = bool(request.POST.get("is-inst-auto", "") + request.POST.get("is-inst-manual", ""))
         is_subeana = bool(request.POST.get("is-subeana-auto", "") + request.POST.get("is-subeana-manual", ""))
         is_questionable = bool(request.POST.get("is-questionable-auto", "") + request.POST.get("is-questionable-manual", ""))
+        category = request.POST.get("category") or "song"
 
         # is_questionableの場合、オリジナル模倣はユーザーの入力値に関わらず空にする
         if is_questionable:
             is_original = False
+
+        # カテゴリが選択肢にない場合はエラー
+        if category not in dict(Song.CHOICES):
+            context["error"] = "カテゴリが不正です。"
+            return render(request, 'subekashi/song_new.html', context)
 
         # URLがYouTubeのURLでない場合はエラー
         if not is_youtube_url(url) and url:
@@ -137,6 +144,7 @@ class SongNewView(View):
             is_inst=is_inst,
             is_subeana=is_subeana,
             is_questionable=is_questionable,
+            category=category,
             upload_time=youtube_res.get("upload_time", None),
             view=youtube_res.get("view", None),
             like=youtube_res.get("like", None),

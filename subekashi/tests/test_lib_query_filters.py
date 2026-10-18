@@ -13,6 +13,8 @@ from subekashi.lib.query_filters import (
     filter_by_lack,
     filter_by_collab,
     filter_by_mediatypes,
+    filter_by_categorys,
+    split_categorys,
     filter_by_author,
     filter_by_author_exact,
     make_is_lack_annotation,
@@ -492,7 +494,7 @@ class FilterByLackTest(TestCase):
     filter_by_lack() は以下の3条件のいずれかを満たす曲を「未完成」と判定する:
       (A) is_deleted=False かつ SongLink が存在しない（is_questionable は問わない）
       (B) is_questionable=False かつ is_original=False かつ is_subeana=True かつ imitates が空 かつ author_id=1 なし
-      (C) is_questionable=False かつ is_inst=False かつ lyrics が空文字列
+      (C) is_questionable=False かつ is_inst=False かつ lyrics が空文字列 かつ category="song"（#423）
 
     各テストで「意図しない条件」に引っかからないよう、検証したい条件以外は
     明示的に打ち消したフィールド値を設定する。
@@ -588,6 +590,56 @@ class FilterByLackTest(TestCase):
         link.songs.add(song)
         qs = Song.objects.filter(filter_by_lack()).distinct()
         self.assertNotIn(song, qs)
+
+    def test_non_song_category_without_lyrics_is_not_lack(self):
+        # #423: 歌詞を入力するのはカテゴリが曲の場合のみのため、曲以外は歌詞がなくても条件(C)に該当しない
+        # URLあり(条件A除外)・is_original=True(条件B除外)
+        song = Song.objects.create(title="アレンジ歌詞なしテスト", category="arrange", is_inst=False, lyrics="", is_original=True)
+        link = SongLink.objects.create(url="https://youtu.be/arrangenolyr01")
+        link.songs.add(song)
+        qs = Song.objects.filter(filter_by_lack()).distinct()
+        self.assertNotIn(song, qs)
+
+
+class FilterByCategorysTest(TestCase):
+    """filter_by_categorys() のテスト（#423）"""
+
+    def setUp(self):
+        self.song = Song.objects.create(title="曲")
+        self.arrange = Song.objects.create(title="アレンジ", category="arrange")
+        self.meme = Song.objects.create(title="ネタ動画", category="meme")
+
+    def test_single_category(self):
+        ids = list(Song.objects.filter(filter_by_categorys("arrange")).values_list("id", flat=True))
+        self.assertEqual(ids, [self.arrange.id])
+
+    def test_multiple_categorys(self):
+        ids = list(Song.objects.filter(filter_by_categorys("song,meme")).values_list("id", flat=True))
+        self.assertCountEqual(ids, [self.song.id, self.meme.id])
+
+    def test_unknown_category_matches_nothing(self):
+        self.assertFalse(Song.objects.filter(filter_by_categorys("joke")).exists())
+
+    def test_excluded_categorys(self):
+        """先頭に~を付けたカテゴリの曲は除く"""
+        ids = list(Song.objects.filter(filter_by_categorys("~song,~meme")).values_list("id", flat=True))
+        self.assertEqual(ids, [self.arrange.id])
+
+    def test_included_and_excluded_categorys(self):
+        """「のみ」と「以外」の両方を指定した場合は、「のみ」のカテゴリのうち「以外」のカテゴリでない曲"""
+        ids = list(Song.objects.filter(filter_by_categorys("song,arrange,~arrange")).values_list("id", flat=True))
+        self.assertEqual(ids, [self.song.id])
+
+
+class SplitCategorysTest(TestCase):
+    """split_categorys() のテスト（#423）"""
+
+    def test_split(self):
+        self.assertEqual(split_categorys("arrange,~meme,cover,~song"), (["arrange", "cover"], ["meme", "song"]))
+
+    def test_empty_values_are_ignored(self):
+        self.assertEqual(split_categorys(""), ([], []))
+        self.assertEqual(split_categorys("arrange,,~meme"), (["arrange"], ["meme"]))
 
 
 class FilterByMediatypesTest(TestCase):
@@ -706,6 +758,15 @@ class MakeIsLackAnnotationTest(TestCase):
         )
         song.authors.add(author)
         link = SongLink.objects.create(url="https://youtu.be/subeanawithauthor02")
+        link.songs.add(song)
+        qs = Song.objects.annotate(is_lack=make_is_lack_annotation())
+        annotated = qs.get(pk=song.pk)
+        self.assertFalse(annotated.is_lack)
+
+    def test_non_song_category_without_lyrics_annotated_false(self):
+        # #423: カテゴリが曲以外なら、歌詞がなくても条件(C)に該当しない
+        song = Song.objects.create(title="告知アノテーションテスト", category="notice", is_inst=False, lyrics="", is_original=True)
+        link = SongLink.objects.create(url="https://youtu.be/noticenolyr01")
         link.songs.add(song)
         qs = Song.objects.annotate(is_lack=make_is_lack_annotation())
         annotated = qs.get(pk=song.pk)

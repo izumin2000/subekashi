@@ -129,6 +129,23 @@ class SongEditFormTest(SimpleTestCase):
         form = SongEditForm(data=self._make_data(lyrics=""))
         self.assertTrue(form.is_valid())
 
+    def test_category_is_optional(self):
+        """#423: categoryを送らない場合は空文字になる（ビューで編集前のカテゴリのままにする）"""
+        form = SongEditForm(data=self._make_data())
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data["category"], "")
+
+    def test_valid_category(self):
+        form = SongEditForm(data=self._make_data(category="arrange"))
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data["category"], "arrange")
+
+    def test_invalid_category_is_invalid(self):
+        """#423: 選択肢にないカテゴリ（変更前の"joke"等）はエラーにする"""
+        form = SongEditForm(data=self._make_data(category="joke"))
+        self.assertFalse(form.is_valid())
+        self.assertIn("カテゴリが不正です。", form.errors["category"])
+
     def test_title_max_length_500_is_valid(self):
         form = SongEditForm(data=self._make_data(title="あ" * 500))
         self.assertTrue(form.is_valid())

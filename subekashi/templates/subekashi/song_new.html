@@ -13,6 +13,14 @@
             <label for="url"><i class="fas fa-link"></i><span class="icon-p-big"><i class="fab fa-youtube"></i>URL</span><i class="fas fa-info-circle" data-tutorial="youtube-url"></i></label>
             <input type="url" id="url" name="url" value="{{ request.GET.url }}" required>
         </div>
+        <div class="form-col">
+            <label for="category-auto"><i class="fas fa-shapes"></i><span class="icon-p-big">カテゴリ</span><i class="fas fa-info-circle" data-tutorial="category"></i></label>
+            <select id="category-auto" name="category" data-sync="category">
+                {% for category in SONG_CATEGORIES %}
+                    <option value="{{ category.value }}">{{ category.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
         <div class="checkbox-col" data-hide-if-questionable>
             <input type="checkbox" id="is-original-auto" name="is-original-auto" data-sync="original">
             <label for="is-original-auto"><i class="fas fa-external-link-alt"></i><span class="icon-p-big">オリジナル模倣</span></label>
@@ -56,6 +64,14 @@
         <div class="form-col">
             <label for="authors"><i class="fas fa-user-friends"></i><span class="icon-p-big">作者</span><span class="icon-p">(複数可)</span><i class="fas fa-info-circle" data-tutorial="authors"></i></label>
             <input type="text" id="authors" name="authors" class="sansfont" value="{{ request.GET.authors }}" required>
+        </div>
+        <div class="form-col">
+            <label for="category-manual"><i class="fas fa-shapes"></i><span class="icon-p-big">カテゴリ</span><i class="fas fa-info-circle" data-tutorial="category"></i></label>
+            <select id="category-manual" name="category" data-sync="category">
+                {% for category in SONG_CATEGORIES %}
+                    <option value="{{ category.value }}">{{ category.label }}</option>
+                {% endfor %}
+            </select>
         </div>
         <div class="checkbox-col" data-hide-if-questionable>
             <input type="checkbox" id="is-original-manual" name="is-original-manual" data-sync="original">

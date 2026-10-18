@@ -70,6 +70,28 @@ class SongAPIListTest(TestCase):
         self.assertEqual(data["count"], 1)
         self.assertEqual(data["result"][0]["title"], "APIテスト曲1")
 
+    def test_categorys_filter_supports_multiple_values(self):
+        """#423: categorysはmediatypesと同様にカンマ区切りで複数のカテゴリを指定できること"""
+        Song.objects.filter(pk=self.song1.pk).update(category="arrange")
+        Song.objects.create(title="APIテスト曲3", category="meme")
+        response = self.client.get("/api/song/", {"categorys": "arrange,meme"})
+        titles = [song["title"] for song in response.json()["result"]]
+        self.assertCountEqual(titles, ["APIテスト曲1", "APIテスト曲3"])
+
+    def test_categorys_filter_supports_excluded_categorys(self):
+        """#423: categorysで先頭に~を付けたカテゴリの曲は除くこと"""
+        Song.objects.filter(pk=self.song1.pk).update(category="arrange")
+        Song.objects.create(title="APIテスト曲3", category="meme")
+        response = self.client.get("/api/song/", {"categorys": "~song,~meme"})
+        titles = [song["title"] for song in response.json()["result"]]
+        self.assertEqual(titles, ["APIテスト曲1"])
+
+    def test_result_contains_category(self):
+        response = self.client.get("/api/song/", {"categorys": "song"})
+        data = response.json()
+        self.assertEqual(data["count"], 2)
+        self.assertEqual({song["category"] for song in data["result"]}, {"song"})
+
     def test_is_lack_false_excludes_lack_songs(self):
         """is_lack=False で未完成の曲が除外されること（#970）"""
         # song1: URLあり・歌詞ありのオリジナル模倣曲（完成）、song2: URLなし（未完成）

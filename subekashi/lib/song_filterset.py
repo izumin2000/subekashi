@@ -10,6 +10,7 @@ from subekashi.lib.query_filters import (
     filter_by_imitated,
     filter_by_guesser,
     filter_by_mediatypes,
+    filter_by_categorys,
     filter_by_lack,
     filter_by_collab,
     filter_by_author,
@@ -188,6 +189,10 @@ class SongFilter(django_filters.FilterSet):
         method='filter_mediatypes',
         validators=[validate_max_length(100)]
     )
+    categorys = django_filters.CharFilter(
+        method='filter_categorys',
+        validators=[validate_max_length(100)]
+    )
     is_lack = django_filters.BooleanFilter(method='filter_is_lack')
     is_collab = django_filters.BooleanFilter(method='filter_is_collab')
 
@@ -233,6 +238,10 @@ class SongFilter(django_filters.FilterSet):
     def filter_mediatypes(self, queryset, name, value):
         """正規表現を使用したメディアタイプによるフィルタ"""
         return queryset.filter(filter_by_mediatypes(value))
+
+    def filter_categorys(self, queryset, name, value):
+        """カテゴリによるフィルタ（カンマ区切りリストをサポート。先頭に~を付けたカテゴリは除外する）"""
+        return queryset.filter(filter_by_categorys(value))
 
     def filter_is_lack(self, queryset, name, value):
         """不完全な曲をフィルタ（Falseの場合は不完全な曲を除外）"""

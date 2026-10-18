@@ -81,6 +81,14 @@
 | 検証: レスポンス | `/songs/<id>/edit` へリダイレクト (302) |
 | 検証: Song | `is_questionable == True`、`is_original == False`（強制OFF）、`is_subeana == True`（タイトル・作者・URLに加え非公開/削除済み・ネタ曲・インスト・すべあな界隈曲の入力値はそのまま保存される） |
 
+#### 1-6. カテゴリを指定して登録（#423）
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作 | `POST /songs/new/` `{title="タイトル", authors="作者", category="otomad"}` |
+| 検証: レスポンス | `/songs/<id>/edit` へリダイレクト (302) |
+| 検証: Song | `category == "otomad"`（`category` を送らない場合は `"song"`、選択肢にない値はエラーでSongは作成されない） |
+
 ---
 
 ### 2. 曲編集フロー
@@ -167,6 +175,15 @@
 | 操作 | `POST /songs/<id>/edit/` `{title=..., authors=..., is_questionable=True, is_deleted=True, is_joke=True, is_inst=True, is_subeana=True}` |
 | 検証: レスポンス | `/songs/<id>?toast=edit` へリダイレクト (302) |
 | 検証: Song | `is_questionable == True`、`is_deleted`・`is_joke`・`is_inst`・`is_subeana` がすべて入力通り `True` で保存される |
+
+#### 2-10. カテゴリの変更（#423）
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作 | `POST /songs/<id>/edit/` `{title=..., authors=..., category="dec"}` |
+| 検証: レスポンス | `/songs/<id>?toast=edit` へリダイレクト (302) |
+| 検証: Song | `category == "dec"`。`category` を送らない場合は編集前のカテゴリのまま。カテゴリが曲以外でも、送信された歌詞はそのまま保存される（歌詞の入力欄は `song_edit.js` で非表示にするだけ） |
+| 検証: History | `changes` に `["カテゴリ", "曲", "解読"]`（選択肢の表示名）が含まれる |
 
 ---
 
@@ -288,6 +305,24 @@
 | 前提（is_questionable、歌詞なし） | URL あり・歌詞なしだが `is_questionable=True` の曲が存在する |
 | 操作 | `GET /api/song/?lack=true` |
 | 検証 | 歌詞なし条件は `is_questionable=False` が必須のため、結果に含まれない |
+
+#### 5-4-1. カテゴリの検索（#423）
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | カテゴリが曲・アレンジ・ネタ動画の曲が存在する |
+| 操作 | `GET /api/song/?categorys=arrange,meme` |
+| 検証 | アレンジ・ネタ動画の曲のみ返される（`mediatypes` と同様にカンマ区切りで複数指定できる）。曲の検索画面（`/api/html/song_cards`）では「カテゴリが有効です」が表示される |
+| 操作 | `GET /api/song/?categorys=~song,~meme` |
+| 検証 | 先頭に~を付けたカテゴリ（「以外」）の曲を除き、アレンジの曲のみ返される |
+
+#### 5-4-2. カテゴリの選択の保存（#423）
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | 設定「検索の選択肢の保存」が保存（`is_saved_select=on`） |
+| 操作 | 検索画面でカテゴリの指定なし・のみ・以外を変更する（songs.jsが `POST /songs/` `{categorys="arrange,~meme"}` を送る）→ `GET /songs/` |
+| 検証 | `search_categorys` cookieに保存され、URLクエリが無い検索画面・トップ画面の「全て表示」の検索で、アレンジの「のみ」・ネタ動画の「以外」のラジオボタンが選択される。曲ページのタグのリンク（`GET /songs/?categorys=...`）では保存した選択を上書きしない。保存しない設定（`is_saved_select=off`）では保存した選択を使わない |
 
 #### 5-5. SongsView ページでの検索
 

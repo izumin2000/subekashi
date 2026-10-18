@@ -19,9 +19,11 @@ from subekashi.lib.song_service import (
     build_new_song_discord_text,
     build_edit_song_discord_text,
     yes_no,
+    category_label,
     get_short_base_title,
     get_full_base_title,
     get_short_and_full_songs,
+    split_songs_by_category,
 )
 
 
@@ -33,6 +35,16 @@ class YesNoTest(TestCase):
 
     def test_false_returns_iie(self):
         self.assertEqual(yes_no(False), "いいえ")
+
+
+class CategoryLabelTest(TestCase):
+    """category_label() のテスト（#423）"""
+
+    def test_returns_label(self):
+        self.assertEqual(category_label("arrange"), "アレンジ")
+
+    def test_unknown_category_returns_value(self):
+        self.assertEqual(category_label("unknown"), "unknown")
 
 
 class CheckRejectListTest(TestCase):
@@ -151,6 +163,12 @@ class CreateSongTest(TestCase):
         fields = SongFields(title="界隈曲テスト", is_questionable=True)
         song = create_song(fields)
         self.assertTrue(song.is_questionable)
+
+    def test_category_is_set(self):
+        fields = SongFields(title="音MADテスト", category="otomad")
+        song = create_song(fields)
+        song.refresh_from_db()
+        self.assertEqual(song.category, "otomad")
 
     def test_post_time_is_set_automatically(self):
         before = timezone.now()
@@ -298,6 +316,12 @@ class UpdateSongTest(TestCase):
         self.song.refresh_from_db()
         self.assertTrue(self.song.is_questionable)
 
+    def test_category_is_updated(self):
+        fields = SongFields(title="更新前タイトル", lyrics="更新前歌詞", category="medley")
+        update_song(self.song, fields, [self.author1], [], ["https://youtu.be/beforeupdate1"])
+        self.song.refresh_from_db()
+        self.assertEqual(self.song.category, "medley")
+
     def test_imitates_are_updated(self):
         target_song = Song.objects.create(title="新しい模倣元")
         fields = SongFields(title="更新前タイトル", lyrics="更新前歌詞")
@@ -373,6 +397,15 @@ class BuildNewSongDiscordTextTest(TestCase):
         )
         self.assertIn("界隈曲?", text)
 
+    def test_text_contains_category_label(self):
+        """#423: カテゴリは選択肢の表示名で通知・履歴に残す"""
+        fields = SongFields(title="新規テスト曲", category="medley")
+        changes, text = build_new_song_discord_text(
+            self.song.id, fields, [self.author], "", "editor_ip"
+        )
+        self.assertIn(["カテゴリ", "メドレー"], changes)
+        self.assertIn("**カテゴリ**：`メドレー`", text)
+
 
 class BuildEditSongDiscordTextTest(TestCase):
     """build_edit_song_discord_text() のテスト"""
@@ -425,6 +458,59 @@ class BuildEditSongDiscordTextTest(TestCase):
             self.song.id, self.song, fields, [self.author], "", []
         )
         self.assertIn("界隈曲?", changed_labels)
+
+    def test_category_change_is_detected(self):
+        """#423: カテゴリの変更は選択肢の表示名で履歴に残す"""
+        fields = SongFields(title="編集前タイトル", lyrics="編集前歌詞", category="cover")
+        _, changes, _, changed_labels = build_edit_song_discord_text(
+            self.song.id, self.song, fields, [self.author], "", []
+        )
+        self.assertIn("カテゴリ", changed_labels)
+        self.assertIn(["カテゴリ", "曲", "カバー"], changes)
+
+    def test_same_category_is_not_detected(self):
+        fields = SongFields(title="編集前タイトル", lyrics="編集前歌詞")
+        _, _, _, changed_labels = build_edit_song_discord_text(
+            self.song.id, self.song, fields, [self.author], "", []
+        )
+        self.assertNotIn("カテゴリ", changed_labels)
+
+
+class SplitSongsByCategoryTest(TestCase):
+    """split_songs_by_category() のテスト（#423）"""
+
+    def test_splits_songs_jokes_and_categorys(self):
+        song = Song.objects.create(title="曲")
+        joke = Song.objects.create(title="ネタ曲", is_joke=True)
+        cover = Song.objects.create(title="カバー", category="cover")
+        arrange1 = Song.objects.create(title="アレンジ1", category="arrange")
+        arrange2 = Song.objects.create(title="アレンジ2", category="arrange")
+        groups = split_songs_by_category(Song.objects.order_by("id"))
+        self.assertEqual(groups["songs"], [song])
+        self.assertEqual(groups["joke_songs"], [joke])
+        # カテゴリごとのまとまりは、曲の並びではなくSONG_CATEGORIESの順（アレンジ・カバー）に並ぶ
+        self.assertEqual(
+            [(group["category"]["value"], group["songs"]) for group in groups["category_groups"]],
+            [("arrange", [arrange1, arrange2]), ("cover", [cover])],
+        )
+
+    def test_joke_song_of_other_category_is_grouped_by_category(self):
+        """曲以外のカテゴリの曲は、ネタ曲でもカテゴリの方にまとめる"""
+        meme_joke = Song.objects.create(title="ネタ曲のネタ動画", category="meme", is_joke=True)
+        groups = split_songs_by_category(Song.objects.all())
+        self.assertEqual(groups["joke_songs"], [])
+        self.assertEqual(groups["category_groups"][0]["category"]["value"], "meme")
+        self.assertEqual(groups["category_groups"][0]["songs"], [meme_joke])
+
+    def test_unknown_category_is_not_grouped(self):
+        """選択肢にないカテゴリの曲は、カテゴリが曲の曲と同じく扱う"""
+        unknown = Song.objects.create(title="移行前のネタ動画", category="joke")
+        groups = split_songs_by_category(Song.objects.all())
+        self.assertEqual(groups["songs"], [unknown])
+        self.assertEqual(groups["category_groups"], [])
+
+    def test_empty(self):
+        self.assertEqual(split_songs_by_category(Song.objects.none()), {"songs": [], "joke_songs": [], "category_groups": []})
 
 
 class GetShortBaseTitleTest(TestCase):
