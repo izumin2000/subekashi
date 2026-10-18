@@ -69,6 +69,7 @@ class ArticlesViewTest(TestCase):
 
     def test_article_wrapper_divs_are_balanced(self):
         # 記事の投稿方法・ニュース・それ以外の記事のいずれでも、記事ごとの<div>を余計に閉じない（#1244）
+        # ニュースの記事はsetUpで作成している
         Article.objects.create(
             article_id="howToArticle",
             title="使い方記事",
@@ -86,7 +87,10 @@ class ArticlesViewTest(TestCase):
         content = self.client.get("/articles/").content.decode()
         start = content.index('<article id="mainarticle">')
         main = content[start:content.index("</article>", start)]
-        self.assertEqual(main.count("<div"), main.count("</div>"))
+        self.assertIn('id="how-to-article"', main)
+        self.assertIn('class="single-news-wrapper"', main)
+        self.assertIn('href="/articles/test-articles-blog/"', main)
+        self.assertEqual(len(re.findall(r"<div[\s>]", main)), main.count("</div>"))
 
     def test_is_pinned_article_default_pins_howto_article_first(self):
         Article.objects.create(

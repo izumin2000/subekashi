@@ -1745,7 +1745,7 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | キーワード検索 | `?keyword=テスト記事タイトル` | HTTP 200、該当記事が含まれる |
 | キーワード一致なし | 存在しないキーワード | HTTP 200 |
 | タイトル中のリンクの除去（#483） | `tag="blog"`でタイトルが`[リンク](https://example.com)と**太字**` | 記事へのリンクの中で`<a>`が入れ子にならないよう、`リンクと<strong>太字</strong>`と表示される |
-| 記事ごとの`<div>`の対応（#1244） | `howToArticle`・`tag="news"`・`tag="blog"`の記事が存在 | `#mainarticle`内の`<div`と`</div>`の数が一致する（記事の投稿方法・ニュースで`</div>`が余計に出力されない） |
+| 記事ごとの`<div>`の対応（#1244） | `howToArticle`・`tag="news"`・`tag="blog"`の記事が存在（ニュースの記事は`setUp`で作成） | 3種類の行がそれぞれ出力され、`#mainarticle`内の`<div>`の開始タグ（`<div[\s>]`）と`</div>`の数が一致する（記事の投稿方法・ニュースで`</div>`が余計に出力されない） |
 
 #### 12-2. `DefaultArticleView` (`/articles/<id>/`)
 
