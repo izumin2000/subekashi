@@ -5,6 +5,7 @@ SongAPI・EditorIsOpenView のレスポンス形式・ステータスコード�
 SongThrottle はビュークラスに直接定義されているため、patch で無効化する。
 ApiThrottleClientIPTest・ApiThrottleIdentTest では、スロットリングを X-Real-IP ごとに数えることを検証する（#1192）。
 NewsAPIViewTest では、API_KEY を知っている人だけがニュースを登録できることを検証する（#925）。
+SongLinkAPITest では、表記の違うビリビリ動画のURLでも同じ動画のURLが見つかることを検証する（#1246）。
 """
 import json
 from datetime import timedelta
@@ -242,6 +243,40 @@ class SongEditInitViewTest(TestCase):
         response = self.client.get("/api/song_edit_init/", {"song_id": "9" * 30, "fetch_imitate": "1"})
         self.assertEqual(response.status_code, 200)
         self.assertIsNone(response.json()["imitate_songs"])
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+@patch("subekashi.views.api.songlink.SongLinkAPI.throttle_classes", [])
+class SongLinkAPITest(TestCase):
+    """SongLinkAPI GET /api/songlink/ のテスト
+
+    song_edit.js・song_new.jsは、入力したURLが登録済みかをこのAPIで判定する。
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+        self.song = Song.objects.create(title="URLテスト曲")
+        self.link = SongLink.objects.create(url="https://bilibili.com/video/BV1qV411J7Kq")
+        self.link.songs.add(self.song)
+
+    def _get_link_ids(self, url):
+        response = self.client.get("/api/songlink/", {"url": url})
+        self.assertEqual(response.status_code, 200)
+        return [link["id"] for link in response.json()["result"]]
+
+    def test_bilibili_url_is_found_by_av_and_unformatted_url(self):
+        # #1246: av番号・www・末尾の/・クエリの付いたURLでも、同じ動画のURLが見つかる
+        for url in [
+            "https://bilibili.com/video/BV1qV411J7Kq",
+            "https://www.bilibili.com/video/av417727107/",
+            "https://m.bilibili.com/video/BV1qV411J7Kq/?spm_id_from=333.999.0.0&p=1",
+        ]:
+            with self.subTest(url=url):
+                self.assertEqual(self._get_link_ids(url), [self.link.id])
+
+    def test_bilibili_url_of_other_page_is_not_found(self):
+        # #1246: 2パート目以降は別の曲のことがあるため、別のURLとして扱う
+        self.assertEqual(self._get_link_ids("https://www.bilibili.com/video/BV1qV411J7Kq?p=2"), [])
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
