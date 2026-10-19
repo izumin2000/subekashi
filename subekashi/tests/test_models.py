@@ -577,6 +577,68 @@ class SongCategoryMigrationTest(TestCase):
         self.assertEqual(meme.category, "joke")
 
 
+class SongLinkBilibiliUrlMigrationTest(TestCase):
+    """0051_songlink_bilibili_url のデータ移行のテスト（#1246）"""
+
+    def setUp(self):
+        self.migration = importlib.import_module("subekashi.migrations.0051_songlink_bilibili_url")
+
+    def create_link(self, url, songs=(), **kwargs):
+        link = SongLink.objects.create(url=url, **kwargs)
+        link.songs.set(songs)
+        return link
+
+    def test_url_is_formatted(self):
+        song = Song.objects.create(title="曲")
+        link = self.create_link("https://bilibili.com/video/BV11ar4YcEyF/?spm_id_from=333.1387.homepage.video_card.click", [song])
+        formatted = self.create_link("https://bilibili.com/video/BV1aN411R7QU")
+        other = self.create_link("https://nicovideo.jp/watch/sm12345678/")
+        self.migration.normalize_bilibili_urls(apps, None)
+        link.refresh_from_db()
+        formatted.refresh_from_db()
+        other.refresh_from_db()
+        self.assertEqual(link.url, "https://bilibili.com/video/BV11ar4YcEyF")
+        self.assertEqual(list(link.songs.all()), [song])
+        self.assertEqual(formatted.url, "https://bilibili.com/video/BV1aN411R7QU")
+        self.assertEqual(other.url, "https://nicovideo.jp/watch/sm12345678/")
+
+    def test_same_video_urls_are_merged(self):
+        bv_song = Song.objects.create(title="BV番号で登録した曲")
+        av_song = Song.objects.create(title="av番号で登録した曲")
+        slash_song = Song.objects.create(title="末尾に/を付けて登録した曲")
+        bv_link = self.create_link("https://bilibili.com/video/BV1qV411J7Kq", [bv_song])
+        self.create_link("https://bilibili.com/video/av417727107/", [av_song], allow_dup=True)
+        self.create_link("https://bilibili.com/video/BV1qV411J7Kq/", [slash_song])
+        self.migration.normalize_bilibili_urls(apps, None)
+        self.assertEqual(list(SongLink.objects.filter(url__icontains="bilibili").values_list("id", flat=True)), [bv_link.id])
+        bv_link.refresh_from_db()
+        self.assertCountEqual(bv_link.songs.all(), [bv_song, av_song, slash_song])
+        self.assertTrue(bv_link.allow_dup)
+
+    def test_unformatted_urls_are_merged_into_first_link(self):
+        song = Song.objects.create(title="曲")
+        first = self.create_link("https://bilibili.com/video/av417727107")
+        self.create_link("https://bilibili.com/video/BV1qV411J7Kq/", [song])
+        self.migration.normalize_bilibili_urls(apps, None)
+        first.refresh_from_db()
+        self.assertEqual(first.url, "https://bilibili.com/video/BV1qV411J7Kq")
+        self.assertEqual(list(first.songs.all()), [song])
+        self.assertEqual(SongLink.objects.count(), 1)
+
+    def test_merged_link_is_removed_only_if_both_are_removed(self):
+        song = Song.objects.create(title="曲")
+        removed = self.create_link("https://bilibili.com/video/BV1qV411J7Kq", is_removed=True)
+        self.create_link("https://bilibili.com/video/av417727107", [song])
+        both_removed = self.create_link("https://bilibili.com/video/BV11ar4YcEyF", is_removed=True)
+        self.create_link("https://bilibili.com/video/BV11ar4YcEyF/", is_removed=True)
+        self.migration.normalize_bilibili_urls(apps, None)
+        removed.refresh_from_db()
+        both_removed.refresh_from_db()
+        self.assertFalse(removed.is_removed)
+        self.assertEqual(list(removed.songs.all()), [song])
+        self.assertTrue(both_removed.is_removed)
+
+
 class SongGetFlagsTest(TestCase):
     """Song.get_flags() のテスト（#1228）"""
 

@@ -185,6 +185,15 @@
 | 検証: Song | `category == "omnibus"`。`category` を送らない場合は編集前のカテゴリのまま。カテゴリが曲以外でも、送信された歌詞はそのまま保存される（歌詞の入力欄は `song_edit.js` で非表示にするだけ） |
 | 検証: History | `changes` に `["カテゴリ", "曲", "総集編"]`（選択肢の表示名）が含まれる |
 
+#### 2-11. ビリビリ動画のURLを揃えて保存し、同じ動画のURLを重複として扱う（#1246）
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作 | `POST /songs/<id>/edit/` `{url="https://www.bilibili.com/video/av417727107/?spm_id_from=...,https://www.bilibili.com/video/BV1in4y1Q7qw?p=2&vd_source=...", ...}` |
+| 検証: レスポンス | `/songs/<id>?toast=edit` へリダイレクト (302) |
+| 検証: SongLink | `https://bilibili.com/video/BV1qV411J7Kq`・`https://bilibili.com/video/BV1in4y1Q7qw?p=2` で保存される（av番号はBV番号に変換し、2パート目以降の `p` のみ残す） |
+| 検証: 重複 | 別の曲に `https://bilibili.com/video/BV1qV411J7Kq` が紐付いているとき、`https://www.bilibili.com/video/av417727107/` を送ると HTTP 200、"既に登録されています" のエラーでURLは追加されない。画面のJSが重複の判定に使う `GET /api/songlink/?url=` も、av番号・`www.`・`m.`・末尾の `/`・クエリの違うURLで同じ `SongLink` を返し、`?p=2` のURLでは返さない |
+
 ---
 
 ### 3. 削除申請フロー
