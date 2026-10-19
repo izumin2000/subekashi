@@ -34,6 +34,8 @@
 | YouTubeショートURL | `https://youtube.com/shorts/abcdefghijk` | `True` |
 | 短縮YouTube URL (youtu.be) | `https://youtu.be/dQw4w9WgXcQ` | `True` |
 | モバイル版YouTube URL | `https://m.youtube.com/watch?v=dQw4w9WgXcQ` | `True` |
+| ライブのURL（#52） | `https://www.youtube.com/live/dQw4w9WgXcQ?feature=share`・`https://youtube.com/live/dQw4w9WgXcQ` | `True` |
+| チャンネルのライブのページ・コミュニティ投稿（#52） | `https://www.youtube.com/@subekashi/live`・`https://www.youtube.com/post/...` | `False`（動画ではない） |
 | 非YouTube URL | `https://nicovideo.jp/watch/sm12345` | `False` |
 | 空文字列 | `""` | `False` |
 
@@ -44,6 +46,7 @@
 | 通常URL | `https://www.youtube.com/watch?v=dQw4w9WgXcQ` | `"dQw4w9WgXcQ"` |
 | youtu.be URL | `https://youtu.be/dQw4w9WgXcQ` | `"dQw4w9WgXcQ"` |
 | ショートURL | `https://youtube.com/shorts/abcdefghijk` | `"abcdefghijk"` |
+| ライブのURL（#52） | `https://www.youtube.com/live/dQw4w9WgXcQ?si=xxxx` | `"dQw4w9WgXcQ"` |
 | 非YouTube URL | `https://example.com` | `"https://example.com"` (そのまま返す) |
 
 #### 1-3. `format_youtube_url(url)`
@@ -52,6 +55,7 @@
 | --- | --- | --- |
 | 通常YouTube URL | `https://www.youtube.com/watch?v=dQw4w9WgXcQ` | `"https://youtu.be/dQw4w9WgXcQ"` |
 | 既に短縮済み | `https://youtu.be/dQw4w9WgXcQ` | `"https://youtu.be/dQw4w9WgXcQ"` |
+| ライブのURL（#52） | `https://www.youtube.com/live/dQw4w9WgXcQ?feature=share` | `"https://youtu.be/dQw4w9WgXcQ"` |
 | 非YouTube URL | `https://nicovideo.jp/watch/sm12345` | `"https://nicovideo.jp/watch/sm12345"` (変化なし) |
 
 #### 1-4. `format_x_url(url)`
@@ -69,6 +73,7 @@
 | スペース付きカンマ区切り | `"url1, url2"` | `"url1,url2"` |
 | www付きURL | `"https://www.youtube.com/watch?v=abc1234abcd"` | `"https://youtu.be/abc1234abcd"` |
 | Googleリダイレクトリンク | `"https://www.google.com/url?q=https://youtu.be/abc1234abcd"` | `"https://youtu.be/abc1234abcd"` |
+| ライブのURL（#52） | `"https://www.youtube.com/live/dQw4w9WgXcQ?si=xxxx"` | `"https://youtu.be/dQw4w9WgXcQ"`（編集画面などで許可されているURLとして扱われる） |
 | 複数URL | `"https://youtu.be/abc1234abcd,https://x.com/u/1"` | 各URLが正規化されたカンマ区切り |
 
 #### 1-6. `get_allow_media(url)`
@@ -729,6 +734,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | POST: 動画が削除・非公開（#886） | YouTubeのURL・`get_youtube_api` が `{}` を返す | HTTP 200、「作者は空白にできません」ではなく、「YouTube上で削除されたか非公開になっている」「「タイトルと作者から登録」で「非公開/削除済み」にチェックを入れて」を含むエラーをトーストで表示し、Songは作成されない |
 | POST: 既に登録されているYouTubeのURL | 曲に紐づく`SongLink`と同じURL | HTTP 200、"既に登録されています" を含むエラー。`get_youtube_api`は呼び出されない（クォータを消費しない） |
 | POST: YouTubeのURLから登録 | `get_youtube_api` がタイトル・チャンネル名を返す | `/songs/<id>/edit`へリダイレクト（302）。Songのタイトル・作者・URLがAPIの結果・入力したURLで保存される |
+| POST: YouTubeのライブのURLから登録（#52） | `url="https://www.youtube.com/live/<id>?si=xxxx"`・`get_youtube_api` がタイトル・チャンネル名を返す | 302。`get_youtube_api`は動画IDで呼ばれ、URLは`https://youtu.be/<id>`で保存される。画面のJS（`base.js`の`getYouTubeId`）もライブのURLを動画のURLとして扱う（Playwrightで確認） |
 | POST: 作者が空白 | `url=""`, `authors="  "` | HTTP 200、"作者" を含むエラー |
 | POST: タイトルが空 | `url=""`, `authors="テスト作者"`, `title=""` | HTTP 200、"タイトル" を含むエラー |
 | POST: タイトルが`Song.title`のmax_length超（#1085） | `title`がmax_length+1文字 | HTTP 200、"タイトル" を含むエラー、Songは作成されない（フォームを経由せず保存するため直接バリデーションが必要） |

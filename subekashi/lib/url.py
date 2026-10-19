@@ -5,7 +5,7 @@ from urllib.parse import urlparse, urlunparse
 import re
 
 _YOUTUBE_RE = re.compile(
-    r'https?://(?:www\.|m\.)?(?:youtube\.com/(?:.*[?&]v=|shorts/)|youtu\.be/)([a-zA-Z0-9_-]{11})'
+    r'https?://(?:www\.|m\.)?(?:youtube\.com/(?:.*[?&]v=|shorts/|live/)|youtu\.be/)([a-zA-Z0-9_-]{11})'
 )
 
 _ALLOW_MEDIA_RES = [(re.compile(m["regex"]), m) for m in ALLOW_MEDIAS]

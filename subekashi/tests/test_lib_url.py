@@ -37,6 +37,15 @@ class IsYoutubeUrlTest(SimpleTestCase):
     def test_youtube_url_with_extra_params(self):
         self.assertTrue(is_youtube_url("https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=30"))
 
+    def test_youtube_live_url(self):
+        self.assertTrue(is_youtube_url("https://www.youtube.com/live/dQw4w9WgXcQ?feature=share"))
+        self.assertTrue(is_youtube_url("https://youtube.com/live/dQw4w9WgXcQ"))
+
+    def test_youtube_channel_live_page_is_not_video(self):
+        # チャンネルのライブのページ・コミュニティ投稿は動画ではない
+        self.assertFalse(is_youtube_url("https://www.youtube.com/@subekashi/live"))
+        self.assertFalse(is_youtube_url("https://www.youtube.com/post/Ugz2NFeQm6RobFzqwPB4AaABCQ"))
+
     def test_niconico_url_is_not_youtube(self):
         self.assertFalse(is_youtube_url("https://nicovideo.jp/watch/sm12345678"))
 
@@ -71,6 +80,12 @@ class GetYoutubeIdTest(SimpleTestCase):
             "abcdefghijk",
         )
 
+    def test_live_url(self):
+        self.assertEqual(
+            get_youtube_id("https://www.youtube.com/live/dQw4w9WgXcQ?si=xxxx"),
+            "dQw4w9WgXcQ",
+        )
+
     def test_non_youtube_url_returns_original(self):
         url = "https://example.com"
         self.assertEqual(get_youtube_id(url), url)
@@ -98,6 +113,12 @@ class FormatYoutubeUrlTest(SimpleTestCase):
     def test_youtube_url_with_timestamp(self):
         self.assertEqual(
             format_youtube_url("https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=30"),
+            "https://youtu.be/dQw4w9WgXcQ",
+        )
+
+    def test_live_url_is_shortened(self):
+        self.assertEqual(
+            format_youtube_url("https://www.youtube.com/live/dQw4w9WgXcQ?feature=share"),
             "https://youtu.be/dQw4w9WgXcQ",
         )
 
@@ -152,6 +173,10 @@ class CleanUrlTest(SimpleTestCase):
 
     def test_youtube_url_is_shortened(self):
         result = clean_url("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+        self.assertEqual(result, "https://youtu.be/dQw4w9WgXcQ")
+
+    def test_youtube_live_url_is_shortened(self):
+        result = clean_url("https://www.youtube.com/live/dQw4w9WgXcQ?si=xxxx")
         self.assertEqual(result, "https://youtu.be/dQw4w9WgXcQ")
 
     def test_google_redirect_prefix_is_removed(self):

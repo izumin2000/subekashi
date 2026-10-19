@@ -1210,6 +1210,19 @@ class SongNewViewTest(TestCase):
         self.assertEqual(list(song.authors.values_list("name", flat=True)), ["YTチャンネル名"])
         self.assertEqual(list(song.links.values_list("url", flat=True)), ["https://youtu.be/aaaaaaaaaaa"])
 
+    @patch("subekashi.views.song_new.get_youtube_api")
+    def test_post_youtube_live_url_registers_short_url(self, mock_api):
+        # ライブのURL（youtube.com/live/<id>）も動画のURLとして受け付け、短縮URLで保存する（#52）
+        mock_api.return_value = {"title": "ライブ", "author": "YTチャンネル名", "upload_time": None, "view": 100, "like": 10}
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "https://www.youtube.com/live/aaaaaaaaaaa?si=xxxx", "authors": "", "title": ""},
+        )
+        self.assertEqual(response.status_code, 302)
+        mock_api.assert_called_once_with("aaaaaaaaaaa")
+        song = Song.objects.get(title="ライブ")
+        self.assertEqual(list(song.links.values_list("url", flat=True)), ["https://youtu.be/aaaaaaaaaaa"])
+
     def test_post_empty_authors_returns_error(self):
         # URL なし・作者空白 → 作者バリデーションエラー
         response = self.client.post(
