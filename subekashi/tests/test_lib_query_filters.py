@@ -700,6 +700,26 @@ class FilterByMediatypesTest(TestCase):
         qs = Song.objects.filter(filter_by_mediatypes("vimesis")).distinct()
         self.assertNotIn(spoofed_song, qs)
 
+    def test_timeline_medias_match_song_with_link(self):
+        # Issue #1247: 追加したメディアの正規表現がDBのREGEXP経由でも機能することを確認する
+        cases = [
+            ("bowlroll", "https://bowlroll.net/file/284458"),
+            ("misskey", "https://misskey.io/notes/9t0cp2dmpjod01ls"),
+            ("booth", "https://example.booth.pm/items/5057223"),
+            ("piapro", "https://piapro.jp/t/WuJy"),
+            ("rechord", "https://rechord.cc/4-DF3Y99flI"),
+            ("dropbox", "https://dropbox.com/scl/fi/abc/song.mp3?rlkey=xyz&dl=0"),
+        ]
+        for media_id, url in cases:
+            with self.subTest(media_id=media_id):
+                song = Song.objects.create(title=f"{media_id}曲")
+                link = SongLink.objects.create(url=url)
+                link.songs.add(song)
+
+                qs = Song.objects.filter(filter_by_mediatypes(media_id)).distinct()
+                self.assertIn(song, qs)
+                self.assertNotIn(self.song_with_youtube_link, qs)
+
 
 class MakeIsLackAnnotationTest(TestCase):
     """make_is_lack_annotation() のテスト"""

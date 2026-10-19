@@ -262,6 +262,40 @@ class GetAllowMediaTest(SimpleTestCase):
         self.assertIsNot(result, False)
         self.assertEqual(result["id"], "note")
 
+    def test_timeline_media_urls_return_media(self):
+        # Issue #1247: すべあな界隈年表にあるURLは、曲の編集と同じくclean_urlを通してから判定しても許可される
+        cases = [
+            ("https://bowlroll.net/file/284458", "bowlroll"),
+            ("https://misskey.io/notes/9t0cp2dmpjod01ls", "misskey"),
+            ("https://booth.pm/ja/items/5057223", "booth"),
+            ("https://example.booth.pm/items/5057223", "booth"),
+            ("https://piapro.jp/t/WuJy", "piapro"),
+            ("https://rechord.cc/4-DF3Y99flI", "rechord"),
+            ("https://www.dropbox.com/scl/fi/abc/song.mp3?rlkey=xyz&dl=0", "dropbox"),
+        ]
+        for url, media_id in cases:
+            with self.subTest(url=url):
+                result = get_allow_media(clean_url(url))
+                self.assertIsNot(result, False)
+                self.assertEqual(result["id"], media_id)
+
+    def test_timeline_media_spoofed_domains_return_false(self):
+        for url in [
+            "https://bowlrollXnet.example.net/",
+            "https://xmisskey.io/",
+            "https://booth.pm.attacker.example/",
+            "https://piapro.jp.attacker.example/",
+            "https://xrechord.cc/",
+            "https://dropbox.com.attacker.example/",
+        ]:
+            with self.subTest(url=url):
+                self.assertFalse(get_allow_media(url))
+
+    def test_discord_url_returns_false(self):
+        # Issue #1247: Discordのメッセージのリンクはサーバーの参加者しか見られないため許可しない
+        result = get_allow_media("https://discord.com/channels/111/222/333")
+        self.assertFalse(result)
+
 
 class GetAllMediaTest(SimpleTestCase):
     """get_all_media() のテスト（SEND_DISCORD=False のため外部送信なし）"""
@@ -280,6 +314,12 @@ class GetAllMediaTest(SimpleTestCase):
         result = get_all_media("https://nicovideo.jp/watch/sm12345678")
         self.assertIsNot(result, False)
         self.assertEqual(result["id"], "nicovideo")
+
+    def test_booth_url_returns_booth_media(self):
+        # Issue #1247: 許可したドメインは「許可されていないURL」として表示されない
+        result = get_all_media("https://booth.pm/ja/items/5057223")
+        self.assertIsNot(result, False)
+        self.assertEqual(result["id"], "booth")
 
     def test_unknown_url_returns_disallow_media(self):
         # 未登録URLは disallow エントリにフォールバックする（send_discordが呼ばれるがDEBUG=Trueのため送信なし）
