@@ -160,6 +160,42 @@ ALLOW_MEDIAS = [
         "regex": r"(^|[./])bsky\.app($|[/:?#])",
         "icon": "<img src='/static/subekashi/image/bluesky.png' alt='Bluesky'></img>",
     },
+    {
+        "id": "bowlroll",
+        "name": "BowlRoll",
+        "regex": r"(^|[./])bowlroll\.net($|[/:?#])",
+        "icon": "<i class='fas fa-file-download'></i>",
+    },
+    {
+        "id": "misskey",
+        "name": "Misskey.io",
+        "regex": r"(^|[./])misskey\.io($|[/:?#])",
+        "icon": "<i class='fas fa-comment-dots'></i>",
+    },
+    {
+        "id": "booth",
+        "name": "BOOTH",
+        "regex": r"(^|[./])booth\.pm($|[/:?#])",
+        "icon": "<i class='fas fa-store'></i>",
+    },
+    {
+        "id": "piapro",
+        "name": "ピアプロ",
+        "regex": r"(^|[./])piapro\.jp($|[/:?#])",
+        "icon": "<i class='fas fa-headphones'></i>",
+    },
+    {
+        "id": "rechord",
+        "name": "rechord",
+        "regex": r"(^|[./])rechord\.cc($|[/:?#])",
+        "icon": "<i class='fas fa-guitar'></i>",
+    },
+    {
+        "id": "dropbox",
+        "name": "Dropbox",
+        "regex": r"(^|[./])dropbox\.com($|[/:?#])",
+        "icon": "<i class='fab fa-dropbox'></i>",
+    },
 ]
 
 ALL_MEDIAS = ALLOW_MEDIAS + [

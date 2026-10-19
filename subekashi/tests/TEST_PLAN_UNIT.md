@@ -87,6 +87,17 @@
 | ドメイン内の`.`が未エスケープだと誤マッチする文字列（ビリビリ動画） | `https://bilibiliXcom.example.net/` | `False`（Issue #1056） |
 | 末尾側の境界チェックがないとなりすませるドメイン（Vimesis） | `https://vimesis.com.attacker.example/` | `False`（Issue #1056 レビュー指摘） |
 | 先頭側の境界チェックがないとなりすませるドメイン（note） | `https://xnote.comevil.net/` | `False`（Issue #1056 レビュー指摘） |
+| すべあな界隈年表にあるURLのドメイン（`clean_url`を通してから判定） | `https://bowlroll.net/file/284458`・`https://misskey.io/notes/...`・`https://booth.pm/ja/items/...`・`https://example.booth.pm/items/...`・`https://piapro.jp/t/WuJy`・`https://rechord.cc/...`・`https://www.dropbox.com/scl/fi/...?rlkey=...&dl=0` | それぞれ `bowlroll`・`misskey`・`booth`・`piapro`・`rechord`・`dropbox`（Issue #1247） |
+| 追加したドメインのなりすまし | `https://bowlrollXnet.example.net/`・`https://xmisskey.io/`・`https://booth.pm.attacker.example/`・`https://piapro.jp.attacker.example/`・`https://xrechord.cc/`・`https://dropbox.com.attacker.example/` | `False`（Issue #1247） |
+| Discordのメッセージのリンク | `https://discord.com/channels/111/222/333` | `False`（サーバーの参加者しか見られないため許可しない、Issue #1247） |
+
+#### 1-7. `get_all_media(url)`
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 許可されているURL | `https://youtu.be/...`・`https://x.com/...`・`https://nicovideo.jp/...` | それぞれ `youtube`・`x`・`nicovideo`。`id`・`name`・`icon` を持つ |
+| 追加したドメインのURL | `https://booth.pm/ja/items/5057223` | `booth`（「許可されていないURL」にならない、Issue #1247） |
+| 許可されていないURL | `https://totally-unknown-domain-abc123.example.com/` | `disallow` |
 
 ---
 
@@ -364,6 +375,7 @@ A -`past`-> B -`spell`-> C -`abbr`-> D とつながり、DとEは`another`での
 | 複数指定（例: `youtube,other`） | URLありの曲・URLなしの曲がそれぞれ存在 | 両方とも結果に含まれる |
 | `vimesis`（DB REGEXP経由の境界チェック確認） | `https://main.vimesis.com/channel/@subekashi` のSongLinkが紐付いている曲 | 結果に含まれる。YouTube曲は含まれない（Issue #1056） |
 | `vimesis`（なりすましドメインの除外確認） | `https://vimesis.com.attacker.example/` のSongLinkが紐付いている曲 | 結果に含まれない（Issue #1056 レビュー指摘） |
+| `bowlroll`・`misskey`・`booth`・`piapro`・`rechord`・`dropbox`（DB REGEXP経由の確認） | それぞれのメディアのURL（boothはショップのサブドメイン）のSongLinkが紐付いている曲 | 結果に含まれる。YouTube曲は含まれない（Issue #1247） |
 
 #### 3-3-1. `filter_by_categorys(categorys)`（#423）
 
