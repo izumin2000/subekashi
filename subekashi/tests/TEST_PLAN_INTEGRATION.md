@@ -857,6 +857,39 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 
 ---
 
+### 22. すべあな界隈年表からの曲の登録・更新フロー（#52）
+
+**テストファイル**: `tests/test_management_commands.py`（`TimelineCommandTest`）、`tests/test_lib_timeline_import.py`（`ImportTimelineTest`）
+
+`timeline`コマンドが、すべあな界隈年表（Googleスプレッドシート）の2018年〜今年のシートを読み取り（`get_timeline`はモック化）、`import_timeline`で曲を新規作成・更新して、DB（Song・SongLink・History・Editor）に保存し、結果を出力する流れを検証する。スプレッドシートはAPIキーで読み取るのみで、書き換えるAPIは呼ばない（単体テスト計画書の26-2）。
+
+#### 22-1. 新規作成から2回目の実行まで
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `get_timeline`が、URLが登録されていない行を返す |
+| 操作1 | `manage.py timeline --year 2018 2019` |
+| 検証1 | 行ごとに曲が作られ、標準出力に「〇〇を新規作成（`<ROOT_URL>/songs/<id>`）」と「新規作成：3件、更新：0件、…」が出る |
+| 操作2 | 同じ行でもう一度実行する（`ImportTimelineTest.test_second_run_changes_nothing`） |
+| 検証2 | 曲もHistoryも増えない（毎日実行しても重複しない） |
+
+#### 22-2. 既存の曲の更新
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | 行のURLが登録されている曲のカテゴリが年表と異なる |
+| 操作 | `manage.py timeline --year 2018` |
+| 検証 | 曲のカテゴリが年表の値になり、編集者id=1のHistoryが作られ、標準出力に「曲のカテゴリを編集（`<ROOT_URL>/songs/<id>`）」と「更新：1件」が出る |
+
+#### 22-3. `--dry-run`
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作 | `manage.py timeline --year 2018 --dry-run` |
+| 検証 | 結果は出力されるが、Song・SongLink・History・Editorは保存されない |
+
+---
+
 ## テスト実装の方針
 
 ### ディレクトリ構成（案）

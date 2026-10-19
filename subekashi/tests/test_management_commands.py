@@ -8,13 +8,14 @@ backup: バックアップ先をサーバーストレージからGoogle Driveに
 word: word.jsonから模倣単語候補をWordに一括登録する処理（#1053）を検証する。
 ai: Song.lyricsの単語をランダムに入れ替えてgenetype="janome"のAiレコードをシードする処理を検証する。
 stats: 月次統計(Stats)を最古のSongの月〜今月まで再計算する処理（#334）を検証する。
+timeline: すべあな界隈年表の2018年〜今年（日本時間）のシートを読み取り、曲を登録・更新する処理（#52）を検証する。
 """
 import json
 import os
 import stat
 import subprocess
 import tempfile
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta, timezone as dt_timezone
 from io import StringIO
 from unittest.mock import MagicMock, mock_open, patch
 
@@ -23,11 +24,13 @@ from django.core.management.base import CommandError
 from django.test import TestCase
 from django.utils import timezone
 
+from subekashi.lib.timeline import TimelineError, TimelineRow
 from subekashi.lib.youtube import YoutubeApiError, YoutubeApiUnavailableError
 from article.models import Article
 from subekashi.management.commands.backup import Command
 from subekashi.management.commands.sitemap import Command as SitemapCommand
-from subekashi.models import Ai, Author, Song, SongLink, Stats, Word
+from config.settings import ROOT_URL
+from subekashi.models import Ai, Author, Editor, History, Song, SongLink, Stats, Word
 
 
 def timezone_aware(year, month, day):
@@ -1259,3 +1262,135 @@ class SitemapCommandTest(TestCase):
         self.assertIn(f"{self.BASE_URL}/articles/open/", locs)
         self.assertNotIn(f"{self.BASE_URL}/articles/closed/", locs)
         self.assertNotIn(f"{self.BASE_URL}/articles/news/", locs)
+
+
+def make_timeline_row(year, row, title, row_date=None, category="曲", urls=None):
+    return TimelineRow(
+        year=year, row=row, date=row_date, premiere_rush="", title=title, author="作者", badge="", category=category,
+        motif1="", motif2="", urls=[f"https://youtu.be/{year}{row:07d}"] if urls is None else urls, decode_date="",
+        decode_urls=[], lyrics_url="", distribution="", distribution2="", distribution_urls=[], notes=[],
+    )
+
+
+@patch("subekashi.management.commands.timeline.send_discord")
+@patch("subekashi.management.commands.timeline.get_timeline")
+class TimelineCommandTest(TestCase):
+    """timeline コマンドのテスト（すべあな界隈年表の読み取りと曲の登録・更新、#52）"""
+
+    def _run(self, *extra_args):
+        out = StringIO()
+        err = StringIO()
+        call_command("timeline", *extra_args, stdout=out, stderr=err)
+        return out.getvalue(), err.getvalue()
+
+    @patch("subekashi.management.commands.timeline.timezone.now")
+    def test_reads_from_2018_to_this_year_in_jst(self, mock_now, mock_get_timeline, mock_send_discord):
+        # UTCでは2026年12月31日だが、日本時間では2027年1月1日
+        mock_now.return_value = datetime(2026, 12, 31, 15, 0, tzinfo=dt_timezone.utc)
+        mock_get_timeline.return_value = {}
+        self._run()
+
+        mock_get_timeline.assert_called_once_with(list(range(2018, 2028)))
+
+    def test_year_option(self, mock_get_timeline, mock_send_discord):
+        mock_get_timeline.return_value = {}
+        self._run("--year", "2020", "2021")
+
+        mock_get_timeline.assert_called_once_with([2020, 2021])
+
+    def test_creates_songs_and_outputs_result(self, mock_get_timeline, mock_send_discord):
+        mock_get_timeline.return_value = {
+            2018: [make_timeline_row(2018, 2, "曲1")],
+            2019: [make_timeline_row(2019, 2, "曲2"), make_timeline_row(2019, 3, "曲3")],
+        }
+        out, err = self._run("--year", "2018", "2019")
+
+        self.assertIn("2018年：1件", out)
+        self.assertIn("2019年：2件", out)
+        for title in ["曲1", "曲2", "曲3"]:
+            song = Song.objects.get(title=title)
+            self.assertIn(f"{title}を新規作成（{ROOT_URL}/songs/{song.id}）", out)
+        self.assertIn("新規作成：3件、更新：0件、変更なし：0件、対象外のカテゴリ：0件、スキップ：0件", out)
+        self.assertEqual(err, "")
+        mock_send_discord.assert_not_called()
+
+    def test_outputs_updated_songs(self, mock_get_timeline, mock_send_discord):
+        song = Song.objects.create(title="曲")
+        SongLink.objects.create(url="https://youtu.be/20180000002").songs.add(song)
+        mock_get_timeline.return_value = {2018: [make_timeline_row(2018, 2, "曲", category="アレンジ")]}
+        out, _ = self._run("--year", "2018")
+
+        self.assertIn(f"曲のカテゴリを編集（{ROOT_URL}/songs/{song.id}）", out)
+        self.assertIn("新規作成：0件、更新：1件", out)
+
+    def test_outputs_skipped_rows(self, mock_get_timeline, mock_send_discord):
+        mock_get_timeline.return_value = {2018: [
+            make_timeline_row(2018, 2, "曲1", urls=[]),
+            make_timeline_row(2018, 3, "曲2", urls=[]),
+            make_timeline_row(2018, 4, "解読", category="解読"),
+        ]}
+        out, _ = self._run("--year", "2018")
+
+        self.assertIn("対象外のカテゴリ：1件、スキップ：2件", out)
+        self.assertIn("  登録できるURLが無い：2件", out)
+        self.assertNotIn("スキップ：2018年2行目", out)
+
+        # 詳細はverbosityが2以上のときのみ出力する
+        out, _ = self._run("--year", "2018", "-v", "2")
+        self.assertIn("スキップ：2018年2行目 曲1（登録できるURLが無い）", out)
+
+    def test_warns_unknown_category(self, mock_get_timeline, mock_send_discord):
+        mock_get_timeline.return_value = {2018: [
+            make_timeline_row(2018, 2, "曲1", category="新カテゴリ"),
+            make_timeline_row(2018, 3, "曲2", category="新カテゴリ"),
+        ]}
+        _, err = self._run("--year", "2018")
+
+        self.assertIn("カテゴリ「新カテゴリ」の2行は、登録・更新するかが決まっていないためスキップしました", err)
+        self.assertFalse(Song.objects.exists())
+
+    def test_dry_run_does_not_save(self, mock_get_timeline, mock_send_discord):
+        mock_get_timeline.return_value = {2018: [make_timeline_row(2018, 2, "曲1")]}
+        out, _ = self._run("--year", "2018", "--dry-run")
+
+        self.assertIn("曲1を新規作成", out)
+        self.assertIn("（dry-run）新規作成：1件", out)
+        self.assertFalse(Song.objects.exists())
+        self.assertFalse(SongLink.objects.exists())
+        self.assertFalse(History.objects.exists())
+        self.assertFalse(Editor.objects.exists())
+
+    def test_warns_years_without_sheet(self, mock_get_timeline, mock_send_discord):
+        mock_get_timeline.return_value = {2018: [make_timeline_row(2018, 2, "曲1")]}
+        out, err = self._run("--year", "2018", "2019")
+
+        self.assertIn("2019年のシートがありません", err)
+        self.assertNotIn("2018年のシートがありません", err)
+        self.assertIn("新規作成：1件", out)
+        # シートが無いのは年が変わった直後などで起こりうるため、Discordには通知しない
+        mock_send_discord.assert_not_called()
+
+    def test_json_option_outputs_rows_without_import(self, mock_get_timeline, mock_send_discord):
+        mock_get_timeline.return_value = {
+            2018: [make_timeline_row(2018, 2, "曲1", date(2018, 5, 10))],
+            2019: [make_timeline_row(2019, 2, "曲2")],
+        }
+        out, _ = self._run("--year", "2018", "2019", "--json")
+
+        rows = json.loads(out)
+        self.assertEqual([(row["year"], row["row"], row["title"], row["date"]) for row in rows], [
+            (2018, 2, "曲1", "2018-05-10"),
+            (2019, 2, "曲2", None),
+        ])
+        self.assertEqual(rows[0]["urls"], ["https://youtu.be/20180000002"])
+        self.assertFalse(Song.objects.exists())
+
+    def test_error_notifies_discord(self, mock_get_timeline, mock_send_discord):
+        mock_get_timeline.side_effect = TimelineError("Google Sheets APIの呼び出しに失敗しました（HTTP 403）")
+        out, err = self._run("--year", "2018")
+
+        self.assertIn("Google Sheets APIの呼び出しに失敗しました（HTTP 403）", err)
+        self.assertEqual(out, "")
+        self.assertFalse(Song.objects.exists())
+        mock_send_discord.assert_called_once()
+        self.assertIn("Google Sheets APIの呼び出しに失敗しました（HTTP 403）", mock_send_discord.call_args.args[1])

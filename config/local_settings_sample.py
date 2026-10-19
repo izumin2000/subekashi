@@ -18,6 +18,11 @@ VENV_PATH = ''
 
 YOUTUBE_API_KEY = ''
 
+# manage.py timeline で読み取るすべあな界隈年表のID（URLの /d/ と /edit の間の文字列）と、Google Sheets APIを有効にしたAPIキー。
+# APIキーでは公開されているスプレッドシートの読み取りしかできない
+GOOGLE_SHEETS_SPREADSHEET_ID = '1kkVYxRtlby7KuCcAO4ATT_4ruHUoIYZRN2bDoew8T9w'
+GOOGLE_SHEETS_API_KEY = ''
+
 # /api/news/ にニュースをPOSTするときのX-API-Keyヘッダーの値。空文字列の場合はPOSTを受け付けない
 # import secrets
 # secrets.token_urlsafe(32)
