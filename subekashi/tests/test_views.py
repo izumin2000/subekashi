@@ -449,6 +449,12 @@ class SongsViewTest(TestCase):
         self.assertContains(response, '<label for="search-form-radio-collab"><i class="fas fa-user-friends"></i><span class="icon-p-big">合作</span></label>')
         self.assertContains(response, '<input type="radio" id="is_collab-true" name="is_collab" value="True" checked>', count=1)
 
+    def test_imitate_form_label_is_imitate_source(self):
+        """模倣のフォームは入力した曲を模倣元に持つ曲で絞り込むため、「模倣元」と模倣元のアイコンで表示されること（#1241）"""
+        response = self.client.get(reverse("subekashi:songs"))
+        self.assertContains(response, '<label for="search-form-radio-imitate"><i class="fas fa-sitemap imitate"></i><span class="icon-p-big">模倣元</span></label>', count=1)
+        self.assertContains(response, '<label for="imitate"><i class="fas fa-sitemap imitate"></i><span class="icon-p-big">模倣元</span></label>', count=1)
+
     def test_songrange_and_jokerange_are_radio(self):
         """界隈曲の種類・ネタ曲はラジオボタンで選択された状態で表示されること"""
         response = self.client.get(reverse("subekashi:songs"), {"is_subeana": "xx", "is_joke": "False"})
@@ -1351,6 +1357,12 @@ class SongEditViewTest(TestCase):
         """#423: 歌詞の入力欄は、カテゴリが曲以外のときにJS（song_edit.js）で非表示にする対象であること"""
         content = self.client.get(reverse("subekashi:song_edit", args=[self.song.id])).content.decode()
         self.assertRegex(content, r'<div class="form-col" data-hide-if-questionable data-hide-if-not-song>\s*<label for="lyrics">')
+
+    def test_get_imitate_label_is_imitate_source(self):
+        """#1241: 模倣の入力欄は編集する曲の模倣元を登録するため、「模倣元」と模倣元のアイコンで表示し、原曲以外の曲を検索する欄を「模倣曲」と表記しないこと"""
+        response = self.client.get(reverse("subekashi:song_edit", args=[self.song.id]))
+        self.assertContains(response, '<label id="imitate-label" data-hide-if-questionable><i class="fas fa-sitemap imitate"></i><span class="icon-p-big">模倣元</span>', count=1)
+        self.assertContains(response, '<p id="imitate-sub">もしくは原曲以外から選択</p>', count=1)
 
     def test_post_category_is_saved_and_recorded_in_history(self):
         response = self.client.post(
@@ -4082,6 +4094,16 @@ class SongCardsViewTest(TestCase):
         content = "".join(response.json())
         self.assertIn("合作カードテスト", content)
         self.assertNotIn("カードテスト曲", content)
+
+    def test_imitate_shows_active_filter(self):
+        """imitate を指定したとき「模倣元が有効です」が含まれること（#1241）"""
+        original = Song.objects.create(title="模倣元カードテスト")
+        response = self.client.get(
+            reverse("subekashi:song_cards"), {"imitate": original.id}
+        )
+        self.assertEqual(response.status_code, 200)
+        content = "".join(response.json())
+        self.assertIn("模倣元が有効です", content)
 
 
 @override_settings(STORAGES=STATIC_STORAGE, RATELIMIT_ENABLE=False)
