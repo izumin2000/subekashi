@@ -638,6 +638,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 真偽値フィルタは重複して表示しない | `?is_inst=True&is_original=False` | インスト曲・オリジナル模倣曲のラジオボタンはそれぞれ1つのフォームにのみ表示される |
 | スペシャルデザインのフィルタ（#939） | `?is_special=True` | 「スペシャルデザイン」のラジオボタン（`fas fa-magic`）が表示され、`is_special-true`（のみ）のラジオボタンが1つだけ選択された状態で表示される |
 | 合作のフィルタ（#943） | `?is_collab=True` | 「合作」のラジオボタン（`fas fa-user-friends`）が表示され、`is_collab-true`（のみ）のラジオボタンが1つだけ選択された状態で表示される |
+| 模倣元のフォーム（#1241） | GETリクエスト | フォームを選ぶラジオボタンと`#imitate`のラベルが「模倣元」・模倣元のアイコン（`fas fa-sitemap imitate`）で表示される（入力した曲を模倣元に持つ曲で絞り込むため） |
 | 界隈曲の種類・ネタ曲のラジオボタン | `?is_subeana=xx&is_joke=False` | 「以外」(`songrange-xx`・`jokerange-off`) のラジオボタンが選択された状態で表示される（選択肢は「指定なし」「のみ」「以外」） |
 | 界隈曲の種類・ネタ曲のラジオボタン（未指定） | URLクエリなし | `songrange-all`・`jokerange-on`（指定なし）のラジオボタンが選択された状態で表示される |
 | ラジオボタンの選択肢の文言 | GETリクエスト | 検索フォームのラジオボタンの選択肢に「表示」が含まれない |
@@ -752,6 +753,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | POST: is_questionable時も非公開/削除済み・ネタ曲・インスト・すべあな界隈曲は保存される | `is_questionable=True`, `is_deleted=True`, `is_joke=True`, `is_inst=True`, `is_subeana=True` | 各フラグがそれぞれ `True` のまま保存される |
 | GET: カテゴリの選択欄（#423） | `category="medley"` の曲 | `<select id="category" name="category">` が表示され、メドレーの選択肢のみ `selected` |
 | GET: 歌詞の入力欄（#423） | GETリクエスト | 歌詞の `.form-col` に `data-hide-if-not-song` が付く（カテゴリが曲以外のときに `song_edit.js` で非表示にする） |
+| GET: 模倣元の入力欄（#1241） | GETリクエスト | `#imitate-label` が「模倣元」・模倣元のアイコン（`fas fa-sitemap imitate`）で表示される |
 | POST: カテゴリの変更（#423） | `category="omnibus"` | 302、`category == "omnibus"`、Historyの `changes` に `["カテゴリ", "曲", "総集編"]` |
 | POST: カテゴリを送らない（#423） | `category="offv"` の曲に `category` なしで送信 | 302、`category == "offv"` のまま（カテゴリの選択欄がない古いページから送信された場合に変えない） |
 | POST: 不正なカテゴリ（#423） | `category="joke"` | HTTP 200、`"カテゴリが不正です。"` のエラー、カテゴリは変わらない |
@@ -1047,6 +1049,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `is_special=True` の絞り込み（#939） | `is_special=True` の曲と通常の曲が存在 | スペシャルデザインの曲のカードのみが返される |
 | `is_collab=True` / `False`（#943） | GETリクエスト | 「合作が有効です」が含まれる |
 | `is_collab=True` の絞り込み（#943） | 作者2人の曲と通常の曲が存在 | 合作の曲のカードのみが返される |
+| `imitate` の指定（#1241） | `imitate=<曲ID>` | 「模倣元が有効です」が含まれる |
 | `categorys` の絞り込み（#423） | カテゴリが曲・アレンジ・音MADの曲が存在、`categorys=arrange,otomad` | 「カテゴリが有効です」「3件中2件ヒットしました」が含まれ、アレンジ・音MADの曲のカードのみが返される |
 | `categorys` の「以外」（#423） | カテゴリが曲・アレンジの曲が存在、`categorys=~song` | 「カテゴリが有効です」「2件中1件ヒットしました」が含まれ、アレンジの曲のカードのみが返される |
 

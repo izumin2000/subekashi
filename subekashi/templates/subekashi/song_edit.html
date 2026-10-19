@@ -33,7 +33,7 @@
             <input type="text" id="url" name="url" value="{{ song.links.all|join:',' }}">
         </div>
         <p class="song-edit-info" id="song-edit-info-url"><span class='loading'></span></p>
-        <label id="imitate-label" data-hide-if-questionable><i class="fas fa-sitemap"></i><span class="icon-p-big">模倣</span><i class="fas fa-info-circle" data-tutorial="imitate"></i></label>
+        <label id="imitate-label" data-hide-if-questionable><i class="fas fa-sitemap imitate"></i><span class="icon-p-big">模倣元</span><i class="fas fa-info-circle" data-tutorial="imitate"></i></label>
         <div id="imitate-div" data-hide-if-questionable>
             <p>原曲から選択</p>
             {% render_categorys %}
@@ -128,9 +128,9 @@
     {% if error %}
         showToast("error", "{{ error|safe }}");
     {% elif request.GET.toast == "auto" %}
-        showToast("ok", "登録しました。続けて模倣・歌詞等を登録することができます。");
+        showToast("ok", "登録しました。続けて模倣元・歌詞等を登録することができます。");
     {% elif request.GET.toast == "manual" %}
-        showToast("ok", "登録しました。続けてURL・模倣・歌詞等を登録することができます。");
+        showToast("ok", "登録しました。続けてURL・模倣元・歌詞等を登録することができます。");
     {% endif %}
 
     {% if request.GET.name_unified %}

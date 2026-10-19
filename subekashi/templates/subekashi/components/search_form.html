@@ -16,7 +16,7 @@
     <input type="radio" id="search-form-radio-url" name="search-form" value="url" {% if search_form == "url" %}checked{% endif %}>
     <label for="search-form-radio-url"><i class="fas fa-link"></i><span class="icon-p-big">URL</span></label>
     <input type="radio" id="search-form-radio-imitate" name="search-form" value="imitate" {% if search_form == "imitate" %}checked{% endif %}>
-    <label for="search-form-radio-imitate"><i class="fas fa-sitemap"></i><span class="icon-p-big">模倣</span></label>
+    <label for="search-form-radio-imitate"><i class="fas fa-sitemap imitate"></i><span class="icon-p-big">模倣元</span></label>
     <input type="radio" id="search-form-radio-category" name="search-form" value="category" {% if search_form == "category" %}checked{% endif %}>
     <label for="search-form-radio-category"><i class="fas fa-shapes"></i><span class="icon-p-big">カテゴリ</span></label>
     <input type="radio" id="search-form-radio-subeana" name="search-form" value="subeana" {% if search_form == "subeana" %}checked{% endif %}>
@@ -140,7 +140,7 @@
         <p class="info override-info" id="media-override-info" hidden><i class="fas fa-info-circle info"></i>YouTube関連のフィルタ/並び替えが有効なため、YouTubeの曲のみを表示しています</p>
     </div>
     <div class="search-form" id="search-form-imitate" {% if search_form != "imitate" %}hidden{% endif %}>
-        <label for="imitate"><i class="fas fa-sitemap"></i><span class="icon-p-big">模倣</span></label>
+        <label for="imitate"><i class="fas fa-sitemap imitate"></i><span class="icon-p-big">模倣元</span></label>
         <div id="imitate-div">
             <p>曲ID</p>
             <input type="text" id="imitate" name="imitate" value="{{ form_values.imitate }}" placeholder="タイトルか作者かURLを入力">

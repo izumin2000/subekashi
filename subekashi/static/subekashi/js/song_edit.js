@@ -136,17 +136,17 @@ function deleteImitate(imitateId) {
 function appendImitate(song) {
     // 読み込み完了前に追加すると、読み込み完了時に既存の模倣曲で上書きされてしまうため追加させない
     if (isInitFailed) {
-        showToast("error", "模倣一覧の読み込みに失敗しました。ページを再読み込みしてください。");
+        showToast("error", "模倣元の一覧の読み込みに失敗しました。ページを再読み込みしてください。");
         return;
     }
     if (!isImitateListLoaded) {
-        showToast("info", "模倣一覧を読み込み中です。読み込み完了後に再度選択してください。");
+        showToast("info", "模倣元の一覧を読み込み中です。読み込み完了後に再度選択してください。");
         return;
     }
 
     // 同じ曲が2つ並ぶと、片方を削除した際に両方とも#imitateから消えてしまうため追加させない（#1135）
     if (imitateIdList.some(id => id == song.id)) {
-        showToast("info", "その曲は既に模倣曲として登録されています。");
+        showToast("info", "その曲は既に模倣元として登録されています。");
         return;
     }
 
@@ -179,7 +179,7 @@ async function songGuesserClick(id) {
     imitateTitleEle.value = "";
 
     if (id == song_id) {
-        showToast("error", "編集する曲の模倣曲に、その曲自身を登録することはできません。");
+        showToast("error", "編集する曲の模倣元に、その曲自身を登録することはできません。");
         renderSongGuesser();
         return;
     }
@@ -429,7 +429,7 @@ function checkButton() {
         const is_original = document.getElementById("is-original").checked;
         const is_subeana = document.getElementById("is-subeana").checked;
         if (!is_original && is_subeana && (imitateEle.value == "") && (authorsEle.value != "全てあなたの所為です。")) {
-            message += "<li>「オリジナル模倣」にチェックをつけるか、模倣曲を1曲以上登録してください。</li>"
+            message += "<li>「オリジナル模倣」にチェックをつけるか、模倣元を1曲以上登録してください。</li>"
             is_lack = true;
         }
 
