@@ -150,6 +150,8 @@
 | 自分自身を除外した場合 | `exclude_song_id` を指定し、同じ曲のURL | `None` を返す |
 | `allow_dup=True` のSongLink | 重複URLだが `allow_dup=True` | `None` を返す |
 | 曲に紐付いていないSongLink | リンクは存在するが曲なし | `None` を返す |
+| ユーザーが削除した曲だけに紐付くSongLink（#1239） | 紐付く曲が`is_removed=True`のみ | `None` を返す（登録されていないURLとして扱う） |
+| 削除した曲と削除していない曲に紐付くSongLink（#1239） | 紐付く曲の一方が`is_removed=True` | エラーメッセージ文字列を返す |
 | URLが`SongLink.url`のmax_length丁度 (#1085) | `len(url) == max_length` | `None` を返す |
 | URLが`SongLink.url`のmax_length超過 (#1085) | `len(url) == max_length + 1` | エラーメッセージ文字列を返す（MySQL移行時のData too long for column対策） |
 
@@ -179,6 +181,8 @@
 | --- | --- | --- |
 | 既存URLの削除 | 新しいURLリストに含まれないURL | `SongLink.songs` から削除される |
 | 他の曲に紐付かないURLは完全削除 | URLが他の曲にない | SongLinkレコードごと削除される |
+| ユーザーが削除した曲に紐付くURLは残す（#1239） | URLが`is_removed=True`の曲にも紐付く | SongLinkは削除されず、削除した曲に紐付いたまま（復元に備える） |
+| 削除した曲との模倣関係は残す（#1239） | 模倣元に`is_removed=True`の曲がある状態で、`imitate_songs`を空にして更新 | 削除した曲との模倣関係は消えない（編集画面に表示されないため） |
 | 新しいURLの追加 | 新しいURL | SongLinkが作成・紐付けられる |
 | 作者の更新 | 新しい author_objects | Song.authors が更新される |
 | `is_questionable` の更新 | `is_questionable=True` | `song.is_questionable` が `True` に更新される |
@@ -190,6 +194,15 @@
 | テストケース | 入力 | 期待結果 |
 | --- | --- | --- |
 | 正常なテキスト生成 | 曲オブジェクト、理由、編集者 | 曲ID・タイトル・作者・理由を含む文字列 |
+| 管理サイトのURL（#1239） | 曲オブジェクト | 削除した曲のページは表示できないため、曲のページではなく復元に使う管理サイトの変更画面（`/admin/subekashi/song/<id>/change/`）のURLを含む |
+
+#### 2-6-1. `remove_song(song)`（#1239）
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 曲を論理削除する | 曲オブジェクト | `is_removed=True`で保存され、`Song.objects`から取得できなくなる（`Song.all_objects`では取得できる） |
+| 関連を残す | 作者・URL・模倣元のある曲 | 作者・URL・模倣元はそのまま残り、`SongLink.is_removed`も`False`のまま |
+| 他のフィールドは保存しない | 保存前に`title`を書き換えた曲 | `is_removed`だけを保存し、`title`・`post_time`は変わらない |
 
 #### 2-7. `build_edit_song_discord_text(song_id, song, fields, author_objects, cleaned_url, imitate_songs)`
 
@@ -390,6 +403,8 @@ A -`past`-> B -`spell`-> C -`abbr`-> D とつながり、DとEは`another`での
 | `is_questionable=True` かつURLなし・削除されていない曲 | `is_questionable=True`, `is_deleted=False`, SongLink なし | 結果に含まれる（URLなし条件は `is_questionable` を問わない） |
 | `is_questionable=True` かつ歌詞なし/模倣なし等の曲 | `is_questionable=True`, URLあり、歌詞なし等 | 結果に含まれない（歌詞なし・模倣なし条件は `is_questionable=False` が必須） |
 | カテゴリが曲以外で歌詞なしの曲（#423） | `category="arrange"`, `is_inst=False`, `lyrics=""`, URLあり, `is_original=True` | 結果に含まれない（歌詞なし条件は `category="song"` が必須。歌詞を入力するのは曲の場合のみ） |
+| ユーザーが削除した曲だけを模倣する曲（#1239） | 模倣元が`is_removed=True`の曲のみ、URL・歌詞あり | 結果に含まれる（削除した曲は模倣元として数えない）。`exclude()`の結果には含まれない |
+| 削除した曲と削除していない曲を模倣する曲（#1239） | 模倣元の一方が`is_removed=True`、URL・歌詞あり | 結果に含まれない。`exclude()`の結果に含まれる |
 
 #### 3-3. `filter_by_mediatypes(mediatypes)`
 
@@ -432,6 +447,7 @@ A -`past`-> B -`spell`-> C -`abbr`-> D とつながり、DとEは`another`での
 | `is_questionable=True` かつURLなし・削除されていない曲に annotate | `is_questionable=True`, SongLink なし | `is_lack=True` がアノテートされる（URLなし条件は `is_questionable` を問わない） |
 | `is_questionable=True` かつ歌詞なし等の曲に annotate | `is_questionable=True`, URLあり、歌詞なし等 | `is_lack=False` がアノテートされる（歌詞なし条件は `is_questionable=False` が必須） |
 | カテゴリが曲以外で歌詞なしの曲に annotate（#423） | `category="notice"`, URLあり、歌詞なし | `is_lack=False` がアノテートされる（歌詞なし条件は `category="song"` が必須） |
+| ユーザーが削除した曲だけを模倣する曲に annotate（#1239） | 模倣元が`is_removed=True`の曲のみ、URL・歌詞あり | `is_lack=True` がアノテートされる（`filter_by_lack()`と同じ判定） |
 
 #### 3-5. `filter_by_collab()`（#943）
 
@@ -622,6 +638,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | 正常アクセス | GETリクエスト | HTTP 200 |
 | テンプレートが使用される | GETリクエスト | `subekashi/top.html` がレンダリングされる |
+| 曲を削除した後のトースト（#1239） | `?toast=delete` | `showToast("ok", "曲を削除しました。");`が含まれる。`toast`が無ければ含まれない |
 | ニュース欄のリンク付与（#961） | `tag="news"`, `handle_as_news=False`の記事 | タイトルのみ表示され`<a>`タグは付与されない |
 | ニュース欄のリンク付与（#961） | `tag="release"`の記事 | `DefaultArticleView`へのURLでタイトル全体が`<a>`タグにくくられる |
 | ニュース欄のリンク付与（#961） | `handle_as_news=True`の記事（`tag`は`news`以外） | `DefaultArticleView`へのURLでタイトル全体が`<a>`タグにくくられる |
@@ -735,7 +752,9 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | 存在する曲ID | 有効なsong_id | HTTP 200 |
 | 存在しない曲ID | 無効なsong_id | HTTP 404 |
-| 削除済み曲 | `is_deleted=True` の曲 | HTTP 404 または特定の表示 |
+| ユーザーが削除した曲（#1239） | `is_removed=True` の曲 | HTTP 404 |
+| 模倣元・模倣曲に削除した曲がある（#1239） | `is_removed=True` の曲と模倣関係がある | 模倣元・模倣曲の一覧（`imitate_list`・`imitated_list`）に含まれず、タイトルも表示されない |
+| 「編集/削除」のボタン（#1239） | 有効なsong_id | ボタンの文言が「編集/削除」で、「削除申請」は含まれない |
 | is_questionable=True の曲 | `is_questionable=True` の曲 | レスポンスに「界隈曲?」タグが含まれる |
 | is_questionable=False の曲 | デフォルトの曲 | レスポンスに「界隈曲?」タグが含まれない |
 | デフォルトの曲 | `is_questionable=False`, `is_limited=False` | レスポンスに `<meta name="robots">` が含まれない |
@@ -788,6 +807,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | 存在する曲のGET | 有効なsong_id | HTTP 200 |
 | 存在しない曲のGET | 無効なsong_id | HTTP 404 |
+| ユーザーが削除した曲のGET（#1239） | `is_removed=True` の曲 | HTTP 404 |
 | GET: ブラウザにキャッシュさせない（#1135） | 有効なsong_id | `Cache-Control`に`no-store`が含まれ、`public`は含まれない（キャッシュされた古いフォームの送信で、その間の編集が巻き戻るのを防ぐ） |
 | POST: is_questionable時に歌詞・模倣・下書き・オリジナル模倣が強制的に空/OFF | `is_questionable=True`, `lyrics="..."`, `imitate="<id>"`, `is_draft=True`, `is_original=True` | 保存されたSongの `lyrics=""`、`imitates`が空、`is_draft=False`、`is_original=False`、`is_questionable=True` |
 | POST: is_questionable時も非公開/削除済み・ネタ曲・インスト・すべあな界隈曲は保存される | `is_questionable=True`, `is_deleted=True`, `is_joke=True`, `is_inst=True`, `is_subeana=True` | 各フラグがそれぞれ `True` のまま保存される |
@@ -814,12 +834,31 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 #### 7-7. `SongDeleteView` (`/songs/<id>/delete/`)
 
+削除申請ではなく、送信するとすぐに曲を論理削除する（#1239）
+
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | 存在する曲のGET | 有効なsong_id | HTTP 200 |
 | 存在しない曲のGET | 無効なsong_id | HTTP 404 |
-| POST: 正常な削除理由 | `reason="..."` | `/songs/<id>?toast=delete` へリダイレクト |
-| POST: 削除理由が空 | `reason=""` | HTTP 200、`context["error"]` にエラーメッセージ |
+| GET: 削除のフォーム | 有効なsong_id | 削除した曲が表示されなくなる旨の説明と「削除」の送信ボタンがあり、「削除申請」は含まれない |
+| POST: 正常な削除理由 | `reason="..."` | 削除した曲のページは表示できないため、`/?toast=delete`（トップ）へリダイレクト |
+| POST: 曲を論理削除する | `reason="..."` | `is_removed=True`になり、曲のページがHTTP 404になる |
+| POST: 編集履歴を保存する | `reason="削除理由テスト"` | `history_type="delete"`・`title="<タイトル>を削除"`・`changes=["理由", "削除理由テスト"]`のHistoryが作成される |
+| POST: Discordに通知する | `send_discord`をモック | 削除理由と、復元に使う管理サイトの変更画面のURLを送る |
+| POST: Discordに送信できない | `send_discord`が`False`を返す | HTTP 500 |
+| POST: 削除理由が空 | `reason=""` | HTTP 200、`context["error"]` にエラーメッセージ。曲は削除されない |
+| 削除した曲（#1239） | `is_removed=True` の曲にGET・POST | どちらもHTTP 404。Historyは作成されない |
+| 編集できない曲 | `is_lock=True` の曲にPOST | `/songs/<id>?toast=lock` へリダイレクトし、曲は削除されない |
+
+#### 7-7-1. 管理サイトの曲（`SongAdmin`）（#1239）
+
+ユーザーが削除した曲も表示し、`is_removed`のチェックを外して復元できるようにする
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 一覧に削除した曲を含める | `is_removed=True`の曲と通常の曲 | 一覧にどちらも表示される |
+| 削除した曲で絞り込む | `?is_removed__exact=1` | 削除した曲だけが表示される |
+| 削除した曲の変更画面 | `is_removed=True`の曲 | HTTP 200で、`is_removed`のチェックボックスがチェックされた状態で表示される |
 
 #### 7-8. `AuthorView` (`/authors/<id>/`)
 
@@ -1057,6 +1096,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 正常アクセス | GETリクエスト | HTTP 200 |
 | author向けHistory (#991) | `History.create_for_author()`で作成したHistoryが存在 | 作者名・作者ページへのリンクが表示され、「この曲は削除されました」は表示されない |
 | author削除後のHistory (#991) | 上記のauthorを削除 | 「この曲または作者は削除されました」が表示される |
+| ユーザーが削除した曲のHistory（#1239） | 曲の削除のHistoryを作成した後に`is_removed=True` | 曲のページは404になるため、曲のページへのリンクは無く「この曲または作者は削除されました」が表示される。削除理由は表示される |
 
 #### 7-10-1. `EditorView` (`/editor/<id>/`)（#991でauthor向けHistory表示を追加）
 
@@ -1064,6 +1104,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | 存在するeditor | 有効なeditor_id | HTTP 200 |
 | author向けHistory | `History.create_for_author()`で作成したHistoryが存在 | 作者名が表示され、「この曲は削除されました」は表示されない |
+| ユーザーが削除した曲のHistory（#1239） | `is_removed=True`の曲のHistoryが存在 | 曲のページへのリンクは無く「この曲または作者は削除されました」が表示される |
 | 本人の判定はX-Real-IP（#1189） | `ip`が`encrypt("203.0.113.1")`のeditor、`X-Real-IP: 203.0.113.1`・`X-Forwarded-For: 198.51.100.1` | `is_me`がTrue |
 | X-Forwarded-Forではなりすませない（#1189） | `ip`が`encrypt("203.0.113.1")`のeditor、`X-Real-IP: 203.0.113.2`・`X-Forwarded-For: 203.0.113.1` | `is_me`がFalse（他人のIPを名乗ってその人の編集者になれない） |
 
@@ -1073,6 +1114,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | 存在する曲 | 有効なsong_id | HTTP 200 |
 | 存在しない曲 | `song_id=99999` | HTTP 404 |
+| ユーザーが削除した曲（#1239） | `is_removed=True` の曲 | HTTP 404（履歴は編集履歴の一覧で見られる） |
 | 編集の差分の表示（#608） | 編集（`changes`の見出しが`["種類", "編集前", "編集後"]`）と新規作成（見出しが`["種類", "内容"]`）のHistoryが存在 | `<table class="diff-table">`が編集のHistoryの分だけ（1つ）含まれ、差分を表示する`subekashi/js/editor.js`が読み込まれる |
 
 #### 7-11. `SongCardsView` (`/api/html/song_cards`)
@@ -1197,7 +1239,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | divのaction-buttonが無い | トップ・曲・曲の編集履歴・曲の編集（`?toast`付き）・編集履歴一覧・編集者・作者・別名一覧・別名編集・別名削除・名義の統一の確認・歌詞の作成結果の各ページ | `<a href>`または`<button>`のaction-buttonが1つ以上あり、`<div class="action-button">`と旧クラス名の`dummybutton`は含まれない |
 | ボタンの文言はspan | 上記の各ページ | 全てのaction-buttonの文言が`<span>`で、`<p>`は含まれない |
-| 画面遷移のボタンはhref付きのa | 曲のページ | 「編集/削除申請」「編集履歴」が`<a href="..." class="action-button">`になる |
+| 画面遷移のボタンはhref付きのa | 曲のページ | 「編集/削除」「編集履歴」が`<a href="..." class="action-button">`になる |
 | 画面遷移のボタン（黒）はhref付きのa | 別名削除ページ | 「キャンセル」が`<a href="/authors/<id>/aliases/" class="action-button black-action-button">`になる |
 | 編集履歴の操作ボタンはbutton | 編集履歴一覧・編集者・曲の編集履歴の各ページ | 「再読み込み」「全て開く/閉じる」が`<button type="button" id="history-reload" class="action-button">`・`<button type="button" id="history-open-all" class="action-button">`になる |
 | 別名一覧の再読み込みボタンはbutton | 別名一覧ページ | `<button type="button" id="alias-reload" class="action-button black-action-button">`になる |
@@ -1337,6 +1379,10 @@ faviconの画像は`icon_large.png`（800×800）から生成する。`site.webm
 | `categorys` の「以外」（#423） | カテゴリがアレンジ・ネタ動画・曲の曲が存在、`?categorys=~song,~meme` | 先頭に~を付けたカテゴリの曲を除き、アレンジの曲のみ返される |
 | レスポンスの `category`（#423） | `?categorys=song` | 各曲に `category` が含まれる |
 | `sort=-imitated_count`（#542） | 曲1が曲2を模倣、`?sort=-imitated_count` | 模倣曲の数が多い曲2、曲1の順で返される |
+| ユーザーが削除した曲（#1239） | `is_removed=True`の曲が存在 | 一覧の結果・`count`に含まれない |
+| 削除した曲の個別取得（#1239） | `/api/song/<削除した曲のid>/` | HTTP 404 |
+| レスポンスの`is_removed`（#1239） | `/api/song/<id>/` | 常にFalseになるため`is_removed`は含まれない。`is_deleted`・`imitateds`・`url`は含まれる |
+| 模倣関係の削除した曲（#1239） | `is_removed=True`の曲と模倣関係がある曲を個別取得 | `imitates`・`imitateds`に削除した曲のidが含まれない |
 
 #### 8-2. `EditorIsOpenView` (`/api/editor/is_open`)
 
@@ -1380,12 +1426,13 @@ faviconの画像は`icon_large.png`（800×800）から生成する。`site.webm
 | 模倣元がない曲 | `?song_id=<id>&fetch_imitate=1` | `imitate_songs`が`None`ではなく空配列 |
 | 模倣元が検索のデフォルト件数（50件）超 | 模倣元51件の曲 | 51件すべてが返る |
 | 削除済み・下書きの模倣元 | `is_deleted=True`・`is_draft=True`の曲を模倣元に持つ曲 | 除外されずにすべて返る |
+| ユーザーが削除した模倣元（#1239） | `is_removed=True`の曲と通常の曲を模倣元に持つ曲 | 削除した曲は返らない（保存しても模倣関係は消えない。2-5の`update_song`を参照） |
 | 存在しないsong_id | `?song_id=99999&fetch_imitate=1` | HTTP 200（500にならない）、`imitate_songs`が`None`（`song_edit.js`は読み込み失敗として登録ボタンを無効化する） |
 | 数値でないsong_id | `?song_id=abc&fetch_imitate=1` | HTTP 200（500にならない）、`imitate_songs`が`None` |
 | 上付き数字のsong_id | `?song_id=²&fetch_imitate=1` | HTTP 200（500にならない）、`imitate_songs`が`None`（`str.isdigit()`はTrueだが`int()`で変換できない） |
 | 範囲外のsong_id | 30桁の数字 | HTTP 200（500にならない）、`imitate_songs`が`None` |
 
-#### 8-5-1. `SongLinkAPI` (`/api/songlink/`)（#1246）
+#### 8-5-1. `SongLinkAPI` (`/api/songlink/`)（#1246、#1239）
 
 **テストクラス**: `SongLinkAPITest`（`tests/test_api.py`）
 
@@ -1395,6 +1442,9 @@ faviconの画像は`icon_large.png`（800×800）から生成する。`site.webm
 | --- | --- | --- |
 | 表記の違うビリビリ動画のURL | `https://bilibili.com/video/BV1qV411J7Kq` の`SongLink`がある状態で、同じURL・`https://www.bilibili.com/video/av417727107/`・`https://m.bilibili.com/video/BV1qV411J7Kq/?spm_id_from=...&p=1` | いずれもその`SongLink`のみを返す |
 | 2パート目以降のURL | `https://www.bilibili.com/video/BV1qV411J7Kq?p=2` | 空（別の曲のことがあるため別のURLとして扱う） |
+| URLに紐づく曲 | 曲に紐づくURLを`?url=`で指定 | `songs`にその曲が含まれる |
+| ユーザーが削除した曲（#1239） | 削除した曲と通常の曲に紐づくURL | `songs`に削除した曲は含まれない |
+| 削除した曲だけに紐づくURL（#1239） | 削除した曲だけに紐づくURL | `songs`が空（登録できるURLとして扱われる） |
 
 #### 8-6. スロットリングのIP（`lib/throttling.py`）（#1192）
 
@@ -1585,6 +1635,7 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | 模倣曲の数が多い順 | `{"sort": "-imitated_count"}` | B, C, D, A の順 |
 | 模倣曲の数が少ない順 | `{"sort": "imitated_count"}` | D, A, C, B の順 |
 | distinctが適用されるフィルタとの組み合わせ | `keyword` / `imitate` / `imitated` と組み合わせる | 重複せず、ソート順が維持される |
+| ユーザーが削除した曲は数えない（#1239） | 上記に加え、Dが削除した曲2曲を模倣し、削除した曲2曲がCを模倣する | 数えると順序が変わるが、`-imitate_count` は A, D, C, B、`-imitated_count` は B, C, D, A の順のまま。削除した曲は結果に含まれない |
 | 件数の取得では並び替えない（#1124） | `{"keyword": "...", "sort": "-imitated_count", "count": True}` | 件数取得（`COUNT(*)`）のSQLに模倣曲の数のサブクエリと `ORDER BY` が含まれない |
 
 #### 10-9. `lib/song_filterset.py` の `order_by_sort_with_missing_last(queryset, sort)`（作者ページの並び替え、#606）
@@ -1626,6 +1677,20 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | `is_deleted=True` の曲 | 削除フラグを立てる | DBに残るが削除済みとして扱われる |
 | ManyToMany: authors | `song.authors.add(author)` | 作者が曲に紐付く |
 | ManyToMany: imitates (自己参照) | `song.imitates.add(other_song)` | 模倣関係が成立する |
+
+#### 11-1-2. ユーザーが削除した曲を除くマネージャー（`SongManager`）（#1239）
+
+`Song.objects`（デフォルトマネージャー）は`is_removed=True`の曲を除き、`Song.all_objects`は全件を返す
+
+| テストケース | 操作 | 期待結果 |
+| --- | --- | --- |
+| `Song.objects` | 通常の曲と削除した曲 | 通常の曲だけを返す |
+| `Song.all_objects` | 通常の曲と削除した曲 | どちらも返す |
+| `get_or_none()` | 削除した曲のid | `None`（曲のページ・編集・削除・編集履歴のページが404になる） |
+| `get_for_author()` | 作者の曲に削除した曲がある | 削除した曲を含まない |
+| 関連マネージャー（`author.songs`・`song.imitates`・`song.imitateds`・`link.songs`） | 削除した曲と関連がある | 削除した曲を含まない（デフォルトマネージャーから作られるため） |
+| `History.song` | 削除した曲のHistory | 削除した曲を返す（FKの参照はベースマネージャーを使うため。編集履歴の一覧で「削除されました」と表示するのに使う） |
+| デフォルトマネージャー | `Song._default_manager` | `objects` |
 
 #### 11-1-1. `Song.get_flags(is_lack=False)`（#1228）
 
@@ -1894,7 +1959,8 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
-| 通常削除 | `delete <id>` | Songが削除される |
+| 通常削除 | `delete <id>` | SongがDBから削除される（`Song.all_objects`でも取得できない） |
+| ユーザーが削除した曲（#1239） | `is_removed=True`の曲に`delete <id>` | SongがDBから削除され、紐づく`SongLink.is_removed`が`True`になる |
 | デフォルトの挙動 | `delete <id>` | 紐づく`SongLink.is_removed`が`True`になる |
 | `--keep-links` 指定 | `delete <id> --keep-links` | `SongLink.is_removed`は`False`のまま |
 | 存在しないID | `delete 999999` | 例外を投げず警告を出力 |
@@ -2013,6 +2079,7 @@ URL生成は`get_urls()`に分離しており、ファイル出力・`collectsta
 | 固定パス | 正常実行 | `/`・`/songs/`・`/songs/new/`・`/stats/`・`/ai/`・`/ai/result/`・`/ad/`・`/contact/`・`/articles/`・`/articles/lilyriku/`がそれぞれ1件ずつ含まれる（`/ai/`の重複を解消） |
 | 曲・編集履歴 | 通常の曲が存在 | `/songs/<id>/`と`/songs/<id>/history/`が含まれる |
 | noindexの曲は除外 | `is_questionable=True`または`is_limited=True`の曲が存在 | その曲の`/songs/<id>/`・`/songs/<id>/history/`は含まれない |
+| ユーザーが削除した曲は除外（#1239） | `is_removed=True`の曲が存在 | ページが404になるため、その曲の`/songs/<id>/`・`/songs/<id>/history/`は含まれない |
 | 作者 | Authorが存在 | `/authors/<id>/`・`/authors/<id>/stats/`・`/authors/<id>/aliases/`が含まれ、存在しない旧パス`/author/<id>/`は含まれない |
 | 旧形式のchannel | Authorが存在 | リダイレクト用の`/channel/<name>/`は含まれない |
 | 記事 | 公開・非公開・news記事が混在 | 公開かつnews以外の記事のみ`/articles/<id>/`が含まれる |
@@ -2300,6 +2367,8 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 | 空のqueryset | `compute_base_stats` | 曲が0件 | 全フィールドが0 |
 | view/likeがNullな曲を含む | `compute_base_stats` | 一部の曲の`view`・`like`が`None` | `Sum`が`None`にならず0として扱われる |
 | 模倣されている曲 | `compute_base_stats` | 2曲がある曲を模倣 | `total_imitateds`がその曲について2になる |
+| ユーザーが削除した模倣曲（#1239） | `compute_base_stats` | 通常の曲と削除した曲がある曲を模倣 | `total_imitateds`は1（削除した曲は数えない） |
+| ユーザーが削除した曲（#1239） | `compute_base_stats` | 通常の曲(view=100)と削除した曲(view=50)、`Song.objects.all()`を渡す | `song_count`は1、`total_view`は100 |
 | 同じ作者が複数曲に関わる | `compute_common_stats` | 作者Aが2曲、作者Bが1曲（Aと共作） | `total_authors`は重複を除いた人数（2）になる（`compute_unique_author_count`を内部で使用、#334で`song.authors`の総和から変更） |
 | 作者数と模倣曲数の相互干渉防止（回帰） | `compute_common_stats` | 複数作者かつ複数の模倣曲を同時に持つ曲 | `total_authors`（Authorテーブル起点のユニーク集計）と`total_imitateds`（Songテーブル起点のCount集計）が互いに水増しされず、それぞれ正しい値になる |
 
@@ -2323,6 +2392,7 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 | 同一作者が複数曲を持つ | 2曲が同じ作者 | ユニーク作者数は1 |
 | 空のqueryset | 曲が0件 | 0 |
 | 複数の原曲を模倣 | 1曲が2曲を模倣 | `compute_total_imitates`が2 |
+| ユーザーが削除した原曲を模倣（#1239） | 1曲が通常の曲と削除した曲を模倣 | `compute_total_imitates`が1（削除した曲は数えない） |
 
 #### 19-3-1. `compute_collaborator_count(qs, author_id)` / `compute_unique_collaborator_count(qs, author_id)`（authorごとの統計ページのみ、#334）
 
@@ -2608,7 +2678,7 @@ YouTube Data API（`build`）はモック化する。「動画が存在しない
 | 編集 | `history_type="edit"`、`changes`の見出しが`["種類", "編集前", "編集後"]` | `<table class="diff-table">`になり、編集前・編集後のセルが出力される |
 | 以前の形式の編集 | `history_type="new"`、`changes`の見出しが`["種類", "編集前", "編集後"]` | `<table class="diff-table">`になる |
 | 新規作成 | `history_type="new"`、`changes`の見出しが`["種類", "内容"]` | `<table>`のままで、`diff-table`は含まれない |
-| 削除申請 | `history_type="delete"`、`changes=["理由", "削除理由"]` | `<table class="delete-table">`のままで、`diff-table`は含まれない |
+| 削除 | `history_type="delete"`、`changes=["理由", "削除理由"]` | `<table class="delete-table">`のままで、`diff-table`は含まれない |
 | changesが無い | `changes=None` | 表を出力しない |
 | セルの改行とエスケープ | 編集前`"<b>1行目\n2行目"`、編集後`"1行目\r\n2行目"` | `<td>&lt;b&gt;1行目<br>2行目</td>`・`<td>1行目<br>2行目</td>`（JSはセルのテキストと`<br>`から元の文字列を取り出す） |
 

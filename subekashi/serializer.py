@@ -19,7 +19,8 @@ class SongSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Song
-        fields = '__all__'
+        # APIは削除した曲（#1239）を返さず常にFalseになるため、is_removedは含めない
+        exclude = ['is_removed']
 
 
 class SongLinkSongSerializer(serializers.ModelSerializer):

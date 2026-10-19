@@ -3,7 +3,13 @@ from .models import *
 
 
 class SongAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('id', 'title', 'is_removed')
+    search_fields = ('title',)
+    # ユーザーが削除した曲（#1239）も表示し、is_removedのチェックを外して復元できるようにする
+    list_filter = ('is_removed',)
+
+    def get_queryset(self, request):
+        return Song.all_objects.all()
 
 admin.site.register(Song, SongAdmin)
 

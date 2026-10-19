@@ -22,7 +22,7 @@
             <details class="history_details">
                 <summary><p>{{ history.create_time }}</p><p>{{ history.title }}</p></summary>
                 {% render_changes history %}
-                {% if history.song %}
+                {% if history.song and not history.song.is_removed %}
                     <a href="{% url 'subekashi:song' history.song.id %}">{{ history.song.title }}</a>
                 {% elif history.author %}
                     <a href="{% url 'subekashi:author' history.author.id %}">{{ history.author.name }}</a>

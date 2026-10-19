@@ -23,8 +23,8 @@ from subekashi.lib.query_utils import has_youtube_filter_or_sort, has_view_filte
 AUTHOR_SORT_MAP = {'author': 'authors__name', '-author': '-authors__name'}
 # URLパラメータ値をDjango ORM向けに変換する必要があるソートのマッピング
 DISTINCT_SORT_MAP = {'random': '?', **AUTHOR_SORT_MAP}
-# 模倣元の数・模倣曲の数のソート → 数える Song.imitates の中間テーブルのフィールド名（#542）
-IMITATE_COUNT_SORT_MAP = {'imitate_count': 'from_song', 'imitated_count': 'to_song'}
+# 模倣元の数・模倣曲の数のソート → 数える Song.imitates の中間テーブルの(曲側のフィールド名, 数える相手側のフィールド名)（#542）
+IMITATE_COUNT_SORT_MAP = {'imitate_count': ('from_song', 'to_song'), 'imitated_count': ('to_song', 'from_song')}
 
 
 def order_by_sort(queryset, sort):
@@ -32,10 +32,11 @@ def order_by_sort(queryset, sort):
     field = sort.lstrip('-')
     if field in IMITATE_COUNT_SORT_MAP:
         # imitatesをJOINすると曲が重複するため、曲ごとに数えたサブクエリで並び替える
-        through_field = IMITATE_COUNT_SORT_MAP[field]
+        through_field, counted_field = IMITATE_COUNT_SORT_MAP[field]
         counts = (
             Song.imitates.through.objects
-            .filter(**{through_field: OuterRef('pk')})
+            # 削除した曲（#1239）は数えない
+            .filter(**{through_field: OuterRef('pk'), f'{counted_field}__is_removed': False})
             .values(through_field)
             .annotate(count=Count('pk'))
             .values('count')

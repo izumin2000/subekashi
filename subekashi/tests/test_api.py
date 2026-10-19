@@ -65,6 +65,13 @@ class SongAPIListTest(TestCase):
         data = response.json()
         self.assertEqual(data["count"], 2)
 
+    def test_list_excludes_removed_song(self):
+        # ユーザーが削除した曲（#1239）は返さない
+        Song.objects.create(title="APIテスト削除した曲", is_removed=True)
+        data = self.client.get("/api/song/").json()
+        self.assertEqual(data["count"], 2)
+        self.assertNotIn("APIテスト削除した曲", [song["title"] for song in data["result"]])
+
     def test_keyword_filter_narrows_results(self):
         response = self.client.get("/api/song/", {"keyword": "APIテスト曲1"})
         data = response.json()
@@ -188,6 +195,29 @@ class SongAPIRetrieveTest(TestCase):
         response = self.client.get("/api/song/99999/")
         self.assertEqual(response.status_code, 404)
 
+    def test_retrieve_removed_song_returns_404(self):
+        # ユーザーが削除した曲（#1239）は返さない
+        self.song.is_removed = True
+        self.song.save()
+        response = self.client.get(f"/api/song/{self.song.id}/")
+        self.assertEqual(response.status_code, 404)
+
+    def test_response_does_not_contain_is_removed(self):
+        # 削除した曲は返さず常にFalseになるため、is_removedは含めない
+        data = self.client.get(f"/api/song/{self.song.id}/").json()
+        self.assertNotIn("is_removed", data)
+        self.assertIn("is_deleted", data)
+        self.assertIn("imitateds", data)
+        self.assertIn("url", data)
+
+    def test_imitates_and_imitateds_exclude_removed_song(self):
+        removed = Song.objects.create(title="個別取得テストの削除した曲", is_removed=True)
+        self.song.imitates.add(removed)
+        removed.imitates.add(self.song)
+        data = self.client.get(f"/api/song/{self.song.id}/").json()
+        self.assertEqual(data["imitates"], [])
+        self.assertEqual(data["imitateds"], [])
+
 
 @override_settings(STORAGES=STATIC_STORAGE)
 @patch("subekashi.views.api.song_edit_init.SongEditInitView.throttle_classes", [])
@@ -222,6 +252,13 @@ class SongEditInitViewTest(TestCase):
         draft_song = Song.objects.create(title="下書き模倣元", is_draft=True)
         self.song.imitates.set([deleted_song, draft_song])
         self.assertCountEqual(self._get_imitate_ids(), [deleted_song.id, draft_song.id])
+
+    def test_imitate_songs_excludes_removed_song(self):
+        # ユーザーが削除した曲（#1239）は模倣元に表示しない。保存しても模倣関係は消えない（UpdateSongTest）
+        removed_song = Song.objects.create(title="削除した模倣元", is_removed=True)
+        imitate_song = Song.objects.create(title="模倣元")
+        self.song.imitates.set([removed_song, imitate_song])
+        self.assertEqual(self._get_imitate_ids(), [imitate_song.id])
 
     def test_nonexistent_song_id_returns_none_instead_of_500(self):
         response = self.client.get("/api/song_edit_init/", {"song_id": 99999, "fetch_imitate": "1"})
@@ -264,6 +301,13 @@ class SongLinkAPITest(TestCase):
         self.assertEqual(response.status_code, 200)
         return [link["id"] for link in response.json()["result"]]
 
+    def _get_song_ids(self, url):
+        response = self.client.get("/api/songlink/", {"url": url})
+        self.assertEqual(response.status_code, 200)
+        result = response.json()["result"]
+        self.assertEqual(len(result), 1)
+        return [song["id"] for song in result[0]["songs"]]
+
     def test_bilibili_url_is_found_by_av_and_unformatted_url(self):
         # #1246: av番号・www・末尾の/・クエリの付いたURLでも、同じ動画のURLが見つかる
         for url in [
@@ -277,6 +321,22 @@ class SongLinkAPITest(TestCase):
     def test_bilibili_url_of_other_page_is_not_found(self):
         # #1246: 2パート目以降は別の曲のことがあるため、別のURLとして扱う
         self.assertEqual(self._get_link_ids("https://www.bilibili.com/video/BV1qV411J7Kq?p=2"), [])
+
+    def test_songs_contains_linked_song(self):
+        self.assertEqual(self._get_song_ids(self.link.url), [self.song.id])
+
+    def test_songs_excludes_removed_song(self):
+        # ユーザーが削除した曲（#1239）は含めない
+        removed = Song.objects.create(title="URLテストの削除した曲", is_removed=True)
+        self.link.songs.add(removed)
+        self.assertEqual(self._get_song_ids(self.link.url), [self.song.id])
+
+    def test_url_of_only_removed_song_has_no_songs(self):
+        # ユーザーが削除した曲（#1239）だけに紐づくURLは、曲の登録・編集画面で登録できるURLとして扱われる
+        removed = Song.objects.create(title="URLテストの削除した曲", is_removed=True)
+        link = SongLink.objects.create(url="https://youtu.be/songlink001")
+        link.songs.add(removed)
+        self.assertEqual(self._get_song_ids(link.url), [])
 
 
 @override_settings(STORAGES=STATIC_STORAGE)

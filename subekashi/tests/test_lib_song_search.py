@@ -301,6 +301,21 @@ class SongSearchImitateCountSortTest(TestCase):
             with self.subTest(sort=sort):
                 self.assertEqual(self._search_titles({"sort": sort}), expected)
 
+    def test_sort_by_imitate_count_excludes_removed_songs(self):
+        # ユーザーが削除した曲（#1239）は模倣元・模倣曲の数に数えず、結果にも含めない
+        removed_1 = Song.objects.create(title="模倣ソート削除1", is_removed=True)
+        removed_2 = Song.objects.create(title="模倣ソート削除2", is_removed=True)
+        self.song_d.imitates.add(removed_1, removed_2)
+        removed_1.imitates.add(self.song_c)
+        removed_2.imitates.add(self.song_c)
+        cases = [
+            ("-imitate_count", ["模倣ソートA", "模倣ソートD", "模倣ソートC", "模倣ソートB"]),
+            ("-imitated_count", ["模倣ソートB", "模倣ソートC", "模倣ソートD", "模倣ソートA"]),
+        ]
+        for sort, expected in cases:
+            with self.subTest(sort=sort):
+                self.assertEqual(self._search_titles({"sort": sort}), expected)
+
     def test_sort_by_imitate_count_with_distinct_filter(self):
         """distinctが適用されるフィルタと組み合わせても、重複せずソート順が維持されること"""
         cases = [

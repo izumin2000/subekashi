@@ -1,7 +1,7 @@
 """
 管理コマンドのテスト
 
-delete: is_removedをfalseのままにする--keep-linksオプションを検証する。
+delete: is_removedをfalseのままにする--keep-linksオプションと、ユーザーが削除した曲（#1239）も完全に削除できることを検証する。
 youtube: DBロック対策で処理方式を変更した後の挙動（id指定・全件処理・リンク無しスキップ・動画削除時の扱い）と、YouTube以外のURLがある曲を削除済みにしない挙動（#1136）、
 APIの呼び出しに失敗した曲を更新しない挙動・クォータ超過時に処理を打ち切る挙動（#1146）を検証する。
 backup: バックアップ先をサーバーストレージからGoogle Driveに変更した挙動（#1050）を検証する。
@@ -51,7 +51,16 @@ class DeleteCommandTest(TestCase):
 
     def test_delete_removes_song(self):
         call_command("delete", str(self.song.id))
-        self.assertFalse(Song.objects.filter(pk=self.song.id).exists())
+        self.assertFalse(Song.all_objects.filter(pk=self.song.id).exists())
+
+    def test_delete_removes_song_removed_by_user(self):
+        # ユーザーが削除した曲（#1239）も完全に削除できる
+        self.song.is_removed = True
+        self.song.save()
+        call_command("delete", str(self.song.id))
+        self.assertFalse(Song.all_objects.filter(pk=self.song.id).exists())
+        self.link.refresh_from_db()
+        self.assertTrue(self.link.is_removed)
 
     def test_delete_sets_links_is_removed_true_by_default(self):
         call_command("delete", str(self.song.id))
@@ -1230,10 +1239,12 @@ class SitemapCommandTest(TestCase):
     def test_questionable_and_limited_songs_are_excluded(self):
         questionable = Song.objects.create(title="疑義曲", is_questionable=True)
         limited = Song.objects.create(title="非公開曲", is_limited=True)
+        # ユーザーが削除した曲（#1239）のページは404になるため含めない
+        removed = Song.objects.create(title="削除した曲", is_removed=True)
 
         locs = self.get_locs()
 
-        for song in [questionable, limited]:
+        for song in [questionable, limited, removed]:
             self.assertNotIn(f"{self.BASE_URL}/songs/{song.id}/", locs)
             self.assertNotIn(f"{self.BASE_URL}/songs/{song.id}/history/", locs)
 

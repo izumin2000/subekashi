@@ -142,9 +142,11 @@ def filter_by_categorys(categorys):
 def filter_by_lack():
     any_links = SongLink.objects.filter(songs=OuterRef('pk'))
     has_author_1 = Author.objects.filter(id=1, songs__id=OuterRef('pk'))
+    # 削除した曲（#1239）は模倣元として数えない
+    live_imitates = Song.imitates.through.objects.filter(from_song=OuterRef('pk'), to_song__is_removed=False)
     return (
         (Q(is_deleted=False) & ~Exists(any_links)) |
-        (Q(is_questionable=False, is_original=False, is_subeana=True, imitates__isnull=True) & ~Exists(has_author_1)) |
+        (Q(is_questionable=False, is_original=False, is_subeana=True) & ~Exists(live_imitates) & ~Exists(has_author_1)) |
         # 歌詞を入力するのはカテゴリが曲の場合のみ（#423）
         Q(is_questionable=False, is_inst=False, lyrics="", category="song")
     )
@@ -154,9 +156,11 @@ def filter_by_lack():
 def make_is_lack_annotation():
     any_links = SongLink.objects.filter(songs=OuterRef('pk'))
     has_author_1 = Author.objects.filter(id=1, songs__id=OuterRef('pk'))
+    # 削除した曲（#1239）は模倣元として数えない
+    live_imitates = Song.imitates.through.objects.filter(from_song=OuterRef('pk'), to_song__is_removed=False)
     return Case(
         When(Q(is_deleted=False) & ~Exists(any_links), then=Value(True)),
-        When(Q(is_questionable=False, is_original=False, is_subeana=True, imitates__isnull=True) & ~Exists(has_author_1), then=Value(True)),
+        When(Q(is_questionable=False, is_original=False, is_subeana=True) & ~Exists(live_imitates) & ~Exists(has_author_1), then=Value(True)),
         When(Q(is_questionable=False, is_inst=False, lyrics='', category='song'), then=Value(True)),
         default=Value(False),
         output_field=BooleanField(),

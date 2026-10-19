@@ -1,10 +1,11 @@
+from django.db import transaction
 from django.shortcuts import render, redirect
 from django.views import View
 from subekashi.forms import SongDeleteForm
 from subekashi.models import Song, Editor, History
 from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
-from subekashi.lib.song_service import build_delete_discord_text
+from subekashi.lib.song_service import build_delete_discord_text, remove_song
 from config.local_settings import DELETE_DISCORD_URL
 
 
@@ -19,7 +20,7 @@ class SongDeleteView(View):
 
     def get_base_context(self):
         return {
-            "metatitle": f"{self.song.title}の削除申請",
+            "metatitle": f"{self.song.title}の削除",
             "song": self.song,
         }
 
@@ -36,23 +37,25 @@ class SongDeleteView(View):
 
         reason = form.cleaned_data['reason']
 
-        # 編集履歴を保存
         ip = get_ip(request)
         editor = Editor.get_or_create_from_ip(ip)
 
-        History.create_for_song(
-            song=self.song,
-            title=f"{self.song.title}を削除申請",
-            history_type="delete",
-            changes=["理由", reason],
-            editor=editor,
-        )
+        # 曲を論理削除し、編集履歴を保存（#1239）
+        with transaction.atomic():
+            remove_song(self.song)
+            History.create_for_song(
+                song=self.song,
+                title=f"{self.song.title}を削除",
+                history_type="delete",
+                changes=["理由", reason],
+                editor=editor,
+            )
 
-        # Discordに送信
+        # Discordに送信し、送信できなければ500ページに遷移
         content = build_delete_discord_text(self.song, reason, editor)
         is_ok = send_discord(DELETE_DISCORD_URL, content)
         if not is_ok:
-            context["error"] = "お問い合わせを送信できませんでした。"
-            return render(request, 'subekashi/song_edit.html', context)
+            return render(request, 'subekashi/500.html', status=500)
 
-        return redirect(f'/songs/{song_id}?toast=delete')
+        # 削除した曲のページは表示できないため、トップに遷移する
+        return redirect('/?toast=delete')
