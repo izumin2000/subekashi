@@ -1,6 +1,6 @@
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from config.settings import GOOGLE_SHEETS_API_KEY, GOOGLE_SHEETS_SPREADSHEET_ID
+from django.conf import settings
 from subekashi.lib.youtube import get_error_reasons
 from dataclasses import dataclass
 from datetime import date
@@ -116,13 +116,16 @@ def parse_sheet(year, values):
 # APIキーでは公開されているスプレッドシートの読み取りしかできないため、スプレッドシートを書き換えることはない
 # 元の例外の文字列にはAPIキーを含むURLが入るため、例外は連鎖させず（from None）、メッセージにはAPIキーを含まない情報のみを入れる
 def get_timeline(years):
-    if GOOGLE_SHEETS_API_KEY == "" or GOOGLE_SHEETS_SPREADSHEET_ID == "":
+    # local_settings.pyに設定が無い環境でも、importで止まらずに「設定されていません」と通知できるよう、getattrで読む
+    api_key = getattr(settings, "GOOGLE_SHEETS_API_KEY", "")
+    spreadsheet_id = getattr(settings, "GOOGLE_SHEETS_SPREADSHEET_ID", "")
+    if not api_key or not spreadsheet_id:
         raise TimelineError("GOOGLE_SHEETS_API_KEYまたはGOOGLE_SHEETS_SPREADSHEET_IDが設定されていません")
 
     try:
-        spreadsheets = build("sheets", "v4", developerKey=GOOGLE_SHEETS_API_KEY, cache_discovery=False).spreadsheets()
+        spreadsheets = build("sheets", "v4", developerKey=api_key, cache_discovery=False).spreadsheets()
         spreadsheet = spreadsheets.get(
-            spreadsheetId=GOOGLE_SHEETS_SPREADSHEET_ID,
+            spreadsheetId=spreadsheet_id,
             fields="sheets.properties.title"
         ).execute()
         sheet_titles = {sheet["properties"]["title"] for sheet in spreadsheet.get("sheets", [])}
@@ -132,7 +135,7 @@ def get_timeline(years):
             return {}
 
         response = spreadsheets.values().batchGet(
-            spreadsheetId=GOOGLE_SHEETS_SPREADSHEET_ID,
+            spreadsheetId=spreadsheet_id,
             ranges=[f"'{get_sheet_title(year)}'" for year in target_years]
         ).execute()
 

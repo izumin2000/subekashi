@@ -5,7 +5,13 @@ from django.db import transaction
 from django.utils import timezone
 from subekashi.models import Editor, History, Song, SongLink, SongFields
 from subekashi.lib.author_helpers import get_or_create_authors, validate_author_name_lengths
-from subekashi.lib.song_service import build_new_song_discord_text, category_label, check_reject_list, create_song
+from subekashi.lib.song_service import (
+    build_new_song_discord_text,
+    category_label,
+    check_reject_list,
+    create_song,
+    get_short_base_title,
+)
 from subekashi.lib.url import clean_url, get_allow_media
 import re
 import unicodedata
@@ -41,6 +47,8 @@ EDITOR_ID = 1
 
 # 全てあなたの所為です。
 SUBEANA_AUTHOR_ID = 1
+
+NICOVIDEO_HOSTS = {"nicovideo.jp", "sp.nicovideo.jp"}
 
 LYRICS_URL_PATTERN = re.compile(r"lyrics\.imicomweb\.com/songs/(\d+)")
 
@@ -122,16 +130,23 @@ def get_motif2_titles(text):
 
 
 # 合作は作者を改行で区切り、2人目以降の先頭に「+」を付けて書かれていることがある
+# 「+SSBA」のように「+」で始まる作者もいるため、1人目の「+」は削らない
 def get_author_names(text):
-    names = [name.strip().lstrip("+").strip() for name in text.split("\n")]
+    lines = [line.strip() for line in text.split("\n")]
+    names = lines[:1] + [line.lstrip("+").strip() for line in lines[1:]]
     # 空白文字のみの作者名も作者として扱うため、そのまま返す
     return [name for name in names if name] or ([text] if text else [])
 
 
 # DBには「www.」付き・http・大文字小文字の違うURLもあるため、比較用に揃える
 # XのユーザーIDなどは大文字小文字を区別しないため小文字にするが、YouTubeの動画IDは区別するためそのままにする
+# ニコニコ動画は、スマホ版（sp.nicovideo.jp）や「?ref=」などの付いたURLも同じ動画のURLとして揃える
 def get_url_key(url):
-    key = re.sub(r"^https?://", "", clean_url(url))
+    cleaned_url = clean_url(url)
+    parsed = urlparse(cleaned_url)
+    if parsed.netloc.lower() in NICOVIDEO_HOSTS:
+        return f"nicovideo.jp{parsed.path}".rstrip("/").lower()
+    key = re.sub(r"^https?://", "", cleaned_url)
     return key if key.startswith("youtu.be/") else key.lower()
 
 
@@ -163,14 +178,16 @@ class TimelineImporter:
     """すべあな界隈年表の行を曲として登録・更新する
 
     行のURL（URL列・URL2列）が登録されている曲を更新し、どのURLも登録されていなければ曲を新規登録する。
+    複数の曲で共有しているURL（allow_dup=True）は、どの曲の行かを決める手がかりにしない。
     どのURLも登録されていなくても、歌詞列がタイトルか作者の一致する曲を指していれば、その曲を更新する。
     毎日実行するため、1回の実行で何万回もクエリを発行しないよう、曲・URL・模倣の関係を先に全て読み込んでおく。
     """
 
     def __init__(self):
         self.result = TimelineImportResult()
-        # このrunで登録・更新した曲。複数の行に一致する曲のカテゴリが毎回行ごとに入れ替わらないよう、最初の行のカテゴリにする
-        self.processed_song_ids = set()
+        # このrunでカテゴリを決めた曲。複数の行に一致する曲のカテゴリが毎回行ごとに入れ替わらないよう、最初の行のカテゴリにする
+        # カテゴリが空欄の行はカテゴリを決めないため含めない
+        self.categorized_song_ids = set()
 
         self.songs = {
             song_id: SongState(title, category, is_questionable)
@@ -198,7 +215,9 @@ class TimelineImporter:
         self.song_url_keys = defaultdict(set)
         # 削除された曲のURL（deleteコマンドでis_removed=Trueになり、どの曲にも紐づいていない）
         self.removed_url_keys = set()
-        for link_id, url, is_removed in SongLink.objects.values_list("id", "url", "is_removed"):
+        # 複数の曲で共有しているURL（メドレーの動画やチャンネルのURLなど）
+        self.shared_url_keys = set()
+        for link_id, url, is_removed, allow_dup in SongLink.objects.values_list("id", "url", "is_removed", "allow_dup"):
             key = get_url_key(url)
             self.link_ids.setdefault(key, link_id)
             self.url_song_ids[key] |= link_song_ids[link_id]
@@ -206,6 +225,8 @@ class TimelineImporter:
                 self.song_url_keys[song_id].add(key)
             if is_removed and not link_song_ids[link_id]:
                 self.removed_url_keys.add(key)
+            if allow_dup:
+                self.shared_url_keys.add(key)
 
     def is_removed_url(self, key):
         return key in self.removed_url_keys and not self.url_song_ids[key]
@@ -242,9 +263,14 @@ class TimelineImporter:
         state = self.songs.get(song_id)
         if state is None:
             return None
-        if row.title == state.title or self.author_names[song_id] & set(get_author_names(row.author)):
+        if row.title == state.title:
             return song_id
-        raise TimelineSkip("歌詞列の曲とタイトル・作者が一致しない")
+        if not self.author_names[song_id] & set(get_author_names(row.author)):
+            raise TimelineSkip("歌詞列の曲とタイトル・作者が一致しない")
+        # full版の行の歌詞列がshort版の曲を指していることもあるため、作者だけが一致する場合はshort版かどうかも同じ曲に限る
+        if (get_short_base_title(row.title) is None) != (get_short_base_title(state.title) is None):
+            raise TimelineSkip("歌詞列の曲とshort版かどうかが異なる")
+        return song_id
 
     def add_url(self, song, url):
         key = get_url_key(url)
@@ -293,7 +319,10 @@ class TimelineImporter:
         self.title_song_ids[song.title].add(song.id)
         self.imitate_ids[song.id] |= imitate_ids
         self.author_names[song.id] = {author.name for author in authors}
-        self.processed_song_ids.add(song.id)
+        if any(author.id == SUBEANA_AUTHOR_ID for author in authors):
+            self.subeana_song_ids.add(song.id)
+        if row.category:
+            self.categorized_song_ids.add(song.id)
         self.result.created.append(song)
 
     def update(self, song_id, urls, category, imitate_ids):
@@ -305,8 +334,12 @@ class TimelineImporter:
         ]
         # 界隈曲?の曲は、編集画面と同様に模倣を登録しない
         new_imitate_ids = set() if state.is_questionable else imitate_ids - self.imitate_ids[song_id] - {song_id}
-        new_category = category if song_id not in self.processed_song_ids and category != state.category else None
-        self.processed_song_ids.add(song_id)
+        # カテゴリが空欄の行（categoryがNone）は、サイトで設定されたカテゴリを変えない
+        new_category = None
+        if category:
+            if song_id not in self.categorized_song_ids and category != state.category:
+                new_category = category
+            self.categorized_song_ids.add(song_id)
         if not (new_urls or new_imitate_ids or new_category):
             self.result.unchanged += 1
             return
@@ -362,7 +395,9 @@ class TimelineImporter:
             if not urls:
                 raise TimelineSkip("登録できるURLが無い")
 
-            song_ids = set().union(*(self.url_song_ids[get_url_key(url)] for url in urls))
+            # 複数の曲で共有しているURL（allow_dup=True）は、どの曲の行かを決める手がかりにしない
+            keys = [get_url_key(url) for url in urls if get_url_key(url) not in self.shared_url_keys]
+            song_ids = set().union(*(self.url_song_ids[key] for key in keys))
             if len(song_ids) > 1:
                 raise TimelineSkip("複数の曲に一致")
 
@@ -370,7 +405,10 @@ class TimelineImporter:
             with transaction.atomic():
                 song_id = song_ids.pop() if song_ids else self.get_lyrics_song_id(row)
                 if song_id:
-                    self.update(song_id, urls, category, imitate_ids)
+                    self.update(song_id, urls, category if row.category else None, imitate_ids)
+                elif not keys:
+                    # 共有しているURLしか無い行は、次の実行でもURLで照合できず毎日新規作成されてしまうため登録しない
+                    raise TimelineSkip("複数の曲で共有しているURLのみ")
                 else:
                     self.create(row, urls, category, imitate_ids)
 

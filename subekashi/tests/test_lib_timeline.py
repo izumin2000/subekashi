@@ -11,7 +11,8 @@ import socket
 from datetime import date
 from unittest.mock import MagicMock, patch
 
-from django.test import SimpleTestCase
+from django.conf import settings
+from django.test import SimpleTestCase, override_settings
 from googleapiclient.errors import HttpError
 
 from subekashi.lib.timeline import EXPECTED_HEADER, TimelineError, get_timeline, parse_sheet
@@ -171,8 +172,7 @@ class ParseSheetTest(SimpleTestCase):
             parse_sheet(2024, [])
 
 
-@patch("subekashi.lib.timeline.GOOGLE_SHEETS_SPREADSHEET_ID", "sheet-id")
-@patch("subekashi.lib.timeline.GOOGLE_SHEETS_API_KEY", "dummy-key")
+@override_settings(GOOGLE_SHEETS_SPREADSHEET_ID="sheet-id", GOOGLE_SHEETS_API_KEY="dummy-key")
 @patch("subekashi.lib.timeline.build")
 class GetTimelineTest(SimpleTestCase):
     def get_spreadsheets(self, mock_build):
@@ -288,7 +288,12 @@ class GetTimelineTest(SimpleTestCase):
 
     def test_missing_settings_raises_error_without_calling_api(self, mock_build):
         for setting in ["GOOGLE_SHEETS_API_KEY", "GOOGLE_SHEETS_SPREADSHEET_ID"]:
-            with self.subTest(setting=setting), patch(f"subekashi.lib.timeline.{setting}", ""):
+            with self.subTest(setting=setting, value="空文字列"), override_settings(**{setting: ""}):
+                with self.assertRaisesMessage(TimelineError, "設定されていません"):
+                    get_timeline([2018])
+            # local_settings.pyに設定自体が無い場合も、importで止まらずにTimelineErrorにする
+            with self.subTest(setting=setting, value="未定義"), override_settings():
+                delattr(settings, setting)
                 with self.assertRaisesMessage(TimelineError, "設定されていません"):
                     get_timeline([2018])
         mock_build.assert_not_called()

@@ -85,6 +85,9 @@ class GetAuthorNamesTest(SimpleTestCase):
         self.assertEqual(get_author_names("作者"), ["作者"])
         # 合作は改行で区切り、2人目以降の先頭に「+」が付くことがある
         self.assertEqual(get_author_names("作者A\n+作者B"), ["作者A", "作者B"])
+        # 「+」で始まる作者もいるため、1人目の「+」は削らない
+        self.assertEqual(get_author_names("+SSBA"), ["+SSBA"])
+        self.assertEqual(get_author_names("+SSBA\n+作者B"), ["+SSBA", "作者B"])
         self.assertEqual(get_author_names("作者A \n\n作者B"), ["作者A", "作者B"])
         # 「、」「/」は名前の一部として使われているため区切らない
         self.assertEqual(get_author_names("全て魚の所為で、"), ["全て魚の所為で、"])
@@ -306,6 +309,17 @@ class ImportTimelineTest(TestCase):
         self.assertEqual(result.unchanged, 1)
         self.assertEqual(song_urls(song), ["http://www.nicovideo.jp/watch/SM1", "https://x.com/SubeKashi/status/1"])
 
+    def test_matches_nicovideo_url_for_smartphone_and_query(self):
+        # スマホ版（sp.nicovideo.jp）や「?ref=」の付いたニコニコ動画のURLも、同じ動画のURLとして照合する
+        song = create_song("曲", urls=["https://nicovideo.jp/watch/sm1"])
+        result = import_timeline([
+            make_row(urls=["https://sp.nicovideo.jp/watch/sm1?ref=user_video"]),
+            make_row(urls=["https://nicovideo.jp/watch/sm1?ref=nicoiphone_other"]),
+        ])
+
+        self.assertEqual((result.created, result.unchanged), ([], 2))
+        self.assertEqual(song_urls(song), ["https://nicovideo.jp/watch/sm1"])
+
     def test_youtube_id_is_case_sensitive(self):
         # YouTubeの動画IDは大文字小文字を区別するため、大文字小文字のみ違う動画は別の曲にする
         song = create_song("曲", urls=["https://youtu.be/aaaaaaaaaaa"])
@@ -325,6 +339,38 @@ class ImportTimelineTest(TestCase):
 
         mock_post.assert_not_called()
         mock_send_discord.assert_not_called()
+
+    def test_shared_url_does_not_identify_song(self):
+        # 複数の曲で共有しているURL（allow_dup=True）は、紐づいている曲が1曲でもその曲の行とは決めない
+        shared = SongLink.objects.create(url="https://youtu.be/sssssssssss", allow_dup=True)
+        medley = create_song("メドレー")
+        shared.songs.add(medley)
+        result = import_timeline([make_row(title="新しい曲", urls=["https://youtu.be/aaaaaaaaaaa", "https://youtu.be/sssssssssss"])])
+
+        song = result.created[0]
+        self.assertEqual(song_urls(song), ["https://youtu.be/sssssssssss", "https://youtu.be/aaaaaaaaaaa"])
+        self.assertEqual(set(shared.songs.all()), {medley, song})
+        medley.refresh_from_db()
+        self.assertEqual(medley.category, "song")
+
+    def test_shared_url_linked_to_multiple_songs_is_ignored(self):
+        shared = SongLink.objects.create(url="https://youtu.be/sssssssssss", allow_dup=True)
+        shared.songs.add(create_song("曲A"), create_song("曲B"))
+        song = create_song("曲", urls=["https://youtu.be/aaaaaaaaaaa"])
+        import_timeline([make_row(category="アレンジ", urls=["https://youtu.be/aaaaaaaaaaa", "https://youtu.be/sssssssssss"])])
+
+        song.refresh_from_db()
+        self.assertEqual(song.category, "arrange")
+        self.assertIn("https://youtu.be/sssssssssss", song_urls(song))
+
+    def test_skips_row_with_only_shared_url(self):
+        # 共有しているURLしか無い行は、次の実行でもURLで照合できず毎日新規作成されてしまうため登録しない
+        shared = SongLink.objects.create(url="https://youtu.be/sssssssssss", allow_dup=True)
+        shared.songs.add(create_song("メドレー"))
+        result = import_timeline([make_row(title="新しい曲", urls=["https://youtu.be/sssssssssss"])])
+
+        self.assertEqual([reason for _, reason in result.skipped], ["複数の曲で共有しているURLのみ"])
+        self.assertFalse(Song.objects.filter(title="新しい曲").exists())
 
     def test_skips_url_linked_to_multiple_songs(self):
         song1 = create_song("曲1", urls=["https://youtu.be/aaaaaaaaaaa"])
@@ -372,6 +418,15 @@ class ImportTimelineTest(TestCase):
         result = import_timeline([make_row(motif1=".枠")])
 
         self.assertEqual(list(result.created[0].imitates.all()), [subeana])
+
+    def test_motif1_prefers_subeana_song_created_in_same_run(self):
+        create_song("原曲", "別の作者")
+        result = import_timeline([
+            make_row(title="原曲", author="全てあなたの所為です。", urls=["https://youtu.be/aaaaaaaaaaa"]),
+            make_row(title="模倣曲", motif1="原曲枠", urls=["https://youtu.be/bbbbbbbbbbb"]),
+        ])
+
+        self.assertEqual(list(result.created[1].imitates.all()), [result.created[0]])
 
     def test_motif1_without_subeana_song(self):
         # すべあなの曲が無ければ、モチーフ2と同様にタイトルが一致する曲が1曲のときのみ追加する
@@ -435,6 +490,26 @@ class ImportTimelineTest(TestCase):
         song.refresh_from_db()
         self.assertEqual(song.category, "otomad")
 
+    def test_empty_category_does_not_change_category(self):
+        # カテゴリが空欄の行は、サイトで設定されたカテゴリを変えない（新規作成では曲にする）
+        song = create_song("曲", urls=["https://youtu.be/aaaaaaaaaaa"], category="arrange")
+        result = import_timeline([make_row(category="")])
+
+        song.refresh_from_db()
+        self.assertEqual(song.category, "arrange")
+        self.assertEqual(result.unchanged, 1)
+
+    def test_category_row_after_empty_category_row(self):
+        # カテゴリが空欄の行はカテゴリを決めないため、後の行のカテゴリにする
+        song = create_song("曲", urls=["https://youtu.be/aaaaaaaaaaa", "https://youtu.be/bbbbbbbbbbb"])
+        import_timeline([
+            make_row(category="", urls=["https://youtu.be/aaaaaaaaaaa"]),
+            make_row(category="カバー", urls=["https://youtu.be/bbbbbbbbbbb"]),
+        ])
+
+        song.refresh_from_db()
+        self.assertEqual(song.category, "cover")
+
     def test_category_of_song_matched_by_rows_does_not_flip(self):
         song = create_song("曲", urls=["https://youtu.be/aaaaaaaaaaa", "https://youtu.be/bbbbbbbbbbb"])
         rows = [
@@ -459,6 +534,20 @@ class ImportTimelineTest(TestCase):
         self.assertEqual(result.created, [])
         self.assertEqual(song_urls(same_title), ["https://youtu.be/aaaaaaaaaaa"])
         self.assertEqual(song_urls(same_author), ["https://youtu.be/bbbbbbbbbbb"])
+
+    def test_skips_lyrics_song_with_only_author_and_different_version(self):
+        # full版の行の歌詞列がshort版の曲を指していることがあるため、作者だけが一致する場合はshort版かどうかも同じ曲に限る
+        short = create_song("曲[short]", "作者")
+        result = import_timeline([make_row(title="曲", lyrics_url=f"https://lyrics.imicomweb.com/songs/{short.id}")])
+
+        self.assertEqual([reason for _, reason in result.skipped], ["歌詞列の曲とshort版かどうかが異なる"])
+        self.assertEqual(song_urls(short), [])
+
+    def test_updates_lyrics_song_with_only_author_and_same_version(self):
+        short = create_song("曲[Short]", "作者")
+        import_timeline([make_row(title="曲[short]", lyrics_url=f"https://lyrics.imicomweb.com/songs/{short.id}")])
+
+        self.assertEqual(song_urls(short), ["https://youtu.be/aaaaaaaaaaa"])
 
     def test_skips_lyrics_song_with_different_title_and_author(self):
         song = create_song("別の曲", "別の作者")
