@@ -50,6 +50,9 @@ SUBEANA_AUTHOR_ID = 1
 
 NICOVIDEO_HOSTS = {"nicovideo.jp", "sp.nicovideo.jp"}
 
+# clean_urlで揃えた後の、動画IDの大文字小文字を区別するURL
+CASE_SENSITIVE_URL_PREFIXES = ("youtu.be/", "bilibili.com/video/")
+
 LYRICS_URL_PATTERN = re.compile(r"lyrics\.imicomweb\.com/songs/(\d+)")
 
 VARIATION_SELECTOR = "\ufe0f"
@@ -139,7 +142,7 @@ def get_author_names(text):
 
 
 # DBには「www.」付き・http・大文字小文字の違うURLもあるため、比較用に揃える
-# XのユーザーIDなどは大文字小文字を区別しないため小文字にするが、YouTubeの動画IDは区別するためそのままにする
+# XのユーザーIDなどは大文字小文字を区別しないため小文字にするが、YouTube・ビリビリ動画の動画IDは区別するためそのままにする
 # ニコニコ動画は、スマホ版（sp.nicovideo.jp）や「?ref=」などの付いたURLも同じ動画のURLとして揃える
 def get_url_key(url):
     cleaned_url = clean_url(url)
@@ -147,7 +150,7 @@ def get_url_key(url):
     if parsed.netloc.lower() in NICOVIDEO_HOSTS:
         return f"nicovideo.jp{parsed.path}".rstrip("/").lower()
     key = re.sub(r"^https?://", "", cleaned_url)
-    return key if key.startswith("youtu.be/") else key.lower()
+    return key if key.startswith(CASE_SENSITIVE_URL_PREFIXES) else key.lower()
 
 
 # 曲に登録できるURLのみを、短縮・フォーマットして返す

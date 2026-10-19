@@ -328,6 +328,24 @@ class ImportTimelineTest(TestCase):
         self.assertEqual([created.title for created in result.created], ["別の曲"])
         self.assertEqual(song_urls(song), ["https://youtu.be/aaaaaaaaaaa"])
 
+    def test_bilibili_url_matches_av_and_bv(self):
+        # ビリビリ動画のURLはclean_urlでBV番号のURLに揃えるため、av番号や「www.」・クエリの違うURLも同じ動画として照合する（#1246）
+        song = create_song("曲", urls=["https://bilibili.com/video/BV1qV411J7Kq"])
+        result = import_timeline([
+            make_row(urls=["https://www.bilibili.com/video/av417727107/"]),
+            make_row(urls=["https://www.bilibili.com/video/BV1qV411J7Kq/?spm_id_from=333.1387"]),
+        ])
+
+        self.assertEqual((result.created, result.unchanged), ([], 2))
+        self.assertEqual(song_urls(song), ["https://bilibili.com/video/BV1qV411J7Kq"])
+
+    def test_bilibili_id_is_case_sensitive(self):
+        # BV番号は大文字小文字を区別するため、大文字小文字のみ違う動画は別の曲にする
+        create_song("曲", urls=["https://bilibili.com/video/BV1qV411J7Kq"])
+        result = import_timeline([make_row(title="別の曲", urls=["https://bilibili.com/video/BV1QV411J7KQ"])])
+
+        self.assertEqual([created.title for created in result.created], ["別の曲"])
+
     def test_does_not_send_to_external_services(self):
         # --dry-runではDBの変更はロールバックされるが、外部への送信は取り消せないため、取り込みでは送信しない
         create_song("曲", urls=["https://youtu.be/aaaaaaaaaaa"])
