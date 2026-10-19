@@ -70,6 +70,7 @@
 | www付きURL | `"https://www.youtube.com/watch?v=abc1234abcd"` | `"https://youtu.be/abc1234abcd"` |
 | Googleリダイレクトリンク | `"https://www.google.com/url?q=https://youtu.be/abc1234abcd"` | `"https://youtu.be/abc1234abcd"` |
 | 複数URL | `"https://youtu.be/abc1234abcd,https://x.com/u/1"` | 各URLが正規化されたカンマ区切り |
+| ビリビリ動画のURL（#1246） | `"https://www.bilibili.com/video/av417727107/,https://www.bilibili.com/video/BV1in4y1Q7qw/?p=2"` | `"https://bilibili.com/video/BV1qV411J7Kq,https://bilibili.com/video/BV1in4y1Q7qw?p=2"`（`format_bilibili_url` で揃える） |
 
 #### 1-6. `get_allow_media(url)`
 
@@ -98,6 +99,27 @@
 | 許可されているURL | `https://youtu.be/...`・`https://x.com/...`・`https://nicovideo.jp/...` | それぞれ `youtube`・`x`・`nicovideo`。`id`・`name`・`icon` を持つ |
 | 追加したドメインのURL | `https://booth.pm/ja/items/5057223` | `booth`（「許可されていないURL」にならない、Issue #1247） |
 | 許可されていないURL | `https://totally-unknown-domain-abc123.example.com/` | `disallow` |
+
+#### 1-8. `convert_av_to_bv(aid)`（#1246）
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| ビリビリ動画がBV番号を導入したときの例 | `170001` | `"BV17x411w7KC"` |
+| すべあな界隈年表にBV番号で、DBにav番号で登録されていた動画 | `417727107` | `"BV1qV411J7Kq"` |
+| av番号が2^30を超えた2024年以降の動画 | `111298867365120` | `"BV1L9Uoa9EUx"` |
+
+#### 1-9. `format_bilibili_url(url)`（#1246）
+
+ビリビリ動画の動画のURLを `https://bilibili.com/video/BV<id>` に揃える。`b23.tv` の短縮URLは、リダイレクト先を取得しないと動画が分からないため対象外。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| `www.`・末尾の`/`・クエリ | `https://www.bilibili.com/video/BV11ar4YcEyF/?spm_id_from=...&vd_source=...` | `"https://bilibili.com/video/BV11ar4YcEyF"` |
+| 揃えたURL | `https://bilibili.com/video/BV11ar4YcEyF` | そのまま返す |
+| スマホ版・http・フラグメント | `https://m.bilibili.com/video/BV11ar4YcEyF`・`http://bilibili.com/video/BV11ar4YcEyF#reply` | `"https://bilibili.com/video/BV11ar4YcEyF"` |
+| av番号 | `https://www.bilibili.com/video/av417727107/` | `"https://bilibili.com/video/BV1qV411J7Kq"` |
+| パートの指定 | `?p=1` / `?p=2` / `?p=3&vd_source=...` / av番号のURLの`?spm_id_from=...&p=02` / `?p=abc` | `p` を消す / `?p=2` / `?p=3` / BV番号のURLに`?p=2` / `p` を消す（1つの動画のパートごとに別の曲のことがあるため、2パート目以降のみ残す） |
+| 動画のURLではない・動画IDが不正 | 桁数の多いBV番号（`BV1bcvtezEAcc`、年表にある誤記）・2^51以上のav番号・`/audio/au...`・`space.bilibili.com`・`bilibili.com.attacker.example`・ニコニコ動画のURL | そのまま返す |
 
 ---
 
@@ -773,6 +795,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | POST: 作者名が`Author.name`のmax_length超（#1085） | `authors`がmax_length+1文字 | HTTP 200、"作者名" を含むエラー |
 | POST: 作者名がpast別名と一致し統一した名義へ正規化される（#1029、#1137） | `authors=`past別名のname | 保存後、redirect先URLに`name_unified=1`が付与される |
 | POST: 正規化が発生しない | `authors=`通常の作者名 | redirect先URLに`name_unified`は付与されない |
+| POST: ビリビリ動画のURL（#1246） | `url="https://www.bilibili.com/video/av417727107/?spm_id_from=...,https://www.bilibili.com/video/BV1in4y1Q7qw?p=2&vd_source=..."` | 302、`https://bilibili.com/video/BV1qV411J7Kq`・`https://bilibili.com/video/BV1in4y1Q7qw?p=2` で保存される |
+| POST: 登録済みのBV番号のURLと同じ動画のav番号のURL（#1246） | 別の曲に `https://bilibili.com/video/BV1qV411J7Kq` が紐付いている状態で `url="https://www.bilibili.com/video/av417727107/"` | HTTP 200、"既に登録されています" を含むエラー、URLは追加されない |
 
 #### 7-6. `ContactView` (`/contact/`)
 
@@ -1355,6 +1379,17 @@ faviconの画像は`icon_large.png`（800×800）から生成する。`site.webm
 | 上付き数字のsong_id | `?song_id=²&fetch_imitate=1` | HTTP 200（500にならない）、`imitate_songs`が`None`（`str.isdigit()`はTrueだが`int()`で変換できない） |
 | 範囲外のsong_id | 30桁の数字 | HTTP 200（500にならない）、`imitate_songs`が`None` |
 
+#### 8-5-1. `SongLinkAPI` (`/api/songlink/`)（#1246）
+
+**テストクラス**: `SongLinkAPITest`（`tests/test_api.py`）
+
+`song_edit.js`・`song_new.js`は、入力したURLが登録済みかをこのAPIで判定する。`url`は`clean_url`で揃えてから検索する。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 表記の違うビリビリ動画のURL | `https://bilibili.com/video/BV1qV411J7Kq` の`SongLink`がある状態で、同じURL・`https://www.bilibili.com/video/av417727107/`・`https://m.bilibili.com/video/BV1qV411J7Kq/?spm_id_from=...&p=1` | いずれもその`SongLink`のみを返す |
+| 2パート目以降のURL | `https://www.bilibili.com/video/BV1qV411J7Kq?p=2` | 空（別の曲のことがあるため別のURLとして扱う） |
+
 #### 8-6. スロットリングのIP（`lib/throttling.py`）（#1192）
 
 **テストクラス**: `ApiThrottleClientIPTest`・`ApiThrottleIdentTest`（`tests/test_api.py`）
@@ -1680,6 +1715,10 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | `url` のユニーク制約 | 同じURLで2件作成 | `IntegrityError` が発生 |
 | `url__iexact`検索 (#1092) | `url="https://youtu.be/AbCdEfGhIjK"`のlinkに対し小文字化した値で`iexact`検索 | 一致する |
 | 曲との多対多関係 | `link.songs.add(song)` | 関係が成立する |
+| マイグレーション `0051_songlink_bilibili_url`: URLを揃える（#1246） | `?spm_id_from=` の付いたビリビリ動画のURL・揃えたビリビリ動画のURL・末尾に`/`の付いたニコニコ動画のURLに `normalize_bilibili_urls` を実行 | 1つ目は `https://bilibili.com/video/BV<id>` になり曲の紐付けは残る。2つ目・ニコニコ動画のURLは変わらない |
+| マイグレーション `0051_songlink_bilibili_url`: 同じ動画のURLを1つにまとめる（#1246） | BV番号のURL・同じ動画のav番号のURL（`allow_dup=True`）・末尾に`/`の付いたBV番号のURLにそれぞれ別の曲が紐付いている | BV番号のURLの1件だけが残り、3曲とも紐付き、`allow_dup=True`（どちらかがTrueならTrue） |
+| マイグレーション `0051_songlink_bilibili_url`: 揃えたURLが無い場合（#1246） | av番号のURL（曲なし）と、末尾に`/`の付いた同じ動画のBV番号のURL（曲あり） | 先に登録したav番号のURLがBV番号のURLになり、もう一方の曲が紐付く。`SongLink`は1件になる |
+| マイグレーション `0051_songlink_bilibili_url`: `is_removed`（#1246） | 削除された曲のURL（`is_removed=True`）と、同じ動画の曲に紐付くURL / 両方とも削除された曲のURL | `is_removed=False`（曲に紐付くURLが「削除された曲のURL」として編集できなくならないように） / `is_removed=True` |
 
 #### 11-5. `Contact` モデル
 

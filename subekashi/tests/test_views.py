@@ -1542,6 +1542,34 @@ class SongEditViewTest(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertNotIn("name_unified", response.url)
 
+    def test_post_bilibili_url_is_saved_in_formatted_form(self):
+        """#1246: ビリビリ動画のURLは、av番号・www・末尾の/・クエリを揃えて保存すること"""
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {
+                "title": "編集テスト曲",
+                "authors": "編集テスト作者",
+                "url": "https://www.bilibili.com/video/av417727107/?spm_id_from=333.999.0.0,https://www.bilibili.com/video/BV1in4y1Q7qw?p=2&vd_source=e746505daf0168401b3bf90bae76310d",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertCountEqual(
+            self.song.links.values_list("url", flat=True),
+            ["https://bilibili.com/video/BV1qV411J7Kq", "https://bilibili.com/video/BV1in4y1Q7qw?p=2"],
+        )
+
+    def test_post_bilibili_av_url_of_registered_bv_url_returns_error(self):
+        """#1246: av番号のURLとBV番号のURLは、同じ動画のURLとして重複を判定すること"""
+        link = SongLink.objects.create(url="https://bilibili.com/video/BV1qV411J7Kq")
+        link.songs.add(Song.objects.create(title="既存曲"))
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {"title": "編集テスト曲", "authors": "編集テスト作者", "url": "https://www.bilibili.com/video/av417727107/"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("既に登録されています", response.context["error"])
+        self.assertFalse(self.song.links.exists())
+
 
 @override_settings(STORAGES=STATIC_STORAGE)
 class SongHistoryViewTest(TestCase):

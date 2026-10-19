@@ -10,6 +10,8 @@ from subekashi.lib.url import (
     get_youtube_id,
     format_youtube_url,
     format_x_url,
+    convert_av_to_bv,
+    format_bilibili_url,
     clean_url,
     get_allow_media,
     get_all_media,
@@ -134,6 +136,75 @@ class FormatXUrlTest(SimpleTestCase):
         self.assertNotIn("#top", result)
 
 
+class ConvertAvToBvTest(SimpleTestCase):
+    """convert_av_to_bv() のテスト（#1246）"""
+
+    def test_known_pairs(self):
+        cases = [
+            # ビリビリ動画がBV番号を導入したときに例として示した組
+            (170001, "BV17x411w7KC"),
+            # すべあな界隈年表にBV番号で、DBにav番号で登録されていた動画
+            (417727107, "BV1qV411J7Kq"),
+            # av番号が2^30を超えた2024年以降の動画
+            (111298867365120, "BV1L9Uoa9EUx"),
+        ]
+        for aid, bvid in cases:
+            with self.subTest(aid=aid):
+                self.assertEqual(convert_av_to_bv(aid), bvid)
+
+
+class FormatBilibiliUrlTest(SimpleTestCase):
+    """format_bilibili_url() のテスト（#1246）"""
+
+    def test_www_trailing_slash_and_query_are_removed(self):
+        self.assertEqual(
+            format_bilibili_url("https://www.bilibili.com/video/BV11ar4YcEyF/?spm_id_from=333.1387.homepage.video_card.click&vd_source=e58d08ec4f151c8816a037087220fbd5"),
+            "https://bilibili.com/video/BV11ar4YcEyF",
+        )
+
+    def test_formatted_url_is_unchanged(self):
+        url = "https://bilibili.com/video/BV11ar4YcEyF"
+        self.assertEqual(format_bilibili_url(url), url)
+
+    def test_mobile_and_http_url_are_formatted(self):
+        for url in ["https://m.bilibili.com/video/BV11ar4YcEyF", "http://bilibili.com/video/BV11ar4YcEyF#reply"]:
+            with self.subTest(url=url):
+                self.assertEqual(format_bilibili_url(url), "https://bilibili.com/video/BV11ar4YcEyF")
+
+    def test_av_url_is_converted_to_bv(self):
+        self.assertEqual(
+            format_bilibili_url("https://www.bilibili.com/video/av417727107/"),
+            "https://bilibili.com/video/BV1qV411J7Kq",
+        )
+
+    def test_page_after_first_is_kept(self):
+        # すべあな界隈年表には、1つの動画のパートごとに別の曲が載っている
+        cases = [
+            ("https://www.bilibili.com/video/BV1in4y1Q7qw?p=1", "https://bilibili.com/video/BV1in4y1Q7qw"),
+            ("https://www.bilibili.com/video/BV1in4y1Q7qw?p=2", "https://bilibili.com/video/BV1in4y1Q7qw?p=2"),
+            ("https://www.bilibili.com/video/BV1in4y1Q7qw?p=3&vd_source=e746505daf0168401b3bf90bae76310d", "https://bilibili.com/video/BV1in4y1Q7qw?p=3"),
+            ("https://bilibili.com/video/av417727107/?spm_id_from=333.999.0.0&p=02", "https://bilibili.com/video/BV1qV411J7Kq?p=2"),
+            ("https://bilibili.com/video/BV1in4y1Q7qw?p=abc", "https://bilibili.com/video/BV1in4y1Q7qw"),
+        ]
+        for url, expected in cases:
+            with self.subTest(url=url):
+                self.assertEqual(format_bilibili_url(url), expected)
+
+    def test_url_without_video_id_is_unchanged(self):
+        for url in [
+            # BV番号の桁数が多い（すべあな界隈年表にある誤記）
+            "https://www.bilibili.com/video/BV1bcvtezEAcc",
+            # BV番号に変換できない大きさのav番号
+            "https://www.bilibili.com/video/av2251799813685248",
+            "https://www.bilibili.com/audio/au2080348",
+            "https://space.bilibili.com/12345678",
+            "https://bilibili.com.attacker.example/video/BV11ar4YcEyF",
+            "https://nicovideo.jp/watch/sm12345678",
+        ]:
+            with self.subTest(url=url):
+                self.assertEqual(format_bilibili_url(url), url)
+
+
 class CleanUrlTest(SimpleTestCase):
     """clean_url() のテスト"""
 
@@ -167,6 +238,10 @@ class CleanUrlTest(SimpleTestCase):
         result = clean_url("https://twitter.com/user/status/123?s=20")
         self.assertIn("x.com", result)
         self.assertNotIn("?s=20", result)
+
+    def test_bilibili_url_is_formatted(self):
+        result = clean_url("https://www.bilibili.com/video/av417727107/,https://www.bilibili.com/video/BV1in4y1Q7qw/?p=2")
+        self.assertEqual(result, "https://bilibili.com/video/BV1qV411J7Kq,https://bilibili.com/video/BV1in4y1Q7qw?p=2")
 
     def test_trailing_slash_is_removed(self):
         result = clean_url("https://nicovideo.jp/watch/sm12345678/")
