@@ -23,7 +23,7 @@ def get_active_filters(query):
         'author': '作者',
         'lyrics': '歌詞',
         'url': 'URL',
-        'imitate': '模倣',
+        'imitate': '模倣元',
         'view_gte': '再生回数/以上',
         'view_lte': '再生回数/以下',
         'like_gte': '高評価数/以上',
