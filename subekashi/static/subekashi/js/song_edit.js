@@ -57,7 +57,7 @@ async function init() {
 };
 window.addEventListener('load', init);
 
-// 初期化に失敗した場合は模倣一覧を読み込めず、#imitateの値が古い可能性があるため登録させない（#1135）
+// 初期化に失敗した場合は模倣元の一覧を読み込めず、#imitateの値が古い可能性があるため登録させない（#1135）
 var isInitFailed = false;
 function failInit() {
     isInitFailed = true;
@@ -86,7 +86,7 @@ function checkDeleteForm() {
 
 document.getElementById('reason').addEventListener('input', checkDeleteForm)
 
-// 模倣リストの末尾にsongを追加
+// 模倣元の一覧の末尾にsongを追加
 function appendImitateList(song) {
     const tmpl = document.getElementById("imitate-item-template");
     const clone = tmpl.content.cloneNode(true);
@@ -105,12 +105,12 @@ function appendImitateList(song) {
     document.getElementById("imitate-list").appendChild(clone);
 }
 
-// 読み込み時に模倣一覧を描画
+// 読み込み時に模倣元の一覧を描画
 var imitateEle = document.getElementById("imitate");
 var isImitateListLoaded = false;
 function initImitateList(imitateSongList) {
     // 一覧の表示と#imitateの値がずれると、表示されている曲が保存時に消えてしまうため、
-    // キャッシュ等で古くなりうるHTML上の値は使わず、どちらもAPIから取得した最新の模倣曲を元にする（#1135）
+    // キャッシュ等で古くなりうるHTML上の値は使わず、どちらもAPIから取得した最新の模倣元を元にする（#1135）
     imitateIdList = imitateSongList.map(song => song.id);
     for (const imitateSong of imitateSongList) {
         appendImitateList(imitateSong);
@@ -125,16 +125,16 @@ function setImitate() {
     checkButton();
 }
 
-// 模倣一覧からimitateIdを削除
+// 模倣元の一覧からimitateIdを削除
 function deleteImitate(imitateId) {
     document.getElementById(`imitate-${imitateId}`).remove();
     imitateIdList = imitateIdList.filter(id => id != imitateId);        // imitateIdListからimitateIdを削除
     setImitate();       // imitateIdListの内容を#imitateにセット
 }
 
-// 模倣一覧にsongを追加
+// 模倣元の一覧にsongを追加
 function appendImitate(song) {
-    // 読み込み完了前に追加すると、読み込み完了時に既存の模倣曲で上書きされてしまうため追加させない
+    // 読み込み完了前に追加すると、読み込み完了時に既存の模倣元で上書きされてしまうため追加させない
     if (isInitFailed) {
         showToast("error", "模倣元の一覧の読み込みに失敗しました。ページを再読み込みしてください。");
         return;
@@ -403,7 +403,7 @@ categoryEle.addEventListener('change', updateFormVisibility);
 // 登録ボタン
 function checkButton() {
     // ボタンのdisabledの変更
-    // 模倣一覧の読み込みが完了するまでは、#imitateの値が古い可能性があるため登録させない（#1135）
+    // 模倣元の一覧の読み込みが完了するまでは、#imitateの値が古い可能性があるため登録させない（#1135）
     const songEditSubmitEle = document.getElementById('song-edit-submit');
     songEditSubmitEle.disabled = !(isTitleAuthorValid && isUrlValid && isImitateListLoaded)
 
@@ -425,7 +425,7 @@ function checkButton() {
 
     // 界隈曲?の場合、歌詞・模倣は非表示かつ強制的に空になるため未完成の案内は不要
     if (!isQuestionable) {
-        // 模倣の未完成
+        // 模倣元の未完成
         const is_original = document.getElementById("is-original").checked;
         const is_subeana = document.getElementById("is-subeana").checked;
         if (!is_original && is_subeana && (imitateEle.value == "") && (authorsEle.value != "全てあなたの所為です。")) {
@@ -449,7 +449,7 @@ function checkButton() {
 document.querySelectorAll('input[type="checkbox"], textarea').forEach(input => input.addEventListener('input', checkButton));
 checkButton();
 
-// 模倣検索フォームにてエンターの入力を防ぐ
+// 模倣元の検索フォームにてエンターの入力を防ぐ
 imitateTitleEle.addEventListener("keydown", function (event) {
     if (event.key === "Enter") {
         event.preventDefault(); // Enterキーの動作を無効化
