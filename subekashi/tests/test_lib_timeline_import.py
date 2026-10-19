@@ -110,7 +110,7 @@ class GetSongUrlsTest(SimpleTestCase):
             "youtu.be/ccccccccccc",
             # 登録できないURL
             "https://www.youtube.com/post/Ugz2NFeQm6RobFzqwPB4AaABCQ",
-            "https://booth.pm/ja/items/1",
+            "https://discord.com/channels/1/2/3",
             ".be/ddddddddddd",
             "DSC_0006.avi - ニコニコ動画",
             "https://nicovideo.jp/watch/" + "a" * 300,
@@ -188,7 +188,7 @@ class ImportTimelineTest(TestCase):
     def test_skips_rows_without_song_urls(self):
         rows = [
             make_row(urls=[]),
-            make_row(urls=["https://booth.pm/ja/items/1"]),
+            make_row(urls=["https://discord.com/channels/1/2/3"]),
             make_row(urls=["https://www.youtube.com/post/Ugz2NFeQm6RobFzqwPB4AaABCQ"]),
         ]
         result = import_timeline(rows)
