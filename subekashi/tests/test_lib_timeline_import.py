@@ -14,7 +14,7 @@ from subekashi.lib.timeline import TimelineRow
 from subekashi.lib.timeline_import import (
     get_author_names,
     get_motif1_title,
-    get_motif2_title,
+    get_motif2_titles,
     get_song_urls,
     import_timeline,
 )
@@ -51,28 +51,33 @@ class GetMotifTitleTest(SimpleTestCase):
         self.assertEqual(get_motif1_title(""), "")
 
     def test_motif2_arrow_form(self):
-        # 先頭の矢印と、末尾の作者のバッジ（絵文字1文字分）を削除する
-        self.assertEqual(get_motif2_title("→.[short]👤"), ".[short]")
-        self.assertEqual(get_motif2_title("→0⁰🔩"), "0⁰")
-        self.assertEqual(get_motif2_title("→春ノ海"), "春ノ海")
+        # 先頭の矢印を除き、末尾の作者のバッジ（絵文字1文字分）を削る前と後の順に候補にする
+        self.assertEqual(get_motif2_titles("→.[short]👤"), [".[short]👤", ".[short]"])
+        self.assertEqual(get_motif2_titles("→0⁰🔩"), ["0⁰🔩", "0⁰"])
+        self.assertEqual(get_motif2_titles("→春ノ海"), ["春ノ海"])
         # 異体字セレクタ付きの絵文字・ZWJで繋がった絵文字も1文字分
-        self.assertEqual(get_motif2_title("→曲🌧️"), "曲")
-        self.assertEqual(get_motif2_title("→曲👨‍👩‍👧"), "曲")
-        # 削除するのは1文字分のみ
-        self.assertEqual(get_motif2_title("→曲🍁🔩"), "曲🍁")
-        # 末尾が絵文字でない記号は削除しない
-        self.assertEqual(get_motif2_title("→曲^"), "曲^")
+        self.assertEqual(get_motif2_titles("→曲🌧️")[-1], "曲")
+        self.assertEqual(get_motif2_titles("→曲👨‍👩‍👧")[-1], "曲")
+        # 削るのは1文字分のみ
+        self.assertEqual(get_motif2_titles("→曲🍁🔩"), ["曲🍁🔩", "曲🍁"])
+        # 末尾が絵文字でない記号は削らない
+        self.assertEqual(get_motif2_titles("→曲^"), ["曲^"])
+        # 記号1文字のタイトル（削ると空になる）
+        self.assertEqual(get_motif2_titles("→❁"), ["❁"])
 
     def test_motif2_imitate_form(self):
-        # 末尾の「模倣」と、その前の作者のバッジ（絵文字と「+」）を削除する
-        self.assertEqual(get_motif2_title("鵺🔢模倣"), "鵺")
-        self.assertEqual(get_motif2_title("天秤にかけて🍁+模倣"), "天秤にかけて")
-        self.assertEqual(get_motif2_title("蝕🍁🌌🌧️模倣"), "蝕")
-        self.assertEqual(get_motif2_title("᠈[short]📺️模倣"), "᠈[short]")
+        # 末尾の「模倣」と、その前の作者のバッジ（絵文字と「+」）を削る前と後の順に候補にする
+        self.assertEqual(get_motif2_titles("鵺🔢模倣"), ["鵺🔢模倣", "鵺🔢", "鵺"])
+        self.assertEqual(get_motif2_titles("天秤にかけて🍁+模倣")[-1], "天秤にかけて")
+        self.assertEqual(get_motif2_titles("蝕🍁🌌🌧️模倣")[-1], "蝕")
+        self.assertEqual(get_motif2_titles("᠈[short]📺️模倣")[-1], "᠈[short]")
+        # 「模倣」で終わるタイトル
+        self.assertEqual(get_motif2_titles("全てが適当すぎた.模倣"), ["全てが適当すぎた.模倣", "全てが適当すぎた."])
 
     def test_motif2_without_arrow(self):
-        self.assertEqual(get_motif2_title("名の無い星"), "名の無い星")
-        self.assertEqual(get_motif2_title("K²🔩"), "K²")
+        self.assertEqual(get_motif2_titles("名の無い星"), ["名の無い星"])
+        self.assertEqual(get_motif2_titles("K²🔩"), ["K²🔩", "K²"])
+        self.assertEqual(get_motif2_titles(""), [])
 
 
 class GetAuthorNamesTest(SimpleTestCase):
@@ -295,11 +300,31 @@ class ImportTimelineTest(TestCase):
 
     def test_matches_url_with_different_format(self):
         # DBには「www.」付き・http・大文字小文字の違うURLが登録されていることがある
-        song = create_song("曲", urls=["http://www.nicovideo.jp/watch/SM1"])
-        result = import_timeline([make_row(urls=["https://nicovideo.jp/watch/sm1"])])
+        song = create_song("曲", urls=["http://www.nicovideo.jp/watch/SM1", "https://x.com/SubeKashi/status/1"])
+        result = import_timeline([make_row(urls=["https://nicovideo.jp/watch/sm1", "https://x.com/subekashi/status/1"])])
 
         self.assertEqual(result.unchanged, 1)
-        self.assertEqual(song_urls(song), ["http://www.nicovideo.jp/watch/SM1"])
+        self.assertEqual(song_urls(song), ["http://www.nicovideo.jp/watch/SM1", "https://x.com/SubeKashi/status/1"])
+
+    def test_youtube_id_is_case_sensitive(self):
+        # YouTubeの動画IDは大文字小文字を区別するため、大文字小文字のみ違う動画は別の曲にする
+        song = create_song("曲", urls=["https://youtu.be/aaaaaaaaaaa"])
+        result = import_timeline([make_row(title="別の曲", urls=["https://youtu.be/AAAAAAAAAAA"])])
+
+        self.assertEqual([created.title for created in result.created], ["別の曲"])
+        self.assertEqual(song_urls(song), ["https://youtu.be/aaaaaaaaaaa"])
+
+    def test_does_not_send_to_external_services(self):
+        # --dry-runではDBの変更はロールバックされるが、外部への送信は取り消せないため、取り込みでは送信しない
+        create_song("曲", urls=["https://youtu.be/aaaaaaaaaaa"])
+        with patch("subekashi.lib.discord.requests.post") as mock_post, patch("subekashi.lib.url.send_discord") as mock_send_discord:
+            import_timeline([
+                make_row(category="アレンジ", urls=["https://youtu.be/aaaaaaaaaaa", "https://youtu.be/bbbbbbbbbbb"]),
+                make_row(title="新しい曲", urls=["https://youtu.be/ccccccccccc"]),
+            ])
+
+        mock_post.assert_not_called()
+        mock_send_discord.assert_not_called()
 
     def test_skips_url_linked_to_multiple_songs(self):
         song1 = create_song("曲1", urls=["https://youtu.be/aaaaaaaaaaa"])
@@ -368,6 +393,20 @@ class ImportTimelineTest(TestCase):
         result = import_timeline([make_row(motif1="表裏枠", motif2="名の無い星")])
 
         self.assertEqual(set(result.created[0].imitates.all()), {hyouri, star})
+
+    def test_motif2_prefers_unstripped_title(self):
+        # 記号で終わるタイトルの曲は、記号を削らずに探す
+        symbol = create_song("❁", "別の作者")
+        star = create_song("曲★", "別の作者")
+        create_song("曲", "別の作者")
+        mohou = create_song("全てが適当すぎた.模倣", "別の作者")
+        result = import_timeline([
+            make_row(motif2="→❁", urls=["https://youtu.be/aaaaaaaaaaa"]),
+            make_row(motif2="→曲★", urls=["https://youtu.be/bbbbbbbbbbb"]),
+            make_row(motif2="全てが適当すぎた.模倣", urls=["https://youtu.be/ccccccccccc"]),
+        ])
+
+        self.assertEqual([list(song.imitates.all()) for song in result.created], [[symbol], [star], [mohou]])
 
     def test_motif_does_not_add_self(self):
         song = create_song("曲", urls=["https://youtu.be/aaaaaaaaaaa"])

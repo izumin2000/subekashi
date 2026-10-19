@@ -1,4 +1,4 @@
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 from config.settings import ROOT_URL
@@ -19,13 +19,13 @@ class Command(BaseCommand):
         this_year = timezone.localtime(timezone.now()).year
         years = options["year"] or list(range(FIRST_YEAR, this_year + 1))
 
+        # PythonAnywhereのtasksで失敗を検知できるよう、CommandErrorを送出して0以外の終了コードで終える
         try:
             timeline = get_timeline(years)
         except TimelineError as e:
             message = f"{e}。timelineコマンドの処理を打ち切りました"
-            self.stderr.write(self.style.ERROR(message))
             send_discord(ERROR_DISCORD_URL, message)
-            return
+            raise CommandError(message) from None
 
         for year in years:
             if year not in timeline:
@@ -40,12 +40,18 @@ class Command(BaseCommand):
             self.stdout.write(f"{get_sheet_title(year)}：{len(rows)}件")
 
         rows = [row for rows in timeline.values() for row in rows]
-        if options["dry_run"]:
-            with transaction.atomic():
+        # ERROR_DISCORD_URLは公開チャンネルのため、DBのエラーなどの詳細は送らず、例外のクラス名のみを通知する
+        # 詳細はトレースバックとしてtasksのログに残る。保存済みの行は、次回の実行では変更なしになる
+        try:
+            if options["dry_run"]:
+                with transaction.atomic():
+                    result = import_timeline(rows)
+                    transaction.set_rollback(True)
+            else:
                 result = import_timeline(rows)
-                transaction.set_rollback(True)
-        else:
-            result = import_timeline(rows)
+        except Exception as e:
+            send_discord(ERROR_DISCORD_URL, f"曲の登録・更新中にエラーが発生しました（{type(e).__name__}）。timelineコマンドの処理を打ち切りました")
+            raise
 
         self.write_result(result, options["verbosity"], options["dry_run"])
 

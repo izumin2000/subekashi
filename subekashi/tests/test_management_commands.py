@@ -1359,6 +1359,7 @@ class TimelineCommandTest(TestCase):
         self.assertFalse(SongLink.objects.exists())
         self.assertFalse(History.objects.exists())
         self.assertFalse(Editor.objects.exists())
+        mock_send_discord.assert_not_called()
 
     def test_warns_years_without_sheet(self, mock_get_timeline, mock_send_discord):
         mock_get_timeline.return_value = {2018: [make_timeline_row(2018, 2, "曲1")]}
@@ -1386,11 +1387,23 @@ class TimelineCommandTest(TestCase):
         self.assertFalse(Song.objects.exists())
 
     def test_error_notifies_discord(self, mock_get_timeline, mock_send_discord):
+        # PythonAnywhereのtasksで失敗を検知できるよう、CommandErrorを送出する（0以外の終了コードで終わる）
         mock_get_timeline.side_effect = TimelineError("Google Sheets APIの呼び出しに失敗しました（HTTP 403）")
-        out, err = self._run("--year", "2018")
+        with self.assertRaisesMessage(CommandError, "Google Sheets APIの呼び出しに失敗しました（HTTP 403）"):
+            self._run("--year", "2018")
 
-        self.assertIn("Google Sheets APIの呼び出しに失敗しました（HTTP 403）", err)
-        self.assertEqual(out, "")
         self.assertFalse(Song.objects.exists())
         mock_send_discord.assert_called_once()
         self.assertIn("Google Sheets APIの呼び出しに失敗しました（HTTP 403）", mock_send_discord.call_args.args[1])
+
+    @patch("subekashi.management.commands.timeline.import_timeline")
+    def test_unexpected_error_notifies_discord(self, mock_import, mock_get_timeline, mock_send_discord):
+        # 公開チャンネルに通知するため、例外のクラス名のみを送り、詳細は送らない
+        mock_get_timeline.return_value = {2018: [make_timeline_row(2018, 2, "曲1")]}
+        mock_import.side_effect = RuntimeError("DBの詳細")
+        with self.assertRaisesMessage(RuntimeError, "DBの詳細"):
+            self._run("--year", "2018")
+
+        mock_send_discord.assert_called_once()
+        self.assertIn("RuntimeError", mock_send_discord.call_args.args[1])
+        self.assertNotIn("DBの詳細", mock_send_discord.call_args.args[1])

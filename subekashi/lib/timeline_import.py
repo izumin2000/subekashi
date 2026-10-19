@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from urllib.parse import urlparse
 from django.db import transaction
 from django.utils import timezone
-from subekashi.models import Author, Editor, History, Song, SongLink, SongFields
+from subekashi.models import Editor, History, Song, SongLink, SongFields
 from subekashi.lib.author_helpers import get_or_create_authors, validate_author_name_lengths
 from subekashi.lib.song_service import build_new_song_discord_text, category_label, check_reject_list, create_song
 from subekashi.lib.url import clean_url, get_allow_media
@@ -104,12 +104,21 @@ def get_motif1_title(text):
 
 
 # モチーフ2は「→.[short]👤」（アレンジ元と作者のバッジ）か「鵺🔢模倣」（模倣元と作者のバッジ）の形式
-def get_motif2_title(text):
+# 「❁」「全てが適当すぎた.模倣」のように、記号や「模倣」で終わるタイトルの曲もあるため、削る前の文字列から順に模倣元のタイトルの候補を返す
+def get_motif2_titles(text):
     if text.startswith("→"):
-        return remove_last_emoji(text[1:]).strip()
-    if text.endswith("模倣"):
-        return remove_badges(text[:-2]).strip()
-    return remove_last_emoji(text).strip()
+        text = text[1:]
+        candidates = [text, remove_last_emoji(text)]
+    elif text.endswith("模倣"):
+        candidates = [text, text[:-2], remove_badges(text[:-2])]
+    else:
+        candidates = [text, remove_last_emoji(text)]
+    titles = []
+    for title in candidates:
+        title = title.strip()
+        if title and title not in titles:
+            titles.append(title)
+    return titles
 
 
 # 合作は作者を改行で区切り、2人目以降の先頭に「+」を付けて書かれていることがある
@@ -120,8 +129,10 @@ def get_author_names(text):
 
 
 # DBには「www.」付き・http・大文字小文字の違うURLもあるため、比較用に揃える
+# XのユーザーIDなどは大文字小文字を区別しないため小文字にするが、YouTubeの動画IDは区別するためそのままにする
 def get_url_key(url):
-    return re.sub(r"^https?://", "", clean_url(url)).lower()
+    key = re.sub(r"^https?://", "", clean_url(url))
+    return key if key.startswith("youtu.be/") else key.lower()
 
 
 # 曲に登録できるURLのみを、短縮・フォーマットして返す
@@ -171,6 +182,10 @@ class TimelineImporter:
             self.title_song_ids[state.title].add(song_id)
         self.subeana_song_ids = set(Song.objects.filter(authors=SUBEANA_AUTHOR_ID).values_list("id", flat=True))
 
+        self.author_names = defaultdict(set)
+        for song_id, author_name in Song.authors.through.objects.values_list("song_id", "author__name"):
+            self.author_names[song_id].add(author_name)
+
         self.imitate_ids = defaultdict(set)
         for song_id, imitate_id in Song.imitates.through.objects.values_list("from_song_id", "to_song_id"):
             self.imitate_ids[song_id].add(imitate_id)
@@ -195,19 +210,27 @@ class TimelineImporter:
     def is_removed_url(self, key):
         return key in self.removed_url_keys and not self.url_song_ids[key]
 
+    # タイトルの候補のうち、曲がある最初の候補の曲を返す
     # 同じタイトルの曲が複数あると、どの曲か決められないため模倣に追加しない
     # モチーフ1（「教育枠」などの模倣の枠）はすべあなの曲のため、同じタイトルの曲が複数あってもすべあなの曲に決める
     # 曲のタイトルは最初に全て読み込んでいるため、行ごとにクエリは発行しない
-    def get_imitate_ids(self, row):
-        imitate_ids = set()
-        for title, is_motif1 in [(get_motif1_title(row.motif1), True), (get_motif2_title(row.motif2), False)]:
-            title = MOTIF_TITLES.get(title, title)
-            song_ids = self.title_song_ids.get(title, set()) if title else set()
-            if is_motif1:
+    def find_imitate_id(self, titles, prefers_subeana=False):
+        for title in titles:
+            song_ids = self.title_song_ids.get(MOTIF_TITLES.get(title, title))
+            if not song_ids:
+                continue
+            if prefers_subeana:
                 song_ids = (song_ids & self.subeana_song_ids) or song_ids
-            if len(song_ids) == 1:
-                imitate_ids |= song_ids
-        return imitate_ids
+            return next(iter(song_ids)) if len(song_ids) == 1 else None
+        return None
+
+    def get_imitate_ids(self, row):
+        motif1_titles = [title for title in [get_motif1_title(row.motif1)] if title]
+        imitate_ids = [
+            self.find_imitate_id(motif1_titles, prefers_subeana=True),
+            self.find_imitate_id(get_motif2_titles(row.motif2)),
+        ]
+        return {imitate_id for imitate_id in imitate_ids if imitate_id}
 
     # 歌詞列（https://lyrics.imicomweb.com/songs/<id>）が指す曲のidを返す
     # 歌詞列が別の曲を指していることもあるため、タイトルか作者が一致しなければスキップする
@@ -219,17 +242,15 @@ class TimelineImporter:
         state = self.songs.get(song_id)
         if state is None:
             return None
-        author_names = set(Author.objects.filter(songs=song_id).values_list("name", flat=True))
-        if row.title == state.title or author_names & set(get_author_names(row.author)):
+        if row.title == state.title or self.author_names[song_id] & set(get_author_names(row.author)):
             return song_id
         raise TimelineSkip("歌詞列の曲とタイトル・作者が一致しない")
 
     def add_url(self, song, url):
         key = get_url_key(url)
-        link_id = self.link_ids.get(key)
-        link = SongLink.objects.get(pk=link_id) if link_id else SongLink.objects.create(url=url)
-        link.songs.add(song)
-        self.link_ids[key] = link.id
+        link_id = self.link_ids.get(key) or SongLink.objects.create(url=url).id
+        song.links.add(link_id)
+        self.link_ids[key] = link_id
         self.url_song_ids[key].add(song.id)
         self.song_url_keys[song.id].add(key)
 
@@ -271,6 +292,7 @@ class TimelineImporter:
         self.songs[song.id] = SongState(song.title, song.category, song.is_questionable)
         self.title_song_ids[song.title].add(song.id)
         self.imitate_ids[song.id] |= imitate_ids
+        self.author_names[song.id] = {author.name for author in authors}
         self.processed_song_ids.add(song.id)
         self.result.created.append(song)
 
