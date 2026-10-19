@@ -1346,9 +1346,10 @@ class SongEditViewTest(TestCase):
         self.assertRegex(content, r'<div class="form-col" data-hide-if-questionable data-hide-if-not-song>\s*<label for="lyrics">')
 
     def test_get_imitate_label_is_imitate_source(self):
-        """#1241: 模倣の入力欄は編集する曲の模倣元を登録するため、「模倣元」と模倣元のアイコンで表示すること"""
+        """#1241: 模倣の入力欄は編集する曲の模倣元を登録するため、「模倣元」と模倣元のアイコンで表示し、原曲以外の曲を検索する欄を「模倣曲」と表記しないこと"""
         response = self.client.get(reverse("subekashi:song_edit", args=[self.song.id]))
         self.assertContains(response, '<label id="imitate-label" data-hide-if-questionable><i class="fas fa-sitemap imitate"></i><span class="icon-p-big">模倣元</span>', count=1)
+        self.assertContains(response, '<p id="imitate-sub">もしくは原曲以外から選択</p>', count=1)
 
     def test_post_category_is_saved_and_recorded_in_history(self):
         response = self.client.post(

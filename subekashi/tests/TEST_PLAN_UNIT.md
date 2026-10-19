@@ -753,7 +753,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | POST: is_questionable時も非公開/削除済み・ネタ曲・インスト・すべあな界隈曲は保存される | `is_questionable=True`, `is_deleted=True`, `is_joke=True`, `is_inst=True`, `is_subeana=True` | 各フラグがそれぞれ `True` のまま保存される |
 | GET: カテゴリの選択欄（#423） | `category="medley"` の曲 | `<select id="category" name="category">` が表示され、メドレーの選択肢のみ `selected` |
 | GET: 歌詞の入力欄（#423） | GETリクエスト | 歌詞の `.form-col` に `data-hide-if-not-song` が付く（カテゴリが曲以外のときに `song_edit.js` で非表示にする） |
-| GET: 模倣元の入力欄（#1241） | GETリクエスト | `#imitate-label` が「模倣元」・模倣元のアイコン（`fas fa-sitemap imitate`）で表示される |
+| GET: 模倣元の入力欄（#1241） | GETリクエスト | `#imitate-label` が「模倣元」・模倣元のアイコン（`fas fa-sitemap imitate`）で表示され、原曲以外の曲を検索する欄の補足（`#imitate-sub`）が「もしくは原曲以外から選択」と表示される |
 | POST: カテゴリの変更（#423） | `category="omnibus"` | 302、`category == "omnibus"`、Historyの `changes` に `["カテゴリ", "曲", "総集編"]` |
 | POST: カテゴリを送らない（#423） | `category="offv"` の曲に `category` なしで送信 | 302、`category == "offv"` のまま（カテゴリの選択欄がない古いページから送信された場合に変えない） |
 | POST: 不正なカテゴリ（#423） | `category="joke"` | HTTP 200、`"カテゴリが不正です。"` のエラー、カテゴリは変わらない |

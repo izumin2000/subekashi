@@ -80,7 +80,7 @@ class SongEditView(View):
         is_questionable = form.cleaned_data['is_questionable']
         category = form.cleaned_data['category'] or self.song.category
 
-        # is_questionableの場合、模倣・歌詞・下書き・オリジナル模倣はユーザーの入力値に関わらず空にする
+        # is_questionableの場合、模倣元・歌詞・下書き・オリジナル模倣はユーザーの入力値に関わらず空にする
         if is_questionable:
             imitates = ""
             lyrics = ""

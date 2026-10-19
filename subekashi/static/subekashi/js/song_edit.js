@@ -423,7 +423,7 @@ function checkButton() {
         is_lack = true;
     }
 
-    // 界隈曲?の場合、歌詞・模倣は非表示かつ強制的に空になるため未完成の案内は不要
+    // 界隈曲?の場合、歌詞・模倣元は非表示かつ強制的に空になるため未完成の案内は不要
     if (!isQuestionable) {
         // 模倣元の未完成
         const is_original = document.getElementById("is-original").checked;
