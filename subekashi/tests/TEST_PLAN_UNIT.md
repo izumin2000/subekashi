@@ -34,6 +34,8 @@
 | YouTubeショートURL | `https://youtube.com/shorts/abcdefghijk` | `True` |
 | 短縮YouTube URL (youtu.be) | `https://youtu.be/dQw4w9WgXcQ` | `True` |
 | モバイル版YouTube URL | `https://m.youtube.com/watch?v=dQw4w9WgXcQ` | `True` |
+| ライブのURL（#52） | `https://www.youtube.com/live/dQw4w9WgXcQ?feature=share`・`https://youtube.com/live/dQw4w9WgXcQ` | `True` |
+| チャンネルのライブのページ・コミュニティ投稿（#52） | `https://www.youtube.com/@subekashi/live`・`https://www.youtube.com/post/...` | `False`（動画ではない） |
 | 非YouTube URL | `https://nicovideo.jp/watch/sm12345` | `False` |
 | 空文字列 | `""` | `False` |
 
@@ -44,6 +46,7 @@
 | 通常URL | `https://www.youtube.com/watch?v=dQw4w9WgXcQ` | `"dQw4w9WgXcQ"` |
 | youtu.be URL | `https://youtu.be/dQw4w9WgXcQ` | `"dQw4w9WgXcQ"` |
 | ショートURL | `https://youtube.com/shorts/abcdefghijk` | `"abcdefghijk"` |
+| ライブのURL（#52） | `https://www.youtube.com/live/dQw4w9WgXcQ?si=xxxx` | `"dQw4w9WgXcQ"` |
 | 非YouTube URL | `https://example.com` | `"https://example.com"` (そのまま返す) |
 
 #### 1-3. `format_youtube_url(url)`
@@ -52,6 +55,7 @@
 | --- | --- | --- |
 | 通常YouTube URL | `https://www.youtube.com/watch?v=dQw4w9WgXcQ` | `"https://youtu.be/dQw4w9WgXcQ"` |
 | 既に短縮済み | `https://youtu.be/dQw4w9WgXcQ` | `"https://youtu.be/dQw4w9WgXcQ"` |
+| ライブのURL（#52） | `https://www.youtube.com/live/dQw4w9WgXcQ?feature=share` | `"https://youtu.be/dQw4w9WgXcQ"` |
 | 非YouTube URL | `https://nicovideo.jp/watch/sm12345` | `"https://nicovideo.jp/watch/sm12345"` (変化なし) |
 
 #### 1-4. `format_x_url(url)`
@@ -69,6 +73,7 @@
 | スペース付きカンマ区切り | `"url1, url2"` | `"url1,url2"` |
 | www付きURL | `"https://www.youtube.com/watch?v=abc1234abcd"` | `"https://youtu.be/abc1234abcd"` |
 | Googleリダイレクトリンク | `"https://www.google.com/url?q=https://youtu.be/abc1234abcd"` | `"https://youtu.be/abc1234abcd"` |
+| ライブのURL（#52） | `"https://www.youtube.com/live/dQw4w9WgXcQ?si=xxxx"` | `"https://youtu.be/dQw4w9WgXcQ"`（編集画面などで許可されているURLとして扱われる） |
 | 複数URL | `"https://youtu.be/abc1234abcd,https://x.com/u/1"` | 各URLが正規化されたカンマ区切り |
 | ビリビリ動画のURL（#1246） | `"https://www.bilibili.com/video/av417727107/,https://www.bilibili.com/video/BV1in4y1Q7qw/?p=2"` | `"https://bilibili.com/video/BV1qV411J7Kq,https://bilibili.com/video/BV1in4y1Q7qw?p=2"`（`format_bilibili_url` で揃える） |
 
@@ -764,6 +769,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | POST: 動画が削除・非公開（#886） | YouTubeのURL・`get_youtube_api` が `{}` を返す | HTTP 200、「作者は空白にできません」ではなく、「YouTube上で削除されたか非公開になっている」「「タイトルと作者から登録」で「非公開/削除済み」にチェックを入れて」を含むエラーをトーストで表示し、Songは作成されない |
 | POST: 既に登録されているYouTubeのURL | 曲に紐づく`SongLink`と同じURL | HTTP 200、"既に登録されています" を含むエラー。`get_youtube_api`は呼び出されない（クォータを消費しない） |
 | POST: YouTubeのURLから登録 | `get_youtube_api` がタイトル・チャンネル名を返す | `/songs/<id>/edit`へリダイレクト（302）。Songのタイトル・作者・URLがAPIの結果・入力したURLで保存される |
+| POST: YouTubeのライブのURLから登録（#52） | `url="https://www.youtube.com/live/<id>?si=xxxx"`・`get_youtube_api` がタイトル・チャンネル名を返す | 302。`get_youtube_api`は動画IDで呼ばれ、URLは`https://youtu.be/<id>`で保存される。画面のJS（`base.js`の`getYouTubeId`）もライブのURLを動画のURLとして扱う（Playwrightで確認） |
 | POST: 作者が空白 | `url=""`, `authors="  "` | HTTP 200、"作者" を含むエラー |
 | POST: タイトルが空 | `url=""`, `authors="テスト作者"`, `title=""` | HTTP 200、"タイトル" を含むエラー |
 | POST: タイトルが`Song.title`のmax_length超（#1085） | `title`がmax_length+1文字 | HTTP 200、"タイトル" を含むエラー、Songは作成されない（フォームを経由せず保存するため直接バリデーションが必要） |
@@ -2011,6 +2017,24 @@ URL生成は`get_urls()`に分離しており、ファイル出力・`collectsta
 | 旧形式のchannel | Authorが存在 | リダイレクト用の`/channel/<name>/`は含まれない |
 | 記事 | 公開・非公開・news記事が混在 | 公開かつnews以外の記事のみ`/articles/<id>/`が含まれる |
 
+#### 14-8. `timeline` コマンド（すべあな界隈年表の読み取りと曲の登録・更新、#52）
+
+すべあな界隈年表（Googleスプレッドシート）の2018年〜今年のシートを読み取り、年ごとの件数を出力したあと、`import_timeline`（27-2）で曲を登録・更新して結果を出力する。`get_timeline`（26-2）はモック化する。今年はサーバーOSのタイムゾーン（本番はUTC）によらず、`timezone.localtime(timezone.now())`で日本時間の年にする。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 日本時間の今年まで | `--year`未指定・`timezone.now()`がUTCの2026年12月31日15時（日本時間の2027年1月1日） | `get_timeline`に2018〜2027年が渡される |
+| `--year`指定 | `--year 2020 2021` | `get_timeline`に2020・2021年のみが渡される |
+| 新規作成と結果の出力 | 2018年に1件・2019年に2件（URLは登録されていない） | 標準出力に「2018年：1件」「2019年：2件」、曲ごとの「〇〇を新規作成（`<ROOT_URL>/songs/<id>`）」、「新規作成：3件、更新：0件、変更なし：0件、対象外のカテゴリ：0件、スキップ：0件」が出る。標準エラー出力は空で、Discordには通知しない |
+| 更新の出力 | 行のURLが登録されている曲のカテゴリが異なる | 「曲のカテゴリを編集（`<ROOT_URL>/songs/<id>`）」と「更新：1件」が出る |
+| スキップの出力 | URLの無い行が2件・カテゴリが「解読」の行が1件 | 「対象外のカテゴリ：1件、スキップ：2件」と理由ごとの件数「登録できるURLが無い：2件」が出る。行ごとの「スキップ：2018年2行目 曲1（登録できるURLが無い）」は`-v 2`のときのみ出る |
+| 想定していないカテゴリ | カテゴリが「新カテゴリ」の行が2件 | 標準エラー出力に「カテゴリ「新カテゴリ」の2行は、登録・更新するかが決まっていないためスキップしました」が出て、曲は作らない |
+| `--dry-run`指定 | 新規作成する行が1件 | 「〇〇を新規作成」と「（dry-run）新規作成：1件」が出るが、Song・SongLink・History・Editorは保存されない。ロールバックできないDiscordへの通知もしない |
+| シートが無い年 | `--year 2018 2019`・`get_timeline`が2018年のみを返す | 標準エラー出力に「2019年のシートがありません」が出る。2018年の行は登録する。年が変わった直後などで起こりうるため、Discordには通知しない |
+| `--json`指定 | 2018年に日付ありの1件・2019年に日付なしの1件 | 標準出力が行のJSONの配列になる（`date`は`YYYY-MM-DD`か`null`）。曲は登録しない |
+| 読み取りに失敗 | `get_timeline`が`TimelineError`を送出 | PythonAnywhereのtasksで失敗を検知できるよう、`CommandError`を送出する（0以外の終了コードで終わる）。Discord（`ERROR_DISCORD_URL`）にエラーを通知し、曲は登録しない |
+| 取り込み中の想定外のエラー | `import_timeline`が`RuntimeError("DBの詳細")`を送出 | 例外をそのまま送出する（トレースバックはtasksのログに残る）。`ERROR_DISCORD_URL`は公開チャンネルのため、Discordには例外のクラス名（`RuntimeError`）のみを通知し、「DBの詳細」は含めない |
+
 ---
 
 ### 15. `templatetags/song_card.py` — テンプレートタグ
@@ -2590,6 +2614,128 @@ YouTube Data API（`build`）はモック化する。「動画が存在しない
 
 ---
 
+### 26. `lib/timeline.py` — すべあな界隈年表の読み取り（#52）
+
+**テストファイル**: `tests/test_lib_timeline.py`
+
+すべあな界隈年表（Googleスプレッドシート）の年ごとのシートを、Google Sheets APIで読み取る。Issueの指定どおり読み取り専用とするため、OAuthの認証情報ではなくAPIキー（公開されているスプレッドシートの読み取りしかできない）を使い、`spreadsheets.get`と`spreadsheets.values.batchGet`のみを呼び出す。Google Sheets API（`build`）はモック化する。元の例外の文字列にはAPIキーを含むURLが入るため、YouTube Data API連携（21）と同様に例外は連鎖させず（`from None`）、メッセージにはHTTPステータス・理由・元の例外のクラス名のみを入れる。
+
+#### 26-1. `parse_sheet(year, values)`
+
+各年のシートは同じ見出し（`EXPECTED_HEADER`）で、見出しが空の列は直前の列の続き（2つ目以降の解読URL・配信URL）として使われている。日付は空なら直前の行と同じ日。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 列ごとの値 | 全ての列に値がある行 | 各フィールドに対応する列の値が入る。`urls`はURL・URL2、`decode_urls`は解読URLと右の見出しの無い2列、`distribution_urls`は配信URLと右の見出しの無い2列、`notes`は備考と、それより右の見出しの無い列 |
+| 行末のセルが無い | `["5/10", "", "曲名"]`（APIは行末の空のセルを返さない） | 無い列の値は`""`、リストは`[]` |
+| 空のセルはリストに入れない | URL2・3つ目の解読URLのみ値がある | `urls`・`decode_urls`に空文字列が入らない |
+| 前後の空白 | `" 5/10 "`・`" 曲名\n"`・`" 🍁🍜\n🐬+ "` | 前後の空白を取り除く。セル内の改行は残す |
+| 空白文字のみのタイトル・作者 | タイトルが全角スペースのみ・作者が半角スペースのみ・バッジが全角スペースのみ | 全角スペースのみのタイトルなどもあるため、タイトル・作者は取り除かずにそのまま残す。それ以外の列は`""` |
+| 日付の引き継ぎ | 日付が空・全角スペースのみの行 | 直前の行の日付になる |
+| 最初の日付より前の行 | 1行目の日付が空 | `date=None` |
+| 日付として読めない値 | `不明`・`2/30`・`2024/1/1` | `date=None`。次の日付が空の行も`None`を引き継ぐ |
+| うるう日 | 2024年・2025年の`2/29` | 2024年は2024年2月29日、2025年は`None` |
+| 空の行 | 空のリスト・空白のみの行 | 読み飛ばす。`row`はシートの行番号のまま（見出しが1行目） |
+| 見出しのみ | 見出しの行のみ | `[]` |
+| 備考より右に列が増えた | 見出しの末尾に列を追加 | 既存の列の並びは変わらないため読み取る |
+| 見出しが異なる | 列の入れ替え・備考が無い・列が少ない | 別の列の値を読み取らないよう、`TimelineError`（「〇〇年のシートの見出しが想定と異なります」）を送出する |
+| 空のシート | `values=[]` | `TimelineError`を送出する |
+
+#### 26-2. `get_timeline(years)`
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 年ごとの行 | 2018年・2019年のシートがある | `{2018: [...], 2019: [...]}`を返す。`spreadsheets.get`は`fields="sheets.properties.title"`、`batchGet`は`ranges=["'2018年'", "'2019年'"]`で呼ばれる |
+| APIキーのみを使う | 正常実行 | `build("sheets", "v4", developerKey=<APIキー>, cache_discovery=False)`で呼ばれる |
+| 書き込みのAPIを呼ばない | 正常実行 | `spreadsheets.batchUpdate`・`create`、`values.update`・`append`・`clear`・`batchUpdate`・`batchClear`が呼ばれない |
+| シートが無い年 | 2018〜2020年のうち2019年のシートが無い | 2019年は返さず、`batchGet`にも含めない |
+| 対象のシートが1つも無い | 年のシートが無い | `{}`を返し、`batchGet`を呼ばない |
+| 空のシート | `valueRanges`に`values`が無い | `TimelineError`（見出しが想定と異なります）を送出する |
+| `valueRanges`の数が違う | 2年分を要求して1件のみ返る | `TimelineError`（レスポンスを解析できませんでした）を送出する |
+| APIの呼び出しに失敗 | `batchGet`が`HttpError` 400・403・404・500を送出 | `TimelineError`を送出し、メッセージにHTTPステータスと理由が含まれ、APIキーは含まれない。例外が連鎖していない（`__cause__`が`None`・`__suppress_context__`が`True`） |
+| シート一覧の取得に失敗 | `spreadsheets.get`が`HttpError` 404を送出 | `TimelineError`を送出し、`batchGet`を呼ばない |
+| 通信エラー・タイムアウト | `socket.timeout` | `TimelineError`を送出し、メッセージに元の例外のクラス名が含まれる。例外が連鎖していない |
+| 設定が無い | `GOOGLE_SHEETS_API_KEY`または`GOOGLE_SHEETS_SPREADSHEET_ID`が空・`local_settings.py`に定義自体が無い | 設定は`getattr(settings, ...)`で読むため、importで止まらずに`TimelineError`（設定されていません）を送出し、APIは呼び出さない |
+
+---
+
+### 27. `lib/timeline_import.py` — すべあな界隈年表からの曲の登録・更新（#52）
+
+**テストファイル**: `tests/test_lib_timeline_import.py`
+
+年表の行のうち、カテゴリが`CATEGORY_MAP`にある行を曲として登録・更新する（「曲」「DSC」「逆再生枠」・空欄→曲（空欄は新規作成のときのみ。更新ではカテゴリを変えない）、「アレンジ」→アレンジ、「音mad」→音MAD、「メドレー」→メドレー、「総集編」→総集編、「予告」→予告、「オフボ」→オフボ、「カバー」→カバー、「ネタ」→ネタ動画）。「解読」「その他」「配信」「企画」「出来事」「不明」は対象外で、どちらにも無いカテゴリは年表に新しく追加されたものとしてコマンドが警告する。
+
+- **照合**: 行のURL（URL列・URL2列を`clean_url`で短縮・フォーマットし、`get_allow_media`で許可されているもののみ。`youtube.com/live/<id>`も`clean_url`で短縮URLになる。「https://」の無い`youtu.be/<id>`には「https://」を付ける）が登録されている曲を更新する。DBには「www.」付き・http・大文字小文字の違うURLもあるため、比較用に揃えてから照合する（XのユーザーIDなどは大文字小文字を区別しないため小文字にそろえるが、YouTube・ビリビリ動画の動画IDは区別する。ビリビリ動画のURLは`clean_url`でBV番号のURLに揃うため、av番号のURLも同じ動画として扱う（#1246）。ニコニコ動画はスマホ版（`sp.nicovideo.jp`）や「?ref=」などの違いも同じURLとして扱う）。複数の曲で共有しているURL（`allow_dup=True`）は、どの曲の行かを決める手がかりにしない。どのURLも登録されていなければ、歌詞列（`https://lyrics.imicomweb.com/songs/<id>`）の曲とタイトルか作者が一致すればその曲を更新し、一致しなければスキップする（作者だけが一致する場合は、full版の行の歌詞列がshort版の曲を指していることがあるため、short版かどうかも同じ曲に限る）（歌詞列が別の曲を指していることがあるため）。歌詞列の曲も無ければ新規作成する
+- **新規作成**: タイトルは作品名/出来事列、作者は作者列（合作は改行で区切り、2人目以降の先頭に「+」が付くことがある。「+SSBA」のように「+」で始まる作者もいるため、1人目の「+」は削らない。作者名のカンマでは区切らない。0文字でなければ空白文字のみでも登録する）、カテゴリはカテゴリ列、模倣はモチーフ1列・モチーフ2列、URLはURL列・URL2列
+- **更新**: URL・模倣は登録されていないものを追加し、カテゴリは年表の値にする。タイトル・作者は更新しない。ロックされた曲も更新する。`post_time`を更新し、編集画面と同様に変更した項目をHistoryの`changes`に残す
+- **模倣**: モチーフ1列は末尾の「枠」、モチーフ2列は「→.[short]👤」形式なら先頭の矢印と末尾の絵文字1文字分、「鵺🔢模倣」形式なら末尾の「模倣」とその前のバッジ（絵文字と「+」）を削除し、タイトルが完全一致する曲を模倣に追加する。「❁」「全てが適当すぎた.模倣」のように記号や「模倣」で終わるタイトルの曲もあるため、モチーフ2は削る前の文字列から順に探し、曲がある最初の候補にする。同じタイトルの曲が複数あれば追加しない。ただしモチーフ1（模倣の枠）はすべあなの曲のため、同じタイトルの曲が複数あってもすべあな（Author id=1）の曲が1曲ならその曲にする（同じ実行で作ったすべあなの曲も含む）。曲のタイトル・作者は最初に全て読み込み、行ごとにクエリは発行しない。年表での呼び方が曲のタイトルと異なるもの（「表裏」→「表/裏」、「名の無い星」→「名の無い星が空に堕ちたら」）は`MOTIF_TITLES`で変換する
+- **History**: 編集者はid=1のEditor（開発者）。削除されていればid=1で作り直す
+- **毎日実行しても変わらないこと**: URLで照合できない行（登録できるURLが無い行）は毎日新規作成されてしまうため登録しない。複数の行に一致する曲は、カテゴリが行ごとに入れ替わらないよう最初の行（カテゴリが空欄の行を除く）のカテゴリにする。共有しているURLしか無い行も、次の実行でURLで照合できないため登録しない
+- 行ごとにトランザクションで保存し、スキップした行（掲載拒否の作者など）で作った作者は残さない
+- 取り込みではDiscordなど外部へ送信しない（`--dry-run`でDBの変更はロールバックされるが、外部への送信は取り消せないため）
+
+#### 27-1. モチーフ・作者・URLの読み取り
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| モチーフ1 | `教育枠`・`.[short]枠`・`本家以外模倣` | `教育`・`.[short]`・`本家以外模倣` |
+| モチーフ2（矢印の形式） | `→.[short]👤`・`→0⁰🔩`・`→春ノ海`・`→曲🍁🔩`・`→曲^`・`→❁` | 先頭の矢印を除き、末尾の絵文字1文字分を削る前と後の順に候補にする：`[".[short]👤", ".[short]"]`・`["0⁰🔩", "0⁰"]`・`["春ノ海"]`・`["曲🍁🔩", "曲🍁"]`（1文字分のみ）・`["曲^"]`（絵文字でない記号は削らない）・`["❁"]`（削ると空になる候補は除く）。異体字セレクタ付きの絵文字・ZWJで繋がった絵文字も1文字分として削る |
+| モチーフ2（模倣の形式） | `鵺🔢模倣`・`天秤にかけて🍁+模倣`・`蝕🍁🌌🌧️模倣`・`᠈[short]📺️模倣`・`全てが適当すぎた.模倣` | 末尾の「模倣」とその前のバッジ（絵文字と「+」）を削る前と後の順に候補にする：`["鵺🔢模倣", "鵺🔢", "鵺"]`。最後の候補は`天秤にかけて`・`蝕`・`᠈[short]`。`全てが適当すぎた.模倣`は`["全てが適当すぎた.模倣", "全てが適当すぎた."]` |
+| モチーフ2（矢印・模倣の無い形式） | `名の無い星`・`K²🔩`・空文字列 | `["名の無い星"]`・`["K²🔩", "K²"]`・`[]` |
+| 作者 | `作者A\n+作者B`・`作者A \n\n作者B`・`全て魚の所為で、`・`あんくらげ / Ankurage`・全角スペースのみ・空文字列 | 改行で区切り、2人目以降の先頭の「+」を削除する（`+SSBA`は`["+SSBA"]`のまま）。「、」「/」では区切らない。空白文字のみならそのまま1人の作者名にし、空文字列なら`[]` |
+| URL | YouTube（`www.`・`m.`・`&t=`付き）・ニコニコ動画・Twitter・`youtube.com/live/<id>`・「https://」の無い`youtu.be/<id>`・`youtube.com/post/`・Discordのメッセージのリンク・途中で切れたURL（`.be/<id>`）・URLでない文字列・255文字を超えるURL | `https://youtu.be/<id>`・`https://nicovideo.jp/...`・`https://x.com/...`。ライブ・「https://」の無いURLは`https://youtu.be/<id>`にする（重複は除く）。許可されていないメディア・URLでないもの・長すぎるものは除く |
+
+#### 27-2. `import_timeline(rows)`
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 新規作成 | URLが登録されていない行（カテゴリ「DSC」・作者2人・モチーフ1`教育枠`・モチーフ2`→K²🔩`） | タイトル・作者2人・カテゴリ`song`・短縮したURL・模倣（教育・K²）で曲を作り、編集者id=1・`history_type="new"`・「〇〇を新規作成」のHistoryを作る。`changes`にURL・カテゴリ・模倣が入る |
+| カテゴリの対応 | `CATEGORY_MAP`の11種類と空欄 | それぞれ対応する`Song.category`で作る（空欄は曲） |
+| 対象外のカテゴリ | 「解読」「その他」「配信」「企画」「出来事」「不明」 | 曲を作らず、`excluded`に数える |
+| 想定していないカテゴリ | 「新カテゴリ」 | 曲を作らず、`unknown_categories`に入れる |
+| 登録できるURLが無い | URLが無い・Discordのメッセージのリンク・`youtube.com/post/` | スキップ（URLで照合できず、毎日新規作成されてしまうため） |
+| 新規作成できない行 | タイトルが0文字・501文字・作者が0文字・作者名が256文字・掲載拒否の作者を含む | それぞれの理由でスキップ。掲載拒否の作者の行で作った作者は残さない |
+| 空白文字のみのタイトル・作者 | タイトルが全角スペースのみ・作者がタブのみ | 0文字ではないため、そのまま登録する |
+| 削除された曲のURL | `is_removed=True`でどの曲にも紐づいていないSongLink | 新規作成しない（削除した曲を再び登録しない） |
+| 曲に紐づいていないSongLink | `is_removed=False`でどの曲にも紐づいていないSongLink | 新しく作らず、そのSongLinkを使う |
+| 更新 | カテゴリ「曲」・模倣AAA・CCC・URL C・Bの曲に、カテゴリ「カバー」・モチーフAAA・BBB・URL A・Bの行 | タイトル・作者は変えず、カテゴリをカバー、URLをC・B・A、模倣をAAA・BBB・CCCにする。`post_time`を更新し、「曲のURLとカテゴリと模倣を編集」のHistory（編集者id=1・`history_type="edit"`・変更前後のURL・カテゴリ・模倣）を作る |
+| 変更なし | 行と同じ内容の曲 | Historyを作らず、`unchanged`に数える |
+| 2回目の実行 | 同じ行で2回実行 | 2回目は曲もHistoryも増えない |
+| URLの表記の違い | DBに`http://www.nicovideo.jp/watch/SM1`・`https://x.com/SubeKashi/status/1`、行に`https://nicovideo.jp/watch/sm1`・`https://x.com/subekashi/status/1` | 同じURLとして照合し、URLを追加しない |
+| ニコニコ動画のスマホ版・クエリ | DBに`https://nicovideo.jp/watch/sm1`、行に`https://sp.nicovideo.jp/watch/sm1?ref=user_video`・`https://nicovideo.jp/watch/sm1?ref=nicoiphone_other` | 同じURLとして照合し、URLを追加しない（重複した曲を作らない） |
+| YouTubeの動画IDの大文字小文字 | DBに`https://youtu.be/aaaaaaaaaaa`、行に`https://youtu.be/AAAAAAAAAAA` | 動画IDは大文字小文字を区別するため、別の曲として新規作成する |
+| ビリビリ動画のav番号・BV番号（#1246） | DBに`https://bilibili.com/video/BV1qV411J7Kq`、行に`https://www.bilibili.com/video/av417727107/`・`https://www.bilibili.com/video/BV1qV411J7Kq/?spm_id_from=...` | 同じ動画のURLとして照合し、URLを追加しない |
+| ビリビリ動画のBV番号の大文字小文字 | DBに`https://bilibili.com/video/BV1qV411J7Kq`、行に`https://bilibili.com/video/BV1QV411J7KQ` | BV番号は大文字小文字を区別するため、別の曲として新規作成する |
+| 外部への送信 | 更新する行・新規作成する行 | Discordへの送信（`requests.post`・`url.py`の`send_discord`）をしない |
+| 複数の曲に一致 | 行のURLが別々の曲に登録されている | スキップし、どちらの曲も変えない |
+| 共有しているURL（1曲に紐づく） | `allow_dup=True`のURLがメドレーの曲だけに紐づき、行はそのURLと未登録のURLを持つ | メドレーの曲を更新せず、新しい曲を作る。共有しているURLにも新しい曲を紐づける |
+| 共有しているURL（複数の曲に紐づく） | `allow_dup=True`のURLが2曲に紐づき、行のもう一方のURLが曲に登録されている | 「複数の曲に一致」でスキップせず、もう一方のURLの曲を更新する |
+| 共有しているURLのみ | 行のURLが`allow_dup=True`のURLだけ | 「複数の曲で共有しているURLのみ」でスキップし、曲を作らない |
+| ロックされた曲 | `is_lock=True`の曲に一致 | ロックされていない曲と同様に、カテゴリを変えURLを追加する |
+| 界隈曲?の曲 | `is_questionable=True`の曲に一致 | 編集画面と同様に模倣を追加しない |
+| 削除された曲のURLを含む行 | 行のURLの一方が削除された曲のURL | そのURLは曲に追加しない |
+| 同じタイトルの曲が複数（モチーフ2） | 「.」の曲がすべあなと別の作者に1曲ずつ・モチーフ2が`→.👤` | 模倣に追加しない |
+| 同じタイトルの曲が複数（モチーフ1） | 「.」の曲がすべあなと別の作者に1曲ずつ・モチーフ1が`.枠` | すべあなの「.」を模倣に追加する |
+| 同じ実行で作ったすべあなの曲（モチーフ1） | 別の作者の「原曲」がある状態で、1行目で作者が全てあなたの所為です。の「原曲」を作り、2行目のモチーフ1が`原曲枠` | 1行目で作った曲を模倣に追加する |
+| すべあなの曲が無いモチーフ1 | モチーフ1`無題です。枠`（別の作者の曲が1曲）・`..枠`（別の作者の曲が2曲） | 1曲なら追加し、2曲なら追加しない |
+| 呼び方の違う模倣元 | モチーフ1`表裏枠`・モチーフ2`名の無い星`（「表/裏」と別の作者の「表裏」がある） | 「表/裏」・「名の無い星が空に堕ちたら」を模倣に追加する |
+| 記号や「模倣」で終わるタイトルの模倣元 | モチーフ2`→❁`（「❁」の曲がある）・`→曲★`（「曲★」と「曲」の曲がある）・`全てが適当すぎた.模倣`（その曲がある） | 削る前のタイトルの曲（「❁」・「曲★」・「全てが適当すぎた.模倣」）を模倣に追加する |
+| 自身が模倣元 | モチーフ2が曲自身のタイトル | 模倣に追加しない |
+| 同じrunで作った曲が模倣元 | 1行目で原曲を作り、2行目のモチーフ1が原曲 | 2行目の曲の模倣に1行目の曲を追加する |
+| URLを共有する行 | 1行目（音mad）のURLを2行目（曲）がURL2列に持つ | 1行目で作った曲に2行目のURLを追加する。カテゴリは1行目の音MADのまま |
+| カテゴリの異なる複数の行に一致 | アレンジの行・カバーの行が同じ曲に一致し、2回実行 | 最初の行のアレンジになり、Historyは1件のみ（毎回入れ替わらない） |
+| 空欄のカテゴリの行で更新 | カテゴリがアレンジの曲に、カテゴリが空欄の行が一致 | カテゴリを変えず、変更なしに数える |
+| 空欄のカテゴリの行の後の行 | 同じ曲に、空欄の行・カバーの行の順に一致 | 空欄の行はカテゴリを決めないため、カバーになる |
+| 歌詞列の曲 | URLは登録されていないが、歌詞列の曲とタイトルが一致する行・作者が一致する行 | 新規作成せず、歌詞列の曲にURLを追加する |
+| 歌詞列の曲と一致しない | 歌詞列の曲とタイトル・作者のどちらも異なる | スキップ |
+| 歌詞列の曲と作者だけ一致し、short版かどうかが異なる | 作者の同じ「曲[short]」を指す、タイトルが「曲」の行 | 「歌詞列の曲とshort版かどうかが異なる」でスキップし、short版の曲にURLを追加しない |
+| 歌詞列の曲と作者だけ一致し、どちらもshort版 | 作者の同じ「曲[Short]」を指す、タイトルが「曲[short]」の行 | 歌詞列の曲にURLを追加する |
+| 歌詞列の曲が無い | 存在しない曲のidを指す | 新規作成する |
+| URLと歌詞列が別の曲 | URLは曲Aに、歌詞列は曲Bに一致 | URLで一致した曲Aを更新する |
+| 編集者が削除されている | id=1のEditorが無い | id=1のEditorを作り、Historyの編集者にする |
+
+---
+
 ## テスト優先度
 
 | 優先度 | 対象 | 理由 |
@@ -2641,6 +2787,8 @@ subekashi/tests/
 ├── test_models.py                  # 実装済み: モデル基本動作
 ├── test_converters.py              # 実装済み: URLコンバータ
 ├── test_lib_youtube.py             # 実装済み: YouTube Data API連携
+├── test_lib_timeline.py            # 実装済み: すべあな界隈年表の読み取り
+├── test_lib_timeline_import.py     # 実装済み: すべあな界隈年表からの曲の登録・更新
 ├── test_lib_ogp.py                 # 実装済み: ページごとのOGP画像
 ├── test_lib_ip.py                  # 実装済み: クライアントのIP
 ├── test_management_commands.py     # 実装済み: 管理コマンド

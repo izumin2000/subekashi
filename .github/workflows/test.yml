@@ -33,6 +33,8 @@ jobs:
           PYTHONANYWHERE_USERNAME = ""
           PYTHONANYWHERE_TOKEN = ""
           YOUTUBE_API_KEY = ""
+          GOOGLE_SHEETS_SPREADSHEET_ID = ""
+          GOOGLE_SHEETS_API_KEY = ""
           DEBUG = True
           SEND_DISCORD = False
           USE_MYSQL = False

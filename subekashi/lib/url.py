@@ -5,7 +5,7 @@ from urllib.parse import urlparse, urlunparse, parse_qs
 import re
 
 _YOUTUBE_RE = re.compile(
-    r'https?://(?:www\.|m\.)?(?:youtube\.com/(?:.*[?&]v=|shorts/)|youtu\.be/)([a-zA-Z0-9_-]{11})'
+    r'https?://(?:www\.|m\.)?(?:youtube\.com/(?:.*[?&]v=|shorts/|live/)|youtu\.be/)([a-zA-Z0-9_-]{11})'
 )
 
 # av番号は、BV番号に変換できる2^51未満（15桁以下）のみ対象にする
