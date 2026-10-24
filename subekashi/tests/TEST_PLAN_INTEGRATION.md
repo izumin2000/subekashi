@@ -910,6 +910,28 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 
 ---
 
+### 23. トップ画面の投稿予定から検索画面への遷移フロー（#376）
+
+**テストファイル**: `tests/test_views.py`（`UpcomingSongsFlowTest`）
+
+トップ画面の「投稿予定」は、YouTubeの投稿日が未来の曲を投稿日の早い順に表示する。「もっと見る」は検索画面を投稿日/以降（今日の日付）・投稿日/早い順で開く。検索画面の投稿日の入力欄は日付のみのため、検索画面では今日の投稿済みの曲も表示される。リンクには`save_select=off`を付け、保存した並び替えを上書きしない。
+
+#### 23-1. 「もっと見る」で今日以降に投稿（予定）の曲を検索する
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | YouTubeのURLが登録された、投稿日が昨日・今日の0時・明後日・明日の曲（作成順） |
+| 操作1 | `GET /` |
+| 検証1 | 投稿予定は明日・明後日の曲の順 |
+| 操作2 | `is_saved_select=on`・`search_sort=-view`のcookieで、「もっと見る」のURL（`/songs/?upload_time_gte=<今日>&sort=upload_time&save_select=off`）を`GET` |
+| 検証2 | 投稿日/以降の入力欄に今日の日付が入り、投稿日/早い順が選択される。`search_sort`のcookieは保存されない |
+| 操作3 | 検索画面のフォームの値（`songs.js`の`formToQuery`）と同じ`GET /api/html/song_cards?upload_time_gte=<今日>&sort=upload_time&is_limited=False` |
+| 検証3 | 今日・明日・明後日の曲の順に表示され、昨日の曲は表示されない |
+| 操作4 | `GET /songs/` |
+| 検証4 | 保存した並び替え（`-view`）が選択される |
+
+---
+
 ## テスト実装の方針
 
 ### ディレクトリ構成（案）

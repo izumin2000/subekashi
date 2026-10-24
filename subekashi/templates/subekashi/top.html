@@ -47,6 +47,17 @@
         </div>
     {% endif %}
 
+    {% if upcomingInsL %}
+        <h1>投稿予定</h1>
+        {% for songIns in upcomingInsL %}
+            {% render_song_card songIns %}
+        {% endfor %}
+        {# 検索画面の投稿日の入力欄は日付のみのため、今日以降に投稿（予定）の曲を検索する。並び替えは検索の保存設定を上書きしない（save_select=off） #}
+        <div class="action-buttons">
+            <a href="{% url 'subekashi:songs' %}?upload_time_gte={% now 'Y-m-d' %}&sort=upload_time&save_select=off" class="action-button black-action-button"><i class="fas fa-search"></i><span class="icon-p-big">もっと見る</span></a>
+        </div>
+    {% endif %}
+
     {% if is_shown_ad %}
         <h1>宣伝</h1>
         <div class="youtube" id="ad">

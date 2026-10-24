@@ -12,7 +12,7 @@ import socket
 import tempfile
 from urllib.parse import quote, urlencode
 from contextlib import contextmanager
-from datetime import date, datetime, timezone as dt_timezone
+from datetime import date, datetime, timedelta, timezone as dt_timezone
 from unittest.mock import patch, MagicMock
 from PIL import Image
 from django.conf import settings
@@ -201,6 +201,91 @@ class TopViewTest(TestCase):
             with self.subTest(footer=name):
                 footer = re.search(pattern, content, re.DOTALL).group()
                 self.assertIn(f'<a href="{privacy_url}"><i class="fas fa-shield-alt"></i>プライバシーポリシー</a>', footer)
+
+    def _create_upcoming_song(self, title, days, **kwargs):
+        return Song.objects.create(title=title, upload_time=timezone.now() + timedelta(days=days), **kwargs)
+
+    def test_upcoming_songs_are_shown_in_upload_time_order(self):
+        """投稿予定には、YouTubeの投稿日が未来の曲のみを投稿日の早い順に表示する（#376）"""
+        later = self._create_upcoming_song("後の投稿予定", 3)
+        sooner = self._create_upcoming_song("先の投稿予定", 1)
+        self._create_upcoming_song("投稿済み", -1)
+        Song.objects.create(title="投稿日なし")
+
+        response = self.client.get(reverse("subekashi:top"))
+
+        self.assertContains(response, "<h1>投稿予定</h1>")
+        self.assertEqual(list(response.context["upcomingInsL"]), [sooner, later])
+
+    def test_upcoming_section_is_hidden_without_upcoming_songs(self):
+        """投稿日が未来の曲が無い場合は、投稿予定の見出しを表示しない（#376）"""
+        self._create_upcoming_song("投稿済み", -1)
+
+        response = self.client.get(reverse("subekashi:top"))
+
+        self.assertNotContains(response, "<h1>投稿予定</h1>")
+
+    def test_upcoming_count_follows_cookie(self):
+        """投稿予定の曲数は設定（is_shown_upcoming）に従い、cookieが無い場合は5曲、非表示(0)の場合は見出しも表示しない（#376）"""
+        for days in range(1, 12):
+            self._create_upcoming_song(f"投稿予定{days}", days)
+
+        cases = [(None, 5), ("5", 5), ("10", 10), ("15", 11)]
+        for value, count in cases:
+            with self.subTest(value=value):
+                self.client.cookies.clear()
+                if value:
+                    self.client.cookies["is_shown_upcoming"] = value
+                response = self.client.get(reverse("subekashi:top"))
+                self.assertEqual(len(response.context["upcomingInsL"]), count)
+
+        self.client.cookies["is_shown_upcoming"] = "0"
+        response = self.client.get(reverse("subekashi:top"))
+        self.assertNotIn("upcomingInsL", response.context)
+        self.assertNotContains(response, "<h1>投稿予定</h1>")
+
+    def test_upcoming_with_invalid_cookie_shows_default_count(self):
+        """投稿予定の設定のcookieが不正な値の場合は、エラーにせず5曲表示する（#376）"""
+        for days in range(1, 7):
+            self._create_upcoming_song(f"投稿予定{days}", days)
+
+        for value in ["3", "abc", "<script>"]:
+            with self.subTest(value=value):
+                self.client.cookies["is_shown_upcoming"] = value
+                response = self.client.get(reverse("subekashi:top"))
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(len(response.context["upcomingInsL"]), 5)
+
+    def test_upcoming_follows_songrange_and_jokerange(self):
+        """投稿予定も新着・未完成と同じく、トップ画面の界隈曲・ネタ曲の表示設定に従う（#376）"""
+        subeana = self._create_upcoming_song("界隈曲の投稿予定", 1)
+        xx = self._create_upcoming_song("界隈曲以外の投稿予定", 2, is_subeana=False)
+        joke = self._create_upcoming_song("ネタ曲の投稿予定", 3, is_joke=True)
+
+        response = self.client.get(reverse("subekashi:top"))
+        self.assertEqual(list(response.context["upcomingInsL"]), [subeana])
+
+        self.client.cookies["songrange"] = "all"
+        self.client.cookies["jokerange"] = "on"
+        response = self.client.get(reverse("subekashi:top"))
+        self.assertEqual(list(response.context["upcomingInsL"]), [subeana, xx, joke])
+
+    def test_upcoming_excludes_removed_songs(self):
+        """削除した曲（#1239）は投稿予定に表示しない（#376）"""
+        self._create_upcoming_song("削除した投稿予定", 1, is_removed=True)
+
+        response = self.client.get(reverse("subekashi:top"))
+
+        self.assertNotContains(response, "<h1>投稿予定</h1>")
+
+    def test_upcoming_more_link_searches_from_today(self):
+        """投稿予定の「もっと見る」は、今日以降に投稿（予定）の曲を投稿日の早い順で、保存設定を上書きせずに検索する（#376）"""
+        self._create_upcoming_song("投稿予定", 1)
+
+        response = self.client.get(reverse("subekashi:top"))
+
+        today = timezone.localdate().isoformat()
+        self.assertContains(response, f'<a href="/songs/?upload_time_gte={today}&sort=upload_time&save_select=off" class="action-button black-action-button">')
 
     def _get_search_form_html(self, response):
         match = re.search(r'<form action="/songs/" method="GET" id="search-form">.*?</form>', response.content.decode(), re.DOTALL)
@@ -567,6 +652,27 @@ class SongsViewTest(TestCase):
         response = self.client.get(reverse("subekashi:songs"), {"songrange": "xx"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.cookies["search_songrange"].value, "xx")
+
+    def test_save_select_off_query_does_not_overwrite_saved_cookies(self):
+        """save_select=offのURLクエリ（トップ画面の投稿予定の「もっと見る」等のリンク）の並び替え等は、表示にのみ反映しcookieには保存しない（#376）"""
+        self.client.cookies["is_saved_select"] = "on"
+        self.client.cookies["search_sort"] = "-view"
+        self.client.cookies["search_songrange"] = "subeana"
+        response = self.client.get(reverse("subekashi:songs"), {"sort": "upload_time", "songrange": "xx", "save_select": "off"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["sort"], "upload_time")
+        self.assertEqual(response.context["songrange"], "xx")
+        self.assertNotIn("search_sort", response.cookies)
+        self.assertNotIn("search_songrange", response.cookies)
+
+    def test_save_select_off_query_keeps_saved_select_for_other_forms(self):
+        """save_select=offでも、URLクエリで指定していないフォームには保存した選択を使う（#376）"""
+        self.client.cookies["is_saved_select"] = "on"
+        self.client.cookies["search_songrange"] = "subeana"
+        self.client.cookies["search_jokerange"] = "off"
+        response = self.client.get(reverse("subekashi:songs"), {"sort": "upload_time", "save_select": "off"})
+        self.assertEqual(response.context["songrange"], "subeana")
+        self.assertEqual(response.context["jokerange"], "off")
 
     def test_search_form_defaults_to_keyword(self):
         """URLクエリがない場合はキーワードのフォームが表示されること"""
@@ -4871,6 +4977,36 @@ class SettingViewTest(TestCase):
                 selected = [option_text for _, option_text, is_selected in self._get_search_display_options(response) if is_selected]
                 self.assertEqual(selected, [text])
 
+    def _get_upcoming_options(self, response):
+        setting = next(setting for setting in response.context["settings"]["top"] if setting["id"] == "is_shown_upcoming")
+        return [(option["value"], option["text"], option["selected"]) for option in setting["options"]]
+
+    def test_upcoming_display_defaults_to_five(self):
+        """トップ画面の投稿予定の表示の設定は、新着の表示の次に並び、cookieが無い場合は「5曲表示」が選択される（#376）"""
+        response = self.client.get(reverse("subekashi:setting"))
+
+        self.assertContains(response, '<label>投稿予定の表示</label>')
+        self.assertContains(response, '<select id="is_shown_upcoming" class="setting-input">')
+        self.assertEqual(self._get_upcoming_options(response), [
+            ("15", "15曲表示", False),
+            ("10", "10曲表示", False),
+            ("5", "5曲表示", True),
+            ("0", "非表示", False),
+        ])
+        top_ids = [setting["id"] for setting in response.context["settings"]["top"]]
+        self.assertEqual(top_ids.index("is_shown_upcoming"), top_ids.index("is_shown_new") + 1)
+
+    def test_upcoming_display_reflects_cookie(self):
+        """トップ画面の投稿予定の表示の設定は、cookieの値が選択される（#376）"""
+        cases = [("15", "15曲表示"), ("10", "10曲表示"), ("5", "5曲表示"), ("0", "非表示")]
+        for value, text in cases:
+            with self.subTest(value=value):
+                self.client.cookies["is_shown_upcoming"] = value
+                response = self.client.get(reverse("subekashi:setting"))
+
+                selected = [option_text for _, option_text, is_selected in self._get_upcoming_options(response) if is_selected]
+                self.assertEqual(selected, [text])
+
     def test_tutorial_icon_is_shown_only_for_saved_select(self):
         """検索画面のセクションで、選択肢の保存のチュートリアルのアイコンは「検索の選択肢の保存」にのみ付く（#1164）"""
         response = self.client.get(reverse("subekashi:setting"))
@@ -4962,6 +5098,68 @@ class SaveSettingsViewTest(TestCase):
         self._post({"is_shown_search": "off"})
         response = self.client.get(reverse("subekashi:top"))
         self.assertNotContains(response, 'id="search-form"')
+
+    def test_is_shown_upcoming_is_saved(self):
+        """トップ画面の投稿予定の表示の設定はcookieに保存される（#376）"""
+        for value in ["0", "5", "10", "15"]:
+            with self.subTest(value=value):
+                response = self._post({"is_shown_upcoming": value})
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.cookies["is_shown_upcoming"].value, value)
+
+    def test_is_shown_upcoming_with_invalid_value_is_not_saved(self):
+        """トップ画面の投稿予定の表示の設定に許可されていない値を送信しても、cookieには保存されない（#376）"""
+        for value in ["3", "on", "<script>"]:
+            with self.subTest(value=value):
+                response = self._post({"is_shown_upcoming": value})
+
+                self.assertEqual(response.status_code, 200)
+                self.assertNotIn("is_shown_upcoming", response.cookies)
+
+
+@override_settings(STORAGES=STATIC_STORAGE, RATELIMIT_ENABLE=False)
+class UpcomingSongsFlowTest(TestCase):
+    """トップ画面の投稿予定から検索画面への遷移のフロー（#376）"""
+
+    def setUp(self):
+        self.client = Client()
+        today_start = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)
+        self.yesterday_song = self._create_song("昨日の投稿", today_start - timedelta(days=1))
+        self.today_song = self._create_song("今日の投稿", today_start)
+        self.later_song = self._create_song("明後日の投稿予定", today_start + timedelta(days=2))
+        self.sooner_song = self._create_song("明日の投稿予定", today_start + timedelta(days=1))
+
+    def _create_song(self, title, upload_time):
+        song = Song.objects.create(title=title, upload_time=upload_time)
+        link = SongLink.objects.create(url=f"https://youtu.be/{song.id:011d}")
+        link.songs.add(song)
+        return song
+
+    def _get_titles(self, cards):
+        return re.findall(r'title="([^"]+)"><i class="fas fa-music">', "".join(cards))
+
+    def test_more_link_searches_upcoming_songs_without_saving_sort(self):
+        response = self.client.get(reverse("subekashi:top"))
+        self.assertEqual(list(response.context["upcomingInsL"]), [self.sooner_song, self.later_song])
+        more_url = re.search(r'<a href="(/songs/\?upload_time_gte=[^"]+)"', response.content.decode()).group(1)
+
+        # 検索画面では、投稿日/以降に今日の日付が入り、投稿日/早い順が選択されるが、保存した並び替えは変わらない
+        self.client.cookies["is_saved_select"] = "on"
+        self.client.cookies["search_sort"] = "-view"
+        response = self.client.get(more_url)
+        today = timezone.localdate().isoformat()
+        self.assertEqual(response.context["form_values"]["upload_time_gte"], today)
+        self.assertEqual(response.context["sort"], "upload_time")
+        self.assertNotIn("search_sort", response.cookies)
+
+        # 検索画面のフォームの値（songs.jsのformToQuery）で検索すると、今日以降に投稿（予定）の曲が投稿日の早い順に表示される
+        response = self.client.get(reverse("subekashi:song_cards"), {"upload_time_gte": today, "sort": "upload_time", "is_limited": "False"})
+        self.assertEqual(self._get_titles(response.json()), ["今日の投稿", "明日の投稿予定", "明後日の投稿予定"])
+
+        # 検索画面をもう一度開くと、保存した並び替えが選択される
+        response = self.client.get(reverse("subekashi:songs"))
+        self.assertEqual(response.context["sort"], "-view")
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
