@@ -952,7 +952,8 @@ class AuthorAPITest(TestCase):
         self.assertEqual(response.json()["count"], 4)
         for table in ["subekashi_authoralias", "subekashi_authorlink"]:
             with self.subTest(table=table):
-                queries = [query["sql"] for query in context.captured_queries if f"FROM `{table}`" in query["sql"]]
+                # 表名の引用符はDBで異なる（MySQLは`、SQLiteは"）
+                queries = [query["sql"] for query in context.captured_queries if f"FROM {connection.ops.quote_name(table)}" in query["sql"]]
                 self.assertEqual(len(queries), 1)
 
 
@@ -1047,8 +1048,13 @@ class HistoryAPITest(TestCase):
                 self.assertEqual(response.status_code, 400)
                 self.assertIn(name, response.json())
 
-    def test_out_of_range_filter_returns_empty(self):
-        self.assertEqual(self._get_ids({"song": "9" * 30}), [])
+    def test_out_of_range_filter_returns_400(self):
+        # SQLiteで扱えない大きさの整数でクエリを実行するとOverflowErrorで500になる
+        for value in ["9" * 30, "-" + "9" * 30]:
+            with self.subTest(value=value):
+                response = self.client.get("/api/history/", {"song": value})
+                self.assertEqual(response.status_code, 400)
+                self.assertIn("song", response.json())
 
     def test_editor_is_not_queried_per_history(self):
         for i in range(3):
@@ -1056,7 +1062,7 @@ class HistoryAPITest(TestCase):
         with CaptureQueriesContext(connection) as context:
             response = self.client.get("/api/history/")
         self.assertEqual(response.json()["count"], 6)
-        editor_queries = [query["sql"] for query in context.captured_queries if "FROM `subekashi_editor`" in query["sql"]]
+        editor_queries = [query["sql"] for query in context.captured_queries if f"FROM {connection.ops.quote_name('subekashi_editor')}" in query["sql"]]
         self.assertEqual(editor_queries, [])
 
 

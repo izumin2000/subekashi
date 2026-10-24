@@ -5,6 +5,7 @@ from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 from article.models import Article
+from subekashi.converters import SQLITE_INT_MAX, SQLITE_INT_MIN
 from subekashi.lib.pagination import OpenDataPagination
 from subekashi.lib.throttling import UserRateThrottle
 from subekashi.models import Author, Contact, History, Prush, Stats, Word
@@ -42,9 +43,13 @@ class PrushAPI(OpenDataAPI):
     serializer_class = PrushSerializer
 
 
-# NumberFilterは小数も受け付け、?song=1.5 でid=1の曲の履歴を返してしまうため、整数に限る
+# NumberFilterは小数も受け付け、?song=1.5 でid=1の曲の履歴を返してしまうため、整数に限る。
+# SQLiteで扱えない大きさの整数はクエリの実行時にOverflowErrorになるため、入力エラーにする
 class IdFilter(django_filters.NumberFilter):
     field_class = forms.IntegerField
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, min_value=SQLITE_INT_MIN, max_value=SQLITE_INT_MAX, **kwargs)
 
 
 class HistoryFilter(django_filters.FilterSet):

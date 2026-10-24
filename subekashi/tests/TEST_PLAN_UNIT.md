@@ -1524,7 +1524,7 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | 曲・作者で絞り込み | `?song=<id>`・`?author=<id>` | その曲・作者の履歴のみ |
 | 編集者で絞り込み | `?editor=<id>` | 公開・強制公開の編集者はその編集者の履歴、非公開の編集者は空（非公開の編集者の履歴がどれかわからないようにする） |
 | 不正な絞り込み | `?editor=abc`・`?song=1.5`・`?author=1e3` | HTTP 400（それぞれの項目のエラー。小数を切り捨ててid=1として絞り込まない） |
-| 範囲外のidで絞り込み | `?song=`30桁の数字 | HTTP 200、空（500にならない） |
+| 範囲外のidで絞り込み | `?song=`30桁の数字・30桁の負の数 | HTTP 400（`song`のエラー。SQLiteで扱えない大きさの整数でクエリを実行すると`OverflowError`で500になるため） |
 | 編集者を履歴ごとに取得しない | 編集者の違う履歴6件の一覧 | `FROM subekashi_editor`のクエリが実行されない（`select_related`） |
 | 問い合わせ | 回答済み・未回答の問い合わせ | 一覧は回答済みのみ（`id`・`detail`・`post_time`・`answer`）。未回答の個別取得はHTTP 404 |
 | 模倣単語 | 個別取得 | `id`・`word`・`hinshi`・`katsuyou`・`candidate` |
