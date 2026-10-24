@@ -731,7 +731,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 検索フォームの初期表示（URLクエリ指定） | `?title=テスト` `?mediatypes=youtube` `?categorys=arrange` `?view_gte=100` `?is_subeana=xx` `?jokerange=off` `?is_original=True` `?is_inst=True` `?is_questionable=True` `?is_special=True` `?is_collab=True` `?is_lack=True` `?sort=-view` など | URLクエリを含むフォーム（title/url/category/youtube/subeana/joke/original/inst/questionable/special/collab/lack/sortなど）が表示される |
 | 検索フォームの初期表示（複数指定） | `?is_lack=True&keyword=テスト` / `?title=テスト&sort=-view` / `?title=テスト&view_gte=100` / `?view_gte=100&lyrics=テスト` | ラジオボタンの並び順で先の "keyword" / "sort" / "youtube" / "lyrics" が表示される |
 | ラジオボタンの並び順 | GETリクエスト | よく利用するため、先頭からキーワード・並び替え・歌詞・YouTubeの順に並ぶ（全20個。プレラは#1064で追加） |
-| プレラのフォーム（#1064） | 2021年・2024年（2件）・2025年の日付のプレラと、日付が無いプレラが登録されている | プレラのラジオボタン（`fas fa-angle-double-right` のアイコン）と、`<select id="prush" name="prush">` の選択肢が表示される。選択肢は「指定なし」（値は空）と、プレラの日付（`Prush.date`）の古い順に並べ、年ごとの `<optgroup>`（「2021年」「2024年」「2025年」、日付が無いものは最後の「年が不明」）に分けたプレラの名前。`select` の値も `search_form.js` の `FORM_QUERIES` でクエリに入る。年のグループのラベルは太字にせず灰色（`search_form.css`）にする（ブラウザでの確認はPlaywright） |
+| プレラのフォーム（#1064） | 2021年・2024年（2件）・2025年の日付のプレラと、日付が無いプレラが登録されている | プレラのラジオボタン（`fas fa-angle-double-right` のアイコン）と、`<select id="prush" name="prush">` の選択肢が表示される。選択肢は「指定なし」（値は空）と、プレラの日付（`Prush.date`）の新しい順に並べ、年ごとの `<optgroup>`（「2025年」「2024年」「2021年」、日付が無いものは最後の「年が不明」）に分けたプレラの名前。`select` の値も `search_form.js` の `FORM_QUERIES` でクエリに入る。年のグループのラベルは太字にせず灰色（`search_form.css`）にする（ブラウザでの確認はPlaywright） |
 | `prush` のURLクエリ（#1064） | `?prush=年末プレラ５`（曲ページのタグのリンク） | プレラのフォームを表示し、「年末プレラ５」の選択肢を選択した状態にする（`selected_prush`。テキストの入力欄ではないため `TEXT_FORMS` には含めない） |
 | 検索フォームの初期表示（空の値） | `?title=` | "keyword" が表示される |
 | デフォルト値のラジオボタンに`data-default` | GETリクエスト | フィルタバッジは`data-default`のラジオボタンをデフォルト値として判定するため、各フィルタで1つだけ付き、`songrange`・`jokerange` は `COOKIE_FORMS` のデフォルト値、真偽値のフィルタは `""`（指定なし）のラジオボタンに付く |
@@ -1873,7 +1873,7 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 
 #### 11-9. `Prush` モデル（#1064）
 
-プレラ（プレミアラッシュ）。すべあな界隈年表のプ列から `timeline` コマンドで登録し、`Song.prush`（null可の外部キー）で曲に1つだけ付ける。新規登録・編集画面からは登録・編集できない。`date` は年表でそのプレラが最初に出てくる行の日付で、曲の検索の選択肢を古い順に並べ、年ごとに分けるのに使う（マイグレーション `0053_prush_date`）。
+プレラ（プレミアラッシュ）。すべあな界隈年表のプ列から `timeline` コマンドで登録し、`Song.prush`（null可の外部キー）で曲に1つだけ付ける。新規登録・編集画面からは登録・編集できない。`date` は年表でそのプレラが最初に出てくる行の日付で、曲の検索の選択肢を新しい順に並べ、年ごとに分けるのに使う（マイグレーション `0053_prush`）。
 
 | テストケース | 操作 | 期待結果 |
 | --- | --- | --- |

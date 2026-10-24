@@ -61,9 +61,10 @@ DEFAULT_SEARCH_FORM = 'keyword'
 DISPLAY_MEDIA_INDEX = 6
 
 
-# プレラの選択肢を、年表でプレラが最初に出てくる日付の古い順に並べ、年ごとに分けて返す（#1064）
+# プレラの選択肢を、年表でプレラが最初に出てくる日付の新しい順に並べ、年ごとに分けて返す（#1064）
+# 日付が無いプレラは最後の「年が不明」にまとめる
 def get_prush_groups():
-    prushes = Prush.objects.order_by(F("date").asc(nulls_last=True), "id").values_list("name", "date")
+    prushes = Prush.objects.order_by(F("date").desc(nulls_last=True), "-id").values_list("name", "date")
     return [
         {"label": f"{year}年" if year else "年が不明", "names": [name for name, _ in group]}
         for year, group in groupby(prushes, key=lambda prush: prush[1].year if prush[1] else None)

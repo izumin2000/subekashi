@@ -657,7 +657,7 @@ class SongsViewTest(TestCase):
         self.assertNotIn('type="checkbox" value="category-', content)
 
     def test_prush_form_has_prush_choices(self):
-        """#1064: プレラのフォームは、指定なしと、年表でプレラが最初に出てくる日付の古い順に年ごとに分けたプレラの選択肢にすること"""
+        """#1064: プレラのフォームは、指定なしと、年表でプレラが最初に出てくる日付の新しい順に年ごとに分けたプレラの選択肢にすること"""
         Prush.objects.create(name="年末プレラ５", date=date(2024, 12, 31))
         Prush.objects.create(name="日付が無いプレラ")
         Prush.objects.create(name="晩夏プレラ6", date=date(2025, 8, 20))
@@ -668,10 +668,10 @@ class SongsViewTest(TestCase):
         content = response.content.decode()
         start = content.index('<select id="prush" name="prush">')
         select = content[start:content.index("</select>", start)]
-        self.assertEqual(re.findall(r'<optgroup label="([^"]*)">', select), ["2021年", "2024年", "2025年", "年が不明"])
+        self.assertEqual(re.findall(r'<optgroup label="([^"]*)">', select), ["2025年", "2024年", "2021年", "年が不明"])
         self.assertEqual(
             re.findall(r'<option value="([^"]*)">', select),
-            ["", "年末プレラ2", "晩夏プレラ５", "年末プレラ５", "晩夏プレラ6", "日付が無いプレラ"],
+            ["", "晩夏プレラ6", "年末プレラ５", "晩夏プレラ５", "年末プレラ2", "日付が無いプレラ"],
         )
         self.assertIn('<option value="">指定なし</option>', select)
 
