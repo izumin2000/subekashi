@@ -179,6 +179,10 @@
         showToast("ok", "登録しました。");
     {% elif request.GET.toast == "lock" %}
         showToast("warning", "この曲は編集できません。");
+    {% elif request.GET.toast == "restore" %}
+        showToast("ok", "削除を取り消しました。");
+    {% elif request.GET.toast == "restore_notify_error" %}
+        showToast("warning", "削除を取り消しましたが、管理者への通知に失敗しました。");
     {% endif %}
 
     {% if request.GET.name_unified %}

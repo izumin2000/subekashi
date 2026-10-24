@@ -33,6 +33,7 @@ from subekashi.views.song_delete import SongDeleteView
 from subekashi.views.song_edit import SongEditView
 from subekashi.views.song_history import SongHistoryView
 from subekashi.views.song_new import SongNewView
+from subekashi.views.song_restore import SongRestoreView
 from subekashi.views.api.song import SongAPI
 from subekashi.views.api.song_edit_init import SongEditInitView
 from subekashi.views.api.songlink import SongLinkAPI

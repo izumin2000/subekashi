@@ -9,7 +9,7 @@ from subekashi.views.song_removed import render_song_not_found
 
 class SongHistoryView(View):
     def get(self, request, song_id):
-        # Songがなければ404（ユーザーが削除した曲なら削除の取り消しの案内）
+        # Songがなければ404（ユーザーが削除した曲なら、削除を取り消すボタンのあるページ）
         song = Song.get_or_none(song_id)
         if song is None:
             return render_song_not_found(request, song_id)
