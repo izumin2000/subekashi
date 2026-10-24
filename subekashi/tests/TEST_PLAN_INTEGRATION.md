@@ -196,22 +196,33 @@
 
 ---
 
-### 3. 削除申請フロー
+### 3. 削除フロー
 
 **テストファイル案**: `tests/integration/test_flow_song_delete.py`
 
-ビュー層 → `Editor.get_or_create_from_ip` → `History.create_for_song` の連携を検証する。
+ビュー層 → `remove_song` → `Editor.get_or_create_from_ip` → `History.create_for_song` → `send_discord` の連携を検証する。
+削除申請ではなく、送信するとすぐに曲を論理削除する（#1239）。
 
-#### 3-1. 正常な削除申請
+#### 3-1. 正常な削除
 
 | 項目 | 内容 |
 | --- | --- |
 | 前提 | 削除されていない曲が存在する |
 | 操作 | `POST /songs/<id>/delete/` `{reason="著作権上の理由"}` |
-| 検証: レスポンス | `/songs/<id>?toast=delete` へリダイレクト (302) |
-| 検証: Song | `Song.is_deleted` は変化していない（申請のみ） |
-| 検証: History | `History(history_type="delete")` が 1 件作成されている |
+| 検証: レスポンス | `/?toast=delete`（トップ）へリダイレクト (302) |
+| 検証: Song | `Song.is_removed` が `True` になる（`Song.is_deleted` は変化しない）。作者・URL・模倣元は残る |
+| 検証: History | `History(history_type="delete", title="<タイトル>を削除")` が 1 件作成されている |
 | 検証: Editor | `Editor.objects.count()` が 1 件増加（または既存が再利用）している |
+| 検証: Discord | 新規登録・編集と同じNEW_DISCORD_URL宛に、新規作成と同じ形式（`削除されました`・曲のページのURL・空行）で始まり、タイトル・作者・削除理由・編集者を含む文面を送る |
+| 検証: 表示 | 曲のページ・編集・削除・編集履歴のページが、削除の取り消しをお問い合わせ（種類「削除の取り消し」）で申請するよう案内するページ（HTTP 410）になり、検索・API・作者のページ・模倣元/模倣曲の一覧・統計・サイトマップに含まれない。編集履歴の一覧では曲へのリンクの代わりに「この曲または作者は削除されました」と表示される |
+| 検証: URL | 削除した曲だけに紐づくURLは、別の曲に登録できる（`validate_song_url`・`/api/songlink/`） |
+
+#### 3-1-1. 削除した曲の復元（手動）
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作 | 管理サイトの曲の変更画面で `is_removed` のチェックを外して保存する |
+| 検証 | 曲のページ等に再び表示され、作者・URL・模倣関係も削除前のまま戻る |
 
 #### 3-2. 削除理由が空はエラー
 
@@ -228,7 +239,7 @@
 | 前提 | `song.is_lock = True` |
 | 操作 | `POST /songs/<id>/delete/` |
 | 検証 | `/songs/<id>?toast=lock` へリダイレクト |
-| 検証 | `History.objects.count() == 0` |
+| 検証 | `History.objects.count() == 0`、`Song.is_removed` は `False` のまま |
 
 ---
 
@@ -951,7 +962,7 @@ python manage.py test subekashi.tests article.tests
 | **高** | 曲登録フロー (1) | 中核機能。Song/Author/SongLink/History が正しく連携するかを一括確認 |
 | **高** | 曲編集フロー (2) | update_song の副作用（SongLink の追加・削除）は単体テストでカバーしにくい |
 | **高** | 楽曲検索・API フロー (5) | ページネーション + フィルターの組み合わせはE2Eで確認が必要 |
-| **中** | 削除申請フロー (3) | 単体テストでほぼカバー済みだが、DB 書き込みの確認が必要 |
+| **中** | 削除フロー (3) | 単体テストでほぼカバー済みだが、DB 書き込みの確認が必要 |
 | **中** | 作者管理フロー (6) | get_or_create の重複防止は実 DB で確認が重要 |
 | **中** | YouTube API 連携フロー (10) | 外部 API との連携は結合テストでしか確認できない |
 | **低** | 模倣関係フロー (7) | M2M の操作は比較的単純 |

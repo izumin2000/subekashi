@@ -1,25 +1,27 @@
+from django.db import transaction
 from django.shortcuts import render, redirect
 from django.views import View
 from subekashi.forms import SongDeleteForm
 from subekashi.models import Song, Editor, History
 from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
-from subekashi.lib.song_service import build_delete_discord_text
-from config.local_settings import DELETE_DISCORD_URL
+from subekashi.lib.song_service import build_delete_discord_text, remove_song
+from subekashi.views.song_removed import render_song_not_found
+from config.local_settings import NEW_DISCORD_URL
 
 
 class SongDeleteView(View):
     def dispatch(self, request, song_id, *args, **kwargs):
         self.song = Song.get_or_none(song_id)
         if self.song is None:
-            return render(request, 'subekashi/404.html', status=404)
+            return render_song_not_found(request, song_id)
         if self.song.is_lock:
             return redirect(f'/songs/{song_id}?toast=lock')
         return super().dispatch(request, song_id, *args, **kwargs)
 
     def get_base_context(self):
         return {
-            "metatitle": f"{self.song.title}の削除申請",
+            "metatitle": f"{self.song.title}の削除",
             "song": self.song,
         }
 
@@ -36,23 +38,24 @@ class SongDeleteView(View):
 
         reason = form.cleaned_data['reason']
 
-        # 編集履歴を保存
         ip = get_ip(request)
         editor = Editor.get_or_create_from_ip(ip)
 
-        History.create_for_song(
-            song=self.song,
-            title=f"{self.song.title}を削除申請",
-            history_type="delete",
-            changes=["理由", reason],
-            editor=editor,
-        )
+        # 曲を論理削除し、編集履歴を保存（#1239）
+        with transaction.atomic():
+            remove_song(self.song)
+            History.create_for_song(
+                song=self.song,
+                title=f"{self.song.title}を削除",
+                history_type="delete",
+                changes=["理由", reason],
+                editor=editor,
+            )
 
-        # Discordに送信
+        # 申請ではなく曲の変更になったため、新規登録・編集と同じ通知先のDiscordに送信する
         content = build_delete_discord_text(self.song, reason, editor)
-        is_ok = send_discord(DELETE_DISCORD_URL, content)
-        if not is_ok:
-            context["error"] = "お問い合わせを送信できませんでした。"
-            return render(request, 'subekashi/song_edit.html', context)
+        is_ok = send_discord(NEW_DISCORD_URL, content)
 
-        return redirect(f'/songs/{song_id}?toast=delete')
+        # 削除した曲のページは表示できないため、トップに遷移する
+        # 通知に失敗しても曲は削除されているため、500ページにはせず、削除できたことと通知に失敗したことを伝える
+        return redirect('/?toast=delete' if is_ok else '/?toast=delete_notify_error')

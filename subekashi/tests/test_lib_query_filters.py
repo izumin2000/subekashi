@@ -600,6 +600,25 @@ class FilterByLackTest(TestCase):
         qs = Song.objects.filter(filter_by_lack()).distinct()
         self.assertNotIn(song, qs)
 
+    def test_song_imitating_only_removed_song_is_lack(self):
+        # 条件(B): 模倣元がユーザーが削除した曲（#1239）だけなら、模倣元が空とみなす
+        # URLあり(条件A除外)・歌詞あり(条件C除外)
+        removed = Song.objects.create(title="削除した模倣元", is_removed=True)
+        song = Song.objects.create(title="削除した曲だけを模倣する曲", lyrics="歌詞あり")
+        song.imitates.add(removed)
+        SongLink.objects.create(url="https://youtu.be/lackremoved01").songs.add(song)
+        self.assertIn(song, Song.objects.filter(filter_by_lack()))
+        self.assertNotIn(song, Song.objects.exclude(filter_by_lack()))
+
+    def test_song_imitating_removed_and_existing_songs_is_not_lack(self):
+        removed = Song.objects.create(title="削除した模倣元", is_removed=True)
+        original = Song.objects.create(title="模倣元")
+        song = Song.objects.create(title="模倣元のある曲", lyrics="歌詞あり")
+        song.imitates.add(removed, original)
+        SongLink.objects.create(url="https://youtu.be/lackremoved02").songs.add(song)
+        self.assertNotIn(song, Song.objects.filter(filter_by_lack()))
+        self.assertIn(song, Song.objects.exclude(filter_by_lack()))
+
 
 class FilterByCategorysTest(TestCase):
     """filter_by_categorys() のテスト（#423）"""
@@ -746,6 +765,15 @@ class MakeIsLackAnnotationTest(TestCase):
         )
         qs = Song.objects.annotate(is_lack=make_is_lack_annotation())
         annotated = qs.get(pk=song.pk)
+        self.assertTrue(annotated.is_lack)
+
+    def test_song_imitating_only_removed_song_annotated_true(self):
+        # ユーザーが削除した曲（#1239）だけを模倣する曲は、filter_by_lack()と同じく模倣元が空とみなす
+        removed = Song.objects.create(title="削除した模倣元", is_removed=True)
+        song = Song.objects.create(title="削除した曲だけを模倣する曲", lyrics="歌詞あり")
+        song.imitates.add(removed)
+        SongLink.objects.create(url="https://youtu.be/annremoved001").songs.add(song)
+        annotated = Song.objects.annotate(is_lack=make_is_lack_annotation()).get(pk=song.pk)
         self.assertTrue(annotated.is_lack)
 
     def test_questionable_song_not_matching_condition_b_or_c_annotated_false(self):

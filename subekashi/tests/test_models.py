@@ -575,6 +575,55 @@ class PrushModelTest(TestCase):
         self.assertIsNone(song.prush)
 
 
+class SongRemovedManagerTest(TestCase):
+    """ユーザーが削除した曲（is_removed=True）を除くマネージャーのテスト（#1239）"""
+
+    def setUp(self):
+        self.author = Author.objects.create(name="削除マネージャーテスト作者")
+        self.song = Song.objects.create(title="表示する曲")
+        self.removed = Song.objects.create(title="削除した曲", is_removed=True)
+        for song in [self.song, self.removed]:
+            song.authors.add(self.author)
+
+    def test_objects_excludes_removed_song(self):
+        self.assertEqual(list(Song.objects.all()), [self.song])
+
+    def test_all_objects_includes_removed_song(self):
+        self.assertEqual(set(Song.all_objects.all()), {self.song, self.removed})
+
+    def test_get_or_none_returns_none_for_removed_song(self):
+        self.assertIsNone(Song.get_or_none(self.removed.id))
+        self.assertEqual(Song.get_or_none(self.song.id), self.song)
+
+    def test_get_for_author_excludes_removed_song(self):
+        self.assertEqual(list(Song.get_for_author(self.author.id)), [self.song])
+
+    def test_author_songs_excludes_removed_song(self):
+        self.assertEqual(list(self.author.songs.all()), [self.song])
+
+    def test_imitates_and_imitateds_exclude_removed_song(self):
+        self.song.imitates.add(self.removed)
+        self.removed.imitates.add(self.song)
+        self.assertEqual(list(self.song.imitates.all()), [])
+        self.assertEqual(list(self.song.imitateds.all()), [])
+
+    def test_link_songs_excludes_removed_song(self):
+        link = SongLink.objects.create(url="https://youtu.be/removedmgr01")
+        link.songs.add(self.song, self.removed)
+        self.assertEqual(list(link.songs.all()), [self.song])
+
+    def test_history_song_returns_removed_song(self):
+        # 編集履歴からは、削除した曲を参照できる（履歴の一覧で「削除されました」と表示するため）
+        editor = Editor.objects.create(ip="127.0.0.1")
+        history = History.create_for_song(
+            song=self.removed, title="削除した曲を削除", history_type="delete", changes=["理由", "重複"], editor=editor,
+        )
+        self.assertEqual(History.objects.get(pk=history.pk).song, self.removed)
+
+    def test_default_manager_is_objects(self):
+        self.assertEqual(Song._default_manager.name, "objects")
+
+
 class SongCategoryMigrationTest(TestCase):
     """0050_song_category_meme のデータ移行のテスト（#423）"""
 

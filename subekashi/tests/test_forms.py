@@ -21,7 +21,7 @@ class ContactFormTest(SimpleTestCase):
         self.assertTrue(form.is_valid())
 
     def test_all_category_choices_are_valid(self):
-        for category in ["不具合の報告", "提案", "質問", "その他"]:
+        for category in ["不具合の報告", "提案", "質問", "削除の取り消し", "その他"]:
             form = ContactForm(data=self._make_data(category=category))
             self.assertTrue(form.is_valid(), f"カテゴリ '{category}' が無効と判定された")
 

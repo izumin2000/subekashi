@@ -14,6 +14,7 @@
                 <option value="不具合の報告" {% if request.GET.category == "不具合の報告" %}selected{% endif %}>不具合の報告</option>
                 <option value="提案" {% if request.GET.category == "提案" %}selected{% endif %}>提案</option>
                 <option value="質問" {% if request.GET.category == "質問" %}selected{% endif %}>質問</option>
+                <option value="削除の取り消し" {% if request.GET.category == "削除の取り消し" %}selected{% endif %}>削除の取り消し</option>
                 <option value="その他" {% if request.GET.category == "その他" %}selected{% endif %}>その他</option>
             </select>
         </div>

@@ -234,6 +234,27 @@ class ImportTimelineTest(TestCase):
         self.assertEqual([reason for _, reason in result.skipped], ["削除された曲のURL"])
         self.assertFalse(Song.objects.exists())
 
+    def test_skips_url_of_song_removed_by_user(self):
+        # ユーザーが削除した曲（#1239）だけに紐づくURLも、削除を取り消さないよう再び登録しない
+        removed = create_song("曲", urls=["https://youtu.be/aaaaaaaaaaa"], is_removed=True)
+        result = import_timeline([make_row(category="アレンジ")])
+
+        self.assertEqual([reason for _, reason in result.skipped], ["削除された曲のURL"])
+        self.assertEqual(Song.all_objects.count(), 1)
+        removed.refresh_from_db()
+        self.assertEqual(removed.category, "song")
+
+    def test_url_of_song_removed_by_user_is_not_used_to_match(self):
+        # ユーザーが削除した曲（#1239）のURLは照合に使わず、削除していない曲を更新する。削除した曲のURLは追加しない
+        create_song("曲", urls=["https://youtu.be/aaaaaaaaaaa"], is_removed=True)
+        song = create_song("曲", urls=["https://youtu.be/bbbbbbbbbbb"])
+        result = import_timeline([make_row(category="アレンジ", urls=["https://youtu.be/aaaaaaaaaaa", "https://youtu.be/bbbbbbbbbbb"])])
+
+        self.assertEqual(result.skipped, [])
+        song.refresh_from_db()
+        self.assertEqual(song.category, "arrange")
+        self.assertEqual(song_urls(song), ["https://youtu.be/bbbbbbbbbbb"])
+
     def test_reuses_link_without_songs(self):
         link = SongLink.objects.create(url="https://youtu.be/aaaaaaaaaaa")
         import_timeline([make_row()])
@@ -599,6 +620,14 @@ class ImportTimelineTest(TestCase):
         result = import_timeline([make_row(lyrics_url="https://lyrics.imicomweb.com/songs/999999")])
 
         self.assertEqual(len(result.created), 1)
+
+    def test_skips_lyrics_song_removed_by_user(self):
+        # 歌詞列がユーザーが削除した曲（#1239）を指す行は、削除した曲を作り直さないよう登録しない
+        removed = create_song("曲", is_removed=True)
+        result = import_timeline([make_row(lyrics_url=f"https://lyrics.imicomweb.com/songs/{removed.id}")])
+
+        self.assertEqual([reason for _, reason in result.skipped], ["歌詞列の曲が削除されている"])
+        self.assertEqual(Song.all_objects.count(), 1)
 
     def test_url_match_takes_priority_over_lyrics(self):
         song = create_song("曲", urls=["https://youtu.be/aaaaaaaaaaa"])

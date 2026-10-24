@@ -4,14 +4,15 @@ from django.views import View
 from subekashi.models import Song, History
 from subekashi.lib.ip import get_ip
 from subekashi.constants.constants import HISTORIES_PER_PAGE
+from subekashi.views.song_removed import render_song_not_found
 
 
 class SongHistoryView(View):
     def get(self, request, song_id):
-        # Songがなければ404
+        # Songがなければ404（ユーザーが削除した曲なら削除の取り消しの案内）
         song = Song.get_or_none(song_id)
         if song is None:
-            return render(request, 'subekashi/404.html', status=404)
+            return render_song_not_found(request, song_id)
 
         all_histories = History.get_for_song(song)
         paginator = Paginator(all_histories, HISTORIES_PER_PAGE)
