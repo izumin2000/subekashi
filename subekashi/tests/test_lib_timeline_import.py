@@ -6,7 +6,7 @@ lib/timeline_import.py のテスト（すべあな界隈年表から曲を登録
 どのURLも登録されていなくても、歌詞列の曲とタイトルか作者が一致すればその曲を更新する。
 タイトル・作者は更新せず、URL・模倣は追加のみ、カテゴリは年表の値にする。Historyの編集者はid=1のEditor。
 """
-from datetime import date
+from datetime import date, timedelta
 from unittest.mock import MagicMock, patch
 
 from django.test import SimpleTestCase, TestCase
@@ -268,7 +268,9 @@ class ImportTimelineTest(TestCase):
         ccc = create_song("CCC", "原曲の作者")
         song = create_song("曲", "作者", ["https://youtu.be/AAAAAAAAAAC", "https://youtu.be/AAAAAAAAAAB"])
         song.imitates.add(aaa, ccc)
-        post_time = song.post_time
+        # Windowsの時計は分解能が約15.6msで、作成と更新が同じ時刻になることがあるため、作成日時を前日にしておく
+        post_time = song.post_time - timedelta(days=1)
+        Song.objects.filter(pk=song.pk).update(post_time=post_time)
 
         result = import_timeline([make_row(
             title="年表のタイトル", author="年表の作者", category="カバー", motif1="AAA", motif2="→BBB",
