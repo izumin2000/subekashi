@@ -1,3 +1,5 @@
+from itertools import groupby
+from django.db.models import F
 from django.shortcuts import render
 from django.views import View
 from subekashi.constants.constants import ALL_MEDIAS, LONG_TERM_COOKIE_AGE, FORM_BUTTON_CHOICES, FORM_BUTTON_DEFAULT, SORT_CHOICES, SONG_CATEGORIES
@@ -59,6 +61,15 @@ DEFAULT_SEARCH_FORM = 'keyword'
 DISPLAY_MEDIA_INDEX = 6
 
 
+# プレラの選択肢を、年表でプレラが最初に出てくる日付の古い順に並べ、年ごとに分けて返す（#1064）
+def get_prush_groups():
+    prushes = Prush.objects.order_by(F("date").asc(nulls_last=True), "id").values_list("name", "date")
+    return [
+        {"label": f"{year}年" if year else "年が不明", "names": [name for name, _ in group]}
+        for year, group in groupby(prushes, key=lambda prush: prush[1].year if prush[1] else None)
+    ]
+
+
 # 検索フォームの表示に使うcontextと、URLクエリで変更されcookieに保存する値を返す
 # トップ画面の検索フォーム（TopView）でも使用する。トップ画面では検索の選択肢のcookieを保存しないため、request_dataに空の辞書を渡し、cookieに保存する値は使わない
 def get_search_form_context(request, request_data):
@@ -69,7 +80,7 @@ def get_search_form_context(request, request_data):
         # 自動で適用されるフィルタの案内に使用する（search_form.js）
         "youtube_queries": {"filters": YOUTUBE_FILTERS, "sorts": YOUTUBE_SORTS},
         # プレラの選択肢（#1064）
-        "prush_names": list(Prush.objects.order_by("id").values_list("name", flat=True)),
+        "prush_groups": get_prush_groups(),
     }
 
     COOKIES = request.COOKIES

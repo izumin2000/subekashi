@@ -240,18 +240,33 @@ class TimelineImporter:
             if allow_dup:
                 self.shared_url_keys.add(key)
 
-        self.prush_names = dict(Prush.objects.values_list("id", "name"))
+        self.prush_names = {}
+        self.prush_dates = {}
+        for prush_id, name, prush_date in Prush.objects.values_list("id", "name", "date"):
+            self.prush_names[prush_id] = name
+            self.prush_dates[prush_id] = prush_date
         self.prush_ids = {get_prush_key(name): prush_id for prush_id, name in self.prush_names.items()}
 
-    # プレラのidを返す。無ければ作る
+    # プレラのidを返す。無ければその行の日付で作る
     # 行をスキップすると作ったプレラはロールバックされるため、スキップすることが無くなってから呼ぶ
-    def get_prush_id(self, name):
-        key = get_prush_key(name)
+    def get_prush_id(self, row):
+        key = get_prush_key(row.premiere_rush)
         if key not in self.prush_ids:
-            prush = Prush.objects.create(name=name)
+            prush = Prush.objects.create(name=row.premiere_rush, date=row.date)
             self.prush_ids[key] = prush.id
             self.prush_names[prush.id] = prush.name
+            self.prush_dates[prush.id] = prush.date
         return self.prush_ids[key]
+
+    # プレラの日付は、年表でそのプレラが最初に出てくる行の日付にする
+    # 曲の検索の選択肢の並びに使うため、曲を登録・更新しない行（対象外のカテゴリ・スキップした行）の日付も使う
+    def update_prush_date(self, row):
+        prush_id = self.prush_ids.get(get_prush_key(row.premiere_rush)) if row.premiere_rush else None
+        if prush_id is None or row.date is None:
+            return
+        if self.prush_dates.get(prush_id) is None or row.date < self.prush_dates[prush_id]:
+            Prush.objects.filter(pk=prush_id).update(date=row.date)
+            self.prush_dates[prush_id] = row.date
 
     def is_removed_url(self, key):
         return key in self.removed_url_keys and not self.url_song_ids[key]
@@ -323,7 +338,7 @@ class TimelineImporter:
         fields = SongFields(title=row.title, category=category)
         song = create_song(fields)
         if row.premiere_rush:
-            song.prush_id = self.get_prush_id(row.premiere_rush)
+            song.prush_id = self.get_prush_id(row)
             song.save(update_fields=["prush"])
         song.authors.set(authors)
         for url in urls:
@@ -356,7 +371,7 @@ class TimelineImporter:
             self.prushed_song_ids.add(song.id)
         self.result.created.append(song)
 
-    def update(self, song_id, urls, category, prush_name, imitate_ids):
+    def update(self, song_id, row, urls, category, imitate_ids):
         state = self.songs[song_id]
 
         new_urls = [
@@ -372,11 +387,12 @@ class TimelineImporter:
                 new_category = category
             self.categorized_song_ids.add(song_id)
         # プ列が空欄の行は、登録されているプレラを消さない
+        prush_name = row.premiere_rush
         new_prush_id = None
         if prush_name:
             current_key = get_prush_key(self.prush_names[state.prush_id]) if state.prush_id else None
             if song_id not in self.prushed_song_ids and get_prush_key(prush_name) != current_key:
-                new_prush_id = self.get_prush_id(prush_name)
+                new_prush_id = self.get_prush_id(row)
             self.prushed_song_ids.add(song_id)
         if not (new_urls or new_imitate_ids or new_category or new_prush_id):
             self.result.unchanged += 1
@@ -426,6 +442,7 @@ class TimelineImporter:
         self.result.updated.append((song, history))
 
     def import_row(self, row):
+        self.update_prush_date(row)
         category = CATEGORY_MAP.get(row.category)
         if category is None:
             if row.category in EXCLUDED_CATEGORIES:
@@ -449,7 +466,7 @@ class TimelineImporter:
             with transaction.atomic():
                 song_id = song_ids.pop() if song_ids else self.get_lyrics_song_id(row)
                 if song_id:
-                    self.update(song_id, urls, category if row.category else None, row.premiere_rush, imitate_ids)
+                    self.update(song_id, row, urls, category if row.category else None, imitate_ids)
                 elif not keys:
                     # 共有しているURLしか無い行は、次の実行でもURLで照合できず毎日新規作成されてしまうため登録しない
                     raise TimelineSkip("複数の曲で共有しているURLのみ")

@@ -561,6 +561,9 @@ class PrushModelTest(TestCase):
     def test_str_returns_name(self):
         self.assertEqual(str(Prush.objects.create(name="年末プレラ５")), "年末プレラ５")
 
+    def test_date_is_none_by_default(self):
+        self.assertIsNone(Prush.objects.create(name="年末プレラ５").date)
+
     def test_song_has_no_prush_by_default(self):
         self.assertIsNone(Song.objects.create(title="曲").prush)
 

@@ -12,7 +12,7 @@ import socket
 import tempfile
 from urllib.parse import quote
 from contextlib import contextmanager
-from datetime import datetime, timezone as dt_timezone
+from datetime import date, datetime, timezone as dt_timezone
 from unittest.mock import patch, MagicMock
 from PIL import Image
 from django.conf import settings
@@ -641,15 +641,22 @@ class SongsViewTest(TestCase):
         self.assertNotIn('type="checkbox" value="category-', content)
 
     def test_prush_form_has_prush_choices(self):
-        """#1064: プレラのフォームは、指定なしと、登録されているプレラを登録順に並べた選択肢にすること"""
-        Prush.objects.create(name="年末プレラ５")
-        Prush.objects.create(name="晩夏プレラ6")
+        """#1064: プレラのフォームは、指定なしと、年表でプレラが最初に出てくる日付の古い順に年ごとに分けたプレラの選択肢にすること"""
+        Prush.objects.create(name="年末プレラ５", date=date(2024, 12, 31))
+        Prush.objects.create(name="日付が無いプレラ")
+        Prush.objects.create(name="晩夏プレラ6", date=date(2025, 8, 20))
+        Prush.objects.create(name="年末プレラ2", date=date(2021, 12, 31))
+        Prush.objects.create(name="晩夏プレラ５", date=date(2024, 8, 20))
         response = self.client.get(reverse("subekashi:songs"))
         self.assertContains(response, '<label for="search-form-radio-prush"><i class="fas fa-angle-double-right"></i><span class="icon-p-big">プレラ</span></label>')
         content = response.content.decode()
         start = content.index('<select id="prush" name="prush">')
         select = content[start:content.index("</select>", start)]
-        self.assertEqual(re.findall(r'<option value="([^"]*)">', select), ["", "年末プレラ５", "晩夏プレラ6"])
+        self.assertEqual(re.findall(r'<optgroup label="([^"]*)">', select), ["2021年", "2024年", "2025年", "年が不明"])
+        self.assertEqual(
+            re.findall(r'<option value="([^"]*)">', select),
+            ["", "年末プレラ2", "晩夏プレラ５", "年末プレラ５", "晩夏プレラ6", "日付が無いプレラ"],
+        )
         self.assertIn('<option value="">指定なし</option>', select)
 
     def test_prush_query_selects_prush_form(self):

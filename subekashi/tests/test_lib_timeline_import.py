@@ -6,6 +6,7 @@ lib/timeline_import.py のテスト（すべあな界隈年表から曲を登録
 どのURLも登録されていなくても、歌詞列の曲とタイトルか作者が一致すればその曲を更新する。
 タイトル・作者は更新せず、URL・模倣は追加のみ、カテゴリは年表の値にする。Historyの編集者はid=1のEditor。
 """
+from datetime import date
 from unittest.mock import MagicMock, patch
 
 from django.test import SimpleTestCase, TestCase
@@ -610,11 +611,12 @@ class ImportTimelineTest(TestCase):
         self.assertEqual(other.category, "song")
 
     def test_creates_song_with_prush(self):
-        # プ列のプレラを曲に登録する（#1064）
-        result = import_timeline([make_row(premiere_rush="年末プレラ５")])
+        # プ列のプレラを曲に登録する。プレラの日付はその行の日付（#1064）
+        result = import_timeline([make_row(premiere_rush="年末プレラ５", date=date(2024, 12, 31))])
 
         song = result.created[0]
         self.assertEqual(song.prush.name, "年末プレラ５")
+        self.assertEqual(song.prush.date, date(2024, 12, 31))
         self.assertIn(["プレラ", "年末プレラ５"], song.histories.get().changes)
 
     def test_rows_share_prush(self):
@@ -625,6 +627,24 @@ class ImportTimelineTest(TestCase):
 
         self.assertEqual(result.created[0].prush, result.created[1].prush)
         self.assertEqual(Prush.objects.count(), 1)
+
+    def test_prush_date_is_earliest_row(self):
+        # プレラの日付は、年表でそのプレラが最初に出てくる行の日付にする。曲を登録しない行（対象外のカテゴリ）の日付も使う
+        prush = Prush.objects.create(name="年末プレラ５", date=date(2024, 12, 31))
+        import_timeline([
+            make_row(premiere_rush="年末プレラ５", category="企画", date=date(2024, 12, 30)),
+            make_row(premiere_rush="年末プレラ５", date=date(2025, 1, 1)),
+        ])
+
+        prush.refresh_from_db()
+        self.assertEqual(prush.date, date(2024, 12, 30))
+
+    def test_prush_date_without_row_date(self):
+        prush = Prush.objects.create(name="年末プレラ５")
+        import_timeline([make_row(premiere_rush="年末プレラ５"), make_row(premiere_rush="年末プレラ５", date=date(2025, 1, 1), urls=[])])
+
+        prush.refresh_from_db()
+        self.assertEqual(prush.date, date(2025, 1, 1))
 
     def test_prush_matches_full_and_half_width(self):
         # 年末のプレラが翌年まで続くと、全角・半角が違うことがある（「年末プレラ３」と「年末プレラ3」）

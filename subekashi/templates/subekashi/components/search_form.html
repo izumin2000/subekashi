@@ -161,8 +161,12 @@
             <label for="prush"><i class="fas fa-angle-double-right"></i><span class="icon-p-big">プレラ</span></label>
             <select id="prush" name="prush">
                 <option value="">指定なし</option>
-                {% for prush_name in prush_names %}
-                    <option value="{{ prush_name }}"{% if prush_name == selected_prush %} selected{% endif %}>{{ prush_name }}</option>
+                {% for prush_group in prush_groups %}
+                    <optgroup label="{{ prush_group.label }}">
+                        {% for prush_name in prush_group.names %}
+                            <option value="{{ prush_name }}"{% if prush_name == selected_prush %} selected{% endif %}>{{ prush_name }}</option>
+                        {% endfor %}
+                    </optgroup>
                 {% endfor %}
             </select>
         </div>
