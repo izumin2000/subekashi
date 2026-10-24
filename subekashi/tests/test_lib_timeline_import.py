@@ -18,7 +18,7 @@ from subekashi.lib.timeline_import import (
     get_song_urls,
     import_timeline,
 )
-from subekashi.models import Author, Editor, History, Song, SongLink
+from subekashi.models import Author, Editor, History, Prush, Song, SongLink
 
 
 def make_row(**fields):
@@ -608,6 +608,80 @@ class ImportTimelineTest(TestCase):
         other.refresh_from_db()
         self.assertEqual(song.category, "arrange")
         self.assertEqual(other.category, "song")
+
+    def test_creates_song_with_prush(self):
+        # プ列のプレラを曲に登録する（#1064）
+        result = import_timeline([make_row(premiere_rush="年末プレラ５")])
+
+        song = result.created[0]
+        self.assertEqual(song.prush.name, "年末プレラ５")
+        self.assertIn(["プレラ", "年末プレラ５"], song.histories.get().changes)
+
+    def test_rows_share_prush(self):
+        result = import_timeline([
+            make_row(title="曲1", premiere_rush="年末プレラ５", urls=["https://youtu.be/aaaaaaaaaaa"]),
+            make_row(title="曲2", premiere_rush="年末プレラ５", urls=["https://youtu.be/bbbbbbbbbbb"]),
+        ])
+
+        self.assertEqual(result.created[0].prush, result.created[1].prush)
+        self.assertEqual(Prush.objects.count(), 1)
+
+    def test_prush_matches_full_and_half_width(self):
+        # 年末のプレラが翌年まで続くと、全角・半角が違うことがある（「年末プレラ３」と「年末プレラ3」）
+        prush = Prush.objects.create(name="年末プレラ３")
+        result = import_timeline([make_row(premiere_rush="年末プレラ3")])
+
+        self.assertEqual(result.created[0].prush, prush)
+        self.assertEqual(Prush.objects.count(), 1)
+
+    def test_updates_prush(self):
+        song = create_song("曲", urls=["https://youtu.be/aaaaaaaaaaa"])
+        import_timeline([make_row(premiere_rush="年末プレラ５")])
+
+        song.refresh_from_db()
+        self.assertEqual(song.prush.name, "年末プレラ５")
+        history = song.histories.get()
+        self.assertEqual(history.title, "曲のプレラを編集")
+        self.assertEqual(history.changes, [["種類", "編集前", "編集後"], ["プレラ", "", "年末プレラ５"]])
+
+    def test_changes_prush(self):
+        song = create_song("曲", urls=["https://youtu.be/aaaaaaaaaaa"], prush=Prush.objects.create(name="夏プレラ"))
+        import_timeline([make_row(premiere_rush="晩夏プレラ6")])
+
+        song.refresh_from_db()
+        self.assertEqual(song.prush.name, "晩夏プレラ6")
+        self.assertIn(["プレラ", "夏プレラ", "晩夏プレラ6"], song.histories.get().changes)
+
+    def test_empty_prush_does_not_clear_prush(self):
+        # プ列が空欄の行は、登録されているプレラを消さない
+        prush = Prush.objects.create(name="夏プレラ")
+        song = create_song("曲", urls=["https://youtu.be/aaaaaaaaaaa"], prush=prush)
+        result = import_timeline([make_row()])
+
+        song.refresh_from_db()
+        self.assertEqual(song.prush, prush)
+        self.assertEqual(result.unchanged, 1)
+
+    def test_prush_of_first_row_is_used(self):
+        # 複数の行に一致する曲は、プレラが毎回入れ替わらないよう最初の行のプレラにする
+        song = create_song("曲", urls=["https://youtu.be/aaaaaaaaaaa", "https://youtu.be/bbbbbbbbbbb"])
+        rows = [
+            make_row(premiere_rush="夏プレラ", urls=["https://youtu.be/aaaaaaaaaaa"]),
+            make_row(premiere_rush="晩夏プレラ6", urls=["https://youtu.be/bbbbbbbbbbb"]),
+        ]
+        import_timeline(rows)
+        import_timeline(rows)
+
+        song.refresh_from_db()
+        self.assertEqual(song.prush.name, "夏プレラ")
+        self.assertEqual(song.histories.count(), 1)
+        self.assertFalse(Prush.objects.filter(name="晩夏プレラ6").exists())
+
+    def test_skipped_row_does_not_create_prush(self):
+        result = import_timeline([make_row(author="掲載拒否の作者", premiere_rush="夏プレラ")])
+
+        self.assertEqual([reason for _, reason in result.skipped], ["掲載拒否の作者"])
+        self.assertFalse(Prush.objects.exists())
 
     def test_recreates_deleted_editor(self):
         self.editor.delete()

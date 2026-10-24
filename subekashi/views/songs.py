@@ -3,6 +3,7 @@ from django.views import View
 from subekashi.constants.constants import ALL_MEDIAS, LONG_TERM_COOKIE_AGE, FORM_BUTTON_CHOICES, FORM_BUTTON_DEFAULT, SORT_CHOICES, SONG_CATEGORIES
 from subekashi.lib.query_filters import split_categorys
 from subekashi.lib.query_utils import YOUTUBE_FILTERS, YOUTUBE_SORTS
+from subekashi.models import Prush
 
 
 # Cookieに保存するフォームの設定
@@ -22,7 +23,7 @@ COOKIE_FORMS = {
 }
 
 # 文字・数値・日付を入力するフォーム（URLクエリの値を入力欄の初期値にする）
-TEXT_FORMS = ["keyword", "lyrics", *YOUTUBE_FILTERS, "title", "author", "url", "imitate"]
+TEXT_FORMS = ["keyword", "lyrics", *YOUTUBE_FILTERS, "title", "author", "url", "imitate", "prush"]
 
 # 真偽値のフィルタ（True・False・フィルタなしの3値）
 BOOL_FORMS = ["is_subeana", "is_joke", "is_lack", "is_draft", "is_original", "is_inst", "is_deleted", "is_questionable", "is_special", "is_collab"]
@@ -40,6 +41,7 @@ SEARCH_FORM_QUERIES = {
     'url': ['url', 'mediatypes'],
     'imitate': ['imitate'],
     'category': ['categorys'],
+    'prush': ['prush'],
     'subeana': ['songrange', 'is_subeana'],
     'joke': ['jokerange', 'is_joke'],
     'original': ['is_original'],
@@ -66,6 +68,8 @@ def get_search_form_context(request, request_data):
         "SORT_CHOICES": SORT_CHOICES,
         # 自動で適用されるフィルタの案内に使用する（search_form.js）
         "youtube_queries": {"filters": YOUTUBE_FILTERS, "sorts": YOUTUBE_SORTS},
+        # プレラの入力欄の候補（#1064）
+        "prush_names": list(Prush.objects.order_by("id").values_list("name", flat=True)),
     }
 
     COOKIES = request.COOKIES

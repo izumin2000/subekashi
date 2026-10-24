@@ -79,7 +79,7 @@
                 </td>
             </tr>
         {% endfor %}
-        {% if flags or category %}
+        {% if flags or category or song.prush %}
             <tr id="tags">
                 <td>
                     <i class="fas fa-tags"></i><p class="icon-p">タグ</p>
@@ -87,6 +87,9 @@
                 <td>
                     {% if category %}
                         <a href="{% url 'subekashi:songs' %}?categorys={{ category.value }}"><i class="{{ category.icon }}"></i><span class="icon-p-big">{{ category.label }}</span></a>
+                    {% endif %}
+                    {% if song.prush %}
+                        <a href="{% url 'subekashi:songs' %}?prush={{ song.prush.name|urlencode }}"><i class="fas fa-calendar-day"></i><span class="icon-p-big">{{ song.prush.name }}</span></a>
                     {% endif %}
                     {% for flag in flags %}
                         {% if flag.query %}

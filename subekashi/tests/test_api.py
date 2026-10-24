@@ -20,7 +20,7 @@ from rest_framework.views import APIView
 from article.models import Article
 from subekashi import urls as subekashi_urls
 from subekashi.lib.song_search import DEFAULT_SIZE
-from subekashi.models import Ai, Author, Song, SongLink, Word
+from subekashi.models import Ai, Author, Prush, Song, SongLink, Word
 from subekashi.views.api.song import SongAPI
 
 
@@ -86,6 +86,21 @@ class SongAPIListTest(TestCase):
         response = self.client.get("/api/song/", {"categorys": "~song,~meme"})
         titles = [song["title"] for song in response.json()["result"]]
         self.assertEqual(titles, ["APIテスト曲1"])
+
+    def test_prush_filter_is_exact_match(self):
+        """#1064: prushはプレラの名前の完全一致で絞り込むこと（「夏プレラ」で「晩夏プレラ6」の曲を含めない）"""
+        Song.objects.filter(pk=self.song1.pk).update(prush=Prush.objects.create(name="夏プレラ"))
+        Song.objects.filter(pk=self.song2.pk).update(prush=Prush.objects.create(name="晩夏プレラ6"))
+        response = self.client.get("/api/song/", {"prush": "夏プレラ"})
+        self.assertEqual([song["title"] for song in response.json()["result"]], ["APIテスト曲1"])
+        response = self.client.get("/api/song/", {"prush": "プレラ"})
+        self.assertEqual(response.json()["count"], 0)
+
+    def test_result_contains_prush_name(self):
+        """#1064: プレラはidではなく名前で返し、プレラが無い曲はnullを返すこと"""
+        Song.objects.filter(pk=self.song1.pk).update(prush=Prush.objects.create(name="年末プレラ５"))
+        result = {song["title"]: song["prush"] for song in self.client.get("/api/song/").json()["result"]}
+        self.assertEqual(result, {"APIテスト曲1": "年末プレラ５", "APIテスト曲2": None})
 
     def test_result_contains_category(self):
         response = self.client.get("/api/song/", {"categorys": "song"})

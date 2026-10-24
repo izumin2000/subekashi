@@ -34,6 +34,7 @@ def get_active_filters(query):
         'is_joke': 'ネタ曲',
         'mediatypes': 'メディア',
         'categorys': 'カテゴリ',
+        'prush': 'プレラ',
         'is_lack': '未完成',
         'is_draft': '下書き',
         'is_original': 'オリジナル模倣曲',

@@ -193,6 +193,12 @@ class SongFilter(django_filters.FilterSet):
         method='filter_categorys',
         validators=[validate_max_length(100)]
     )
+    # プレラ（#1064）は名前の完全一致。曲ページのタグのリンクでも使うため、部分一致にはしない（「夏プレラ」で「晩夏プレラ6」が見つからないように）
+    prush = SearchCharFilter(
+        field_name='prush__name',
+        lookup_expr='exact',
+        validators=[validate_max_length(255)]
+    )
     is_lack = django_filters.BooleanFilter(method='filter_is_lack')
     is_collab = django_filters.BooleanFilter(method='filter_is_collab')
 

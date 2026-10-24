@@ -5,6 +5,7 @@ from django.db import models
 from django.utils import timezone
 from subekashi.constants.constants import SONG_CATEGORIES, SONG_FLAGS
 from .author import Author
+from .prush import Prush
 from .base import GetOrNoneMixin
 
 
@@ -31,6 +32,8 @@ class Song(GetOrNoneMixin, models.Model):
     view = models.IntegerField(blank = True, null = True)
     like = models.IntegerField(blank = True, null = True)
     category = models.CharField(default = "song", choices=CHOICES, max_length=10)
+    # プレラ（プレミアラッシュ）。timelineコマンドで登録し、新規登録・編集画面からは登録・編集できない（#1064）
+    prush = models.ForeignKey(Prush, blank = True, null = True, default = None, on_delete = models.SET_NULL, related_name = "songs")
 
     def __str__(self):
         return self.title
