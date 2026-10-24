@@ -29,6 +29,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.humanize',
     'rest_framework',
+    # 公開API（#1243）の絞り込みのフォームをブラウザで表示するAPIの画面に出すため、テンプレートを読み込む
+    'django_filters',
     'django_hosts',
     'subekashi',
     'article',

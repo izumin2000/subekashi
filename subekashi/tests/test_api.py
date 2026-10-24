@@ -6,14 +6,15 @@ SongThrottle はビュークラスに直接定義されているため、patch �
 ApiThrottleClientIPTest・ApiThrottleIdentTest では、スロットリングを X-Real-IP ごとに数えることを検証する（#1192）。
 NewsAPIViewTest では、API_KEY を知っている人だけがニュースを登録できることを検証する（#925）。
 SongLinkAPITest では、表記の違うビリビリ動画のURLでも同じ動画のURLが見つかることを検証する（#1246）。
+OpenData〜Test・〜APITest（作者・プレラ・編集履歴・問い合わせ・模倣単語・統計・記事）では、誰でもGETで取得できる公開APIを検証する（#1243）。
 """
 import json
-from datetime import timedelta
+from datetime import date, timedelta
 from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
-from django.urls import URLResolver
+from django.urls import URLResolver, resolve
 from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework.views import APIView
@@ -22,7 +23,7 @@ from subekashi import urls as subekashi_urls
 from subekashi.lib.song_search import DEFAULT_SIZE
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
-from subekashi.models import Ai, Author, Prush, Song, SongLink, Word
+from subekashi.models import Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Prush, Song, SongLink, Stats, Word
 from subekashi.views.api.song import SongAPI
 
 
@@ -815,3 +816,362 @@ class ApiThrottleIdentTest(SimpleTestCase):
             for throttle_class in view_class.throttle_classes:
                 with self.subTest(view=view_class.__name__, throttle=throttle_class.__name__):
                     self.assertEqual(throttle_class().get_ident(request), "203.0.113.1")
+
+
+OPEN_DATA_API_URLS = ["/api/author/", "/api/prush/", "/api/history/", "/api/contact/", "/api/word/", "/api/stats/", "/api/article/"]
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+@patch("subekashi.views.api.open_data.OpenDataAPI.throttle_classes", [])
+class OpenDataAPICommonTest(TestCase):
+    """公開API（#1243）に共通する動作のテスト"""
+
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_list_returns_pagination_keys(self):
+        for url in OPEN_DATA_API_URLS:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(list(response.json()), ["count", "page", "size", "max_page", "result"])
+
+    def test_post_is_not_allowed(self):
+        for url in OPEN_DATA_API_URLS:
+            with self.subTest(url=url):
+                self.assertEqual(self.client.post(url, {}, format="json").status_code, 405)
+
+    def test_allows_any_origin(self):
+        for url in OPEN_DATA_API_URLS:
+            with self.subTest(url=url):
+                response = self.client.get(url, HTTP_ORIGIN="https://example.com")
+                self.assertEqual(response["Access-Control-Allow-Origin"], "*")
+                self.assertNotIn("Access-Control-Allow-Credentials", response)
+
+    def test_browsable_api_shows_filter_form(self):
+        # 絞り込みのフォームのテンプレート（django_filters）を読み込めないと、ブラウザで開いたときに500になる
+        for url in OPEN_DATA_API_URLS:
+            with self.subTest(url=url):
+                response = self.client.get(url, HTTP_ACCEPT="text/html")
+                self.assertEqual(response.status_code, 200)
+        self.assertContains(self.client.get("/api/history/", HTTP_ACCEPT="text/html"), 'name="editor"')
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+@patch("rest_framework.throttling.SimpleRateThrottle.timer", return_value=1_800_000_000)
+class OpenDataThrottleTest(TestCase):
+    """公開API（#1243）も曲のAPIと同じく、同じIPから毎秒2回までに制限することのテスト"""
+
+    def setUp(self):
+        cache.clear()
+        self.client = APIClient()
+
+    def test_third_request_in_a_second_is_limited(self, mock_timer):
+        for _ in range(2):
+            self.assertEqual(self.client.get("/api/author/", HTTP_X_REAL_IP="203.0.113.1").status_code, 200)
+        self.assertEqual(self.client.get("/api/history/", HTTP_X_REAL_IP="203.0.113.1").status_code, 429)
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+@patch("subekashi.views.api.open_data.OpenDataAPI.throttle_classes", [])
+class OpenDataPaginationTest(TestCase):
+    """公開API（#1243）のページ分割のテスト。曲のAPIと同じくpage・sizeで取得する範囲を指定する"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.prushes = [Prush.objects.create(name=f"ページ分割テストプレラ{i}") for i in range(5)]
+
+    def _get(self, params):
+        response = self.client.get("/api/prush/", params)
+        self.assertEqual(response.status_code, 200)
+        return response.json()
+
+    def _ids(self, data):
+        return [prush["id"] for prush in data["result"]]
+
+    def test_default_page_and_size(self):
+        data = self._get({})
+        self.assertEqual((data["count"], data["page"], data["size"], data["max_page"]), (5, 1, 50, 1))
+        self.assertEqual(self._ids(data), [prush.id for prush in self.prushes])
+
+    def test_page_and_size(self):
+        data = self._get({"page": 2, "size": 2})
+        self.assertEqual((data["page"], data["size"], data["max_page"]), (2, 2, 3))
+        self.assertEqual(self._ids(data), [prush.id for prush in self.prushes[2:4]])
+
+    def test_size_over_max_is_max(self):
+        self.assertEqual(self._get({"size": 1001})["size"], 1000)
+
+    def test_invalid_page_and_size_are_default(self):
+        for value in ["abc", "0", "-1", "²", ""]:
+            with self.subTest(value=value):
+                data = self._get({"page": value, "size": value})
+                self.assertEqual((data["page"], data["size"]), (1, 50))
+
+    def test_page_out_of_range_is_empty(self):
+        for page in ["4", "9" * 30]:
+            with self.subTest(page=page):
+                data = self._get({"page": page, "size": 2})
+                self.assertEqual(data["count"], 5)
+                self.assertEqual(data["result"], [])
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+@patch("subekashi.views.api.open_data.OpenDataAPI.throttle_classes", [])
+class AuthorAPITest(TestCase):
+    """AuthorAPI GET /api/author/ のテスト（#1243）"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.author = Author.objects.create(name="作者APIテスト作者")
+        AuthorAlias.objects.create(author=self.author, name="作者APIテスト略称", alias_type="abbr")
+        AuthorLink.objects.create(author=self.author, url="https://example.com/author")
+
+    def test_retrieve_contains_aliases_and_links(self):
+        response = self.client.get(f"/api/author/{self.author.id}/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {
+            "id": self.author.id,
+            "name": "作者APIテスト作者",
+            "aliases": [{"name": "作者APIテスト略称", "alias_type": "abbr"}],
+            "links": ["https://example.com/author"],
+        })
+
+    def test_retrieve_nonexistent_author_returns_404(self):
+        for author_id in ["99999", "9" * 30]:
+            with self.subTest(author_id=author_id):
+                self.assertEqual(self.client.get(f"/api/author/{author_id}/").status_code, 404)
+
+    def test_aliases_and_links_are_not_queried_per_author(self):
+        for i in range(3):
+            author = Author.objects.create(name=f"作者APIテスト追加{i}")
+            AuthorAlias.objects.create(author=author, name=f"作者APIテスト追加の別名{i}")
+            AuthorLink.objects.create(author=author, url=f"https://example.com/author{i}")
+        with CaptureQueriesContext(connection) as context:
+            response = self.client.get("/api/author/")
+        self.assertEqual(response.json()["count"], 4)
+        for table in ["subekashi_authoralias", "subekashi_authorlink"]:
+            with self.subTest(table=table):
+                queries = [query["sql"] for query in context.captured_queries if f"FROM `{table}`" in query["sql"]]
+                self.assertEqual(len(queries), 1)
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+@patch("subekashi.views.api.open_data.OpenDataAPI.throttle_classes", [])
+class PrushAPITest(TestCase):
+    """PrushAPI GET /api/prush/ のテスト（#1243）"""
+
+    def test_retrieve_contains_name_and_date(self):
+        prush = Prush.objects.create(name="年末プレラ５", date=date(2024, 12, 31))
+        response = APIClient().get(f"/api/prush/{prush.id}/")
+        self.assertEqual(response.json(), {"id": prush.id, "name": "年末プレラ５", "date": "2024-12-31"})
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+@patch("subekashi.views.api.open_data.OpenDataAPI.throttle_classes", [])
+class HistoryAPITest(TestCase):
+    """HistoryAPI GET /api/history/ のテスト（#1243）
+
+    編集者はidだけを返し、編集履歴を非公開にしている編集者は画面の「編集者: 非公開」と同じくnullにする。
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+        self.song = Song.objects.create(title="履歴APIテスト曲")
+        self.author = Author.objects.create(name="履歴APIテスト作者")
+        self.open_editor = Editor.objects.create(ip="198.51.100.1", is_open=True)
+        self.private_editor = Editor.objects.create(ip="198.51.100.2", is_open=False)
+        self.forced_open_editor = Editor.objects.create(ip="198.51.100.3", is_open=False, is_forced_open=True)
+        now = timezone.now()
+        self.song_history = History.objects.create(
+            song=self.song, title="曲を編集", history_type="edit", editor=self.open_editor,
+            changes=[["種類", "編集前", "編集後"], ["タイトル", "旧タイトル", "履歴APIテスト曲"]], create_time=now - timedelta(minutes=2),
+        )
+        self.author_history = History.objects.create(
+            author=self.author, title="作者を編集", history_type="edit", editor=self.private_editor, create_time=now - timedelta(minutes=1),
+        )
+        self.forced_open_history = History.objects.create(
+            song=self.song, title="曲を削除", history_type="delete", editor=self.forced_open_editor, create_time=now,
+        )
+
+    def _get_ids(self, params=None):
+        response = self.client.get("/api/history/", params or {})
+        self.assertEqual(response.status_code, 200)
+        return [history["id"] for history in response.json()["result"]]
+
+    def test_retrieve_fields(self):
+        data = self.client.get(f"/api/history/{self.song_history.id}/").json()
+        self.assertIn("create_time", data)
+        del data["create_time"]
+        self.assertEqual(data, {
+            "id": self.song_history.id,
+            "song": self.song.id,
+            "author": None,
+            "title": "曲を編集",
+            "history_type": "edit",
+            "changes": [["種類", "編集前", "編集後"], ["タイトル", "旧タイトル", "履歴APIテスト曲"]],
+            "editor": self.open_editor.id,
+        })
+
+    def test_editor_is_null_when_editor_is_private(self):
+        editors = {history["id"]: history["editor"] for history in self.client.get("/api/history/").json()["result"]}
+        self.assertEqual(editors, {
+            self.song_history.id: self.open_editor.id,
+            self.author_history.id: None,
+            self.forced_open_history.id: self.forced_open_editor.id,
+        })
+
+    def test_response_does_not_contain_editor_ip(self):
+        content = self.client.get("/api/history/").content.decode()
+        for editor in [self.open_editor, self.private_editor, self.forced_open_editor]:
+            self.assertNotIn(editor.ip, content)
+
+    def test_list_is_newest_first(self):
+        self.assertEqual(self._get_ids(), [self.forced_open_history.id, self.author_history.id, self.song_history.id])
+
+    def test_filter_by_song_and_author(self):
+        self.assertEqual(self._get_ids({"song": self.song.id}), [self.forced_open_history.id, self.song_history.id])
+        self.assertEqual(self._get_ids({"author": self.author.id}), [self.author_history.id])
+
+    def test_filter_by_editor_excludes_private_editor(self):
+        # 非公開の編集者のidで絞り込めると、編集者を隠した履歴がどれかわかってしまう
+        self.assertEqual(self._get_ids({"editor": self.open_editor.id}), [self.song_history.id])
+        self.assertEqual(self._get_ids({"editor": self.forced_open_editor.id}), [self.forced_open_history.id])
+        self.assertEqual(self._get_ids({"editor": self.private_editor.id}), [])
+
+    def test_invalid_filter_returns_400(self):
+        # 小数を切り捨ててid=1として絞り込まない
+        for name, value in [("editor", "abc"), ("song", "1.5"), ("author", "1e3")]:
+            with self.subTest(name=name, value=value):
+                response = self.client.get("/api/history/", {name: value})
+                self.assertEqual(response.status_code, 400)
+                self.assertIn(name, response.json())
+
+    def test_out_of_range_filter_returns_empty(self):
+        self.assertEqual(self._get_ids({"song": "9" * 30}), [])
+
+    def test_editor_is_not_queried_per_history(self):
+        for i in range(3):
+            History.objects.create(song=self.song, title=f"追加{i}", editor=Editor.objects.create(ip=f"198.51.100.1{i}"))
+        with CaptureQueriesContext(connection) as context:
+            response = self.client.get("/api/history/")
+        self.assertEqual(response.json()["count"], 6)
+        editor_queries = [query["sql"] for query in context.captured_queries if "FROM `subekashi_editor`" in query["sql"]]
+        self.assertEqual(editor_queries, [])
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+@patch("subekashi.views.api.open_data.OpenDataAPI.throttle_classes", [])
+class ContactAPITest(TestCase):
+    """ContactAPI GET /api/contact/ のテスト（#1243）。回答していない問い合わせは返さない"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.answered = Contact.objects.create(detail="回答済みの問い合わせ", post_time=date(2026, 10, 1), answer="回答")
+        self.unanswered = Contact.objects.create(detail="未回答の問い合わせ", post_time=date(2026, 10, 2))
+
+    def test_list_excludes_unanswered_contact(self):
+        data = self.client.get("/api/contact/").json()
+        self.assertEqual(data["result"], [
+            {"id": self.answered.id, "detail": "回答済みの問い合わせ", "post_time": "2026-10-01", "answer": "回答"},
+        ])
+
+    def test_retrieve_unanswered_contact_returns_404(self):
+        self.assertEqual(self.client.get(f"/api/contact/{self.answered.id}/").status_code, 200)
+        self.assertEqual(self.client.get(f"/api/contact/{self.unanswered.id}/").status_code, 404)
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+@patch("subekashi.views.api.open_data.OpenDataAPI.throttle_classes", [])
+class WordAPITest(TestCase):
+    """WordAPI GET /api/word/ のテスト（#1243）"""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.verb = Word.objects.create(word="走る", hinshi="動詞", katsuyou="基本形", candidate="駆ける")
+        self.verb_other_katsuyou = Word.objects.create(word="走っ", hinshi="動詞", katsuyou="連用タ接続", candidate="駆け")
+        self.noun = Word.objects.create(word="携帯", hinshi="名詞", katsuyou="名詞,サ変接続,*,*", candidate="電話")
+
+    def _get_ids(self, params):
+        response = self.client.get("/api/word/", params)
+        self.assertEqual(response.status_code, 200)
+        return [word["id"] for word in response.json()["result"]]
+
+    def test_retrieve_fields(self):
+        data = self.client.get(f"/api/word/{self.verb.id}/").json()
+        self.assertEqual(data, {"id": self.verb.id, "word": "走る", "hinshi": "動詞", "katsuyou": "基本形", "candidate": "駆ける"})
+
+    def test_filter_by_word_hinshi_katsuyou(self):
+        self.assertEqual(self._get_ids({"word": "携帯"}), [self.noun.id])
+        self.assertEqual(self._get_ids({"hinshi": "動詞"}), [self.verb.id, self.verb_other_katsuyou.id])
+        self.assertEqual(self._get_ids({"hinshi": "動詞", "katsuyou": "基本形"}), [self.verb.id])
+
+    def test_candidates_api_is_not_treated_as_retrieve(self):
+        # /api/word/<id>/ のidは数字に限るため、/api/word/candidates/ は模倣単語候補のAPIのまま
+        self.assertEqual(resolve("/api/word/candidates/").url_name, "word-candidates")
+        self.assertEqual(self.client.get("/api/word/abc/").status_code, 404)
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+@patch("subekashi.views.api.open_data.OpenDataAPI.throttle_classes", [])
+class StatsAPITest(TestCase):
+    """StatsAPI GET /api/stats/ のテスト（#1243）"""
+
+    def setUp(self):
+        self.client = APIClient()
+        Stats.objects.create(year=2026, month=9, songrange="all", song_count=10)
+        Stats.objects.create(year=2026, month=9, songrange="xx", song_count=3)
+        Stats.objects.create(year=2026, month=10, songrange="xx", song_count=4)
+
+    def test_filter_by_songrange(self):
+        data = self.client.get("/api/stats/", {"songrange": "xx"}).json()
+        self.assertEqual([(stats["year"], stats["month"], stats["song_count"]) for stats in data["result"]], [(2026, 9, 3), (2026, 10, 4)])
+
+    def test_invalid_songrange_returns_400(self):
+        response = self.client.get("/api/stats/", {"songrange": "invalid"})
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("songrange", response.json())
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+@patch("subekashi.views.api.open_data.OpenDataAPI.throttle_classes", [])
+class ArticleAPITest(TestCase):
+    """ArticleAPI GET /api/article/ のテスト（#1243）。記事一覧と同じく、非公開の記事・公開日時の前の記事は返さない"""
+
+    def setUp(self):
+        self.client = APIClient()
+        now = timezone.now()
+        self.old_article = Article.objects.create(article_id="oldArticle", title="古い記事", tag="blog", text="本文", is_md=False, post_time=now - timedelta(days=2))
+        self.news = Article.objects.create(article_id="LiveStreamVol.6", title="ニュース", tag="news", is_md=False, post_time=now - timedelta(days=1))
+        Article.objects.create(article_id="closedArticle", title="非公開の記事", tag="blog", is_open=False, post_time=now - timedelta(days=1))
+        Article.objects.create(article_id="futureArticle", title="公開前の記事", tag="blog", post_time=now + timedelta(days=1))
+
+    def _get_ids(self, params=None):
+        response = self.client.get("/api/article/", params or {})
+        self.assertEqual(response.status_code, 200)
+        return [article["article_id"] for article in response.json()["result"]]
+
+    def test_list_excludes_closed_and_future_articles(self):
+        self.assertEqual(self._get_ids(), ["LiveStreamVol.6", "oldArticle"])
+
+    def test_retrieve_closed_and_future_articles_returns_404(self):
+        for article_id in ["closedArticle", "futureArticle"]:
+            with self.subTest(article_id=article_id):
+                self.assertEqual(self.client.get(f"/api/article/{article_id}/").status_code, 404)
+
+    def test_retrieve_article_id_with_dot(self):
+        response = self.client.get("/api/article/LiveStreamVol.6/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["title"], "ニュース")
+
+    def test_retrieve_fields(self):
+        data = self.client.get("/api/article/oldArticle/").json()
+        self.assertNotIn("is_open", data)
+        self.assertEqual(
+            {key: data[key] for key in ["article_id", "title", "author", "tag", "text", "is_md", "handle_as_news"]},
+            {"article_id": "oldArticle", "title": "古い記事", "author": "", "tag": "blog", "text": "本文", "is_md": False, "handle_as_news": False},
+        )
+        self.assertIn("post_time", data)
+
+    def test_filter_by_tag(self):
+        self.assertEqual(self._get_ids({"tag": "news"}), ["LiveStreamVol.6"])

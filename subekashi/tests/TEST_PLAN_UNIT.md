@@ -1495,6 +1495,48 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | タイトルが空 | `title`なし・空白と改行のみ | HTTP 400（`title`のエラー）、記事は作成されない |
 | 変換後のタイトルが上限を超える | `title="**a**"×100`（500文字） | HTTP 400（`title`のエラー）、記事は作成されない |
 
+#### 8-8. 公開API（`views/api/open_data.py`・`lib/pagination.py`）（#1243）
+
+**テストクラス**: `OpenDataAPICommonTest`・`OpenDataThrottleTest`・`OpenDataPaginationTest`・`AuthorAPITest`・`PrushAPITest`・`HistoryAPITest`・`ContactAPITest`・`WordAPITest`・`StatsAPITest`・`ArticleAPITest`（`tests/test_api.py`）
+
+誰でもGETで取得できる読み取り専用のAPI。`/api/author/`・`/api/prush/`・`/api/history/`・`/api/contact/`・`/api/word/`・`/api/stats/`・`/api/article/`の一覧と`<id>/`の個別取得。編集者（`Editor`）のAPIは作らない。一覧は曲のAPIと同じく`page`・`size`で範囲を指定し、`count`・`page`・`size`・`max_page`・`result`を返す。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 一覧の形式 | 各APIに`GET` | HTTP 200、キーが`count`・`page`・`size`・`max_page`・`result`の順 |
+| GET以外 | 各APIに`POST` | HTTP 405 |
+| CORS | `Origin`ヘッダー付きで各APIに`GET` | `Access-Control-Allow-Origin: *`、`Access-Control-Allow-Credentials`は返らない |
+| ブラウザで表示するAPIの画面 | `Accept: text/html`で各APIに`GET` | HTTP 200（`django_filters`のテンプレートを読み込めないと500）。`/api/history/`は絞り込みのフォーム（`name="editor"`）を含む |
+| 1秒に3回目で制限 | 同じ`X-Real-IP`で`/api/author/`に2回、`/api/history/`に1回`GET` | 3回目はHTTP 429（毎秒2回まで） |
+| ページ分割: 既定 | プレラ5件、パラメータなし | `count=5`・`page=1`・`size=50`・`max_page=1`、id順に5件 |
+| ページ分割: page・size | `?page=2&size=2` | `max_page=3`、3・4件目 |
+| ページ分割: sizeの上限 | `?size=1001` | `size=1000` |
+| ページ分割: 不正な値 | `page`・`size`に`abc`・`0`・`-1`・`²`・空文字列 | `page=1`・`size=50` |
+| ページ分割: 範囲外のページ | `?page=4&size=2`・30桁の`page` | `count=5`、`result`が空（500にならない） |
+| 作者 | 別名・リンクのある作者を個別取得 | `{"id", "name", "aliases": [{"name", "alias_type"}], "links": [URL]}` |
+| 存在しない作者 | `/api/author/99999/`・30桁のid | HTTP 404 |
+| 作者の別名・リンクを作者ごとに取得しない | 別名・リンクのある作者4人の一覧 | `subekashi_authoralias`・`subekashi_authorlink`のクエリがそれぞれ1回（`prefetch_related`） |
+| プレラ | 個別取得 | `{"id", "name", "date"}` |
+| 編集履歴 | 曲の編集履歴を個別取得 | `id`・`song`・`author`・`title`・`history_type`・`create_time`・`changes`・`editor`（編集者のid） |
+| 非公開の編集者 | `is_open=True`・`is_open=False`・`is_forced_open=True`の編集者の履歴 | `editor`は公開・強制公開の編集者はid、非公開の編集者は`null`（画面の「編集者: 非公開」と同じ） |
+| 編集者のIP | 一覧 | レスポンスに編集者の`ip`が含まれない |
+| 編集履歴の並び順 | 一覧 | 新しい順 |
+| 曲・作者で絞り込み | `?song=<id>`・`?author=<id>` | その曲・作者の履歴のみ |
+| 編集者で絞り込み | `?editor=<id>` | 公開・強制公開の編集者はその編集者の履歴、非公開の編集者は空（非公開の編集者の履歴がどれかわからないようにする） |
+| 不正な絞り込み | `?editor=abc`・`?song=1.5`・`?author=1e3` | HTTP 400（それぞれの項目のエラー。小数を切り捨ててid=1として絞り込まない） |
+| 範囲外のidで絞り込み | `?song=`30桁の数字 | HTTP 200、空（500にならない） |
+| 編集者を履歴ごとに取得しない | 編集者の違う履歴6件の一覧 | `FROM subekashi_editor`のクエリが実行されない（`select_related`） |
+| 問い合わせ | 回答済み・未回答の問い合わせ | 一覧は回答済みのみ（`id`・`detail`・`post_time`・`answer`）。未回答の個別取得はHTTP 404 |
+| 模倣単語 | 個別取得 | `id`・`word`・`hinshi`・`katsuyou`・`candidate` |
+| 模倣単語の絞り込み | `?word=`・`?hinshi=`・`?hinshi=&katsuyou=` | 完全一致で絞り込む |
+| 模倣単語候補のAPI | `/api/word/candidates/`・`/api/word/abc/` | `word-candidates`のまま（個別取得のidは数字に限る）。`/api/word/abc/`はHTTP 404 |
+| 統計 | `?songrange=xx` | その`songrange`のみ、年・月の順 |
+| 不正なsongrange | `?songrange=invalid` | HTTP 400（`songrange`のエラー） |
+| 記事 | 公開済み・非公開・公開日時の前の記事 | 一覧は公開済みのみ、`post_time`の新しい順。非公開・公開日時の前の記事の個別取得はHTTP 404 |
+| 「.」を含む記事のid | `/api/article/LiveStreamVol.6/` | HTTP 200 |
+| 記事の項目 | 個別取得 | `is_open`は含まれない（常にTrueのため）。`article_id`・`title`・`author`・`tag`・`text`・`post_time`・`is_md`・`handle_as_news`を含む |
+| 記事のタグで絞り込み | `?tag=news` | ニュースの記事のみ |
+
 ---
 
 ### 9. ミドルウェア

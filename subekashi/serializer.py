@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from article.models import Article
 from .models import *
 
 class AuthorSerializer(serializers.ModelSerializer):
@@ -59,6 +60,67 @@ class AdSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ad
         fields = '__all__'
+
+
+class AuthorAliasSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AuthorAlias
+        fields = ['name', 'alias_type']
+
+
+# 作者のAPI（#1243）は、曲のAPIのauthorsと違い作者が登録した別名・リンクも返す
+class AuthorDetailSerializer(serializers.ModelSerializer):
+    aliases = AuthorAliasSerializer(many=True, read_only=True)
+    links = serializers.SlugRelatedField(slug_field='url', many=True, read_only=True)
+
+    class Meta:
+        model = Author
+        fields = ['id', 'name', 'aliases', 'links']
+
+
+class PrushSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Prush
+        fields = ['id', 'name', 'date']
+
+
+class HistorySerializer(serializers.ModelSerializer):
+    # 編集者はidだけを返す。編集履歴を非公開にしている編集者は、画面の「編集者: 非公開」と同じくnullにする
+    editor = serializers.SerializerMethodField()
+
+    def get_editor(self, obj):
+        if obj.editor.is_open or obj.editor.is_forced_open:
+            return obj.editor_id
+        return None
+
+    class Meta:
+        model = History
+        fields = ['id', 'song', 'author', 'title', 'history_type', 'create_time', 'changes', 'editor']
+
+
+class ContactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contact
+        fields = ['id', 'detail', 'post_time', 'answer']
+
+
+class WordSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Word
+        fields = '__all__'
+
+
+class StatsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Stats
+        fields = '__all__'
+
+
+class ArticleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Article
+        # APIは非公開の記事を返さず常にTrueになるため、is_openは含めない
+        exclude = ['is_open']
 
 
 class IsOpenSerializer(serializers.Serializer):
