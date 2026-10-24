@@ -656,6 +656,13 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | PC向けグローバルヘッダーの配置（#1123） | `pc_menu_position`クッキーなし（トップ） | `#pc-global-header`が`#pc-header-menu`の中に1つだけ置かれる |
 | PC向けグローバルヘッダーの配置（#1123） | `pc_menu_position=aside`（サイド） | `#pc-header-menu`は無く、`#pc-global-header`が`#subekashi-header`より前に1つだけ置かれる |
 | フッターのプライバシーポリシーのリンク（#1170） | GETリクエスト | PCのフッター（`#footer-wrapper`）とスマホメニューのフッター（`#sp_menu_footer`）のそれぞれに、記事`privacy`（`/articles/privacy/`）へのリンクがある。記事は管理画面から作成するため、記事があるかは確認しない |
+| 投稿予定の表示（#376） | 投稿日が3日後・1日後・1日前・無しの曲 | 「投稿予定」の見出しが表示され、context["upcomingInsL"]は投稿日が未来の曲のみで、投稿日の早い順（1日後・3日後） |
+| 投稿予定が無い（#376） | 投稿日が過去の曲のみ | 「投稿予定」の見出しが表示されない |
+| 投稿予定の曲数（#376） | 投稿日が未来の曲が11曲あり、`is_shown_upcoming`が無し・`5`・`10`・`15`・`0` | 5・5・10・11曲表示される。`0`（非表示）の場合はcontextに`upcomingInsL`が無く、見出しも表示されない |
+| 投稿予定の設定のcookieの不正な値（#376） | `is_shown_upcoming`が`3`・`abc`・`<script>` | HTTP 200で、デフォルトの5曲表示される |
+| 投稿予定の界隈曲・ネタ曲の表示設定（#376） | 投稿日が未来の界隈曲・界隈曲以外・ネタ曲 | cookie無し（`songrange=subeana`・`jokerange=off`）では界隈曲のみ、`songrange=all`・`jokerange=on`では3曲とも表示される（新着・未完成と同じく`Song.get_for_range`を使う） |
+| 投稿予定に削除した曲を出さない（#376） | 投稿日が未来の削除した曲（`is_removed=True`、#1239）のみ | 「投稿予定」の見出しが表示されない |
+| 投稿予定の「もっと見る」（#376） | 投稿日が未来の曲 | `/songs/?upload_time_gte=<今日の日付>&sort=upload_time&save_select=off`へのリンクがある。検索画面の投稿日の入力欄は日付のみのため、今日以降に投稿（予定）の曲を投稿日の早い順で検索し、保存した並び替えは上書きしない |
 | viewportのmetaタグ（#1058） | GETリクエスト | `<meta name="viewport" content="width=device-width,...">`が含まれ、余分な`meta=""`属性が無い |
 | 検索の表示のデフォルト（#585） | `is_shown_search`クッキーなし | context["is_shown_search"] = "on"、キーワードのみの検索フォーム（`#keyword`、placeholderは「タイトル・チャンネル名・歌詞・URL」）が表示され、`#search-form-radios`・`search_form.js`は無い |
 | 検索の表示がキーワードのみ（#585） | `is_shown_search=on` | キーワードのみの検索フォームが表示され、`#search-forms`は無い |
@@ -712,6 +719,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | is_subeana経由の絞り込み(タグリンク等)は保存設定cookieを上書きしない | `is_saved_select=on`, `search_songrange=subeana` (cookie), `?is_subeana=xx` | context["songrange"] = "xx"（表示のみ反映）、`search_songrange` cookieは上書きされない |
 | is_joke経由の絞り込み(タグリンク等)は保存設定cookieを上書きしない | `is_saved_select=on`, `search_jokerange=on` (cookie), `?is_joke=only` | context["jokerange"] = "only"（表示のみ反映）、`search_jokerange` cookieは上書きされない |
 | songrangeクエリ(検索フォーム経由)は引き続きcookieに保存される | `is_saved_select=on`, `?songrange=xx` | `search_songrange` cookieに "xx" が保存される |
+| save_select=offのURLクエリは保存設定cookieを上書きしない（#376） | `is_saved_select=on`, `search_sort=-view`・`search_songrange=subeana` (cookie), `?sort=upload_time&songrange=xx&save_select=off`（トップ画面の投稿予定の「もっと見る」等のリンク） | context["sort"] = "upload_time"・context["songrange"] = "xx"（表示には反映）、`search_sort`・`search_songrange` cookieは保存されない |
+| save_select=offでもURLクエリに無いフォームは保存した選択を使う（#376） | `is_saved_select=on`, `search_songrange=subeana`・`search_jokerange=off` (cookie), `?sort=upload_time&save_select=off` | context["songrange"] = "subeana"・context["jokerange"] = "off" |
 | 検索フォームの初期表示（デフォルト） | URLクエリなし | context["search_form"] = "keyword"、キーワードのラジオボタンが選択され、他のフォームは `hidden` |
 | 検索フォームのラジオボタンは必ず1つ選択される | URLクエリなし・各フォームのURLクエリ | `name="search-form"` のラジオボタンが常に1つだけ選択される（JSはこれを前提にしている） |
 | 全てのフォームにURLクエリが対応づけられている | GETリクエスト | 20個のラジオボタンの並びが `SEARCH_FORM_QUERIES` のキーの並びと一致する |
@@ -1269,6 +1278,8 @@ Google検索のセクションの「ニュースの提供元」は、当サイ�
 | 正常アクセス | GETリクエスト | HTTP 200 |
 | 検索の表示の設定のデフォルト（#585） | cookie無し | 「検索の表示」の`<select id="is_shown_search">`が表示され、選択肢は「全て表示」（`all`）・「キーワードのみ」（`on`）・「非表示」（`off`）の順で、「キーワードのみ」が選択される |
 | 検索の表示の設定のcookieを反映（#585） | `is_shown_search`に`all`・`on`・`off`のcookieを送信 | それぞれ「全て表示」・「キーワードのみ」・「非表示」のみが選択される |
+| 投稿予定の表示の設定のデフォルト（#376） | cookie無し | 「投稿予定の表示」の`<select id="is_shown_upcoming">`がトップ画面のセクションの「新着の表示」の次に表示され、選択肢は「15曲表示」・「10曲表示」・「5曲表示」・「非表示」（`15`・`10`・`5`・`0`）の順で、「5曲表示」が選択される |
+| 投稿予定の表示の設定のcookieを反映（#376） | `is_shown_upcoming`に`15`・`10`・`5`・`0`のcookieを送信 | それぞれ「15曲表示」・「10曲表示」・「5曲表示」・「非表示」のみが選択される |
 | フォームボタンの設定のデフォルト | cookie無し | 「フォームボタン」の`<select id="form_button">`が表示され、選択肢は「アイコンのみ」（`icon`）・「アイコンと文字」（`icon_text`）の順で、「アイコンと文字」が選択される |
 | フォームボタンの設定のcookieを反映 | `form_button=icon`のcookieを送信 | 「アイコンのみ」が選択される |
 | チュートリアルのアイコン | GETリクエスト | 選択肢の保存のチュートリアル（`data-tutorial="select"`）のアイコンは「検索の選択肢の保存」にのみ付き、「フォームボタン」には付かない |
@@ -1282,6 +1293,8 @@ Google検索のセクションの「ニュースの提供元」は、当サイ�
 | 許可されていない値は保存しない | `{"cookies": {"form_button": "text"}}`・`{"cookies": {"form_button": "<script>"}}` | HTTP 200、`form_button`のcookieは保存されない |
 | 検索の表示の設定の保存（#585） | `{"cookies": {"is_shown_search": "all"}}`・`"on"`・`"off"` | HTTP 200、`is_shown_search`のcookieが送信した値で保存される |
 | 検索の表示の設定の許可されていない値は保存しない（#585） | `{"cookies": {"is_shown_search": "keyword"}}`・`{"cookies": {"is_shown_search": "<script>"}}` | HTTP 200、`is_shown_search`のcookieは保存されない |
+| 投稿予定の表示の設定の保存（#376） | `{"cookies": {"is_shown_upcoming": "0"}}`・`"5"`・`"10"`・`"15"` | HTTP 200、`is_shown_upcoming`のcookieが送信した値で保存される |
+| 投稿予定の表示の設定の許可されていない値は保存しない（#376） | `{"cookies": {"is_shown_upcoming": "3"}}`・`"on"`・`"<script>"` | HTTP 200、`is_shown_upcoming`のcookieは保存されない |
 
 #### 7-19. `robots` (`/robots.txt`)（#1172）
 

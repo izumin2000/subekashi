@@ -89,6 +89,9 @@ def get_search_form_context(request, request_data):
 
     # is_saved_selectの設定を確認
     is_saved_select = COOKIES.get('is_saved_select', 'on')
+    # URLクエリにsave_select=offがある場合は、リンク（トップ画面の投稿予定の「もっと見る」等、#376）からの一時的な指定のため、
+    # 並び替え等を表示にのみ反映し、検索の保存設定(cookie)は上書きしない
+    is_saving_query = is_saved_select == 'on' and request_data.get('save_select') != 'off'
 
     # cookieが不正な値の場合はデフォルト値を使用
     form_button = COOKIES.get('form_button', FORM_BUTTON_DEFAULT)
@@ -105,8 +108,8 @@ def get_search_form_context(request, request_data):
                 context[form_name] = default_value  # 不正な値の場合はデフォルト値を使用
             else:       # URLクエリやユーザーのCOOKIE_FORMSの変更の場合はcookieに値を保存するcookies_to_setに書き込む
                 context[form_name] = value
-                # is_saved_selectがonの場合のみcookieに保存
-                if is_saved_select == 'on':
+                # is_saved_selectがonで、一時的な指定でない場合のみcookieに保存
+                if is_saving_query:
                     cookies_to_set[f"search_{form_name}"] = value
         else:
             # is_saved_selectがoffの場合はcookieを無視してデフォルト値を使用

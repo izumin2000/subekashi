@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.cache import never_cache
@@ -62,6 +63,15 @@ class TopView(View):
         new_count = int(request.COOKIES.get("is_shown_new", "5"))
         if new_count > 0:
             context["songInsL"] = songInsL.order_by('-id')[:new_count]
+
+        # 投稿予定の表示設定（YouTubeの投稿日が未来の曲を、投稿日の早い順に表示する、#376）
+        upcoming_count = request.COOKIES.get("is_shown_upcoming", "5")
+        # cookieが不正な値の場合はデフォルトの5曲とする
+        if upcoming_count not in ALLOWED_SETTING_VALUES["is_shown_upcoming"]:
+            upcoming_count = "5"
+        upcoming_count = int(upcoming_count)
+        if upcoming_count > 0:
+            context["upcomingInsL"] = songInsL.filter(upload_time__gt=timezone.now()).order_by('upload_time', 'id')[:upcoming_count]
 
         # 未完成の表示設定
         lack_count = int(request.COOKIES.get("is_shown_lack", "5"))

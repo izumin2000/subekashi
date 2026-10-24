@@ -9,7 +9,7 @@ import json
 # 設定可能なcookieキーのホワイトリスト
 ALLOWED_SETTING_KEYS = {
     'songrange', 'jokerange', 'news_type', 'is_shown_search',
-    'is_shown_new', 'is_shown_ad', 'is_shown_ai', 'is_shown_lack',
+    'is_shown_new', 'is_shown_upcoming', 'is_shown_ad', 'is_shown_ai', 'is_shown_lack',
     'is_saved_select', 'form_button', 'brlyrics', 'pc_menu_position'
 }
 
@@ -20,6 +20,7 @@ ALLOWED_SETTING_VALUES = {
     'news_type': {'single', 'all', 'off'},
     'is_shown_search': {'all', 'on', 'off'},
     'is_shown_new': {'0', '5', '10', '15'},
+    'is_shown_upcoming': {'0', '5', '10', '15'},
     'is_shown_ad': {'on', 'off'},
     'is_shown_ai': {'on', 'off'},
     'is_shown_lack': {'0', '5', '10', '15'},
@@ -41,6 +42,7 @@ class SettingView(View):
         news_type = request.COOKIES.get("news_type", "single")
         is_shown_search = request.COOKIES.get("is_shown_search", "on")
         is_shown_new = request.COOKIES.get("is_shown_new", "5")
+        is_shown_upcoming = request.COOKIES.get("is_shown_upcoming", "5")
         is_shown_ad = request.COOKIES.get("is_shown_ad", "on")
         is_shown_ai = request.COOKIES.get("is_shown_ai", "on")
         is_shown_lack = request.COOKIES.get("is_shown_lack", "5")
@@ -95,6 +97,16 @@ class SettingView(View):
                         {'value': '10', 'text': '10曲表示', 'selected': is_shown_new == '10'},
                         {'value': '5', 'text': '5曲表示', 'selected': is_shown_new == '5'},
                         {'value': '0', 'text': '非表示', 'selected': is_shown_new == '0'},
+                    ]
+                },
+                {
+                    'label': '投稿予定の表示',
+                    'id': 'is_shown_upcoming',
+                    'options': [
+                        {'value': '15', 'text': '15曲表示', 'selected': is_shown_upcoming == '15'},
+                        {'value': '10', 'text': '10曲表示', 'selected': is_shown_upcoming == '10'},
+                        {'value': '5', 'text': '5曲表示', 'selected': is_shown_upcoming == '5'},
+                        {'value': '0', 'text': '非表示', 'selected': is_shown_upcoming == '0'},
                     ]
                 },
                 {
