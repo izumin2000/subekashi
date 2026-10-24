@@ -6,7 +6,7 @@ from subekashi.models import Song, Editor, History
 from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
 from subekashi.lib.song_service import build_delete_discord_text, remove_song
-from config.local_settings import DELETE_DISCORD_URL
+from config.local_settings import NEW_DISCORD_URL
 
 
 class SongDeleteView(View):
@@ -51,9 +51,9 @@ class SongDeleteView(View):
                 editor=editor,
             )
 
-        # Discordに送信し、送信できなければ500ページに遷移
+        # 申請ではなく曲の変更になったため、新規登録・編集と同じ通知先のDiscordに送信し、送信できなければ500ページに遷移
         content = build_delete_discord_text(self.song, reason, editor)
-        is_ok = send_discord(DELETE_DISCORD_URL, content)
+        is_ok = send_discord(NEW_DISCORD_URL, content)
         if not is_ok:
             return render(request, 'subekashi/500.html', status=500)
 

@@ -26,7 +26,6 @@ jobs:
           cat > config/local_settings.py << 'EOF'
           SECRET_KEY = "ci-test-secret-key"
           NEW_DISCORD_URL = ""
-          DELETE_DISCORD_URL = ""
           CONTACT_DISCORD_URL = ""
           ERROR_DISCORD_URL = ""
           DSP_DISCORD_URL = ""

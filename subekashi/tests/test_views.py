@@ -1703,10 +1703,13 @@ class SongDeleteViewTest(TestCase):
         self.assertEqual(history.title, "削除テスト曲を削除")
         self.assertEqual(history.changes, ["理由", "削除理由テスト"])
 
+    @patch("subekashi.views.song_delete.NEW_DISCORD_URL", "https://discord.example/new")
     @patch("subekashi.views.song_delete.send_discord", return_value=True)
     def test_post_sends_discord_notification_with_admin_url(self, mock_send_discord):
+        # 申請ではなく曲の変更になったため、新規登録・編集と同じ通知先に送る
         self._post()
-        content = mock_send_discord.call_args[0][1]
+        url, content = mock_send_discord.call_args[0]
+        self.assertEqual(url, "https://discord.example/new")
         self.assertIn("削除理由テスト", content)
         self.assertIn(f"/admin/subekashi/song/{self.song.id}/change/", content)
 
