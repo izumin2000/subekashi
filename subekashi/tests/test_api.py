@@ -122,7 +122,7 @@ class SongAPIListTest(TestCase):
                     response = self.client.get("/api/song/", params)
                 self.assertEqual(response.status_code, 200)
                 self.assertTrue(any(song["prush"] for song in response.json()["result"]))
-                prush_queries = [query["sql"] for query in context.captured_queries if "FROM `subekashi_prush`" in query["sql"]]
+                prush_queries = [query["sql"] for query in context.captured_queries if f"FROM {connection.ops.quote_name('subekashi_prush')}" in query["sql"]]
                 self.assertEqual(prush_queries, [])
 
     def test_result_contains_category(self):
@@ -303,7 +303,7 @@ class SongEditInitViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(sorted(song["prush"] for song in response.json()["imitate_songs"]), ["プレラ0", "プレラ1", "プレラ2"])
         self.assertEqual(sorted(song["prush"] for song in response.json()["title_author_songs"]), ["別のプレラ0", "別のプレラ1", "別のプレラ2"])
-        prush_queries = [query["sql"] for query in context.captured_queries if "FROM `subekashi_prush`" in query["sql"]]
+        prush_queries = [query["sql"] for query in context.captured_queries if f"FROM {connection.ops.quote_name('subekashi_prush')}" in query["sql"]]
         self.assertEqual(prush_queries, [])
 
     def test_nonexistent_song_id_returns_none_instead_of_500(self):
