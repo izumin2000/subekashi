@@ -290,6 +290,21 @@ class SongEditInitViewTest(TestCase):
         self.song.imitates.set([removed_song, imitate_song])
         self.assertEqual(self._get_imitate_ids(), [imitate_song.id])
 
+    def test_imitate_songs_prush_is_not_queried_per_song(self):
+        """#1064: 模倣元の曲のプレラの名前を返すために、曲ごとにプレラを取得しないこと（select_related）"""
+        self.song.imitates.set([Song.objects.create(title=f"模倣元{i}", prush=Prush.objects.create(name=f"プレラ{i}")) for i in range(3)])
+        author = Author.objects.create(name="編集初期化テスト作者")
+        for i in range(3):
+            Song.objects.create(title="同じタイトルの曲", prush=Prush.objects.create(name=f"別のプレラ{i}")).authors.add(author)
+        params = {"song_id": self.song.id, "fetch_imitate": "1", "title": "同じタイトルの曲", "authors": author.name}
+        with CaptureQueriesContext(connection) as context:
+            response = self.client.get("/api/song_edit_init/", params)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(sorted(song["prush"] for song in response.json()["imitate_songs"]), ["プレラ0", "プレラ1", "プレラ2"])
+        self.assertEqual(sorted(song["prush"] for song in response.json()["title_author_songs"]), ["別のプレラ0", "別のプレラ1", "別のプレラ2"])
+        prush_queries = [query["sql"] for query in context.captured_queries if "FROM `subekashi_prush`" in query["sql"]]
+        self.assertEqual(prush_queries, [])
+
     def test_nonexistent_song_id_returns_none_instead_of_500(self):
         response = self.client.get("/api/song_edit_init/", {"song_id": 99999, "fetch_imitate": "1"})
         self.assertEqual(response.status_code, 200)

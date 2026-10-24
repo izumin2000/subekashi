@@ -41,7 +41,8 @@ class SongEditInitView(APIView):
         # isdigit()は"²"等の上付き数字もTrueになりint()で変換できず500になるため、isdecimal()で判定する
         song = Song.get_or_none(song_id) if fetch_imitate and song_id.isdecimal() else None
         if song is not None:
-            qs = song.imitates.prefetch_related('links', 'authors').order_by('id')
+            # SongSerializerがプレラの名前を返すため、曲ごとにプレラを取得しないようselect_relatedする（#1064）
+            qs = song.imitates.select_related('prush').prefetch_related('links', 'authors').order_by('id')
             imitate_songs = list(SongSerializer(qs, many=True).data)
 
         # URLごとの重複チェック（入力URLの順序を保持したリスト）

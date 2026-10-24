@@ -731,7 +731,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 検索フォームの初期表示（URLクエリ指定） | `?title=テスト` `?mediatypes=youtube` `?categorys=arrange` `?view_gte=100` `?is_subeana=xx` `?jokerange=off` `?is_original=True` `?is_inst=True` `?is_questionable=True` `?is_special=True` `?is_collab=True` `?is_lack=True` `?sort=-view` など | URLクエリを含むフォーム（title/url/category/youtube/subeana/joke/original/inst/questionable/special/collab/lack/sortなど）が表示される |
 | 検索フォームの初期表示（複数指定） | `?is_lack=True&keyword=テスト` / `?title=テスト&sort=-view` / `?title=テスト&view_gte=100` / `?view_gte=100&lyrics=テスト` | ラジオボタンの並び順で先の "keyword" / "sort" / "youtube" / "lyrics" が表示される |
 | ラジオボタンの並び順 | GETリクエスト | よく利用するため、先頭からキーワード・並び替え・歌詞・YouTubeの順に並ぶ（全20個。プレラは#1064で追加） |
-| プレラのフォーム（#1064） | 2021年・2024年（2件）・2025年の日付のプレラと、日付が無いプレラが登録されている | プレラのラジオボタン（`fas fa-angle-double-right` のアイコン）と、`<select id="prush" name="prush">` の選択肢が表示される。選択肢は「指定なし」（値は空）と、プレラの日付（`Prush.date`）の古い順に並べ、年ごとの `<optgroup>`（「2021年」「2024年」「2025年」、日付が無いものは最後の「年が不明」）に分けたプレラの名前。`select` の値も `search_form.js` の `FORM_QUERIES` でクエリに入る（ブラウザでの確認はPlaywright） |
+| プレラのフォーム（#1064） | 2021年・2024年（2件）・2025年の日付のプレラと、日付が無いプレラが登録されている | プレラのラジオボタン（`fas fa-angle-double-right` のアイコン）と、`<select id="prush" name="prush">` の選択肢が表示される。選択肢は「指定なし」（値は空）と、プレラの日付（`Prush.date`）の古い順に並べ、年ごとの `<optgroup>`（「2021年」「2024年」「2025年」、日付が無いものは最後の「年が不明」）に分けたプレラの名前。`select` の値も `search_form.js` の `FORM_QUERIES` でクエリに入る。年のグループのラベルは太字にせず灰色（`search_form.css`）にする（ブラウザでの確認はPlaywright） |
 | `prush` のURLクエリ（#1064） | `?prush=年末プレラ５`（曲ページのタグのリンク） | プレラのフォームを表示し、「年末プレラ５」の選択肢を選択した状態にする（`selected_prush`。テキストの入力欄ではないため `TEXT_FORMS` には含めない） |
 | 検索フォームの初期表示（空の値） | `?title=` | "keyword" が表示される |
 | デフォルト値のラジオボタンに`data-default` | GETリクエスト | フィルタバッジは`data-default`のラジオボタンをデフォルト値として判定するため、各フィルタで1つだけ付き、`songrange`・`jokerange` は `COOKIE_FORMS` のデフォルト値、真偽値のフィルタは `""`（指定なし）のラジオボタンに付く |
@@ -1440,6 +1440,7 @@ faviconの画像は`icon_large.png`（800×800）から生成する。`site.webm
 | 模倣元が検索のデフォルト件数（50件）超 | 模倣元51件の曲 | 51件すべてが返る |
 | 削除済み・下書きの模倣元 | `is_deleted=True`・`is_draft=True`の曲を模倣元に持つ曲 | 除外されずにすべて返る |
 | ユーザーが削除した模倣元（#1239） | `is_removed=True`の曲と通常の曲を模倣元に持つ曲 | 削除した曲は返らない（保存しても模倣関係は消えない。2-5の`update_song`を参照） |
+| プレラを曲ごとに取得しない（#1064） | プレラの付いた模倣元3件と、タイトル・作者が一致するプレラの付いた曲3件 | `imitate_songs`・`title_author_songs`の`prush`はプレラの名前で、`FROM subekashi_prush`のクエリが実行されない（`select_related('prush')`） |
 | 存在しないsong_id | `?song_id=99999&fetch_imitate=1` | HTTP 200（500にならない）、`imitate_songs`が`None`（`song_edit.js`は読み込み失敗として登録ボタンを無効化する） |
 | 数値でないsong_id | `?song_id=abc&fetch_imitate=1` | HTTP 200（500にならない）、`imitate_songs`が`None` |
 | 上付き数字のsong_id | `?song_id=²&fetch_imitate=1` | HTTP 200（500にならない）、`imitate_songs`が`None`（`str.isdigit()`はTrueだが`int()`で変換できない） |
