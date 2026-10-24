@@ -58,8 +58,10 @@ class GetMotifTitleTest(SimpleTestCase):
         # 異体字セレクタ付きの絵文字・ZWJで繋がった絵文字も1文字分
         self.assertEqual(get_motif2_titles("→曲🌧️")[-1], "曲")
         self.assertEqual(get_motif2_titles("→曲👨‍👩‍👧")[-1], "曲")
-        # 削るのは1文字分のみ
-        self.assertEqual(get_motif2_titles("→曲🍁🔩"), ["曲🍁🔩", "曲🍁"])
+        # 1文字分を削った候補の後に、作者のバッジ（絵文字と「+」）を全て削った候補を加える（合作の曲）
+        self.assertEqual(get_motif2_titles("→曲🍁🔩"), ["曲🍁🔩", "曲🍁", "曲"])
+        self.assertEqual(get_motif2_titles("→生合成🔢😥"), ["生合成🔢😥", "生合成🔢", "生合成"])
+        self.assertEqual(get_motif2_titles("→天秤にかけて🍁+"), ["天秤にかけて🍁+", "天秤にかけて"])
         # 末尾が絵文字でない記号は削らない
         self.assertEqual(get_motif2_titles("→曲^"), ["曲^"])
         # 記号1文字のタイトル（削ると空になる）
@@ -422,12 +424,30 @@ class ImportTimelineTest(TestCase):
 
         self.assertEqual(song_urls(song), ["https://youtu.be/aaaaaaaaaaa"])
 
-    def test_motif2_with_same_title_songs_is_not_added(self):
-        create_song(".", "全てあなたの所為です。")
-        create_song(".", "別の作者")
+    def test_motif2_prefers_subeana_song(self):
+        # 同じタイトルのアレンジなども登録されているため、モチーフ2も同じタイトルの曲が複数あればすべあなの曲にする
+        subeana = create_song("エヌ", "全てあなたの所為です。")
+        create_song("エヌ", "別の作者")
+        result = import_timeline([make_row(motif2="→エヌ👤")])
+
+        self.assertEqual(list(result.created[0].imitates.all()), [subeana])
+
+    def test_motif2_with_same_title_songs_without_subeana_is_not_added(self):
+        create_song(".", "別の作者A")
+        create_song(".", "別の作者B")
         result = import_timeline([make_row(motif2="→.👤")])
 
         self.assertFalse(result.created[0].imitates.exists())
+
+    def test_motif2_with_multiple_badges(self):
+        # 合作の曲は「→生合成🔢😥」のように作者のバッジが複数付く
+        collaboration = create_song("生合成", "全て十五の所為です。")
+        result = import_timeline([
+            make_row(motif2="→生合成🔢😥", urls=["https://youtu.be/aaaaaaaaaaa"]),
+            make_row(motif2="→生合成🔢+", urls=["https://youtu.be/bbbbbbbbbbb"]),
+        ])
+
+        self.assertEqual([list(song.imitates.all()) for song in result.created], [[collaboration], [collaboration]])
 
     def test_motif1_prefers_subeana_song(self):
         # モチーフ1（模倣の枠）はすべあなの曲のため、同じタイトルの曲が複数あってもすべあなの曲にする

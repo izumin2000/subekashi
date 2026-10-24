@@ -118,8 +118,9 @@ def get_motif1_title(text):
 # 「❁」「全てが適当すぎた.模倣」のように、記号や「模倣」で終わるタイトルの曲もあるため、削る前の文字列から順に模倣元のタイトルの候補を返す
 def get_motif2_titles(text):
     if text.startswith("→"):
+        # 合作の曲は「→生合成🔢😥」のように作者のバッジが複数付き、「+」が付くこともあるため、バッジを全て削った候補も加える
         text = text[1:]
-        candidates = [text, remove_last_emoji(text)]
+        candidates = [text, remove_last_emoji(text), remove_badges(text)]
     elif text.endswith("模倣"):
         candidates = [text, text[:-2], remove_badges(text[:-2])]
     else:
@@ -235,23 +236,22 @@ class TimelineImporter:
         return key in self.removed_url_keys and not self.url_song_ids[key]
 
     # タイトルの候補のうち、曲がある最初の候補の曲を返す
-    # 同じタイトルの曲が複数あると、どの曲か決められないため模倣に追加しない
-    # モチーフ1（「教育枠」などの模倣の枠）はすべあなの曲のため、同じタイトルの曲が複数あってもすべあなの曲に決める
+    # 模倣元は多くがすべあなの曲で、同じタイトルのアレンジなども登録されているため、同じタイトルの曲が複数あればすべあなの曲に決める
+    # すべあなの曲に決まらなければ、どの曲か決められないため模倣に追加しない
     # 曲のタイトルは最初に全て読み込んでいるため、行ごとにクエリは発行しない
-    def find_imitate_id(self, titles, prefers_subeana=False):
+    def find_imitate_id(self, titles):
         for title in titles:
             song_ids = self.title_song_ids.get(MOTIF_TITLES.get(title, title))
             if not song_ids:
                 continue
-            if prefers_subeana:
-                song_ids = (song_ids & self.subeana_song_ids) or song_ids
+            song_ids = (song_ids & self.subeana_song_ids) or song_ids
             return next(iter(song_ids)) if len(song_ids) == 1 else None
         return None
 
     def get_imitate_ids(self, row):
         motif1_titles = [title for title in [get_motif1_title(row.motif1)] if title]
         imitate_ids = [
-            self.find_imitate_id(motif1_titles, prefers_subeana=True),
+            self.find_imitate_id(motif1_titles),
             self.find_imitate_id(get_motif2_titles(row.motif2)),
         ]
         return {imitate_id for imitate_id in imitate_ids if imitate_id}
