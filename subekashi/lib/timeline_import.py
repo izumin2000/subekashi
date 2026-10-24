@@ -184,6 +184,7 @@ class TimelineImporter:
     行のURL（URL列・URL2列）が登録されている曲を更新し、どのURLも登録されていなければ曲を新規登録する。
     複数の曲で共有しているURL（allow_dup=True）は、どの曲の行かを決める手がかりにしない。
     どのURLも登録されていなくても、歌詞列がタイトルか作者の一致する曲を指していれば、その曲を更新する。
+    ユーザーが削除した曲（#1239）は、削除を取り消さないよう更新も作り直しもしない。
     毎日実行するため、1回の実行で何万回もクエリを発行しないよう、曲・URL・模倣の関係を先に全て読み込んでおく。
     """
 
@@ -202,6 +203,8 @@ class TimelineImporter:
         for song_id, state in self.songs.items():
             self.title_song_ids[state.title].add(song_id)
         self.subeana_song_ids = set(Song.objects.filter(authors=SUBEANA_AUTHOR_ID).values_list("id", flat=True))
+        # ユーザーが削除した曲（#1239）。self.songsには含まれないため、照合・更新の対象にしない
+        self.removed_song_ids = set(Song.all_objects.filter(is_removed=True).values_list("id", flat=True))
 
         self.author_names = defaultdict(set)
         for song_id, author_name in Song.authors.through.objects.values_list("song_id", "author__name"):
@@ -217,17 +220,18 @@ class TimelineImporter:
         self.link_ids = {}
         self.url_song_ids = defaultdict(set)
         self.song_url_keys = defaultdict(set)
-        # 削除された曲のURL（deleteコマンドでis_removed=Trueになり、どの曲にも紐づいていない）
+        # 削除された曲のURL（deleteコマンドでis_removed=Trueになり、どの曲にも紐づいていないか、ユーザーが削除した曲だけに紐づく）
         self.removed_url_keys = set()
         # 複数の曲で共有しているURL（メドレーの動画やチャンネルのURLなど）
         self.shared_url_keys = set()
         for link_id, url, is_removed, allow_dup in SongLink.objects.values_list("id", "url", "is_removed", "allow_dup"):
             key = get_url_key(url)
+            song_ids = link_song_ids[link_id] - self.removed_song_ids
             self.link_ids.setdefault(key, link_id)
-            self.url_song_ids[key] |= link_song_ids[link_id]
-            for song_id in link_song_ids[link_id]:
+            self.url_song_ids[key] |= song_ids
+            for song_id in song_ids:
                 self.song_url_keys[song_id].add(key)
-            if is_removed and not link_song_ids[link_id]:
+            if (is_removed or link_song_ids[link_id]) and not song_ids:
                 self.removed_url_keys.add(key)
             if allow_dup:
                 self.shared_url_keys.add(key)
@@ -263,6 +267,9 @@ class TimelineImporter:
         if not match:
             return None
         song_id = int(match[1])
+        # ユーザーが削除した曲を作り直さないよう、新規作成もしない
+        if song_id in self.removed_song_ids:
+            raise TimelineSkip("歌詞列の曲が削除されている")
         state = self.songs.get(song_id)
         if state is None:
             return None
