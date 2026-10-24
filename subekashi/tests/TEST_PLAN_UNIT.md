@@ -194,7 +194,7 @@
 | テストケース | 入力 | 期待結果 |
 | --- | --- | --- |
 | 正常なテキスト生成 | 曲オブジェクト、理由、編集者 | 曲ID・タイトル・作者・理由を含む文字列 |
-| 管理サイトのURL（#1239） | 曲オブジェクト | 削除した曲のページは表示できないため、曲のページではなく復元に使う管理サイトの変更画面（`/admin/subekashi/song/<id>/change/`）のURLを含む |
+| 先頭の形式（#1239） | 曲オブジェクト | 新規作成と同じく`削除されました`・曲のページのURL（`<ROOT_URL>/songs/<id>`）・空行で始まり、その後にタイトルが続く |
 
 #### 2-6-1. `remove_song(song)`（#1239）
 
@@ -844,7 +844,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | POST: 正常な削除理由 | `reason="..."` | 削除した曲のページは表示できないため、`/?toast=delete`（トップ）へリダイレクト |
 | POST: 曲を論理削除する | `reason="..."` | `is_removed=True`になり、曲のページがHTTP 404になる |
 | POST: 編集履歴を保存する | `reason="削除理由テスト"` | `history_type="delete"`・`title="<タイトル>を削除"`・`changes=["理由", "削除理由テスト"]`のHistoryが作成される |
-| POST: Discordに通知する | `send_discord`をモック | 申請ではなく曲の変更になったため、新規登録・編集と同じNEW_DISCORD_URL宛に、削除理由と復元に使う管理サイトの変更画面のURLを送る |
+| POST: Discordに通知する | `send_discord`をモック | 申請ではなく曲の変更になったため、新規登録・編集と同じNEW_DISCORD_URL宛に、`削除されました`・曲のページのURLで始まり、削除理由を含む文面を送る |
 | POST: Discordに送信できない | `send_discord`が`False`を返す | HTTP 500 |
 | POST: 削除理由が空 | `reason=""` | HTTP 200、`context["error"]` にエラーメッセージ。曲は削除されない |
 | 削除した曲（#1239） | `is_removed=True` の曲にGET・POST | どちらもHTTP 404。Historyは作成されない |

@@ -213,7 +213,7 @@
 | 検証: Song | `Song.is_removed` が `True` になる（`Song.is_deleted` は変化しない）。作者・URL・模倣元は残る |
 | 検証: History | `History(history_type="delete", title="<タイトル>を削除")` が 1 件作成されている |
 | 検証: Editor | `Editor.objects.count()` が 1 件増加（または既存が再利用）している |
-| 検証: Discord | 新規登録・編集と同じNEW_DISCORD_URL宛に、削除理由と、復元に使う管理サイトの変更画面（`/admin/subekashi/song/<id>/change/`）のURLを送る |
+| 検証: Discord | 新規登録・編集と同じNEW_DISCORD_URL宛に、新規作成と同じ形式（`削除されました`・曲のページのURL・空行）で始まり、タイトル・作者・削除理由・編集者を含む文面を送る |
 | 検証: 表示 | 曲のページ・編集・削除・編集履歴のページが404になり、検索・API・作者のページ・模倣元/模倣曲の一覧・統計・サイトマップに含まれない。編集履歴の一覧では曲へのリンクの代わりに「この曲または作者は削除されました」と表示される |
 | 検証: URL | 削除した曲だけに紐づくURLは、別の曲に登録できる（`validate_song_url`・`/api/songlink/`） |
 

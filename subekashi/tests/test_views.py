@@ -1705,13 +1705,14 @@ class SongDeleteViewTest(TestCase):
 
     @patch("subekashi.views.song_delete.NEW_DISCORD_URL", "https://discord.example/new")
     @patch("subekashi.views.song_delete.send_discord", return_value=True)
-    def test_post_sends_discord_notification_with_admin_url(self, mock_send_discord):
+    def test_post_sends_discord_notification(self, mock_send_discord):
         # 申請ではなく曲の変更になったため、新規登録・編集と同じ通知先に送る
         self._post()
         url, content = mock_send_discord.call_args[0]
         self.assertEqual(url, "https://discord.example/new")
+        self.assertTrue(content.startswith("削除されました\n"))
+        self.assertIn(f"/songs/{self.song.id}\n", content)
         self.assertIn("削除理由テスト", content)
-        self.assertIn(f"/admin/subekashi/song/{self.song.id}/change/", content)
 
     @patch("subekashi.views.song_delete.send_discord", return_value=False)
     def test_post_discord_failure_returns_500(self, _mock_send_discord):

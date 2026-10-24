@@ -6,6 +6,7 @@ lib/song_service.py のテスト
 from unittest.mock import patch
 from django.test import TestCase
 from django.utils import timezone
+from config.settings import ROOT_URL
 from subekashi.models import Author, AuthorAlias, Song, SongLink, SongFields
 from subekashi.lib.song_service import (
     check_reject_list,
@@ -423,11 +424,10 @@ class BuildDeleteDiscordTextTest(TestCase):
         text = build_delete_discord_text(self.song, "理由", "editor_ip")
         self.assertIn("削除テスト作者", text)
 
-    def test_text_contains_admin_url(self):
-        # 削除した曲（#1239）のページは表示できないため、復元に使う管理サイトのURLを載せる
+    def test_text_starts_like_new_song_text(self):
+        # 先頭は新規作成と同じく「〜されました」・曲のページのURL・空行の形式にする（#1239）
         text = build_delete_discord_text(self.song, "理由", "editor_ip")
-        self.assertIn(f"/admin/subekashi/song/{self.song.id}/change/", text)
-        self.assertNotIn(f"/songs/{self.song.id}", text)
+        self.assertTrue(text.startswith(f"削除されました\n{ROOT_URL}/songs/{self.song.id}\n\nタイトル：削除申請曲\n"))
 
 
 class BuildNewSongDiscordTextTest(TestCase):

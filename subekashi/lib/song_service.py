@@ -150,10 +150,10 @@ def remove_song(song):
 
 
 def build_delete_discord_text(song, reason, editor):
-    """削除用のDiscordテキストを構築する。削除した曲のページは表示できないため、復元に使う管理サイトのURLを載せる"""
+    """削除用のDiscordテキストを構築する。先頭は新規作成（build_new_song_discord_text）と同じ形式にする"""
     return (
-        f"```{song.id}```\n"
-        f"{ROOT_URL}/admin/subekashi/song/{song.id}/change/\n"
+        f"削除されました\n"
+        f"{ROOT_URL}/songs/{song.id}\n\n"
         f"タイトル：{song.title}\n"
         f"チャンネル名：{song.authors_str()}\n"
         f"理由：{reason}\n"
