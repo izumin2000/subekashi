@@ -1,0 +1,13 @@
+{% extends "subekashi/base/base.html" %}
+
+
+{% load static %}
+{% block noindex %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block css %}{% static 'subekashi/css/song_removed.css'%}{% endblock %}
+
+{% block content %}
+<section id="song-removed">
+    <h1>このページは削除されました</h1>
+    <p>削除を取り消したい場合は<a href="{{ contact_url }}" id="song-removed-contact">こちら</a>を押して<br>申請してください。</p>
+</section>
+{% endblock %}

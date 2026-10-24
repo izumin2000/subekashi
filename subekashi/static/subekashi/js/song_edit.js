@@ -358,7 +358,7 @@ async function checkUrlForm(prefetchedLinks = undefined) {
                 ${makeSongInfoRowsHTML([song])}<br>
                 として<a href="${songLink}" target="_blank">既に登録されています</a>${song.is_lack ? "がまだ未完成です。" : "。"}<br>
                 この記事を削除したい場合、<br>
-                <a href="${deleteLink}" target="_blank"><i class="error far fa-trash-alt"></i>削除申請</a>を行ってください。<br>
+                <a href="${deleteLink}" target="_blank"><i class="error far fa-trash-alt"></i>削除</a>してください。<br>
                 複数の曲があるURLとして登録したい場合、<br><a href="${allowDupLink}">こちら</a>をクリックしてください。
             </span>`;
             return;

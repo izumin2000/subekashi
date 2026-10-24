@@ -16,7 +16,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         for song_id in options['ids']:
             try:
-                song = Song.objects.get(pk=song_id)
+                # ユーザーが削除した曲（#1239）も完全に削除できるようにする
+                song = Song.all_objects.get(pk=song_id)
                 if not options['keep_links']:
                     song.links.update(is_removed=True)
                 song.delete()

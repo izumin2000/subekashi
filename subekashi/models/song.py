@@ -8,9 +8,20 @@ from .author import Author
 from .base import GetOrNoneMixin
 
 
+# ユーザーが削除した曲（is_removed=True）を除いたSongを返すマネージャー（#1239）
+class SongManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_removed=False)
+
+
 # 楽曲のメイン情報
 class Song(GetOrNoneMixin, models.Model):
     CHOICES = tuple((category["value"], category["label"]) for category in SONG_CATEGORIES)
+
+    # 最初に定義したマネージャーがデフォルトマネージャーになり、author.songs・song.imitates等の関連マネージャーからも
+    # 削除した曲が除かれる。削除した曲も含めて扱う場合（管理サイト・管理コマンド）はall_objectsを使う
+    objects = SongManager()
+    all_objects = models.Manager()
 
     title = models.CharField(default = "", max_length = 500)
     authors = models.ManyToManyField(Author, related_name='songs', blank=True)
@@ -28,6 +39,10 @@ class Song(GetOrNoneMixin, models.Model):
     is_lock = models.BooleanField(default = False)
     is_limited = models.BooleanField(default = False)
     is_questionable = models.BooleanField(default = False)
+    # ユーザーによる曲の論理削除（#1239）。is_deletedは動画が非公開/削除済みかどうかで、別の意味
+    # ほぼ全ての曲がFalseのため、インデックスを付けるとMySQLがis_removed=Falseの条件でインデックスを選び、
+    # タイトルの検索などがかえって遅くなる（約14000曲で20ms→37ms）ため、インデックスは付けない
+    is_removed = models.BooleanField(default = False)
     view = models.IntegerField(blank = True, null = True)
     like = models.IntegerField(blank = True, null = True)
     category = models.CharField(default = "song", choices=CHOICES, max_length=10)

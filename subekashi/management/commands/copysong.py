@@ -82,7 +82,8 @@ class Command(BaseCommand):
         # imitates関係を一括作成
         self.stdout.write("imitates関係を設定中です...")
         all_target_ids = {tid for song in songs for tid in getattr(song, '_imitates_data', [])}
-        existing_ids = set(Song.objects.filter(pk__in=all_target_ids).values_list('id', flat=True))
+        # ユーザーが削除した曲（#1239）もDBには存在するため、all_objectsで存在を確認する
+        existing_ids = set(Song.all_objects.filter(pk__in=all_target_ids).values_list('id', flat=True))
         imitate_rows = [
             Song.imitates.through(from_song_id=song.id, to_song_id=target_id)
             for song in songs
@@ -149,7 +150,7 @@ class Command(BaseCommand):
         if not hasattr(song, '_imitates_data') or not song._imitates_data:
             return
 
-        existing = Song.objects.filter(pk__in=song._imitates_data)
+        existing = Song.all_objects.filter(pk__in=song._imitates_data)
         existing_ids = set(existing.values_list('pk', flat=True))
         song.imitates.set(existing)
 
@@ -159,7 +160,8 @@ class Command(BaseCommand):
             ))
 
     def json_to_song(self, songjson: Dict):
-        if Song.objects.filter(pk=songjson["id"]).exists():
+        # ユーザーが削除した曲（#1239）と同じIDで作成するとIDが重複するため、all_objectsで存在を確認する
+        if Song.all_objects.filter(pk=songjson["id"]).exists():
             self.stdout.write(self.style.ERROR(f"ID {songjson['id']}はすでに存在しています。"))
             return None
 

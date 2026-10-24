@@ -54,7 +54,8 @@ def validate_song_url(cleaned_url, exclude_song_id=None):
     if len(cleaned_url) > max_length:
         return f"URLは{max_length}文字以下である必要があります。"
 
-    qs = SongLink.objects.filter(url__iexact=cleaned_url, allow_dup=False, songs__isnull=False)
+    # 削除した曲（#1239）だけに紐づくURLは、登録されていないURLとして扱う
+    qs = SongLink.objects.filter(url__iexact=cleaned_url, allow_dup=False, songs__is_removed=False)
     if exclude_song_id is not None:
         qs = qs.exclude(songs__id=exclude_song_id)
     if qs.exists():
@@ -133,7 +134,8 @@ def update_song(song, fields: SongFields, author_objects, imitate_songs, cleaned
         for url_str, link in existing_links.items():
             if url_str not in new_url_set:
                 link.songs.remove(song)
-                if not link.songs.exists():
+                # 削除した曲（#1239）に紐づくURLは、曲を復元したときのために残す
+                if not Song.all_objects.filter(links=link).exists():
                     link.delete()
         for url_str in new_url_set:
             if url_str not in existing_links:
@@ -141,11 +143,17 @@ def update_song(song, fields: SongFields, author_objects, imitate_songs, cleaned
                 link.songs.add(song)
 
 
+def remove_song(song):
+    """Songを論理削除する（#1239）。復元できるよう、URL・作者・模倣元等の関連はそのまま残す"""
+    song.is_removed = True
+    song.save(update_fields=["is_removed"])
+
+
 def build_delete_discord_text(song, reason, editor):
-    """削除申請用のDiscordテキストを構築する"""
+    """削除用のDiscordテキストを構築する。先頭は新規作成（build_new_song_discord_text）と同じ形式にする"""
     return (
-        f"```{song.id}```\n"
-        f"{ROOT_URL}/songs/{song.id}\n"
+        f"削除されました\n"
+        f"{ROOT_URL}/songs/{song.id}\n\n"
         f"タイトル：{song.title}\n"
         f"チャンネル名：{song.authors_str()}\n"
         f"理由：{reason}\n"

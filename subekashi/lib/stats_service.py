@@ -123,7 +123,10 @@ def compute_base_stats(qs):
     """
     stats = compute_view_like_totals(qs)
     base = _clean_base(qs)
-    stats["total_imitateds"] = base.annotate(c=Count("imitateds", distinct=True)).aggregate(s=Sum("c"))["s"] or 0
+    # 削除した曲（#1239）は模倣曲として数えない
+    stats["total_imitateds"] = base.annotate(
+        c=Count("imitateds", filter=Q(imitateds__is_removed=False), distinct=True)
+    ).aggregate(s=Sum("c"))["s"] or 0
     return stats
 
 
@@ -153,7 +156,10 @@ def compute_unique_author_count(qs):
 def compute_total_imitates(qs):
     """authorごとの統計ページのみ: 範囲内の各曲が模倣している元曲数の総和"""
     base = _clean_base(qs)
-    return base.annotate(c=Count("imitates", distinct=True)).aggregate(s=Sum("c"))["s"] or 0
+    # 削除した曲（#1239）は模倣元として数えない
+    return base.annotate(
+        c=Count("imitates", filter=Q(imitates__is_removed=False), distinct=True)
+    ).aggregate(s=Sum("c"))["s"] or 0
 
 
 def compute_collaborator_count(qs, author_id):

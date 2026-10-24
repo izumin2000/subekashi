@@ -294,6 +294,25 @@ class ComputeBaseStatsTest(TestCase):
 
         self.assertEqual(stats["total_imitateds"], 2)
 
+    def test_total_imitateds_excludes_removed_song(self):
+        # ユーザーが削除した曲（#1239）は模倣曲として数えない
+        original = Song.objects.create(title="原曲")
+        Song.objects.create(title="模倣曲").imitates.add(original)
+        Song.objects.create(title="削除した模倣曲", is_removed=True).imitates.add(original)
+
+        stats = compute_base_stats(Song.objects.filter(pk=original.pk))
+
+        self.assertEqual(stats["total_imitateds"], 1)
+
+    def test_removed_song_is_not_counted(self):
+        Song.objects.create(title="曲", view=100)
+        Song.objects.create(title="削除した曲", view=50, is_removed=True)
+
+        stats = compute_base_stats(Song.objects.all())
+
+        self.assertEqual(stats["song_count"], 1)
+        self.assertEqual(stats["total_view"], 100)
+
 
 class ComputeCommonStatsTest(TestCase):
     # 総合統計ページ・stats管理コマンド専用: compute_base_statsにtotal_authorsを
@@ -368,6 +387,15 @@ class ComputeTotalImitatesTest(TestCase):
         imitate.imitates.add(original_1, original_2)
 
         self.assertEqual(compute_total_imitates(Song.objects.filter(pk=imitate.pk)), 2)
+
+    def test_excludes_removed_song(self):
+        # ユーザーが削除した曲（#1239）は模倣元として数えない
+        original = Song.objects.create(title="原曲")
+        removed = Song.objects.create(title="削除した原曲", is_removed=True)
+        imitate = Song.objects.create(title="模倣曲")
+        imitate.imitates.add(original, removed)
+
+        self.assertEqual(compute_total_imitates(Song.objects.filter(pk=imitate.pk)), 1)
 
 
 class ComputeCollaboratorCountTest(TestCase):
