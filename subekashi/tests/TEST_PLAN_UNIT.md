@@ -2226,6 +2226,17 @@ URL生成は`get_urls()`に分離しており、ファイル出力・`collectsta
 | 歌詞なしのインストの曲以外 | `category="arrange"`・`is_inst=True`・歌詞が空 | 「インスト曲」を表示 |
 | 未完成の判定と一致 | 全カテゴリと `is_questionable=False`・`True` のそれぞれで、`is_original=True`・URLあり・歌詞が空 | 「歌詞未登録」と表示するのは `Song.is_lack()` が `True` の曲（界隈曲?ではなく、カテゴリが曲）だけ |
 
+#### 15-4. `is_subeana_author(song)` と曲カードの背景色（#1219）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 全てあなたの所為です。の曲 | `song.authors` が作者ID 1（`SUBEANA_AUTHOR_ID`）のみ | `True` |
+| 全てあなたの所為です。との合作 | `song.authors` がほかの作者と作者ID 1 | `True` |
+| ほかの作者の曲 | `song.authors` が作者ID 1 以外のみ | `False` |
+| 作者0人 | `song.authors` が空 | `False` |
+| prefetch済みの作者 | `prefetch_related("authors")` で取得した作者ID 1 の曲 | クエリを発行せずに `True` を返す |
+| 曲カードのクラス | 作者ID 1 の曲とほかの作者の曲を `render_song_card` で描画 | 作者ID 1 の曲のカードだけ、半透明の青色の背景にする `song-card-subeana-author` のクラスが付く |
+
 ---
 
 ### 16. `lib/author_alias_service.py` — 別名Discord通知・名義の統一サービス（#992、#1137、#1230）

@@ -5,14 +5,15 @@ get_author(): 作者0人・1人・2人以上（合作）の表示分岐を検証
 get_url(): 曲のフラグのアイコンと、URLのアイコン・URL未登録の表示分岐、両者の間の縦線を検証する。
 PC幅で隠すインスト曲のアイコンと、スマホ幅で三点リーダーにまとめるアイコンのクラスも検証する（#1229）。
 get_lyrics(): 歌詞・インスト曲・歌詞未登録の表示分岐と、歌詞の登録が不要な曲に「歌詞未登録」を出さないことを検証する（#1253）。
+is_subeana_author(): 全てあなたの所為です。の曲（合作を含む）の判定と、曲カードの背景色のクラスを検証する（#1219）。
 SEND_DISCORD=False のためDiscordへの実送信は発生しない。
 """
 from django.test import TestCase
 from django.urls import reverse
 
-from subekashi.constants.constants import SONG_CATEGORIES
+from subekashi.constants.constants import SONG_CATEGORIES, SUBEANA_AUTHOR_ID
 from subekashi.models import Author, Song, SongLink
-from subekashi.templatetags.song_card import get_author, get_lyrics, get_url
+from subekashi.templatetags.song_card import get_author, get_lyrics, get_url, is_subeana_author, render_song_card
 
 
 class GetAuthorTest(TestCase):
@@ -284,3 +285,38 @@ class GetLyricsTest(TestCase):
                     song = Song.objects.create(title="URLありで歌詞なしの曲", category=category["value"], is_original=True, is_questionable=is_questionable)
                     SongLink.objects.create(url=f"https://youtu.be/song{song.id:07d}").songs.add(song)
                     self.assertEqual("歌詞未登録" in get_lyrics(song), Song.is_lack(song.id))
+
+
+class IsSubeanaAuthorTest(TestCase):
+    """is_subeana_author() と曲カードの背景色のクラスのテスト（#1219）"""
+
+    def setUp(self):
+        self.subeana = Author.objects.create(pk=SUBEANA_AUTHOR_ID, name="全てあなたの所為です。")
+        self.other = Author.objects.create(name="テスト作者")
+
+    def _create_song(self, *authors):
+        song = Song.objects.create(title="テスト曲")
+        song.authors.add(*authors)
+        return song
+
+    def test_subeana_author(self):
+        self.assertTrue(is_subeana_author(self._create_song(self.subeana)))
+
+    def test_collab_with_subeana_author(self):
+        self.assertTrue(is_subeana_author(self._create_song(self.other, self.subeana)))
+
+    def test_other_author(self):
+        self.assertFalse(is_subeana_author(self._create_song(self.other)))
+
+    def test_no_author(self):
+        self.assertFalse(is_subeana_author(self._create_song()))
+
+    def test_prefetched_authors_do_not_query(self):
+        self._create_song(self.subeana)
+        song = Song.objects.prefetch_related("authors").get()
+        with self.assertNumQueries(0):
+            self.assertTrue(is_subeana_author(song))
+
+    def test_song_card_class(self):
+        self.assertIn('class="song-card song-card-subeana-author"', render_song_card(self._create_song(self.subeana)))
+        self.assertIn('class="song-card"', render_song_card(self._create_song(self.other)))
