@@ -4,13 +4,15 @@ song_card テンプレートタグのテスト
 get_author(): 作者0人・1人・2人以上（合作）の表示分岐を検証する。
 get_url(): 曲のフラグのアイコンと、URLのアイコン・URL未登録の表示分岐、両者の間の縦線を検証する。
 PC幅で隠すインスト曲のアイコンと、スマホ幅で三点リーダーにまとめるアイコンのクラスも検証する（#1229）。
+get_lyrics(): 歌詞・インスト曲・歌詞未登録の表示分岐と、歌詞の登録が不要な曲に「歌詞未登録」を出さないことを検証する（#1253）。
 SEND_DISCORD=False のためDiscordへの実送信は発生しない。
 """
 from django.test import TestCase
 from django.urls import reverse
 
+from subekashi.constants.constants import SONG_CATEGORIES
 from subekashi.models import Author, Song, SongLink
-from subekashi.templatetags.song_card import get_author, get_url
+from subekashi.templatetags.song_card import get_author, get_lyrics, get_url
 
 
 class GetAuthorTest(TestCase):
@@ -231,3 +233,54 @@ class GetUrlTest(TestCase):
         self.assertIn("fa-ellipsis-h", result)
         self.assertNotIn("song-card-separator", result)
         self.assertNotIn("URL未登録", result)
+
+
+class GetLyricsTest(TestCase):
+    """get_lyrics() のテスト"""
+
+    def test_lyrics_returns_lyrics(self):
+        song = Song.objects.create(title="歌詞ありの曲", lyrics="テスト歌詞")
+        self.assertEqual(get_lyrics(song), '<i class="fas fa-align-center"></i>テスト歌詞')
+
+    def test_lyrics_html_is_escaped(self):
+        song = Song.objects.create(title="特殊文字の歌詞の曲", lyrics="<script>")
+        result = get_lyrics(song)
+        self.assertNotIn("<script>", result)
+        self.assertIn("&lt;script&gt;", result)
+
+    def test_inst_without_lyrics_returns_inst(self):
+        song = Song.objects.create(title="歌詞なしのインスト曲", is_inst=True)
+        self.assertEqual(get_lyrics(song), '<i class="fas fa-align-center"></i>インスト曲')
+
+    def test_song_without_lyrics_returns_unregistered_link(self):
+        song = Song.objects.create(title="歌詞未登録の曲")
+        result = get_lyrics(song)
+        self.assertIn("歌詞未登録", result)
+        self.assertIn(reverse("subekashi:song_edit", args=[song.id]), result)
+
+    def test_not_song_without_lyrics_returns_empty(self):
+        for category in [category for category in SONG_CATEGORIES if category["value"] != "song"]:
+            with self.subTest(category=category["value"]):
+                song = Song.objects.create(title="歌詞なしの曲以外", category=category["value"])
+                self.assertEqual(get_lyrics(song), "")
+
+    def test_questionable_without_lyrics_returns_empty(self):
+        song = Song.objects.create(title="歌詞なしの界隈曲?", is_questionable=True)
+        self.assertEqual(get_lyrics(song), "")
+
+    def test_not_song_with_lyrics_returns_lyrics(self):
+        song = Song.objects.create(title="歌詞ありのカバー", category="cover", lyrics="テスト歌詞")
+        self.assertEqual(get_lyrics(song), '<i class="fas fa-align-center"></i>テスト歌詞')
+
+    def test_not_song_inst_without_lyrics_returns_inst(self):
+        song = Song.objects.create(title="歌詞なしのインストのアレンジ", category="arrange", is_inst=True)
+        self.assertEqual(get_lyrics(song), '<i class="fas fa-align-center"></i>インスト曲')
+
+    def test_unregistered_only_if_lack_by_lyrics(self):
+        # URLがあるオリジナル模倣の曲は、未完成かどうかが歌詞の条件だけで決まる
+        for category in SONG_CATEGORIES:
+            for is_questionable in [False, True]:
+                with self.subTest(category=category["value"], is_questionable=is_questionable):
+                    song = Song.objects.create(title="URLありで歌詞なしの曲", category=category["value"], is_original=True, is_questionable=is_questionable)
+                    SongLink.objects.create(url=f"https://youtu.be/song{song.id:07d}").songs.add(song)
+                    self.assertEqual("歌詞未登録" in get_lyrics(song), Song.is_lack(song.id))
