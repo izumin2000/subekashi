@@ -206,6 +206,33 @@
 | 関連を残す | 作者・URL・模倣元のある曲 | 作者・URL・模倣元はそのまま残り、`SongLink.is_removed`も`False`のまま |
 | 他のフィールドは保存しない | 保存前に`title`を書き換えた曲 | `is_removed`だけを保存し、`title`・`post_time`は変わらない |
 
+#### 2-6-2. `restore_song(song)`（#1264）
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 削除を取り消す | `remove_song`で削除した曲 | `is_removed=False`で保存され、`Song.objects`から再び取得できる |
+| 関連が戻る | 作者・URL・模倣元のある曲 | 作者・URL・模倣元が削除前のまま戻り、作者の曲（`author.songs`）にも含まれる |
+| 他のフィールドは保存しない | 保存前に`title`を書き換えた曲 | `is_removed`だけを保存し、`title`・`post_time`は変わらない |
+
+#### 2-6-3. `get_restore_conflict_songs(song)`（#1264）
+
+削除した曲のURLが削除していない他の曲に登録されていると、削除を取り消すとURLが重複するため取り消せない
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 削除した曲だけのURL | URLが削除した曲だけに紐付く | 空 |
+| 他の曲に登録されたURL | URLが削除していない他の曲にも紐付く | その曲を返す |
+| 他の削除した曲に登録されたURL | URLが`is_removed=True`の他の曲にも紐付く | 空（取り消しても重複しない） |
+| 重複を許可したURL | `allow_dup=True`のURLが他の曲にも紐付く | 空 |
+| 複数のURLが同じ曲に登録 | 2つのURLが同じ他の曲に紐付く | その曲を1回だけ返す |
+| 他の曲だけのURL | 削除した曲と関係ないURLが他の曲に紐付く | 空 |
+
+#### 2-6-4. `build_restore_discord_text(song, editor)`（#1264）
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 削除と同じ形式 | 作者のある曲、編集者 | `削除が取り消されました`・曲のページのURL・空行で始まり、タイトル・チャンネル名・編集者が続く（理由は入力しないため無い） |
+
 #### 2-7. `build_edit_song_discord_text(song_id, song, fields, author_objects, cleaned_url, imitate_songs)`
 
 | テストケース | 入力 | 期待結果 |
@@ -570,7 +597,7 @@ A -`past`-> B -`spell`-> C -`abbr`-> D とつながり、DとEは`another`での
 | categoryが空 | `category=""`, `detail="内容"` | `is_valid() == False`、エラーメッセージあり |
 | detailが空 | `category="質問"`, `detail=""` | `is_valid() == False`、エラーメッセージあり |
 | 不正なcategory値 | `category="不正な選択肢"` | `is_valid() == False` |
-| 全ての種類 | `category`が「不具合の報告」「提案」「質問」「削除の取り消し」（#1239）「その他」 | いずれも `is_valid() == True` |
+| 全ての種類 | `category`が「不具合の報告」「提案」「質問」「その他」 | いずれも `is_valid() == True`（#1239で追加した「削除の取り消し」は、曲のページのボタンで取り消すようにしたため削除した。#1264） |
 | detailが10000文字丁度 (#1085) | `detail="あ" * 10000` | `is_valid() == True` |
 | detailが10000文字超 (#1085) | `detail="あ" * 10001` | `is_valid() == False` |
 
@@ -767,7 +794,9 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | 存在する曲ID | 有効なsong_id | HTTP 200 |
 | 存在しない曲ID | 無効なsong_id | HTTP 404 |
-| ユーザーが削除した曲（#1239） | `is_removed=True` の曲 | HTTP 410で、曲の情報を表示せず「このページは削除されました」と、削除の取り消しをお問い合わせで申請するよう案内するページ（`song_removed.html`）を表示する。noindexで、タイトルは表示しない。「こちら」のリンクは`/contact/?category=削除の取り消し&detail=<ROOT_URL>/songs/<id> の削除を取り消してください。`（URLエンコード） |
+| ユーザーが削除した曲（#1239） | `is_removed=True` の曲 | HTTP 410で、曲の情報（歌詞等）を表示せず、`<h1><曲名>のページは削除されました</h1>`と「削除を取り消す」ボタンのあるページ（`song_removed.html`、7-7-2）を表示する（#1264）。noindex |
+| 削除を取り消した後のトースト（#1264） | `?toast=restore` | `showToast("ok", "削除を取り消しました。");`が含まれる |
+| 通知に失敗した取り消しの後のトースト（#1264） | `?toast=restore_notify_error` | `showToast("warning", "削除を取り消しましたが、管理者への通知に失敗しました。");`が含まれる |
 | 模倣元・模倣曲に削除した曲がある（#1239） | `is_removed=True` の曲と模倣関係がある | 模倣元・模倣曲の一覧（`imitate_list`・`imitated_list`）に含まれず、タイトルも表示されない |
 | 「編集/削除」のボタン（#1239） | 有効なsong_id | ボタンの文言が「編集/削除」で、「削除申請」は含まれない |
 | is_questionable=True の曲 | `is_questionable=True` の曲 | レスポンスに「界隈曲?」タグが含まれる |
@@ -824,7 +853,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | 存在する曲のGET | 有効なsong_id | HTTP 200 |
 | 存在しない曲のGET | 無効なsong_id | HTTP 404 |
-| ユーザーが削除した曲のGET（#1239） | `is_removed=True` の曲 | HTTP 410で、曲の情報を表示せず「このページは削除されました」と、削除の取り消しをお問い合わせで申請するよう案内するページ（`song_removed.html`）を表示する |
+| ユーザーが削除した曲のGET（#1239） | `is_removed=True` の曲 | HTTP 410で、曲の情報を表示せず、削除を取り消すボタンのあるページ（`song_removed.html`、7-7-2）を表示する |
 | GET: ブラウザにキャッシュさせない（#1135） | 有効なsong_id | `Cache-Control`に`no-store`が含まれ、`public`は含まれない（キャッシュされた古いフォームの送信で、その間の編集が巻き戻るのを防ぐ） |
 | POST: is_questionable時に歌詞・模倣・下書き・オリジナル模倣が強制的に空/OFF | `is_questionable=True`, `lyrics="..."`, `imitate="<id>"`, `is_draft=True`, `is_original=True` | 保存されたSongの `lyrics=""`、`imitates`が空、`is_draft=False`、`is_original=False`、`is_questionable=True` |
 | POST: is_questionable時も非公開/削除済み・ネタ曲・インスト・すべあな界隈曲は保存される | `is_questionable=True`, `is_deleted=True`, `is_joke=True`, `is_inst=True`, `is_subeana=True` | 各フラグがそれぞれ `True` のまま保存される |
@@ -849,7 +878,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | GETアクセス | GETリクエスト | HTTP 200 |
 | POST: 正常な入力 | `category="不具合の報告"`, `detail="..."` | HTTP 200、`context["result"] == "ok"` |
 | POST: 不正な入力 | `detail` 未入力 | HTTP 200、`context["result"]` にエラーメッセージ |
-| 削除の取り消しのリンク（#1239） | `?category=削除の取り消し&detail=...`（削除した曲のページのリンク） | 種類の「削除の取り消し」が選択され、詳細に`detail`の値が入る |
+| クエリで入力した状態で開く | `?category=提案&detail=...`（曲の編集画面のリンク等） | 種類の「提案」が選択され、詳細に`detail`の値が入る |
+| 種類に「削除の取り消し」が無い（#1264） | GETリクエスト | 「削除の取り消し」が含まれない（削除の取り消しは曲のページのボタンで行う） |
 
 #### 7-7. `SongDeleteView` (`/songs/<id>/delete/`)
 
@@ -859,14 +889,14 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | 存在する曲のGET | 有効なsong_id | HTTP 200 |
 | 存在しない曲のGET | 無効なsong_id | HTTP 404 |
-| GET: 削除のフォーム | 有効なsong_id | 削除した曲が表示されなくなる旨の説明と「削除」の送信ボタンがあり、「削除申請」は含まれない |
+| GET: 削除のフォーム | 有効なsong_id | 削除した曲が表示されなくなる旨と、誤って削除した場合は曲のページの「削除を取り消す」から元に戻せる旨（#1264）の説明と「削除」の送信ボタンがあり、「削除申請」は含まれない |
 | POST: 正常な削除理由 | `reason="..."` | 削除した曲のページは表示できないため、`/?toast=delete`（トップ）へリダイレクト |
-| POST: 曲を論理削除する | `reason="..."` | `is_removed=True`になり、曲のページがHTTP 404になる |
+| POST: 曲を論理削除する | `reason="..."` | `is_removed=True`になり、曲のページが削除した曲のページ（HTTP 410）になる |
 | POST: 編集履歴を保存する | `reason="削除理由テスト"` | `history_type="delete"`・`title="<タイトル>を削除"`・`changes=["理由", "削除理由テスト"]`のHistoryが作成される |
 | POST: Discordに通知する | `send_discord`をモック | 申請ではなく曲の変更になったため、新規登録・編集と同じNEW_DISCORD_URL宛に、`削除されました`・曲のページのURLで始まり、削除理由を含む文面を送る |
 | POST: Discordに送信できない | `send_discord`が`False`を返す | 曲は削除されているため、500ページにはせず`/?toast=delete_notify_error`へリダイレクトする。曲は削除され、Historyも作成される |
 | POST: 削除理由が空 | `reason=""` | HTTP 200、`context["error"]` にエラーメッセージ。曲は削除されない |
-| 削除した曲（#1239） | `is_removed=True` の曲にGET・POST | どちらも削除の取り消しを案内するページ（HTTP 410）。Historyは作成されない |
+| 削除した曲（#1239） | `is_removed=True` の曲にGET・POST | どちらも削除した曲のページ（HTTP 410）。Historyは作成されない |
 | 編集できない曲 | `is_lock=True` の曲にPOST | `/songs/<id>?toast=lock` へリダイレクトし、曲は削除されない |
 
 #### 7-7-1. 管理サイトの曲（`SongAdmin`）（#1239）
@@ -878,6 +908,44 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 一覧に削除した曲を含める | `is_removed=True`の曲と通常の曲 | 一覧にどちらも表示される |
 | 削除した曲で絞り込む | `?is_removed__exact=1` | 削除した曲だけが表示される |
 | 削除した曲の変更画面 | `is_removed=True`の曲 | HTTP 200で、`is_removed`のチェックボックスがチェックされた状態で表示される |
+
+#### 7-7-2. 削除した曲のページ（`song_removed.html`）（#1264）
+
+曲のページ・編集・削除・編集履歴のページで、ユーザーが削除した曲（#1239）なら表示する（HTTP 410）。曲名・直近の削除理由と、削除を取り消すボタンを表示する
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 曲名のエスケープ | タイトルが`<b>削除ページテスト曲</b>` | `<h1>&lt;b&gt;削除ページテスト曲&lt;/b&gt;のページは削除されました</h1>` |
+| 直近の削除理由 | 削除（古い理由）→取り消し→削除（新しい理由）の履歴 | `<p id="song-removed-reason">削除理由：新しい削除理由</p>`が表示され、古い理由は表示されない |
+| 削除理由のエスケープと改行 | 理由が`<script>重複</script>`と改行・2行目 | エスケープされ、改行が`<br>`になる |
+| 削除の履歴が無い | 管理サイトで削除した曲 | 「削除理由」は表示されない |
+| 最新の履歴が削除ではない | 削除→取り消しの後に管理サイトで削除した曲 | 取り消す前の削除の理由は表示されない |
+| 削除の履歴のchangesが想定外の形 | `changes`が`None`・`[]`・`["理由"]`・`"理由"`の削除の履歴 | 500にならず、HTTP 410で「削除理由」は表示されない |
+| 削除を取り消すボタン | 削除した曲 | `/songs/<id>/restore/`にPOSTするフォーム（`csrfmiddlewaretoken`付き）と、`<i class="fas fa-trash-restore-alt"></i>`・「削除を取り消す」のボタンがある |
+| お問い合わせでの申請を案内しない | 削除した曲 | 「削除の取り消し」「申請」が含まれない |
+| ロックされた曲 | `is_lock=True` | 「この曲はロックされているため、削除を取り消せません。」と表示し、ボタンは無い |
+| URLが他の曲に登録されている | 削除した曲のURLが削除していない他の曲にも紐付く | 「この曲のURLが次の曲に登録されているため、削除を取り消せません。」と、その曲へのリンク（タイトルはエスケープ）を表示し、ボタンは無い |
+| ブラウザにキャッシュさせない | 削除した曲 | `Cache-Control`が`no-cache`（削除を取り消した後に開き直したとき、キャッシュからこのページを表示しない） |
+
+#### 7-7-3. `SongRestoreView` (`/songs/<id>/restore/`)（#1264）
+
+削除した曲のページの「削除を取り消す」ボタンから、曲の削除を取り消す
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| POST: 削除を取り消す | 削除した曲 | `/songs/<id>?toast=restore`へリダイレクト（`X-Robots-Tag: noindex, nofollow`）。`is_removed=False`になり、曲のページがHTTP 200になる |
+| POST: 編集履歴を保存する | 削除した曲 | `history_type="restore"`（表示名「削除の取り消し」）・`title="<タイトル>の削除を取り消し"`・`changes=None`・送信した人の編集者のHistoryが作成される |
+| POST: Discordに通知する | `send_discord`をモック | NEW_DISCORD_URL宛に、`削除が取り消されました`・曲のページのURLで始まる文面を送る |
+| POST: Discordに送信できない | `send_discord`が`False`を返す | 500ページにはせず`/songs/<id>?toast=restore_notify_error`へリダイレクトする。削除は取り消され、Historyも作成される |
+| GET | 削除した曲 | HTTP 405。削除は取り消されない |
+| CSRFトークンが無い | `enforce_csrf_checks=True`でPOST | HTTP 403。削除は取り消されない |
+| 存在しない曲 | 無効なsong_id | HTTP 404 |
+| 削除していない曲 | 既に取り消した曲にPOST | `/songs/<id>`へリダイレクトし、Historyの作成・Discordへの通知をしない |
+| ロックされた曲 | `is_lock=True`の削除した曲にPOST | 削除した曲のページ（HTTP 410、ロックの説明）を返し、取り消さない。Historyの作成・Discordへの通知をしない |
+| URLが他の曲に登録されている | 削除した曲のURLが他の曲にも紐付く状態でPOST | 削除した曲のページ（HTTP 410、登録している曲へのリンク）を返し、取り消さない。Historyの作成・Discordへの通知をしない |
+| 削除と取り消し | 曲を削除した後に取り消す | 削除した曲のページに削除理由が表示され、取り消すと曲のページがHTTP 200になる。Historyは削除・取り消しの順に残る |
+| 曲の行のロック | `SELECT ... FOR UPDATE`に対応するDB（SQLiteでは実行しない） | 削除されているか・取り消せるかの確認より前に、曲の行を`SELECT ... FOR UPDATE`でロックし、その後に`UPDATE`する |
+| 同時に押す（`TransactionTestCase`） | 1つ目の取り消しをコミット前に止め、その間に別の接続から2つ目をPOST | 2つ目は1つ目のコミットまでロックを待ち、削除していない曲として扱う。取り消し（`restore_song`）は1回だけ行われ、`history_type="restore"`のHistoryは1件 |
 
 #### 7-8. `AuthorView` (`/authors/<id>/`)
 
@@ -1116,6 +1184,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | author向けHistory (#991) | `History.create_for_author()`で作成したHistoryが存在 | 作者名・作者ページへのリンクが表示され、「この曲は削除されました」は表示されない |
 | author削除後のHistory (#991) | 上記のauthorを削除 | 「この曲または作者は削除されました」が表示される |
 | ユーザーが削除した曲のHistory（#1239） | 曲の削除のHistoryを作成した後に`is_removed=True` | 曲のページは404になるため、曲のページへのリンクは無く「この曲または作者は削除されました」が表示される。削除理由は表示される |
+| 削除を取り消した曲のHistory（#1264） | 曲を削除してから取り消す | 「<タイトル>の削除を取り消し」が表示され、削除・取り消しの両方の履歴から曲のページへリンクする。「この曲または作者は削除されました」は表示されない |
 
 #### 7-10-1. `EditorView` (`/editor/<id>/`)（#991でauthor向けHistory表示を追加）
 
@@ -1133,8 +1202,9 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | --- | --- | --- |
 | 存在する曲 | 有効なsong_id | HTTP 200 |
 | 存在しない曲 | `song_id=99999` | HTTP 404 |
-| ユーザーが削除した曲（#1239） | `is_removed=True` の曲 | HTTP 410で、曲の情報を表示せず「このページは削除されました」と、削除の取り消しをお問い合わせで申請するよう案内するページ（`song_removed.html`）を表示する（履歴は編集履歴の一覧で見られる） |
+| ユーザーが削除した曲（#1239） | `is_removed=True` の曲 | HTTP 410で、曲の情報を表示せず、削除を取り消すボタンのあるページ（`song_removed.html`、7-7-2）を表示する（履歴は編集履歴の一覧で見られる） |
 | 編集の差分の表示（#608） | 編集（`changes`の見出しが`["種類", "編集前", "編集後"]`）と新規作成（見出しが`["種類", "内容"]`）のHistoryが存在 | `<table class="diff-table">`が編集のHistoryの分だけ（1つ）含まれ、差分を表示する`subekashi/js/editor.js`が読み込まれる |
+| 削除の取り消しの履歴（#1264） | 曲を削除してから取り消す（取り消しのHistoryは`changes=None`） | HTTP 200で「<タイトル>の削除を取り消し」が表示される。変更内容の表（`change_table_wrapper`）は削除の理由の表（`delete-table`）の1つだけで、取り消しの履歴には表示しない |
 
 #### 7-11. `SongCardsView` (`/api/html/song_cards`)
 
@@ -1755,7 +1825,7 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | --- | --- | --- |
 | `Song.objects` | 通常の曲と削除した曲 | 通常の曲だけを返す |
 | `Song.all_objects` | 通常の曲と削除した曲 | どちらも返す |
-| `get_or_none()` | 削除した曲のid | `None`（曲のページ・編集・削除・編集履歴のページは、削除の取り消しを案内するページになる） |
+| `get_or_none()` | 削除した曲のid | `None`（曲のページ・編集・削除・編集履歴のページは、削除を取り消すボタンのあるページになる） |
 | `get_for_author()` | 作者の曲に削除した曲がある | 削除した曲を含まない |
 | 関連マネージャー（`author.songs`・`song.imitates`・`song.imitateds`・`link.songs`） | 削除した曲と関連がある | 削除した曲を含まない（デフォルトマネージャーから作られるため） |
 | `History.song` | 削除した曲のHistory | 削除した曲を返す（FKの参照はベースマネージャーを使うため。編集履歴の一覧で「削除されました」と表示するのに使う） |

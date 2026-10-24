@@ -149,6 +149,17 @@ def remove_song(song):
     song.save(update_fields=["is_removed"])
 
 
+def restore_song(song):
+    """論理削除した曲（#1239）の削除を取り消す（#1264）"""
+    song.is_removed = False
+    song.save(update_fields=["is_removed"])
+
+
+def get_restore_conflict_songs(song):
+    """削除した曲のURLが登録されている、削除していない他の曲を返す。削除を取り消すとURLが重複するため、取り消せない（#1264）"""
+    return Song.objects.filter(links__songs=song, links__allow_dup=False).exclude(pk=song.pk).distinct().order_by("id")
+
+
 def build_delete_discord_text(song, reason, editor):
     """削除用のDiscordテキストを構築する。先頭は新規作成（build_new_song_discord_text）と同じ形式にする"""
     return (
@@ -157,6 +168,17 @@ def build_delete_discord_text(song, reason, editor):
         f"タイトル：{song.title}\n"
         f"チャンネル名：{song.authors_str()}\n"
         f"理由：{reason}\n"
+        f"編集者：{editor}"
+    )
+
+
+def build_restore_discord_text(song, editor):
+    """削除の取り消し用のDiscordテキストを構築する。削除（build_delete_discord_text）と同じ形式にする"""
+    return (
+        f"削除が取り消されました\n"
+        f"{ROOT_URL}/songs/{song.id}\n\n"
+        f"タイトル：{song.title}\n"
+        f"チャンネル名：{song.authors_str()}\n"
         f"編集者：{editor}"
     )
 

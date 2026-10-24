@@ -7,7 +7,23 @@
 
 {% block content %}
 <section id="song-removed">
-    <h1>このページは削除されました</h1>
-    <p>削除を取り消したい場合は<a href="{{ contact_url }}" id="song-removed-contact">こちら</a>を押して<br>申請してください。</p>
+    <h1>{{ song.title }}のページは削除されました</h1>
+    {% if reason %}
+        <p id="song-removed-reason">削除理由：{{ reason|linebreaksbr }}</p>
+    {% endif %}
+    {% if song.is_lock %}
+        <p>この曲はロックされているため、削除を取り消せません。</p>
+    {% elif conflict_songs %}
+        <p>この曲のURLが次の曲に登録されているため、削除を取り消せません。<br>削除を取り消す場合は、次の曲からURLを外してください。</p>
+        <ul id="song-removed-conflicts">
+            {% for conflict_song in conflict_songs %}
+                <li><a href="{% url 'subekashi:song' conflict_song.id %}">{{ conflict_song.title }}</a></li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <form action="{% url 'subekashi:song_restore' song.id %}" method="POST" class="action-buttons">{% csrf_token %}
+            <button type="submit" class="action-button black-action-button" id="song-restore-submit"><i class="fas fa-trash-restore-alt"></i><span class="icon-p-big">削除を取り消す</span></button>
+        </form>
+    {% endif %}
 </section>
 {% endblock %}

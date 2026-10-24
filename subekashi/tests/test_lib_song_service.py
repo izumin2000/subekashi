@@ -1,7 +1,7 @@
 """
 lib/song_service.py のテスト
 
-曲作成・更新・削除・Discord テキスト生成・short版/full版の判定のサービス関数を検証する。
+曲作成・更新・削除・削除の取り消し・Discord テキスト生成・short版/full版の判定のサービス関数を検証する。
 """
 from unittest.mock import patch
 from django.test import TestCase
@@ -17,7 +17,10 @@ from subekashi.lib.song_service import (
     get_imitate_songs,
     update_song,
     remove_song,
+    restore_song,
+    get_restore_conflict_songs,
     build_delete_discord_text,
+    build_restore_discord_text,
     build_new_song_discord_text,
     build_edit_song_discord_text,
     yes_no,
@@ -415,6 +418,88 @@ class RemoveSongTest(TestCase):
         self.assertEqual(song.post_time, post_time)
 
 
+class RestoreSongTest(TestCase):
+    """restore_song() のテスト（#1264）"""
+
+    def setUp(self):
+        self.author = Author.objects.create(name="取り消しテスト作者")
+        self.target = Song.objects.create(title="取り消しテストの模倣元")
+        self.song = Song.objects.create(title="削除を取り消す曲", lyrics="歌詞")
+        self.song.authors.add(self.author)
+        self.song.imitates.add(self.target)
+        self.link = SongLink.objects.create(url="https://youtu.be/restoresong1")
+        self.link.songs.add(self.song)
+        remove_song(self.song)
+
+    def test_song_is_restored(self):
+        restore_song(self.song)
+        self.assertFalse(Song.all_objects.get(pk=self.song.pk).is_removed)
+        self.assertTrue(Song.objects.filter(pk=self.song.pk).exists())
+
+    def test_relations_are_restored(self):
+        # 削除しても作者・URL・模倣元は残しているため、元どおりに戻る
+        restore_song(self.song)
+        song = Song.objects.get(pk=self.song.pk)
+        self.assertEqual(list(song.authors.all()), [self.author])
+        self.assertEqual(list(song.links.all()), [self.link])
+        self.assertEqual(list(song.imitates.all()), [self.target])
+        self.assertEqual(list(self.author.songs.all()), [song])
+
+    def test_other_fields_are_not_changed(self):
+        post_time = Song.all_objects.get(pk=self.song.pk).post_time
+        self.song.title = "保存されないタイトル"
+        restore_song(self.song)
+        song = Song.objects.get(pk=self.song.pk)
+        self.assertEqual(song.title, "削除を取り消す曲")
+        self.assertEqual(song.post_time, post_time)
+
+
+class GetRestoreConflictSongsTest(TestCase):
+    """get_restore_conflict_songs() のテスト（#1264）
+
+    削除した曲のURLが削除していない他の曲に登録されていると、削除を取り消すとURLが重複するため取り消せない
+    """
+
+    def setUp(self):
+        self.removed = Song.objects.create(title="URL重複テストの削除した曲", is_removed=True)
+        self.link = SongLink.objects.create(url="https://youtu.be/conflict001")
+        self.link.songs.add(self.removed)
+
+    def test_url_only_of_removed_song_has_no_conflict(self):
+        self.assertEqual(list(get_restore_conflict_songs(self.removed)), [])
+
+    def test_url_registered_to_other_song_is_conflict(self):
+        other = Song.objects.create(title="同じURLを登録した曲")
+        self.link.songs.add(other)
+        self.assertEqual(list(get_restore_conflict_songs(self.removed)), [other])
+
+    def test_url_registered_to_other_removed_song_is_not_conflict(self):
+        other_removed = Song.objects.create(title="同じURLの削除した曲", is_removed=True)
+        self.link.songs.add(other_removed)
+        self.assertEqual(list(get_restore_conflict_songs(self.removed)), [])
+
+    def test_allow_dup_url_is_not_conflict(self):
+        # 重複を許可したURLは、他の曲に登録されていても取り消せる
+        other = Song.objects.create(title="重複を許可したURLの曲")
+        self.link.songs.add(other)
+        self.link.allow_dup = True
+        self.link.save()
+        self.assertEqual(list(get_restore_conflict_songs(self.removed)), [])
+
+    def test_song_with_multiple_conflict_urls_is_returned_once(self):
+        other = Song.objects.create(title="2つのURLを登録した曲")
+        self.link.songs.add(other)
+        second_link = SongLink.objects.create(url="https://youtu.be/conflict002")
+        second_link.songs.add(self.removed, other)
+        self.assertEqual(list(get_restore_conflict_songs(self.removed)), [other])
+
+    def test_other_url_of_other_song_is_not_conflict(self):
+        # 他の曲にしか登録されていないURLでは重複しない
+        other = Song.objects.create(title="別のURLの曲")
+        SongLink.objects.create(url="https://youtu.be/conflict003").songs.add(other)
+        self.assertEqual(list(get_restore_conflict_songs(self.removed)), [])
+
+
 class BuildDeleteDiscordTextTest(TestCase):
     """build_delete_discord_text() のテスト"""
 
@@ -443,6 +528,24 @@ class BuildDeleteDiscordTextTest(TestCase):
         # 先頭は新規作成と同じく「〜されました」・曲のページのURL・空行の形式にする（#1239）
         text = build_delete_discord_text(self.song, "理由", "editor_ip")
         self.assertTrue(text.startswith(f"削除されました\n{ROOT_URL}/songs/{self.song.id}\n\nタイトル：削除申請曲\n"))
+
+
+class BuildRestoreDiscordTextTest(TestCase):
+    """build_restore_discord_text() のテスト（#1264）"""
+
+    def setUp(self):
+        self.author = Author.objects.create(name="取り消しテスト作者")
+        self.song = Song.objects.create(title="削除を取り消した曲", is_removed=True)
+        self.song.authors.add(self.author)
+
+    def test_text_has_same_format_as_delete_text(self):
+        # 削除（build_delete_discord_text）と同じ形式にする。取り消しでは理由を入力しないため、理由の行は無い
+        text = build_restore_discord_text(self.song, "editor_ip")
+        self.assertEqual(
+            text,
+            f"削除が取り消されました\n{ROOT_URL}/songs/{self.song.id}\n\n"
+            "タイトル：削除を取り消した曲\nチャンネル名：取り消しテスト作者\n編集者：editor_ip",
+        )
 
 
 class BuildNewSongDiscordTextTest(TestCase):

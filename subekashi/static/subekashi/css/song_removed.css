@@ -5,3 +5,13 @@
 #song-removed p {
     line-height: 2;
 }
+
+#song-removed-conflicts {
+    list-style: none;
+    padding: 0;
+}
+
+/* アイコンとテキストを上下中央寄せにする（共通のspan{padding-top:5px}を打ち消す） */
+#song-removed .action-button span {
+    padding-top: 0;
+}

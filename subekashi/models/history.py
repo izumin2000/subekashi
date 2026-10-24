@@ -13,6 +13,7 @@ class History(models.Model):
         ("new", "新規作成"),
         ("edit", "編集"),
         ("delete", "削除"),
+        ("restore", "削除の取り消し"),
     )
 
     song = models.ForeignKey(Song, blank = True, null = True, on_delete = models.SET_NULL, related_name="histories")
