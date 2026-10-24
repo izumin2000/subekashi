@@ -40,6 +40,8 @@ class Song(GetOrNoneMixin, models.Model):
     is_limited = models.BooleanField(default = False)
     is_questionable = models.BooleanField(default = False)
     # ユーザーによる曲の論理削除（#1239）。is_deletedは動画が非公開/削除済みかどうかで、別の意味
+    # ほぼ全ての曲がFalseのため、インデックスを付けるとMySQLがis_removed=Falseの条件でインデックスを選び、
+    # タイトルの検索などがかえって遅くなる（約14000曲で20ms→37ms）ため、インデックスは付けない
     is_removed = models.BooleanField(default = False)
     view = models.IntegerField(blank = True, null = True)
     like = models.IntegerField(blank = True, null = True)

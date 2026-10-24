@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.views import View
 from subekashi.models import Song
 from subekashi.lib.song_service import get_song_links_with_media, get_short_and_full_songs, split_songs_by_category
+from subekashi.views.song_removed import render_song_not_found
 import re
 
 
@@ -9,7 +10,7 @@ class SongView(View):
     def get(self, request, song_id):
         song = Song.get_or_none(song_id)
         if song is None:
-            return render(request, 'subekashi/404.html', status=404)
+            return render_song_not_found(request, song_id)
 
         # URLのリンクを取得
         links = get_song_links_with_media(song)

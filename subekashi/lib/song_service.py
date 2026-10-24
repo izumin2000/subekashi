@@ -135,7 +135,7 @@ def update_song(song, fields: SongFields, author_objects, imitate_songs, cleaned
             if url_str not in new_url_set:
                 link.songs.remove(song)
                 # 削除した曲（#1239）に紐づくURLは、曲を復元したときのために残す
-                if not link.songs(manager="all_objects").exists():
+                if not Song.all_objects.filter(links=link).exists():
                     link.delete()
         for url_str in new_url_set:
             if url_str not in existing_links:

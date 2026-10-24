@@ -21,6 +21,7 @@ from subekashi.lib.song_service import (
     update_song,
     build_edit_song_discord_text,
 )
+from subekashi.views.song_removed import render_song_not_found
 
 
 # ブラウザにキャッシュされた古いフォームが送信されると、その間に行われた編集が巻き戻ってしまうため
@@ -30,7 +31,7 @@ class SongEditView(View):
     def dispatch(self, request, song_id, *args, **kwargs):
         self.song = Song.get_or_none(song_id)
         if self.song is None:
-            return render(request, 'subekashi/404.html', status=404)
+            return render_song_not_found(request, song_id)
         if self.song.is_lock:
             return redirect(f'/songs/{song_id}?toast=lock')
         return super().dispatch(request, song_id, *args, **kwargs)

@@ -124,10 +124,25 @@ class ValidateSongUrlTest(TestCase):
         self.assertIsNone(result)
 
     def test_url_of_removed_and_existing_songs_returns_error_message(self):
+        # allow_dup=FalseのURLが削除した曲と削除していない曲の両方に紐づく場合は、削除していない曲と重複する
         removed_song = Song.objects.create(title="削除した曲", is_removed=True)
         self.link.songs.add(removed_song)
         result = validate_song_url("https://youtu.be/existing1234")
         self.assertIsNotNone(result)
+
+    def test_url_of_removed_and_existing_songs_when_editing_other_song_returns_error_message(self):
+        removed_song = Song.objects.create(title="削除した曲", is_removed=True)
+        other_song = Song.objects.create(title="編集している曲")
+        self.link.songs.add(removed_song)
+        result = validate_song_url("https://youtu.be/existing1234", exclude_song_id=other_song.id)
+        self.assertIsNotNone(result)
+
+    def test_url_of_removed_and_editing_song_returns_none(self):
+        # 編集している曲自身のURLは、削除した曲にも紐づいていても登録できる
+        removed_song = Song.objects.create(title="削除した曲", is_removed=True)
+        self.link.songs.add(removed_song)
+        result = validate_song_url("https://youtu.be/existing1234", exclude_song_id=self.song.id)
+        self.assertIsNone(result)
 
     def test_url_at_max_length_returns_none(self):
         # #1085: MySQL移行時のData too long for column対策

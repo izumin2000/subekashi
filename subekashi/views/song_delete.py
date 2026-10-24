@@ -6,6 +6,7 @@ from subekashi.models import Song, Editor, History
 from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
 from subekashi.lib.song_service import build_delete_discord_text, remove_song
+from subekashi.views.song_removed import render_song_not_found
 from config.local_settings import NEW_DISCORD_URL
 
 
@@ -13,7 +14,7 @@ class SongDeleteView(View):
     def dispatch(self, request, song_id, *args, **kwargs):
         self.song = Song.get_or_none(song_id)
         if self.song is None:
-            return render(request, 'subekashi/404.html', status=404)
+            return render_song_not_found(request, song_id)
         if self.song.is_lock:
             return redirect(f'/songs/{song_id}?toast=lock')
         return super().dispatch(request, song_id, *args, **kwargs)
@@ -51,11 +52,10 @@ class SongDeleteView(View):
                 editor=editor,
             )
 
-        # 申請ではなく曲の変更になったため、新規登録・編集と同じ通知先のDiscordに送信し、送信できなければ500ページに遷移
+        # 申請ではなく曲の変更になったため、新規登録・編集と同じ通知先のDiscordに送信する
         content = build_delete_discord_text(self.song, reason, editor)
         is_ok = send_discord(NEW_DISCORD_URL, content)
-        if not is_ok:
-            return render(request, 'subekashi/500.html', status=500)
 
         # 削除した曲のページは表示できないため、トップに遷移する
-        return redirect('/?toast=delete')
+        # 通知に失敗しても曲は削除されているため、500ページにはせず、削除できたことと通知に失敗したことを伝える
+        return redirect('/?toast=delete' if is_ok else '/?toast=delete_notify_error')

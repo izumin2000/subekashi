@@ -11,6 +11,7 @@ import re
 import socket
 import tempfile
 from contextlib import contextmanager
+from urllib.parse import urlencode
 from datetime import datetime, timezone as dt_timezone
 from unittest.mock import patch, MagicMock
 from PIL import Image
@@ -25,6 +26,7 @@ from django.test import TestCase, Client, RequestFactory, override_settings
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import escape
 from article.models import Article
 from subekashi.forms import AuthorAliasForm
 from subekashi.constants.constants import LONG_TERM_COOKIE_AGE, SHORT_TERM_COOKIE_AGE, SORT_CHOICES
@@ -64,9 +66,14 @@ class TopViewTest(TestCase):
         response = self.client.get(reverse("subekashi:top"), {"toast": "delete"})
         self.assertContains(response, 'showToast("ok", "曲を削除しました。");')
 
+    def test_toast_delete_notify_error_shows_warning_toast(self):
+        # 削除はできたがDiscordへの通知に失敗した場合は、500ページにせず警告のトーストを表示する（#1239）
+        response = self.client.get(reverse("subekashi:top"), {"toast": "delete_notify_error"})
+        self.assertContains(response, 'showToast("warning", "曲を削除しましたが、管理者への通知に失敗しました。");')
+
     def test_no_toast_does_not_show_delete_toast(self):
         response = self.client.get(reverse("subekashi:top"))
-        self.assertNotContains(response, "曲を削除しました。")
+        self.assertNotContains(response, "曲を削除しました")
 
     def test_viewport_meta_has_no_stray_attribute(self):
         response = self.client.get(reverse("subekashi:top"))
@@ -897,12 +904,21 @@ class SongViewTest(TestCase):
         response = self.client.get(reverse("subekashi:song", args=[99999]))
         self.assertEqual(response.status_code, 404)
 
-    def test_removed_song_returns_404(self):
-        # ユーザーが削除した曲（#1239）のページは表示しない
+    def test_removed_song_shows_undo_request_page(self):
+        # ユーザーが削除した曲（#1239）のページは、曲の情報を表示せず、削除の取り消しをお問い合わせで申請するよう案内する
         self.song.is_removed = True
         self.song.save()
         response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
-        self.assertEqual(response.status_code, 404)
+
+        assert_song_removed_page(self, response)
+        self.assertContains(response, "削除を取り消したい場合は", status_code=410)
+        self.assertContains(response, '<meta name="robots" content="noindex, nofollow">', status_code=410)
+        self.assertNotContains(response, "詳細テスト曲", status_code=410)
+        query = urlencode({
+            "category": "削除の取り消し",
+            "detail": f"{settings.ROOT_URL}/songs/{self.song.id} の削除を取り消してください。",
+        })
+        self.assertContains(response, f'href="{reverse("subekashi:contact")}?{escape(query)}"', status_code=410)
 
     def test_imitate_lists_exclude_removed_song(self):
         removed = Song.objects.create(title="削除した模倣関係の曲", is_removed=True)
@@ -1377,12 +1393,12 @@ class SongEditViewTest(TestCase):
         response = self.client.get(reverse("subekashi:song_edit", args=[99999]))
         self.assertEqual(response.status_code, 404)
 
-    def test_removed_song_returns_404(self):
-        # ユーザーが削除した曲（#1239）は編集できない
+    def test_removed_song_shows_undo_request_page(self):
+        # ユーザーが削除した曲（#1239）は編集できず、削除の取り消しの申請を案内する
         self.song.is_removed = True
         self.song.save()
         response = self.client.get(reverse("subekashi:song_edit", args=[self.song.id]))
-        self.assertEqual(response.status_code, 404)
+        assert_song_removed_page(self, response)
 
     def test_get_selects_current_category(self):
         """#423: カテゴリの選択欄は、曲のカテゴリを選択した状態で表示すること"""
@@ -1638,12 +1654,12 @@ class SongHistoryViewTest(TestCase):
         response = self.client.get(reverse("subekashi:song_history", args=[99999]))
         self.assertEqual(response.status_code, 404)
 
-    def test_removed_song_returns_404(self):
-        # ユーザーが削除した曲（#1239）の編集履歴のページは表示しない。履歴は編集履歴の一覧で見られる
+    def test_removed_song_shows_undo_request_page(self):
+        # ユーザーが削除した曲（#1239）の編集履歴のページは表示せず、削除の取り消しの申請を案内する。履歴は編集履歴の一覧で見られる
         self.song.is_removed = True
         self.song.save()
         response = self.client.get(reverse("subekashi:song_history", args=[self.song.id]))
-        self.assertEqual(response.status_code, 404)
+        assert_song_removed_page(self, response)
 
     def test_edit_history_has_diff_table(self):
         # 編集の変更履歴は、編集前と編集後の差分をeditor.jsで表示する（#608）
@@ -1694,7 +1710,7 @@ class SongDeleteViewTest(TestCase):
         self._post()
         self.assertTrue(Song.all_objects.get(pk=self.song.pk).is_removed)
         response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
-        self.assertEqual(response.status_code, 404)
+        assert_song_removed_page(self, response)
 
     def test_post_valid_reason_saves_history(self):
         self._post()
@@ -1715,9 +1731,12 @@ class SongDeleteViewTest(TestCase):
         self.assertIn("削除理由テスト", content)
 
     @patch("subekashi.views.song_delete.send_discord", return_value=False)
-    def test_post_discord_failure_returns_500(self, _mock_send_discord):
+    def test_post_discord_failure_redirects_with_notify_error(self, _mock_send_discord):
+        # 通知に失敗しても曲は削除されているため、500ページにはせず、削除できたことと通知に失敗したことを伝える
         response = self._post()
-        self.assertEqual(response.status_code, 500)
+        self.assertRedirects(response, "/?toast=delete_notify_error", fetch_redirect_response=False)
+        self.assertTrue(Song.all_objects.get(pk=self.song.pk).is_removed)
+        self.assertTrue(History.objects.filter(song_id=self.song.id, history_type="delete").exists())
 
     def test_post_empty_reason_returns_error(self):
         response = self._post(reason="")
@@ -1725,11 +1744,11 @@ class SongDeleteViewTest(TestCase):
         self.assertIn("error", response.context)
         self.assertFalse(Song.all_objects.get(pk=self.song.pk).is_removed)
 
-    def test_removed_song_returns_404(self):
+    def test_removed_song_shows_undo_request_page(self):
         self.song.is_removed = True
         self.song.save()
-        self.assertEqual(self.client.get(reverse("subekashi:song_delete", args=[self.song.id])).status_code, 404)
-        self.assertEqual(self._post().status_code, 404)
+        assert_song_removed_page(self, self.client.get(reverse("subekashi:song_delete", args=[self.song.id])))
+        assert_song_removed_page(self, self._post())
         self.assertFalse(History.objects.filter(song_id=self.song.id).exists())
 
     def test_locked_song_is_not_removed(self):
@@ -4032,6 +4051,15 @@ class ContactViewTest(TestCase):
         response = self.client.get(reverse("subekashi:contact"))
         self.assertEqual(response.status_code, 200)
 
+    def test_undo_removal_query_fills_form(self):
+        # 削除した曲（#1239）のページのリンクから、種類「削除の取り消し」と詳細を入力した状態で開く
+        response = self.client.get(reverse("subekashi:contact"), {
+            "category": "削除の取り消し",
+            "detail": "https://lyrics.imicomweb.com/songs/1 の削除を取り消してください。",
+        })
+        self.assertContains(response, '<option value="削除の取り消し" selected>削除の取り消し</option>')
+        self.assertContains(response, "https://lyrics.imicomweb.com/songs/1 の削除を取り消してください。</textarea>")
+
     def test_post_valid_form_returns_ok(self):
         # SEND_DISCORD=False のため send_discord は即 True を返す
         response = self.client.post(
@@ -4472,6 +4500,13 @@ class RobotsViewTest(TestCase):
             reverse("subekashi:song_history", args=[1]),
         ]:
             self.assertFalse(self._is_disallowed(path), path)
+
+
+def assert_song_removed_page(test, response):
+    # ユーザーが削除した曲（#1239）は404ではなく、削除の取り消しの申請を案内するページを表示する
+    test.assertEqual(response.status_code, 410)
+    test.assertTemplateUsed(response, "subekashi/song_removed.html")
+    test.assertContains(response, "このページは削除されました", status_code=410)
 
 
 @contextmanager
