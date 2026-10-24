@@ -118,6 +118,10 @@ def get_lyrics(song):
     if not lyrics and song.is_inst:
         return mark_safe('<i class="fas fa-align-center"></i>インスト曲')
 
+    # 未完成の判定（filter_by_lack）と同じく、歌詞の登録が必要なのは界隈曲?ではなく、カテゴリが曲の場合のみ（#1253）
+    if not lyrics and (song.is_questionable or song.category != "song"):
+        return ""
+
     # 歌詞を登録していないのなら
     if not lyrics and not song.is_inst:
         edit_url = reverse('subekashi:song_edit', args=[song.id])
