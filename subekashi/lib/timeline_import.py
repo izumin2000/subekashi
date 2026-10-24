@@ -60,6 +60,8 @@ ZERO_WIDTH_JOINER = "\u200d"
 
 
 # 行を登録・更新しない理由
+# 行ごとのトランザクションはロールバックされるが、メモリ上のキャッシュ（曲・URL・模倣・プレラなど）は戻らないため、
+# DBやキャッシュを変える前にだけ送出する
 class TimelineSkip(Exception):
     pass
 
@@ -242,10 +244,12 @@ class TimelineImporter:
 
         self.prush_names = {}
         self.prush_dates = {}
-        for prush_id, name, prush_date in Prush.objects.values_list("id", "name", "date"):
+        # 全角・半角だけが違うプレラが複数登録されている場合は、先に登録されたプレラを使う
+        self.prush_ids = {}
+        for prush_id, name, prush_date in Prush.objects.order_by("id").values_list("id", "name", "date"):
             self.prush_names[prush_id] = name
             self.prush_dates[prush_id] = prush_date
-        self.prush_ids = {get_prush_key(name): prush_id for prush_id, name in self.prush_names.items()}
+            self.prush_ids.setdefault(get_prush_key(name), prush_id)
 
     # プレラのidを返す。無ければその行の日付で作る
     # 行をスキップすると作ったプレラはロールバックされるため、スキップすることが無くなってから呼ぶ
@@ -337,13 +341,13 @@ class TimelineImporter:
 
         fields = SongFields(title=row.title, category=category)
         song = create_song(fields)
-        if row.premiere_rush:
-            song.prush_id = self.get_prush_id(row)
-            song.save(update_fields=["prush"])
         song.authors.set(authors)
         for url in urls:
             self.add_url(song, url)
         song.imitates.add(*imitate_ids)
+        if row.premiere_rush:
+            song.prush_id = self.get_prush_id(row)
+            song.save(update_fields=["prush"])
 
         editor = get_editor()
         changes, _ = build_new_song_discord_text(song.id, fields, authors, ",".join(urls), editor)

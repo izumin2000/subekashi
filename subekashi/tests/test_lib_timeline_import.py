@@ -654,6 +654,14 @@ class ImportTimelineTest(TestCase):
         self.assertEqual(result.created[0].prush, prush)
         self.assertEqual(Prush.objects.count(), 1)
 
+    def test_prush_uses_first_registered_of_same_key(self):
+        # 全角・半角だけが違うプレラが複数登録されている場合は、先に登録されたプレラを使う
+        first = Prush.objects.create(name="年末プレラ３")
+        Prush.objects.create(name="年末プレラ3")
+        result = import_timeline([make_row(premiere_rush="年末プレラ3")])
+
+        self.assertEqual(result.created[0].prush, first)
+
     def test_updates_prush(self):
         song = create_song("曲", urls=["https://youtu.be/aaaaaaaaaaa"])
         import_timeline([make_row(premiere_rush="年末プレラ５")])

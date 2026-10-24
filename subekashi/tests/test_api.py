@@ -20,6 +20,8 @@ from rest_framework.views import APIView
 from article.models import Article
 from subekashi import urls as subekashi_urls
 from subekashi.lib.song_search import DEFAULT_SIZE
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from subekashi.models import Ai, Author, Prush, Song, SongLink, Word
 from subekashi.views.api.song import SongAPI
 
@@ -101,6 +103,19 @@ class SongAPIListTest(TestCase):
         Song.objects.filter(pk=self.song1.pk).update(prush=Prush.objects.create(name="年末プレラ５"))
         result = {song["title"]: song["prush"] for song in self.client.get("/api/song/").json()["result"]}
         self.assertEqual(result, {"APIテスト曲1": "年末プレラ５", "APIテスト曲2": None})
+
+    def test_prush_is_not_queried_per_song(self):
+        """#1064: プレラの名前を返すために、曲ごとにプレラを取得しないこと（select_related）"""
+        for i in range(3):
+            Song.objects.create(title=f"APIテスト追加{i}", prush=Prush.objects.create(name=f"プレラ{i}"))
+        for params in [{}, {"keyword": "APIテスト追加"}, {"prush": "プレラ0"}]:
+            with self.subTest(params=params):
+                with CaptureQueriesContext(connection) as context:
+                    response = self.client.get("/api/song/", params)
+                self.assertEqual(response.status_code, 200)
+                self.assertTrue(any(song["prush"] for song in response.json()["result"]))
+                prush_queries = [query["sql"] for query in context.captured_queries if "FROM `subekashi_prush`" in query["sql"]]
+                self.assertEqual(prush_queries, [])
 
     def test_result_contains_category(self):
         response = self.client.get("/api/song/", {"categorys": "song"})
