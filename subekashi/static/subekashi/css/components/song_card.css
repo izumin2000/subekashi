@@ -17,6 +17,14 @@
     background-color: #555;
 }
 
+.song-card-subeana-author {
+    background-color: #0099ff40;
+}
+
+.song-card-subeana-author:hover {
+    background-color: #0099ff66;
+}
+
 .song-card table {
     width: 100%;
     padding: 5px;

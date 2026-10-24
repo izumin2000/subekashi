@@ -4,11 +4,17 @@ from django.utils.safestring import mark_safe
 from django.template.loader import render_to_string
 from subekashi.lib.url import get_all_media
 from subekashi.lib.discord import send_discord
-from subekashi.constants.constants import SONG_CARD_SP_MAX_FLAG_ICONS
+from subekashi.constants.constants import SONG_CARD_SP_MAX_FLAG_ICONS, SUBEANA_AUTHOR_ID
 from config.settings import *
 
 
 register = template.Library()
+
+# 全てあなたの所為です。の曲（合作を含む）か。検索ではauthorsをprefetchしているため、filterではなくall()から探す
+@register.filter
+def is_subeana_author(song):
+    return any(author.id == SUBEANA_AUTHOR_ID for author in song.authors.all())
+
 
 @register.simple_tag
 def get_author(song):

@@ -13,6 +13,7 @@ from subekashi.lib.song_service import (
     get_short_base_title,
 )
 from subekashi.lib.url import clean_url, get_allow_media
+from subekashi.constants.constants import SUBEANA_AUTHOR_ID
 import re
 import unicodedata
 
@@ -44,9 +45,6 @@ MOTIF_TITLES = {
 
 # Historyの編集者（開発者）
 EDITOR_ID = 1
-
-# 全てあなたの所為です。
-SUBEANA_AUTHOR_ID = 1
 
 NICOVIDEO_HOSTS = {"nicovideo.jp", "sp.nicovideo.jp"}
 
