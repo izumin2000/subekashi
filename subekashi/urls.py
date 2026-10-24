@@ -11,6 +11,13 @@ defaultRouter.register('song', SongAPI)
 defaultRouter.register('songlink', SongLinkAPI, basename='songlink')
 defaultRouter.register('ai', AiAPI)
 defaultRouter.register('ad', AdAPI)
+defaultRouter.register('author', AuthorAPI)
+defaultRouter.register('prush', PrushAPI)
+defaultRouter.register('history', HistoryAPI)
+defaultRouter.register('contact', ContactAPI)
+defaultRouter.register('word', WordAPI)
+defaultRouter.register('stats', StatsAPI)
+defaultRouter.register('article', ArticleAPI, basename='article')
 
 register_converter(SQLiteIntConverter, 'sqliteint')
 

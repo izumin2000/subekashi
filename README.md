@@ -305,6 +305,33 @@ APIは全てのオリジンから利用できます（`Access-Control-Allow-Orig
   - このフィールド以外を更新しようとするとバリデーションエラーが返されます
 - **POST/DELETE**: 使用不可
 
+### その他のデータのAPI
+**メソッド**: GET, HEAD, OPTIONS
+**レート制限**: 2リクエスト/秒
+
+作者・プレラ・編集履歴などの情報を取得できます。`/api/<名前>`で一覧を、`/api/<名前>/{id}`で1件を取得します。並び順に記載が無いものはID順です。
+
+| エンドポイント | 内容 | 絞り込み（完全一致） |
+| --- | --- | --- |
+| [/api/author](https://lyrics.imicomweb.com/api/author) | 作者。`aliases`（作者に登録された別名の`name`・`alias_type`）と`links`（リンクのURLの配列）を含む | なし |
+| [/api/prush](https://lyrics.imicomweb.com/api/prush) | プレラ（プレミアラッシュ） | なし |
+| [/api/history](https://lyrics.imicomweb.com/api/history) | 編集履歴（新しい順） | `song`（song ID）、`author`（作者のID）、`editor`（編集者のID） |
+| [/api/contact](https://lyrics.imicomweb.com/api/contact) | 回答済みのお問い合わせ（新しい順） | なし |
+| [/api/word](https://lyrics.imicomweb.com/api/word) | 全て蛇の目の所為です。の単語の入れ替え候補 | `word`、`hinshi`、`katsuyou` |
+| [/api/stats](https://lyrics.imicomweb.com/api/stats) | 月ごとの統計（年・月の順） | `songrange`（`all`、`subeana`、`xx`） |
+| [/api/article](https://lyrics.imicomweb.com/api/article) | 記事（公開日時の新しい順）。`/api/article/{article_id}`で1件を取得 | `tag` |
+
+**ページネーション**
+- `page`: ページ番号（デフォルト: 1、最小: 1）
+- `size`: 1ページあたりの件数（デフォルト: 50、最小: 1、最大: 1000。1000を超える値は1000になります）
+
+一覧はSong APIと同じく`count`・`page`・`size`・`max_page`・`result`を返します。
+
+**注意事項**
+- 編集履歴の`editor`は編集者のIDです。編集履歴を非公開にしている編集者の場合は`null`になり、その編集者のIDで絞り込んだ結果は空になります
+- 非公開の記事・公開日時の前の記事は含まれません
+- 絞り込みの値が不正な場合、400 Bad Requestと共にエラーメッセージが返されます
+
 ## 曲の削除と復元（管理者向け）
 ユーザーが曲の編集画面の「削除」から送信すると、曲は論理削除され（`Song.is_removed`がTrue）、DBには残ります。  
 削除した曲は、検索・作者のページ・API等に表示されません。曲のページには、削除の取り消しをお問い合わせ（種類「削除の取り消し」）で申請するよう案内するページが表示されます。
