@@ -14,19 +14,21 @@ class SongRestoreView(View):
     http_method_names = ['post']
 
     def post(self, request, song_id):
-        song = Song.all_objects.filter(pk=song_id).first()
-        if song is None:
-            return render(request, 'subekashi/404.html', status=404)
-        # 既に削除を取り消した曲は、曲のページに遷移する
-        if not song.is_removed:
-            return redirect(f'/songs/{song_id}')
-        # ロックされた曲・URLが他の曲に登録されている曲は取り消さず、取り消せない理由を表示する
-        if song.is_lock or get_restore_conflict_songs(song).exists():
-            return render_song_removed(request, song)
-
-        editor = Editor.get_or_create_from_ip(get_ip(request))
-
         with transaction.atomic():
+            # 同時に押されたときに履歴・通知が二重にならないよう、曲の行をロックしてから確認する
+            # 確認から取り消すまでの間に、別の曲の登録・編集で同じURLが登録されるとURLが重複しうるが、
+            # 別の曲どうしで同じURLを同時に登録する場合（validate_song_url）と同じく、まれなため許容する
+            song = Song.all_objects.select_for_update().filter(pk=song_id).first()
+            if song is None:
+                return render(request, 'subekashi/404.html', status=404)
+            # 既に削除を取り消した曲は、曲のページに遷移する
+            if not song.is_removed:
+                return redirect(f'/songs/{song_id}')
+            # ロックされた曲・URLが他の曲に登録されている曲は取り消さず、取り消せない理由を表示する
+            if song.is_lock or get_restore_conflict_songs(song).exists():
+                return render_song_removed(request, song)
+
+            editor = Editor.get_or_create_from_ip(get_ip(request))
             restore_song(song)
             History.create_for_song(
                 song=song,

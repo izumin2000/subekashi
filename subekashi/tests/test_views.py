@@ -10,6 +10,7 @@ import os
 import re
 import socket
 import tempfile
+import threading
 from urllib.parse import quote
 from contextlib import contextmanager
 from datetime import date, datetime, timedelta, timezone as dt_timezone
@@ -22,7 +23,7 @@ from django.core import signing
 from django.core.cache import cache
 from django.db import connection
 from django.template.loader import render_to_string
-from django.test import TestCase, Client, RequestFactory, override_settings
+from django.test import TestCase, TransactionTestCase, Client, RequestFactory, override_settings, skipUnlessDBFeature
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
@@ -32,6 +33,7 @@ from subekashi.constants.constants import LONG_TERM_COOKIE_AGE, SHORT_TERM_COOKI
 from subekashi.lib.ogp import OGP_SALT, OGP_VERSION, load_ogp_token, make_ogp_token, render_ogp_image
 from subekashi.lib.query_utils import YOUTUBE_FILTERS, YOUTUBE_SORTS
 from subekashi.lib.security import encrypt
+from subekashi.lib.song_service import restore_song
 from subekashi.lib.youtube import YoutubeApiError
 from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Prush, Song, SongLink, Stats, Word
 from subekashi.models.author import TransitiveAlias
@@ -1744,6 +1746,19 @@ class SongHistoryViewTest(TestCase):
         self.assertContains(response, '<table class="diff-table">', count=1)
         self.assertContains(response, "subekashi/js/editor.js")
 
+    def test_restore_history_has_no_changes_table(self):
+        # 削除の取り消し（#1264）の履歴はchanges=Noneのため、変更内容の表を表示しない（削除の履歴は理由の表を表示する）
+        self.client.post(reverse("subekashi:song_delete", args=[self.song.id]), {"reason": "取り消す前の削除理由"})
+        self.client.post(reverse("subekashi:song_restore", args=[self.song.id]))
+
+        response = self.client.get(reverse("subekashi:song_history", args=[self.song.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "履歴テスト曲の削除を取り消し")
+        self.assertContains(response, '<div class="change_table_wrapper">', count=1)
+        self.assertContains(response, '<table class="delete-table">', count=1)
+        self.assertContains(response, "取り消す前の削除理由")
+
 
 @override_settings(STORAGES=STATIC_STORAGE)
 class SongDeleteViewTest(TestCase):
@@ -1888,6 +1903,16 @@ class SongRemovedPageTest(TestCase):
         response = self._get()
         self.assertNotContains(response, "取り消した削除の理由", status_code=410)
         self.assertNotContains(response, "削除理由", status_code=410)
+
+    def test_unexpected_changes_of_delete_history_does_not_raise(self):
+        # 削除の履歴のchangesが["理由", 理由]の形でなくても、500にせず理由を表示しない
+        for changes in [None, [], ["理由"], "理由"]:
+            with self.subTest(changes=changes):
+                History.objects.all().delete()
+                self._create_history("delete", changes, minutes_ago=10)
+                response = self._get()
+                assert_song_removed_page(self, response)
+                self.assertNotContains(response, "削除理由", status_code=410)
 
     def test_restore_button_posts_with_csrf_token(self):
         response = self._get()
@@ -2046,6 +2071,69 @@ class SongRestoreViewTest(TestCase):
             list(History.objects.filter(song_id=self.song.id).order_by("create_time", "id").values_list("history_type", flat=True)),
             ["delete", "restore"],
         )
+
+    @skipUnlessDBFeature("has_select_for_update")
+    def test_song_row_is_locked_before_check_and_restore(self):
+        # 削除されているか・取り消せるかの確認と取り消しは、曲の行をロックしてから行う
+        with CaptureQueriesContext(connection) as queries:
+            self._post()
+        sqls = [query["sql"] for query in queries.captured_queries]
+        table = connection.ops.quote_name("subekashi_song")
+        lock_index = next((i for i, sql in enumerate(sqls) if f"FROM {table}" in sql and sql.endswith("FOR UPDATE")), None)
+        update_index = next((i for i, sql in enumerate(sqls) if sql.startswith(f"UPDATE {table}")), None)
+        self.assertIsNotNone(lock_index, "曲の行をロックしていない")
+        self.assertIsNotNone(update_index)
+        self.assertLess(lock_index, update_index)
+
+
+@skipUnlessDBFeature("has_select_for_update")
+@override_settings(STORAGES=STATIC_STORAGE)
+class SongRestoreConcurrencyTest(TransactionTestCase):
+    """「削除を取り消す」が同時に押された場合のテスト（#1264）
+
+    別々のDB接続から同時に送るため、TransactionTestCaseで実際にコミットする。SQLiteはSELECT ... FOR UPDATEが無いため実行しない
+    """
+
+    def test_simultaneous_posts_restore_once(self):
+        song = Song.objects.create(title="同時に取り消す曲", is_removed=True)
+        url = reverse("subekashi:song_restore", args=[song.id])
+        first_restoring = threading.Event()
+        release = threading.Event()
+        restored_ids = []
+
+        # 1つ目の取り消しをコミットする前に止め、その間に2つ目を送る
+        def restore_and_wait(target):
+            restored_ids.append(target.id)
+            if len(restored_ids) == 1:
+                first_restoring.set()
+                release.wait(10)
+            restore_song(target)
+
+        def post():
+            try:
+                Client().post(url)
+            finally:
+                connection.close()
+
+        with patch("subekashi.views.song_restore.restore_song", side_effect=restore_and_wait):
+            first = threading.Thread(target=post)
+            second = threading.Thread(target=post)
+            first.start()
+            try:
+                self.assertTrue(first_restoring.wait(10))
+                second.start()
+                # 2つ目は1つ目がコミットするまで曲の行のロックを待つ
+                second.join(1)
+                self.assertTrue(second.is_alive())
+            finally:
+                release.set()
+                first.join(10)
+                if second.ident is not None:
+                    second.join(10)
+
+        self.assertEqual(restored_ids, [song.id])
+        self.assertFalse(Song.all_objects.get(pk=song.pk).is_removed)
+        self.assertEqual(History.objects.filter(song_id=song.id, history_type="restore").count(), 1)
 
 
 @override_settings(STORAGES=STATIC_STORAGE)

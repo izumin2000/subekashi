@@ -14,7 +14,10 @@ def render_song_not_found(request, song_id):
 def render_song_removed(request, song):
     # 削除している間は編集できないため、最新の編集履歴が削除なら直近の削除の理由になる（管理サイトで削除した場合は履歴が無い）
     latest_history = History.get_for_song(song).first()
-    reason = latest_history.changes[1] if latest_history and latest_history.history_type == "delete" else None
+    is_delete = latest_history is not None and latest_history.history_type == "delete"
+    # 削除の履歴のchangesは["理由", 理由]だが、管理サイト等で変えられていても410のページを500にしない
+    changes = latest_history.changes if is_delete else None
+    reason = changes[1] if isinstance(changes, list) and len(changes) > 1 else None
 
     context = {
         "metatitle": "削除されたページ",
