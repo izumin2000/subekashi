@@ -185,3 +185,14 @@
     height: 24px;
     margin-right: 5px;
 }
+
+/* プレラの選択肢の年のグループ（#1064）。ブラウザの標準の太字をやめて他のpと同じ太さにし、灰色にする */
+#prush optgroup {
+    font-weight: normal;
+    color: #777;
+}
+
+/* グループの灰色を選択肢に引き継がない */
+#prush optgroup option {
+    color: FieldText;
+}

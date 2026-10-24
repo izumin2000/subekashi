@@ -194,6 +194,12 @@ class SongFilter(django_filters.FilterSet):
         method='filter_categorys',
         validators=[validate_max_length(100)]
     )
+    # プレラ（#1064）は名前の完全一致。曲ページのタグのリンクでも使うため、部分一致にはしない（「夏プレラ」で「晩夏プレラ6」が見つからないように）
+    prush = SearchCharFilter(
+        field_name='prush__name',
+        lookup_expr='exact',
+        validators=[validate_max_length(255)]
+    )
     is_lack = django_filters.BooleanFilter(method='filter_is_lack')
     is_collab = django_filters.BooleanFilter(method='filter_is_collab')
 
@@ -322,8 +328,8 @@ class SongFilter(django_filters.FilterSet):
             # （外さないとサブクエリでも模倣曲の数等を数えて並び替えてしまい、件数の取得と検索の両方が遅くなる）
             ids = queryset.order_by().values('id').distinct()
             # Song.objects.filter(...) で新規 queryset を作るため、song_search.py で設定した
-            # prefetch_related は引き継がれない。ここで明示的に再設定する。
-            queryset = Song.objects.prefetch_related('links', 'authors').filter(id__in=Subquery(ids))
+            # select_related・prefetch_related は引き継がれない。ここで明示的に再設定する。
+            queryset = Song.objects.select_related('prush').prefetch_related('links', 'authors').filter(id__in=Subquery(ids))
             sort = self.data.get('sort')
             if sort:
                 queryset = order_by_sort(queryset, sort)

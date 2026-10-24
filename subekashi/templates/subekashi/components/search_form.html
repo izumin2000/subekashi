@@ -19,6 +19,8 @@
     <label for="search-form-radio-imitate"><i class="fas fa-sitemap imitate"></i><span class="icon-p-big">模倣元</span></label>
     <input type="radio" id="search-form-radio-category" name="search-form" value="category" {% if search_form == "category" %}checked{% endif %}>
     <label for="search-form-radio-category"><i class="fas fa-shapes"></i><span class="icon-p-big">カテゴリ</span></label>
+    <input type="radio" id="search-form-radio-prush" name="search-form" value="prush" {% if search_form == "prush" %}checked{% endif %}>
+    <label for="search-form-radio-prush"><i class="fas fa-angle-double-right"></i><span class="icon-p-big">プレラ</span></label>
     <input type="radio" id="search-form-radio-subeana" name="search-form" value="subeana" {% if search_form == "subeana" %}checked{% endif %}>
     <label for="search-form-radio-subeana"><i class="fas fa-border-style"></i><span class="icon-p-big">界隈曲の種類</span></label>
     <input type="radio" id="search-form-radio-joke" name="search-form" value="joke" {% if search_form == "joke" %}checked{% endif %}>
@@ -153,6 +155,21 @@
         {% for category_filter in category_filters %}
             {% include "subekashi/components/bool_filter.html" with name=category_filter.name icon=category_filter.category.icon label=category_filter.category.label value=category_filter.value %}
         {% endfor %}
+    </div>
+    <div class="search-form" id="search-form-prush" {% if search_form != "prush" %}hidden{% endif %}>
+        <div class="form-col">
+            <label for="prush"><i class="fas fa-angle-double-right"></i><span class="icon-p-big">プレラ</span></label>
+            <select id="prush" name="prush">
+                <option value="">指定なし</option>
+                {% for prush_group in prush_groups %}
+                    <optgroup label="{{ prush_group.label }}">
+                        {% for prush_name in prush_group.names %}
+                            <option value="{{ prush_name }}"{% if prush_name == selected_prush %} selected{% endif %}>{{ prush_name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                {% endfor %}
+            </select>
+        </div>
     </div>
     <div class="search-form" id="search-form-subeana" {% if search_form != "subeana" %}hidden{% endif %}>
         <div class="radio-col">

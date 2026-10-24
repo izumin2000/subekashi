@@ -15,7 +15,7 @@ from django.conf import settings
 from django.test import SimpleTestCase, override_settings
 from googleapiclient.errors import HttpError
 
-from subekashi.lib.timeline import EXPECTED_HEADER, TimelineError, get_timeline, parse_sheet
+from subekashi.lib.timeline import EXPECTED_HEADER, TimelineError, TimelineRow, fill_premiere_rush_continuations, get_timeline, parse_sheet
 
 
 def make_row(**cells):
@@ -151,6 +151,29 @@ class ParseSheetTest(SimpleTestCase):
 
         self.assertEqual([(row.title, row.row) for row in rows], [("曲1", 2), ("曲2", 5)])
 
+    def test_premiere_rush_of_merged_cells(self):
+        # プ列は、プレラの行をセル結合している。APIは結合したセルの値を一番上の行にしか返さないため、結合した範囲の行に入れる（#1064）
+        values = [
+            EXPECTED_HEADER,
+            make_row(premiere_rush="年末プレラ５", title="曲1"),
+            make_row(title="曲2"),
+            make_row(title="曲3"),
+            make_row(title="曲4"),
+        ]
+        merges = [
+            {"startRowIndex": 1, "endRowIndex": 3, "startColumnIndex": 1, "endColumnIndex": 2},
+            # プ列以外の結合は使わない
+            {"startRowIndex": 3, "endRowIndex": 5, "startColumnIndex": 2, "endColumnIndex": 3},
+        ]
+        rows = parse_sheet(2024, values, merges)
+
+        self.assertEqual([row.premiere_rush for row in rows], ["年末プレラ５", "年末プレラ５", "", ""])
+
+    def test_premiere_rush_without_merges(self):
+        rows = parse_sheet(2024, [EXPECTED_HEADER, make_row(premiere_rush=" 夏プレラ ", title="曲1"), make_row(title="曲2")])
+
+        self.assertEqual([row.premiere_rush for row in rows], ["夏プレラ", ""])
+
     def test_header_only(self):
         self.assertEqual(parse_sheet(2024, [EXPECTED_HEADER]), [])
 
@@ -170,6 +193,34 @@ class ParseSheetTest(SimpleTestCase):
     def test_empty_sheet_raises_error(self):
         with self.assertRaises(TimelineError):
             parse_sheet(2024, [])
+
+
+class FillPremiereRushContinuationsTest(SimpleTestCase):
+    def make_rows(self, premiere_rushes):
+        return [
+            TimelineRow(
+                year=2024, row=i + 2, date=None, premiere_rush=premiere_rush, title="曲", author="", badge="", category="",
+                motif1="", motif2="", urls=[], decode_date="", decode_urls=[], lyrics_url="", distribution="",
+                distribution2="", distribution_urls=[], notes=[],
+            )
+            for i, premiere_rush in enumerate(premiere_rushes)
+        ]
+
+    def test_continuation_marks_use_previous_row(self):
+        # 結合した範囲の後の行には「︙」「⋮」「...」を書いて、直前の行のプレラの続きを表している（#1064）
+        rows = self.make_rows(["年末プレラ５", "︙", "⋮", "...", "", "︙", "夏プレラ", "︙"])
+        fill_premiere_rush_continuations(rows)
+
+        self.assertEqual(
+            [row.premiere_rush for row in rows],
+            ["年末プレラ５", "年末プレラ５", "年末プレラ５", "年末プレラ５", "", "", "夏プレラ", "夏プレラ"],
+        )
+
+    def test_continuation_mark_at_first_row(self):
+        rows = self.make_rows(["︙", ""])
+        fill_premiere_rush_continuations(rows)
+
+        self.assertEqual([row.premiere_rush for row in rows], ["", ""])
 
 
 @override_settings(GOOGLE_SHEETS_SPREADSHEET_ID="sheet-id", GOOGLE_SHEETS_API_KEY="dummy-key")
@@ -199,8 +250,24 @@ class GetTimelineTest(SimpleTestCase):
         self.assertEqual([(row.title, row.date) for row in timeline[2019]], [("曲2", date(2019, 1, 1)), ("曲3", date(2019, 1, 1))])
 
         spreadsheets = self.get_spreadsheets(mock_build)
-        spreadsheets.get.assert_called_once_with(spreadsheetId="sheet-id", fields="sheets.properties.title")
+        spreadsheets.get.assert_called_once_with(spreadsheetId="sheet-id", fields="sheets(properties.title,merges)")
         spreadsheets.values.return_value.batchGet.assert_called_once_with(spreadsheetId="sheet-id", ranges=["'2018年'", "'2019年'"])
+
+    def test_premiere_rush_continues_across_years(self, mock_build):
+        # 年末のプレラは翌年のシートの先頭まで続き、翌年のシートの先頭の行は「︙」になっている（#1064）
+        spreadsheets = self.get_spreadsheets(mock_build)
+        spreadsheets.get.return_value.execute.return_value = {"sheets": [
+            {"properties": {"title": "2023年"}, "merges": [{"startRowIndex": 2, "endRowIndex": 4, "startColumnIndex": 1, "endColumnIndex": 2}]},
+            {"properties": {"title": "2024年"}},
+        ]}
+        spreadsheets.values.return_value.batchGet.return_value.execute.return_value = {"valueRanges": [
+            {"values": [EXPECTED_HEADER, make_row(title="曲1"), make_row(premiere_rush="年末プレラ４", title="曲2"), make_row(title="曲3")]},
+            {"values": [EXPECTED_HEADER, make_row(premiere_rush="︙", title="曲4"), make_row(title="曲5")]},
+        ]}
+        timeline = get_timeline([2023, 2024])
+
+        self.assertEqual([row.premiere_rush for row in timeline[2023]], ["", "年末プレラ４", "年末プレラ４"])
+        self.assertEqual([row.premiere_rush for row in timeline[2024]], ["年末プレラ４", ""])
 
     def test_uses_only_api_key(self, mock_build):
         # APIキーでは公開されているスプレッドシートの読み取りしかできない

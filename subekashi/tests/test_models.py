@@ -11,7 +11,7 @@ from django.db.utils import DataError
 from django.test import TestCase
 from django.utils import timezone
 from subekashi.constants.constants import SONG_CATEGORIES, SONG_FLAGS
-from subekashi.models import Ai, Author, AuthorAlias, Contact, Editor, History, Song, SongLink, Stats, Word
+from subekashi.models import Ai, Author, AuthorAlias, Contact, Editor, History, Prush, Song, SongLink, Stats, Word
 from subekashi.models.author import EffectiveAlias, TransitiveAlias
 
 
@@ -553,6 +553,26 @@ class SongModelTest(TestCase):
     def test_get_category_returns_none_for_unknown_category(self):
         song = Song.objects.create(title="移行前のネタ動画", category="joke")
         self.assertIsNone(song.get_category())
+
+
+class PrushModelTest(TestCase):
+    """Prush モデルのテスト（#1064）"""
+
+    def test_str_returns_name(self):
+        self.assertEqual(str(Prush.objects.create(name="年末プレラ５")), "年末プレラ５")
+
+    def test_date_is_none_by_default(self):
+        self.assertIsNone(Prush.objects.create(name="年末プレラ５").date)
+
+    def test_song_has_no_prush_by_default(self):
+        self.assertIsNone(Song.objects.create(title="曲").prush)
+
+    def test_deleting_prush_keeps_songs(self):
+        prush = Prush.objects.create(name="年末プレラ５")
+        song = Song.objects.create(title="曲", prush=prush)
+        prush.delete()
+        song.refresh_from_db()
+        self.assertIsNone(song.prush)
 
 
 class SongRemovedManagerTest(TestCase):

@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from urllib.parse import urlparse
 from django.db import transaction
 from django.utils import timezone
-from subekashi.models import Editor, History, Song, SongLink, SongFields
+from subekashi.models import Editor, History, Prush, Song, SongLink, SongFields
 from subekashi.lib.author_helpers import get_or_create_authors, validate_author_name_lengths
 from subekashi.lib.song_service import (
     build_new_song_discord_text,
@@ -60,6 +60,8 @@ ZERO_WIDTH_JOINER = "\u200d"
 
 
 # 行を登録・更新しない理由
+# 行ごとのトランザクションはロールバックされるが、メモリ上のキャッシュ（曲・URL・模倣・プレラなど）は戻らないため、
+# DBやキャッシュを変える前にだけ送出する
 class TimelineSkip(Exception):
     pass
 
@@ -69,6 +71,7 @@ class SongState:
     title: str
     category: str
     is_questionable: bool
+    prush_id: int | None
 
 
 @dataclass
@@ -172,6 +175,11 @@ def get_song_urls(urls):
     return song_urls
 
 
+# プレラの名前は、年末のプレラが翌年まで続くときなどに全角・半角が違うことがある（「年末プレラ３」と「年末プレラ3」）ため、揃えて比べる
+def get_prush_key(name):
+    return unicodedata.normalize("NFKC", name).strip()
+
+
 # Historyの編集者（開発者）を返す。削除されていたらid=1で作り直す
 def get_editor():
     editor, _ = Editor.objects.get_or_create(pk=EDITOR_ID)
@@ -193,11 +201,13 @@ class TimelineImporter:
         # このrunでカテゴリを決めた曲。複数の行に一致する曲のカテゴリが毎回行ごとに入れ替わらないよう、最初の行のカテゴリにする
         # カテゴリが空欄の行はカテゴリを決めないため含めない
         self.categorized_song_ids = set()
+        # このrunでプレラを決めた曲。カテゴリと同様に、最初の行のプレラにする
+        self.prushed_song_ids = set()
 
         self.songs = {
-            song_id: SongState(title, category, is_questionable)
-            for song_id, title, category, is_questionable
-            in Song.objects.values_list("id", "title", "category", "is_questionable")
+            song_id: SongState(title, category, is_questionable, prush_id)
+            for song_id, title, category, is_questionable, prush_id
+            in Song.objects.values_list("id", "title", "category", "is_questionable", "prush_id")
         }
         self.title_song_ids = defaultdict(set)
         for song_id, state in self.songs.items():
@@ -235,6 +245,36 @@ class TimelineImporter:
                 self.removed_url_keys.add(key)
             if allow_dup:
                 self.shared_url_keys.add(key)
+
+        self.prush_names = {}
+        self.prush_dates = {}
+        # 全角・半角だけが違うプレラが複数登録されている場合は、先に登録されたプレラを使う
+        self.prush_ids = {}
+        for prush_id, name, prush_date in Prush.objects.order_by("id").values_list("id", "name", "date"):
+            self.prush_names[prush_id] = name
+            self.prush_dates[prush_id] = prush_date
+            self.prush_ids.setdefault(get_prush_key(name), prush_id)
+
+    # プレラのidを返す。無ければその行の日付で作る
+    # 行をスキップすると作ったプレラはロールバックされるため、スキップすることが無くなってから呼ぶ
+    def get_prush_id(self, row):
+        key = get_prush_key(row.premiere_rush)
+        if key not in self.prush_ids:
+            prush = Prush.objects.create(name=row.premiere_rush, date=row.date)
+            self.prush_ids[key] = prush.id
+            self.prush_names[prush.id] = prush.name
+            self.prush_dates[prush.id] = prush.date
+        return self.prush_ids[key]
+
+    # プレラの日付は、年表でそのプレラが最初に出てくる行の日付にする
+    # 曲の検索の選択肢の並びに使うため、曲を登録・更新しない行（対象外のカテゴリ・スキップした行）の日付も使う
+    def update_prush_date(self, row):
+        prush_id = self.prush_ids.get(get_prush_key(row.premiere_rush)) if row.premiere_rush else None
+        if prush_id is None or row.date is None:
+            return
+        if self.prush_dates.get(prush_id) is None or row.date < self.prush_dates[prush_id]:
+            Prush.objects.filter(pk=prush_id).update(date=row.date)
+            self.prush_dates[prush_id] = row.date
 
     def is_removed_url(self, key):
         return key in self.removed_url_keys and not self.url_song_ids[key]
@@ -312,9 +352,14 @@ class TimelineImporter:
         for url in urls:
             self.add_url(song, url)
         song.imitates.add(*imitate_ids)
+        if row.premiere_rush:
+            song.prush_id = self.get_prush_id(row)
+            song.save(update_fields=["prush"])
 
         editor = get_editor()
         changes, _ = build_new_song_discord_text(song.id, fields, authors, ",".join(urls), editor)
+        if song.prush_id:
+            changes.append(["プレラ", self.prush_names[song.prush_id]])
         if imitate_ids:
             changes.append(["模倣", "\n".join(Song.objects.filter(id__in=imitate_ids).order_by("id").values_list("title", flat=True))])
         History.create_for_song(
@@ -325,7 +370,7 @@ class TimelineImporter:
             editor=editor,
         )
 
-        self.songs[song.id] = SongState(song.title, song.category, song.is_questionable)
+        self.songs[song.id] = SongState(song.title, song.category, song.is_questionable, song.prush_id)
         self.title_song_ids[song.title].add(song.id)
         self.imitate_ids[song.id] |= imitate_ids
         self.author_names[song.id] = {author.name for author in authors}
@@ -333,9 +378,11 @@ class TimelineImporter:
             self.subeana_song_ids.add(song.id)
         if row.category:
             self.categorized_song_ids.add(song.id)
+        if row.premiere_rush:
+            self.prushed_song_ids.add(song.id)
         self.result.created.append(song)
 
-    def update(self, song_id, urls, category, imitate_ids):
+    def update(self, song_id, row, urls, category, imitate_ids):
         state = self.songs[song_id]
 
         new_urls = [
@@ -350,7 +397,15 @@ class TimelineImporter:
             if song_id not in self.categorized_song_ids and category != state.category:
                 new_category = category
             self.categorized_song_ids.add(song_id)
-        if not (new_urls or new_imitate_ids or new_category):
+        # プ列が空欄の行は、登録されているプレラを消さない
+        prush_name = row.premiere_rush
+        new_prush_id = None
+        if prush_name:
+            current_key = get_prush_key(self.prush_names[state.prush_id]) if state.prush_id else None
+            if song_id not in self.prushed_song_ids and get_prush_key(prush_name) != current_key:
+                new_prush_id = self.get_prush_id(row)
+            self.prushed_song_ids.add(song_id)
+        if not (new_urls or new_imitate_ids or new_category or new_prush_id):
             self.result.unchanged += 1
             return
 
@@ -372,6 +427,12 @@ class TimelineImporter:
             song.category = new_category
             state.category = new_category
 
+        if new_prush_id:
+            changes.append(["プレラ", self.prush_names.get(song.prush_id, ""), self.prush_names[new_prush_id]])
+            labels.append("プレラ")
+            song.prush_id = new_prush_id
+            state.prush_id = new_prush_id
+
         if new_imitate_ids:
             before = "\n".join(song.imitates.order_by("id").values_list("title", flat=True))
             song.imitates.add(*new_imitate_ids)
@@ -381,7 +442,7 @@ class TimelineImporter:
             self.imitate_ids[song_id] |= new_imitate_ids
 
         # 実行中に編集画面で行われた変更を上書きしないよう、変更するフィールドのみを保存する
-        Song.objects.filter(pk=song_id).update(category=song.category, post_time=timezone.now())
+        Song.objects.filter(pk=song_id).update(category=song.category, prush=song.prush_id, post_time=timezone.now())
         history = History.create_for_song(
             song=song,
             title=f"{song.title}の{'と'.join(labels)}を編集",
@@ -392,6 +453,7 @@ class TimelineImporter:
         self.result.updated.append((song, history))
 
     def import_row(self, row):
+        self.update_prush_date(row)
         category = CATEGORY_MAP.get(row.category)
         if category is None:
             if row.category in EXCLUDED_CATEGORIES:
@@ -415,7 +477,7 @@ class TimelineImporter:
             with transaction.atomic():
                 song_id = song_ids.pop() if song_ids else self.get_lyrics_song_id(row)
                 if song_id:
-                    self.update(song_id, urls, category if row.category else None, imitate_ids)
+                    self.update(song_id, row, urls, category if row.category else None, imitate_ids)
                 elif not keys:
                     # 共有しているURLしか無い行は、次の実行でもURLで照合できず毎日新規作成されてしまうため登録しない
                     raise TimelineSkip("複数の曲で共有しているURLのみ")

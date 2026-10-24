@@ -11,7 +11,8 @@ class SongThrottle(UserRateThrottle):
 
 
 class SongAPI(viewsets.ReadOnlyModelViewSet):
-    queryset = Song.objects.prefetch_related('links')
+    # SongSerializerがプレラの名前を返すため、曲ごとにプレラを取得しないようselect_relatedする（#1064）
+    queryset = Song.objects.select_related('prush').prefetch_related('links')
     serializer_class = SongSerializer
     throttle_classes = [SongThrottle]
 

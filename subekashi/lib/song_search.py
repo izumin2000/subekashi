@@ -30,7 +30,8 @@ def song_search(querys):
 
     # django-filterを適用
     try:
-        filterset = SongFilter(cleaned_querys, queryset=Song.objects.prefetch_related('links', 'authors'))
+        # 曲のAPI（SongSerializer）がプレラの名前を返すため、曲ごとにプレラを取得しないようselect_relatedする（#1064）
+        filterset = SongFilter(cleaned_querys, queryset=Song.objects.select_related('prush').prefetch_related('links', 'authors'))
 
         # フィルタのバリデーションエラーをチェック
         if not filterset.is_valid():

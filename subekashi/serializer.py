@@ -13,6 +13,8 @@ class SongSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
     # imitateds は逆参照のため明示的に宣言（__all__に含まれない）
     imitateds = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    # プレラ（#1064）はidではなく名前を返す。プレラが無ければnull
+    prush = serializers.SlugRelatedField(slug_field='name', read_only=True)
 
     def get_url(self, obj):
         return list(obj.links.values_list('url', flat=True))

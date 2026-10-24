@@ -10,9 +10,9 @@ import os
 import re
 import socket
 import tempfile
+from urllib.parse import quote, urlencode
 from contextlib import contextmanager
-from urllib.parse import urlencode
-from datetime import datetime, timezone as dt_timezone
+from datetime import date, datetime, timezone as dt_timezone
 from unittest.mock import patch, MagicMock
 from PIL import Image
 from django.conf import settings
@@ -34,7 +34,7 @@ from subekashi.lib.ogp import OGP_SALT, OGP_VERSION, load_ogp_token, make_ogp_to
 from subekashi.lib.query_utils import YOUTUBE_FILTERS, YOUTUBE_SORTS
 from subekashi.lib.security import encrypt
 from subekashi.lib.youtube import YoutubeApiError
-from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Song, SongLink, Stats, Word
+from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Prush, Song, SongLink, Stats, Word
 from subekashi.models.author import TransitiveAlias
 from subekashi.views.songs import COOKIE_FORMS, SEARCH_FORM_QUERIES, TEXT_FORMS
 
@@ -656,6 +656,34 @@ class SongsViewTest(TestCase):
         self.assertEqual(re.findall(r'<input type="radio" id="category_\w+-false" name="category_(\w+)" value="False" >', content), category_values)
         self.assertNotIn('type="checkbox" value="category-', content)
 
+    def test_prush_form_has_prush_choices(self):
+        """#1064: プレラのフォームは、指定なしと、年表でプレラが最初に出てくる日付の新しい順に年ごとに分けたプレラの選択肢にすること"""
+        Prush.objects.create(name="年末プレラ５", date=date(2024, 12, 31))
+        Prush.objects.create(name="日付が無いプレラ")
+        Prush.objects.create(name="晩夏プレラ6", date=date(2025, 8, 20))
+        Prush.objects.create(name="年末プレラ2", date=date(2021, 12, 31))
+        Prush.objects.create(name="晩夏プレラ５", date=date(2024, 8, 20))
+        response = self.client.get(reverse("subekashi:songs"))
+        self.assertContains(response, '<label for="search-form-radio-prush"><i class="fas fa-angle-double-right"></i><span class="icon-p-big">プレラ</span></label>')
+        content = response.content.decode()
+        start = content.index('<select id="prush" name="prush">')
+        select = content[start:content.index("</select>", start)]
+        self.assertEqual(re.findall(r'<optgroup label="([^"]*)">', select), ["2025年", "2024年", "2021年", "年が不明"])
+        self.assertEqual(
+            re.findall(r'<option value="([^"]*)">', select),
+            ["", "晩夏プレラ6", "年末プレラ５", "晩夏プレラ５", "年末プレラ2", "日付が無いプレラ"],
+        )
+        self.assertIn('<option value="">指定なし</option>', select)
+
+    def test_prush_query_selects_prush_form(self):
+        """#1064: prushのURLクエリ（曲ページのタグのリンク）では、プレラのフォームでそのプレラを選択した状態で表示すること"""
+        Prush.objects.create(name="年末プレラ５")
+        Prush.objects.create(name="晩夏プレラ6")
+        response = self.client.get(reverse("subekashi:songs"), {"prush": "年末プレラ５"})
+        self.assertEqual(response.context["search_form"], "prush")
+        self.assertContains(response, '<option value="年末プレラ５" selected>年末プレラ５</option>')
+        self.assertContains(response, '<option value="晩夏プレラ6">晩夏プレラ6</option>')
+
     def test_category_radio_has_icon(self):
         """#423: カテゴリのラジオボタンの見出しには、カテゴリのアイコンを付けること"""
         response = self.client.get(reverse("subekashi:songs"))
@@ -736,7 +764,7 @@ class SongsViewTest(TestCase):
         response = self.client.get(reverse("subekashi:songs"))
         radios = re.findall(r'id="search-form-radio-(\w+)"', response.content.decode())
         self.assertEqual(radios[:4], ["keyword", "sort", "lyrics", "youtube"])
-        self.assertEqual(len(radios), 19)
+        self.assertEqual(len(radios), 20)
 
     def test_search_form_ignores_empty_query(self):
         """値が空のURLクエリではフォームが切り替わらないこと"""
@@ -1026,6 +1054,16 @@ class SongViewTest(TestCase):
         tags = self._get_tags_html(category="meme")
         self.assertIn(f'<a href="{reverse("subekashi:songs")}?categorys=meme"><i class="far fa-laugh-squint"></i><span class="icon-p-big">ネタ動画</span></a>', tags)
 
+    def test_prush_tag_links_to_search(self):
+        """#1064: プレラがある曲は、そのプレラの検索へのリンクをタグに表示すること"""
+        self._make_complete()
+        prush = Prush.objects.create(name="端午プレラ6 / 端午クソ動画投稿祭6")
+        tags = self._get_tags_html(prush=prush)
+        self.assertIn(
+            f'<a href="{reverse("subekashi:songs")}?prush={quote(prush.name, safe="/")}"><i class="fas fa-angle-double-right"></i><span class="icon-p-big">端午プレラ6 / 端午クソ動画投稿祭6</span></a>',
+            tags,
+        )
+
     def test_song_category_tag_not_shown(self):
         """#423: カテゴリが曲の曲には、カテゴリのタグを表示しないこと"""
         tags = self._get_tags_html()
@@ -1165,6 +1203,16 @@ class SongNewViewTest(TestCase):
         )
         self.assertEqual(response.status_code, 302)
         self.assertEqual(Song.objects.get(title="カテゴリテスト曲").category, "otomad")
+
+    def test_post_does_not_set_prush(self):
+        """#1064: 新規登録画面からはプレラを登録できないこと"""
+        Prush.objects.create(name="年末プレラ５")
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "", "authors": "プレラテスト作者", "title": "プレラテスト曲", "prush": "年末プレラ５"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIsNone(Song.objects.get(title="プレラテスト曲").prush)
 
     def test_post_without_category_defaults_to_song(self):
         response = self.client.post(
@@ -1427,6 +1475,20 @@ class SongEditViewTest(TestCase):
         self.song.refresh_from_db()
         self.assertEqual(self.song.category, "omnibus")
         self.assertIn(["カテゴリ", "曲", "総集編"], History.objects.get(song=self.song).changes)
+
+    def test_post_keeps_prush(self):
+        """#1064: 編集画面からはプレラを変えられず、編集してもプレラは消えないこと"""
+        prush = Prush.objects.create(name="年末プレラ５")
+        Song.objects.filter(pk=self.song.pk).update(prush=prush)
+        Prush.objects.create(name="晩夏プレラ6")
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {"title": "編集後の曲", "authors": "編集テスト作者", "url": "", "prush": "晩夏プレラ6"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.song.refresh_from_db()
+        self.assertEqual(self.song.title, "編集後の曲")
+        self.assertEqual(self.song.prush, prush)
 
     def test_post_without_category_keeps_current_category(self):
         """#423: categoryを送らない場合（カテゴリの選択欄がない古いページからの送信等）は、編集前のカテゴリのままにすること"""

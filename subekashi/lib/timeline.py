@@ -21,6 +21,9 @@ EXPECTED_HEADER = [
     "解読日", "解読URL", "", "", "歌詞", "配信", "配信2", "配信URL", "", "", "備考",
 ]
 
+# プ列（プレラ）の列番号
+PREMIERE_RUSH_COLUMN = 1
+
 DATE_PATTERN = re.compile(r"(\d{1,2})/(\d{1,2})")
 
 
@@ -70,11 +73,39 @@ def parse_date(year, text):
         return None
 
 
+# プ列で、直前の行と同じプレラであることを表す記号（「︙」「⋮」「...」）
+def is_premiere_rush_continuation(text):
+    return bool(text) and set(text) <= set("︙⋮.…")
+
+
+# プ列（プレラ）は、プレラの行をセル結合し、APIは結合したセルの値を一番上の行にしか返さないため、結合した範囲の行に一番上の行の値を入れる（#1064）
+def get_premiere_rushes(values, merges):
+    premiere_rushes = {}
+    for merge in merges:
+        if not merge.get("startColumnIndex", 0) <= PREMIERE_RUSH_COLUMN < merge.get("endColumnIndex", 0):
+            continue
+        start = merge.get("startRowIndex", 0)
+        top_cells = values[start] if start < len(values) else []
+        for index in range(start, merge.get("endRowIndex", start)):
+            premiere_rushes[index] = get_cell(top_cells, PREMIERE_RUSH_COLUMN).strip()
+    return premiere_rushes
+
+
+# 結合した範囲の後の行には「︙」などを書いてプレラの続きを表している。年末のプレラは翌年のシートの先頭まで続くため、年をまたいで直前の行のプレラにする
+def fill_premiere_rush_continuations(rows):
+    previous = ""
+    for row in rows:
+        if is_premiere_rush_continuation(row.premiere_rush):
+            row.premiere_rush = previous
+        previous = row.premiere_rush
+
+
 # 列の並びが変わったまま読み取ると別の列の値が入るため、見出しが想定と異なる場合はTimelineErrorを送出する
-def parse_sheet(year, values):
+def parse_sheet(year, values, merges=()):
     if not values or [cell.strip() for cell in values[0][:len(EXPECTED_HEADER)]] != EXPECTED_HEADER:
         raise TimelineError(f"{get_sheet_title(year)}のシートの見出しが想定と異なります")
 
+    merged_premiere_rushes = get_premiere_rushes(values, merges)
     rows = []
     current_date = None
     # 1行目は見出しのため、2行目から読み取る
@@ -91,7 +122,7 @@ def parse_sheet(year, values):
             year=year,
             row=row_number,
             date=current_date,
-            premiere_rush=get_cell(cells, 1),
+            premiere_rush=merged_premiere_rushes.get(row_number - 1, get_cell(cells, PREMIERE_RUSH_COLUMN)),
             # 全角スペースのみのタイトルなど、空白文字のみの値も曲のタイトル・作者として扱うため、そのまま残す
             title=get_cell(cells, 2) or get_cell(raw_cells, 2),
             author=get_cell(cells, 3) or get_cell(raw_cells, 3),
@@ -126,11 +157,11 @@ def get_timeline(years):
         spreadsheets = build("sheets", "v4", developerKey=api_key, cache_discovery=False).spreadsheets()
         spreadsheet = spreadsheets.get(
             spreadsheetId=spreadsheet_id,
-            fields="sheets.properties.title"
+            fields="sheets(properties.title,merges)"
         ).execute()
-        sheet_titles = {sheet["properties"]["title"] for sheet in spreadsheet.get("sheets", [])}
+        sheet_merges = {sheet["properties"]["title"]: sheet.get("merges", []) for sheet in spreadsheet.get("sheets", [])}
 
-        target_years = [year for year in years if get_sheet_title(year) in sheet_titles]
+        target_years = [year for year in years if get_sheet_title(year) in sheet_merges]
         if not target_years:
             return {}
 
@@ -150,7 +181,9 @@ def get_timeline(years):
     if len(value_ranges) != len(target_years):
         raise TimelineError("Google Sheets APIのレスポンスを解析できませんでした")
 
-    return {
-        year: parse_sheet(year, value_range.get("values", []))
+    timeline = {
+        year: parse_sheet(year, value_range.get("values", []), sheet_merges[get_sheet_title(year)])
         for year, value_range in zip(target_years, value_ranges)
     }
+    fill_premiere_rush_continuations([row for year in sorted(timeline) for row in timeline[year]])
+    return timeline

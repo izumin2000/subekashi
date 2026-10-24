@@ -69,3 +69,10 @@ class StatsAdmin(admin.ModelAdmin):
     ordering = ('-year', '-month', 'songrange')
 
 admin.site.register(Stats, StatsAdmin)
+
+
+class PrushAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'date')
+    search_fields = ('name',)
+
+admin.site.register(Prush, PrushAdmin)
