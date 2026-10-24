@@ -3,7 +3,8 @@
 // ページのJSでは、ここにある関数と同じ名前の関数を定義しない
 // base.jsのgetCookie・getSongGuessersを使う。また、ページのJSでsongGuesserClick・categoryClickを定義する（base.jsのクリックのイベントから呼ばれる）
 var songGuesserController;
-const FORM_QUERIES = '#search-forms input';
+// プレラ（#1064）は選択肢から選ぶため、selectも含める
+const FORM_QUERIES = '#search-forms input, #search-forms select';
 const CATEGORY_QUERIES = '#search-form-category input[type="radio"]';
 
 window.addEventListener('DOMContentLoaded', function () {

@@ -20,7 +20,7 @@
     <input type="radio" id="search-form-radio-category" name="search-form" value="category" {% if search_form == "category" %}checked{% endif %}>
     <label for="search-form-radio-category"><i class="fas fa-shapes"></i><span class="icon-p-big">カテゴリ</span></label>
     <input type="radio" id="search-form-radio-prush" name="search-form" value="prush" {% if search_form == "prush" %}checked{% endif %}>
-    <label for="search-form-radio-prush"><i class="fas fa-calendar-day"></i><span class="icon-p-big">プレラ</span></label>
+    <label for="search-form-radio-prush"><i class="fas fa-angle-double-right"></i><span class="icon-p-big">プレラ</span></label>
     <input type="radio" id="search-form-radio-subeana" name="search-form" value="subeana" {% if search_form == "subeana" %}checked{% endif %}>
     <label for="search-form-radio-subeana"><i class="fas fa-border-style"></i><span class="icon-p-big">界隈曲の種類</span></label>
     <input type="radio" id="search-form-radio-joke" name="search-form" value="joke" {% if search_form == "joke" %}checked{% endif %}>
@@ -158,13 +158,13 @@
     </div>
     <div class="search-form" id="search-form-prush" {% if search_form != "prush" %}hidden{% endif %}>
         <div class="form-col">
-            <label for="prush"><i class="fas fa-calendar-day"></i><span class="icon-p-big">プレラ</span></label>
-            <input type="text" id="prush" name="prush" value="{{ form_values.prush }}" list="prush-names" autocomplete="off">
-            <datalist id="prush-names">
+            <label for="prush"><i class="fas fa-angle-double-right"></i><span class="icon-p-big">プレラ</span></label>
+            <select id="prush" name="prush">
+                <option value="">指定なし</option>
                 {% for prush_name in prush_names %}
-                    <option value="{{ prush_name }}"></option>
+                    <option value="{{ prush_name }}"{% if prush_name == selected_prush %} selected{% endif %}>{{ prush_name }}</option>
                 {% endfor %}
-            </datalist>
+            </select>
         </div>
     </div>
     <div class="search-form" id="search-form-subeana" {% if search_form != "subeana" %}hidden{% endif %}>

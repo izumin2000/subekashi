@@ -89,7 +89,7 @@
                         <a href="{% url 'subekashi:songs' %}?categorys={{ category.value }}"><i class="{{ category.icon }}"></i><span class="icon-p-big">{{ category.label }}</span></a>
                     {% endif %}
                     {% if song.prush %}
-                        <a href="{% url 'subekashi:songs' %}?prush={{ song.prush.name|urlencode }}"><i class="fas fa-calendar-day"></i><span class="icon-p-big">{{ song.prush.name }}</span></a>
+                        <a href="{% url 'subekashi:songs' %}?prush={{ song.prush.name|urlencode }}"><i class="fas fa-angle-double-right"></i><span class="icon-p-big">{{ song.prush.name }}</span></a>
                     {% endif %}
                     {% for flag in flags %}
                         {% if flag.query %}

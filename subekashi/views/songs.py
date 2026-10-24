@@ -23,7 +23,7 @@ COOKIE_FORMS = {
 }
 
 # 文字・数値・日付を入力するフォーム（URLクエリの値を入力欄の初期値にする）
-TEXT_FORMS = ["keyword", "lyrics", *YOUTUBE_FILTERS, "title", "author", "url", "imitate", "prush"]
+TEXT_FORMS = ["keyword", "lyrics", *YOUTUBE_FILTERS, "title", "author", "url", "imitate"]
 
 # 真偽値のフィルタ（True・False・フィルタなしの3値）
 BOOL_FORMS = ["is_subeana", "is_joke", "is_lack", "is_draft", "is_original", "is_inst", "is_deleted", "is_questionable", "is_special", "is_collab"]
@@ -68,7 +68,7 @@ def get_search_form_context(request, request_data):
         "SORT_CHOICES": SORT_CHOICES,
         # 自動で適用されるフィルタの案内に使用する（search_form.js）
         "youtube_queries": {"filters": YOUTUBE_FILTERS, "sorts": YOUTUBE_SORTS},
-        # プレラの入力欄の候補（#1064）
+        # プレラの選択肢（#1064）
         "prush_names": list(Prush.objects.order_by("id").values_list("name", flat=True)),
     }
 
@@ -131,6 +131,9 @@ def get_search_form_context(request, request_data):
 
     # 入力欄のURLクエリ対応
     context["form_values"] = {name: request_data.get(name, "") for name in TEXT_FORMS}
+
+    # プレラの選択肢のURLクエリ対応（曲ページのタグのリンク、#1064）
+    context["selected_prush"] = request_data.get("prush", "")
 
     # メディアのチェックボックスのURLクエリ対応（カンマ区切り）
     context["mediatypes"] = request_data.get("mediatypes", "").split(",")

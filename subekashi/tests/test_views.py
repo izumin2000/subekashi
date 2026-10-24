@@ -640,21 +640,26 @@ class SongsViewTest(TestCase):
         self.assertEqual(re.findall(r'<input type="radio" id="category_\w+-false" name="category_(\w+)" value="False" >', content), category_values)
         self.assertNotIn('type="checkbox" value="category-', content)
 
-    def test_prush_form_suggests_prush_names(self):
-        """#1064: プレラのフォームの入力欄に、登録されているプレラの名前を候補として出すこと"""
+    def test_prush_form_has_prush_choices(self):
+        """#1064: プレラのフォームは、指定なしと、登録されているプレラを登録順に並べた選択肢にすること"""
         Prush.objects.create(name="年末プレラ５")
         Prush.objects.create(name="晩夏プレラ6")
         response = self.client.get(reverse("subekashi:songs"))
-        self.assertContains(response, '<input type="radio" id="search-form-radio-prush" name="search-form" value="prush" >', html=False)
-        self.assertContains(response, '<input type="text" id="prush" name="prush" value="" list="prush-names" autocomplete="off">')
+        self.assertContains(response, '<label for="search-form-radio-prush"><i class="fas fa-angle-double-right"></i><span class="icon-p-big">プレラ</span></label>')
         content = response.content.decode()
-        self.assertLess(content.index('<option value="年末プレラ５"></option>'), content.index('<option value="晩夏プレラ6"></option>'))
+        start = content.index('<select id="prush" name="prush">')
+        select = content[start:content.index("</select>", start)]
+        self.assertEqual(re.findall(r'<option value="([^"]*)">', select), ["", "年末プレラ５", "晩夏プレラ6"])
+        self.assertIn('<option value="">指定なし</option>', select)
 
     def test_prush_query_selects_prush_form(self):
-        """#1064: prushのURLクエリ（曲ページのタグのリンク）では、プレラのフォームを入力した状態で表示すること"""
+        """#1064: prushのURLクエリ（曲ページのタグのリンク）では、プレラのフォームでそのプレラを選択した状態で表示すること"""
+        Prush.objects.create(name="年末プレラ５")
+        Prush.objects.create(name="晩夏プレラ6")
         response = self.client.get(reverse("subekashi:songs"), {"prush": "年末プレラ５"})
         self.assertEqual(response.context["search_form"], "prush")
-        self.assertEqual(response.context["form_values"]["prush"], "年末プレラ５")
+        self.assertContains(response, '<option value="年末プレラ５" selected>年末プレラ５</option>')
+        self.assertContains(response, '<option value="晩夏プレラ6">晩夏プレラ6</option>')
 
     def test_category_radio_has_icon(self):
         """#423: カテゴリのラジオボタンの見出しには、カテゴリのアイコンを付けること"""
@@ -1002,7 +1007,7 @@ class SongViewTest(TestCase):
         prush = Prush.objects.create(name="端午プレラ6 / 端午クソ動画投稿祭6")
         tags = self._get_tags_html(prush=prush)
         self.assertIn(
-            f'<a href="{reverse("subekashi:songs")}?prush={quote(prush.name, safe="/")}"><i class="fas fa-calendar-day"></i><span class="icon-p-big">端午プレラ6 / 端午クソ動画投稿祭6</span></a>',
+            f'<a href="{reverse("subekashi:songs")}?prush={quote(prush.name, safe="/")}"><i class="fas fa-angle-double-right"></i><span class="icon-p-big">端午プレラ6 / 端午クソ動画投稿祭6</span></a>',
             tags,
         )
 

@@ -710,8 +710,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 検索フォームの初期表示（URLクエリ指定） | `?title=テスト` `?mediatypes=youtube` `?categorys=arrange` `?view_gte=100` `?is_subeana=xx` `?jokerange=off` `?is_original=True` `?is_inst=True` `?is_questionable=True` `?is_special=True` `?is_collab=True` `?is_lack=True` `?sort=-view` など | URLクエリを含むフォーム（title/url/category/youtube/subeana/joke/original/inst/questionable/special/collab/lack/sortなど）が表示される |
 | 検索フォームの初期表示（複数指定） | `?is_lack=True&keyword=テスト` / `?title=テスト&sort=-view` / `?title=テスト&view_gte=100` / `?view_gte=100&lyrics=テスト` | ラジオボタンの並び順で先の "keyword" / "sort" / "youtube" / "lyrics" が表示される |
 | ラジオボタンの並び順 | GETリクエスト | よく利用するため、先頭からキーワード・並び替え・歌詞・YouTubeの順に並ぶ（全20個。プレラは#1064で追加） |
-| プレラのフォーム（#1064） | プレラ「年末プレラ５」「晩夏プレラ6」が登録されている | プレラのラジオボタンと、`list="prush-names"` の入力欄が表示され、`<datalist>` に登録順（id順）でプレラの名前が候補として並ぶ |
-| `prush` のURLクエリ（#1064） | `?prush=年末プレラ５`（曲ページのタグのリンク） | プレラのフォームを表示し、入力欄に「年末プレラ５」が入る |
+| プレラのフォーム（#1064） | プレラ「年末プレラ５」「晩夏プレラ6」が登録されている | プレラのラジオボタン（`fas fa-angle-double-right` のアイコン）と、`<select id="prush" name="prush">` の選択肢が表示される。選択肢は「指定なし」（値は空）と、登録順（id順）のプレラの名前。`select` の値も `search_form.js` の `FORM_QUERIES` でクエリに入る（ブラウザでの確認はPlaywright） |
+| `prush` のURLクエリ（#1064） | `?prush=年末プレラ５`（曲ページのタグのリンク） | プレラのフォームを表示し、「年末プレラ５」の選択肢を選択した状態にする（`selected_prush`。テキストの入力欄ではないため `TEXT_FORMS` には含めない） |
 | 検索フォームの初期表示（空の値） | `?title=` | "keyword" が表示される |
 | デフォルト値のラジオボタンに`data-default` | GETリクエスト | フィルタバッジは`data-default`のラジオボタンをデフォルト値として判定するため、各フィルタで1つだけ付き、`songrange`・`jokerange` は `COOKIE_FORMS` のデフォルト値、真偽値のフィルタは `""`（指定なし）のラジオボタンに付く |
 | cookieの不正な値 | `search_songrange`・`search_jokerange`・`search_sort` に不正な値 (cookie) | デフォルト値（`all`・`on`・`-post_time`）のラジオボタンが選択される |
@@ -751,7 +751,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 界隈曲?の非すべあな曲のタグ（#1228） | `is_questionable=True`・`is_subeana=False` | 界隈曲?のタグは出て、非すべあな模倣曲のタグは出ない |
 | タグの順番（#1228） | `is_questionable=True`・`is_draft=True`・`is_limited=True`・URL未登録 | 界隈曲?・未完成・下書き・限定公開の順に並ぶ |
 | カテゴリのタグ（#423） | `category="arrange"`・`is_questionable=True` | `?categorys=arrange` の検索へのリンクのタグ（カテゴリのアイコン `fas fa-sliders-h`、「アレンジ」）が、界隈曲?のタグより前に出る |
-| プレラのタグ（#1064） | プレラ「端午プレラ6 / 端午クソ動画投稿祭6」の曲 | `?prush=<URLエンコードした名前>` の検索へのリンク（`fas fa-calendar-day` のアイコンと名前）をタグに表示する |
+| プレラのタグ（#1064） | プレラ「端午プレラ6 / 端午クソ動画投稿祭6」の曲 | `?prush=<URLエンコードした名前>` の検索へのリンク（「＞＞」のような `fas fa-angle-double-right` のアイコンと名前）をタグに表示する |
 | カテゴリだけの曲のタグ欄（#423） | 未完成でなく、`category="meme"` だけ | タグ欄が表示され、`?categorys=meme` のリンクのタグ（`far fa-laugh-squint`、「ネタ動画」）が出る |
 | カテゴリが曲の曲（#423） | `category="song"`（既定値）・URL未登録 | カテゴリのタグは出ない（未完成のタグは出る） |
 | 模倣元のdetails（#423） | 模倣元にカテゴリが曲の曲・ネタ曲・カバー・ネタ曲のアレンジ | 模倣元のdetailsの直下にカテゴリが曲の曲を並べ、ネタ曲（`far fa-meh-rolling-eyes`）・アレンジ（`fas fa-sliders-h`）・カバー（`fas fa-microphone`）の順に、それぞれのdetailsにまとめる。ネタ曲のアレンジはアレンジの方に入る |
