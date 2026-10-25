@@ -30,7 +30,7 @@ from django.urls import reverse
 from django.utils import timezone
 from article.models import Article
 from subekashi.forms import AuthorAliasForm
-from subekashi.constants.constants import LONG_TERM_COOKIE_AGE, SHORT_TERM_COOKIE_AGE, SORT_CHOICES
+from subekashi.constants.constants import HISTORIES_PER_PAGE, LONG_TERM_COOKIE_AGE, SHORT_TERM_COOKIE_AGE, SORT_CHOICES
 from subekashi.lib.ogp import OGP_SALT, OGP_VERSION, load_ogp_token, make_ogp_token, render_ogp_image
 from subekashi.lib.query_utils import YOUTUBE_FILTERS, YOUTUBE_SORTS
 from subekashi.lib.security import encrypt
@@ -2426,6 +2426,87 @@ class EditorViewTest(TestCase):
         )
         self.assertFalse(response.context["is_me"])
 
+    def _create_author_histories(self, editor, *titles):
+        author = Author.objects.create(name=f"編集者検索テスト作者{Author.objects.count()}")
+        for title in titles:
+            History.create_for_author(
+                author=author, title=title, history_type="edit", changes=None, editor=editor,
+            )
+
+    def test_search_filters_histories_by_title(self):
+        # 編集履歴の概要（title）の部分一致で絞り込む（#954）
+        self._create_author_histories(self.editor, "別名を追加", "リンクを編集")
+
+        response = self.client.get(reverse("subekashi:editor", args=[self.editor.id]), {"q": "別名"})
+
+        self.assertEqual([history.title for history in response.context["page_obj"]], ["別名を追加"])
+        self.assertEqual(response.context["total_count"], 1)
+        self.assertContains(response, 'id="history-count">1件</p>')
+        self.assertContains(response, 'name="q" value="別名"')
+
+    def test_search_excludes_other_editors_histories(self):
+        other_editor = Editor.objects.create(ip="127.0.0.14")
+        self._create_author_histories(other_editor, "別名を追加")
+
+        response = self.client.get(reverse("subekashi:editor", args=[self.editor.id]), {"q": "別名"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["total_count"], 0)
+        self.assertContains(response, 'id="history-count">0件</p>')
+
+    def test_blank_query_shows_all_histories(self):
+        self._create_author_histories(self.editor, "別名を追加", "リンクを編集")
+
+        response = self.client.get(reverse("subekashi:editor", args=[self.editor.id]), {"q": "  "})
+
+        self.assertEqual(response.context["total_count"], 2)
+        self.assertEqual(response.context["search_query"], "")
+
+    def test_search_query_is_escaped_in_form(self):
+        response = self.client.get(reverse("subekashi:editor", args=[self.editor.id]), {"q": '"><script>alert(1)</script>'})
+
+        self.assertNotContains(response, "<script>alert(1)</script>")
+        self.assertContains(response, 'value="&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;"')
+
+    def test_pagination_keeps_search_query(self):
+        # 検索結果が複数ページのとき、前へ・次へのリンクで検索語を引き継ぐ
+        author = Author.objects.create(name="編集者ページ送り作者")
+        History.objects.bulk_create([
+            History(author=author, title=f"別名&追加{i}", history_type="edit", editor=self.editor)
+            for i in range(HISTORIES_PER_PAGE + 1)
+        ])
+        History.create_for_author(author=author, title="対象外", history_type="edit", changes=None, editor=self.editor)
+
+        query = quote("別名&追加")
+        first = self.client.get(reverse("subekashi:editor", args=[self.editor.id]), {"q": "別名&追加"})
+        self.assertEqual(first.context["total_count"], HISTORIES_PER_PAGE + 1)
+        self.assertContains(first, f'href="?page=2&amp;q={query}"', count=2)
+
+        second = self.client.get(reverse("subekashi:editor", args=[self.editor.id]), {"q": "別名&追加", "page": 2})
+        self.assertContains(second, f'href="?page=1&amp;q={query}"', count=2)
+
+    def test_pagination_without_search_query_has_no_q(self):
+        author = Author.objects.create(name="編集者ページ送り作者2")
+        History.objects.bulk_create([
+            History(author=author, title=f"履歴{i}", history_type="edit", editor=self.editor)
+            for i in range(HISTORIES_PER_PAGE + 1)
+        ])
+
+        response = self.client.get(reverse("subekashi:editor", args=[self.editor.id]))
+
+        self.assertContains(response, 'href="?page=2"', count=2)
+
+    def test_private_editor_hides_search_form_and_histories(self):
+        # 非公開の編集者は、検索しても履歴を見られない
+        private_editor = Editor.objects.create(ip="127.0.0.15", is_open=False)
+        self._create_author_histories(private_editor, "別名を追加")
+
+        response = self.client.get(reverse("subekashi:editor", args=[private_editor.id]), {"q": "別名"})
+
+        self.assertContains(response, "この編集者の情報は非公開です。")
+        self.assertNotContains(response, 'name="q"')
+        self.assertNotContains(response, "別名を追加")
+
 
 @override_settings(STORAGES=STATIC_STORAGE)
 class AuthorViewTest(TestCase):
@@ -2481,6 +2562,19 @@ class AuthorViewTest(TestCase):
         response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
 
         self.assertContains(response, "2件の別名")
+
+    def test_song_search_link_present(self):
+        # 作者名を絞り込みに指定した曲の検索画面へのaction-buttonを表示する（#954）
+        response = self.client.get(reverse("subekashi:author", args=[self.author.id]))
+        soup = BeautifulSoup(response.content, "html.parser")
+        button = soup.select_one(f'.action-buttons a.action-button[href="{reverse("subekashi:songs")}?author={quote(self.author.name)}"]')
+        self.assertIsNotNone(button)
+        self.assertIsNotNone(button.select_one("i.fa-search"))
+
+    def test_song_search_link_encodes_author_name(self):
+        author = Author.objects.create(name="A&B=C+D/E#F 作者")
+        response = self.client.get(reverse("subekashi:author", args=[author.id]))
+        self.assertContains(response, f'href="{reverse("subekashi:songs")}?author=A%26B%3DC%2BD/E%23F%20%E4%BD%9C%E8%80%85"')
 
     def test_stats_link_present(self):
         # 統計ページへのaction-buttonが別名ボタンの右に追加される（#334）
@@ -4728,6 +4822,21 @@ class HistoriesViewTest(TestCase):
         self.assertContains(response, "この曲または作者は削除されました")
         self.assertContains(response, "重複")
         self.assertNotContains(response, f'href="{reverse("subekashi:song", args=[song.id])}"')
+
+    def test_pagination_keeps_search_query(self):
+        # 検索結果が複数ページのとき、前へ・次へのリンクで検索語を引き継ぐ（#954）
+        editor = Editor.objects.create(ip="127.0.0.16")
+        author = Author.objects.create(name="履歴一覧ページ送り作者")
+        History.objects.bulk_create([
+            History(author=author, title=f"別名を追加{i}", history_type="edit", editor=editor)
+            for i in range(HISTORIES_PER_PAGE + 1)
+        ])
+
+        first = self.client.get(reverse("subekashi:histories"), {"q": "別名"})
+        self.assertContains(first, f'href="?page=2&amp;q={quote("別名")}"', count=2)
+
+        second = self.client.get(reverse("subekashi:histories"), {"q": "別名", "page": 2})
+        self.assertContains(second, f'href="?page=1&amp;q={quote("別名")}"', count=2)
 
     def test_restore_history_links_to_song(self):
         # 削除を取り消した曲（#1264）の履歴は、変更内容の表を表示せず、曲へのリンクを表示する

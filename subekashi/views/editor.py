@@ -13,7 +13,8 @@ class EditorView(View):
         if editor is None:
             return render(request, 'subekashi/404.html', status=404)
 
-        all_histories = History.get_for_editor(editor)
+        search_query = request.GET.get("q", "").strip()
+        all_histories = History.get_for_editor(editor, search_query)
         paginator = Paginator(all_histories, HISTORIES_PER_PAGE)
         page_obj = paginator.get_page(request.GET.get("page", 1))
 
@@ -23,6 +24,7 @@ class EditorView(View):
             "is_me": get_ip(request) == editor.ip,
             "page_obj": page_obj,
             "total_count": paginator.count,
+            "search_query": search_query,
         }
 
         return render(request, 'subekashi/editor.html', context)

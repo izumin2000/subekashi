@@ -20,6 +20,7 @@
                 <p id="author-stats-summary"{% if kenreki.overflow_color %} style="color: {{ kenreki.overflow_color }};"{% endif %}><i class="fas fa-trophy"></i> {{ kenreki.points|intcomma:False }}</p>
             {% endif %}
         </div>
+        <a href="{% url 'subekashi:songs' %}?author={{ author|urlencode }}" class="action-button black-action-button"><i class="fas fa-search"></i><span class="icon-p-big">曲を検索</span></a>
     </div>
     {% if songInsL|length >= 2 %}
         <form method="get" id="author-sort" data-auto-submit>
