@@ -30,7 +30,7 @@ class TopView(View):
             "RECOMEND_ARTICLES": recomend_articles
         }
 
-        # 初心者向け案内の表示設定（×ボタンで閉じるとtop.jsでoffにする、#1236）
+        # 初心者向け案内の表示設定（「表示しない」ボタンで閉じるとtop.jsでoffにする、#1236）
         is_shown_guide = request.COOKIES.get("is_shown_guide", "on") != "off"
         context["is_shown_guide"] = is_shown_guide
         if is_shown_guide:

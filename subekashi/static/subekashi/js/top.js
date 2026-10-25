@@ -47,8 +47,10 @@ function categoryClick(song) {
     renderFilterStatus();
 }
 
-// 初心者向け案内を×ボタンで閉じたら、次から表示しない（設定画面の「初心者向け案内の表示」で再び表示できる）
+// 初心者向け案内を「表示しない」ボタンで閉じたら、次から表示しない（設定画面の「初心者向け案内の表示」で再び表示できる）
+// cookieの属性は、設定画面で保存するcookie（SaveSettingsView）と揃える
 if (guideEle) {
+    const guideCookieAge = Number(guideEle.dataset.cookieAge);
     document.getElementById('guide-close').addEventListener('click', () => {
         document.cookie = `is_shown_guide=off; path=/; max-age=${guideCookieAge}; samesite=lax`;
         guideEle.remove();
@@ -56,9 +58,18 @@ if (guideEle) {
 
     // 初心者向け案内の説明文を、表示された1行ごとに0.1sずつ遅らせて下からフェードインする（top.cssの.guide-row）
     // 行の分かれ方はフォントで変わるため、フォントを読み込んでから1文字ずつの位置で行を分ける
+    // フォント（約3MB）の読み込みが遅い場合に文字を隠したままにしないよう、待つのはGUIDE_FONT_TIMEOUTまでにする
+    const GUIDE_FONT_TIMEOUT = 1000;
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        document.fonts.ready.then(() => {
-            const guideLines = Array.from(guideEle.querySelectorAll('.guide-line'), (lineEle) => ({ lineEle, text: lineEle.textContent }));
+        const fontTimeout = new Promise((resolve) => setTimeout(resolve, GUIDE_FONT_TIMEOUT));
+        Promise.race([document.fonts.ready, fontTimeout]).then(() => {
+            const lineEles = Array.from(guideEle.querySelectorAll('.guide-line'));
+            // top.jsの読み込みが遅く、top.cssのフォールバック（3s後にまとめて表示）で表示済みの場合は、消して表示し直さない
+            if (!lineEles.length || lineEles.some((lineEle) => getComputedStyle(lineEle).opacity !== '0')) {
+                return;
+            }
+
+            const guideLines = lineEles.map((lineEle) => ({ lineEle, text: lineEle.textContent }));
             const rowEles = guideLines.flatMap(({ lineEle, text }) => {
                 const charEles = Array.from(text, (char) => {
                     const charEle = document.createElement('span');
@@ -87,6 +98,9 @@ if (guideEle) {
                 lineEle.classList.add('is-split');
                 return lineRowEles;
             });
+            if (!rowEles.length) {
+                return;
+            }
 
             rowEles.forEach((rowEle, index) => {
                 rowEle.style.animationDelay = `${index * 0.1}s`;
@@ -97,7 +111,7 @@ if (guideEle) {
                 guideLines.forEach(({ lineEle, text }) => {
                     lineEle.textContent = text;
                 });
-            });
+            }, { once: true });
         });
     }
 }

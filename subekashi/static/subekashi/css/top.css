@@ -1,4 +1,4 @@
-/* 初心者向け案内。背景の画像は6周年記念グラフィックアート（https://izumin2000.github.io/anniversary6/）のlyrics_default_hd.jpeg */
+/* 初心者向け案内。背景の画像は6周年記念グラフィックアート（https://izumin2000.github.io/anniversary6/）のlyrics_default_hd.jpegを、WebP（品質80）に変換したもの */
 /* 画像はファーストビュー全体（画面の高さからヘッダーと、スマホでは下のメニューの高さを引いた高さ）に表示し、縦横比を変えずに、はみ出す上下か左右を切り取る */
 /* ヘッダー・下のメニューの高さを変えた場合は、--guide-offsetも合わせる */
 #guide-image {
@@ -12,7 +12,7 @@
     padding: 70px 90px;
     box-sizing: border-box;
     overflow: hidden;
-    background: #111 url("../image/guide.jpeg") center / cover no-repeat;
+    background: #111 url("../image/guide.webp") center / cover no-repeat;
 }
 
 body[data-pc-menu="aside"] #guide-image {

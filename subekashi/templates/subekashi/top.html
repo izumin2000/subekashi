@@ -6,7 +6,8 @@
 
 {% block first_view %}
 {% if is_shown_guide %}
-    <div id="guide">
+    {# data-cookie-ageは「表示しない」ボタンで保存するcookieの保存期間（top.jsで使う） #}
+    <div id="guide" data-cookie-age="{{ guide_cookie_age }}">
         <div id="guide-image">
             <div id="guide-text">
                 {# top.jsで.guide-lineを表示された1行ごとに分けて、順に表示する #}
@@ -161,9 +162,6 @@
     {% endif %}
     // search_form.jsを読み込むかと同じ条件にする
     const isShownAllSearch = {% if is_shown_search == "all" %}true{% else %}false{% endif %};
-    {% if is_shown_guide %}
-    const guideCookieAge = {{ guide_cookie_age }};
-    {% endif %}
 
     {% if request.GET.toast == "delete" %}
         showToast("ok", "曲を削除しました。");

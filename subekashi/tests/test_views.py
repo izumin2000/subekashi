@@ -490,19 +490,21 @@ class TopViewTest(TestCase):
         self.assertIn(button.parent, guide.find(id="guide-image").find_next_siblings())
 
     def test_guide_passes_cookie_age_to_top_js(self):
-        """×ボタンで閉じたときのcookieの保存期間を、top.jsに渡す（#1236）"""
+        """「表示しない」ボタンで閉じたときのcookieの保存期間を、インラインのスクリプトのグローバル変数ではなく#guideのdata-cookie-ageでtop.jsに渡す（#1236）"""
         response = self.client.get(reverse("subekashi:top"))
+        guide = BeautifulSoup(response.content, "html.parser").find(id="guide")
 
-        self.assertContains(response, f"const guideCookieAge = {LONG_TERM_COOKIE_AGE};")
+        self.assertEqual(guide["data-cookie-age"], str(LONG_TERM_COOKIE_AGE))
+        self.assertNotContains(response, "guideCookieAge")
 
     def test_guide_is_hidden_when_closed(self):
-        """×ボタンで閉じた（is_shown_guide=off）場合、初心者向け案内は表示しない（#1236）"""
+        """「表示しない」ボタンで閉じた（is_shown_guide=off）場合、初心者向け案内は表示しない（#1236）"""
         self.client.cookies["is_shown_guide"] = "off"
         response = self.client.get(reverse("subekashi:top"))
 
         self.assertFalse(response.context["is_shown_guide"])
         self.assertNotContains(response, 'id="guide"')
-        self.assertNotContains(response, "guideCookieAge")
+        self.assertNotContains(response, "data-cookie-age")
 
     def test_guide_with_invalid_cookie_is_shown(self):
         """is_shown_guideがoff以外の値の場合、初心者向け案内を表示する（#1236）"""
@@ -519,8 +521,8 @@ class TopViewTest(TestCase):
         with open(finders.find("subekashi/css/top.css"), encoding="utf-8") as f:
             image_paths = re.findall(r'url\("\.\./(image/guide[^"]*)"\)', f.read())
 
-        self.assertEqual(image_paths, ["image/guide.jpeg"])
-        self.assertIsNotNone(finders.find("subekashi/image/guide.jpeg"))
+        self.assertEqual(image_paths, ["image/guide.webp"])
+        self.assertIsNotNone(finders.find("subekashi/image/guide.webp"))
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
