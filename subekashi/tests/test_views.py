@@ -15,6 +15,7 @@ from urllib.parse import quote
 from contextlib import contextmanager
 from datetime import date, datetime, timedelta, timezone as dt_timezone
 from unittest.mock import patch, MagicMock
+from bs4 import BeautifulSoup
 from PIL import Image
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -466,6 +467,60 @@ class TopViewTest(TestCase):
                 self.assertNotIn('id="search-forms"', form_html)
                 self.assertNotContains(response, "subekashi/js/search_form.js")
                 self.assertNotContains(response, "subekashi/css/components/search_form.css")
+
+    def test_guide_is_shown_first_by_default(self):
+        """初心者向け案内は、cookieが無い場合に、画面の幅いっぱいに表示するため本文（#mainarticle）より前のファーストビューに表示される（#1236）"""
+        response = self.client.get(reverse("subekashi:top"))
+        content = response.content.decode()
+
+        self.assertTrue(response.context["is_shown_guide"])
+        self.assertContains(response, '<h2 class="guide-line">このサイトについて</h2>')
+        self.assertContains(response, '<h2 class="guide-line">界隈曲とは</h2>')
+        self.assertContains(response, '<h2 class="guide-line">すべあな界隈曲とは</h2>')
+        self.assertLess(content.index('id="guide"'), content.index('<article id="mainarticle">'))
+
+    def test_guide_close_button_is_below_image(self):
+        """初心者向け案内の「表示しない」ボタンは、背景の画像（#guide-image）の下に置く（#1236）"""
+        response = self.client.get(reverse("subekashi:top"))
+        guide = BeautifulSoup(response.content, "html.parser").find(id="guide")
+        button = guide.find(id="guide-close")
+
+        self.assertContains(response, '<button type="button" id="guide-close" class="action-button black-action-button"><i class="fas fa-times"></i><span class="icon-p-big">表示しない</span></button>', count=1)
+        self.assertIsNone(guide.find(id="guide-image").find(id="guide-close"))
+        self.assertIn(button.parent, guide.find(id="guide-image").find_next_siblings())
+
+    def test_guide_passes_cookie_age_to_top_js(self):
+        """×ボタンで閉じたときのcookieの保存期間を、top.jsに渡す（#1236）"""
+        response = self.client.get(reverse("subekashi:top"))
+
+        self.assertContains(response, f"const guideCookieAge = {LONG_TERM_COOKIE_AGE};")
+
+    def test_guide_is_hidden_when_closed(self):
+        """×ボタンで閉じた（is_shown_guide=off）場合、初心者向け案内は表示しない（#1236）"""
+        self.client.cookies["is_shown_guide"] = "off"
+        response = self.client.get(reverse("subekashi:top"))
+
+        self.assertFalse(response.context["is_shown_guide"])
+        self.assertNotContains(response, 'id="guide"')
+        self.assertNotContains(response, "guideCookieAge")
+
+    def test_guide_with_invalid_cookie_is_shown(self):
+        """is_shown_guideがoff以外の値の場合、初心者向け案内を表示する（#1236）"""
+        for value in ["on", "OFF", "<script>"]:
+            with self.subTest(value=value):
+                self.client.cookies["is_shown_guide"] = value
+                response = self.client.get(reverse("subekashi:top"))
+
+                self.assertTrue(response.context["is_shown_guide"])
+                self.assertContains(response, 'id="guide"')
+
+    def test_guide_background_image_exists(self):
+        """top.cssで初心者向け案内の背景にする画像が静的ファイルにある（#1236）"""
+        with open(finders.find("subekashi/css/top.css"), encoding="utf-8") as f:
+            image_paths = re.findall(r'url\("\.\./(image/guide[^"]*)"\)', f.read())
+
+        self.assertEqual(image_paths, ["image/guide.jpeg"])
+        self.assertIsNotNone(finders.find("subekashi/image/guide.jpeg"))
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
@@ -5330,6 +5385,34 @@ class SettingViewTest(TestCase):
                 selected = [option_text for _, option_text, is_selected in self._get_upcoming_options(response) if is_selected]
                 self.assertEqual(selected, [text])
 
+    def _get_guide_display_options(self, response):
+        setting = next(setting for setting in response.context["settings"]["top"] if setting["id"] == "is_shown_guide")
+        return [(option["value"], option["text"], option["selected"]) for option in setting["options"]]
+
+    def test_guide_display_defaults_to_shown(self):
+        """トップ画面の初心者向け案内の表示の設定は、ネタ曲の表示の次に置き、cookieが無い場合は「表示」が選択される（#1236）"""
+        response = self.client.get(reverse("subekashi:setting"))
+        setting_ids = [setting["id"] for setting in response.context["settings"]["top"]]
+
+        self.assertContains(response, '<label>初心者向け案内の表示</label>')
+        self.assertContains(response, '<select id="is_shown_guide" class="setting-input">')
+        self.assertEqual(setting_ids.index("is_shown_guide"), setting_ids.index("jokerange") + 1)
+        self.assertEqual(self._get_guide_display_options(response), [
+            ("on", "表示", True),
+            ("off", "非表示", False),
+        ])
+
+    def test_guide_display_reflects_cookie(self):
+        """トップ画面の初心者向け案内の表示の設定は、cookieの値が選択され、off以外の値は「表示」になる（#1236）"""
+        cases = [("off", "非表示"), ("on", "表示"), ("<script>", "表示")]
+        for value, text in cases:
+            with self.subTest(value=value):
+                self.client.cookies["is_shown_guide"] = value
+                response = self.client.get(reverse("subekashi:setting"))
+
+                selected = [option_text for _, option_text, is_selected in self._get_guide_display_options(response) if is_selected]
+                self.assertEqual(selected, [text])
+
     def test_tutorial_icon_is_shown_only_for_saved_select(self):
         """検索画面のセクションで、選択肢の保存のチュートリアルのアイコンは「検索の選択肢の保存」にのみ付く（#1164）"""
         response = self.client.get(reverse("subekashi:setting"))
@@ -5417,6 +5500,32 @@ class SaveSettingsViewTest(TestCase):
         response = self.client.get(reverse("subekashi:top"))
         self.assertContains(response, 'id="keyword"')
         self.assertNotContains(response, 'id="search-form-radios"')
+
+    def test_is_shown_guide_is_saved(self):
+        """トップ画面の初心者向け案内の表示の設定はcookieに保存され、許可されていない値は保存されない（#1236）"""
+        for value in ["on", "off"]:
+            with self.subTest(value=value):
+                response = self._post({"is_shown_guide": value})
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.cookies["is_shown_guide"].value, value)
+
+        for value in ["hidden", "<script>"]:
+            with self.subTest(value=value):
+                response = self._post({"is_shown_guide": value})
+
+                self.assertEqual(response.status_code, 200)
+                self.assertNotIn("is_shown_guide", response.cookies)
+
+    def test_saved_is_shown_guide_is_applied_to_top(self):
+        """設定画面で保存した初心者向け案内の表示の設定が、トップ画面に反映される。閉じた案内を設定画面から再び表示できる（#1236）"""
+        self._post({"is_shown_guide": "off"})
+        response = self.client.get(reverse("subekashi:top"))
+        self.assertNotContains(response, 'id="guide"')
+
+        self._post({"is_shown_guide": "on"})
+        response = self.client.get(reverse("subekashi:top"))
+        self.assertContains(response, 'id="guide"')
 
         self._post({"is_shown_search": "off"})
         response = self.client.get(reverse("subekashi:top"))

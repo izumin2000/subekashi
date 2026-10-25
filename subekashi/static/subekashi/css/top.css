@@ -1,3 +1,143 @@
+/* 初心者向け案内。背景の画像は6周年記念グラフィックアート（https://izumin2000.github.io/anniversary6/）のlyrics_default_hd.jpeg */
+/* 画像はファーストビュー全体（画面の高さからヘッダーと、スマホでは下のメニューの高さを引いた高さ）に表示し、縦横比を変えずに、はみ出す上下か左右を切り取る */
+/* ヘッダー・下のメニューの高さを変えた場合は、--guide-offsetも合わせる */
+#guide-image {
+    --guide-offset: 112px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - var(--guide-offset));
+    min-height: calc(100svh - var(--guide-offset));
+    padding: 70px 90px;
+    box-sizing: border-box;
+    overflow: hidden;
+    background: #111 url("../image/guide.jpeg") center / cover no-repeat;
+}
+
+body[data-pc-menu="aside"] #guide-image {
+    --guide-offset: 94px;
+}
+
+/* 画像の上に重ねる黒の不透明度は、中心（--guide-opacity-center）から説明文の端（--guide-opacity-text）まで変え、説明文の外側は画像の端まで--guide-opacity-edgeにする */
+#guide-text {
+    --guide-opacity-center: 90%;
+    --guide-opacity-text: 90%;
+    --guide-opacity-edge: 30%;
+    position: relative;
+    isolation: isolate;
+    max-width: 1000px;
+    padding: 16px 24px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+/* 説明文の外側は、影（box-shadow）を#guide-imageの端まで広げて塗る */
+#guide-text::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(farthest-side, rgb(17 17 17 / var(--guide-opacity-center)), rgb(17 17 17 / var(--guide-opacity-text)));
+    box-shadow: 0 0 0 200vmax rgb(17 17 17 / var(--guide-opacity-edge));
+}
+
+#guide-title {
+    font-size: 28px;
+    line-height: 40px;
+}
+
+#guide h2 {
+    font-size: 20px;
+    line-height: 28px;
+    margin-top: 16px;
+    color: #09F;
+}
+
+#guide h2 + p {
+    font-size: 16px;
+    line-height: 26px;
+}
+
+/* 説明文は1行ずつ、top.jsで0.1sずつ遅らせて、0.5sかけて下からフェードインする */
+/* top.jsが動かない場合は、3s後にまとめて表示する */
+#guide .guide-line {
+    display: block;
+    opacity: 0;
+    animation: guide-line-fallback 0s 3s forwards;
+}
+
+#guide .guide-line.is-split {
+    opacity: 1;
+    animation: none;
+}
+
+#guide .guide-row {
+    display: block;
+    opacity: 0;
+    animation: guide-line-in 0.5s ease-out forwards;
+}
+
+@keyframes guide-line-in {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes guide-line-fallback {
+    to {
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #guide .guide-line {
+        opacity: 1;
+        animation: none;
+    }
+}
+
+#guide .action-buttons {
+    margin: 20px 0 0 0;
+}
+
+/* スマホのレイアウトは、ヘッダー（64px）と下のメニュー（#tab_bar、50px）の高さを引く */
+@media (max-width: 960px) {
+    body[data-pc-menu] #guide-image {
+        --guide-offset: 114px;
+        padding: 60px 40px;
+    }
+}
+
+@media (max-width: 600px) {
+    body[data-pc-menu] #guide-image {
+        padding: 50px 16px;
+    }
+
+    #guide-text {
+        padding: 12px;
+    }
+
+    #guide-title {
+        font-size: 22px;
+        line-height: 32px;
+    }
+
+    #guide h2 {
+        font-size: 18px;
+    }
+
+    #guide h2 + p {
+        font-size: 15px;
+        line-height: 24px;
+    }
+}
+
 #single-news-wrapper {
     margin-top: 20px;
 }

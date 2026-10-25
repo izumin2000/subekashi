@@ -2,15 +2,18 @@
 // その場合のみtop.htmlでsearch_form.jsをこのファイルより先に読み込み、FORM_QUERIES・initSearchForm・collectFormQuery・renderFilterStatus・toQueryString・renderSongGuesserを使う
 const keywordElement = document.getElementById("keyword");
 const isPC = window.innerWidth > 960; 
+const guideEle = document.getElementById('guide');
+// 初心者向け案内を表示している場合は、案内が画面の上から外れないように、入力欄を選択してもスクロールしない
+const preventFocusScroll = Boolean(guideEle);
 // 「全て表示」の場合は、表示したフォームの入力欄をsearch_form.jsで選択する
 if (keywordElement && isPC && !isShownAllSearch) {
-    keywordElement.focus();
+    keywordElement.focus({ preventScroll: preventFocusScroll });
     keywordElement.click();
 }
 
 if (isShownAllSearch) {
     window.addEventListener('load', function () {
-        initSearchForm();
+        initSearchForm(preventFocusScroll);
         renderFilterStatus();
         document.querySelectorAll(FORM_QUERIES).forEach((formEle) => {
             formEle.addEventListener('change', renderFilterStatus);
@@ -42,6 +45,61 @@ function songGuesserClick(id) {
 function categoryClick(song) {
     document.getElementById("imitate").value = song.id;
     renderFilterStatus();
+}
+
+// 初心者向け案内を×ボタンで閉じたら、次から表示しない（設定画面の「初心者向け案内の表示」で再び表示できる）
+if (guideEle) {
+    document.getElementById('guide-close').addEventListener('click', () => {
+        document.cookie = `is_shown_guide=off; path=/; max-age=${guideCookieAge}; samesite=lax`;
+        guideEle.remove();
+    });
+
+    // 初心者向け案内の説明文を、表示された1行ごとに0.1sずつ遅らせて下からフェードインする（top.cssの.guide-row）
+    // 行の分かれ方はフォントで変わるため、フォントを読み込んでから1文字ずつの位置で行を分ける
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.fonts.ready.then(() => {
+            const guideLines = Array.from(guideEle.querySelectorAll('.guide-line'), (lineEle) => ({ lineEle, text: lineEle.textContent }));
+            const rowEles = guideLines.flatMap(({ lineEle, text }) => {
+                const charEles = Array.from(text, (char) => {
+                    const charEle = document.createElement('span');
+                    charEle.textContent = char;
+                    return charEle;
+                });
+                lineEle.replaceChildren(...charEles);
+
+                const rows = [];
+                let rowTop = null;
+                charEles.forEach((charEle) => {
+                    if (charEle.offsetTop !== rowTop) {
+                        rows.push('');
+                        rowTop = charEle.offsetTop;
+                    }
+                    rows[rows.length - 1] += charEle.textContent;
+                });
+
+                const lineRowEles = rows.map((row) => {
+                    const rowEle = document.createElement('span');
+                    rowEle.className = 'guide-row';
+                    rowEle.textContent = row;
+                    return rowEle;
+                });
+                lineEle.replaceChildren(...lineRowEles);
+                lineEle.classList.add('is-split');
+                return lineRowEles;
+            });
+
+            rowEles.forEach((rowEle, index) => {
+                rowEle.style.animationDelay = `${index * 0.1}s`;
+            });
+
+            // 表示し終えたら行に分ける前の文字に戻し、画面の幅を変えたときに折り返し直せるようにする
+            rowEles.at(-1).addEventListener('animationend', () => {
+                guideLines.forEach(({ lineEle, text }) => {
+                    lineEle.textContent = text;
+                });
+            });
+        });
+    }
 }
 
 // ニュースの「1つずつ表示」

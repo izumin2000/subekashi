@@ -706,6 +706,15 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 検索の表示設定のcookieの不正な値（#585） | `is_shown_search`が`keyword`・`ALL`・`<script>` | context["is_shown_search"] = "on"、キーワードのみの検索フォームが表示され、`search_form.js`・`search_form.css`は読み込まれない |
 | 全て表示はトップ画面のURLクエリを使わない（#585） | `is_shown_search=all`, `is_saved_select=on`, `/?sort=-view&songrange=xx&is_lack=True&mediatypes=youtube`と`TEXT_FORMS`の全ての入力欄の値 | context["search_form"] = "keyword"、`-post_time`と未完成の「指定なし」が選択され、メディアは選択されず、入力欄は全て空（気づかないまま検索に送られないように）。`search_sort`・`search_songrange`・`search_jokerange`のcookieは保存されない |
 
+| 初心者向け案内のデフォルト（#1236） | `is_shown_guide`クッキーなし | context["is_shown_guide"] = True、`#guide`が本文（`<article id="mainarticle">`）より前（`base.html`の`first_view`ブロック）に置かれ、「このサイトについて」「界隈曲とは」「すべあな界隈曲とは」の見出し（`<h2 class="guide-line">`）がある |
+| 初心者向け案内の「表示しない」ボタン（#1236） | `is_shown_guide`クッキーなし | `<button type="button" id="guide-close" class="action-button black-action-button">`（`fa-times`のアイコンと「表示しない」）が1つあり、背景の画像（`#guide-image`）の中ではなく、`#guide-image`の後ろの兄弟要素の中にある |
+| 初心者向け案内のcookieの保存期間（#1236） | `is_shown_guide`クッキーなし | インラインのスクリプトに`const guideCookieAge = {LONG_TERM_COOKIE_AGE};`がある（`top.js`が閉じたときのcookieの保存期間に使う） |
+| 初心者向け案内を閉じた後（#1236） | `is_shown_guide=off` | context["is_shown_guide"] = False、`#guide`と`guideCookieAge`が無い |
+| 初心者向け案内のcookieの不正な値（#1236） | `is_shown_guide`が`on`・`OFF`・`<script>` | `off`以外は表示する。context["is_shown_guide"] = Trueで、`#guide`がある |
+| 初心者向け案内の背景の画像（#1236） | — | `top.css`で背景にする画像は`url("../image/guide.jpeg")`の1つで、`finders.find`で見つかる（6周年記念グラフィックアートの`lyrics_default_hd.jpeg`） |
+
+初心者向け案内（#1236）の「表示しない」ボタン（背景の画像の下に置く）は、`top.js`で`is_shown_guide=off`のcookie（`path=/`・`max-age=guideCookieAge`・`samesite=lax`）を保存し、案内を消す。設定画面の「初心者向け案内の表示」で再び表示できる。案内を表示している間は、PCでキーワードの入力欄（「全て表示」の場合は`search_form.js`の`initSearchForm`で選択する入力欄）を選択しても、案内が画面の上から外れないようにスクロールしない（`focus({ preventScroll: true })`）。入力するとブラウザが入力欄までスクロールする。案内は本文の幅（800px）に収めず、背景の画像（`#guide-image`）を画面の幅いっぱい・ヘッダーの下から画面の下端（スマホのレイアウトでは下のメニューの上）までのファーストビュー全体に表示し、縦横比を変えずに上下か左右を切り取る（`background-size: cover`）。高さはヘッダー・下のメニューの高さ（`--guide-offset`、PCの上メニュー112px・サイドメニュー94px・スマホ114px）を引いて求めるため、これらの高さを変えた場合は合わせる。説明文が入りきらない低い画面では、説明文に合わせて縦に伸びる。画像の上に重ねる黒の不透明度は、説明文の範囲が90%（`--guide-opacity-center`・`--guide-opacity-text`）で、説明文の外側は画像の端まで30%（`--guide-opacity-edge`）にする。説明文は「。」の後で改行し、「界隈曲とは」「すべあな界隈曲とは」は見出しの後で改行する。説明文は`top.js`でフォントの読み込み後に`.guide-line`を表示された1行ごと（スマホで折り返した行も1行とする）の`.guide-row`に分け、上の行から0.1sずつ遅らせて、0.5sかけて`ease-out`で下からフェードインする。表示し終えたら分ける前の文字に戻す（画面の幅を変えたときに折り返し直せるように）。JSが動かない場合は3s後にまとめて表示し、`prefers-reduced-motion: reduce`では動かさずに表示する。JSの動作と見た目はDjangoテストでは確認できないため、Playwrightで確認する（幅1920〜320px・横向きのスマホ、PCの上メニュー・サイドメニューのそれぞれで、`#guide-image`の上端がヘッダーの下端、下端が画面か下のメニューの上端と一致し、幅が画面の幅と一致すること）。
+
 トップ画面の「全て表示」の検索フォームは、`top.js`で送信時に検索画面（`/songs/`）のURLクエリに変換して遷移する。テキスト等の入力欄・メディアは値がある場合のみ、ラジオボタン（並び替え・界隈曲・ネタ曲・真偽値のフィルタ）は表示時から選択を変更した場合のみURLクエリに含める。並び替え・界隈曲・ネタ曲は表示時に検索画面と同じcookieの値が選択されており、含めなくても検索画面で同じ値が選択されるため。song guesser・原曲ボタンのクリックでは模倣の曲IDを入力するのみで、遷移しない。JSの動作はDjangoテストでは確認できないため、Playwrightで確認する。
 
 スマホメニューのフッターは、幅が狭い画面（幅320〜390px）では「プライバシーポリシー」のリンクが2行目に回る（#1170）。リンクの途中で改行せず、フッターの高さが広がってリンクがはみ出さないことはDjangoテストでは確認できないため、Playwrightで確認する。
@@ -1341,6 +1350,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 トップ画面のセクションの「検索の表示」（`is_shown_search`）は「全て表示」（`all`）・「キーワードのみ」（`on`）・「非表示」（`off`）から選べる（#585）。以前の「表示」の設定を引き継ぐため、「キーワードのみ」の値は`on`とする。
 
+トップ画面のセクションの「初心者向け案内の表示」（`is_shown_guide`）は「表示」（`on`）・「非表示」（`off`）から選べる（#1236）。トップ画面の×ボタンで閉じると`off`になり、ここで再び表示できる。トップ画面では`off`以外の値を表示とするため、不正な値の場合も「表示」を選択する。
+
 Google検索のセクションの「ニュースの提供元」は、当サイトをGoogleの優先するソース（Google検索のトップニュースで優先して表示するサイト）に追加するGoogleのページへのリンクを表示する（#1151）。設定はGoogleのアカウントに保存されるため、cookieには保存しない。
 
 | テストケース | 条件 | 期待結果 |
@@ -1350,6 +1361,8 @@ Google検索のセクションの「ニュースの提供元」は、当サイ�
 | 検索の表示の設定のcookieを反映（#585） | `is_shown_search`に`all`・`on`・`off`のcookieを送信 | それぞれ「全て表示」・「キーワードのみ」・「非表示」のみが選択される |
 | 投稿予定の表示の設定のデフォルト（#376） | cookie無し | 「投稿予定の表示」の`<select id="is_shown_upcoming">`がトップ画面のセクションの「新着の表示」の次に表示され、選択肢は「15曲表示」・「10曲表示」・「5曲表示」・「非表示」（`15`・`10`・`5`・`0`）の順で、「5曲表示」が選択される |
 | 投稿予定の表示の設定のcookieを反映（#376） | `is_shown_upcoming`に`15`・`10`・`5`・`0`のcookieを送信 | それぞれ「15曲表示」・「10曲表示」・「5曲表示」・「非表示」のみが選択される |
+| 初心者向け案内の表示の設定のデフォルト（#1236） | cookie無し | 「初心者向け案内の表示」の`<select id="is_shown_guide">`がトップ画面のセクションの「ネタ曲の表示」の次に表示され、選択肢は「表示」（`on`）・「非表示」（`off`）の順で、「表示」が選択される |
+| 初心者向け案内の表示の設定のcookieを反映（#1236） | `is_shown_guide`に`off`・`on`・`<script>`のcookieを送信 | それぞれ「非表示」・「表示」・「表示」のみが選択される |
 | フォームボタンの設定のデフォルト | cookie無し | 「フォームボタン」の`<select id="form_button">`が表示され、選択肢は「アイコンのみ」（`icon`）・「アイコンと文字」（`icon_text`）の順で、「アイコンと文字」が選択される |
 | フォームボタンの設定のcookieを反映 | `form_button=icon`のcookieを送信 | 「アイコンのみ」が選択される |
 | チュートリアルのアイコン | GETリクエスト | 選択肢の保存のチュートリアル（`data-tutorial="select"`）のアイコンは「検索の選択肢の保存」にのみ付き、「フォームボタン」には付かない |
@@ -1365,6 +1378,8 @@ Google検索のセクションの「ニュースの提供元」は、当サイ�
 | 検索の表示の設定の許可されていない値は保存しない（#585） | `{"cookies": {"is_shown_search": "keyword"}}`・`{"cookies": {"is_shown_search": "<script>"}}` | HTTP 200、`is_shown_search`のcookieは保存されない |
 | 投稿予定の表示の設定の保存（#376） | `{"cookies": {"is_shown_upcoming": "0"}}`・`"5"`・`"10"`・`"15"` | HTTP 200、`is_shown_upcoming`のcookieが送信した値で保存される |
 | 投稿予定の表示の設定の許可されていない値は保存しない（#376） | `{"cookies": {"is_shown_upcoming": "3"}}`・`"on"`・`"<script>"` | HTTP 200、`is_shown_upcoming`のcookieは保存されない |
+| 初心者向け案内の表示の設定の保存（#1236） | `{"cookies": {"is_shown_guide": "on"}}`・`"off"` | HTTP 200、`is_shown_guide`のcookieが送信した値で保存される |
+| 初心者向け案内の表示の設定の許可されていない値は保存しない（#1236） | `{"cookies": {"is_shown_guide": "hidden"}}`・`{"cookies": {"is_shown_guide": "<script>"}}` | HTTP 200、`is_shown_guide`のcookieは保存されない |
 
 #### 7-19. `robots` (`/robots.txt`)（#1172）
 
