@@ -1,8 +1,9 @@
 /* 初心者向け案内。背景の画像は6周年記念グラフィックアート（https://izumin2000.github.io/anniversary6/）のlyrics_default_hd.jpegを、WebP（品質80）に変換したもの */
 /* 画像はファーストビュー全体（画面の高さからヘッダーと、スマホでは下のメニューの高さを引いた高さ）に表示し、縦横比を変えずに、はみ出す上下か左右を切り取る */
-/* ヘッダー・下のメニューの高さを変えた場合は、--guide-offsetも合わせる */
+/* ヘッダー・下のメニューの高さ（--guide-offset）は、common.cssの:rootの変数から、ヘッダー（header.html・common.css）と同じ条件で求める */
+/* PCのサイドメニュー（data-pc-menuがheader以外）：グローバルヘッダーと、ロゴの行と、下の線 */
 #guide-image {
-    --guide-offset: 112px;
+    --guide-offset: calc(var(--pc-global-header-height) + var(--header-top-height) + var(--header-border-width));
     position: relative;
     display: flex;
     align-items: center;
@@ -15,8 +16,11 @@
     background: #111 url("../image/guide.webp") center / cover no-repeat;
 }
 
-body[data-pc-menu="aside"] #guide-image {
-    --guide-offset: 94px;
+/* PCの上メニュー：ロゴの行と、メニューの行の分の余白と、下の線（グローバルヘッダーはメニューの中に重ねて表示する） */
+@media (min-width: 961px) {
+    body[data-pc-menu="header"] #guide-image {
+        --guide-offset: calc(var(--header-top-height) + var(--pc-header-menu-height) + var(--header-border-width));
+    }
 }
 
 /* 画像の上に重ねる黒の不透明度は、中心（--guide-opacity-center）から説明文の端（--guide-opacity-text）まで変え、説明文の外側は画像の端まで--guide-opacity-edgeにする */
@@ -106,16 +110,16 @@ body[data-pc-menu="aside"] #guide-image {
     margin: 20px 0 0 0;
 }
 
-/* スマホのレイアウトは、ヘッダー（64px）と下のメニュー（#tab_bar、50px）の高さを引く */
+/* スマホのレイアウト：ロゴの行と、下の線と、下のメニュー（グローバルヘッダーは表示しない） */
 @media (max-width: 960px) {
-    body[data-pc-menu] #guide-image {
-        --guide-offset: 114px;
+    #guide-image {
+        --guide-offset: calc(var(--header-top-height) + var(--header-border-width) + var(--tab-bar-height));
         padding: 60px 40px;
     }
 }
 
 @media (max-width: 600px) {
-    body[data-pc-menu] #guide-image {
+    #guide-image {
         padding: 50px 16px;
     }
 
