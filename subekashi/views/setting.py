@@ -3,14 +3,14 @@ from django.http import JsonResponse
 from django.views import View
 from subekashi.lib.ip import get_ip
 from subekashi.models import Editor
-from subekashi.constants.constants import LONG_TERM_COOKIE_AGE, FORM_BUTTON_CHOICES, FORM_BUTTON_DEFAULT
+from subekashi.constants.constants import LONG_TERM_COOKIE_AGE, FORM_BUTTON_CHOICES, FORM_BUTTON_DEFAULT, FONT_CHOICES, FONT_DEFAULT
 import json
 
 # 設定可能なcookieキーのホワイトリスト
 ALLOWED_SETTING_KEYS = {
     'songrange', 'jokerange', 'is_shown_guide', 'news_type', 'is_shown_search',
     'is_shown_new', 'is_shown_upcoming', 'is_shown_ad', 'is_shown_ai', 'is_shown_lack',
-    'is_saved_select', 'form_button', 'brlyrics', 'pc_menu_position'
+    'is_saved_select', 'form_button', 'brlyrics', 'pc_menu_position', 'font'
 }
 
 # 各設定の許可される値
@@ -28,7 +28,8 @@ ALLOWED_SETTING_VALUES = {
     'is_saved_select': {'on', 'off'},
     'form_button': FORM_BUTTON_CHOICES,
     'brlyrics': {'normal', 'pack', 'brless'},
-    'pc_menu_position': {'header', 'aside'}
+    'pc_menu_position': {'header', 'aside'},
+    'font': FONT_CHOICES
 }
 
 
@@ -52,6 +53,9 @@ class SettingView(View):
         form_button = request.COOKIES.get("form_button", FORM_BUTTON_DEFAULT)
         brlyrics = request.COOKIES.get("brlyrics", "normal")
         pc_menu_position = request.COOKIES.get("pc_menu_position", "header")
+        font = request.COOKIES.get("font", FONT_DEFAULT)
+        if font not in FONT_CHOICES:
+            font = FONT_DEFAULT
 
         settings_data = {
             'top': [
@@ -184,6 +188,14 @@ class SettingView(View):
                     'options': [
                         {'value': 'header', 'text': 'トップ', 'selected': pc_menu_position == 'header'},
                         {'value': 'aside', 'text': 'サイド', 'selected': pc_menu_position == 'aside'},
+                    ]
+                },
+                {
+                    'label': 'フォント',
+                    'id': 'font',
+                    'options': [
+                        {'value': 'imitate', 'text': '源全ゴシック', 'selected': font == 'imitate'},
+                        {'value': 'k8x12s', 'text': 'k8x12S', 'selected': font == 'k8x12s'},
                     ]
                 },
             ],

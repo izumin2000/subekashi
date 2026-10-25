@@ -23,6 +23,12 @@
     --pc-global-header-height: 30px;
     --header-border-width: 4px;
     --tab-bar-height: 50px;
+    --font-family-main: 'Imitate', 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif, Meiryo;
+}
+
+/* 設定画面で選んだフォント。@font-faceは使われるまで読み込まれないため、選ばれていないフォントは読み込まない */
+:root[data-font="k8x12s"] {
+    --font-family-main: 'k8x12s', 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif, Meiryo;
 }
 
 * {
@@ -33,7 +39,7 @@
 html {
     height: 100%;
     background-color: #111;
-    font-family: 'Imitate', 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif, Meiryo;
+    font-family: var(--font-family-main);
 }
 
 body {
@@ -584,13 +590,14 @@ a {
     margin-bottom: 15px;
 }
 
-.sansfont {
+/* k8x12Sを選んでいるときは無効にして、k8x12Sで表示する。:where()で詳細度は.sansfontのまま */
+:where(:root:not([data-font="k8x12s"])) .sansfont {
     font-family: 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans',  sans-serif !important;
     font-weight: 1000 !important;
 }
 
-.imitatefont {
-    font-family: 'Imitate', 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif, Meiryo !important;
+.mainfont {
+    font-family: var(--font-family-main) !important;
 }
 
 .info {
@@ -865,7 +872,7 @@ input, select, option, textarea {
     font-size: 25px;
     border: none;
     box-shadow: 0 0 0 1px #ccc inset;
-    font-family: 'Imitate', 'Noto Sans JP',  'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif, Meiryo;
+    font-family: var(--font-family-main);
     align-items: center;
     box-sizing: border-box;
 }
@@ -943,7 +950,7 @@ input[type=submit], button {
     font-size: 25px;
     cursor: pointer;
     margin: 20px 0;
-    font-family: 'Imitate', 'Noto Sans JP',  'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif, Meiryo;
+    font-family: var(--font-family-main);
     border-radius: 10px;
     color: #000;
     background-color: #eee;

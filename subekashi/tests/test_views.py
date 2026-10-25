@@ -5498,6 +5498,35 @@ class SettingViewTest(TestCase):
             ("icon_text", "アイコンと文字", False),
         ])
 
+    def _get_font_options(self, response):
+        setting = next(setting for setting in response.context["settings"]["display"] if setting["id"] == "font")
+        return [(option["value"], option["text"], option["selected"]) for option in setting["options"]]
+
+    def test_font_defaults_to_imitate(self):
+        """表示設定のフォントは「源全ゴシック」「k8x12S」から選べ、cookieが無い場合は「源全ゴシック」が選択される（#584）"""
+        response = self.client.get(reverse("subekashi:setting"))
+
+        self.assertContains(response, '<label>フォント</label>')
+        self.assertContains(response, '<select id="font" class="setting-input">')
+        self.assertEqual(self._get_font_options(response), [
+            ("imitate", "源全ゴシック", True),
+            ("k8x12s", "k8x12S", False),
+        ])
+
+    def test_font_reflects_cookie(self):
+        """表示設定のフォントは、cookieの値が選択される。不正な値は「源全ゴシック」が選択される（#584）"""
+        expected = {
+            "imitate": [("imitate", "源全ゴシック", True), ("k8x12s", "k8x12S", False)],
+            "k8x12s": [("imitate", "源全ゴシック", False), ("k8x12s", "k8x12S", True)],
+            "<script>": [("imitate", "源全ゴシック", True), ("k8x12s", "k8x12S", False)],
+        }
+        for value, options in expected.items():
+            with self.subTest(value=value):
+                self.client.cookies["font"] = value
+                response = self.client.get(reverse("subekashi:setting"))
+
+                self.assertEqual(self._get_font_options(response), options)
+
     def _get_search_display_options(self, response):
         setting = next(setting for setting in response.context["settings"]["top"] if setting["id"] == "is_shown_search")
         return [(option["value"], option["text"], option["selected"]) for option in setting["options"]]
@@ -5699,6 +5728,46 @@ class SaveSettingsViewTest(TestCase):
         self._post({"is_shown_guide": "on"})
         response = self.client.get(reverse("subekashi:top"))
         self.assertContains(response, 'id="guide"')
+
+    def test_font_is_saved(self):
+        """表示設定のフォントはcookieに保存され、許可されていない値は保存されない（#584）"""
+        for value in ["imitate", "k8x12s"]:
+            with self.subTest(value=value):
+                response = self._post({"font": value})
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.cookies["font"].value, value)
+
+        for value in ["k8x12", "<script>"]:
+            with self.subTest(value=value):
+                response = self._post({"font": value})
+
+                self.assertEqual(response.status_code, 200)
+                self.assertNotIn("font", response.cookies)
+
+    def test_saved_font_is_applied_to_html(self):
+        """設定画面で保存したフォントは、全てのページの<html>のdata-fontに反映される。cookieが無い場合や不正な値は源全ゴシック（imitate）になる（#584）"""
+        response = self.client.get(reverse("subekashi:top"))
+        self.assertContains(response, '<html lang="ja" data-font="imitate">')
+
+        response = self._post({"font": "k8x12s"})
+        self.client.cookies["font"] = response.cookies["font"].value
+        for name in ["subekashi:top", "subekashi:songs", "subekashi:setting"]:
+            with self.subTest(name=name):
+                response = self.client.get(reverse(name))
+                self.assertContains(response, '<html lang="ja" data-font="k8x12s">')
+
+        self.client.cookies["font"] = '"><script>alert(1)</script>'
+        response = self.client.get(reverse("subekashi:top"))
+        self.assertContains(response, '<html lang="ja" data-font="imitate">')
+        self.assertNotContains(response, "<script>alert(1)</script>")
+
+    def test_header_logo_follows_font_setting(self):
+        """ヘッダーのロゴの文言は、設定したフォントに合わせるため、フォントを固定せずmainfontクラスで表示する（#584）"""
+        response = self.client.get(reverse("subekashi:top"))
+
+        self.assertContains(response, 'class="mainfont">全て歌詞の所為です。</a>')
+        self.assertNotContains(response, "imitatefont")
 
     def test_is_shown_upcoming_is_saved(self):
         """トップ画面の投稿予定の表示の設定はcookieに保存される（#376）"""

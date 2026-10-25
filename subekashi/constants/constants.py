@@ -254,6 +254,10 @@ LONG_TERM_COOKIE_AGE = 365 * 24 * 60 * 60
 FORM_BUTTON_CHOICES = {"icon", "icon_text"}
 FORM_BUTTON_DEFAULT = "icon_text"
 
+# サイト全体のフォント（設定画面のフォント、#584）。imitateは源全ゴシック、k8x12sはドットフォント
+FONT_CHOICES = {"imitate", "k8x12s"}
+FONT_DEFAULT = "imitate"
+
 # 曲の並び替えの選択肢（曲の検索画面・作者ページ、#606）
 # 曲の検索画面では、YouTube関連の並び替え(YOUTUBE_SORTS)はラベルにYouTubeのアイコンを付ける
 SORT_CHOICES = [

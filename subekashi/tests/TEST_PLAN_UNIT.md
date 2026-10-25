@@ -1368,6 +1368,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 
 トップ画面のセクションの「初心者向け案内の表示」（`is_shown_guide`）は「表示」（`on`）・「非表示」（`off`）から選べる（#1236）。トップ画面の「表示しない」ボタンで閉じると`off`になり、ここで再び表示できる。トップ画面では`off`以外の値を表示とするため、不正な値の場合も「表示」を選択する。
 
+表示設定のセクションの「フォント」（`font`）は、サイト全体のフォントを「源全ゴシック」（`imitate`、デフォルト）か「k8x12S」（`k8x12s`、ドットフォント）から選べる（#584）。cookieの値は`context_processors`で検証し、許可されていない値は`imitate`とする。値は全てのページの`<html>`の`data-font`に入り、`common.css`の`:root[data-font="k8x12s"]`が`--font-family-main`を切り替える。`html`・`input`・`select`・`option`・`textarea`・ボタン・ヘッダーのロゴ（`.mainfont`）は`--font-family-main`を使う。`@font-face`は使われるまで読み込まれないため、選ばれていないフォントは読み込まない（k8x12sを選ぶと、約3MBの源全ゴシックは読み込まない）。設定画面では、選択するとリロードせず`<html>`の`data-font`を書き換えて、この画面にも反映する。`.sansfont`（`Noto Sans JP`・太字に固定）は、k8x12sを選んでいるときは無効になり（`:where(:root:not([data-font="k8x12s"])) .sansfont`。詳細度は`.sansfont`のまま）、`--font-family-main`で表示する。曲が疑問視されているページ（`is_questionable`）のフォントは、設定に関わらず変わらない。見た目とフォントの読み込みはDjangoテストでは確認できないため、Playwrightで確認する。
+
 Google検索のセクションの「ニュースの提供元」は、当サイトをGoogleの優先するソース（Google検索のトップニュースで優先して表示するサイト）に追加するGoogleのページへのリンクを表示する（#1151）。設定はGoogleのアカウントに保存されるため、cookieには保存しない。
 
 | テストケース | 条件 | 期待結果 |
@@ -1379,6 +1381,8 @@ Google検索のセクションの「ニュースの提供元」は、当サイ�
 | 投稿予定の表示の設定のcookieを反映（#376） | `is_shown_upcoming`に`15`・`10`・`5`・`0`のcookieを送信 | それぞれ「15曲表示」・「10曲表示」・「5曲表示」・「非表示」のみが選択される |
 | 初心者向け案内の表示の設定のデフォルト（#1236） | cookie無し | 「初心者向け案内の表示」の`<select id="is_shown_guide">`がトップ画面のセクションの「ネタ曲の表示」の次に表示され、選択肢は「表示」（`on`）・「非表示」（`off`）の順で、「表示」が選択される |
 | 初心者向け案内の表示の設定のcookieを反映（#1236） | `is_shown_guide`に`off`・`on`・`<script>`のcookieを送信 | それぞれ「非表示」・「表示」・「表示」のみが選択される |
+| フォントの設定のデフォルト（#584） | cookie無し | 表示設定に「フォント」の`<select id="font" class="setting-input">`が表示され、選択肢は「源全ゴシック」（`imitate`）・「k8x12S」（`k8x12s`）の順で、「源全ゴシック」が選択される |
+| フォントの設定のcookieを反映（#584） | `font`に`imitate`・`k8x12s`・`<script>`のcookieを送信 | それぞれ「源全ゴシック」・「k8x12S」・「源全ゴシック」のみが選択される |
 | フォームボタンの設定のデフォルト | cookie無し | 「フォームボタン」の`<select id="form_button">`が表示され、選択肢は「アイコンのみ」（`icon`）・「アイコンと文字」（`icon_text`）の順で、「アイコンと文字」が選択される |
 | フォームボタンの設定のcookieを反映 | `form_button=icon`のcookieを送信 | 「アイコンのみ」が選択される |
 | チュートリアルのアイコン | GETリクエスト | 選択肢の保存のチュートリアル（`data-tutorial="select"`）のアイコンは「検索の選択肢の保存」にのみ付き、「フォームボタン」には付かない |
@@ -1396,6 +1400,10 @@ Google検索のセクションの「ニュースの提供元」は、当サイ�
 | 投稿予定の表示の設定の許可されていない値は保存しない（#376） | `{"cookies": {"is_shown_upcoming": "3"}}`・`"on"`・`"<script>"` | HTTP 200、`is_shown_upcoming`のcookieは保存されない |
 | 初心者向け案内の表示の設定の保存（#1236） | `{"cookies": {"is_shown_guide": "on"}}`・`"off"` | HTTP 200、`is_shown_guide`のcookieが送信した値で保存される |
 | 初心者向け案内の表示の設定の許可されていない値は保存しない（#1236） | `{"cookies": {"is_shown_guide": "hidden"}}`・`{"cookies": {"is_shown_guide": "<script>"}}` | HTTP 200、`is_shown_guide`のcookieは保存されない |
+| フォントの設定の保存（#584） | `{"cookies": {"font": "imitate"}}`・`"k8x12s"` | HTTP 200、`font`のcookieが送信した値で保存される |
+| フォントの設定の許可されていない値は保存しない（#584） | `{"cookies": {"font": "k8x12"}}`・`{"cookies": {"font": "<script>"}}` | HTTP 200、`font`のcookieは保存されない |
+| 保存したフォントを`<html>`に反映（#584） | cookie無し、`font=k8x12s`のcookie（トップ・曲の検索・設定の各ページ）、`font`に`"><script>alert(1)</script>`のcookie | それぞれ`<html lang="ja" data-font="imitate">`・`data-font="k8x12s"`・`data-font="imitate"`になり、不正な値のスクリプトは出力されない |
+| ヘッダーのロゴはフォントの設定に合わせる（#584） | トップ画面のGET | ロゴの文言のリンクは`class="mainfont"`で、旧クラス名の`imitatefont`は含まれない |
 
 #### 7-19. `robots` (`/robots.txt`)（#1172）
 
