@@ -993,6 +993,38 @@ cookieの保存はJS（`top.js`）で行うため、Djangoテストではなく�
 
 ---
 
+### 25. フォントの設定フロー（#584）
+
+**テストファイル**: `tests/test_views.py`（`SaveSettingsViewTest`）
+
+#### 25-1. 設定画面で保存したフォントが全てのページに反映される
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作1 | cookieの無い状態で`GET /` |
+| 検証1 | `<html lang="ja" data-font="imitate">`になる |
+| 操作2 | `POST /api/setting/save/`で`font=k8x12s`を保存し、`GET /`・`GET /songs/`・`GET /setting/` |
+| 検証2 | いずれも`data-font="k8x12s"`になる |
+| 操作3 | `font`に不正な値（`"><script>alert(1)</script>`）のcookieを送信して`GET /` |
+| 検証3 | `data-font="imitate"`になり、不正な値のスクリプトは出力されない |
+
+#### 25-2. フォントの切り替えと読み込み（Playwrightで確認）
+
+CSSの反映とフォントの読み込みはDjangoテストでは確認できないため、開発サーバーとPlaywrightで確認する。
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作1 | cookieの無い状態でトップ画面を開き、読み込まれたフォント（`*.woff2`）を記録する |
+| 検証1 | `html`・`input`・ヘッダーのロゴの`font-family`の先頭は`Imitate`で、`GenZenGothicKaiC.woff2`が読み込まれる |
+| 操作2 | 設定画面の「フォント」を「k8x12S」に変更する |
+| 検証2 | リロードせずに画面のフォントが切り替わり、`font=k8x12s`のcookieが保存される |
+| 操作3 | 新しいブラウザ（コンテキスト）で、`font=k8x12s`のcookieを付けてトップ画面を開き、読み込まれたフォントを記録する |
+| 検証3 | `html`・`input`・ヘッダーのロゴ・`.sansfont`（曲のカードのタイトル等）の`font-family`の先頭は`k8x12s`で、`GenZenGothicKaiC.woff2`は読み込まれず、`k8x12S.woff2`が読み込まれる。CSP違反・JSのエラーが出ない |
+| 操作4 | cookieの無い状態（源全ゴシック）で、`.sansfont`の`font-family`の先頭と`font-weight`を調べる |
+| 検証4 | `Noto Sans JP`・`1000`のままで、今までと変わらない |
+
+---
+
 ## テスト実装の方針
 
 ### ディレクトリ構成（案）

@@ -1,5 +1,5 @@
 from django.conf import settings
-from subekashi.constants.constants import CONST_ERROR, ASIDE_PAGES
+from subekashi.constants.constants import CONST_ERROR, ASIDE_PAGES, FONT_CHOICES, FONT_DEFAULT
 import json
 import os
 
@@ -20,6 +20,8 @@ def context_processors(request):
     else:
         maintenance = {}
 
+    font = request.COOKIES.get("font", FONT_DEFAULT)
+
     context = {
         "root_url": settings.ROOT_URL,
         "aside_pages": ASIDE_PAGES,
@@ -27,6 +29,7 @@ def context_processors(request):
         "is_maintenance": maintenance.get("IS_MAINTENANCE", False),
         "maintenance_message": maintenance.get("MAINTENANCE_MESSAGE", "<p>メンテナンス中です</p>"),
         "pc_menu_position": request.COOKIES.get("pc_menu_position", "header"),
+        "font": font if font in FONT_CHOICES else FONT_DEFAULT,
         "csp_nonce": getattr(request, "csp_nonce", ""),
     }
 

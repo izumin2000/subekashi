@@ -127,6 +127,11 @@
         if (input.id === 'pc_menu_position') {
             location.reload();
         }
+
+        // フォントは<html>のdata-fontで切り替わるため、リロードせずにこの画面にも反映する
+        if (input.id === 'font') {
+            document.documentElement.dataset.font = input.value;
+        }
     }
 
     async function saveSingleSetting(key, value) {
