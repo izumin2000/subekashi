@@ -2454,6 +2454,12 @@ class EditorViewTest(TestCase):
         self.assertEqual(response.context["total_count"], 0)
         self.assertContains(response, 'id="history-count">0件</p>')
 
+    def test_search_input_has_aria_label(self):
+        # placeholderだけではスクリーンリーダーに伝わらないため、aria-labelでラベルを付ける
+        response = self.client.get(reverse("subekashi:editor", args=[self.editor.id]))
+        soup = BeautifulSoup(response.content, "html.parser")
+        self.assertEqual(soup.select_one('form input[name="q"]')["aria-label"], "編集履歴の概要で検索")
+
     def test_blank_query_shows_all_histories(self):
         self._create_author_histories(self.editor, "別名を追加", "リンクを編集")
 
@@ -4822,6 +4828,12 @@ class HistoriesViewTest(TestCase):
         self.assertContains(response, "この曲または作者は削除されました")
         self.assertContains(response, "重複")
         self.assertNotContains(response, f'href="{reverse("subekashi:song", args=[song.id])}"')
+
+    def test_search_input_has_aria_label(self):
+        # 編集者のページと共通のコンポーネント（history_search_form.html）で、aria-labelを付ける（#954）
+        response = self.client.get(reverse("subekashi:histories"))
+        soup = BeautifulSoup(response.content, "html.parser")
+        self.assertEqual(soup.select_one('form input[name="q"]')["aria-label"], "編集履歴の概要で検索")
 
     def test_pagination_keeps_search_query(self):
         # 検索結果が複数ページのとき、前へ・次へのリンクで検索語を引き継ぐ（#954）
