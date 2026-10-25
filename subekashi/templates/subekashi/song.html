@@ -192,7 +192,14 @@
         } catch {
             showToast("error", "曲のURLをコピーできませんでした。");
         }
-        window.open(link.href, "_blank", "noopener");
+        // Safari（特にiOS）は、コピーを待った後のwindow.openをポップアップとしてブロックすることがあるため、開けなければこのタブで年表を開く
+        // noopenerを付けると開けてもnullが返り、ブロックされたか分からないため付けず、開いたタブからこのタブを操作できないようopenerを外す
+        const timelineTab = window.open(link.href, "_blank");
+        if (timelineTab) {
+            timelineTab.opener = null;
+        } else {
+            location.href = link.href;
+        }
     });
     
     {% if request.GET.toast == "edit" %}

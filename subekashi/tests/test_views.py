@@ -1067,6 +1067,9 @@ class SongViewTest(TestCase):
         self.assertNotContains(response, "年表で見る")
         # コピーしてから開く処理は、CSPのnonceを付けたscriptのaddEventListenerで行う（onclickを使わない）
         self.assertContains(response, "document.getElementById('timeline-register')?.addEventListener('click'")
+        # コピーを待った後のwindow.openはSafariでブロックされることがあるため、開けなければこのタブで開く
+        self.assertContains(response, 'const timelineTab = window.open(link.href, "_blank");')
+        self.assertContains(response, "location.href = link.href;")
 
     @override_settings(GOOGLE_SHEETS_SPREADSHEET_ID="sheet-id")
     def test_no_timeline_button_without_timeline_row(self):

@@ -822,7 +822,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | short 版・full 版がない曲（#667） | 関係する曲がない | 「full版」「short版」の行が表示されない |
 | タイトルのエスケープ（#667） | full 版のタイトルが `<b>曲</b>` | リンクのタイトルがエスケープされて表示される |
 | 年表で見るボタン（#1269） | `SongTimeline`（`sheet_id=123`・`row=45`・`is_lyrics_blank=False`）がある曲、`GOOGLE_SHEETS_SPREADSHEET_ID`を設定 | 「編集履歴」の右隣に、`https://docs.google.com/spreadsheets/d/<スプレッドシートのID>/edit#gid=123&range=45:45`（シートの45行目を選択した状態）を新しいタブで開く「年表で見る」ボタン（`fas fa-table`）を表示する。「年表に登録する」は表示しない |
-| 年表に登録するボタン（#1269） | `is_lyrics_blank=True`（URL列で一致した行の歌詞列が空） | 「編集履歴」の右隣に、`#gid=123&range=O45`（歌詞列のセル。行を選択したまま貼り付けると行の全てのセルに入るため）を開く「年表に登録する」ボタン（`fas fa-table`と、検索フォームの`small-icon`と同じく小さくして5px空けた`fas fa-exclamation`、`id="timeline-register"`、`data-song-url="<ROOT_URL>/songs/<id>/"`）を表示し、「年表で見る」は表示しない。クリックすると曲のページのURLをコピーしてから年表を開く（nonce付きのscriptの`addEventListener`。動作はPlaywrightで確認） |
+| 年表に登録するボタン（#1269） | `is_lyrics_blank=True`（URL列で一致した行の歌詞列が空） | 「編集履歴」の右隣に、`#gid=123&range=O45`（歌詞列のセル。行を選択したまま貼り付けると行の全てのセルに入るため）を開く「年表に登録する」ボタン（`fas fa-table`と、検索フォームの`small-icon`と同じく小さくして5px空けた`fas fa-exclamation`、`id="timeline-register"`、`data-song-url="<ROOT_URL>/songs/<id>/"`）を表示し、「年表で見る」は表示しない。クリックすると曲のページのURLをコピーしてから年表を新しいタブで開き、開いたタブの`opener`を外す。コピーを待った後の`window.open`はSafari（特にiOS）でポップアップとしてブロックされることがあるため、`null`が返ればこのタブで年表を開く（nonce付きのscriptの`addEventListener`。`window.open`が`null`を返す場合も含めて動作はPlaywrightで確認） |
 | 年表に載っていない曲（#1269） | `SongTimeline`が無い曲 | 「年表で見る」「年表に登録する」のボタンを表示しない |
 | スプレッドシートのIDが無い（#1269） | `GOOGLE_SHEETS_SPREADSHEET_ID=""`・`is_lyrics_blank=True` | 「年表で見る」「年表に登録する」のボタンを表示しない |
 
