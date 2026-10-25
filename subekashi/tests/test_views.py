@@ -5503,6 +5503,10 @@ class SaveSettingsViewTest(TestCase):
         self.assertContains(response, 'id="keyword"')
         self.assertNotContains(response, 'id="search-form-radios"')
 
+        self._post({"is_shown_search": "off"})
+        response = self.client.get(reverse("subekashi:top"))
+        self.assertNotContains(response, 'id="search-form"')
+
     def test_is_shown_guide_is_saved(self):
         """トップ画面の初心者向け案内の表示の設定はcookieに保存され、許可されていない値は保存されない（#1236）"""
         for value in ["on", "off"]:
@@ -5528,10 +5532,6 @@ class SaveSettingsViewTest(TestCase):
         self._post({"is_shown_guide": "on"})
         response = self.client.get(reverse("subekashi:top"))
         self.assertContains(response, 'id="guide"')
-
-        self._post({"is_shown_search": "off"})
-        response = self.client.get(reverse("subekashi:top"))
-        self.assertNotContains(response, 'id="search-form"')
 
     def test_is_shown_upcoming_is_saved(self):
         """トップ画面の投稿予定の表示の設定はcookieに保存される（#376）"""
