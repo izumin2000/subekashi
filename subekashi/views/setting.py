@@ -8,7 +8,7 @@ import json
 
 # 設定可能なcookieキーのホワイトリスト
 ALLOWED_SETTING_KEYS = {
-    'songrange', 'jokerange', 'news_type', 'is_shown_search',
+    'songrange', 'jokerange', 'is_shown_guide', 'news_type', 'is_shown_search',
     'is_shown_new', 'is_shown_upcoming', 'is_shown_ad', 'is_shown_ai', 'is_shown_lack',
     'is_saved_select', 'form_button', 'brlyrics', 'pc_menu_position'
 }
@@ -17,6 +17,7 @@ ALLOWED_SETTING_KEYS = {
 ALLOWED_SETTING_VALUES = {
     'songrange': {'all', 'subeana', 'xx'},
     'jokerange': {'on', 'off'},
+    'is_shown_guide': {'on', 'off'},
     'news_type': {'single', 'all', 'off'},
     'is_shown_search': {'all', 'on', 'off'},
     'is_shown_new': {'0', '5', '10', '15'},
@@ -39,6 +40,7 @@ class SettingView(View):
         # 現在のcookie値を取得
         songrange = request.COOKIES.get("songrange", "subeana")
         jokerange = request.COOKIES.get("jokerange", "off")
+        is_shown_guide = request.COOKIES.get("is_shown_guide", "on")
         news_type = request.COOKIES.get("news_type", "single")
         is_shown_search = request.COOKIES.get("is_shown_search", "on")
         is_shown_new = request.COOKIES.get("is_shown_new", "5")
@@ -68,6 +70,15 @@ class SettingView(View):
                     'options': [
                         {'value': 'on', 'text': '表示', 'selected': jokerange == 'on'},
                         {'value': 'off', 'text': '非表示', 'selected': jokerange == 'off'},
+                    ]
+                },
+                {
+                    'label': '初心者向け案内の表示',
+                    'id': 'is_shown_guide',
+                    # トップ画面ではoff以外の値を表示とするため、不正な値の場合も表示を選択する
+                    'options': [
+                        {'value': 'on', 'text': '表示', 'selected': is_shown_guide != 'off'},
+                        {'value': 'off', 'text': '非表示', 'selected': is_shown_guide == 'off'},
                     ]
                 },
                 {

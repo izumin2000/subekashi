@@ -2,15 +2,18 @@
 // その場合のみtop.htmlでsearch_form.jsをこのファイルより先に読み込み、FORM_QUERIES・initSearchForm・collectFormQuery・renderFilterStatus・toQueryString・renderSongGuesserを使う
 const keywordElement = document.getElementById("keyword");
 const isPC = window.innerWidth > 960; 
+const guideEle = document.getElementById('guide');
+// 初心者向け案内を表示している場合は、案内が画面の上から外れないように、入力欄を選択してもスクロールしない
+const preventFocusScroll = Boolean(guideEle);
 // 「全て表示」の場合は、表示したフォームの入力欄をsearch_form.jsで選択する
 if (keywordElement && isPC && !isShownAllSearch) {
-    keywordElement.focus();
+    keywordElement.focus({ preventScroll: preventFocusScroll });
     keywordElement.click();
 }
 
 if (isShownAllSearch) {
     window.addEventListener('load', function () {
-        initSearchForm();
+        initSearchForm(preventFocusScroll);
         renderFilterStatus();
         document.querySelectorAll(FORM_QUERIES).forEach((formEle) => {
             formEle.addEventListener('change', renderFilterStatus);
@@ -42,6 +45,92 @@ function songGuesserClick(id) {
 function categoryClick(song) {
     document.getElementById("imitate").value = song.id;
     renderFilterStatus();
+}
+
+// 初心者向け案内を「表示しない」ボタンで閉じたら、次から表示しない（設定画面の「初心者向け案内の表示」で再び表示できる）
+// cookieの属性は、設定画面で保存するcookie（SaveSettingsView）と揃える
+if (guideEle) {
+    const guideCookieAge = Number(guideEle.dataset.cookieAge);
+    document.getElementById('guide-close').addEventListener('click', () => {
+        document.cookie = `is_shown_guide=off; path=/; max-age=${guideCookieAge}; samesite=lax`;
+        guideEle.remove();
+    });
+
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        waitForGuideFont().then(() => fadeInGuideRows(guideEle));
+    }
+}
+
+// 説明文の行の分かれ方はフォントで変わるため、フォントの読み込みを待つ
+// フォント（約3MB）の読み込みが遅い場合に文字を隠したままにしないよう、待つのは1sまでにする
+function waitForGuideFont() {
+    const GUIDE_FONT_TIMEOUT = 1000;
+    const timeout = new Promise((resolve) => setTimeout(resolve, GUIDE_FONT_TIMEOUT));
+    return Promise.race([document.fonts.ready, timeout]);
+}
+
+// 初心者向け案内の説明文を、表示された1行ごとに0.1sずつ遅らせて下からフェードインする（top.cssの.guide-row）
+function fadeInGuideRows(guideEle) {
+    const lineEles = Array.from(guideEle.querySelectorAll('.guide-line'));
+    // top.jsの読み込みが遅く、top.cssのフォールバック（3s後にまとめて表示）で表示済みの場合は、消して表示し直さない
+    if (!lineEles.length || lineEles.some((lineEle) => getComputedStyle(lineEle).opacity !== '0')) {
+        return;
+    }
+
+    // 書き換えるたびにレイアウトを計算し直さないように、全ての行の位置を調べてから書き換える
+    const guideLines = lineEles.map((lineEle) => ({ lineEle, text: lineEle.textContent, rows: splitIntoRows(lineEle) }));
+    const rowEles = guideLines.flatMap(({ lineEle, rows }) => {
+        const lineRowEles = rows.map((row) => {
+            const rowEle = document.createElement('span');
+            rowEle.className = 'guide-row';
+            rowEle.textContent = row;
+            return rowEle;
+        });
+        lineEle.replaceChildren(...lineRowEles);
+        lineEle.classList.add('is-split');
+        return lineRowEles;
+    });
+    if (!rowEles.length) {
+        return;
+    }
+
+    rowEles.forEach((rowEle, index) => {
+        rowEle.style.animationDelay = `${index * 0.1}s`;
+    });
+
+    // 表示し終えたら行に分ける前の文字に戻し、画面の幅を変えたときに折り返し直せるようにする
+    rowEles.at(-1).addEventListener('animationend', () => {
+        guideLines.forEach(({ lineEle, text }) => {
+            lineEle.textContent = text;
+        });
+    }, { once: true });
+}
+
+// 要素の文字を、表示された1行ごとの文字列に分ける
+// 要素を書き換えずにRangeで1文字ずつの位置を調べるため、レイアウトの計算は1回で済む
+function splitIntoRows(ele) {
+    const textNode = ele.firstChild;
+    if (!(textNode instanceof Text)) {
+        return [ele.textContent];
+    }
+
+    const range = document.createRange();
+    const rows = [];
+    let rowTop = null;
+    let offset = 0;
+    for (const char of textNode.data) {
+        range.setStart(textNode, offset);
+        range.setEnd(textNode, offset + char.length);
+        const rect = range.getBoundingClientRect();
+        // 同じ行の文字は上端が揃う。行の高さより文字の高さが大きいフォントもあるため、文字の高さの半分より下がったら次の行とする
+        if (rowTop === null || rect.top - rowTop > rect.height / 2) {
+            rows.push('');
+            rowTop = rect.top;
+        }
+        rows[rows.length - 1] += char;
+        offset += char.length;
+    }
+    return rows;
 }
 
 // ニュースの「1つずつ表示」

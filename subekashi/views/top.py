@@ -6,7 +6,7 @@ from django.views import View
 from django.views.decorators.cache import never_cache
 from subekashi.models import Song, Ai, Ad
 from subekashi.lib.query_filters import filter_by_lack
-from subekashi.constants.constants import RECOMEND_ARTICLES
+from subekashi.constants.constants import RECOMEND_ARTICLES, LONG_TERM_COOKIE_AGE
 from subekashi.views.songs import get_search_form_context
 from subekashi.views.setting import ALLOWED_SETTING_VALUES
 from article.models import Article
@@ -29,6 +29,12 @@ class TopView(View):
             "metatitle": "トップ",
             "RECOMEND_ARTICLES": recomend_articles
         }
+
+        # 初心者向け案内の表示設定（「表示しない」ボタンで閉じるとtop.jsでoffにする、#1236）
+        is_shown_guide = request.COOKIES.get("is_shown_guide", "on") != "off"
+        context["is_shown_guide"] = is_shown_guide
+        if is_shown_guide:
+            context["guide_cookie_age"] = LONG_TERM_COOKIE_AGE
 
         article_qs = Article.get_top_news_articles()
 

@@ -50,6 +50,8 @@
         <main>
             {% get_toast toast_type toast_text %}
             <div id="toast-container"></div>
+            {# 本文の幅（#mainarticle）に収めず、画面の幅いっぱいに表示する内容 #}
+            {% block first_view %}{% endblock %}
             <article id="mainarticle">
                 {% block content %}{% endblock %}
             </article>

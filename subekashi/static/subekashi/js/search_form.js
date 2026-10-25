@@ -20,10 +20,11 @@ window.addEventListener('DOMContentLoaded', function () {
 
 // フォームの選択をcookie・ブラウザが復元した状態に合わせ、操作のイベントを登録する
 // ページのJSのloadで、フォームの値を使う処理（検索・バッジの表示）より先に呼ぶ
-function initSearchForm() {
+// preventScrollがtrueの場合は、入力欄を選択してもスクロールしない（トップ画面で初心者向け案内を表示している場合）
+function initSearchForm(preventScroll = false) {
     restoreFormValuesFromCookies();
     syncSearchForm();
-    focusSearchForm(getSearchFormName());
+    focusSearchForm(getSearchFormName(), preventScroll);
     document.getElementById("search-form-radios").addEventListener('scroll', updateSearchFormRadiosScrollEnd);
 
     document.querySelectorAll('input[name="search-form"]').forEach((radioEle) => {
@@ -168,7 +169,7 @@ function scrollToSearchFormRadio(formName, behavior) {
 }
 
 // PCの場合のみ、表示したフォームの最初のテキスト入力欄を選択する
-function focusSearchForm(formName) {
+function focusSearchForm(formName, preventScroll = false) {
     const isPC = window.innerWidth > 960;
     if (!isPC) {
         return;
@@ -176,7 +177,7 @@ function focusSearchForm(formName) {
 
     const textEle = document.querySelector(`#search-form-${formName} input[type=text]`);
     if (textEle) {
-        textEle.focus();
+        textEle.focus({ preventScroll });
     }
 }
 
