@@ -1059,7 +1059,7 @@ class SongViewTest(TestCase):
         content = response.content.decode()
         button = (
             '<a href="https://docs.google.com/spreadsheets/d/sheet-id/edit#gid=123&amp;range=O45" id="timeline-register" class="action-button" target="_blank" '
-            f'data-song-url="{settings.ROOT_URL}/songs/{self.song.id}/"><i class="fas fa-table"></i><i class="fas fa-exclamation"></i><span class="icon-p-big">年表に登録する</span></a>'
+            f'data-song-url="{settings.ROOT_URL}/songs/{self.song.id}/"><i class="fas fa-table"></i><i class="fas fa-exclamation small-icon"></i><span class="icon-p-big">年表に登録する</span></a>'
         )
 
         self.assertIn(button, content)

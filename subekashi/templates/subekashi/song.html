@@ -26,7 +26,7 @@
         <a href="{% url 'subekashi:song_history' song.id %}" class="action-button"><i class="fas fa-history"></i><span class="icon-p-big">編集履歴</span></a>
         {% if timeline_url %}
             {% if timeline.is_lyrics_blank %}
-                <a href="{{ timeline_url }}" id="timeline-register" class="action-button" target="_blank" data-song-url="{{ song_url }}"><i class="fas fa-table"></i><i class="fas fa-exclamation"></i><span class="icon-p-big">年表に登録する</span></a>
+                <a href="{{ timeline_url }}" id="timeline-register" class="action-button" target="_blank" data-song-url="{{ song_url }}"><i class="fas fa-table"></i><i class="fas fa-exclamation small-icon"></i><span class="icon-p-big">年表に登録する</span></a>
             {% else %}
                 <a href="{{ timeline_url }}" class="action-button" target="_blank"><i class="fas fa-table"></i><span class="icon-p-big">年表で見る</span></a>
             {% endif %}
