@@ -11,7 +11,7 @@
     <h1><span id="h1-title">{{ editor }}{% if is_me %}(あなた){% endif %}の編集履歴</span></h1>
     {% if editor.is_open or editor.is_forced_open or is_me %}
         {% if not editor.is_open and not editor.is_forced_open %}
-            <p id="private_info">この情報はあなただけに表示されています。</p>
+            <p id="private-info">この情報はあなただけに表示されています。</p>
         {% endif %}
         <div class="action-buttons">
             {% include "subekashi/components/history_action_buttons.html" %}
@@ -20,7 +20,7 @@
         <p id="history-count">{{ total_count }}件</p>
         {% include "subekashi/components/pagination.html" %}
         {% for history in page_obj %}
-            <details class="history_details">
+            <details class="history-details">
                 <summary><p>{{ history.create_time }}</p><p>{{ history.title }}</p></summary>
                 {% render_changes history %}
                 {% if history.song and not history.song.is_removed %}

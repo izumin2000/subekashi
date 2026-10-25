@@ -16,7 +16,7 @@
     font-display: swap;
 }
 
-/* ヘッダー・下のメニュー（#tab_bar）の高さ。トップ画面の初心者向け案内（top.css）で、ファーストビューの高さの計算にも使う */
+/* ヘッダー・下のメニュー（#tab-bar）の高さ。トップ画面の初心者向け案内（top.css）で、ファーストビューの高さの計算にも使う */
 :root {
     --header-top-height: 60px;
     --pc-header-menu-height: 48px;
@@ -404,7 +404,7 @@ body[data-pc-menu="aside"] aside a:hover p {
     }
 }
 
-#sp_menu {
+#sp-menu {
     display: none;
     flex-direction: column;
     position: fixed;
@@ -419,27 +419,27 @@ body[data-pc-menu="aside"] aside a:hover p {
     transition: display 0.3s ease;
 }
 
-#sp_menu a {
+#sp-menu a {
     margin: 5px auto;
 }
 
-#sp_menu i {
+#sp-menu i {
     display: inline-block;
     margin: 1vh;
     font-size: 24px;
 }
 
-#sp_menu p {
+#sp-menu p {
     display: inline-block;
 }
 
-#sp_version, #sp_version i {
+#sp-version, #sp-version i {
     margin: 1em 0 0.5em 0;
     text-align: center;
     font-size: 16px;
 }
 
-#tab_bar {
+#tab-bar {
     display: flex;
     position: fixed;
     justify-content: center;
@@ -455,19 +455,19 @@ body[data-pc-menu="aside"] aside a:hover p {
 }
 
 @media (min-width: 961px) {
-    #tab_bar {
+    #tab-bar {
         display: none;
     }
 }
 
-#tab_bar i {
+#tab-bar i {
     font-size: 30px;
     margin: 0 5vw;
     cursor: pointer;
 }
 
-/* 画面の幅が狭いとリンクが2行目に回るため、高さは固定しない。#sp_menuはflexのため、縮まないようにする */
-#sp_menu_footer {
+/* 画面の幅が狭いとリンクが2行目に回るため、高さは固定しない。#sp-menuはflexのため、縮まないようにする */
+#sp-menu-footer {
     width: 100%;
     min-height: 32px;
     flex-shrink: 0;
@@ -477,14 +477,14 @@ body[data-pc-menu="aside"] aside a:hover p {
     align-items: center;
 }
 
-#sp_menu_footer p, #sp_menu_footer a, #sp_menu_footer i {
+#sp-menu-footer p, #sp-menu-footer a, #sp-menu-footer i {
     text-align: center;
     font-size: 15px;
     line-height: 15px;
     margin: 5px 5px;
 }
 
-#sp_menu_footer a {
+#sp-menu-footer a {
     white-space: nowrap;
 }
 
@@ -1338,12 +1338,12 @@ footer a {
     margin-left: 0;
 }
 
-#pc_version {
+#pc-version {
     margin: 0 1em;
 }
 
 @media(max-width: 960px) {
-    #pc_version {
+    #pc-version {
         display: none;
     }
 

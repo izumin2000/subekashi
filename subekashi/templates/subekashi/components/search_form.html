@@ -70,32 +70,32 @@
     </div>
     <div class="search-form" id="search-form-youtube" {% if search_form != "youtube" %}hidden{% endif %}>
         <div class="form-col">
-            <label for="view_gte"><i class="fas fa-play"></i><i class="fas fa-greater-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>再生回数/以上</span></label>
-            <input type="number" id="view_gte" name="view_gte" value="{{ form_values.view_gte }}" min="1">
+            <label for="view-gte"><i class="fas fa-play"></i><i class="fas fa-greater-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>再生回数/以上</span></label>
+            <input type="number" id="view-gte" name="view_gte" value="{{ form_values.view_gte }}" min="1">
         </div>
         <div class="form-col">
-            <label for="view_lte"><i class="fas fa-play"></i><i class="fas fa-less-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>再生回数/以下</span></label>
-            <input type="number" id="view_lte" name="view_lte" value="{{ form_values.view_lte }}" min="1">
+            <label for="view-lte"><i class="fas fa-play"></i><i class="fas fa-less-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>再生回数/以下</span></label>
+            <input type="number" id="view-lte" name="view_lte" value="{{ form_values.view_lte }}" min="1">
         </div>
         <p class="info override-info" id="view-override-info" hidden><i class="fas fa-info-circle info"></i>再生回数のフィルタ/並び替えが有効なため、再生回数が1回以上の曲のみを表示しています</p>
         <div class="form-col">
-            <label for="like_gte"><i class="far fa-thumbs-up"></i><i class="fas fa-greater-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>高評価数/以上</span></label>
-            <input type="number" id="like_gte" name="like_gte" value="{{ form_values.like_gte }}" min="1">
+            <label for="like-gte"><i class="far fa-thumbs-up"></i><i class="fas fa-greater-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>高評価数/以上</span></label>
+            <input type="number" id="like-gte" name="like_gte" value="{{ form_values.like_gte }}" min="1">
         </div>
         <div class="form-col">
-            <label for="like_lte"><i class="far fa-thumbs-up"></i><i class="fas fa-less-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>高評価数/以下</span></label>
-            <input type="number" id="like_lte" name="like_lte" value="{{ form_values.like_lte }}" min="1">
+            <label for="like-lte"><i class="far fa-thumbs-up"></i><i class="fas fa-less-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>高評価数/以下</span></label>
+            <input type="number" id="like-lte" name="like_lte" value="{{ form_values.like_lte }}" min="1">
         </div>
         <p class="info override-info" id="like-override-info" hidden><i class="fas fa-info-circle info"></i>高評価数のフィルタ/並び替えが有効なため、高評価数が1以上の曲のみを表示しています</p>
         <div class="form-col">
-            <label for="upload_time_gte"><i class="far fa-calendar-alt"></i><i class="fas fa-greater-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>投稿日/以降</span></label>
-            <input type="date" id="upload_time_gte" name="upload_time_gte" value="{{ form_values.upload_time_gte }}" min="2000-01-01" max="9999-12-31">
+            <label for="upload-time-gte"><i class="far fa-calendar-alt"></i><i class="fas fa-greater-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>投稿日/以降</span></label>
+            <input type="date" id="upload-time-gte" name="upload_time_gte" value="{{ form_values.upload_time_gte }}" min="2000-01-01" max="9999-12-31">
         </div>
         <div class="form-col">
-            <label for="upload_time_lte"><i class="far fa-calendar-alt"></i><i class="fas fa-less-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>投稿日/以前</span></label>
-            <input type="date" id="upload_time_lte" name="upload_time_lte" value="{{ form_values.upload_time_lte }}" min="2000-01-01" max="9999-12-31">
+            <label for="upload-time-lte"><i class="far fa-calendar-alt"></i><i class="fas fa-less-than-equal small-icon icon-p-big"></i><br><span class="icon-p-big"><i class="fab fa-youtube"></i>投稿日/以前</span></label>
+            <input type="date" id="upload-time-lte" name="upload_time_lte" value="{{ form_values.upload_time_lte }}" min="2000-01-01" max="9999-12-31">
         </div>
-        <p class="info override-info" id="upload_time-override-info" hidden><i class="fas fa-info-circle info"></i>投稿日の並び替えが有効なため、投稿日が登録されている曲のみを表示しています</p>
+        <p class="info override-info" id="upload-time-override-info" hidden><i class="fas fa-info-circle info"></i>投稿日の並び替えが有効なため、投稿日が登録されている曲のみを表示しています</p>
     </div>
     <div class="search-form" id="search-form-title" {% if search_form != "title" %}hidden{% endif %}>
         <div class="form-col">

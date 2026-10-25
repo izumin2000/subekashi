@@ -682,7 +682,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | レガシーgenetype="model"は対象外（GPTインポート廃止） | `genetype="model", score=5`のレコードが存在 | 「作成された歌詞」欄に表示されない（`get_top_scored()`も`genetype="janome"`のみ対象） |
 | PC向けグローバルヘッダーの配置（#1123） | `pc_menu_position`クッキーなし（トップ） | `#pc-global-header`が`#pc-header-menu`の中に1つだけ置かれる |
 | PC向けグローバルヘッダーの配置（#1123） | `pc_menu_position=aside`（サイド） | `#pc-header-menu`は無く、`#pc-global-header`が`#subekashi-header`より前に1つだけ置かれる |
-| フッターのプライバシーポリシーのリンク（#1170） | GETリクエスト | PCのフッター（`#footer-wrapper`）とスマホメニューのフッター（`#sp_menu_footer`）のそれぞれに、記事`privacy`（`/articles/privacy/`）へのリンクがある。記事は管理画面から作成するため、記事があるかは確認しない |
+| フッターのプライバシーポリシーのリンク（#1170） | GETリクエスト | PCのフッター（`#footer-wrapper`）とスマホメニューのフッター（`#sp-menu-footer`）のそれぞれに、記事`privacy`（`/articles/privacy/`）へのリンクがある。記事は管理画面から作成するため、記事があるかは確認しない |
 | 投稿予定の表示（#376） | 投稿日が3日後・1日後・1日前・無しの曲 | 「投稿予定」の見出しが表示され、context["upcomingInsL"]は投稿日が未来の曲のみで、投稿日の早い順（1日後・3日後） |
 | 投稿予定が無い（#376） | 投稿日が過去の曲のみ | 「投稿予定」の見出しが表示されない |
 | 投稿予定の曲数（#376） | 投稿日が未来の曲が11曲あり、`is_shown_upcoming`が無し・`5`・`10`・`15`・`0` | 5・5・10・11曲表示される。`0`（非表示）の場合はcontextに`upcomingInsL`が無く、見出しも表示されない |
@@ -1229,7 +1229,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 存在しない曲 | `song_id=99999` | HTTP 404 |
 | ユーザーが削除した曲（#1239） | `is_removed=True` の曲 | HTTP 410で、曲の情報を表示せず、削除を取り消すボタンのあるページ（`song_removed.html`、7-7-2）を表示する（履歴は編集履歴の一覧で見られる） |
 | 編集の差分の表示（#608） | 編集（`changes`の見出しが`["種類", "編集前", "編集後"]`）と新規作成（見出しが`["種類", "内容"]`）のHistoryが存在 | `<table class="diff-table">`が編集のHistoryの分だけ（1つ）含まれ、差分を表示する`subekashi/js/editor.js`が読み込まれる |
-| 削除の取り消しの履歴（#1264） | 曲を削除してから取り消す（取り消しのHistoryは`changes=None`） | HTTP 200で「<タイトル>の削除を取り消し」が表示される。変更内容の表（`change_table_wrapper`）は削除の理由の表（`delete-table`）の1つだけで、取り消しの履歴には表示しない |
+| 削除の取り消しの履歴（#1264） | 曲を削除してから取り消す（取り消しのHistoryは`changes=None`） | HTTP 200で「<タイトル>の削除を取り消し」が表示される。変更内容の表（`change-table-wrapper`）は削除の理由の表（`delete-table`）の1つだけで、取り消しの履歴には表示しない |
 
 #### 7-11. `SongCardsView` (`/api/html/song_cards`)
 

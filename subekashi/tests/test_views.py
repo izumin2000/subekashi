@@ -197,7 +197,7 @@ class TopViewTest(TestCase):
 
         footers = {
             "pc": r'<div id="footer-wrapper">.*?</footer>',
-            "sp": r'<footer id="sp_menu_footer">.*?</footer>',
+            "sp": r'<footer id="sp-menu-footer">.*?</footer>',
         }
         for name, pattern in footers.items():
             with self.subTest(footer=name):
@@ -1964,7 +1964,7 @@ class SongHistoryViewTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "履歴テスト曲の削除を取り消し")
-        self.assertContains(response, '<div class="change_table_wrapper">', count=1)
+        self.assertContains(response, '<div class="change-table-wrapper">', count=1)
         self.assertContains(response, '<table class="delete-table">', count=1)
         self.assertContains(response, "取り消す前の削除理由")
 
@@ -3028,7 +3028,7 @@ class StatsViewTest(TestCase):
         self.assertEqual(response.context["chart_series"], "song_count")
         self.assertTrue(self._is_radio_checked(response, "chart-mode-monthly"))
         self.assertFalse(self._is_radio_checked(response, "chart-mode-cumulative"))
-        self.assertTrue(self._is_radio_checked(response, "chart-series-song_count"))
+        self.assertTrue(self._is_radio_checked(response, "chart-series-song-count"))
 
     def test_chart_settings_reflect_cookie_values(self):
         # #1111: songrange/year/month用のformとは別に、グラフ表示設定はcookieで
@@ -3043,8 +3043,8 @@ class StatsViewTest(TestCase):
         self.assertEqual(response.context["chart_series"], "total_view")
         self.assertTrue(self._is_radio_checked(response, "chart-mode-cumulative"))
         self.assertFalse(self._is_radio_checked(response, "chart-mode-monthly"))
-        self.assertTrue(self._is_radio_checked(response, "chart-series-total_view"))
-        self.assertFalse(self._is_radio_checked(response, "chart-series-song_count"))
+        self.assertTrue(self._is_radio_checked(response, "chart-series-total-view"))
+        self.assertFalse(self._is_radio_checked(response, "chart-series-song-count"))
 
     def test_chart_settings_reflect_cookie_across_songrange_filter_change(self):
         # #1111の再現ケース: songrange変更（ページ全体の再読み込み相当）を挟んでも
@@ -3612,7 +3612,7 @@ class AuthorAliasNewViewTest(TestCase):
         self.assertContains(response, 'id="alias-type-description-text"')
         # 説明欄がフォームのフィールド群より後、送信ボタンより前にあることを確認する
         description_index = content.index('id="alias-type-description"')
-        select_index = content.index('id="alias_type"')
+        select_index = content.index('id="alias-type"')
         submit_index = content.index('<input type="submit"')
         self.assertLess(select_index, description_index)
         self.assertLess(description_index, submit_index)
