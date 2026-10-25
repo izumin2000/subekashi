@@ -24,6 +24,9 @@ EXPECTED_HEADER = [
 # プ列（プレラ）の列番号
 PREMIERE_RUSH_COLUMN = 1
 
+# 歌詞列（全て歌詞の所為です。の曲のページのURL）の列番号
+LYRICS_COLUMN = 14
+
 DATE_PATTERN = re.compile(r"(\d{1,2})/(\d{1,2})")
 
 
@@ -55,12 +58,13 @@ def get_sheet_title(year):
     return f"{year}年"
 
 
-# 年表のシートを、その行を選択した状態で開くURL。スプレッドシートのIDが設定されていなければNoneを返す（#1269）
-def get_timeline_url(sheet_id, row):
+# 年表のシートを、その行（columnを指定した場合はその列のセル）を選択した状態で開くURL。スプレッドシートのIDが設定されていなければNoneを返す（#1269）
+def get_timeline_url(sheet_id, row, column=None):
     spreadsheet_id = getattr(settings, "GOOGLE_SHEETS_SPREADSHEET_ID", "")
     if not spreadsheet_id:
         return None
-    return f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit#gid={sheet_id}&range={row}:{row}"
+    cell_range = f"{chr(ord('A') + column)}{row}" if column is not None else f"{row}:{row}"
+    return f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit#gid={sheet_id}&range={cell_range}"
 
 
 def get_cell(cells, index):
@@ -143,7 +147,7 @@ def parse_sheet(year, values, merges=(), sheet_id=None):
             urls=get_cells(cells, 8, 10),
             decode_date=get_cell(cells, 10),
             decode_urls=get_cells(cells, 11, 14),
-            lyrics_url=get_cell(cells, 14),
+            lyrics_url=get_cell(cells, LYRICS_COLUMN),
             distribution=get_cell(cells, 15),
             distribution2=get_cell(cells, 16),
             distribution_urls=get_cells(cells, 17, 20),

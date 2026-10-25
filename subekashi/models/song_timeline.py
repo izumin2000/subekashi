@@ -10,8 +10,9 @@ class SongTimeline(models.Model):
     # シートのID（URLのgid）
     sheet_id = models.IntegerField()
     row = models.IntegerField()
-    # 歌詞列にこの曲のページのURLが書かれているか
-    has_lyrics_url = models.BooleanField(default=False)
+    # URL列で曲に一致した行の歌詞列が空か。空なら、曲のページで曲のページのURLをコピーして年表を開く「年表に登録する」ボタンにする
+    # 歌詞列で曲に一致した行は、歌詞列が空ではないためFalseになる
+    is_lyrics_blank = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.year}年{self.row}行目"

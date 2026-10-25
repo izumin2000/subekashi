@@ -1381,23 +1381,25 @@ class TimelineCommandTest(TestCase):
 
     @override_settings(STORAGES=STATIC_STORAGE, GOOGLE_SHEETS_SPREADSHEET_ID="sheet-id")
     def test_song_page_opens_timeline_row(self, mock_get_timeline, mock_send_discord):
-        # #1269: timelineコマンドで保存した年表の行を、曲のページの「年表で見る」ボタンで開ける
+        # #1269: timelineコマンドで保存した年表の行を、曲のページのボタンで開ける
+        # 歌詞列が空の行の曲は「年表に登録する」（歌詞列のセルを選択）、歌詞列に曲のページのURLが書かれた後は「年表で見る」（行を選択）
         mock_get_timeline.return_value = {2018: [make_timeline_row(2018, 5, "曲1")]}
         self._run("--year", "2018")
         song = Song.objects.get(title="曲1")
         response = self.client.get(reverse("subekashi:song", args=[song.id]))
 
-        self.assertContains(response, 'href="https://docs.google.com/spreadsheets/d/sheet-id/edit#gid=2018&amp;range=5:5"')
-        self.assertContains(response, "歌詞列：未登録")
+        self.assertContains(response, 'href="https://docs.google.com/spreadsheets/d/sheet-id/edit#gid=2018&amp;range=O5" id="timeline-register"')
+        self.assertContains(response, f'data-song-url="{ROOT_URL}/songs/{song.id}/"')
+        self.assertNotContains(response, "年表で見る")
 
-        # 年表の歌詞列に曲のページのURLが書かれた後の実行では、登録済みになる
         row = make_timeline_row(2018, 5, "曲1")
-        row.lyrics_url = f"https://lyrics.imicomweb.com/songs/{song.id}"
+        row.lyrics_url = f"{ROOT_URL}/songs/{song.id}/"
         mock_get_timeline.return_value = {2018: [row]}
         self._run("--year", "2018")
         response = self.client.get(reverse("subekashi:song", args=[song.id]))
 
-        self.assertContains(response, "歌詞列：登録済み")
+        self.assertContains(response, 'href="https://docs.google.com/spreadsheets/d/sheet-id/edit#gid=2018&amp;range=5:5" class="action-button" target="_blank"><i class="fas fa-table"></i><span class="icon-p-big">年表で見る</span>')
+        self.assertNotContains(response, "年表に登録する")
 
     def test_warns_years_without_sheet(self, mock_get_timeline, mock_send_discord):
         mock_get_timeline.return_value = {2018: [make_timeline_row(2018, 2, "曲1")]}

@@ -25,10 +25,11 @@
         {% endif %}
         <a href="{% url 'subekashi:song_history' song.id %}" class="action-button"><i class="fas fa-history"></i><span class="icon-p-big">編集履歴</span></a>
         {% if timeline_url %}
-            <div class="action-button-with-count">
+            {% if timeline.is_lyrics_blank %}
+                <a href="{{ timeline_url }}" id="timeline-register" class="action-button" target="_blank" data-song-url="{{ song_url }}"><i class="fas fa-table"></i><i class="fas fa-exclamation"></i><span class="icon-p-big">年表に登録する</span></a>
+            {% else %}
                 <a href="{{ timeline_url }}" class="action-button" target="_blank"><i class="fas fa-table"></i><span class="icon-p-big">年表で見る</span></a>
-                <p id="timeline-lyrics">歌詞列：{% if timeline.has_lyrics_url %}登録済み{% else %}未登録{% endif %}</p>
-            </div>
+            {% endif %}
         {% endif %}
     </div>
 
@@ -179,6 +180,19 @@
                 .then(() => showToast("ok", "コピーしました。"))
                 .catch(() => showToast("error", "コピーできませんでした。"));
         });
+    });
+
+    // 年表の歌詞列が空の曲は、歌詞列に貼り付けられるよう曲のページのURLをコピーしてから年表を開く（#1269）
+    document.getElementById('timeline-register')?.addEventListener('click', async (event) => {
+        event.preventDefault();
+        const link = event.currentTarget;
+        try {
+            await navigator.clipboard.writeText(link.dataset.songUrl);
+            showToast("ok", "曲のURLをコピーしました。");
+        } catch {
+            showToast("error", "曲のURLをコピーできませんでした。");
+        }
+        window.open(link.href, "_blank", "noopener");
     });
     
     {% if request.GET.toast == "edit" %}

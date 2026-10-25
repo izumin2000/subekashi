@@ -178,11 +178,6 @@ def get_prush_key(name):
     return unicodedata.normalize("NFKC", name).strip()
 
 
-# 歌詞列にその曲のページのURLが書かれているか（#1269）
-def has_lyrics_url(row, song_id):
-    return any(int(lyrics_song_id) == song_id for lyrics_song_id in LYRICS_URL_PATTERN.findall(row.lyrics_url))
-
-
 # Historyの編集者（開発者）を返す。削除されていたらid=1で作り直す
 def get_editor():
     editor, _ = Editor.objects.get_or_create(pk=EDITOR_ID)
@@ -496,13 +491,14 @@ class TimelineImporter:
 
     # 年表で曲が載っている行（SongTimeline）を保存する
     # 読み取った年の行に一致しなくなった曲（行が削除された・スキップするようになった曲など）の行は削除する
+    # 歌詞列で曲に一致した行は歌詞列が空ではないため、歌詞列が空の行はURL列で一致した行（新規作成した曲の行を含む）に限られる
     def save_song_timelines(self, years):
         timelines = {timeline.song_id: timeline for timeline in SongTimeline.objects.all()}
-        fields = ["year", "sheet_id", "row", "has_lyrics_url"]
+        fields = ["year", "sheet_id", "row", "is_lyrics_blank"]
         created = []
         updated = []
         for song_id, row in self.timeline_rows.items():
-            values = {"year": row.year, "sheet_id": row.sheet_id, "row": row.row, "has_lyrics_url": has_lyrics_url(row, song_id)}
+            values = {"year": row.year, "sheet_id": row.sheet_id, "row": row.row, "is_lyrics_blank": not row.lyrics_url}
             timeline = timelines.pop(song_id, None)
             if timeline is None:
                 created.append(SongTimeline(song_id=song_id, **values))

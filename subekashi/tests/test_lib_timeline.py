@@ -48,6 +48,12 @@ class GetTimelineUrlTest(SimpleTestCase):
         # 曲のページの「年表で見る」ボタンは、シート（gid）の行を選択した状態で開く（#1269）
         self.assertEqual(get_timeline_url(123, 45), "https://docs.google.com/spreadsheets/d/sheet-id/edit#gid=123&range=45:45")
 
+    @override_settings(GOOGLE_SHEETS_SPREADSHEET_ID="sheet-id")
+    def test_selects_cell_of_column(self):
+        # 歌詞列が空の曲の「年表に登録する」ボタンは、歌詞列（O列）のセルを選択した状態で開く
+        self.assertEqual(get_timeline_url(123, 45, 14), "https://docs.google.com/spreadsheets/d/sheet-id/edit#gid=123&range=O45")
+        self.assertEqual(get_timeline_url(123, 45, 0), "https://docs.google.com/spreadsheets/d/sheet-id/edit#gid=123&range=A45")
+
     @override_settings(GOOGLE_SHEETS_SPREADSHEET_ID="")
     def test_returns_none_without_spreadsheet_id(self):
         self.assertIsNone(get_timeline_url(123, 45))

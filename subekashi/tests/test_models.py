@@ -564,8 +564,8 @@ class SongTimelineModelTest(TestCase):
     def test_str(self):
         self.assertEqual(str(SongTimeline.objects.create(song=self.song, year=2024, sheet_id=123, row=45)), "2024年45行目")
 
-    def test_has_lyrics_url_is_false_by_default(self):
-        self.assertFalse(SongTimeline.objects.create(song=self.song, year=2024, sheet_id=123, row=45).has_lyrics_url)
+    def test_is_lyrics_blank_is_false_by_default(self):
+        self.assertFalse(SongTimeline.objects.create(song=self.song, year=2024, sheet_id=123, row=45).is_lyrics_blank)
 
     def test_deleting_song_deletes_timeline(self):
         SongTimeline.objects.create(song=self.song, year=2024, sheet_id=123, row=45)

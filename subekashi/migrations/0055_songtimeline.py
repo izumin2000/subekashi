@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
                 ('year', models.IntegerField()),
                 ('sheet_id', models.IntegerField()),
                 ('row', models.IntegerField()),
-                ('has_lyrics_url', models.BooleanField(default=False)),
+                ('is_lyrics_blank', models.BooleanField(default=False)),
                 ('song', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='timeline', to='subekashi.song')),
             ],
         ),
