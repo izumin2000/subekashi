@@ -21,7 +21,8 @@ from unittest.mock import MagicMock, mock_open, patch
 
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from django.test import TestCase
+from django.test import TestCase, override_settings
+from django.urls import reverse
 from django.utils import timezone
 
 from subekashi.lib.timeline import TimelineError, TimelineRow
@@ -30,7 +31,12 @@ from article.models import Article
 from subekashi.management.commands.backup import Command
 from subekashi.management.commands.sitemap import Command as SitemapCommand
 from config.settings import ROOT_URL
-from subekashi.models import Ai, Author, Editor, History, Song, SongLink, Stats, Word
+from subekashi.models import Ai, Author, Editor, History, Song, SongLink, SongTimeline, Stats, Word
+
+STATIC_STORAGE = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
 
 
 def timezone_aware(year, month, day):
@@ -1279,7 +1285,7 @@ def make_timeline_row(year, row, title, row_date=None, category="曲", urls=None
     return TimelineRow(
         year=year, row=row, date=row_date, premiere_rush="", title=title, author="作者", badge="", category=category,
         motif1="", motif2="", urls=[f"https://youtu.be/{year}{row:07d}"] if urls is None else urls, decode_date="",
-        decode_urls=[], lyrics_url="", distribution="", distribution2="", distribution_urls=[], notes=[],
+        decode_urls=[], lyrics_url="", distribution="", distribution2="", distribution_urls=[], notes=[], sheet_id=year,
     )
 
 
@@ -1370,7 +1376,30 @@ class TimelineCommandTest(TestCase):
         self.assertFalse(SongLink.objects.exists())
         self.assertFalse(History.objects.exists())
         self.assertFalse(Editor.objects.exists())
+        self.assertFalse(SongTimeline.objects.exists())
         mock_send_discord.assert_not_called()
+
+    @override_settings(STORAGES=STATIC_STORAGE, GOOGLE_SHEETS_SPREADSHEET_ID="sheet-id")
+    def test_song_page_opens_timeline_row(self, mock_get_timeline, mock_send_discord):
+        # #1269: timelineコマンドで保存した年表の行を、曲のページのボタンで開ける
+        # 歌詞列が空の行の曲は「年表に登録する」（歌詞列のセルを選択）、歌詞列に曲のページのURLが書かれた後は「年表で見る」（行を選択）
+        mock_get_timeline.return_value = {2018: [make_timeline_row(2018, 5, "曲1")]}
+        self._run("--year", "2018")
+        song = Song.objects.get(title="曲1")
+        response = self.client.get(reverse("subekashi:song", args=[song.id]))
+
+        self.assertContains(response, 'href="https://docs.google.com/spreadsheets/d/sheet-id/edit#gid=2018&amp;range=O5" id="timeline-register"')
+        self.assertContains(response, f'data-song-url="{ROOT_URL}/songs/{song.id}/"')
+        self.assertNotContains(response, "年表で見る")
+
+        row = make_timeline_row(2018, 5, "曲1")
+        row.lyrics_url = f"{ROOT_URL}/songs/{song.id}/"
+        mock_get_timeline.return_value = {2018: [row]}
+        self._run("--year", "2018")
+        response = self.client.get(reverse("subekashi:song", args=[song.id]))
+
+        self.assertContains(response, 'href="https://docs.google.com/spreadsheets/d/sheet-id/edit#gid=2018&amp;range=5:5" class="action-button" target="_blank"><i class="fas fa-table"></i><span class="icon-p-big">年表で見る</span>')
+        self.assertNotContains(response, "年表に登録する")
 
     def test_warns_years_without_sheet(self, mock_get_timeline, mock_send_discord):
         mock_get_timeline.return_value = {2018: [make_timeline_row(2018, 2, "曲1")]}

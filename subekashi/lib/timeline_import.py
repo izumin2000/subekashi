@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from urllib.parse import urlparse
 from django.db import transaction
 from django.utils import timezone
-from subekashi.models import Editor, History, Prush, Song, SongLink, SongFields
+from subekashi.models import Editor, History, Prush, Song, SongLink, SongFields, SongTimeline
 from subekashi.lib.author_helpers import get_or_create_authors, validate_author_name_lengths
 from subekashi.lib.song_service import (
     build_new_song_discord_text,
@@ -201,6 +201,8 @@ class TimelineImporter:
         self.categorized_song_ids = set()
         # このrunでプレラを決めた曲。カテゴリと同様に、最初の行のプレラにする
         self.prushed_song_ids = set()
+        # 曲ごとの、年表で曲が載っている行（曲のページの「年表で見る」ボタンに使う、#1269）。カテゴリと同様に、最初の行にする
+        self.timeline_rows = {}
 
         self.songs = {
             song_id: SongState(title, category, is_questionable, prush_id)
@@ -379,6 +381,7 @@ class TimelineImporter:
         if row.premiere_rush:
             self.prushed_song_ids.add(song.id)
         self.result.created.append(song)
+        return song.id
 
     def update(self, song_id, row, urls, category, imitate_ids):
         state = self.songs[song_id]
@@ -480,14 +483,37 @@ class TimelineImporter:
                     # 共有しているURLしか無い行は、次の実行でもURLで照合できず毎日新規作成されてしまうため登録しない
                     raise TimelineSkip("複数の曲で共有しているURLのみ")
                 else:
-                    self.create(row, urls, category, imitate_ids)
+                    song_id = self.create(row, urls, category, imitate_ids)
+            self.timeline_rows.setdefault(song_id, row)
 
         except TimelineSkip as e:
             self.result.skipped.append((row, str(e)))
+
+    # 年表で曲が載っている行（SongTimeline）を保存する
+    # 読み取った年の行に一致しなくなった曲（行が削除された・スキップするようになった曲など）の行は削除する
+    # 歌詞列で曲に一致した行は歌詞列が空ではないため、歌詞列が空の行はURL列で一致した行（新規作成した曲の行を含む）に限られる
+    def save_song_timelines(self, years):
+        timelines = {timeline.song_id: timeline for timeline in SongTimeline.objects.all()}
+        fields = ["year", "sheet_id", "row", "is_lyrics_blank"]
+        created = []
+        updated = []
+        for song_id, row in self.timeline_rows.items():
+            values = {"year": row.year, "sheet_id": row.sheet_id, "row": row.row, "is_lyrics_blank": not row.lyrics_url}
+            timeline = timelines.pop(song_id, None)
+            if timeline is None:
+                created.append(SongTimeline(song_id=song_id, **values))
+            elif any(getattr(timeline, field) != value for field, value in values.items()):
+                for field, value in values.items():
+                    setattr(timeline, field, value)
+                updated.append(timeline)
+        SongTimeline.objects.bulk_create(created, batch_size=1000)
+        SongTimeline.objects.bulk_update(updated, fields, batch_size=1000)
+        SongTimeline.objects.filter(pk__in=[timeline.pk for timeline in timelines.values() if timeline.year in years]).delete()
 
 
 def import_timeline(rows):
     importer = TimelineImporter()
     for row in rows:
         importer.import_row(row)
+    importer.save_song_timelines({row.year for row in rows})
     return importer.result

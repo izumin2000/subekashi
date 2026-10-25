@@ -1,7 +1,10 @@
 from django.shortcuts import render
+from django.urls import reverse
 from django.views import View
-from subekashi.models import Song
+from config.settings import ROOT_URL
+from subekashi.models import Song, SongTimeline
 from subekashi.lib.song_service import get_song_links_with_media, get_short_and_full_songs, split_songs_by_category
+from subekashi.lib.timeline import LYRICS_COLUMN, get_timeline_url
 from subekashi.views.song_removed import render_song_not_found
 import re
 
@@ -50,6 +53,14 @@ class SongView(View):
         # タグに表示するカテゴリ（カテゴリが曲の場合は表示しない）
         category = song.get_category() if song.category != "song" else None
 
+        # 年表で曲が載っている行（#1269）。年表に載っていない曲には「年表で見る」ボタンを表示しない
+        # 歌詞列が空の行は、コピーした曲のページのURLを貼り付けられるよう、行ではなく歌詞列のセルを選択した状態で開く
+        # （行を選択したまま貼り付けると、行の全てのセルに入ってしまうため）
+        timeline = SongTimeline.objects.filter(song=song).first()
+        timeline_url = None
+        if timeline:
+            timeline_url = get_timeline_url(timeline.sheet_id, timeline.row, LYRICS_COLUMN if timeline.is_lyrics_blank else None)
+
         context = {
             "description": description,
             "metatitle": f"{song.title} / {song.authors_str()}",
@@ -66,5 +77,8 @@ class SongView(View):
             "short_songs": short_songs,
             "flags": flags,
             "category": category,
+            "timeline": timeline,
+            "timeline_url": timeline_url,
+            "song_url": f"{ROOT_URL}{reverse('subekashi:song', args=[song.id])}",
         }
         return render(request, "subekashi/song.html", context)
