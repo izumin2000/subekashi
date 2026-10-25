@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from django.views import View
-from subekashi.models import Song
+from subekashi.models import Song, SongTimeline
 from subekashi.lib.song_service import get_song_links_with_media, get_short_and_full_songs, split_songs_by_category
+from subekashi.lib.timeline import get_timeline_url
 from subekashi.views.song_removed import render_song_not_found
 import re
 
@@ -50,6 +51,10 @@ class SongView(View):
         # タグに表示するカテゴリ（カテゴリが曲の場合は表示しない）
         category = song.get_category() if song.category != "song" else None
 
+        # 年表で曲が載っている行（#1269）。年表に載っていない曲には「年表で見る」ボタンを表示しない
+        timeline = SongTimeline.objects.filter(song=song).first()
+        timeline_url = get_timeline_url(timeline.sheet_id, timeline.row) if timeline else None
+
         context = {
             "description": description,
             "metatitle": f"{song.title} / {song.authors_str()}",
@@ -66,5 +71,7 @@ class SongView(View):
             "short_songs": short_songs,
             "flags": flags,
             "category": category,
+            "timeline": timeline,
+            "timeline_url": timeline_url,
         }
         return render(request, "subekashi/song.html", context)

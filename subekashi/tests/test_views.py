@@ -35,7 +35,7 @@ from subekashi.lib.query_utils import YOUTUBE_FILTERS, YOUTUBE_SORTS
 from subekashi.lib.security import encrypt
 from subekashi.lib.song_service import restore_song
 from subekashi.lib.youtube import YoutubeApiError
-from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Prush, Song, SongLink, Stats, Word
+from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Prush, Song, SongLink, SongTimeline, Stats, Word
 from subekashi.models.author import TransitiveAlias
 from subekashi.views.songs import COOKIE_FORMS, SEARCH_FORM_QUERIES, TEXT_FORMS
 
@@ -1038,6 +1038,37 @@ class SongViewTest(TestCase):
     def test_nonexistent_song_returns_404(self):
         response = self.client.get(reverse("subekashi:song", args=[99999]))
         self.assertEqual(response.status_code, 404)
+
+    @override_settings(GOOGLE_SHEETS_SPREADSHEET_ID="sheet-id")
+    def test_timeline_button_opens_row(self):
+        # #1269: 年表に載っている曲は、編集履歴の右隣に、年表のシートの行を選択した状態で開くボタンを表示する
+        SongTimeline.objects.create(song=self.song, year=2024, sheet_id=123, row=45, has_lyrics_url=True)
+        response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
+        content = response.content.decode()
+        button = '<a href="https://docs.google.com/spreadsheets/d/sheet-id/edit#gid=123&amp;range=45:45" class="action-button" target="_blank"><i class="fas fa-table"></i><span class="icon-p-big">年表で見る</span></a>'
+
+        self.assertIn(button, content)
+        self.assertLess(content.index("編集履歴"), content.index(button))
+        self.assertContains(response, '<p id="timeline-lyrics">歌詞列：登録済み</p>')
+
+    @override_settings(GOOGLE_SHEETS_SPREADSHEET_ID="sheet-id")
+    def test_timeline_lyrics_not_registered(self):
+        SongTimeline.objects.create(song=self.song, year=2024, sheet_id=123, row=45, has_lyrics_url=False)
+        response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
+        self.assertContains(response, '<p id="timeline-lyrics">歌詞列：未登録</p>')
+
+    @override_settings(GOOGLE_SHEETS_SPREADSHEET_ID="sheet-id")
+    def test_no_timeline_button_without_timeline_row(self):
+        # 年表に載っていない曲（timelineコマンドで一致する行が無い曲）には表示しない
+        response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
+        self.assertNotContains(response, "年表で見る")
+        self.assertNotContains(response, "timeline-lyrics")
+
+    @override_settings(GOOGLE_SHEETS_SPREADSHEET_ID="")
+    def test_no_timeline_button_without_spreadsheet_id(self):
+        SongTimeline.objects.create(song=self.song, year=2024, sheet_id=123, row=45)
+        response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
+        self.assertNotContains(response, "年表で見る")
 
     def test_removed_song_shows_removed_page(self):
         # ユーザーが削除した曲（#1239）のページは、曲の情報を表示せず、削除を取り消すボタンを表示する（#1264）

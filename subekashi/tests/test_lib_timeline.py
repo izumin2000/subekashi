@@ -15,7 +15,9 @@ from django.conf import settings
 from django.test import SimpleTestCase, override_settings
 from googleapiclient.errors import HttpError
 
-from subekashi.lib.timeline import EXPECTED_HEADER, TimelineError, TimelineRow, fill_premiere_rush_continuations, get_timeline, parse_sheet
+from subekashi.lib.timeline import (
+    EXPECTED_HEADER, TimelineError, TimelineRow, fill_premiere_rush_continuations, get_timeline, get_timeline_url, parse_sheet,
+)
 
 
 def make_row(**cells):
@@ -40,7 +42,22 @@ def make_http_error(status, reasons=()):
     )
 
 
+class GetTimelineUrlTest(SimpleTestCase):
+    @override_settings(GOOGLE_SHEETS_SPREADSHEET_ID="sheet-id")
+    def test_selects_row(self):
+        # 曲のページの「年表で見る」ボタンは、シート（gid）の行を選択した状態で開く（#1269）
+        self.assertEqual(get_timeline_url(123, 45), "https://docs.google.com/spreadsheets/d/sheet-id/edit#gid=123&range=45:45")
+
+    @override_settings(GOOGLE_SHEETS_SPREADSHEET_ID="")
+    def test_returns_none_without_spreadsheet_id(self):
+        self.assertIsNone(get_timeline_url(123, 45))
+
+
 class ParseSheetTest(SimpleTestCase):
+    def test_sets_sheet_id(self):
+        values = [EXPECTED_HEADER, make_row(title="曲1"), make_row(title="曲2")]
+        self.assertEqual([row.sheet_id for row in parse_sheet(2018, values, sheet_id=123)], [123, 123])
+
     def test_maps_cells_to_fields(self):
         values = [EXPECTED_HEADER, make_row(
             date="5/10", premiere_rush="年末プレラ", title="曲名", author="作者", badge="👤", category="曲",
@@ -250,8 +267,25 @@ class GetTimelineTest(SimpleTestCase):
         self.assertEqual([(row.title, row.date) for row in timeline[2019]], [("曲2", date(2019, 1, 1)), ("曲3", date(2019, 1, 1))])
 
         spreadsheets = self.get_spreadsheets(mock_build)
-        spreadsheets.get.assert_called_once_with(spreadsheetId="sheet-id", fields="sheets(properties.title,merges)")
+        spreadsheets.get.assert_called_once_with(spreadsheetId="sheet-id", fields="sheets(properties(title,sheetId),merges)")
         spreadsheets.values.return_value.batchGet.assert_called_once_with(spreadsheetId="sheet-id", ranges=["'2018年'", "'2019年'"])
+
+    def test_rows_have_sheet_id(self, mock_build):
+        # シートのID（gid）は曲のページの「年表で見る」ボタンのURLに使う（#1269）
+        # APIは値が0の項目を省くため、sheetIdが無いシートは0にする
+        spreadsheets = self.get_spreadsheets(mock_build)
+        spreadsheets.get.return_value.execute.return_value = {"sheets": [
+            {"properties": {"title": "2018年", "sheetId": 123}},
+            {"properties": {"title": "2019年"}},
+        ]}
+        spreadsheets.values.return_value.batchGet.return_value.execute.return_value = {"valueRanges": [
+            {"values": [EXPECTED_HEADER, make_row(title="曲1")]},
+            {"values": [EXPECTED_HEADER, make_row(title="曲2")]},
+        ]}
+        timeline = get_timeline([2018, 2019])
+
+        self.assertEqual([row.sheet_id for row in timeline[2018]], [123])
+        self.assertEqual([row.sheet_id for row in timeline[2019]], [0])
 
     def test_premiere_rush_continues_across_years(self, mock_build):
         # 年末のプレラは翌年のシートの先頭まで続き、翌年のシートの先頭の行は「︙」になっている（#1064）

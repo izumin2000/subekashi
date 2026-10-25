@@ -11,7 +11,7 @@ from django.db.utils import DataError
 from django.test import TestCase
 from django.utils import timezone
 from subekashi.constants.constants import SONG_CATEGORIES, SONG_FLAGS
-from subekashi.models import Ai, Author, AuthorAlias, Contact, Editor, History, Prush, Song, SongLink, Stats, Word
+from subekashi.models import Ai, Author, AuthorAlias, Contact, Editor, History, Prush, Song, SongLink, SongTimeline, Stats, Word
 from subekashi.models.author import EffectiveAlias, TransitiveAlias
 
 
@@ -553,6 +553,24 @@ class SongModelTest(TestCase):
     def test_get_category_returns_none_for_unknown_category(self):
         song = Song.objects.create(title="移行前のネタ動画", category="joke")
         self.assertIsNone(song.get_category())
+
+
+class SongTimelineModelTest(TestCase):
+    """SongTimeline モデルのテスト（年表で曲が載っている行、#1269）"""
+
+    def setUp(self):
+        self.song = Song.objects.create(title="曲")
+
+    def test_str(self):
+        self.assertEqual(str(SongTimeline.objects.create(song=self.song, year=2024, sheet_id=123, row=45)), "2024年45行目")
+
+    def test_has_lyrics_url_is_false_by_default(self):
+        self.assertFalse(SongTimeline.objects.create(song=self.song, year=2024, sheet_id=123, row=45).has_lyrics_url)
+
+    def test_deleting_song_deletes_timeline(self):
+        SongTimeline.objects.create(song=self.song, year=2024, sheet_id=123, row=45)
+        self.song.delete()
+        self.assertFalse(SongTimeline.objects.exists())
 
 
 class PrushModelTest(TestCase):

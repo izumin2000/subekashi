@@ -998,6 +998,14 @@ input[type=submit], button {
     outline-offset: 2px;
 }
 
+/* ボタンの下に件数などを表示する（作者のページの「別名」、曲のページの「年表で見る」） */
+.action-button-with-count {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
 .imitate {
     transform: rotate(180deg);
 }

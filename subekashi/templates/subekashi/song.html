@@ -24,6 +24,12 @@
             <a href="{% url 'subekashi:song_edit' song.id %}" class="action-button"><i class="fas fa-pen"></i><span class="icon-p-big">編集/削除</span></a>
         {% endif %}
         <a href="{% url 'subekashi:song_history' song.id %}" class="action-button"><i class="fas fa-history"></i><span class="icon-p-big">編集履歴</span></a>
+        {% if timeline_url %}
+            <div class="action-button-with-count">
+                <a href="{{ timeline_url }}" class="action-button" target="_blank"><i class="fas fa-table"></i><span class="icon-p-big">年表で見る</span></a>
+                <p id="timeline-lyrics">歌詞列：{% if timeline.has_lyrics_url %}登録済み{% else %}未登録{% endif %}</p>
+            </div>
+        {% endif %}
     </div>
 
     <table id="song-info">

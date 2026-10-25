@@ -923,7 +923,19 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 | 項目 | 内容 |
 | --- | --- |
 | 操作 | `manage.py timeline --year 2018 --dry-run` |
-| 検証 | 結果は出力されるが、Song・SongLink・History・Editorは保存されない |
+| 検証 | 結果は出力されるが、Song・SongLink・History・Editor・SongTimeline（#1269）は保存されない |
+
+#### 22-4. 曲のページの「年表で見る」ボタン（#1269）
+
+`TimelineCommandTest.test_song_page_opens_timeline_row`
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `get_timeline`が、2018年のシート（`sheet_id=2018`）の5行目の、歌詞列が空の行を返す。`GOOGLE_SHEETS_SPREADSHEET_ID`を設定 |
+| 操作1 | `manage.py timeline --year 2018` の後、作られた曲のページを`GET` |
+| 検証1 | 「年表で見る」ボタンのリンクが`https://docs.google.com/spreadsheets/d/<スプレッドシートのID>/edit#gid=2018&range=5:5`（5行目を選択した状態）で、ボタンの下に「歌詞列：未登録」が出る |
+| 操作2 | 歌詞列にその曲のページのURLを書いた行でもう一度実行し、曲のページを`GET` |
+| 検証2 | 「歌詞列：登録済み」が出る |
 
 ---
 

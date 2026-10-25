@@ -76,3 +76,12 @@ class PrushAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 admin.site.register(Prush, PrushAdmin)
+
+
+class SongTimelineAdmin(admin.ModelAdmin):
+    list_display = ('id', 'song', 'year', 'row', 'has_lyrics_url')
+    list_filter = ('year', 'has_lyrics_url')
+    # 曲の選択肢が約14000件になるため、セレクトボックスではなくidで指定する
+    raw_id_fields = ('song',)
+
+admin.site.register(SongTimeline, SongTimelineAdmin)

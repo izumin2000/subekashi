@@ -17,9 +17,10 @@ from subekashi.lib.timeline_import import (
     get_motif1_title,
     get_motif2_titles,
     get_song_urls,
+    has_lyrics_url,
     import_timeline,
 )
-from subekashi.models import Author, Editor, History, Prush, Song, SongLink
+from subekashi.models import Author, Editor, History, Prush, Song, SongLink, SongTimeline
 
 
 def make_row(**fields):
@@ -27,6 +28,7 @@ def make_row(**fields):
         "year": 2024, "row": 2, "date": None, "premiere_rush": "", "title": "曲", "author": "作者", "badge": "",
         "category": "曲", "motif1": "", "motif2": "", "urls": ["https://youtu.be/aaaaaaaaaaa"], "decode_date": "",
         "decode_urls": [], "lyrics_url": "", "distribution": "", "distribution2": "", "distribution_urls": [], "notes": [],
+        "sheet_id": 1000,
     }
     values.update(fields)
     return TimelineRow(**values)
@@ -748,3 +750,93 @@ class ImportTimelineTest(TestCase):
 
         history = History.objects.get()
         self.assertEqual(history.editor_id, 1)
+
+
+class HasLyricsUrlTest(SimpleTestCase):
+    def test_matches_song_id(self):
+        self.assertTrue(has_lyrics_url(make_row(lyrics_url="https://lyrics.imicomweb.com/songs/12"), 12))
+        self.assertTrue(has_lyrics_url(make_row(lyrics_url="lyrics.imicomweb.com/songs/12/"), 12))
+        self.assertTrue(has_lyrics_url(make_row(lyrics_url="https://lyrics.imicomweb.com/songs/3 https://lyrics.imicomweb.com/songs/12"), 12))
+
+    def test_other_song_or_empty(self):
+        self.assertFalse(has_lyrics_url(make_row(lyrics_url="https://lyrics.imicomweb.com/songs/123"), 12))
+        self.assertFalse(has_lyrics_url(make_row(lyrics_url="https://lyrics.imicomweb.com/songs/1"), 12))
+        self.assertFalse(has_lyrics_url(make_row(lyrics_url=""), 12))
+
+
+class SaveSongTimelinesTest(TestCase):
+    """年表で曲が載っている行（SongTimeline）の保存（曲のページの「年表で見る」ボタンに使う、#1269）"""
+
+    def setUp(self):
+        Editor.objects.create(pk=1, ip="")
+        Author.objects.create(pk=1, name="全てあなたの所為です。")
+
+    def get_timeline(self, song):
+        return SongTimeline.objects.values_list("year", "sheet_id", "row", "has_lyrics_url").get(song=song)
+
+    def test_created_song(self):
+        result = import_timeline([make_row(year=2024, row=5, sheet_id=123)])
+
+        self.assertEqual(self.get_timeline(result.created[0]), (2024, 123, 5, False))
+
+    def test_updated_and_unchanged_songs(self):
+        updated = create_song("更新する曲", urls=["https://youtu.be/AAAAAAAAAAA"])
+        unchanged = create_song("変更なしの曲", urls=["https://youtu.be/AAAAAAAAAAB"])
+        result = import_timeline([
+            make_row(row=2, urls=["https://youtu.be/AAAAAAAAAAA"], category="カバー", lyrics_url=f"https://lyrics.imicomweb.com/songs/{updated.id}"),
+            make_row(row=3, urls=["https://youtu.be/AAAAAAAAAAB"], category=""),
+        ])
+
+        self.assertEqual(len(result.updated), 1)
+        self.assertEqual(result.unchanged, 1)
+        self.assertEqual(self.get_timeline(updated), (2024, 1000, 2, True))
+        self.assertEqual(self.get_timeline(unchanged), (2024, 1000, 3, False))
+
+    def test_lyrics_url_of_other_song(self):
+        # URLで一致した曲の行の歌詞列が別の曲を指している場合は、登録済みにしない
+        song = create_song("曲", urls=["https://youtu.be/AAAAAAAAAAA"])
+        other = create_song("別の曲")
+        import_timeline([make_row(urls=["https://youtu.be/AAAAAAAAAAA"], lyrics_url=f"https://lyrics.imicomweb.com/songs/{other.id}")])
+
+        self.assertFalse(self.get_timeline(song)[3])
+        self.assertFalse(SongTimeline.objects.filter(song=other).exists())
+
+    def test_first_row_of_multiple_rows(self):
+        # カテゴリ・プレラと同様に、複数の行に一致する曲は最初の行にする
+        song = create_song("曲", urls=["https://youtu.be/AAAAAAAAAAA"])
+        import_timeline([
+            make_row(year=2023, row=10, sheet_id=23, urls=["https://youtu.be/AAAAAAAAAAA"]),
+            make_row(year=2024, row=2, sheet_id=24, urls=["https://youtu.be/AAAAAAAAAAA"], lyrics_url=f"https://lyrics.imicomweb.com/songs/{song.id}"),
+        ])
+
+        self.assertEqual(self.get_timeline(song), (2023, 23, 10, False))
+
+    def test_skipped_and_excluded_rows(self):
+        create_song("曲A", urls=["https://youtu.be/AAAAAAAAAAA"])
+        create_song("曲B", urls=["https://youtu.be/AAAAAAAAAAB"])
+        create_song("解読", urls=["https://youtu.be/AAAAAAAAAAC"])
+        import_timeline([
+            make_row(urls=["https://youtu.be/AAAAAAAAAAA", "https://youtu.be/AAAAAAAAAAB"]),
+            make_row(category="解読", urls=["https://youtu.be/AAAAAAAAAAC"]),
+        ])
+
+        self.assertFalse(SongTimeline.objects.exists())
+
+    def test_updates_moved_row_and_lyrics_url(self):
+        song = create_song("曲", urls=["https://youtu.be/AAAAAAAAAAA"])
+        SongTimeline.objects.create(song=song, year=2024, sheet_id=1000, row=2, has_lyrics_url=False)
+        import_timeline([make_row(row=3, urls=["https://youtu.be/AAAAAAAAAAA"], lyrics_url=f"https://lyrics.imicomweb.com/songs/{song.id}")])
+
+        self.assertEqual(self.get_timeline(song), (2024, 1000, 3, True))
+        self.assertEqual(SongTimeline.objects.count(), 1)
+
+    def test_deletes_rows_only_in_read_years(self):
+        # 読み取った年の行に一致しなくなった曲の行は削除し、読み取っていない年（--yearオプション）の行は残す
+        song = create_song("曲", urls=["https://youtu.be/AAAAAAAAAAA"])
+        removed_row_song = create_song("年表から消えた曲")
+        other_year_song = create_song("2023年の曲")
+        SongTimeline.objects.create(song=removed_row_song, year=2024, sheet_id=1000, row=3)
+        SongTimeline.objects.create(song=other_year_song, year=2023, sheet_id=23, row=3)
+        import_timeline([make_row(year=2024, urls=["https://youtu.be/AAAAAAAAAAA"])])
+
+        self.assertEqual(set(SongTimeline.objects.values_list("song", flat=True)), {song.id, other_year_song.id})

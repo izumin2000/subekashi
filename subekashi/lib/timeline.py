@@ -47,10 +47,20 @@ class TimelineRow:
     distribution2: str
     distribution_urls: list[str]
     notes: list[str]
+    # シートのID（URLのgid）。曲のページの「年表で見る」ボタンのURLに使う（#1269）
+    sheet_id: int | None = None
 
 
 def get_sheet_title(year):
     return f"{year}年"
+
+
+# 年表のシートを、その行を選択した状態で開くURL。スプレッドシートのIDが設定されていなければNoneを返す（#1269）
+def get_timeline_url(sheet_id, row):
+    spreadsheet_id = getattr(settings, "GOOGLE_SHEETS_SPREADSHEET_ID", "")
+    if not spreadsheet_id:
+        return None
+    return f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit#gid={sheet_id}&range={row}:{row}"
 
 
 def get_cell(cells, index):
@@ -101,7 +111,7 @@ def fill_premiere_rush_continuations(rows):
 
 
 # 列の並びが変わったまま読み取ると別の列の値が入るため、見出しが想定と異なる場合はTimelineErrorを送出する
-def parse_sheet(year, values, merges=()):
+def parse_sheet(year, values, merges=(), sheet_id=None):
     if not values or [cell.strip() for cell in values[0][:len(EXPECTED_HEADER)]] != EXPECTED_HEADER:
         raise TimelineError(f"{get_sheet_title(year)}のシートの見出しが想定と異なります")
 
@@ -138,6 +148,7 @@ def parse_sheet(year, values, merges=()):
             distribution2=get_cell(cells, 16),
             distribution_urls=get_cells(cells, 17, 20),
             notes=get_cells(cells, 20),
+            sheet_id=sheet_id,
         ))
 
     return rows
@@ -157,11 +168,11 @@ def get_timeline(years):
         spreadsheets = build("sheets", "v4", developerKey=api_key, cache_discovery=False).spreadsheets()
         spreadsheet = spreadsheets.get(
             spreadsheetId=spreadsheet_id,
-            fields="sheets(properties.title,merges)"
+            fields="sheets(properties(title,sheetId),merges)"
         ).execute()
-        sheet_merges = {sheet["properties"]["title"]: sheet.get("merges", []) for sheet in spreadsheet.get("sheets", [])}
+        sheets = {sheet["properties"]["title"]: sheet for sheet in spreadsheet.get("sheets", [])}
 
-        target_years = [year for year in years if get_sheet_title(year) in sheet_merges]
+        target_years = [year for year in years if get_sheet_title(year) in sheets]
         if not target_years:
             return {}
 
@@ -181,9 +192,11 @@ def get_timeline(years):
     if len(value_ranges) != len(target_years):
         raise TimelineError("Google Sheets APIのレスポンスを解析できませんでした")
 
-    timeline = {
-        year: parse_sheet(year, value_range.get("values", []), sheet_merges[get_sheet_title(year)])
-        for year, value_range in zip(target_years, value_ranges)
-    }
+    timeline = {}
+    for year, value_range in zip(target_years, value_ranges):
+        sheet = sheets[get_sheet_title(year)]
+        # APIは値が0の項目をレスポンスから省くため、シートのIDが無ければ0（最初に作られたシート）にする
+        sheet_id = sheet["properties"].get("sheetId", 0)
+        timeline[year] = parse_sheet(year, value_range.get("values", []), sheet.get("merges", []), sheet_id)
     fill_premiere_rush_continuations([row for year in sorted(timeline) for row in timeline[year]])
     return timeline

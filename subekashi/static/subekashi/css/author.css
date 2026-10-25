@@ -13,13 +13,6 @@
     text-align: center;
 }
 
-.action-button-with-count {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-}
-
 /* アイコンとテキストを上下中央寄せにする（共通のspan{padding-top:5px}を打ち消す） */
 .action-buttons .action-button span {
     padding-top: 0;

@@ -11,6 +11,12 @@
     padding-top: 10px;
 }
 
+/* 「年表で見る」ボタンの下の、年表の歌詞列の登録状況（#1269） */
+#timeline-lyrics {
+    font-size: 12px;
+    color: #fff;
+}
+
 #song-info {
     margin: 0 auto;
 }
