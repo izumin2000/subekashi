@@ -6,7 +6,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     // 読み込み時に最初のdetailを展開
     const firstDetail = document.querySelector("details");
-    firstDetail.open = true;
+    if (firstDetail) firstDetail.open = true;
 
     // セルの値をコピー
 	document.querySelectorAll(".change_table_wrapper td").forEach(cell => {

@@ -16,6 +16,7 @@
         <div class="action-buttons">
             {% include "subekashi/components/history_action_buttons.html" %}
         </div>
+        {% include "subekashi/components/history_search_form.html" %}
         <p id="history-count">{{ total_count }}件</p>
         {% include "subekashi/components/pagination.html" %}
         {% for history in page_obj %}
