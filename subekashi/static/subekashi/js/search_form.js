@@ -293,7 +293,7 @@ function renderOverrideInfos(query) {
         "media": (youtubeQueries.filters.some((key) => key in query) || youtubeQueries.sorts.includes(sort)) && !("mediatypes" in query),
         "view": ("view_lte" in query || ["view", "-view"].includes(sort)) && !("view_gte" in query),
         "like": ("like_lte" in query || ["like", "-like"].includes(sort)) && !("like_gte" in query),
-        "upload_time": ["upload_time", "-upload_time"].includes(sort),
+        "upload-time": ["upload_time", "-upload_time"].includes(sort),
     };
 
     for (const [name, isOverridden] of Object.entries(overrides)) {

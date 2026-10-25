@@ -13,8 +13,8 @@
             <input type="text" id="name" name="name" class="sansfont" required>
         </div>
         <div class="form-col">
-            <label for="alias_type"><i class="fas fa-tag"></i><span class="icon-p-big">種別</span></label>
-            <select id="alias_type" name="alias_type" required>
+            <label for="alias-type"><i class="fas fa-tag"></i><span class="icon-p-big">種別</span></label>
+            <select id="alias-type" name="alias_type" required>
                 <option value="" selected disabled>選択してください</option>
                 {% for choice in alias_type_choices %}
                     <option value="{{ choice.value }}" data-description="{{ choice.description }}">{{ choice.label }}</option>

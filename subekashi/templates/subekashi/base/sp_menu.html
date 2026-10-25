@@ -1,12 +1,12 @@
 {% load static %}
 
 
-<div id="sp_menu" class="sansfont">
+<div id="sp-menu" class="sansfont">
     {% for aside_page in aside_pages %}
     <a href="{% url aside_page.url %}"><i class="{{ aside_page.icon }}"></i><p>{{ aside_page.name }}</p></a>
     {% endfor %}
     <a href="https://www.youtube.com/@subeteanatanoseidesu" target="_blank"><i class="far fa-user"></i><p>全てあなたの所為です。</p></a>
-    <p id="sp_version"><i class="fa fa-history"></i> <span id="version">{{ version }}</span></p>
+    <p id="sp-version"><i class="fa fa-history"></i> <span id="version">{{ version }}</span></p>
     <div id="sp-global-header">
         <div id="sp-global-items-wrapper" class="sansfont">
         </div>
@@ -16,11 +16,11 @@
             <p class="sp-global-notice"></p>
         </div>
     </div>
-    <footer id="sp_menu_footer">
+    <footer id="sp-menu-footer">
         <p>当サイトは非公式です。<a href="https://github.com/izumin2000/subekashi" target="_blank" rel="noopener noreferrer"><i class="fab fa-github"></i>GitHub</a><a href="{% url 'article:default_article' 'privacy' %}"><i class="fas fa-shield-alt"></i>プライバシーポリシー</a></p>
     </footer>
 </div>
-<div id="tab_bar">
+<div id="tab-bar">
     <a href="{% url 'subekashi:top' %}"><i class="fas fa-home"></i></a>
     <a href="{% url 'subekashi:song_new' %}"><i class="fa fa-plus"></i></a>
     <a href="{% url 'subekashi:songs' %}"><i class="fas fa-search"></i></a>

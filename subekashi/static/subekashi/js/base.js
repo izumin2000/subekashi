@@ -294,10 +294,10 @@ function setGlobalHeader(type) {
     document.getElementsByClassName(`${type}-global-notice`)[1].innerText = imiNNotice2;
 }
 
-// #sp_menuの切り替え
+// #sp-menuの切り替え
 var isSpMenuOpen = false;
 document.getElementById("toggle-tab-bar").addEventListener("click", function () {
-    const menuEle = document.getElementById("sp_menu");
+    const menuEle = document.getElementById("sp-menu");
 
     if (isSpMenuOpen) {
         menuEle.style.animation = "slideDown 0.3s forwards";
@@ -317,12 +317,12 @@ document.getElementById("toggle-tab-bar").addEventListener("click", function () 
 });
 
 function hideSpMenu() {
-    document.getElementById("sp_menu").style.display = "none";
+    document.getElementById("sp-menu").style.display = "none";
     isSpMenuOpen = false;
 }
 
 document.body.addEventListener('click', (event) => {
-    if (event.target.closest('#sp_menu')) {
+    if (event.target.closest('#sp-menu')) {
         return;
     }
 
@@ -337,7 +337,7 @@ document.body.addEventListener('click', (event) => {
     hideSpMenu();
 });
 
-// PCレイアウトに切り替わったら#sp_menuを閉じる（#tab_barが非表示になり閉じられなくなるため）
+// PCレイアウトに切り替わったら#sp-menuを閉じる（#tab-barが非表示になり閉じられなくなるため）
 window.matchMedia("(min-width: 961px)").addEventListener("change", (event) => {
     if (event.matches) {
         hideSpMenu();

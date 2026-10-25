@@ -1,6 +1,6 @@
 window.addEventListener("DOMContentLoaded", () => {
     // 開いたときに編集前と編集後の差分を表示する（読み込み時に全ての履歴の差分を求めないようにする）
-    document.querySelectorAll(".history_details").forEach(details => {
+    document.querySelectorAll(".history-details").forEach(details => {
         details.addEventListener("toggle", () => showDiff(details), { once: true });
     });
 
@@ -9,7 +9,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if (firstDetail) firstDetail.open = true;
 
     // セルの値をコピー
-	document.querySelectorAll(".change_table_wrapper td").forEach(cell => {
+	document.querySelectorAll(".change-table-wrapper td").forEach(cell => {
 		cell.addEventListener("click", async () => {
 			const text = cell.innerText.trim();
 			try {
