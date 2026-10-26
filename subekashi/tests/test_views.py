@@ -11,7 +11,7 @@ import re
 import socket
 import tempfile
 import threading
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 from contextlib import contextmanager
 from datetime import date, datetime, timedelta, timezone as dt_timezone
 from unittest.mock import patch, MagicMock
@@ -1141,6 +1141,120 @@ class SongViewTest(TestCase):
         response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
         self.assertNotContains(response, "年表で見る")
         self.assertNotContains(response, "年表に登録する")
+
+    def _add_link(self, url):
+        SongLink.objects.create(url=url).songs.add(self.song)
+
+    def _get_song_content(self, **cookies):
+        self.client.cookies.load(cookies)
+        return self.client.get(reverse("subekashi:song", args=[self.song.id])).content.decode()
+
+    def test_embed_is_shown_above_lyrics(self):
+        # #1254: 公式がiframeでの埋め込みに対応しているURLは、歌詞の上にdetailsで埋め込む
+        self._add_link("https://youtu.be/dQw4w9WgXcQ")
+        content = self._get_song_content()
+
+        self.assertIn('<details id="embed" data-cookie-age="', content)
+        self.assertIn('<summary><i class="fas fa-play-circle"></i><span class="icon-p">埋め込み</span>YouTube</summary>', content)
+        self.assertIn(
+            '<iframe class="embed-frame embed-video" src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ" title="YouTubeの埋め込み" loading="lazy"',
+            content,
+        )
+        self.assertLess(content.index('<details id="embed"'), content.index('<div id="lyrics-wrapper">'))
+
+    def test_embed_is_below_imitate_details(self):
+        self._add_link("https://youtu.be/dQw4w9WgXcQ")
+        self.song.imitates.add(Song.objects.create(title="模倣元の曲"))
+        content = self._get_song_content()
+        self.assertLess(content.index('<span class="icon-p">模倣元</span>'), content.index('<details id="embed"'))
+
+    def test_embed_is_shown_without_lyrics(self):
+        Song.objects.filter(pk=self.song.pk).update(lyrics="")
+        self._add_link("https://youtu.be/dQw4w9WgXcQ")
+        content = self._get_song_content()
+        self.assertIn('<details id="embed"', content)
+        self.assertNotIn('<div id="lyrics-wrapper">', content)
+
+    def test_embeds_of_multiple_links(self):
+        self._add_link("https://youtu.be/dQw4w9WgXcQ")
+        self._add_link("https://nicovideo.jp/watch/sm12345678")
+        self._add_link("https://soundcloud.com/artist/track-name")
+        content = self._get_song_content()
+
+        self.assertEqual(content.count('<iframe class="embed-frame'), 3)
+        self.assertIn('src="https://embed.nicovideo.jp/watch/sm12345678"', content)
+        self.assertIn('class="embed-frame embed-audio" src="https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fartist%2Ftrack-name&amp;visual=false"', content)
+        summary = content[content.index('<span class="icon-p">埋め込み</span>'):]
+        summary = summary[:summary.index("</summary>")]
+        for name in ["YouTube", "ニコニコ動画", "SoundCloud"]:
+            self.assertIn(name, summary)
+
+    def test_embed_origins_are_allowed_by_response_csp(self):
+        # #1254: 埋め込めないURLは除き、埋め込んだiframeのオリジンは、ページのCSPのframe-srcに含まれる
+        for url in [
+            "https://youtu.be/dQw4w9WgXcQ",
+            "https://x.com/user/status/1234567890",
+            "https://nicovideo.jp/watch/sm12345678",
+            "https://booth.pm/ja/items/1",
+            "https://soundcloud.com/artist/track-name",
+        ]:
+            self._add_link(url)
+        response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
+        srcs = re.findall(r'<iframe class="embed-frame [^"]*" src="([^"]+)"', response.content.decode())
+        frame_src = next(
+            directive.split()[1:] for directive in response["Content-Security-Policy"].split(";") if directive.strip().startswith("frame-src")
+        )
+
+        self.assertEqual(len(srcs), 3)
+        for src in srcs:
+            parsed_src = urlparse(src)
+            self.assertIn(f"{parsed_src.scheme}://{parsed_src.netloc}", frame_src)
+        self.assertEqual(sorted(urlparse(src).netloc for src in srcs), ["embed.nicovideo.jp", "w.soundcloud.com", "www.youtube-nocookie.com"])
+
+    def test_no_embed_without_embeddable_link(self):
+        # #1254: 埋め込めないURLだけの曲・URLが無い曲には、埋め込みの欄を表示しない
+        self.assertNotIn('id="embed"', self._get_song_content())
+        self._add_link("https://x.com/user/status/1234567890")
+        content = self._get_song_content()
+        self.assertNotIn('id="embed"', content)
+        self.assertNotIn("<iframe", content)
+
+    def test_embed_is_open_by_default(self):
+        self._add_link("https://youtu.be/dQw4w9WgXcQ")
+        response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
+        self.assertTrue(response.context["is_shown_embed"])
+        self.assertRegex(response.content.decode(), r'<details id="embed" data-cookie-age="\d+" open>')
+
+    def test_embed_is_closed_by_cookie(self):
+        # #1254: 閉じた状態はis_shown_embed=offのcookieに保存され、次に開いたときも閉じたままにする
+        self._add_link("https://youtu.be/dQw4w9WgXcQ")
+        self.client.cookies["is_shown_embed"] = "off"
+        response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
+        content = response.content.decode()
+
+        self.assertFalse(response.context["is_shown_embed"])
+        self.assertRegex(content, r'<details id="embed" data-cookie-age="\d+">')
+        self.assertIn('<iframe class="embed-frame', content)
+
+    def test_embed_is_open_with_other_cookie_values(self):
+        # offのみ閉じる。on・不正な値は開く
+        self._add_link("https://youtu.be/dQw4w9WgXcQ")
+        for value in ["on", "OFF", "<script>"]:
+            with self.subTest(value=value):
+                self.client.cookies["is_shown_embed"] = value
+                response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
+                self.assertTrue(response.context["is_shown_embed"])
+                self.assertRegex(response.content.decode(), r'<details id="embed" data-cookie-age="\d+" open>')
+
+    def test_embed_cookie_is_saved_by_toggle_script(self):
+        # 開閉の保存は、CSPのnonceを付けたscriptのaddEventListenerで行う（onclickを使わない）。cookieの保存期間はdata属性で渡す
+        self._add_link("https://youtu.be/dQw4w9WgXcQ")
+        content = self._get_song_content()
+
+        self.assertIn(f'<details id="embed" data-cookie-age="{LONG_TERM_COOKIE_AGE}"', content)
+        self.assertIn("embedEle.addEventListener('toggle'", content)
+        self.assertIn("document.cookie = `is_shown_embed=${embedEle.open ? 'on' : 'off'}; path=/; max-age=${embedEle.dataset.cookieAge}; samesite=lax`;", content)
+        self.assertNotIn("onclick", content[content.index('<details id="embed"'):content.index("</details>", content.index('<details id="embed"'))])
 
     def test_removed_song_shows_removed_page(self):
         # ユーザーが削除した曲（#1239）のページは、曲の情報を表示せず、削除を取り消すボタンを表示する（#1264）

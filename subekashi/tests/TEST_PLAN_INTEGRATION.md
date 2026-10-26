@@ -1025,6 +1025,54 @@ CSSの反映とフォントの読み込みはDjangoテストでは確認でき�
 
 ---
 
+### 26. 曲ページの埋め込みプレイヤーの表示と開閉の保存フロー（#1254）
+
+**テストファイル**: `tests/test_views.py`（`SongViewTest`）、`tests/test_lib_embed.py`、`tests/test_lib_song_service.py`（`GetSongEmbedsTest`）、`tests/test_middleware.py`（`ContentSecurityPolicyMiddlewareTest`）
+
+曲のURL（`SongLink`）から`lib/embed.py`で埋め込み用のURLを求め、ビュー・テンプレート・JS・CSPが連携して、歌詞の上のdetailsに埋め込みプレイヤーを表示する。開閉の状態は`is_shown_embed`のcookieに保存する。
+
+#### 26-1. URLから埋め込みプレイヤーの表示まで
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | YouTube・ニコニコ動画・SoundCloudのURLと、X・BOOTHのURLを登録した曲 |
+| 操作 | `GET /songs/<id>/` |
+| 検証1 | `<details id="embed">`に、YouTube・ニコニコ動画・SoundCloudの3つの`<iframe>`だけがURLの順に出る（X・BOOTHは埋め込まない）。`src`はそれぞれ`youtube-nocookie.com`・`embed.nicovideo.jp`・`w.soundcloud.com`のもの |
+| 検証2 | 模倣元・模倣曲のdetailsより後ろ、歌詞（`#lyrics-wrapper`）より前に表示する |
+| 検証3 | CSPの`frame-src`に、3つの`src`のオリジンが含まれる |
+
+#### 26-2. 開閉の保存と復元
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作1 | cookieの無い状態で`GET /songs/<id>/` |
+| 検証1 | `<details id="embed" ... open>`で開いている |
+| 操作2 | `is_shown_embed=off`のcookieを付けて`GET /songs/<id>/` |
+| 検証2 | `open`が付かず閉じている。`on`・`OFF`・`<script>`のcookieでは開く |
+
+#### 26-3. 開閉の保存と、各サービスのプレイヤーの表示（Playwrightで確認）
+
+iframeの読み込み・CSP違反・cookieの保存はDjangoテストでは確認できないため、開発サーバーとPlaywright（Chrome）で確認する。
+
+| 項目 | 内容 |
+| --- | --- |
+| 操作1 | YouTube・ニコニコ動画・SoundCloud・ビリビリ動画・Google Drive・ScratchのURLがある実際の曲のページを開く |
+| 検証1 | いずれもiframeが読み込まれてプレイヤーが表示され、CSP違反・JSのエラーが出ない。ニコニコ動画で削除済みの動画は、プレイヤーが「この動画は表示できません」と表示する（埋め込みの不具合ではない） |
+| 操作2 | cookieの無い状態でページを開く |
+| 検証2 | `is_shown_embed`のcookieは保存されない（初期の開いた状態では`toggle`のイベントで保存しない） |
+| 操作3 | 「埋め込み」のsummaryをクリックして閉じ、リロードする |
+| 検証3 | `is_shown_embed=off`（`path=/`・1年・`SameSite=Lax`）が保存され、リロード後も閉じている。閉じている間はiframeを読み込まない（`loading="lazy"`） |
+| 操作4 | もう一度クリックして開き、リロードする |
+| 検証4 | `is_shown_embed=on`が保存され、リロード後も開いていて、iframeを読み込む |
+| 操作5 | 別の曲のページで閉じた後、ブラウザにキャッシュされた（`Cache-Control: max-age=1800`）最初の曲のページを開く |
+| 検証5 | キャッシュされたHTMLが開いた状態でも、読み込み時にcookieの状態に合わせて開閉する |
+| 操作6 | スマホの幅（375px）で開く |
+| 検証6 | iframeが幅に収まり、横スクロールが出ない |
+| 操作7 | SoundCloudの短縮URL（`on.soundcloud.com/…`）をプレーヤーに指定する |
+| 検証7 | 「有効なSoundCloudのURLではない」と表示されるため、埋め込み対象にしない |
+
+---
+
 ## テスト実装の方針
 
 ### ディレクトリ構成（案）

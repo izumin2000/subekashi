@@ -162,6 +162,17 @@
         </details>
     {% endif %}
 
+    {% if embeds %}
+        <details id="embed" data-cookie-age="{{ embed_cookie_age }}"{% if is_shown_embed %} open{% endif %}>
+            <summary><i class="fas fa-play-circle"></i><span class="icon-p">埋め込み</span>{% for embed in embeds %}{% if not forloop.first %}・{% endif %}{{ embed.name }}{% endfor %}</summary>
+            <div id="embed-list">
+                {% for embed in embeds %}
+                    <iframe class="embed-frame embed-{{ embed.shape }}" src="{{ embed.src }}" title="{{ embed.name }}の埋め込み" loading="lazy" allow="encrypted-media; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+                {% endfor %}
+            </div>
+        </details>
+    {% endif %}
+
     {% if song.lyrics %}
         <div id="lyrics-wrapper">
             <p id="lyrics-header"><i class="far fa-copy" data-copy="{{ song.lyrics|escape }}"></i><i class="fas fa-align-center"></i><span class="icon-p">歌詞</span></p>
@@ -181,6 +192,19 @@
                 .catch(() => showToast("error", "コピーできませんでした。"));
         });
     });
+
+    // 埋め込みプレイヤーの開閉をcookieに保存する（#1254）
+    // ブラウザにキャッシュされたページでも最後の開閉の状態になるよう、読み込み時にcookieの状態に合わせる
+    const embedEle = document.getElementById('embed');
+    if (embedEle) {
+        embedEle.open = getCookie().is_shown_embed !== 'off';
+        let isSavedOpen = embedEle.open;
+        embedEle.addEventListener('toggle', () => {
+            if (embedEle.open === isSavedOpen) return;
+            isSavedOpen = embedEle.open;
+            document.cookie = `is_shown_embed=${embedEle.open ? 'on' : 'off'}; path=/; max-age=${embedEle.dataset.cookieAge}; samesite=lax`;
+        });
+    }
 
     // 年表の歌詞列が空の曲は、歌詞列に貼り付けられるよう曲のページのURLをコピーしてから年表を開く（#1269）
     document.getElementById('timeline-register')?.addEventListener('click', async (event) => {

@@ -317,6 +317,18 @@
 | 選択肢にないカテゴリ | `category="joke"`（変更前の値） | `songs` に入り、`category_groups` は空 |
 | 曲がない | 空のQuerySet | すべて空 |
 
+#### 2-14. `get_song_embeds(links)`（#1254）
+
+曲ページの歌詞の上の埋め込みプレイヤーのために、`get_song_links_with_media(song)`のリンクのうち埋め込めるものを選ぶ。埋め込み用のURLと形は`lib/embed.py`の`get_embed()`（28章）で求める。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 埋め込めるリンク | YouTubeとニコニコ動画のURLがある曲 | `src`・`shape`（`get_embed()`の戻り値）と、リンクのサービス名（`name`。「YouTube」「ニコニコ動画」）を持つdictのリストを返す |
+| 埋め込めないリンク | X・BOOTHのURLとYouTubeのURLがある曲 | YouTubeだけを返す |
+| 同じ埋め込み | 同じ動画の`youtu.be`のURLと`youtube.com/watch?v=`のURL | 1件にまとめる |
+| 順番 | ニコニコ動画・YouTubeの順のリンク | リンクの順に並ぶ |
+| リンクがない | 空のリスト | 空のリスト |
+
 ---
 
 ### 3. `lib/query_filters.py` — クエリフィルター
@@ -834,6 +846,15 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 年表に登録するボタン（#1269） | `is_lyrics_blank=True`（URL列で一致した行の歌詞列が空） | 「編集履歴」の右隣に、`#gid=123&range=O45`（歌詞列のセル。行を選択したまま貼り付けると行の全てのセルに入るため）を開く「年表に登録する」ボタン（`fas fa-table`と、検索フォームの`small-icon`と同じく小さくして5px空けた`fas fa-exclamation`、`id="timeline-register"`、`data-song-url="<ROOT_URL>/songs/<id>/"`）を表示し、「年表で見る」は表示しない。クリックすると曲のページのURLをコピーしてから年表を新しいタブで開き、開いたタブの`opener`を外す。コピーを待った後の`window.open`はSafari（特にiOS）でポップアップとしてブロックされることがあるため、`null`が返ればこのタブで年表を開く（nonce付きのscriptの`addEventListener`。`window.open`が`null`を返す場合も含めて動作はPlaywrightで確認） |
 | 年表に載っていない曲（#1269） | `SongTimeline`が無い曲 | 「年表で見る」「年表に登録する」のボタンを表示しない |
 | スプレッドシートのIDが無い（#1269） | `GOOGLE_SHEETS_SPREADSHEET_ID=""`・`is_lyrics_blank=True` | 「年表で見る」「年表に登録する」のボタンを表示しない |
+| 埋め込みプレイヤー（#1254） | YouTubeのURLと歌詞がある曲 | `<details id="embed" data-cookie-age="<LONG_TERM_COOKIE_AGE>" open>`の中に、`<summary>`（`fas fa-play-circle`・「埋め込み」・サービス名「YouTube」）と、`youtube-nocookie.com/embed/<動画ID>`の`<iframe class="embed-frame embed-video" title="YouTubeの埋め込み" loading="lazy">`が出る。`#lyrics-wrapper`より前に置く |
+| 埋め込みプレイヤーの位置（#1254） | 模倣元がある曲 | 模倣元のdetailsより後ろ、歌詞（`#lyrics-wrapper`）より前に表示する |
+| 歌詞がない曲の埋め込みプレイヤー（#1254） | 歌詞が空で、YouTubeのURLがある曲 | 歌詞の欄（`#lyrics-wrapper`）はなく、埋め込みプレイヤーは表示する |
+| 複数の埋め込み（#1254） | YouTube・ニコニコ動画・SoundCloudの曲のURL | `<iframe class="embed-frame`が3つ。SoundCloudは`embed-audio`で、`src`の`&`は`&amp;`にエスケープされる。`<summary>`に3つのサービス名が出る |
+| 埋め込めるURLがない曲（#1254） | URLなし・Xのポストだけ | `id="embed"`の欄と`<iframe`を表示しない |
+| 埋め込みプレイヤーの既定は開く（#1254） | `is_shown_embed`のcookieなし | `context["is_shown_embed"] = True`で、`<details id="embed" ... open>`になる |
+| 閉じた埋め込みプレイヤー（#1254） | `is_shown_embed=off` | `context["is_shown_embed"] = False`で、`open`が付かない（`<iframe>`は出力し、`loading="lazy"`により閉じている間は読み込まれない） |
+| `is_shown_embed`の不正な値（#1254） | `on`・`OFF`・`<script>` | `off`以外は開く。`is_shown_embed = True`で`open`が付く |
+| 埋め込みプレイヤーの開閉の保存（#1254） | YouTubeのURLがある曲 | nonce付きのscriptの`embedEle.addEventListener('toggle'`で、開閉時に`is_shown_embed=on`・`off`を`path=/`・`max-age`（`data-cookie-age`）・`samesite=lax`のcookieに保存する。`onclick`は使わない。ブラウザの動作はPlaywrightで確認（結合テスト26章） |
 
 #### 7-4. `SongNewView` (`/songs/new/`)
 
@@ -1696,6 +1717,7 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | 本番のサーバーエラー | `DEBUG=False`、HTTP 500 | 付与される |
 | インラインスクリプトの禁止 | `script-src` | `'unsafe-inline'`・`'unsafe-eval'`・`*`を含まない |
 | 制限的なディレクティブ | - | `default-src 'self'`・`object-src 'none'`・`base-uri 'self'`・`form-action 'self'`・`frame-ancestors 'none'` |
+| 埋め込みプレイヤーのiframeの許可（#1254） | YouTube・ニコニコ動画・SoundCloud（曲・プレイリスト）・ビリビリ動画・Google Drive・ScratchのURLの`get_embed()`の`src` | `src`のオリジン（`scheme://host`）が`frame-src`に含まれる（無いとCSPでブロックされる） |
 
 #### 9-4. `RestrictIPMiddleware` — BAN の判定（#1189）
 
@@ -3084,6 +3106,39 @@ YouTube Data API（`build`）はモック化する。「動画が存在しない
 
 ---
 
+### 28. `lib/embed.py` — 曲ページの埋め込みプレイヤー（#1254）
+
+**テストファイル**: `tests/test_lib_embed.py`
+
+URLから、公式がiframeでの埋め込みに対応しているサービスの埋め込み用のURL（`src`）とiframeの形（`shape`。`video`: 16:9、`audio`: 高さ166px、`playlist`: 高さ300px、`scratch`: 485:402）を求める。埋め込めないURLは`None`を返す。URLの形が違う場合に別の動画を埋め込まないよう、サービスごとにホストとパスを確認し、IDは正規表現で確認した文字のみを`src`に使う（SoundCloudのみ`quote`でエンコードする）。X・Bluesky・TikTok・Misskeyなどは公式の埋め込みがスクリプトによるものか、URLだけでは埋め込み用のIDが分からないため対象外。Bandcampは埋め込み用の数値のIDが必要なため対象外。
+
+#### 28-1. `get_embed(url)`
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| YouTube | `https://youtu.be/dQw4w9WgXcQ`・`youtube.com/watch?v=…&t=30`・`youtube.com/shorts/…` | `https://www.youtube-nocookie.com/embed/<動画ID>`・`video` |
+| 他のサイトのクエリのYouTube | `https://x.com/user/status/1?u=https://youtu.be/dQw4w9WgXcQ` | `None`（ホストがYouTubeではない） |
+| YouTubeのチャンネル | `https://www.youtube.com/@subekashi` | `None` |
+| ニコニコ動画 | `https://nicovideo.jp/watch/sm12345678`・`nm1`・`so1`・数字のみ・`www.`・`sp.`・クエリ付き | `https://embed.nicovideo.jp/watch/<動画ID>`（クエリは付けない）・`video` |
+| ニコニコ動画の動画以外 | `nicovideo.jp/user/…`・`/mylist/…`・`/watch/`・`/watch/sm12345abc` | `None` |
+| SoundCloudの曲 | `https://soundcloud.com/artist/track-name` | `https://w.soundcloud.com/player/?url=https%3A%2F%2Fsoundcloud.com%2Fartist%2Ftrack-name&visual=false`・`audio` |
+| SoundCloudのプレイリスト | `https://soundcloud.com/artist/sets/album-name` | 同様の`src`・`playlist` |
+| SoundCloudのクエリ・末尾のスラッシュ・モバイル | `…/track-name/?si=abc&utm_source=clipboard`・`m.soundcloud.com` | クエリ・スラッシュを除いた`https://soundcloud.com/…`を`url`に指定した`src` |
+| SoundCloudのパーセントエンコード | `https://soundcloud.com/artist/%E6%9B%B2` | `url`の`%`を`%25`にエンコードする（プレーヤーが1回デコードして元のURLに戻る） |
+| SoundCloudのユーザーのページ・タブ | `soundcloud.com/artist`・`/tracks`・`/sets`・`/likes`・`/track-name/recommended`・`soundcloud.com/` | `None` |
+| SoundCloudの短縮URL | `https://on.soundcloud.com/d3pgp` | `None`（プレーヤーが「有効なSoundCloudのURLではない」と表示する。Playwrightで確認） |
+| ビリビリ動画 | `https://bilibili.com/video/BV1qV411J7Kq`・`?p=3`・`www.`・`/?spm_id_from=333&p=2` | `https://player.bilibili.com/player.html?isOutside=true&bvid=<BV番号>&p=<パート>&autoplay=0`（パートの既定は1）・`video` |
+| ビリビリ動画のav番号 | `https://bilibili.com/video/av170001` | BV番号（`BV17x411w7KC`）に変換した`src` |
+| ビリビリ動画の動画以外 | `bilibili.com/read/cv123`・`space.bilibili.com/123` | `None` |
+| Google Drive | `https://drive.google.com/file/d/<ID>/view?usp=sharing`・`/file/u/0/d/<ID>/view` | `https://drive.google.com/file/d/<ID>/preview`・`video` |
+| Google Driveのフォルダ | `https://drive.google.com/drive/folders/<ID>` | `None` |
+| Scratch | `https://scratch.mit.edu/projects/123456789`・`/editor` | `https://scratch.mit.edu/projects/<ID>/embed`・`scratch` |
+| Scratchの作品以外 | `scratch.mit.edu/users/someone`・`/studios/123` | `None` |
+| 対応していないサービス | X・Bandcamp・Bluesky・ピアプロ・BOOTH | `None` |
+| 空文字・URLではない文字列・`javascript:`のURL | `""`・`"not a url"`・`javascript:alert(1)//youtu.be/dQw4w9WgXcQ` | `None` |
+
+---
+
 ## テスト優先度
 
 | 優先度 | 対象 | 理由 |
@@ -3139,6 +3194,7 @@ subekashi/tests/
 ├── test_lib_timeline_import.py     # 実装済み: すべあな界隈年表からの曲の登録・更新
 ├── test_lib_ogp.py                 # 実装済み: ページごとのOGP画像
 ├── test_lib_ip.py                  # 実装済み: クライアントのIP
+├── test_lib_embed.py               # 実装済み: 曲ページの埋め込みプレイヤー
 ├── test_management_commands.py     # 実装済み: 管理コマンド
 ├── test_templatetags_song_card.py  # 実装済み: song_card テンプレートタグ
 ├── test_templatetags_ogp.py        # 実装済み: ogp テンプレートタグ

@@ -5,6 +5,7 @@ RatelimitMiddleware・CacheControlMiddleware・ContentSecurityPolicyMiddleware�
 """
 import json
 from unittest.mock import MagicMock, patch
+from urllib.parse import urlparse
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, JsonResponse
@@ -14,6 +15,7 @@ from django_ratelimit.exceptions import Ratelimited
 from subekashi.middleware.rate_limit import RatelimitMiddleware
 from subekashi.middleware.cache import CacheControlMiddleware
 from subekashi.middleware.csp import ContentSecurityPolicyMiddleware
+from subekashi.lib.embed import get_embed
 from subekashi.middleware.restrict_ip import RestrictIPMiddleware
 from subekashi.constants.constants import SHORT_TERM_COOKIE_AGE, LONG_TERM_COOKIE_AGE
 
@@ -209,6 +211,24 @@ class ContentSecurityPolicyMiddlewareTest(SimpleTestCase):
         self.assertNotIn("'unsafe-inline'", script_src)
         self.assertNotIn("'unsafe-eval'", script_src)
         self.assertNotIn("*", script_src)
+
+    def test_embed_origins_are_allowed_in_frame_src(self):
+        # 曲ページの埋め込みプレイヤー（#1254）のiframeのoriginは、frame-srcに無いとCSPでブロックされる
+        urls = [
+            "https://youtu.be/dQw4w9WgXcQ",
+            "https://nicovideo.jp/watch/sm1",
+            "https://soundcloud.com/artist/track-name",
+            "https://soundcloud.com/artist/sets/album-name",
+            "https://bilibili.com/video/BV1qV411J7Kq",
+            "https://drive.google.com/file/d/1aB-cD_eF2gH/view",
+            "https://scratch.mit.edu/projects/123456789",
+        ]
+        _, response = self._call(HttpResponse("OK"))
+        frame_src = self._directives(response)["frame-src"]
+        for url in urls:
+            with self.subTest(url=url):
+                parsed_src = urlparse(get_embed(url)["src"])
+                self.assertIn(f"{parsed_src.scheme}://{parsed_src.netloc}", frame_src)
 
     def test_restrictive_directives(self):
         _, response = self._call(HttpResponse("OK"))

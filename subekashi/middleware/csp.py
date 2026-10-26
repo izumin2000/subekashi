@@ -41,6 +41,12 @@ CSP_DIRECTIVES = {
         "https://www.youtube-nocookie.com",
         "https://www.youtube.com",
         "https://platform.twitter.com",
+        # 曲ページの埋め込みプレイヤー（subekashi/lib/embed.py）
+        "https://embed.nicovideo.jp",
+        "https://w.soundcloud.com",
+        "https://player.bilibili.com",
+        "https://drive.google.com",
+        "https://scratch.mit.edu",
     ],
     "object-src": ["'none'"],
     "base-uri": ["'self'"],

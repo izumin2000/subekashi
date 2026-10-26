@@ -90,6 +90,37 @@ summary .icon-p {
     margin: 0 15px 0 -5px;
 }
 
+/* 歌詞の上の埋め込みプレイヤー（#1254）。ページの幅に収め、形ごとに高さを決める */
+#embed-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.embed-frame {
+    width: 100%;
+    max-width: 640px;
+    border: 0;
+}
+
+.embed-video {
+    aspect-ratio: 16 / 9;
+}
+
+.embed-audio {
+    height: 166px;
+}
+
+.embed-playlist {
+    height: 300px;
+}
+
+.embed-scratch {
+    aspect-ratio: 485 / 402;
+}
+
 #lyrics-wrapper {
     line-height: 50px;
     margin-top: 75px;
