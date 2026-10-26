@@ -172,13 +172,14 @@ def build_delete_discord_text(song, reason, editor):
     )
 
 
-def build_restore_discord_text(song, editor):
+def build_restore_discord_text(song, reason, editor):
     """削除の取り消し用のDiscordテキストを構築する。削除（build_delete_discord_text）と同じ形式にする"""
     return (
         f"削除が取り消されました\n"
         f"{ROOT_URL}/songs/{song.id}\n\n"
         f"タイトル：{song.title}\n"
         f"チャンネル名：{song.authors_str()}\n"
+        f"理由：{reason}\n"
         f"編集者：{editor}"
     )
 

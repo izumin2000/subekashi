@@ -11,7 +11,7 @@ def render_song_not_found(request, song_id):
     return render_song_removed(request, song)
 
 
-def render_song_removed(request, song):
+def render_song_removed(request, song, error=None):
     # 削除している間は編集できないため、最新の編集履歴が削除なら直近の削除の理由になる（管理サイトで削除した場合は履歴が無い）
     latest_history = History.get_for_song(song).first()
     is_delete = latest_history is not None and latest_history.history_type == "delete"
@@ -24,6 +24,7 @@ def render_song_removed(request, song):
         "song": song,
         "reason": reason,
         "conflict_songs": list(get_restore_conflict_songs(song)),
+        "error": error,
     }
     response = render(request, 'subekashi/song_removed.html', context, status=410)
     # 削除を取り消した後にこのページをブラウザのキャッシュから表示しないよう、毎回サーバーに問い合わせる

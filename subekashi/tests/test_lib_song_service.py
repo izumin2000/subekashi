@@ -539,12 +539,12 @@ class BuildRestoreDiscordTextTest(TestCase):
         self.song.authors.add(self.author)
 
     def test_text_has_same_format_as_delete_text(self):
-        # 削除（build_delete_discord_text）と同じ形式にする。取り消しでは理由を入力しないため、理由の行は無い
-        text = build_restore_discord_text(self.song, "editor_ip")
+        # 削除（build_delete_discord_text）と同じ形式にする（#1275）
+        text = build_restore_discord_text(self.song, "誤って削除したため", "editor_ip")
         self.assertEqual(
             text,
             f"削除が取り消されました\n{ROOT_URL}/songs/{self.song.id}\n\n"
-            "タイトル：削除を取り消した曲\nチャンネル名：取り消しテスト作者\n編集者：editor_ip",
+            "タイトル：削除を取り消した曲\nチャンネル名：取り消しテスト作者\n理由：誤って削除したため\n編集者：editor_ip",
         )
 
 
