@@ -1,4 +1,5 @@
 beautifulsoup4==4.12.3
+certifi==2026.10.23
 Django==5.2.17
 django-cors-headers==4.9.0
 django-filter==26.1
