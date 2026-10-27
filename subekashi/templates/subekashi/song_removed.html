@@ -21,9 +21,28 @@
             {% endfor %}
         </ul>
     {% else %}
-        <form action="{% url 'subekashi:song_restore' song.id %}" method="POST" class="action-buttons">{% csrf_token %}
-            <button type="submit" class="action-button black-action-button" id="song-restore-submit"><i class="fas fa-trash-restore-alt"></i><span class="icon-p-big">削除を取り消す</span></button>
-        </form>
+        <div id="song-restore">
+            <h1>削除を取り消す</h1>
+            <p>この曲を元に戻す場合は、取り消す理由を入力してください。</p>
+            <form action="{% url 'subekashi:song_restore' song.id %}" method="POST">{% csrf_token %}
+                <div class="form-col">
+                    <label for="restore-reason">取り消し理由</label>
+                    <textarea id="restore-reason" name="reason" required></textarea>
+                </div>
+                <div class="action-buttons">
+                    <button type="submit" class="action-button black-action-button" id="song-restore-submit" disabled><i class="fas fa-trash-restore-alt"></i><span class="icon-p-big">削除を取り消す</span></button>
+                </div>
+            </form>
+        </div>
     {% endif %}
 </section>
+{% endblock %}
+
+{% block js %}
+<script defer src="{% static 'subekashi/js/song_removed.js' %}"></script>
+{% if error %}
+<script defer nonce="{{ csp_nonce }}">
+    showToast("error", "{{ error|escapejs }}");
+</script>
+{% endif %}
 {% endblock %}

@@ -11,6 +11,36 @@
     padding: 0;
 }
 
+/* 上の削除理由と区別できるよう、削除を取り消すフォームは区切り線と見出しで分ける */
+#song-restore {
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 1px solid #555;
+}
+
+#song-restore h1 {
+    margin-top: 0;
+}
+
+#song-restore p {
+    margin-bottom: 20px;
+}
+
+/* 取り消し理由が空の間は無効の見た目にする。共通のdisabled（common.css）は、黒のボタンの背景色より詳細度が低く負けてしまう */
+#song-restore-submit:disabled {
+    background-color: #666;
+}
+
+#song-restore-submit:disabled span,
+#song-restore-submit:disabled i {
+    color: #aaa;
+}
+
+/* 親の中央寄せを引き継がず、理由は左寄せで入力する */
+#song-removed textarea {
+    text-align: left;
+}
+
 /* アイコンとテキストを上下中央寄せにする（共通のspan{padding-top:5px}を打ち消す） */
 #song-removed .action-button span {
     padding-top: 0;

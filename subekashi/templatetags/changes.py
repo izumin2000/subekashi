@@ -10,7 +10,7 @@ def render_changes(history):
     history = History.objects.get(pk = history.id)
     changes = history.changes
     context = {
-        "is_delete": history.history_type == "delete",
+        "is_reason": history.history_type in ("delete", "restore"),
         # 編集前と編集後の差分をJS（editor.js）で表示する。以前は編集もhistory_type="new"で保存していたため、見出しで判定する
         "is_edit": isinstance(changes, list) and bool(changes) and changes[0] == EDIT_CHANGES_HEADER,
         "changes": changes

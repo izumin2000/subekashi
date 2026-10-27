@@ -2069,18 +2069,32 @@ class SongHistoryViewTest(TestCase):
         self.assertContains(response, '<table class="diff-table">', count=1)
         self.assertContains(response, "subekashi/js/editor.js")
 
-    def test_restore_history_has_no_changes_table(self):
-        # 削除の取り消し（#1264）の履歴はchanges=Noneのため、変更内容の表を表示しない（削除の履歴は理由の表を表示する）
+    def test_restore_history_shows_reason_table(self):
+        # 削除の取り消し（#1264）の履歴は、削除の履歴と同じく理由の表を表示する（#1275）
         self.client.post(reverse("subekashi:song_delete", args=[self.song.id]), {"reason": "取り消す前の削除理由"})
-        self.client.post(reverse("subekashi:song_restore", args=[self.song.id]))
+        self.client.post(reverse("subekashi:song_restore", args=[self.song.id]), {"reason": "誤って削除したため取り消す"})
 
         response = self.client.get(reverse("subekashi:song_history", args=[self.song.id]))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "履歴テスト曲の削除を取り消し")
-        self.assertContains(response, '<div class="change-table-wrapper">', count=1)
-        self.assertContains(response, '<table class="delete-table">', count=1)
+        self.assertContains(response, '<div class="change-table-wrapper">', count=2)
+        self.assertContains(response, '<table class="delete-table">', count=2)
         self.assertContains(response, "取り消す前の削除理由")
+        self.assertContains(response, "誤って削除したため取り消す")
+
+    def test_restore_history_without_reason_has_no_changes_table(self):
+        # 理由を入力しなかった頃（#1264）の取り消しの履歴はchanges=Noneのため、変更内容の表を表示しない（#1275）
+        History.create_for_song(
+            song=self.song, title="履歴テスト曲の削除を取り消し", history_type="restore", changes=None,
+            editor=Editor.objects.create(ip="127.0.0.31"),
+        )
+
+        response = self.client.get(reverse("subekashi:song_history", args=[self.song.id]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "履歴テスト曲の削除を取り消し")
+        self.assertNotContains(response, '<div class="change-table-wrapper">')
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
@@ -2201,11 +2215,12 @@ class SongRemovedPageTest(TestCase):
     def test_latest_delete_reason_is_shown(self):
         # 削除・取り消しを繰り返した曲は、直近の削除の理由を表示する
         self._create_history("delete", ["理由", "古い削除理由"], minutes_ago=30)
-        self._create_history("restore", None, minutes_ago=20)
+        self._create_history("restore", ["理由", "取り消した理由"], minutes_ago=20)
         self._create_history("delete", ["理由", "新しい削除理由"], minutes_ago=10)
         response = self._get()
         self.assertContains(response, '<p id="song-removed-reason">削除理由：新しい削除理由</p>', status_code=410)
         self.assertNotContains(response, "古い削除理由", status_code=410)
+        self.assertNotContains(response, "取り消した理由", status_code=410)
 
     def test_reason_is_escaped_and_keeps_line_breaks(self):
         self._create_history("delete", ["理由", "<script>重複</script>\n2行目"], minutes_ago=10)
@@ -2222,9 +2237,10 @@ class SongRemovedPageTest(TestCase):
     def test_reason_is_not_shown_when_latest_history_is_not_delete(self):
         # 削除を取り消した後に管理サイトで削除した場合、取り消す前の削除の理由は表示しない
         self._create_history("delete", ["理由", "取り消した削除の理由"], minutes_ago=20)
-        self._create_history("restore", None, minutes_ago=10)
+        self._create_history("restore", ["理由", "削除を取り消した理由"], minutes_ago=10)
         response = self._get()
         self.assertNotContains(response, "取り消した削除の理由", status_code=410)
+        self.assertNotContains(response, "削除を取り消した理由", status_code=410)
         self.assertNotContains(response, "削除理由", status_code=410)
 
     def test_unexpected_changes_of_delete_history_does_not_raise(self):
@@ -2240,12 +2256,26 @@ class SongRemovedPageTest(TestCase):
     def test_restore_button_posts_with_csrf_token(self):
         response = self._get()
         self.assertContains(
-            response, f'<form action="{reverse("subekashi:song_restore", args=[self.song.id])}" method="POST" class="action-buttons">', status_code=410,
+            response, f'<form action="{reverse("subekashi:song_restore", args=[self.song.id])}" method="POST">', status_code=410,
         )
         self.assertContains(response, 'name="csrfmiddlewaretoken"', status_code=410)
         self.assertContains(
             response, '<i class="fas fa-trash-restore-alt"></i><span class="icon-p-big">削除を取り消す</span>', status_code=410,
         )
+
+    def test_restore_form_has_required_reason(self):
+        # 削除理由と同じく、削除を取り消す理由は必須で入力する（#1275）
+        response = self._get()
+        # 上の削除理由と区別できるよう、削除を取り消すフォームは見出しと説明を付けた区切り（#song-restore）にする
+        self.assertContains(response, '<div id="song-restore">', status_code=410)
+        self.assertContains(response, "<h1>削除を取り消す</h1>", status_code=410)
+        self.assertContains(response, "<p>この曲を元に戻す場合は、取り消す理由を入力してください。</p>", status_code=410)
+        self.assertContains(response, '<label for="restore-reason">取り消し理由</label>', status_code=410)
+        self.assertContains(response, '<textarea id="restore-reason" name="reason" required></textarea>', status_code=410)
+        # 理由が空の間は押せない。理由を入力すると、song_removed.jsがボタンを押せるようにする
+        self.assertContains(response, 'class="action-button black-action-button" id="song-restore-submit" disabled>', status_code=410)
+        self.assertContains(response, "subekashi/js/song_removed.js", status_code=410)
+        self.assertNotContains(response, "showToast(", status_code=410)
 
     def test_page_does_not_link_to_contact_for_undo(self):
         # 削除の取り消しはお問い合わせで申請せず、ボタンで行う
@@ -2259,6 +2289,8 @@ class SongRemovedPageTest(TestCase):
         response = self._get()
         self.assertContains(response, "この曲はロックされているため、削除を取り消せません。", status_code=410)
         self.assertNotContains(response, reverse("subekashi:song_restore", args=[self.song.id]), status_code=410)
+        self.assertNotContains(response, "restore-reason", status_code=410)
+        self.assertNotContains(response, 'id="song-restore"', status_code=410)
 
     def test_song_with_conflict_url_has_no_restore_button(self):
         # 削除した曲のURLが他の曲に登録されていると、取り消すとURLが重複するため、ボタンの代わりに登録している曲を表示する
@@ -2291,8 +2323,11 @@ class SongRestoreViewTest(TestCase):
         self.song = Song.objects.create(title="取り消しテスト曲", is_removed=True)
         self.song.authors.add(self.author)
 
-    def _post(self):
-        return self.client.post(reverse("subekashi:song_restore", args=[self.song.id]))
+    def _post(self, data=None):
+        # 取り消しの理由は必須（#1275）
+        return self.client.post(
+            reverse("subekashi:song_restore", args=[self.song.id]), {"reason": "取り消しテストの理由"} if data is None else data,
+        )
 
     def test_post_restores_song_and_redirects_to_song_page(self):
         # SEND_DISCORD=False のため send_discord は即 True を返す
@@ -2309,7 +2344,7 @@ class SongRestoreViewTest(TestCase):
         self.assertEqual(history.history_type, "restore")
         self.assertEqual(history.get_history_type_display(), "削除の取り消し")
         self.assertEqual(history.title, "取り消しテスト曲の削除を取り消し")
-        self.assertIsNone(history.changes)
+        self.assertEqual(history.changes, ["理由", "取り消しテストの理由"])
         self.assertEqual(history.editor.ip, encrypt("127.0.0.1"))
 
     @patch("subekashi.views.song_restore.NEW_DISCORD_URL", "https://discord.example/new")
@@ -2320,6 +2355,19 @@ class SongRestoreViewTest(TestCase):
         url, content = mock_send_discord.call_args[0]
         self.assertEqual(url, "https://discord.example/new")
         self.assertTrue(content.startswith(f"削除が取り消されました\n{settings.ROOT_URL}/songs/{self.song.id}\n"))
+        self.assertIn("理由：取り消しテストの理由\n", content)
+
+    @patch("subekashi.views.song_restore.send_discord", return_value=True)
+    def test_post_without_reason_is_not_restored(self, mock_send_discord):
+        # 取り消しの理由が無い・空白だけの場合は取り消さず、削除した曲のページにエラーを表示する（#1275）
+        for data in [{}, {"reason": ""}, {"reason": " \n　 "}]:
+            with self.subTest(data=data):
+                response = self._post(data)
+                assert_song_removed_page(self, response)
+                self.assertContains(response, 'showToast("error", "取り消し理由を入力してください。");', status_code=410)
+                self.assertTrue(Song.all_objects.get(pk=self.song.pk).is_removed)
+                self.assertFalse(History.objects.filter(song_id=self.song.id).exists())
+                mock_send_discord.assert_not_called()
 
     @patch("subekashi.views.song_restore.send_discord", return_value=False)
     def test_post_discord_failure_redirects_with_notify_error(self, _mock_send_discord):
@@ -2354,6 +2402,13 @@ class SongRestoreViewTest(TestCase):
         self.assertFalse(History.objects.filter(song_id=self.song.id).exists())
         mock_send_discord.assert_not_called()
 
+    def test_not_removed_song_without_reason_redirects_to_song_page(self):
+        # 理由の確認より前に、削除を取り消した曲かどうかを確認する
+        self.song.is_removed = False
+        self.song.save()
+        response = self._post({})
+        self.assertRedirects(response, f"/songs/{self.song.id}", fetch_redirect_response=False)
+
     @patch("subekashi.views.song_restore.send_discord", return_value=True)
     def test_locked_song_is_not_restored(self, mock_send_discord):
         self.song.is_lock = True
@@ -2364,6 +2419,14 @@ class SongRestoreViewTest(TestCase):
         self.assertTrue(Song.all_objects.get(pk=self.song.pk).is_removed)
         self.assertFalse(History.objects.filter(song_id=self.song.id).exists())
         mock_send_discord.assert_not_called()
+
+    def test_locked_song_without_reason_shows_lock_message(self):
+        # ロックされた曲は理由を入力するフォームを表示しないため、理由のエラーではなくロックの説明を表示する
+        self.song.is_lock = True
+        self.song.save()
+        response = self._post({})
+        self.assertContains(response, "この曲はロックされているため、削除を取り消せません。", status_code=410)
+        self.assertNotContains(response, "showToast(", status_code=410)
 
     @patch("subekashi.views.song_restore.send_discord", return_value=True)
     def test_song_with_conflict_url_is_not_restored(self, mock_send_discord):
@@ -2391,8 +2454,8 @@ class SongRestoreViewTest(TestCase):
 
         self.assertEqual(self.client.get(reverse("subekashi:song", args=[self.song.id])).status_code, 200)
         self.assertEqual(
-            list(History.objects.filter(song_id=self.song.id).order_by("create_time", "id").values_list("history_type", flat=True)),
-            ["delete", "restore"],
+            list(History.objects.filter(song_id=self.song.id).order_by("create_time", "id").values_list("history_type", "changes")),
+            [("delete", ["理由", "誤って登録"]), ("restore", ["理由", "取り消しテストの理由"])],
         )
 
     @skipUnlessDBFeature("has_select_for_update")
@@ -2434,7 +2497,7 @@ class SongRestoreConcurrencyTest(TransactionTestCase):
 
         def post():
             try:
-                Client().post(url)
+                Client().post(url, {"reason": "同時に取り消す理由"})
             finally:
                 connection.close()
 
@@ -4965,10 +5028,10 @@ class HistoriesViewTest(TestCase):
         self.assertContains(second, f'href="?page=1&amp;q={quote("別名")}"', count=2)
 
     def test_restore_history_links_to_song(self):
-        # 削除を取り消した曲（#1264）の履歴は、変更内容の表を表示せず、曲へのリンクを表示する
+        # 削除を取り消した曲（#1264）の履歴は、曲へのリンクを表示する
         song = Song.objects.create(title="履歴一覧の取り消した曲")
         self.client.post(reverse("subekashi:song_delete", args=[song.id]), {"reason": "誤り"})
-        self.client.post(reverse("subekashi:song_restore", args=[song.id]))
+        self.client.post(reverse("subekashi:song_restore", args=[song.id]), {"reason": "誤って削除した"})
 
         response = self.client.get(reverse("subekashi:histories"))
 

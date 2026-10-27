@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.shortcuts import render, redirect
 from django.views import View
+from subekashi.forms import SongRestoreForm
 from subekashi.models import Song, Editor, History
 from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
@@ -28,18 +29,23 @@ class SongRestoreView(View):
             if song.is_lock or get_restore_conflict_songs(song).exists():
                 return render_song_removed(request, song)
 
+            form = SongRestoreForm(request.POST)
+            if not form.is_valid():
+                return render_song_removed(request, song, error=form.errors['reason'][0])
+            reason = form.cleaned_data['reason']
+
             editor = Editor.get_or_create_from_ip(get_ip(request))
             restore_song(song)
             History.create_for_song(
                 song=song,
                 title=f"{song.title}の削除を取り消し",
                 history_type="restore",
-                changes=None,
+                changes=["理由", reason],
                 editor=editor,
             )
 
         # 通知に失敗しても削除は取り消されているため、500ページにはせず、取り消せたことと通知に失敗したことを伝える
-        content = build_restore_discord_text(song, editor)
+        content = build_restore_discord_text(song, reason, editor)
         is_ok = send_discord(NEW_DISCORD_URL, content)
 
         response = redirect(f'/songs/{song_id}?toast=restore' if is_ok else f'/songs/{song_id}?toast=restore_notify_error')

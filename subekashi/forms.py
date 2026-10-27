@@ -33,6 +33,13 @@ class SongDeleteForm(forms.Form):
     )
 
 
+class SongRestoreForm(forms.Form):
+    reason = forms.CharField(
+        widget=forms.Textarea,
+        error_messages={'required': '取り消し理由を入力してください。'},
+    )
+
+
 class AuthorAliasForm(forms.Form):
     name = forms.CharField(
         max_length=500,
