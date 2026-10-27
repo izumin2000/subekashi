@@ -7,6 +7,7 @@ from subekashi.constants.constants import SONG_CATEGORIES
 from subekashi.models import Song, SongLink, SongFields
 from subekashi.lib.author_helpers import get_same_person_author_ids
 from subekashi.lib.url import get_all_media
+from subekashi.lib.embed import get_embed
 
 
 # short版のタイトルに付く「short」の部分（#667）
@@ -221,6 +222,16 @@ def get_song_links_with_media(song):
             "name": media["name"],
         })
     return links
+
+
+def get_song_embeds(links):
+    """get_song_links_with_mediaのリンクのうち埋め込めるものを、埋め込み用のURL付きで返す。同じ埋め込みは1つにまとめる（#1254）"""
+    embeds = []
+    for link in links:
+        embed = get_embed(link["text"])
+        if embed and all(embed["src"] != added["src"] for added in embeds):
+            embeds.append({**embed, "name": link["name"]})
+    return embeds
 
 
 def get_short_base_title(title):

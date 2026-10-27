@@ -29,6 +29,8 @@ from subekashi.lib.song_service import (
     get_full_base_title,
     get_short_and_full_songs,
     split_songs_by_category,
+    get_song_links_with_media,
+    get_song_embeds,
 )
 
 
@@ -873,3 +875,46 @@ class GetShortAndFullSongsTest(TestCase):
         Song.objects.create(title="鏡")
         short = Song.objects.create(title="鏡[short]")
         self.assertEqual(get_short_and_full_songs(short), ([], []))
+
+
+class GetSongEmbedsTest(TestCase):
+    """get_song_embeds() のテスト（#1254）"""
+
+    def create_song_with_urls(self, *urls):
+        song = Song.objects.create(title="埋め込みテスト曲")
+        for url in urls:
+            SongLink.objects.create(url=url).songs.add(song)
+        return song
+
+    def test_embeddable_links_have_embed_src_and_media_name(self):
+        song = self.create_song_with_urls("https://youtu.be/dQw4w9WgXcQ", "https://nicovideo.jp/watch/sm1")
+        embeds = get_song_embeds(get_song_links_with_media(song))
+        self.assertEqual(
+            {embed["name"]: embed for embed in embeds},
+            {
+                "ニコニコ動画": {"src": "https://embed.nicovideo.jp/watch/sm1", "shape": "video", "name": "ニコニコ動画"},
+                "YouTube": {"src": "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ", "shape": "video", "name": "YouTube"},
+            },
+        )
+
+    def test_links_that_cannot_be_embedded_are_excluded(self):
+        song = self.create_song_with_urls("https://x.com/user/status/1", "https://youtu.be/dQw4w9WgXcQ", "https://booth.pm/ja/items/1")
+        embeds = get_song_embeds(get_song_links_with_media(song))
+        self.assertEqual([embed["name"] for embed in embeds], ["YouTube"])
+
+    def test_same_embed_is_added_once(self):
+        links = [
+            {"text": "https://youtu.be/dQw4w9WgXcQ", "icon": "", "name": "YouTube"},
+            {"text": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "icon": "", "name": "YouTube"},
+        ]
+        self.assertEqual(len(get_song_embeds(links)), 1)
+
+    def test_order_follows_links(self):
+        links = [
+            {"text": "https://nicovideo.jp/watch/sm1", "icon": "", "name": "ニコニコ動画"},
+            {"text": "https://youtu.be/dQw4w9WgXcQ", "icon": "", "name": "YouTube"},
+        ]
+        self.assertEqual([embed["name"] for embed in get_song_embeds(links)], ["ニコニコ動画", "YouTube"])
+
+    def test_no_links_returns_empty_list(self):
+        self.assertEqual(get_song_embeds([]), [])

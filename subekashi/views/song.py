@@ -3,7 +3,8 @@ from django.urls import reverse
 from django.views import View
 from config.settings import ROOT_URL
 from subekashi.models import Song, SongTimeline
-from subekashi.lib.song_service import get_song_links_with_media, get_short_and_full_songs, split_songs_by_category
+from subekashi.constants.constants import LONG_TERM_COOKIE_AGE
+from subekashi.lib.song_service import get_song_links_with_media, get_song_embeds, get_short_and_full_songs, split_songs_by_category
 from subekashi.lib.timeline import LYRICS_COLUMN, get_timeline_url
 from subekashi.views.song_removed import render_song_not_found
 import re
@@ -68,6 +69,10 @@ class SongView(View):
             "br_cleaned_lyrics": br_cleaned_lyrics,
             "authors": song.authors.all(),
             "links": links,
+            # 歌詞の上の埋め込みプレイヤー（#1254）。開閉の状態はis_shown_embedのcookieに保存する（off以外は開く）
+            "embeds": get_song_embeds(links),
+            "is_shown_embed": request.COOKIES.get("is_shown_embed", "on") != "off",
+            "embed_cookie_age": LONG_TERM_COOKIE_AGE,
             "imitate_list": imitate_list,
             "imitated_list": imitated_list,
             # 模倣元・模倣曲のうち、ネタ曲と曲以外のカテゴリの曲はdetailsにまとめる
