@@ -214,6 +214,13 @@
 
 #single-news-display * {
     display: inline-block;
+    max-width: 100%;
+}
+
+/* URLなど区切りのない長い文字列も強制的に改行する */
+#single-news-display, #all-news-display {
+    overflow-wrap: anywhere;
+    word-break: break-all;
 }
 
 #all-news-display {
