@@ -857,6 +857,25 @@ class StatsCommandTest(TestCase):
         self.assertEqual(mar_all.total_view, 30)
 
     @patch("subekashi.management.commands.stats.now_local")
+    def test_saves_imitated_author_count_cumulatively(self, mock_now_local):
+        # 1度でも模倣されたことのある作者数（#1163）も他の指標と同様に各月の累積値として保存され、
+        # 事前にマイグレーションで入れた値や古い実行結果ではなく、毎回再計算した値で上書きされる
+        mock_now_local.return_value = timezone_aware(2026, 2, 15)
+        author_jan = Author.objects.create(name="1月の作者")
+        author_feb = Author.objects.create(name="2月の作者")
+        song_jan = Song.objects.create(title="1月の曲", upload_time=timezone_aware(2026, 1, 15))
+        song_jan.authors.add(author_jan)
+        song_feb = Song.objects.create(title="2月の曲", upload_time=timezone_aware(2026, 2, 10))
+        song_feb.authors.add(author_feb)
+        Song.objects.create(title="模倣曲", upload_time=timezone_aware(2026, 2, 12)).imitates.add(song_jan, song_feb)
+        Stats.objects.create(year=2026, month=1, songrange="all", total_imitated_authors=99)
+
+        self._run()
+
+        self.assertEqual(Stats.objects.get(year=2026, month=1, songrange="all").total_imitated_authors, 1)
+        self.assertEqual(Stats.objects.get(year=2026, month=2, songrange="all").total_imitated_authors, 2)
+
+    @patch("subekashi.management.commands.stats.now_local")
     def test_songrange_is_split_by_is_subeana(self, mock_now_local):
         mock_now_local.return_value = timezone_aware(2026, 3, 15)
         Song.objects.create(title="すべあな曲", upload_time=timezone_aware(2026, 3, 1), is_subeana=True)

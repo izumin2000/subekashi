@@ -134,6 +134,7 @@ def compute_common_stats(qs):
     """総合統計ページ・stats管理コマンドのみ: total_authorsを含む共通統計を返す"""
     stats = compute_base_stats(qs)
     stats["total_authors"] = compute_unique_author_count(qs)
+    stats["total_imitated_authors"] = compute_imitated_author_count(qs)
     return stats
 
 
@@ -151,6 +152,13 @@ def build_stats_items(stats, items):
 def compute_unique_author_count(qs):
     """範囲内の曲に紐づく重複なしの作者数（総作者数として使用）"""
     return Author.objects.filter(songs__in=qs).distinct().count()
+
+
+def compute_imitated_author_count(qs):
+    """範囲内の曲のうち、1度でも模倣された曲に紐づく重複なしの作者数"""
+    # 削除した曲（#1239）は模倣曲として数えない
+    imitated_songs = _clean_base(qs).filter(imitateds__is_removed=False)
+    return Author.objects.filter(songs__in=imitated_songs).distinct().count()
 
 
 def compute_total_imitates(qs):
@@ -235,7 +243,7 @@ def resolve_year_month(request, year_choice_qs=None):
     return year, month, year_choices, month_choices
 
 
-MONTHLY_STATS_FIELDS = ["song_count", "total_view", "total_like", "total_authors", "total_imitateds"]
+MONTHLY_STATS_FIELDS = ["song_count", "total_view", "total_like", "total_authors", "total_imitated_authors", "total_imitateds"]
 
 
 def with_monthly_deltas(rows):

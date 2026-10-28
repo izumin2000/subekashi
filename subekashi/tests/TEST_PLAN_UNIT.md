@@ -1326,6 +1326,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 曲は存在し他の指標が0（回帰、コードレビュー指摘対応の仕様変更） | 曲が1件以上存在するがtotal_like等が0 | 「データなし」ではなく実際の値としてそのカードも表示される（`song_count`が0の時だけ全体を非表示にし、それ以外は個々の値が0でも表示する） |
 | YouTube由来の指標のみYouTubeアイコン付き (#896) | view・likeを持つ曲が存在 | `stats_items`のうち`is_youtube`が付くのは「総再生回数」「総高評価数」のみで、レスポンスに`fa-youtube`が含まれる |
 | songrangeによる絞り込み | `?songrange=subeana` | is_subeana=Trueの曲のみが集計される |
+| 1度でも模倣されたことのある作者数（#1163） | 原曲の作者と、その原曲を模倣した曲の作者が存在 | `stats_items`の「模倣された作者数」は原曲の作者のみの1になり（「総作者数」は2）、レスポンスに「模倣された作者数」が含まれる |
+| 模倣された作者数はsongrangeフィルターに連動（#1163） | すべあな界隈曲と界隈外曲の両方が1つの模倣曲に模倣されている、`?songrange=xx` | 「模倣された作者数」は界隈外曲の作者のみの1になる |
 | 不正なsongrange | `?songrange=invalid` | "all"にフォールバックする |
 | yearによる絞り込み | `?year=2024` | upload_time年が2024の曲のみが集計される |
 | yearが"all"でもmonthのみで絞り込み | `?month=1` | 年をまたいで該当月の曲のみが集計される（#334で年月セレクトを独立表示に変更） |
@@ -1341,6 +1343,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | グラフがsongrangeフィルターに連動（コードレビュー指摘対応の仕様変更） | `?songrange=subeana`、`Stats`にall/subeana/xxそれぞれのレコードが存在 | `context["monthly_stats"]`がsongrange="subeana"のレコードのみになる |
 | グラフがyearフィルターに連動（コードレビュー指摘対応の仕様変更） | `?year=2024`、複数年の`Stats`レコードが存在 | `context["monthly_stats"]`が2024年の月のみになる |
 | グラフがyear未指定のmonthのみフィルターにも連動（回帰、コードレビュー指摘対応） | `?month=1`（yearは指定しない）、複数年の`Stats`レコードが存在 | 統計カードと同様、`context["monthly_stats"]`も年をまたいだ該当月のみになる（以前はグラフ側だけmonth条件が無視されていた） |
+| グラフに模倣された作者数が渡される（#1163） | `total_imitated_authors`が2・5の2か月分の`Stats`が存在 | `context["monthly_stats"]`の`total_imitated_authors`が`[2, 5]`、月ごとの差分`total_imitated_authors_delta`が`[2, 3]`になる |
 | グラフの差分は絞り込み前の全期間から計算（回帰） | `?year=2025`指定、2024年12月と2025年1月の`Stats`が存在 | 表示範囲を2025年のみに絞り込んでも、`song_count_delta`は2024年12月との差分として正しく計算される |
 | year選択肢は選択中のsongrangeに連動（回帰、コードレビュー指摘対応） | `?songrange=subeana`、xx曲のみの年とsubeana曲のみの年が混在 | `year_choices`にxx曲のみの年が含まれず、選択しても0件になる組み合わせを避けられる |
 | メニューからの導線 | トップページのGET | `/stats/`へのリンクが記事とお問い合わせの間に含まれる |
@@ -1349,6 +1352,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | `highlighted_month`はyear・month両方指定時のみセット（コードレビュー指摘対応） | `?year=2024&month=6` | `context["highlighted_month"]`が`6`になり、JS側で棒グラフのその月だけ色を変えるための`highlighted-month-data`が埋め込まれる（グラフ側はmonthを無視してその年全体を表示するため、選択していた月をハイライトして元のフィルターとの対応を分かりやすくする） |
 | グラフ表示設定はcookie未設定時デフォルト（#1111） | cookie無し | `context["chart_mode"]`が`"monthly"`、`context["chart_series"]`が`"song_count"`になり、対応するラジオボタンに`checked`が付く |
 | グラフ表示設定はcookieの値を反映（#1111） | `stats_chart_mode=cumulative`・`stats_chart_series=total_view`のcookieを送信 | `context["chart_mode"]`が`"cumulative"`、`context["chart_series"]`が`"total_view"`になり、対応するラジオボタンのみに`checked`が付く |
+| グラフの系列に模倣された作者数を選べる（#1163） | `stats_chart_series=total_imitated_authors`のcookieを送信 | `context["chart_series"]`が`"total_imitated_authors"`になり、`chart-series-total-imitated-authors`のラジオボタンのみに`checked`が付く |
 | グラフ表示設定はsongrange変更（ページ全体の再読み込み）を挟んでも維持される（#1111の再現ケース） | `stats_chart_mode=cumulative`のcookieを送信した状態で`?songrange=subeana`にアクセス | `context["chart_mode"]`が`"cumulative"`のまま（`chart-mode`/`chart-series`は`songrange`/`year`/`month`用のformの外側にあり、これらの変更时のページ全体再読み込みでは送信されないため、cookie側で維持する） |
 | 不正なグラフ表示設定cookieはデフォルトにフォールバック（#1111） | `stats_chart_mode`/`stats_chart_series`に許可されていない値を送信 | `context["chart_mode"]`が`"monthly"`、`context["chart_series"]`が`"song_count"`にフォールバックする |
 
@@ -1992,6 +1996,10 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | マイグレーション `0051_songlink_bilibili_url`: URLを揃える（#1246） | `?spm_id_from=` の付いたビリビリ動画のURL・揃えたビリビリ動画のURL・末尾に`/`の付いたニコニコ動画のURLに `normalize_bilibili_urls` を実行 | 1つ目は `https://bilibili.com/video/BV<id>` になり曲の紐付けは残る。2つ目・ニコニコ動画のURLは変わらない |
 | マイグレーション `0051_songlink_bilibili_url`: 同じ動画のURLを1つにまとめる（#1246） | BV番号のURL・同じ動画のav番号のURL（`allow_dup=True`）・末尾に`/`の付いたBV番号のURLにそれぞれ別の曲が紐付いている | BV番号のURLの1件だけが残り、3曲とも紐付き、`allow_dup=True`（どちらかがTrueならTrue） |
 | マイグレーション `0051_songlink_bilibili_url`: 揃えたURLが無い場合（#1246） | av番号のURL（曲なし）と、末尾に`/`の付いた同じ動画のBV番号のURL（曲あり） | 先に登録したav番号のURLがBV番号のURLになり、もう一方の曲が紐付く。`SongLink`は1件になる |
+| マイグレーション `0056_stats_total_imitated_authors`: songrangeごとの累積値（#1163） | 1月にすべあな界隈曲・界隈外曲、2月にすべあな界隈曲（いずれも作者あり）と、2月の模倣曲（上の3曲を模倣）が存在し、1月・2月のall/subeana/xxの`Stats`に `fill_total_imitated_authors` を実行 | 各月の末日までに投稿された曲の作者のうち、模倣された作者数が入る（all: 1月2・2月3、subeana: 1月1・2月2、xx: 1月1・2月1）。模倣曲の投稿が月末より後でも数える |
+| マイグレーション `0056_stats_total_imitated_authors`: 12月の月末（#1163） | 12月の曲とその模倣曲が存在し、`year`が12月の`Stats`に `fill_total_imitated_authors` を実行 | 翌年1月1日未満の曲まで含め、1になる |
+| マイグレーション `0056_stats_total_imitated_authors`: 削除した曲（#1163） | 削除した曲にのみ模倣されている曲と、削除した曲を模倣している通常の曲が存在 | どちらの作者も数えず、0になる |
+| マイグレーション `0056_stats_total_imitated_authors`: lib側と同じ結果（#1163） | 共作曲とその模倣曲2曲が存在 | `compute_common_stats`の`total_imitated_authors`と同じ値になる（`compute_imitated_author_count`をコピーした処理のずれを防ぐ） |
 | マイグレーション `0051_songlink_bilibili_url`: `is_removed`（#1246） | 削除された曲のURL（`is_removed=True`）と、同じ動画の曲に紐付くURL / 両方とも削除された曲のURL | `is_removed=False`（曲に紐付くURLが「削除された曲のURL」として編集できなくならないように） / `is_removed=True` |
 
 #### 11-5. `Contact` モデル
@@ -2050,7 +2058,7 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 
 | テストケース | 操作 | 期待結果 |
 | --- | --- | --- |
-| デフォルト値 | `year`・`month`のみ指定して作成 | 各集計フィールドが`0`になる |
+| デフォルト値 | `year`・`month`のみ指定して作成 | 各集計フィールド（`total_imitated_authors`を含む、#1163）が`0`になる |
 | `songrange`のデフォルト値 | `year`・`month`のみ指定して作成 | `songrange`が`"all"`になる |
 | `(year, month, songrange)`のユニーク制約 | 同じ`year`・`month`・`songrange`で2件作成 | `IntegrityError`が発生 |
 | `songrange`が異なれば同じ`(year, month)`でも作成可能 | `songrange="all"`と`songrange="subeana"`で同じ`(year, month)` | 2件とも作成できる |
@@ -2283,6 +2291,7 @@ DBロックエラー対策で全件処理時に先にID一覧を取得する方�
 | --- | --- | --- |
 | 全期間を再計算 | 1月・3月にそれぞれ`upload_time`を持つSongが存在する状態で今月=3月15日として実行 | 曲の無い2月分も含め1月〜3月まで月ごとにall/subeana/xxの3件`Stats`が作成され、各月はその月末までの累積値になる。完了メッセージ「月次統計を更新しました。」が出力される |
 | songrangeごとに正しく振り分けられる | is_subeana=True/Falseの曲が混在 | `songrange="subeana"`/`"xx"`のレコードがそれぞれの曲数のみを集計する |
+| 模倣された作者数が月ごとの累積値で保存される（#1163） | 1月の曲・2月の曲（作者あり）と、その両方を模倣する2月の模倣曲が存在、1月分の`Stats`に`total_imitated_authors=99`が入った状態で実行 | 1月分は1、2月分は2に再計算して上書きされる |
 | 年をまたいで再計算 | 前年12月に`upload_time`を持つSongが存在する状態で今月=1月1日として実行 | 前年12月分・当年1月分の両方が作成される |
 | 曲が0件 | DBが空 | 集計期間の起点が決められないため何もせず終了する（`Stats`は作成されない） |
 | `upload_time`を持つSongが1件も無い | 全曲`upload_time=None` | 同上 |
@@ -2604,7 +2613,7 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 
 #### 19-2. `compute_view_like_totals(qs)` / `get_view_like_pairs(qs)` / `compute_base_stats(qs)` / `compute_common_stats(qs)`
 
-`compute_view_like_totals`はsong_count/total_view/total_likeのみを返す最小構成（total_imitateds/total_authorsを含まない）。`get_view_like_pairs`はqs内の各曲のview/likeを`(view, like)`のペアのリストとして列挙する（Noneは0扱い）。鍵歴（#968、`kenreki_service.py`参照）はSongごとに算出してから合計する仕様のため、集計済みのSumではなくこちらを使う。`compute_base_stats`は`compute_view_like_totals`に`total_imitateds`を加えたもの、`compute_common_stats`はさらに`total_authors`（`compute_unique_author_count`によるAuthor起点の追加クエリ）を加えたもので、総合統計ページ・stats管理コマンドのみが使う。authorごとの統計ページはtotal_authorsを画面に表示しない（合作人数を別途算出するため）ため`compute_base_stats`を使い、無駄なクエリが発行されないようにしている（コードレビュー指摘対応）。
+`compute_view_like_totals`はsong_count/total_view/total_likeのみを返す最小構成（total_imitateds/total_authorsを含まない）。`get_view_like_pairs`はqs内の各曲のview/likeを`(view, like)`のペアのリストとして列挙する（Noneは0扱い）。鍵歴（#968、`kenreki_service.py`参照）はSongごとに算出してから合計する仕様のため、集計済みのSumではなくこちらを使う。`compute_base_stats`は`compute_view_like_totals`に`total_imitateds`を加えたもの、`compute_common_stats`はさらに`total_authors`（`compute_unique_author_count`によるAuthor起点の追加クエリ）と`total_imitated_authors`（`compute_imitated_author_count`、#1163）を加えたもので、総合統計ページ・stats管理コマンドのみが使う。authorごとの統計ページはtotal_authorsを画面に表示しない（合作人数を別途算出するため）ため`compute_base_stats`を使い、無駄なクエリが発行されないようにしている（コードレビュー指摘対応）。
 
 | テストケース | 対象 | 前提条件 | 期待結果 |
 | --- | --- | --- | --- |
@@ -2619,6 +2628,8 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 | ユーザーが削除した模倣曲（#1239） | `compute_base_stats` | 通常の曲と削除した曲がある曲を模倣 | `total_imitateds`は1（削除した曲は数えない） |
 | ユーザーが削除した曲（#1239） | `compute_base_stats` | 通常の曲(view=100)と削除した曲(view=50)、`Song.objects.all()`を渡す | `song_count`は1、`total_view`は100 |
 | 同じ作者が複数曲に関わる | `compute_common_stats` | 作者Aが2曲、作者Bが1曲（Aと共作） | `total_authors`は重複を除いた人数（2）になる（`compute_unique_author_count`を内部で使用、#334で`song.authors`の総和から変更） |
+| 模倣された作者数を含む（#1163） | `compute_common_stats` | 作者の曲が1曲に模倣されている | `total_imitated_authors`が1になる |
+| 空のqueryset（#1163） | `compute_common_stats` | 曲が0件 | `total_imitated_authors`が0 |
 | 作者数と模倣曲数の相互干渉防止（回帰） | `compute_common_stats` | 複数作者かつ複数の模倣曲を同時に持つ曲 | `total_authors`（Authorテーブル起点のユニーク集計）と`total_imitateds`（Songテーブル起点のCount集計）が互いに水増しされず、それぞれ正しい値になる |
 
 `AuthorStatsView`側では、これらの分離によりtotal_authors/total_imitateds算出の無駄なクエリが発行されないことをクエリ数のアサーション（`test_does_not_issue_unused_total_authors_query`、`tests/test_views.py`）で回帰防止している。
@@ -2642,6 +2653,22 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 | 空のqueryset | 曲が0件 | 0 |
 | 複数の原曲を模倣 | 1曲が2曲を模倣 | `compute_total_imitates`が2 |
 | ユーザーが削除した原曲を模倣（#1239） | 1曲が通常の曲と削除した曲を模倣 | `compute_total_imitates`が1（削除した曲は数えない） |
+
+#### 19-3-0. `compute_imitated_author_count(qs)`（#1163）
+
+「1度でも模倣されたことのある作者数」の算出に使用（総合統計ページ・stats管理コマンドの`total_imitated_authors`）。qs内の曲のうち、削除されていない曲に1度でも模倣された曲の作者を、重複なしで数える。模倣曲の投稿日時はqsの絞り込みに関わらず見ない（`total_imitateds`と同じ扱い）。
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| 空のqueryset | 曲が0件 | 0 |
+| 模倣された曲の作者 | 作者Aの曲が別の曲に模倣されている | 1 |
+| 模倣していない作者は数えない | 原曲の作者と、原曲を模倣した曲の作者が存在 | 原曲の作者のみの1（模倣した側の作者は、自分の曲が模倣されていなければ数えない） |
+| 複数の曲が模倣されていても1人 | 作者Aの2曲がそれぞれ模倣されている | 1 |
+| 共作曲 | 作者A・Bの共作曲が模倣されている | 2（共作者全員を数える） |
+| 削除した模倣曲のみに模倣された作者（#1239） | 原曲を、削除した曲だけが模倣している | 0 |
+| 通常の模倣曲と削除した模倣曲の両方 | 原曲を、削除した曲と通常の曲が模倣している | 1 |
+| qs外の曲 | qsに含まれない曲の作者の曲も模倣されている | qs内の曲の作者のみが数えられる |
+| 作者数・模倣曲数の相互干渉防止（回帰） | 複数作者かつ3つの模倣曲を持つ曲 | 作者数の2のまま水増しされない |
 
 #### 19-3-1. `compute_collaborator_count(qs, author_id)` / `compute_unique_collaborator_count(qs, author_id)`（authorごとの統計ページのみ、#334）
 
@@ -2687,7 +2714,7 @@ is_subeana=True/Falseの曲がqs内にそれぞれ存在するかを返す。両
 | テストケース | 入力 | 期待結果 |
 | --- | --- | --- |
 | 先頭行の差分 | 1件のみの行リスト | 累積値そのものが差分になる |
-| 2件目以降の差分 | 2件の行リスト | 直前の行との差分になる |
+| 2件目以降の差分 | 2件の行リスト | 直前の行との差分になる（`total_imitated_authors_delta`を含む、#1163） |
 | 累積値は保持される | 任意の行リスト | 元の`<field>`キー（累積値）はそのまま残る |
 | 空リスト | `[]` | `[]` |
 | `year="all"` | 任意の行リスト | 絞り込まれない |

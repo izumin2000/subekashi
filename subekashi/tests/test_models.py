@@ -5,12 +5,14 @@ Song, Author, AuthorAlias, SongLink の CRUD・制約・メソッドを検証す
 """
 import importlib
 import unittest
+from datetime import datetime
 from django.apps import apps
 from django.db import IntegrityError, connection
 from django.db.utils import DataError
 from django.test import TestCase
 from django.utils import timezone
 from subekashi.constants.constants import SONG_CATEGORIES, SONG_FLAGS
+from subekashi.lib.stats_service import compute_common_stats
 from subekashi.models import Ai, Author, AuthorAlias, Contact, Editor, History, Prush, Song, SongLink, SongTimeline, Stats, Word
 from subekashi.models.author import EffectiveAlias, TransitiveAlias
 
@@ -1119,6 +1121,78 @@ class WordModelTest(TestCase):
             Word.objects.create(word="走る", hinshi="動詞", candidate="走る")
 
 
+class StatsImitatedAuthorsMigrationTest(TestCase):
+    """0056_stats_total_imitated_authors のデータ移行のテスト（#1163）"""
+
+    def setUp(self):
+        self.migration = importlib.import_module("subekashi.migrations.0056_stats_total_imitated_authors")
+
+    def create_song(self, title, year, month, authors=(), **kwargs):
+        song = Song.objects.create(title=title, upload_time=timezone.make_aware(datetime(year, month, 15)), **kwargs)
+        song.authors.set(authors)
+        return song
+
+    def test_fills_values_cumulatively_per_songrange(self):
+        subeana_author = Author.objects.create(name="すべあなの作者")
+        xx_author = Author.objects.create(name="界隈外の作者")
+        late_author = Author.objects.create(name="2月の作者")
+        subeana_song = self.create_song("1月のすべあな曲", 2026, 1, [subeana_author], is_subeana=True)
+        xx_song = self.create_song("1月の界隈外曲", 2026, 1, [xx_author], is_subeana=False)
+        late_song = self.create_song("2月の曲", 2026, 2, [late_author], is_subeana=True)
+        # 模倣曲の投稿が2月でも、1月末時点の統計に1月の曲の作者として含める（total_imitatedsと同じ扱い）
+        self.create_song("2月の模倣曲", 2026, 2, is_subeana=True).imitates.add(subeana_song, xx_song, late_song)
+        for songrange in ("all", "subeana", "xx"):
+            for month in (1, 2):
+                Stats.objects.create(year=2026, month=month, songrange=songrange)
+
+        self.migration.fill_total_imitated_authors(apps, None)
+
+        values = {(stats.month, stats.songrange): stats.total_imitated_authors for stats in Stats.objects.all()}
+        self.assertEqual(values, {
+            (1, "all"): 2, (2, "all"): 3,
+            (1, "subeana"): 1, (2, "subeana"): 2,
+            (1, "xx"): 1, (2, "xx"): 1,
+        })
+
+    def test_december_includes_songs_until_end_of_month(self):
+        author = Author.objects.create(name="作者")
+        original = self.create_song("12月の曲", 2025, 12, [author])
+        self.create_song("模倣曲", 2025, 12).imitates.add(original)
+        Stats.objects.create(year=2025, month=12, songrange="all")
+
+        self.migration.fill_total_imitated_authors(apps, None)
+
+        self.assertEqual(Stats.objects.get().total_imitated_authors, 1)
+
+    def test_removed_songs_are_not_counted(self):
+        # 削除した曲（#1239）は、模倣された曲としても模倣曲としても数えない
+        author = Author.objects.create(name="作者")
+        removed_author = Author.objects.create(name="削除した曲の作者")
+        original = self.create_song("原曲", 2026, 1, [author])
+        self.create_song("削除した模倣曲", 2026, 1, is_removed=True).imitates.add(original)
+        removed_original = self.create_song("削除した原曲", 2026, 1, [removed_author], is_removed=True)
+        self.create_song("模倣曲", 2026, 1).imitates.add(removed_original)
+        Stats.objects.create(year=2026, month=1, songrange="all")
+
+        self.migration.fill_total_imitated_authors(apps, None)
+
+        self.assertEqual(Stats.objects.get().total_imitated_authors, 0)
+
+    def test_matches_compute_common_stats(self):
+        # lib側のcompute_imitated_author_countをコピーしたため、同じ結果になることを確認する
+        author_a = Author.objects.create(name="作者A")
+        author_b = Author.objects.create(name="作者B")
+        original = self.create_song("共作曲", 2026, 1, [author_a, author_b])
+        self.create_song("模倣曲1", 2026, 2).imitates.add(original)
+        self.create_song("模倣曲2", 2026, 2).imitates.add(original)
+        Stats.objects.create(year=2026, month=2, songrange="all")
+
+        self.migration.fill_total_imitated_authors(apps, None)
+
+        expected = compute_common_stats(Song.objects.all())["total_imitated_authors"]
+        self.assertEqual(Stats.objects.get().total_imitated_authors, expected)
+
+
 class StatsModelTest(TestCase):
     """Stats モデルのテスト"""
 
@@ -1135,6 +1209,7 @@ class StatsModelTest(TestCase):
         self.assertEqual(stats.total_view, 0)
         self.assertEqual(stats.total_like, 0)
         self.assertEqual(stats.total_authors, 0)
+        self.assertEqual(stats.total_imitated_authors, 0)
         self.assertEqual(stats.total_imitateds, 0)
 
     def test_str(self):

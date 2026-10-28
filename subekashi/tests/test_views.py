@@ -2925,6 +2925,38 @@ class StatsViewTest(TestCase):
         self.assertEqual(youtube_labels, ["総再生回数", "総高評価数"])
         self.assertContains(response, "fa-youtube")
 
+    def test_imitated_authors_item_counts_authors_imitated_at_least_once(self):
+        # 1度でも模倣されたことのある作者数（#1163）。模倣曲の作者や模倣されていない作者は数えない
+        imitated_author = Author.objects.create(name="模倣された作者")
+        imitator = Author.objects.create(name="模倣した作者")
+        original = Song.objects.create(title="原曲")
+        original.authors.add(imitated_author)
+        imitate = Song.objects.create(title="模倣曲")
+        imitate.authors.add(imitator)
+        imitate.imitates.add(original)
+
+        response = self.client.get(reverse("subekashi:stats"))
+
+        stats_items = {item["label"]: item["value"] for item in response.context["stats_items"]}
+        self.assertEqual(stats_items["総作者数"], 2)
+        self.assertEqual(stats_items["模倣された作者数"], 1)
+        self.assertContains(response, "模倣された作者数")
+
+    def test_imitated_authors_item_reflects_songrange_filter(self):
+        subeana_author = Author.objects.create(name="すべあな界隈の作者")
+        xx_author = Author.objects.create(name="界隈外の作者")
+        subeana_song = Song.objects.create(title="すべあな曲", is_subeana=True)
+        subeana_song.authors.add(subeana_author)
+        xx_song = Song.objects.create(title="界隈外曲", is_subeana=False)
+        xx_song.authors.add(xx_author)
+        imitate = Song.objects.create(title="模倣曲", is_subeana=True)
+        imitate.imitates.add(subeana_song, xx_song)
+
+        response = self.client.get(reverse("subekashi:stats"), {"songrange": "xx"})
+
+        stats_items = {item["label"]: item["value"] for item in response.context["stats_items"]}
+        self.assertEqual(stats_items["模倣された作者数"], 1)
+
     @staticmethod
     def _song_count(response):
         return next(item["value"] for item in response.context["stats_items"] if item["label"] == "曲数")
@@ -3078,6 +3110,19 @@ class StatsViewTest(TestCase):
         self.assertEqual(len(monthly_stats), 1)
         self.assertEqual(monthly_stats[0]["song_count"], 6)
 
+    def test_monthly_stats_includes_imitated_authors_and_delta(self):
+        # 1度でも模倣されたことのある作者数（#1163）が累積値と月ごとの差分の両方でグラフに渡される
+        Stats.objects.create(year=2024, month=1, songrange="all", total_imitated_authors=2)
+        Stats.objects.create(year=2024, month=2, songrange="all", total_imitated_authors=5)
+        Song.objects.create(title="すべあな曲", is_subeana=True)
+        Song.objects.create(title="界隈外曲", is_subeana=False)
+
+        response = self.client.get(reverse("subekashi:stats"))
+
+        monthly_stats = response.context["monthly_stats"]
+        self.assertEqual([row["total_imitated_authors"] for row in monthly_stats], [2, 5])
+        self.assertEqual([row["total_imitated_authors_delta"] for row in monthly_stats], [2, 3])
+
     def test_monthly_stats_reflects_year_filter(self):
         Stats.objects.create(year=2024, month=1, songrange="all", song_count=5)
         Stats.objects.create(year=2025, month=1, songrange="all", song_count=9)
@@ -3221,6 +3266,17 @@ class StatsViewTest(TestCase):
         self.assertTrue(self._is_radio_checked(response, "chart-mode-cumulative"))
         self.assertFalse(self._is_radio_checked(response, "chart-mode-monthly"))
         self.assertTrue(self._is_radio_checked(response, "chart-series-total-view"))
+        self.assertFalse(self._is_radio_checked(response, "chart-series-song-count"))
+
+    def test_chart_series_imitated_authors_is_selectable_by_cookie(self):
+        # 1度でも模倣されたことのある作者数（#1163）をグラフの系列として選択できる
+        self._create_all_songrange_stats()
+        self.client.cookies["stats_chart_series"] = "total_imitated_authors"
+
+        response = self.client.get(reverse("subekashi:stats"))
+
+        self.assertEqual(response.context["chart_series"], "total_imitated_authors")
+        self.assertTrue(self._is_radio_checked(response, "chart-series-total-imitated-authors"))
         self.assertFalse(self._is_radio_checked(response, "chart-series-song-count"))
 
     def test_chart_settings_reflect_cookie_across_songrange_filter_change(self):

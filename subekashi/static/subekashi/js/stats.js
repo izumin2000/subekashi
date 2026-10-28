@@ -26,6 +26,7 @@ if (statsChartCanvas) {
         total_view: "総再生回数",
         total_like: "総高評価数",
         total_authors: "総作者数",
+        total_imitated_authors: "模倣された作者数",
         total_imitateds: "総模倣曲関係数",
     };
 

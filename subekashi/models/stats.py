@@ -18,6 +18,7 @@ class Stats(models.Model):
     total_view = models.IntegerField(default = 0)
     total_like = models.IntegerField(default = 0)
     total_authors = models.IntegerField(default = 0)
+    total_imitated_authors = models.IntegerField(default = 0)
     total_imitateds = models.IntegerField(default = 0)
     create_time = models.DateTimeField(default = timezone.now)
 

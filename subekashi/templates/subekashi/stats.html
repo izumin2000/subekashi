@@ -26,6 +26,8 @@
             <label for="chart-series-total-like"><i class="far fa-thumbs-up"></i><span class="icon-p-big"><i class="fab fa-youtube"></i>総高評価数</span></label>
             <input type="radio" id="chart-series-total-authors" name="chart-series" value="total_authors" {% if chart_series == "total_authors" %}checked{% endif %}>
             <label for="chart-series-total-authors"><i class="fas fa-users"></i><span class="icon-p-big">総作者数</span></label>
+            <input type="radio" id="chart-series-total-imitated-authors" name="chart-series" value="total_imitated_authors" {% if chart_series == "total_imitated_authors" %}checked{% endif %}>
+            <label for="chart-series-total-imitated-authors"><i class="fas fa-user-check"></i><span class="icon-p-big">模倣された作者数</span></label>
             <input type="radio" id="chart-series-total-imitateds" name="chart-series" value="total_imitateds" {% if chart_series == "total_imitateds" %}checked{% endif %}>
             <label for="chart-series-total-imitateds"><i class="fas fa-sitemap"></i><span class="icon-p-big">総模倣曲関係数</span></label>
         </div>
