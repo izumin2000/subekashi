@@ -23,7 +23,7 @@ CHART_MODE_CHOICES = {"monthly", "cumulative"}
 CHART_MODE_DEFAULT = "monthly"
 
 CHART_SERIES_COOKIE = "stats_chart_series"
-CHART_SERIES_CHOICES = {"song_count", "total_view", "total_like", "total_authors", "total_imitateds"}
+CHART_SERIES_CHOICES = {"song_count", "total_view", "total_like", "total_authors", "total_imitated_authors", "total_imitateds"}
 CHART_SERIES_DEFAULT = "song_count"
 
 # stats.js側もこのcookie名・有効期限を使ってdocument.cookieに書き込む必要があるため、
@@ -50,6 +50,7 @@ class StatsView(View):
             {"icon": "fas fa-play", "label": "総再生回数", "value": stats["total_view"], "is_youtube": True},
             {"icon": "far fa-thumbs-up", "label": "総高評価数", "value": stats["total_like"], "is_youtube": True},
             {"icon": "fas fa-users", "label": "総作者数", "value": stats["total_authors"]},
+            {"icon": "fas fa-user-check", "label": "模倣された作者数", "value": stats["total_imitated_authors"]},
             {"icon": "fas fa-sitemap", "label": "総模倣曲関係数", "value": stats["total_imitateds"]},
         ])
 
@@ -62,7 +63,7 @@ class StatsView(View):
 
         monthly_series = list(Stats.get_monthly_series(songrange).values(
             "year", "month", "song_count", "total_view", "total_like",
-            "total_authors", "total_imitateds",
+            "total_authors", "total_imitated_authors", "total_imitateds",
         ))
         # 差分(月ごとモード用)は絞り込み前の全期間から計算してから、表示範囲をyear/monthで絞り込む
         monthly_stats = filter_monthly_series_by_year_month(with_monthly_deltas(monthly_series), year, month)

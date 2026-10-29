@@ -15,6 +15,7 @@ from subekashi.lib.stats_service import (
     compute_base_stats,
     compute_collaborator_count,
     compute_common_stats,
+    compute_imitated_author_count,
     compute_total_imitates,
     compute_unique_author_count,
     compute_unique_collaborator_count,
@@ -346,6 +347,110 @@ class ComputeCommonStatsTest(TestCase):
         self.assertEqual(stats["total_authors"], 2)
         self.assertEqual(stats["total_imitateds"], 3)
 
+    def test_total_imitated_authors_is_included(self):
+        author = Author.objects.create(name="作者A")
+        original = Song.objects.create(title="原曲")
+        original.authors.add(author)
+        Song.objects.create(title="模倣曲").imitates.add(original)
+
+        stats = compute_common_stats(Song.objects.all())
+
+        self.assertEqual(stats["total_imitated_authors"], 1)
+
+    def test_empty_queryset_has_zero_imitated_authors(self):
+        stats = compute_common_stats(Song.objects.none())
+
+        self.assertEqual(stats["total_imitated_authors"], 0)
+
+
+class ComputeImitatedAuthorCountTest(TestCase):
+    # 1度でも模倣されたことのある作者数（#1163）
+    def test_empty_queryset(self):
+        self.assertEqual(compute_imitated_author_count(Song.objects.none()), 0)
+
+    def test_counts_author_of_imitated_song(self):
+        author = Author.objects.create(name="作者A")
+        original = Song.objects.create(title="原曲")
+        original.authors.add(author)
+        Song.objects.create(title="模倣曲").imitates.add(original)
+
+        self.assertEqual(compute_imitated_author_count(Song.objects.all()), 1)
+
+    def test_author_of_song_never_imitated_is_not_counted(self):
+        # 模倣曲側の作者は、自分の曲が模倣されていなければ数えない
+        original_author = Author.objects.create(name="原曲の作者")
+        imitator = Author.objects.create(name="模倣曲の作者")
+        original = Song.objects.create(title="原曲")
+        original.authors.add(original_author)
+        imitate = Song.objects.create(title="模倣曲")
+        imitate.authors.add(imitator)
+        imitate.imitates.add(original)
+
+        self.assertEqual(compute_imitated_author_count(Song.objects.all()), 1)
+
+    def test_author_with_multiple_imitated_songs_is_counted_once(self):
+        author = Author.objects.create(name="作者A")
+        original_1 = Song.objects.create(title="原曲1")
+        original_2 = Song.objects.create(title="原曲2")
+        original_1.authors.add(author)
+        original_2.authors.add(author)
+        imitate = Song.objects.create(title="模倣曲")
+        imitate.imitates.add(original_1, original_2)
+        Song.objects.create(title="別の模倣曲").imitates.add(original_1)
+
+        self.assertEqual(compute_imitated_author_count(Song.objects.all()), 1)
+
+    def test_all_authors_of_collaboration_song_are_counted(self):
+        author_a = Author.objects.create(name="作者A")
+        author_b = Author.objects.create(name="作者B")
+        original = Song.objects.create(title="共作曲")
+        original.authors.add(author_a, author_b)
+        Song.objects.create(title="模倣曲").imitates.add(original)
+
+        self.assertEqual(compute_imitated_author_count(Song.objects.all()), 2)
+
+    def test_author_whose_only_imitating_song_is_removed_is_not_counted(self):
+        # ユーザーが削除した曲（#1239）は模倣曲として数えない
+        author = Author.objects.create(name="作者A")
+        original = Song.objects.create(title="原曲")
+        original.authors.add(author)
+        Song.objects.create(title="削除した模倣曲", is_removed=True).imitates.add(original)
+
+        self.assertEqual(compute_imitated_author_count(Song.objects.all()), 0)
+
+    def test_author_is_counted_when_one_of_imitating_songs_is_not_removed(self):
+        author = Author.objects.create(name="作者A")
+        original = Song.objects.create(title="原曲")
+        original.authors.add(author)
+        Song.objects.create(title="削除した模倣曲", is_removed=True).imitates.add(original)
+        Song.objects.create(title="模倣曲").imitates.add(original)
+
+        self.assertEqual(compute_imitated_author_count(Song.objects.all()), 1)
+
+    def test_only_songs_in_queryset_are_considered(self):
+        # 範囲外の曲が模倣されていても、その作者は数えない
+        in_range_author = Author.objects.create(name="範囲内の作者")
+        out_of_range_author = Author.objects.create(name="範囲外の作者")
+        in_range = Song.objects.create(title="範囲内の曲")
+        in_range.authors.add(in_range_author)
+        out_of_range = Song.objects.create(title="範囲外の曲")
+        out_of_range.authors.add(out_of_range_author)
+        imitate = Song.objects.create(title="模倣曲")
+        imitate.imitates.add(in_range, out_of_range)
+
+        self.assertEqual(compute_imitated_author_count(Song.objects.filter(pk=in_range.pk)), 1)
+
+    def test_authors_and_imitating_songs_do_not_inflate_count(self):
+        # 複数作者かつ複数の模倣曲を同時に持つ曲でも、作者数が水増しされない
+        author_a = Author.objects.create(name="作者A")
+        author_b = Author.objects.create(name="作者B")
+        original = Song.objects.create(title="原曲")
+        original.authors.add(author_a, author_b)
+        for i in range(3):
+            Song.objects.create(title=f"模倣曲{i}").imitates.add(original)
+
+        self.assertEqual(compute_imitated_author_count(Song.objects.filter(pk=original.pk)), 2)
+
 
 class BuildStatsItemsTest(TestCase):
     def test_song_count_zero_returns_empty_list(self):
@@ -522,23 +627,24 @@ class MonthStartTest(TestCase):
 
 class WithMonthlyDeltasTest(TestCase):
     def test_first_row_delta_equals_cumulative_value(self):
-        rows = [{"year": 2026, "month": 1, "song_count": 5, "total_view": 10, "total_like": 1, "total_authors": 2, "total_imitateds": 0}]
+        rows = [{"year": 2026, "month": 1, "song_count": 5, "total_view": 10, "total_like": 1, "total_authors": 2, "total_imitated_authors": 0, "total_imitateds": 0}]
         result = with_monthly_deltas(rows)
         self.assertEqual(result[0]["song_count_delta"], 5)
         self.assertEqual(result[0]["total_view_delta"], 10)
 
     def test_subsequent_row_delta_is_difference_from_previous(self):
         rows = [
-            {"year": 2026, "month": 1, "song_count": 5, "total_view": 10, "total_like": 1, "total_authors": 2, "total_imitateds": 0},
-            {"year": 2026, "month": 2, "song_count": 8, "total_view": 25, "total_like": 3, "total_authors": 2, "total_imitateds": 1},
+            {"year": 2026, "month": 1, "song_count": 5, "total_view": 10, "total_like": 1, "total_authors": 2, "total_imitated_authors": 0, "total_imitateds": 0},
+            {"year": 2026, "month": 2, "song_count": 8, "total_view": 25, "total_like": 3, "total_authors": 2, "total_imitated_authors": 1, "total_imitateds": 1},
         ]
         result = with_monthly_deltas(rows)
         self.assertEqual(result[1]["song_count_delta"], 3)
         self.assertEqual(result[1]["total_view_delta"], 15)
         self.assertEqual(result[1]["total_authors_delta"], 0)
+        self.assertEqual(result[1]["total_imitated_authors_delta"], 1)
 
     def test_original_cumulative_values_are_preserved(self):
-        rows = [{"year": 2026, "month": 1, "song_count": 5, "total_view": 10, "total_like": 1, "total_authors": 2, "total_imitateds": 0}]
+        rows = [{"year": 2026, "month": 1, "song_count": 5, "total_view": 10, "total_like": 1, "total_authors": 2, "total_imitated_authors": 0, "total_imitateds": 0}]
         result = with_monthly_deltas(rows)
         self.assertEqual(result[0]["song_count"], 5)
 
