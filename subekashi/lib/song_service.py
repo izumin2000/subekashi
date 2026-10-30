@@ -70,10 +70,12 @@ def validate_song_url(cleaned_url, exclude_song_id=None, allow_dup=False):
     return None
 
 
-def allow_song_url_dup(url, ip):
+def allow_song_url_dup(url, ip, exclude_song_id=None):
     """URLの重複を許可し、そのURLを元から持つ曲の編集履歴に残す（#1282）。SongLinkが無ければNoneを返す
 
     曲の保存と同じトランザクションで呼び、保存できなかったときに重複を許可したままにしない（#1285）。
+    exclude_song_idには、保存する曲（編集している曲）を渡す。その曲にしか紐付いていないURLは
+    重複していないため、許可せずNoneを返す。履歴もその曲には残さない（#1285）。
     既に重複を許可しているURLは、履歴が増えないよう、履歴を残さない。
     同時に呼ばれても履歴が二重にならないよう、allow_dup=Falseの行を更新できたときだけ履歴を残す。
     """
@@ -81,10 +83,15 @@ def allow_song_url_dup(url, ip):
         link = SongLink.objects.filter(url__iexact=url).first()
         if link is None:
             return None
+        songs = link.songs.all()
+        if exclude_song_id is not None:
+            songs = songs.exclude(pk=exclude_song_id)
+            if not songs.exists():
+                return None
         if SongLink.objects.filter(pk=link.pk, allow_dup=False).update(allow_dup=True):
             link.allow_dup = True
             editor = Editor.get_or_create_from_ip(ip)
-            for song in link.songs.all():
+            for song in songs:
                 History.create_for_song(
                     song=song,
                     title=f"{song.title}のURLの重複を許可",

@@ -255,6 +255,36 @@ class AllowSongUrlDupTest(TestCase):
         self.assertTrue(link.allow_dup)
         self.assertFalse(History.objects.exists())
 
+    def test_exclude_song_id_does_not_allow_url_only_of_that_song(self):
+        # #1285: 保存する曲にしか紐付いていないURLは重複していないため、許可せず、履歴も作らない
+        link = allow_song_url_dup("https://youtu.be/existing1234", "ip-a", exclude_song_id=self.song.id)
+        self.assertIsNone(link)
+        self.link.refresh_from_db()
+        self.assertFalse(self.link.allow_dup)
+        self.assertFalse(History.objects.exists())
+        self.assertIsNone(Editor.get_by_ip("ip-a"))
+
+    def test_exclude_song_id_creates_history_for_other_songs_only(self):
+        # #1285: 保存する曲にも紐付いているURLでも、履歴は保存する曲以外の曲にだけ残す
+        other = Song.objects.create(title="もう1曲")
+        self.link.songs.add(other)
+        link = allow_song_url_dup("https://youtu.be/existing1234", "ip-a", exclude_song_id=self.song.id)
+        self.assertEqual(link, self.link)
+        self.link.refresh_from_db()
+        self.assertTrue(self.link.allow_dup)
+        self.assertFalse(History.objects.filter(song=self.song).exists())
+        self.assertEqual(History.objects.filter(song=other).count(), 1)
+
+    def test_exclude_song_id_of_unrelated_song_allows_url(self):
+        # 保存する曲がまだ紐付いていないURL（登録・編集で重複を許可するとき）は、そのまま許可する
+        editing = Song.objects.create(title="編集している曲")
+        link = allow_song_url_dup("https://youtu.be/existing1234", "ip-a", exclude_song_id=editing.id)
+        self.assertEqual(link, self.link)
+        self.link.refresh_from_db()
+        self.assertTrue(self.link.allow_dup)
+        self.assertEqual(History.objects.filter(song=self.song).count(), 1)
+        self.assertFalse(History.objects.filter(song=editing).exists())
+
     def test_rolls_back_with_outer_transaction(self):
         # #1285: 曲の保存と同じトランザクションで呼べば、曲を保存できなかったときに重複を許可したままにしない
         with self.assertRaises(ValueError):

@@ -331,9 +331,9 @@
 | 順番 | ニコニコ動画・YouTubeの順のリンク | リンクの順に並ぶ |
 | リンクがない | 空のリスト | 空のリスト |
 
-#### 2-15. `allow_song_url_dup(url, ip)`（#1282）
+#### 2-15. `allow_song_url_dup(url, ip, exclude_song_id=None)`（#1282）
 
-URLの重複を許可（`SongLink.allow_dup = True`）し、そのURLを元から持つ曲の編集履歴に残す。編集者は`ip`から決める。
+URLの重複を許可（`SongLink.allow_dup = True`）し、そのURLを元から持つ曲の編集履歴に残す。編集者は`ip`から決める。`exclude_song_id`には保存する曲（編集している曲）を渡す（#1285）。
 
 | テストケース | 前提条件 | 期待結果 |
 | --- | --- | --- |
@@ -348,6 +348,9 @@ URLの重複を許可（`SongLink.allow_dup = True`）し、そのURLを元か�
 | 同時に呼ぶ | 別々のDB接続から同時に2回。1つ目が`allow_dup=True`に更新してコミットする前に止め、その間に2つ目を呼ぶ（`TransactionTestCase`。SQLiteは行のロックを待たないため実行しない） | 2つ目はSongLinkの行のロックを待ち、1つ目のコミット後は更新できず、Editorも作らない。Historyは1件だけ |
 | 登録されていないURL | SongLinkが存在しない | `None`を返し、HistoryもEditorも作らない |
 | 曲に紐付いていないSongLink | リンクは存在するが曲なし | `allow_dup=True`にするが、Historyは作らない |
+| 保存する曲にしか紐付いていないURL（#1285） | `exclude_song_id`に、SongLinkにだけ紐付いている曲を指定 | `None`を返し、`allow_dup=False`のまま、HistoryもEditorも作らない（重複していないURLは許可しない） |
+| 保存する曲にも別の曲にも紐付いているURL（#1285） | `exclude_song_id`に、SongLinkに紐付いている曲の1つを指定。SongLinkはもう1曲にも紐付く | `allow_dup=True`になり、Historyは`exclude_song_id`の曲以外の曲にだけ作る |
+| 保存する曲が紐付いていないURL（#1285） | `exclude_song_id`に、SongLinkに紐付いていない曲を指定 | `allow_dup=True`になり、SongLinkに紐付く曲にHistoryが1件でき、`exclude_song_id`の曲にはできない |
 | 外側のトランザクションが失敗する（#1285） | `transaction.atomic()`の中で呼んだ後、例外を送出する | `allow_dup=False`のまま、HistoryもEditorも作らない（曲の保存と同じトランザクションで呼べば、保存できなかったときに重複を許可したままにしない） |
 
 #### 2-15-2. `build_allow_dup_discord_text(link, ip)`（#1285）
@@ -938,6 +941,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | POST: 複数のURLのうち一部だけ重複を許可（#1285） | 別の曲に紐付く2つのURLを`url`にカンマ区切りで付け、`allow_dup_url`には一方だけ付けてPOST。続けて両方を`allow_dup_url`に付けてPOST | 1回目は HTTP 200、"既に登録されています" を含むエラーで、どちらのSongLinkも`allow_dup=False`のまま、URLは追加されない。2回目は 302、両方のSongLinkが`allow_dup=True`になり、2件のURLが紐付く |
 | POST: 重複を許可すると送らない（#1285） | 別の曲に紐付くSongLinkのURLを`url`に付け、`allow_dup_url`なしでPOST | HTTP 200、"既に登録されています" を含むエラー。SongLinkは`allow_dup=False`のまま、Historyは作らない |
 | POST: 重複を許可するURLが`url`と違う（#1285） | `url`は別の曲に紐付くSongLinkのURL、`allow_dup_url`は別のURL | HTTP 200、"既に登録されています" を含むエラー。SongLinkは`allow_dup=False`のまま |
+| POST: 編集している曲にしか紐付いていないURLを`allow_dup_url`に付ける（#1285） | 編集している曲だけに紐付くSongLinkのURLを`url`と`allow_dup_url`に付けてPOST | 302、SongLinkは`allow_dup=False`のまま、「重複を許可」のHistoryは作らず、Discordに「重複許可したURL」を通知しない |
+| POST: 編集している曲と別の曲に紐付くURLの重複を許可（#1285） | 編集している曲と別の曲Aの両方に紐付くSongLinkのURLを`url`と`allow_dup_url`に付けてPOST | 302、SongLinkが`allow_dup=True`になり、「重複を許可」のHistoryは曲Aにだけ1件でき、編集している曲にはできない |
 | POST: 重複を許可するURLでもURLの長さを検証（#1285） | `url`と`allow_dup_url`にmax_length超のURL | HTTP 200、"文字以下である必要があります" を含むエラー、URLは追加されない |
 | POST: 曲を保存できなかったとき重複を許可しない（#1285） | 重複するURLを`url`と`allow_dup_url`に付け、`authors`が`Author.name`のmax_length超 | HTTP 200、"作者名" を含むエラー。SongLinkは`allow_dup=False`のまま、Historyは作らず、Discordに通知しない |
 | POST: カテゴリの変更（#423） | `category="omnibus"` | 302、`category == "omnibus"`、Historyの `changes` に `["カテゴリ", "曲", "総集編"]` |

@@ -2050,6 +2050,47 @@ class SongEditViewTest(TestCase):
         link.refresh_from_db()
         self.assertFalse(link.allow_dup)
 
+    @patch("subekashi.views.song_edit.send_discord", return_value=True)
+    def test_post_with_allow_dup_url_of_own_url_does_not_allow_dup(self, mock_send_discord):
+        """#1285: 編集している曲にしか紐付いていないURLは重複していないため、allow_dup_urlを送られても許可せず、履歴も作らないこと"""
+        link = SongLink.objects.create(url="https://youtu.be/dupallow123")
+        link.songs.add(self.song)
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {
+                "title": "編集テスト曲",
+                "authors": "編集テスト作者",
+                "url": "https://youtu.be/dupallow123",
+                "allow_dup_url": "https://youtu.be/dupallow123",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        link.refresh_from_db()
+        self.assertFalse(link.allow_dup)
+        self.assertFalse(History.objects.filter(title__contains="重複を許可").exists())
+        texts = [call.args[1] for call in mock_send_discord.call_args_list]
+        self.assertFalse([t for t in texts if t.startswith("重複許可したURL")])
+
+    def test_post_with_allow_dup_url_of_own_url_shared_with_other_song_records_no_history_for_own_song(self):
+        """#1285: 編集している曲と別の曲に紐付いているURLの重複を許可しても、編集している曲には履歴を作らないこと"""
+        owner = Song.objects.create(title="重複許可の元の曲")
+        link = SongLink.objects.create(url="https://youtu.be/dupallow123")
+        link.songs.add(self.song, owner)
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {
+                "title": "編集テスト曲",
+                "authors": "編集テスト作者",
+                "url": "https://youtu.be/dupallow123",
+                "allow_dup_url": "https://youtu.be/dupallow123",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        link.refresh_from_db()
+        self.assertTrue(link.allow_dup)
+        self.assertFalse(History.objects.filter(song=self.song, title__contains="重複を許可").exists())
+        self.assertEqual(History.objects.filter(song=owner, title__contains="重複を許可").count(), 1)
+
     def test_post_with_allow_dup_url_still_checks_url_length(self):
         """#1285: 重複を許可するURLでも、URLの長さは検証すること"""
         url = "https://x.com/" + "a" * 300

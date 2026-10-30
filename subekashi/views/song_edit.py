@@ -151,7 +151,7 @@ class SongEditView(View):
         # URLの重複の許可とsongの更新を、まとめて保存する
         with transaction.atomic():
             # この曲を紐づける前に許可し、そのURLを元から持つ曲の編集履歴に残す
-            dup_links = [allow_song_url_dup(u, ip) for u in allow_dup_url_list]
+            dup_links = [allow_song_url_dup(u, ip, exclude_song_id=song_id) for u in allow_dup_url_list]
             update_song(self.song, fields, author_objects, imitate_songs, cleaned_url_list)
 
         for dup_link in filter(None, dup_links):

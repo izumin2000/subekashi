@@ -206,6 +206,7 @@ URLの重複を許可するのは、曲を保存するPOSTのときだけにす�
 | 検証: SongLink | `allow_dup == True` で、曲Aと保存した曲（新しい曲または曲B）の両方が紐付く |
 | 検証: History | 曲Aに `history_type="edit"` のHistoryが1件でき、タイトルは「<曲Aのタイトル>のURLの重複を許可」、`changes` は `[["種類", "内容"], ["重複許可したURL", "https://youtu.be/dupallow123"]]`、編集者はリクエストのIPのEditor。保存した曲には「重複を許可」のHistoryはできない |
 | 検証: 既に許可したURL | `allow_dup=True` のURLでは、Historyは増えない |
+| 検証: 編集している曲だけのURL | `POST /songs/<曲Bのid>/edit/` で、曲Bにしか紐付いていない `allow_dup=False` のURLを `allow_dup_url` に付けても、`allow_dup == False` のままで、「重複を許可」のHistoryもDiscordへの通知もできない（重複していないURLは許可しない） |
 | 検証: Discord | 重複許可したURLの通知を `CONTACT_DISCORD_URL` に1回送る（曲を保存した後） |
 | 検証: GET | `GET /songs/new/?allow_dup_url=...`・`GET /songs/<曲Bのid>/edit/?allow_dup_url=...` は HTTP 200で、`allow_dup`・History・Discordは変わらない |
 | 検証: `allow_dup_url` なし | `allow_dup_url` を送らないと HTTP 200で "既に登録されています" のエラー。`allow_dup` も History も変わらない |

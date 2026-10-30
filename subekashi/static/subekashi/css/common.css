@@ -652,6 +652,8 @@ a {
     text-decoration: underline 2px;
     text-underline-offset: 0.3ex;
     cursor: pointer;
+    /* フォーカス表示の枠が、共通のbuttonのtransitionで初期値からアニメーションしないようにする */
+    transition: none;
 }
 
 .fa-info-circle, .fa-check-circle, .fa-exclamation-triangle, .fa-ban {
