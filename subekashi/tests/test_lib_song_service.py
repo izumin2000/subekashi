@@ -5,7 +5,7 @@ lib/song_service.py のテスト
 """
 import threading
 from unittest.mock import patch
-from django.db import connection
+from django.db import connection, transaction
 from django.test import TestCase, TransactionTestCase, skipUnlessDBFeature
 from django.utils import timezone
 from config.settings import ROOT_URL
@@ -14,6 +14,7 @@ from subekashi.lib.song_service import (
     check_reject_list,
     validate_song_url,
     allow_song_url_dup,
+    build_allow_dup_discord_text,
     create_song,
     set_song_authors_and_links,
     create_song_with_relations,
@@ -118,6 +119,20 @@ class ValidateSongUrlTest(TestCase):
         self.link.save()
         result = validate_song_url("https://youtu.be/existing1234")
         self.assertIsNone(result)
+
+    def test_allow_dup_argument_skips_duplicate_check(self):
+        # #1285: 重複を許可して保存するURLは、保存するときに許可するため、重複のチェックをしない
+        result = validate_song_url("https://youtu.be/existing1234", allow_dup=True)
+        self.assertIsNone(result)
+        self.link.refresh_from_db()
+        self.assertFalse(self.link.allow_dup)
+
+    def test_allow_dup_argument_still_checks_max_length(self):
+        max_length = SongLink._meta.get_field("url").max_length
+        url = "https://youtu.be/" + "a" * (max_length - len("https://youtu.be/") + 1)
+        result = validate_song_url(url, allow_dup=True)
+        self.assertIsNotNone(result)
+        self.assertIn(str(max_length), result)
 
     def test_url_with_no_songs_allows_registration(self):
         SongLink.objects.create(url="https://youtu.be/nosongslink1")
@@ -239,6 +254,30 @@ class AllowSongUrlDupTest(TestCase):
         link.refresh_from_db()
         self.assertTrue(link.allow_dup)
         self.assertFalse(History.objects.exists())
+
+    def test_rolls_back_with_outer_transaction(self):
+        # #1285: 曲の保存と同じトランザクションで呼べば、曲を保存できなかったときに重複を許可したままにしない
+        with self.assertRaises(ValueError):
+            with transaction.atomic():
+                allow_song_url_dup("https://youtu.be/existing1234", "ip-a")
+                raise ValueError
+        self.link.refresh_from_db()
+        self.assertFalse(self.link.allow_dup)
+        self.assertFalse(History.objects.exists())
+        self.assertIsNone(Editor.get_by_ip("ip-a"))
+
+
+class BuildAllowDupDiscordTextTest(TestCase):
+    """build_allow_dup_discord_text() のテスト（#1285）"""
+
+    def test_contains_url_links_and_ip(self):
+        link = SongLink.objects.create(url="https://youtu.be/existing1234")
+        text = build_allow_dup_discord_text(link, "ip-a")
+        self.assertTrue(text.startswith("重複許可したURL："))
+        self.assertIn("https://youtu.be/existing1234", text)
+        self.assertIn(f"{ROOT_URL}/songs/?url=https://youtu.be/existing1234", text)
+        self.assertIn(f"{ROOT_URL}/admin/subekashi/songlink/{link.id}", text)
+        self.assertIn("IP：ip-a", text)
 
 
 @skipUnlessDBFeature("has_select_for_update")

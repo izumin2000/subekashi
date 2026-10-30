@@ -12,6 +12,7 @@
         <div class="form-col">
             <label for="url"><i class="fas fa-link"></i><span class="icon-p-big"><i class="fab fa-youtube"></i>URL</span><i class="fas fa-info-circle" data-tutorial="youtube-url"></i></label>
             <input type="url" id="url" name="url" value="{{ request.GET.url }}" required>
+            <input type="hidden" id="allow-dup-url" name="allow_dup_url">
         </div>
         <div class="form-col">
             <label for="category-auto"><i class="fas fa-shapes"></i><span class="icon-p-big">カテゴリ</span><i class="fas fa-info-circle" data-tutorial="category"></i></label>

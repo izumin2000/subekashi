@@ -14,18 +14,6 @@ const categoryEle = document.getElementById("category")
 async function init() {
     openDeleteDetails();
     song_id = window.location.pathname.split("/")[2];
-    const allowDupUrl = new URLSearchParams(window.location.search).get('allow_dup_url');
-    if (allowDupUrl) {
-        const urlInputEle = document.getElementById('url');
-        const existingUrls = urlInputEle.value ? urlInputEle.value.split(',').filter(Boolean) : [];
-        // 既存URLも同じ正規化を通してから比較し、表記揺れによる誤った重複追加を防ぐ
-        const normalizedAllowDupUrl = normalizeSongUrl(allowDupUrl);
-        const alreadyExists = existingUrls.some(u => normalizeSongUrl(u) === normalizedAllowDupUrl);
-        if (!alreadyExists) {
-            existingUrls.push(allowDupUrl);
-        }
-        urlInputEle.value = existingUrls.join(',');
-    }
 
     const params = new URLSearchParams({ song_id });
     if (titleEle.value) params.append('title', titleEle.value);
@@ -289,11 +277,14 @@ titleEle.addEventListener('input', checkTitleAuthorForm);
 
 // URLの入力チェック
 const urlEle = document.getElementById('url');
+const allowDupUrlEle = document.getElementById('allow-dup-url');
+const songEditInfoUrlEle = document.getElementById('song-edit-info-url');
+const confirmedDupUrls = new Set();     // 重複していても登録すると選んだURL。重複の許可は登録するときに行う（#1285）
 var isUrlValid = true;
 async function checkUrlForm(prefetchedLinks = undefined) {
     isUrlValid = false;
     checkButton();
-    const songEditInfoUrlEle = document.getElementById('song-edit-info-url');
+    allowDupUrlEle.value = '';
 
     const loadingEle = `<span class="loading"></span>`
     songEditInfoUrlEle.innerHTML = loadingEle;
@@ -308,6 +299,7 @@ async function checkUrlForm(prefetchedLinks = undefined) {
 
     const urlList = urlEle.value.split(',');
     const allowDupSongsAll = [];  // allow_dup=Trueの曲を収集
+    const allowDupUrlList = [];   // 重複を許可して登録するURL
     for (let i = 0; i < urlList.length; i++) {
         let url = urlList[i];
 
@@ -345,12 +337,18 @@ async function checkUrlForm(prefetchedLinks = undefined) {
         const existingLink = links.find(
             link => !link.allow_dup && link.songs.some(s => s.id != song_id)
         );
-        if (existingLink) {
+        if (existingLink && confirmedDupUrls.has(url)) {
+            // 複数の曲があるURLとして登録すると選んだ場合は、登録するときに重複を許可する
+            allowDupUrlList.push(urlList[i]);
+            links
+                .filter(link => !link.allow_dup)
+                .flatMap(link => link.songs.filter(s => s.id != song_id))
+                .forEach(s => allowDupSongsAll.push(s));
+        } else if (existingLink) {
             const song = existingLink.songs.find(s => s.id != song_id);
             const songLink = `${baseURL()}/songs/${song.id}`;
             const deleteReason = encodeURIComponent(`${songLink} と重複しています。`);
             const deleteLink = `${baseURL()}/songs/${song_id}/delete?reason=${deleteReason}`;
-            const allowDupLink = `?allow_dup_url=${encodeURIComponent(url)}`;
             songEditInfoUrlEle.innerHTML = `
             <span class="error">
                 <i class="fas fa-ban error"></i>
@@ -359,7 +357,7 @@ async function checkUrlForm(prefetchedLinks = undefined) {
                 として<a href="${songLink}" target="_blank">既に登録されています</a>${song.is_lack ? "がまだ未完成です。" : "。"}<br>
                 この記事を削除したい場合、<br>
                 <a href="${deleteLink}" target="_blank"><i class="error far fa-trash-alt"></i>削除</a>してください。<br>
-                複数の曲があるURLとして登録したい場合、<br><a href="${allowDupLink}">こちら</a>をクリックしてください。
+                複数の曲があるURLとして登録したい場合、<br><button type="button" class="link-button" data-allow-dup-url="${escapeHtml(url)}">こちら</button>をクリックしてください。
             </span>`;
             return;
         }
@@ -371,12 +369,17 @@ async function checkUrlForm(prefetchedLinks = undefined) {
             .forEach(s => allowDupSongsAll.push(s));
     }
 
-    // allow_dup=Trueの重複がある場合は情報表示（登録は可能）
+    allowDupUrlEle.value = allowDupUrlList.join(',');
+
+    // 重複がある場合は情報表示（登録は可能）
     const uniqueAllowDupSongs = [...new Map(allowDupSongsAll.map(s => [s.id, s])).values()];
     if (uniqueAllowDupSongs.length) {
         isUrlValid = true;
         checkButton();
-        songEditInfoUrlEle.innerHTML = `<span class='info'><i class='fas fa-info-circle info'></i>このURLは以下の曲と重複していますが登録できます。<br>${makeSongInfoRowsHTML(uniqueAllowDupSongs)}</span>`;
+        const message = allowDupUrlList.length
+            ? "このURLは以下の曲と重複していますが、複数の曲があるURLとして登録します。"
+            : "このURLは以下の曲と重複していますが登録できます。";
+        songEditInfoUrlEle.innerHTML = `<span class='info'><i class='fas fa-info-circle info'></i>${message}<br>${makeSongInfoRowsHTML(uniqueAllowDupSongs)}</span>`;
         return;
     }
 
@@ -386,6 +389,14 @@ async function checkUrlForm(prefetchedLinks = undefined) {
     songEditInfoUrlEle.innerHTML = "<span class='ok'><i class='fas fa-check-circle ok'></i>登録可能な状態です</span>";
 }
 urlEle.addEventListener('input', checkUrlForm);
+
+// 「こちら」をクリックしたとき、重複していても登録すると選ぶ（保存はしない）
+songEditInfoUrlEle.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-allow-dup-url]');
+    if (!button) return;
+    confirmedDupUrls.add(button.dataset.allowDupUrl);
+    checkUrlForm();
+});
 
 // 界隈曲?チェック時タイトル/作者/URL以外のフォームを、カテゴリが曲以外のとき歌詞を非表示にする
 function updateFormVisibility() {

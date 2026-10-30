@@ -1,8 +1,9 @@
 // 初期化
 const urlEle = document.getElementById('url');
+const allowDupUrlEle = document.getElementById('allow-dup-url');
+const newFormAutoInfoEle = document.getElementById('new-form-auto-info');
+var confirmedDupUrl = '';   // 重複していても登録すると選んだURL。重複の許可は登録するときに行う（#1285）
 async function init() {
-    const allowDupUrl = new URLSearchParams(window.location.search).get('allow_dup_url');
-    if (allowDupUrl) urlEle.value = allowDupUrl;
     urlEle.focus();     // #urlにカーソルをあわせる
     await checkAutoForm();
     await checkManualForm();
@@ -43,10 +44,10 @@ updateQuestionableVisibility();
 // URL入力フォームの入力チェック
 async function checkAutoForm() {
     const newSubmitAutoEle = document.getElementById('new-submit-auto');
-    const newFormAutoInfoEle = document.getElementById('new-form-auto-info');
     const inputUrl = urlEle.value;
     const videoId = getYouTubeId(inputUrl);
     newSubmitAutoEle.disabled = true;
+    allowDupUrlEle.value = '';
 
     const loadingEle = `<span class="loading"></span>`
     newFormAutoInfoEle.innerHTML = loadingEle;
@@ -87,10 +88,17 @@ async function checkAutoForm() {
 
     // 既に登録されているURLの場合（allow_dup=False）
     if (duplicateLinks.length) {
+        // 複数の曲があるURLとして登録すると選んだ場合は、登録するときに重複を許可する
+        if (confirmedDupUrl === formatYouTubeURL(inputUrl)) {
+            allowDupUrlEle.value = inputUrl;
+            newFormAutoInfoEle.innerHTML = `<span class='info'><i class='fas fa-info-circle info'></i>このURLは以下の曲と重複していますが、複数の曲があるURLとして登録します。<br>${makeSongInfoRowsHTML(duplicateLinks.flatMap(link => link.songs))}</span>`;
+            newSubmitAutoEle.disabled = false;
+            return;
+        }
+
         const s = duplicateLinks[0].songs[0];
         const songUrl = `${baseURL()}/songs/${s.id}`;
-        const allowDupLink = `?allow_dup_url=${encodeURIComponent(inputUrl)}`;
-        newFormAutoInfoEle.innerHTML = `<span class='error'><i class='fas fa-ban error'></i>このURLは<br>${makeSongInfoRowsHTML([s])}<br>として<a href="${songUrl}" target="_blank">既に登録されています</a>${s.is_lack ? "がまだ未完成です" : ""}<br>複数の曲があるURLとして登録したい場合、<br><a href="${allowDupLink}">こちら</a>をクリックしてください。</span>`;
+        newFormAutoInfoEle.innerHTML = `<span class='error'><i class='fas fa-ban error'></i>このURLは<br>${makeSongInfoRowsHTML([s])}<br>として<a href="${songUrl}" target="_blank">既に登録されています</a>${s.is_lack ? "がまだ未完成です" : ""}<br>複数の曲があるURLとして登録したい場合、<br><button type="button" class="link-button" data-allow-dup>こちら</button>をクリックしてください。</span>`;
         return;
     }
 
@@ -110,6 +118,13 @@ async function checkAutoForm() {
 };
 
 urlEle.addEventListener('input', checkAutoForm)
+
+// 「こちら」をクリックしたとき、重複していても登録すると選ぶ（保存はしない）
+newFormAutoInfoEle.addEventListener('click', (event) => {
+    if (!event.target.closest('[data-allow-dup]')) return;
+    confirmedDupUrl = formatYouTubeURL(urlEle.value);
+    checkAutoForm();
+});
 
 // タイトル・作者入力フォームの入力チェック
 var authorsEle = document.getElementById('authors');
