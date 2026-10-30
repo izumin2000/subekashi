@@ -329,6 +329,23 @@
 | 順番 | ニコニコ動画・YouTubeの順のリンク | リンクの順に並ぶ |
 | リンクがない | 空のリスト | 空のリスト |
 
+#### 2-15. `allow_song_url_dup(url, ip)`（#1282）
+
+URLの重複を許可（`SongLink.allow_dup = True`）し、そのURLを元から持つ曲の編集履歴に残す。編集者は`ip`から決める。
+
+| テストケース | 前提条件 | 期待結果 |
+| --- | --- | --- |
+| 重複を許可する | 曲に紐付く`allow_dup=False`のSongLink | `allow_dup=True`になり、そのSongLinkを返す |
+| 曲の編集履歴に残す | 同上 | その曲に`history_type="edit"`のHistoryが1件でき、タイトルは「<曲名>のURLの重複を許可」、`changes`は`[["種類", "内容"], ["重複許可したURL", <URL>]]`、編集者は`ip`のEditor |
+| 複数の曲に紐付く | SongLinkが2曲に紐付く | 2曲それぞれにHistoryが1件ずつできる |
+| 削除した曲（#1239） | SongLinkに`is_removed=True`の曲も紐付く | 削除した曲にはHistoryを作らない |
+| 紐付いていない曲 | 無関係な曲がある | その曲にはHistoryを作らない |
+| 大文字小文字の違うURL | `url`が大文字小文字だけ違う | 同じSongLinkの重複を許可し、Historyも1件できる |
+| 既に重複を許可したURL | `allow_dup=True`のSongLink | SongLinkを返すが、HistoryもEditorも作らない（ページを再読み込みしても履歴が増えない） |
+| 2回呼ぶ | 異なる`ip`で続けて2回 | Historyは1件だけ |
+| 登録されていないURL | SongLinkが存在しない | `None`を返し、HistoryもEditorも作らない |
+| 曲に紐付いていないSongLink | リンクは存在するが曲なし | `allow_dup=True`にするが、Historyは作らない |
+
 ---
 
 ### 3. `lib/query_filters.py` — クエリフィルター
@@ -879,6 +896,9 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | GET: カテゴリの選択欄（#423） | GETリクエスト | 2つのフォームそれぞれに `<select id="category-auto/manual" name="category" data-sync="category">` が表示され、`Song.CHOICES` の全ての選択肢が2つずつある |
 | POST: カテゴリを指定（#423） | `category="otomad"` | 302、保存されたSongの `category == "otomad"` |
 | POST: カテゴリを指定しない（#423） | `category` なし | 302、保存されたSongの `category == "song"` |
+| GET: 重複を許可（#1282） | 曲に紐付くSongLinkのURLを`allow_dup_url`に付けてGET | HTTP 200、SongLinkが`allow_dup=True`になり、そのURLを元から持つ曲に`history_type="edit"`のHistoryが残る（編集者はリクエストのIPのEditor）。Discordに通知する |
+| GET: 重複を許可するURLを2回開く（#1282） | 上記を続けて2回 | Historyは1件だけ |
+| GET: 登録されていないURLの重複を許可（#1282） | 登録されていないURLを`allow_dup_url`に付けてGET | HTTP 200、Historyは作らない |
 | POST: 不正なカテゴリ（#423） | YouTubeのURL・`category="joke"` | HTTP 200、`"カテゴリが不正です。"` のエラー。`get_youtube_api` は呼び出されず、Songは作成されない |
 
 #### 7-5. `SongEditView` (`/songs/<id>/edit/`)
@@ -894,6 +914,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | GET: カテゴリの選択欄（#423） | `category="medley"` の曲 | `<select id="category" name="category">` が表示され、メドレーの選択肢のみ `selected` |
 | GET: 歌詞の入力欄（#423） | GETリクエスト | 歌詞の `.form-col` に `data-hide-if-not-song` が付く（カテゴリが曲以外のときに `song_edit.js` で非表示にする） |
 | GET: 模倣元の入力欄（#1241） | GETリクエスト | `#imitate-label` が「模倣元」・模倣元のアイコン（`fas fa-sitemap imitate`）で表示され、原曲以外の曲を検索する欄の補足（`#imitate-sub`）が「もしくは原曲以外から選択」と表示される |
+| GET: 重複を許可（#1282） | 別の曲に紐付くSongLinkのURLを`allow_dup_url`に付けてGET | HTTP 200、SongLinkが`allow_dup=True`になり、URLを元から持つ別の曲に`history_type="edit"`のHistoryが残る。編集している曲にはHistoryを作らない。Discordに通知する |
+| GET: 重複を許可するURLを2回開く（#1282） | 上記を続けて2回 | Historyは1件だけ |
 | POST: カテゴリの変更（#423） | `category="omnibus"` | 302、`category == "omnibus"`、Historyの `changes` に `["カテゴリ", "曲", "総集編"]` |
 | POST: カテゴリを送らない（#423） | `category="offv"` の曲に `category` なしで送信 | 302、`category == "offv"` のまま（カテゴリの選択欄がない古いページから送信された場合に変えない） |
 | POST: プレラは変えられない（#1064） | プレラ「年末プレラ５」の曲に `prush=晩夏プレラ6` を付けて送信 | 302、タイトルは変わり、`prush` は「年末プレラ５」のまま（編集してもプレラは消えない） |

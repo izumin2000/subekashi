@@ -7,10 +7,11 @@ from unittest.mock import patch
 from django.test import TestCase
 from django.utils import timezone
 from config.settings import ROOT_URL
-from subekashi.models import Author, AuthorAlias, Song, SongLink, SongFields
+from subekashi.models import Author, AuthorAlias, Editor, History, Song, SongLink, SongFields
 from subekashi.lib.song_service import (
     check_reject_list,
     validate_song_url,
+    allow_song_url_dup,
     create_song,
     set_song_authors_and_links,
     create_song_with_relations,
@@ -163,6 +164,79 @@ class ValidateSongUrlTest(TestCase):
         result = validate_song_url(url)
         self.assertIsNotNone(result)
         self.assertIn(str(max_length), result)
+
+
+class AllowSongUrlDupTest(TestCase):
+    """allow_song_url_dup() のテスト（#1282）"""
+
+    def setUp(self):
+        self.song = Song.objects.create(title="既存曲")
+        self.link = SongLink.objects.create(url="https://youtu.be/existing1234")
+        self.link.songs.add(self.song)
+
+    def test_sets_allow_dup_and_returns_link(self):
+        link = allow_song_url_dup("https://youtu.be/existing1234", "ip-a")
+        self.assertEqual(link, self.link)
+        self.link.refresh_from_db()
+        self.assertTrue(self.link.allow_dup)
+
+    def test_creates_edit_history_for_song_with_url(self):
+        allow_song_url_dup("https://youtu.be/existing1234", "ip-a")
+        history = History.objects.get(song=self.song)
+        self.assertEqual(history.history_type, "edit")
+        self.assertEqual(history.title, "既存曲のURLの重複を許可")
+        self.assertEqual(history.changes, [["種類", "内容"], ["重複許可したURL", "https://youtu.be/existing1234"]])
+        self.assertEqual(history.editor, Editor.get_by_ip("ip-a"))
+
+    def test_creates_history_for_each_song_with_url(self):
+        other = Song.objects.create(title="もう1曲")
+        self.link.songs.add(other)
+        allow_song_url_dup("https://youtu.be/existing1234", "ip-a")
+        self.assertEqual(History.objects.filter(song=self.song).count(), 1)
+        self.assertEqual(History.objects.filter(song=other).count(), 1)
+
+    def test_does_not_create_history_for_removed_song(self):
+        removed = Song.objects.create(title="削除した曲", is_removed=True)
+        self.link.songs.add(removed)
+        allow_song_url_dup("https://youtu.be/existing1234", "ip-a")
+        self.assertFalse(History.objects.filter(song=removed).exists())
+
+    def test_does_not_create_history_for_other_song(self):
+        other = Song.objects.create(title="無関係な曲")
+        allow_song_url_dup("https://youtu.be/existing1234", "ip-a")
+        self.assertFalse(History.objects.filter(song=other).exists())
+
+    def test_matches_url_case_insensitively(self):
+        link = allow_song_url_dup("https://youtu.be/EXISTING1234", "ip-a")
+        self.assertEqual(link, self.link)
+        self.assertEqual(History.objects.filter(song=self.song).count(), 1)
+
+    def test_already_allowed_url_does_not_create_history(self):
+        # ページを再読み込みしても、履歴・編集者が増えない
+        self.link.allow_dup = True
+        self.link.save()
+        link = allow_song_url_dup("https://youtu.be/existing1234", "ip-a")
+        self.assertEqual(link, self.link)
+        self.assertFalse(History.objects.exists())
+        self.assertIsNone(Editor.get_by_ip("ip-a"))
+
+    def test_second_call_does_not_create_history(self):
+        allow_song_url_dup("https://youtu.be/existing1234", "ip-a")
+        allow_song_url_dup("https://youtu.be/existing1234", "ip-b")
+        self.assertEqual(History.objects.filter(song=self.song).count(), 1)
+
+    def test_unregistered_url_returns_none_without_history(self):
+        link = allow_song_url_dup("https://youtu.be/notexist1234", "ip-a")
+        self.assertIsNone(link)
+        self.assertFalse(History.objects.exists())
+        self.assertIsNone(Editor.get_by_ip("ip-a"))
+
+    def test_url_with_no_songs_sets_allow_dup_without_history(self):
+        link = SongLink.objects.create(url="https://youtu.be/nosongslink1")
+        allow_song_url_dup("https://youtu.be/nosongslink1", "ip-a")
+        link.refresh_from_db()
+        self.assertTrue(link.allow_dup)
+        self.assertFalse(History.objects.exists())
 
 
 class CreateSongTest(TestCase):
