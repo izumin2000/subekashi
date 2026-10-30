@@ -636,6 +636,26 @@ a {
     text-decoration: underline 2px #B60;
 }
 
+/* 文中のリンクのように見えるbutton。共通のbuttonのスタイル（高さ・幅・余白・背景・hover等）を打ち消す */
+.link-button, .link-button:hover, .link-button:active {
+    display: inline;
+    height: auto;
+    width: auto;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: none;
+    font: inherit;
+    color: inherit;
+    text-decoration: underline 2px;
+    text-underline-offset: 0.3ex;
+    cursor: pointer;
+    /* フォーカス表示の枠が、共通のbuttonのtransitionで初期値からアニメーションしないようにする */
+    transition: none;
+}
+
 .fa-info-circle, .fa-check-circle, .fa-exclamation-triangle, .fa-ban {
     margin-right: 10px;
 }

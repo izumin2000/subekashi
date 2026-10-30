@@ -1525,36 +1525,139 @@ class SongNewViewTest(TestCase):
         for value, label in Song.CHOICES:
             self.assertContains(response, f'<option value="{value}">{label}</option>', count=2)
 
+    def test_get_has_hidden_allow_dup_url_input_in_auto_form(self):
+        """#1285: 重複を許可して登録するURLを送るための入力欄を、URLで登録するフォームに置くこと"""
+        response = self.client.get(reverse("subekashi:song_new"))
+        self.assertContains(response, '<input type="hidden" id="allow-dup-url" name="allow_dup_url">', count=1)
+
     @patch("subekashi.views.song_new.send_discord", return_value=True)
-    def test_get_allow_dup_url_allows_dup_and_records_history_for_song_with_url(self, mock_send_discord):
-        """#1282: 重複を許可したURLを元から持つ曲の編集履歴に、重複を許可したことを残すこと"""
+    def test_get_allow_dup_url_does_not_allow_dup(self, mock_send_discord):
+        """#1285: GETで開いただけでは、重複を許可せず、履歴もDiscordへの通知も作らないこと"""
         song = Song.objects.create(title="重複許可の元の曲")
         link = SongLink.objects.create(url="https://youtu.be/dupallow123")
         link.songs.add(song)
         response = self.client.get(reverse("subekashi:song_new"), {"allow_dup_url": "https://youtu.be/dupallow123"})
         self.assertEqual(response.status_code, 200)
         link.refresh_from_db()
+        self.assertFalse(link.allow_dup)
+        self.assertFalse(History.objects.exists())
+        mock_send_discord.assert_not_called()
+
+    @patch("subekashi.views.song_new.get_youtube_api")
+    @patch("subekashi.views.song_new.send_discord", return_value=True)
+    def test_post_with_allow_dup_url_allows_dup_and_records_history_for_song_with_url(self, mock_send_discord, mock_api):
+        """#1282, #1285: 重複を許可して登録したとき、URLを元から持つ曲の編集履歴に、重複を許可したことを残すこと"""
+        mock_api.return_value = {"title": "新しい曲", "author": "新しい作者", "upload_time": None, "view": 1, "like": 1}
+        owner = Song.objects.create(title="重複許可の元の曲")
+        link = SongLink.objects.create(url="https://youtu.be/dupallow123")
+        link.songs.add(owner)
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "https://youtu.be/dupallow123", "allow_dup_url": "https://youtu.be/dupallow123"},
+        )
+        self.assertEqual(response.status_code, 302)
+        link.refresh_from_db()
         self.assertTrue(link.allow_dup)
-        history = History.objects.get(song=song)
+        new_song = Song.objects.get(title="新しい曲")
+        self.assertCountEqual(link.songs.all(), [owner, new_song])
+        history = History.objects.get(song=owner)
         self.assertEqual(history.history_type, "edit")
         self.assertEqual(history.title, "重複許可の元の曲のURLの重複を許可")
         self.assertEqual(history.changes, [["種類", "内容"], ["重複許可したURL", "https://youtu.be/dupallow123"]])
         self.assertEqual(history.editor.ip, encrypt("127.0.0.1"))
-        mock_send_discord.assert_called_once()
+        self.assertEqual(list(History.objects.filter(song=new_song).values_list("history_type", flat=True)), ["new"])
+        texts = [call.args[1] for call in mock_send_discord.call_args_list]
+        self.assertEqual(len([t for t in texts if t.startswith("重複許可したURL")]), 1)
+        self.assertEqual(len([t for t in texts if t.startswith("新規作成されました")]), 1)
 
-    @patch("subekashi.views.song_new.send_discord", return_value=True)
-    def test_get_allow_dup_url_twice_records_history_once(self, mock_send_discord):
-        song = Song.objects.create(title="重複許可の元の曲")
+    @patch("subekashi.views.song_new.get_youtube_api")
+    def test_post_with_allow_dup_url_accepts_notation_variation_of_same_url(self, mock_api):
+        """#1285: 重複を許可するURLは、登録するURLと同じ動画なら表記が違っていても許可すること"""
+        mock_api.return_value = {"title": "新しい曲", "author": "新しい作者", "upload_time": None, "view": 1, "like": 1}
         link = SongLink.objects.create(url="https://youtu.be/dupallow123")
-        link.songs.add(song)
-        for _ in range(2):
-            self.client.get(reverse("subekashi:song_new"), {"allow_dup_url": "https://youtu.be/dupallow123"})
-        self.assertEqual(History.objects.filter(song=song).count(), 1)
+        link.songs.add(Song.objects.create(title="重複許可の元の曲"))
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "https://www.youtube.com/watch?v=dupallow123", "allow_dup_url": "https://youtu.be/dupallow123"},
+        )
+        self.assertEqual(response.status_code, 302)
+        link.refresh_from_db()
+        self.assertTrue(link.allow_dup)
 
-    def test_get_allow_dup_url_of_unregistered_url_records_no_history(self):
-        response = self.client.get(reverse("subekashi:song_new"), {"allow_dup_url": "https://youtu.be/notexist123"})
+    @patch("subekashi.views.song_new.get_youtube_api")
+    def test_post_with_allow_dup_url_of_allowed_url_records_no_history(self, mock_api):
+        mock_api.return_value = {"title": "新しい曲", "author": "新しい作者", "upload_time": None, "view": 1, "like": 1}
+        owner = Song.objects.create(title="重複許可の元の曲")
+        link = SongLink.objects.create(url="https://youtu.be/dupallow123", allow_dup=True)
+        link.songs.add(owner)
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "https://youtu.be/dupallow123", "allow_dup_url": "https://youtu.be/dupallow123"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(History.objects.filter(song=owner).exists())
+
+    @patch("subekashi.views.song_new.get_youtube_api")
+    def test_post_without_allow_dup_url_returns_error_and_keeps_dup_disallowed(self, mock_api):
+        """#1285: 重複を許可すると送らなければ、重複するURLは登録できず、重複も許可しないこと"""
+        owner = Song.objects.create(title="重複許可の元の曲")
+        link = SongLink.objects.create(url="https://youtu.be/dupallow123")
+        link.songs.add(owner)
+        response = self.client.post(reverse("subekashi:song_new"), {"url": "https://youtu.be/dupallow123"})
         self.assertEqual(response.status_code, 200)
+        self.assertIn("既に登録されています", response.context["error"])
+        link.refresh_from_db()
+        self.assertFalse(link.allow_dup)
         self.assertFalse(History.objects.exists())
+        mock_api.assert_not_called()
+
+    @patch("subekashi.views.song_new.get_youtube_api")
+    def test_post_with_allow_dup_url_of_other_url_returns_error(self, mock_api):
+        """#1285: 重複を許可するURLが、登録するURLと違うときは、登録するURLの重複を許可しないこと"""
+        owner = Song.objects.create(title="重複許可の元の曲")
+        link = SongLink.objects.create(url="https://youtu.be/dupallow123")
+        link.songs.add(owner)
+        other_link = SongLink.objects.create(url="https://youtu.be/dupother456")
+        other_link.songs.add(Song.objects.create(title="別の曲"))
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "https://youtu.be/dupallow123", "allow_dup_url": "https://youtu.be/dupother456"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("既に登録されています", response.context["error"])
+        self.assertFalse(SongLink.objects.filter(allow_dup=True).exists())
+        self.assertFalse(History.objects.exists())
+
+    def test_post_with_allow_dup_url_without_url_does_not_allow_dup(self):
+        """#1285: URLなしで登録するときは、重複を許可するURLを送られても重複を許可しないこと"""
+        link = SongLink.objects.create(url="https://youtu.be/dupallow123")
+        link.songs.add(Song.objects.create(title="重複許可の元の曲"))
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "", "authors": "テスト作者", "title": "テスト曲", "allow_dup_url": "https://youtu.be/dupallow123"},
+        )
+        self.assertEqual(response.status_code, 302)
+        link.refresh_from_db()
+        self.assertFalse(link.allow_dup)
+        self.assertFalse(History.objects.filter(song__title="重複許可の元の曲").exists())
+
+    @patch("subekashi.views.song_new.get_youtube_api", return_value={})
+    @patch("subekashi.views.song_new.send_discord", return_value=True)
+    def test_post_with_allow_dup_url_does_not_allow_dup_if_save_fails(self, mock_send_discord, mock_api):
+        """#1285: 曲を保存できなかったときは、重複を許可せず、履歴もDiscordへの通知も作らないこと"""
+        owner = Song.objects.create(title="重複許可の元の曲")
+        link = SongLink.objects.create(url="https://youtu.be/dupallow123")
+        link.songs.add(owner)
+        response = self.client.post(
+            reverse("subekashi:song_new"),
+            {"url": "https://youtu.be/dupallow123", "allow_dup_url": "https://youtu.be/dupallow123"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("YouTube上で削除されたか非公開になっている", response.context["error"])
+        link.refresh_from_db()
+        self.assertFalse(link.allow_dup)
+        self.assertFalse(History.objects.exists())
+        mock_send_discord.assert_not_called()
 
     def test_post_with_category_saves_category(self):
         response = self.client.post(
@@ -1826,9 +1929,14 @@ class SongEditViewTest(TestCase):
         self.assertContains(response, '<label id="imitate-label" data-hide-if-questionable><i class="fas fa-sitemap imitate"></i><span class="icon-p-big">模倣元</span>', count=1)
         self.assertContains(response, '<p id="imitate-sub">もしくは原曲以外から選択</p>', count=1)
 
+    def test_get_has_hidden_allow_dup_url_input(self):
+        """#1285: 重複を許可して登録するURLを送るための入力欄を置くこと"""
+        response = self.client.get(reverse("subekashi:song_edit", args=[self.song.id]))
+        self.assertContains(response, '<input type="hidden" id="allow-dup-url" name="allow_dup_url">', count=1)
+
     @patch("subekashi.views.song_edit.send_discord", return_value=True)
-    def test_get_allow_dup_url_records_history_for_song_with_url_only(self, mock_send_discord):
-        """#1282: 重複を許可したことは、URLを元から持つ曲の編集履歴に残り、編集している曲には残らないこと"""
+    def test_get_allow_dup_url_does_not_allow_dup(self, mock_send_discord):
+        """#1285: GETで開いただけでは、重複を許可せず、履歴もDiscordへの通知も作らないこと"""
         owner = Song.objects.create(title="重複許可の元の曲")
         link = SongLink.objects.create(url="https://youtu.be/dupallow123")
         link.songs.add(owner)
@@ -1838,24 +1946,183 @@ class SongEditViewTest(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         link.refresh_from_db()
-        self.assertTrue(link.allow_dup)
-        history = History.objects.get(song=owner)
-        self.assertEqual(history.history_type, "edit")
-        self.assertEqual(history.title, "重複許可の元の曲のURLの重複を許可")
-        self.assertFalse(History.objects.filter(song=self.song).exists())
-        mock_send_discord.assert_called_once()
+        self.assertFalse(link.allow_dup)
+        self.assertFalse(History.objects.exists())
+        mock_send_discord.assert_not_called()
 
     @patch("subekashi.views.song_edit.send_discord", return_value=True)
-    def test_get_allow_dup_url_twice_records_history_once(self, mock_send_discord):
+    def test_post_with_allow_dup_url_records_history_for_song_with_url_only(self, mock_send_discord):
+        """#1282, #1285: 重複を許可したことは、URLを元から持つ曲の編集履歴に残り、編集している曲には残らないこと"""
         owner = Song.objects.create(title="重複許可の元の曲")
         link = SongLink.objects.create(url="https://youtu.be/dupallow123")
         link.songs.add(owner)
-        for _ in range(2):
-            self.client.get(
-                reverse("subekashi:song_edit", args=[self.song.id]),
-                {"allow_dup_url": "https://youtu.be/dupallow123"},
-            )
-        self.assertEqual(History.objects.filter(song=owner).count(), 1)
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {
+                "title": "編集テスト曲",
+                "authors": "編集テスト作者",
+                "url": "https://youtu.be/dupallow123",
+                "allow_dup_url": "https://youtu.be/dupallow123",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        link.refresh_from_db()
+        self.assertTrue(link.allow_dup)
+        self.assertCountEqual(link.songs.all(), [owner, self.song])
+        history = History.objects.get(song=owner)
+        self.assertEqual(history.history_type, "edit")
+        self.assertEqual(history.title, "重複許可の元の曲のURLの重複を許可")
+        self.assertEqual(history.changes, [["種類", "内容"], ["重複許可したURL", "https://youtu.be/dupallow123"]])
+        self.assertFalse(History.objects.filter(song=self.song, title__contains="重複を許可").exists())
+        texts = [call.args[1] for call in mock_send_discord.call_args_list]
+        self.assertEqual(len([t for t in texts if t.startswith("重複許可したURL")]), 1)
+
+    @patch("subekashi.views.song_edit.send_discord", return_value=True)
+    def test_post_with_allow_dup_url_allows_only_listed_urls(self, mock_send_discord):
+        """#1285: 複数のURLを登録するとき、重複を許可するURLだけを許可すること"""
+        link_a = SongLink.objects.create(url="https://youtu.be/dupallow123")
+        link_a.songs.add(Song.objects.create(title="重複許可の元の曲A"))
+        link_b = SongLink.objects.create(url="https://youtu.be/dupallow456")
+        link_b.songs.add(Song.objects.create(title="重複許可の元の曲B"))
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {
+                "title": "編集テスト曲",
+                "authors": "編集テスト作者",
+                "url": "https://youtu.be/dupallow123,https://youtu.be/dupallow456",
+                "allow_dup_url": "https://youtu.be/dupallow123",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("既に登録されています", response.context["error"])
+        link_a.refresh_from_db()
+        link_b.refresh_from_db()
+        self.assertFalse(link_a.allow_dup)
+        self.assertFalse(link_b.allow_dup)
+        self.assertFalse(self.song.links.exists())
+
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {
+                "title": "編集テスト曲",
+                "authors": "編集テスト作者",
+                "url": "https://youtu.be/dupallow123,https://youtu.be/dupallow456",
+                "allow_dup_url": "https://youtu.be/dupallow123,https://youtu.be/dupallow456",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        link_a.refresh_from_db()
+        link_b.refresh_from_db()
+        self.assertTrue(link_a.allow_dup)
+        self.assertTrue(link_b.allow_dup)
+        self.assertEqual(self.song.links.count(), 2)
+
+    def test_post_without_allow_dup_url_returns_error_and_keeps_dup_disallowed(self):
+        """#1285: 重複を許可すると送らなければ、重複するURLは登録できず、重複も許可しないこと"""
+        owner = Song.objects.create(title="重複許可の元の曲")
+        link = SongLink.objects.create(url="https://youtu.be/dupallow123")
+        link.songs.add(owner)
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {"title": "編集テスト曲", "authors": "編集テスト作者", "url": "https://youtu.be/dupallow123"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("既に登録されています", response.context["error"])
+        link.refresh_from_db()
+        self.assertFalse(link.allow_dup)
+        self.assertFalse(History.objects.exists())
+
+    def test_post_with_allow_dup_url_of_other_url_returns_error(self):
+        """#1285: 重複を許可するURLが、登録するURLと違うときは、登録するURLの重複を許可しないこと"""
+        link = SongLink.objects.create(url="https://youtu.be/dupallow123")
+        link.songs.add(Song.objects.create(title="重複許可の元の曲"))
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {
+                "title": "編集テスト曲",
+                "authors": "編集テスト作者",
+                "url": "https://youtu.be/dupallow123",
+                "allow_dup_url": "https://youtu.be/dupother456",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("既に登録されています", response.context["error"])
+        link.refresh_from_db()
+        self.assertFalse(link.allow_dup)
+
+    @patch("subekashi.views.song_edit.send_discord", return_value=True)
+    def test_post_with_allow_dup_url_of_own_url_does_not_allow_dup(self, mock_send_discord):
+        """#1285: 編集している曲にしか紐付いていないURLは重複していないため、allow_dup_urlを送られても許可せず、履歴も作らないこと"""
+        link = SongLink.objects.create(url="https://youtu.be/dupallow123")
+        link.songs.add(self.song)
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {
+                "title": "編集テスト曲",
+                "authors": "編集テスト作者",
+                "url": "https://youtu.be/dupallow123",
+                "allow_dup_url": "https://youtu.be/dupallow123",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        link.refresh_from_db()
+        self.assertFalse(link.allow_dup)
+        self.assertFalse(History.objects.filter(title__contains="重複を許可").exists())
+        texts = [call.args[1] for call in mock_send_discord.call_args_list]
+        self.assertFalse([t for t in texts if t.startswith("重複許可したURL")])
+
+    def test_post_with_allow_dup_url_of_own_url_shared_with_other_song_records_no_history_for_own_song(self):
+        """#1285: 編集している曲と別の曲に紐付いているURLの重複を許可しても、編集している曲には履歴を作らないこと"""
+        owner = Song.objects.create(title="重複許可の元の曲")
+        link = SongLink.objects.create(url="https://youtu.be/dupallow123")
+        link.songs.add(self.song, owner)
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {
+                "title": "編集テスト曲",
+                "authors": "編集テスト作者",
+                "url": "https://youtu.be/dupallow123",
+                "allow_dup_url": "https://youtu.be/dupallow123",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        link.refresh_from_db()
+        self.assertTrue(link.allow_dup)
+        self.assertFalse(History.objects.filter(song=self.song, title__contains="重複を許可").exists())
+        self.assertEqual(History.objects.filter(song=owner, title__contains="重複を許可").count(), 1)
+
+    def test_post_with_allow_dup_url_still_checks_url_length(self):
+        """#1285: 重複を許可するURLでも、URLの長さは検証すること"""
+        url = "https://x.com/" + "a" * 300
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {"title": "編集テスト曲", "authors": "編集テスト作者", "url": url, "allow_dup_url": url},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("文字以下である必要があります", response.context["error"])
+        self.assertFalse(self.song.links.exists())
+
+    @patch("subekashi.views.song_edit.send_discord", return_value=True)
+    def test_post_with_allow_dup_url_does_not_allow_dup_if_save_fails(self, mock_send_discord):
+        """#1285: 曲を保存できなかったときは、重複を許可せず、履歴もDiscordへの通知も作らないこと"""
+        owner = Song.objects.create(title="重複許可の元の曲")
+        link = SongLink.objects.create(url="https://youtu.be/dupallow123")
+        link.songs.add(owner)
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {
+                "title": "編集テスト曲",
+                "authors": "あ" * 300,
+                "url": "https://youtu.be/dupallow123",
+                "allow_dup_url": "https://youtu.be/dupallow123",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("作者名は", response.context["error"])
+        link.refresh_from_db()
+        self.assertFalse(link.allow_dup)
+        self.assertFalse(History.objects.exists())
+        mock_send_discord.assert_not_called()
 
     def test_post_category_is_saved_and_recorded_in_history(self):
         response = self.client.post(

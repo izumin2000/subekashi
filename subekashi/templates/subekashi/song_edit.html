@@ -31,6 +31,7 @@
         <div class="form-col">
             <label for="url"><i class="fas fa-link"></i><span class="icon-p-big">URL</span><span class="icon-p">(複数可)</span><i class="fas fa-info-circle" data-tutorial="url"></i></label>
             <input type="text" id="url" name="url" value="{{ song.links.all|join:',' }}">
+            <input type="hidden" id="allow-dup-url" name="allow_dup_url">
         </div>
         <p class="song-edit-info" id="song-edit-info-url"><span class='loading'></span></p>
         <label id="imitate-label" data-hide-if-questionable><i class="fas fa-sitemap imitate"></i><span class="icon-p-big">模倣元</span><i class="fas fa-info-circle" data-tutorial="imitate"></i></label>

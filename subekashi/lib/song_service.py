@@ -49,11 +49,17 @@ def category_label(category):
     return dict(Song.CHOICES).get(category, category)
 
 
-def validate_song_url(cleaned_url, exclude_song_id=None):
-    """URLの長さ・重複チェック。エラーメッセージを返す。問題なければNone。"""
+def validate_song_url(cleaned_url, exclude_song_id=None, allow_dup=False):
+    """URLの長さ・重複チェック。エラーメッセージを返す。問題なければNone。
+
+    allow_dup=Trueのときは、重複を許可して保存する（#1285）ため、重複のチェックをしない。
+    """
     max_length = SongLink._meta.get_field('url').max_length
     if len(cleaned_url) > max_length:
         return f"URLは{max_length}文字以下である必要があります。"
+
+    if allow_dup:
+        return None
 
     # 削除した曲（#1239）だけに紐づくURLは、登録されていないURLとして扱う
     qs = SongLink.objects.filter(url__iexact=cleaned_url, allow_dup=False, songs__is_removed=False)
@@ -64,20 +70,28 @@ def validate_song_url(cleaned_url, exclude_song_id=None):
     return None
 
 
-def allow_song_url_dup(url, ip):
+def allow_song_url_dup(url, ip, exclude_song_id=None):
     """URLの重複を許可し、そのURLを元から持つ曲の編集履歴に残す（#1282）。SongLinkが無ければNoneを返す
 
-    既に重複を許可しているURLは、ページを再読み込みしても履歴が増えないよう、履歴を残さない。
+    曲の保存と同じトランザクションで呼び、保存できなかったときに重複を許可したままにしない（#1285）。
+    exclude_song_idには、保存する曲（編集している曲）を渡す。その曲にしか紐付いていないURLは
+    重複していないため、許可せずNoneを返す。履歴もその曲には残さない（#1285）。
+    既に重複を許可しているURLは、履歴が増えないよう、履歴を残さない。
     同時に呼ばれても履歴が二重にならないよう、allow_dup=Falseの行を更新できたときだけ履歴を残す。
     """
     with transaction.atomic():
         link = SongLink.objects.filter(url__iexact=url).first()
         if link is None:
             return None
+        songs = link.songs.all()
+        if exclude_song_id is not None:
+            songs = songs.exclude(pk=exclude_song_id)
+            if not songs.exists():
+                return None
         if SongLink.objects.filter(pk=link.pk, allow_dup=False).update(allow_dup=True):
             link.allow_dup = True
             editor = Editor.get_or_create_from_ip(ip)
-            for song in link.songs.all():
+            for song in songs:
                 History.create_for_song(
                     song=song,
                     title=f"{song.title}のURLの重複を許可",
@@ -86,6 +100,17 @@ def allow_song_url_dup(url, ip):
                     editor=editor,
                 )
     return link
+
+
+def build_allow_dup_discord_text(link, ip):
+    """URLの重複を許可したことを知らせるDiscordテキストを構築する"""
+    return (
+        f"重複許可したURL：\n"
+        f"{link.url}\n"
+        f"{ROOT_URL}/songs/?url={link.url}\n"
+        f"{ROOT_URL}/admin/subekashi/songlink/{link.id}\n"
+        f"IP：{ip}\n"
+    )
 
 
 def create_song(fields: SongFields):
