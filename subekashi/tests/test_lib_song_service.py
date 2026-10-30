@@ -3,8 +3,10 @@ lib/song_service.py のテスト
 
 曲作成・更新・削除・削除の取り消し・Discord テキスト生成・short版/full版の判定のサービス関数を検証する。
 """
+import threading
 from unittest.mock import patch
-from django.test import TestCase
+from django.db import connection
+from django.test import TestCase, TransactionTestCase, skipUnlessDBFeature
 from django.utils import timezone
 from config.settings import ROOT_URL
 from subekashi.models import Author, AuthorAlias, Editor, History, Song, SongLink, SongFields
@@ -237,6 +239,57 @@ class AllowSongUrlDupTest(TestCase):
         link.refresh_from_db()
         self.assertTrue(link.allow_dup)
         self.assertFalse(History.objects.exists())
+
+
+@skipUnlessDBFeature("has_select_for_update")
+class AllowSongUrlDupConcurrencyTest(TransactionTestCase):
+    """allow_song_url_dup() が同時に呼ばれた場合のテスト（#1282）
+
+    別々のDB接続から同時に呼ぶため、TransactionTestCaseで実際にコミットする。SQLiteは行のロックを待たないため実行しない
+    """
+
+    def test_simultaneous_calls_record_history_once(self):
+        song = Song.objects.create(title="同時に許可する曲")
+        link = SongLink.objects.create(url="https://youtu.be/concurrent1")
+        link.songs.add(song)
+        first_allowing = threading.Event()
+        release = threading.Event()
+        editor_ips = []
+        get_editor = Editor.get_or_create_from_ip
+
+        # 1つ目がallow_dup=Trueに更新した後、コミットする前に止め、その間に2つ目を呼ぶ
+        def get_editor_and_wait(ip):
+            editor_ips.append(ip)
+            if len(editor_ips) == 1:
+                first_allowing.set()
+                release.wait(10)
+            return get_editor(ip)
+
+        def allow(ip):
+            try:
+                allow_song_url_dup("https://youtu.be/concurrent1", ip)
+            finally:
+                connection.close()
+
+        with patch.object(Editor, "get_or_create_from_ip", side_effect=get_editor_and_wait):
+            first = threading.Thread(target=allow, args=("ip-a",))
+            second = threading.Thread(target=allow, args=("ip-b",))
+            first.start()
+            try:
+                self.assertTrue(first_allowing.wait(10))
+                second.start()
+                # 2つ目は1つ目がコミットするまで、SongLinkの行のロックを待つ
+                second.join(1)
+                self.assertTrue(second.is_alive())
+            finally:
+                release.set()
+                first.join(10)
+                if second.ident is not None:
+                    second.join(10)
+
+        self.assertEqual(editor_ips, ["ip-a"])
+        self.assertEqual(History.objects.filter(song=song).count(), 1)
+        self.assertTrue(SongLink.objects.get(pk=link.pk).allow_dup)
 
 
 class CreateSongTest(TestCase):

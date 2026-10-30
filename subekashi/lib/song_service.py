@@ -68,11 +68,14 @@ def allow_song_url_dup(url, ip):
     """URLの重複を許可し、そのURLを元から持つ曲の編集履歴に残す（#1282）。SongLinkが無ければNoneを返す
 
     既に重複を許可しているURLは、ページを再読み込みしても履歴が増えないよう、履歴を残さない。
+    同時に呼ばれても履歴が二重にならないよう、allow_dup=Falseの行を更新できたときだけ履歴を残す。
     """
     with transaction.atomic():
-        was_allowed = SongLink.objects.filter(url__iexact=url, allow_dup=True).exists()
-        link = SongLink.set_allow_dup_for_url(url)
-        if link and not was_allowed:
+        link = SongLink.objects.filter(url__iexact=url).first()
+        if link is None:
+            return None
+        if SongLink.objects.filter(pk=link.pk, allow_dup=False).update(allow_dup=True):
+            link.allow_dup = True
             editor = Editor.get_or_create_from_ip(ip)
             for song in link.songs.all():
                 History.create_for_song(

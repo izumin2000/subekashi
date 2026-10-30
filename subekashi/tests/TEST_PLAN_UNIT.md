@@ -343,6 +343,7 @@ URLの重複を許可（`SongLink.allow_dup = True`）し、そのURLを元か�
 | 大文字小文字の違うURL | `url`が大文字小文字だけ違う | 同じSongLinkの重複を許可し、Historyも1件できる |
 | 既に重複を許可したURL | `allow_dup=True`のSongLink | SongLinkを返すが、HistoryもEditorも作らない（ページを再読み込みしても履歴が増えない） |
 | 2回呼ぶ | 異なる`ip`で続けて2回 | Historyは1件だけ |
+| 同時に呼ぶ | 別々のDB接続から同時に2回。1つ目が`allow_dup=True`に更新してコミットする前に止め、その間に2つ目を呼ぶ（`TransactionTestCase`。SQLiteは行のロックを待たないため実行しない） | 2つ目はSongLinkの行のロックを待ち、1つ目のコミット後は更新できず、Editorも作らない。Historyは1件だけ |
 | 登録されていないURL | SongLinkが存在しない | `None`を返し、HistoryもEditorも作らない |
 | 曲に紐付いていないSongLink | リンクは存在するが曲なし | `allow_dup=True`にするが、Historyは作らない |
 
