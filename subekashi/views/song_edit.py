@@ -9,7 +9,7 @@ from config.settings import ROOT_URL
 from config.local_settings import NEW_DISCORD_URL, CONTACT_DISCORD_URL
 from subekashi.constants.constants import SONG_CATEGORIES
 from subekashi.forms import SongEditForm
-from subekashi.models import Song, Editor, History, SongLink, SongFields
+from subekashi.models import Song, Editor, History, SongFields
 from subekashi.lib.url import clean_url, get_allow_media
 from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
@@ -17,6 +17,7 @@ from subekashi.lib.author_helpers import get_or_create_authors, author_names_wer
 from subekashi.lib.song_service import (
     check_reject_list,
     validate_song_url,
+    allow_song_url_dup,
     get_imitate_songs,
     update_song,
     build_edit_song_discord_text,
@@ -47,7 +48,7 @@ class SongEditView(View):
         allow_dup_url = request.GET.get('allow_dup_url', '')
         if allow_dup_url:
             cleaned = clean_url(allow_dup_url) or allow_dup_url
-            link = SongLink.set_allow_dup_for_url(cleaned)
+            link = allow_song_url_dup(cleaned, get_ip(request))
             if link:
                 content = f"\
                     重複許可したURL：\n\

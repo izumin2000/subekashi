@@ -194,6 +194,19 @@
 | 検証: SongLink | `https://bilibili.com/video/BV1qV411J7Kq`・`https://bilibili.com/video/BV1in4y1Q7qw?p=2` で保存される（av番号はBV番号に変換し、2パート目以降の `p` のみ残す） |
 | 検証: 重複 | 別の曲に `https://bilibili.com/video/BV1qV411J7Kq` が紐付いているとき、`https://www.bilibili.com/video/av417727107/` を送ると HTTP 200、"既に登録されています" のエラーでURLは追加されない。画面のJSが重複の判定に使う `GET /api/songlink/?url=` も、av番号・`www.`・`m.`・末尾の `/`・クエリの違うURLで同じ `SongLink` を返し、`?p=2` のURLでは返さない |
 
+#### 2-12. URLの重複を許可したとき、そのURLを元から持つ曲の編集履歴に残す（#1282）
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | 曲Aに `SongLink(url="https://youtu.be/dupallow123")`（`allow_dup=False`）が紐付いている。曲Bがある |
+| 操作 | `GET /songs/new/?allow_dup_url=https://youtu.be/dupallow123`、または `GET /songs/<曲Bのid>/edit/?allow_dup_url=...` |
+| 検証: レスポンス | HTTP 200 |
+| 検証: SongLink | `allow_dup == True` |
+| 検証: History | 曲Aに `history_type="edit"` のHistoryが1件でき、タイトルは「<曲Aのタイトル>のURLの重複を許可」、`changes` は `[["種類", "内容"], ["重複許可したURL", "https://youtu.be/dupallow123"]]`、編集者はリクエストのIPのEditor。曲Bにはできない |
+| 検証: 再読み込み | 同じURLをもう一度開いても、Historyは増えない |
+| 検証: 登録されていないURL | 登録されていないURLを `allow_dup_url` に付けると、HTTP 200でHistoryはできない |
+| 検証: Discord | 重複許可したURLの通知を `CONTACT_DISCORD_URL` に送る（これまでと同じ） |
+
 ---
 
 ### 3. 削除フロー

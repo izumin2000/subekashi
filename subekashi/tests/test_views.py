@@ -1525,6 +1525,37 @@ class SongNewViewTest(TestCase):
         for value, label in Song.CHOICES:
             self.assertContains(response, f'<option value="{value}">{label}</option>', count=2)
 
+    @patch("subekashi.views.song_new.send_discord", return_value=True)
+    def test_get_allow_dup_url_allows_dup_and_records_history_for_song_with_url(self, mock_send_discord):
+        """#1282: 重複を許可したURLを元から持つ曲の編集履歴に、重複を許可したことを残すこと"""
+        song = Song.objects.create(title="重複許可の元の曲")
+        link = SongLink.objects.create(url="https://youtu.be/dupallow123")
+        link.songs.add(song)
+        response = self.client.get(reverse("subekashi:song_new"), {"allow_dup_url": "https://youtu.be/dupallow123"})
+        self.assertEqual(response.status_code, 200)
+        link.refresh_from_db()
+        self.assertTrue(link.allow_dup)
+        history = History.objects.get(song=song)
+        self.assertEqual(history.history_type, "edit")
+        self.assertEqual(history.title, "重複許可の元の曲のURLの重複を許可")
+        self.assertEqual(history.changes, [["種類", "内容"], ["重複許可したURL", "https://youtu.be/dupallow123"]])
+        self.assertEqual(history.editor.ip, encrypt("127.0.0.1"))
+        mock_send_discord.assert_called_once()
+
+    @patch("subekashi.views.song_new.send_discord", return_value=True)
+    def test_get_allow_dup_url_twice_records_history_once(self, mock_send_discord):
+        song = Song.objects.create(title="重複許可の元の曲")
+        link = SongLink.objects.create(url="https://youtu.be/dupallow123")
+        link.songs.add(song)
+        for _ in range(2):
+            self.client.get(reverse("subekashi:song_new"), {"allow_dup_url": "https://youtu.be/dupallow123"})
+        self.assertEqual(History.objects.filter(song=song).count(), 1)
+
+    def test_get_allow_dup_url_of_unregistered_url_records_no_history(self):
+        response = self.client.get(reverse("subekashi:song_new"), {"allow_dup_url": "https://youtu.be/notexist123"})
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(History.objects.exists())
+
     def test_post_with_category_saves_category(self):
         response = self.client.post(
             reverse("subekashi:song_new"),
@@ -1794,6 +1825,37 @@ class SongEditViewTest(TestCase):
         response = self.client.get(reverse("subekashi:song_edit", args=[self.song.id]))
         self.assertContains(response, '<label id="imitate-label" data-hide-if-questionable><i class="fas fa-sitemap imitate"></i><span class="icon-p-big">模倣元</span>', count=1)
         self.assertContains(response, '<p id="imitate-sub">もしくは原曲以外から選択</p>', count=1)
+
+    @patch("subekashi.views.song_edit.send_discord", return_value=True)
+    def test_get_allow_dup_url_records_history_for_song_with_url_only(self, mock_send_discord):
+        """#1282: 重複を許可したことは、URLを元から持つ曲の編集履歴に残り、編集している曲には残らないこと"""
+        owner = Song.objects.create(title="重複許可の元の曲")
+        link = SongLink.objects.create(url="https://youtu.be/dupallow123")
+        link.songs.add(owner)
+        response = self.client.get(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {"allow_dup_url": "https://youtu.be/dupallow123"},
+        )
+        self.assertEqual(response.status_code, 200)
+        link.refresh_from_db()
+        self.assertTrue(link.allow_dup)
+        history = History.objects.get(song=owner)
+        self.assertEqual(history.history_type, "edit")
+        self.assertEqual(history.title, "重複許可の元の曲のURLの重複を許可")
+        self.assertFalse(History.objects.filter(song=self.song).exists())
+        mock_send_discord.assert_called_once()
+
+    @patch("subekashi.views.song_edit.send_discord", return_value=True)
+    def test_get_allow_dup_url_twice_records_history_once(self, mock_send_discord):
+        owner = Song.objects.create(title="重複許可の元の曲")
+        link = SongLink.objects.create(url="https://youtu.be/dupallow123")
+        link.songs.add(owner)
+        for _ in range(2):
+            self.client.get(
+                reverse("subekashi:song_edit", args=[self.song.id]),
+                {"allow_dup_url": "https://youtu.be/dupallow123"},
+            )
+        self.assertEqual(History.objects.filter(song=owner).count(), 1)
 
     def test_post_category_is_saved_and_recorded_in_history(self):
         response = self.client.post(

@@ -812,16 +812,6 @@ class SongLinkModelTest(TestCase):
         link = SongLink.objects.create(url="https://youtu.be/ddddddddddd")
         self.assertFalse(link.allow_dup)
 
-    def test_set_allow_dup_for_url(self):
-        SongLink.objects.create(url="https://youtu.be/eeeeeeeeeee")
-        result = SongLink.set_allow_dup_for_url("https://youtu.be/eeeeeeeeeee")
-        self.assertIsNotNone(result)
-        self.assertTrue(result.allow_dup)
-
-    def test_set_allow_dup_for_nonexistent_url_returns_none(self):
-        result = SongLink.set_allow_dup_for_url("https://youtu.be/notexist1234")
-        self.assertIsNone(result)
-
 
 class ContactModelTest(TestCase):
     """Contact モデルのテスト"""

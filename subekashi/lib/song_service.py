@@ -4,7 +4,7 @@ from django.utils import timezone
 from django.db import transaction
 from config.settings import ROOT_URL
 from subekashi.constants.constants import SONG_CATEGORIES
-from subekashi.models import Song, SongLink, SongFields
+from subekashi.models import Song, SongLink, SongFields, Editor, History
 from subekashi.lib.author_helpers import get_same_person_author_ids
 from subekashi.lib.url import get_all_media
 from subekashi.lib.embed import get_embed
@@ -62,6 +62,30 @@ def validate_song_url(cleaned_url, exclude_song_id=None):
     if qs.exists():
         return "URLは既に登録されています。"
     return None
+
+
+def allow_song_url_dup(url, ip):
+    """URLの重複を許可し、そのURLを元から持つ曲の編集履歴に残す（#1282）。SongLinkが無ければNoneを返す
+
+    既に重複を許可しているURLは、ページを再読み込みしても履歴が増えないよう、履歴を残さない。
+    同時に呼ばれても履歴が二重にならないよう、allow_dup=Falseの行を更新できたときだけ履歴を残す。
+    """
+    with transaction.atomic():
+        link = SongLink.objects.filter(url__iexact=url).first()
+        if link is None:
+            return None
+        if SongLink.objects.filter(pk=link.pk, allow_dup=False).update(allow_dup=True):
+            link.allow_dup = True
+            editor = Editor.get_or_create_from_ip(ip)
+            for song in link.songs.all():
+                History.create_for_song(
+                    song=song,
+                    title=f"{song.title}のURLの重複を許可",
+                    history_type="edit",
+                    changes=[["種類", "内容"], ["重複許可したURL", link.url]],
+                    editor=editor,
+                )
+    return link
 
 
 def create_song(fields: SongFields):
