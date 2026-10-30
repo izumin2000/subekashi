@@ -4,14 +4,20 @@
 Song, Author, AuthorAlias, SongLink の CRUD・制約・メソッドを検証する。
 """
 import importlib
+import io
+import os
+import tempfile
 import unittest
+from contextlib import redirect_stdout
 from datetime import datetime
+from unittest.mock import patch
 from django.apps import apps
 from django.db import IntegrityError, connection
 from django.db.utils import DataError
 from django.test import TestCase
 from django.utils import timezone
 from subekashi.constants.constants import SONG_CATEGORIES, SONG_FLAGS
+from subekashi.lib.security import encrypt
 from subekashi.lib.stats_service import compute_common_stats
 from subekashi.models import Ai, Author, AuthorAlias, Contact, Editor, History, Prush, Song, SongLink, SongTimeline, Stats, Word
 from subekashi.models.author import EffectiveAlias, TransitiveAlias
@@ -1181,6 +1187,107 @@ class StatsImitatedAuthorsMigrationTest(TestCase):
 
         expected = compute_common_stats(Song.objects.all())["total_imitated_authors"]
         self.assertEqual(Stats.objects.get().total_imitated_authors, expected)
+
+
+class EditorModelTest(TestCase):
+    """Editor モデルのテスト"""
+
+    def test_is_banned_defaults_to_false(self):
+        self.assertFalse(Editor.objects.create(ip="editor-default").is_banned)
+
+    def test_is_banned_ip_is_true_only_for_banned_editor(self):
+        # #1281: BANされた編集者はIPで判定する。編集者がいないIPはBANされていない
+        Editor.objects.create(ip="editor-banned", is_banned=True)
+        Editor.objects.create(ip="editor-not-banned")
+        self.assertTrue(Editor.is_banned_ip("editor-banned"))
+        self.assertFalse(Editor.is_banned_ip("editor-not-banned"))
+        self.assertFalse(Editor.is_banned_ip("editor-unknown"))
+        self.assertEqual(Editor.objects.count(), 2)
+
+
+class EditorBannedMigrationTest(TestCase):
+    """0057_editor_is_banned のデータ移行のテスト（#1281）"""
+
+    def setUp(self):
+        self.migration = importlib.import_module("subekashi.migrations.0057_editor_is_banned")
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.ban_path = os.path.join(self.tmp.name, "ban.py")
+
+    def write_ban_list(self, ips):
+        with open(self.ban_path, "w", encoding="utf-8") as f:
+            f.write(f"BAN_LIST = {ips!r}\n")
+
+    def migrate(self):
+        """マイグレーションを実行し、出力を返す"""
+        output = io.StringIO()
+        with patch.object(self.migration, "BAN_LIST_PATH", self.ban_path), redirect_stdout(output):
+            self.migration.ban_listed_editors(apps, None)
+        return output.getvalue()
+
+    def create_editor(self, ip, **kwargs):
+        return Editor.objects.create(ip=encrypt(ip), **kwargs)
+
+    def test_encrypt_is_same_as_lib_security(self):
+        # lib/security.pyのコピーが、本体とずれていないこと
+        self.assertEqual(self.migration.SYMBOLS, importlib.import_module("subekashi.lib.security").SYMBOLS)
+        for ip in ["203.0.113.1", "0.0.0.0", "2400:2200:488:9395:6cee:52aa:b5c6:9629", "::1"]:
+            with self.subTest(ip=ip):
+                self.assertEqual(self.migration.encrypt(ip), encrypt(ip))
+
+    def test_editors_of_ban_list_are_banned(self):
+        banned_ipv4 = self.create_editor("203.0.113.1")
+        banned_ipv6 = self.create_editor("2400:2200:488:9395:6cee:52aa:b5c6:9629")
+        not_listed = self.create_editor("198.51.100.1")
+        self.write_ban_list(["203.0.113.1", "2400:2200:488:9395:6cee:52aa:b5c6:9629"])
+        output = self.migrate()
+        for editor in (banned_ipv4, banned_ipv6, not_listed):
+            editor.refresh_from_db()
+        self.assertTrue(banned_ipv4.is_banned)
+        self.assertTrue(banned_ipv6.is_banned)
+        self.assertFalse(not_listed.is_banned)
+        self.assertIn("BAN_LIST 2件のうち2件の編集者をis_bannedにしました。", output)
+        self.assertNotIn("特定できないIP", output)
+
+    def test_reports_ips_without_editor_and_unreadable_values(self):
+        listed = self.create_editor("203.0.113.1")
+        self.write_ban_list(["203.0.113.1", "203.0.113.9", "not-an-ip"])
+        output = self.migrate()
+        listed.refresh_from_db()
+        self.assertTrue(listed.is_banned)
+        self.assertIn("BAN_LIST 3件のうち1件の編集者をis_bannedにしました。", output)
+        self.assertIn("編集者を特定できないIP: 203.0.113.9", output)
+        self.assertIn("IPとして読めない値: not-an-ip", output)
+        self.assertNotIn("特定できないIP: 203.0.113.1\n", output)
+        # 編集者が見つからないIPのために、編集者を作らない
+        self.assertEqual(Editor.objects.count(), 1)
+
+    def test_duplicated_and_blank_values_are_ignored(self):
+        listed = self.create_editor("203.0.113.1")
+        self.write_ban_list(["203.0.113.1", " 203.0.113.1 ", "", "  "])
+        output = self.migrate()
+        listed.refresh_from_db()
+        self.assertTrue(listed.is_banned)
+        self.assertIn("BAN_LIST 1件のうち1件の編集者をis_bannedにしました。", output)
+
+    def test_does_nothing_without_editors(self):
+        # 編集者が1件もないDB（新規構築・テスト）では、ban.pyがあっても何も出力しない
+        self.write_ban_list(["203.0.113.1"])
+        self.assertEqual(self.migrate(), "")
+
+    def test_notifies_when_ban_file_does_not_exist(self):
+        editor = self.create_editor("203.0.113.1")
+        output = self.migrate()
+        editor.refresh_from_db()
+        self.assertFalse(editor.is_banned)
+        self.assertIn("が無いため", output)
+
+    def test_empty_ban_list_does_nothing(self):
+        editor = self.create_editor("203.0.113.1")
+        self.write_ban_list([])
+        self.assertEqual(self.migrate(), "")
+        editor.refresh_from_db()
+        self.assertFalse(editor.is_banned)
 
 
 class StatsModelTest(TestCase):

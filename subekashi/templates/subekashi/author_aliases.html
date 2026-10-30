@@ -121,6 +121,8 @@
         showToast("info", "既に名義は統一されています。");
     {% elif request.GET.toast == "unify_error" %}
         showToast("error", "名義を統一できませんでした。時間をおいて再度お試しください。");
+    {% elif request.GET.toast == "banned" %}
+        showToast("error", "処理を完了できませんでした。");
     {% endif %}
 
     deleteToastUrlQuery()

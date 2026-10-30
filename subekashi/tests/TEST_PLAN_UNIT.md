@@ -1539,6 +1539,30 @@ faviconの画像は`icon_large.png`（800×800）から生成する。`site.webm
 | manifestの内容 | `site.webmanifest` | `name`が`全て歌詞の所為です。`、`short_name`が`すべかし`、`theme_color`が`#000000`、`background_color`が`#111111`で、`icons`の`sizes`が`192x192`・`512x512` |
 | manifestのアイコンの画像 | `icons`の各要素 | `src`の画像があり、実際のサイズと形式が`sizes`・`type`と一致する |
 
+#### 7-23. BANされた編集者の操作の制限（#1281）
+
+`Editor.is_banned`がTrueの編集者（`Editor.ip`が`get_ip`の値と一致する）は、`History`に保存される操作ができず、「処理を完了できませんでした。」（`BANNED_ERROR`）のトーストを表示する。サイトの閲覧はできる。各ビューの先頭で`Editor.is_banned_ip(get_ip(request))`を判定し、曲・作者・別名・`History`の保存とDiscordへの通知をしない。編集者が存在しないIPはBANされていない扱いで、判定のために`Editor`を作らない。テストは`test_views.py`の`BannedEditorViewTest`。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 曲の登録（`SongNewView`のPOST） | BANされた編集者が正しい内容でPOST | HTTP 200、`context["error"]`が`BANNED_ERROR`。曲・作者・`History`が作られず、Discordに送信されない |
+| 曲の登録画面の重複許可（`SongNewView`のGET） | BANされた編集者が`allow_dup_url`付きでGET | HTTP 200、`context["error"]`が`BANNED_ERROR`。`SongLink.allow_dup`は`False`のまま、`History`が作られず、Discordに送信されない |
+| 曲の編集（`SongEditView`のPOST） | BANされた編集者がタイトルを変えてPOST | HTTP 200、`context["error"]`が`BANNED_ERROR`。曲のタイトルは変わらず、`History`が作られず、Discordに送信されない |
+| 曲の編集画面の重複許可（`SongEditView`のGET） | BANされた編集者が`allow_dup_url`付きでGET | 曲の登録画面の重複許可と同じ |
+| 曲の削除（`SongDeleteView`のPOST） | BANされた編集者が理由付きでPOST | HTTP 200、`context["error"]`が`BANNED_ERROR`。曲は削除されず、`History`が作られず、Discordに送信されない |
+| 曲の削除の取り消し（`SongRestoreView`のPOST） | 削除した曲に対して、BANされた編集者が理由付きでPOST | HTTP 410（削除した曲のページ）、`context["error"]`が`BANNED_ERROR`。曲は削除されたまま、`History`が作られず、Discordに送信されない |
+| 別名の追加（`AuthorAliasNewView`のPOST） | BANされた編集者がPOST | HTTP 200、`context["error"]`が`BANNED_ERROR`。別名・`History`が作られず、Discordに送信されない |
+| 別名の編集（`AuthorAliasEditView`のPOST） | BANされた編集者が名前を変えてPOST | HTTP 200、`context["error"]`が`BANNED_ERROR`。別名は変わらず、`History`が作られず、Discordに送信されない |
+| 別名の削除（`AuthorAliasDeleteView`のPOST） | BANされた編集者がPOST | 別名一覧に`?toast=banned`でリダイレクト。別名は削除されず、`History`が作られず、Discordに送信されない |
+| 名義の統一（`AuthorUnifyNameSetView`のPOST） | BANされた編集者がPOST | 別名一覧に`?toast=banned`でリダイレクト。作者名は変わらず、`History`が作られず、Discordに送信されない |
+| 別名一覧の`toast=banned` | 別名一覧に`?toast=banned`でGET | `showToast("error", "処理を完了できませんでした。")`を出力する |
+| 閲覧はできる | BANされた編集者が、トップ・曲のページ・曲の登録画面・曲の編集画面・別名一覧にGET | いずれもHTTP 200 |
+| BANの解除 | `is_banned`を`False`にして曲の登録をPOST | HTTP 302で曲が登録される |
+| 別の編集者のBAN | 別のIPの編集者だけがBANされている状態で曲の登録をPOST | HTTP 302で曲が登録される |
+| X-Real-IPで判定 | `REMOTE_ADDR`は未BAN、`X-Real-IP`はBANされたIP | `BANNED_ERROR` |
+| X-Forwarded-ForではBANを回避できない | `X-Real-IP`がBANされたIP、`X-Forwarded-For`は別のIP | `BANNED_ERROR`（#1189） |
+| X-Forwarded-ForでBANされたIPを名乗っても制限されない | `X-Real-IP`は未BANのIP、`X-Forwarded-For`がBANされたIP | HTTP 302で曲が登録される（#1189） |
+
 ---
 
 ### 8. REST API ビュー
@@ -1749,17 +1773,9 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | 制限的なディレクティブ | - | `default-src 'self'`・`object-src 'none'`・`base-uri 'self'`・`form-action 'self'`・`frame-ancestors 'none'` |
 | 埋め込みプレイヤーのiframeの許可（#1254） | YouTube・ニコニコ動画・SoundCloud（曲・プレイリスト）・ビリビリ動画・Google Drive・ScratchのURLの`get_embed()`の`src` | `src`のオリジン（`scheme://host`）が`frame-src`に含まれる（無いとCSPでブロックされる） |
 
-#### 9-4. `RestrictIPMiddleware` — BAN の判定（#1189）
+#### 9-4. `RestrictIPMiddleware`（廃止、#1281）
 
-`BAN_LIST` の判定には、`lib/ip.py` の `get_ip`（`X-Real-IP`、無ければ `REMOTE_ADDR`）を使う。`X-Forwarded-For` はクライアントが自由に付けられるため使わない。テストでは `BAN_LIST` を `["203.0.113.1"]` にし、`REMOTE_ADDR` は `10.0.0.1` にする。
-
-| テストケース | 条件 | 期待結果 |
-| --- | --- | --- |
-| BANされたX-Real-IP | `X-Real-IP: 203.0.113.1` | HTTP 500 |
-| BANされていないX-Real-IP | `X-Real-IP: 203.0.113.2` | HTTP 200 |
-| X-Forwarded-ForではBANを回避できない | `X-Real-IP: 203.0.113.1`、`X-Forwarded-For: 198.51.100.1` | HTTP 500 |
-| X-Forwarded-ForでBANされたIPを名乗っても制限されない | `X-Real-IP: 198.51.100.1`、`X-Forwarded-For: 203.0.113.1` | HTTP 200 |
-| X-Real-IPが無ければREMOTE_ADDRで判定 | `REMOTE_ADDR: 203.0.113.1`、`X-Real-IP` なし | HTTP 500 |
+`ban.py`の`BAN_LIST`にあるIPからのアクセスをすべて500にしていたが、`Editor.is_banned`で編集者ごとにBANする仕様に変えたため、ミドルウェアとそのテストを削除した。BANされた編集者の操作の制限は「7-23」、`BAN_LIST`から`is_banned`への移行は「11-11」に記載している。
 
 ---
 
@@ -2111,6 +2127,29 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | `__str__` | `year=2024`・`row=45` | `"2024年45行目"` |
 | `is_lyrics_blank` のデフォルト値 | 指定せずに作成 | `False` |
 | 曲の削除 | 年表の行がある曲を削除 | 年表の行も削除される（`CASCADE`） |
+
+#### 11-11. `Editor` モデル（#1281）
+
+曲や作者を編集したユーザーのIP（`encrypt`した値）の情報。`is_banned`（デフォルト`False`）が`True`の編集者は、`History`に保存される操作ができない（7-23）。以前の`ban.py`の`BAN_LIST`（IPそのもの）の代わりで、管理サイトの編集者の一覧から変更できる。
+
+| テストケース | 操作 | 期待結果 |
+| --- | --- | --- |
+| `is_banned`のデフォルト値 | 指定せずに作成 | `False` |
+| `is_banned_ip(ip)` | `is_banned=True`の編集者・BANされていない編集者・編集者がいないIPを指定 | BANされた編集者のIPのみ`True`。編集者は作られない |
+
+##### 11-11-1. `0057_editor_is_banned`のデータ移行（`ban_listed_editors`）
+
+廃止した`subekashi/constants/dynamic/ban.py`（gitignore対象。本番のサーバーにある）の`BAN_LIST`のIPを`encrypt`し、`Editor.ip`が一致する編集者を`is_banned=True`にする。`ban.py`は`import`せずファイルとして読み、`encrypt`もマイグレーションにコピーしている（`lib/security.py`を後から変えても移行の挙動が変わらないように）。編集者が見つからないIPと、IPとして読めない値は、手作業で確認できるよう`migrate`の出力に出す。編集者は作らない。テストでは`BAN_LIST_PATH`を一時ファイルに差し替える。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| `encrypt`のコピーが本体と同じ | IPv4・`0.0.0.0`・IPv6・`::1`と`SYMBOLS` | `lib/security.py`の`encrypt`・`SYMBOLS`と一致する |
+| `BAN_LIST`の編集者をBANにする | IPv4・IPv6の編集者と、`BAN_LIST`にない編集者 | `BAN_LIST`のIPの編集者のみ`is_banned=True`。出力に「BAN_LIST 2件のうち2件の編集者をis_bannedにしました。」 |
+| 編集者を特定できないIPとIPとして読めない値の報告 | `BAN_LIST`に、編集者のいるIP・編集者のいないIP・`"not-an-ip"` | 編集者のいるIPのみBAN。出力に「編集者を特定できないIP: …」「IPとして読めない値: not-an-ip」。`Editor`は増えない |
+| 重複と空白 | `BAN_LIST`に同じIP（前後に空白あり）・空文字 | 重複と空白を除いて1件として扱う |
+| 編集者が1件もない | 編集者なしで`ban.py`あり | 何もせず、何も出力しない（新規構築・テストのDB） |
+| `ban.py`がない | 編集者ありで`ban.py`なし | `is_banned`は変わらず、「が無いため」を含むメッセージを出力する |
+| `BAN_LIST`が空 | 編集者ありで`BAN_LIST = []` | 何も出力せず、`is_banned`は変わらない |
 
 ### 12. `article` アプリ
 
@@ -2953,7 +2992,7 @@ YouTube Data API（`build`）はモック化する。「動画が存在しない
 
 #### 24-2. `get_ip(request, raw=False)`（#1189）
 
-編集者（`Editor`）の識別・お問い合わせのIP・BANの判定に使うIP。`get_client_ip`と同じIPを使い、`raw=False`の場合は`encrypt`した値を返す。以前は`X-Forwarded-For`の先頭を使っており、他人のIPを名乗ってその人の編集者として編集できた。
+編集者（`Editor`）の識別・お問い合わせのIP・BANされた編集者（`Editor.is_banned`）の判定に使うIP。`get_client_ip`と同じIPを使い、`raw=False`の場合は`encrypt`した値を返す。以前は`X-Forwarded-For`の先頭を使っており、他人のIPを名乗ってその人の編集者として編集できた。
 
 | テストケース | 入力 | 期待結果 |
 | --- | --- | --- |

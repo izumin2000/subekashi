@@ -4,10 +4,12 @@ from .base import GetOrNoneMixin
 
 # SongやAuthorを編集したユーザーのIPアドレスの情報
 # 画面上では"全て{song_id}の所為です。"と表示される
+# is_bannedがTrueの編集者は、Historyに保存される操作（曲や作者の登録・編集・削除など）ができない（#1281）
 class Editor(GetOrNoneMixin, models.Model):
     ip = models.CharField(default = "", unique=True, max_length = 100)
     is_open = models.BooleanField(default = True)
     is_forced_open = models.BooleanField(default = False)
+    is_banned = models.BooleanField(default = False)
 
     def __str__(self):
         return f"全て{self.id}の所為です。"
@@ -20,3 +22,7 @@ class Editor(GetOrNoneMixin, models.Model):
     @classmethod
     def get_by_ip(cls, ip):
         return cls.objects.filter(ip=ip).first()
+
+    @classmethod
+    def is_banned_ip(cls, ip):
+        return cls.objects.filter(ip=ip, is_banned=True).exists()

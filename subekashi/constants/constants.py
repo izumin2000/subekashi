@@ -2,6 +2,9 @@ DEFAULT_DESCRIPTION = "全て歌詞の所為です。は界隈曲をまとめた
 
 CONST_ERROR = "エラー：python manage.py constを実行してください"
 
+# BANされた編集者（Editor.is_banned）が、Historyに保存される操作をしたときに表示する（#1281）
+BANNED_ERROR = "処理を完了できませんでした。"
+
 ASIDE_PAGES = [
     {
         "url": "subekashi:top",

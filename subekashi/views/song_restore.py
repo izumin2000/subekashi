@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.shortcuts import render, redirect
 from django.views import View
+from subekashi.constants.constants import BANNED_ERROR
 from subekashi.forms import SongRestoreForm
 from subekashi.models import Song, Editor, History
 from subekashi.lib.ip import get_ip
@@ -28,6 +29,9 @@ class SongRestoreView(View):
             # ロックされた曲・URLが他の曲に登録されている曲は取り消さず、取り消せない理由を表示する
             if song.is_lock or get_restore_conflict_songs(song).exists():
                 return render_song_removed(request, song)
+
+            if Editor.is_banned_ip(get_ip(request)):
+                return render_song_removed(request, song, error=BANNED_ERROR)
 
             form = SongRestoreForm(request.POST)
             if not form.is_valid():

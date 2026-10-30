@@ -1,7 +1,7 @@
 """
 ミドルウェアのテスト
 
-RatelimitMiddleware・CacheControlMiddleware・ContentSecurityPolicyMiddleware・RestrictIPMiddleware の動作を検証する。
+RatelimitMiddleware・CacheControlMiddleware・ContentSecurityPolicyMiddleware の動作を検証する。
 """
 import json
 from unittest.mock import MagicMock, patch
@@ -16,7 +16,6 @@ from subekashi.middleware.rate_limit import RatelimitMiddleware
 from subekashi.middleware.cache import CacheControlMiddleware
 from subekashi.middleware.csp import ContentSecurityPolicyMiddleware
 from subekashi.lib.embed import get_embed
-from subekashi.middleware.restrict_ip import RestrictIPMiddleware
 from subekashi.constants.constants import SHORT_TERM_COOKIE_AGE, LONG_TERM_COOKIE_AGE
 
 
@@ -238,36 +237,3 @@ class ContentSecurityPolicyMiddlewareTest(SimpleTestCase):
         self.assertEqual(directives["base-uri"], ["'self'"])
         self.assertEqual(directives["form-action"], ["'self'"])
         self.assertEqual(directives["frame-ancestors"], ["'none'"])
-
-
-@override_settings(STORAGES=STATIC_STORAGE)
-class RestrictIPMiddlewareTest(TestCase):
-    """RestrictIPMiddleware のテスト（BAN の判定に X-Real-IP を使う #1189）"""
-
-    def setUp(self):
-        self.factory = RequestFactory()
-
-    def _call(self, remote_addr="10.0.0.1", **headers):
-        middleware = RestrictIPMiddleware(lambda req: HttpResponse("OK"))
-        middleware.BAN_LIST = ["203.0.113.1"]
-        request = self.factory.get("/", REMOTE_ADDR=remote_addr, **headers)
-        return middleware(request)
-
-    def test_banned_x_real_ip_is_restricted(self):
-        self.assertEqual(self._call(HTTP_X_REAL_IP="203.0.113.1").status_code, 500)
-
-    def test_not_banned_x_real_ip_is_not_restricted(self):
-        self.assertEqual(self._call(HTTP_X_REAL_IP="203.0.113.2").status_code, 200)
-
-    def test_x_forwarded_for_does_not_bypass_ban(self):
-        # BANされた利用者がX-Forwarded-Forで別のIPを名乗っても回避できない
-        response = self._call(HTTP_X_REAL_IP="203.0.113.1", HTTP_X_FORWARDED_FOR="198.51.100.1")
-        self.assertEqual(response.status_code, 500)
-
-    def test_x_forwarded_for_of_banned_ip_is_not_restricted(self):
-        # X-Forwarded-ForでBANされたIPを名乗っても、別の利用者は制限されない
-        response = self._call(HTTP_X_REAL_IP="198.51.100.1", HTTP_X_FORWARDED_FOR="203.0.113.1")
-        self.assertEqual(response.status_code, 200)
-
-    def test_banned_remote_addr_without_x_real_ip_is_restricted(self):
-        self.assertEqual(self._call(remote_addr="203.0.113.1").status_code, 500)
