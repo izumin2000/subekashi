@@ -1,3 +1,4 @@
+import inspect
 import json
 from functools import partial
 from typing import Annotated, Literal
@@ -145,10 +146,13 @@ def create_server(client):
         imitates（模倣元の曲のid）・imitated_count（模倣曲の数）を持つ。歌詞は include_lyrics=true のときだけ付く。
         結果が多いときは page を増やして続きを取得する（max_page が最後のページ）。
         """
-        # 引数の名前はそのままAPIのクエリの名前。localsにはクロージャで参照するclientも入るため除く
-        params = {name: value for name, value in locals().items() if name not in ("client", "include_lyrics")}
+        # 引数の名前はそのままAPIのクエリの名前。localsには引数のほかに、関数内で作る変数やクロージャで参照するclientも入るため、引数の名前で絞る
+        params = {name: value for name, value in locals().items() if name in search_params}
         data = await fetch(client, "/api/song/", params)
         return dump({**data, "result": [summarize_song(song, include_lyrics) for song in data["result"]]})
+
+    # search_songsの引数のうち、APIのクエリになるもの（include_lyricsはMCPサーバーだけの引数）
+    search_params = set(inspect.signature(search_songs).parameters) - {"include_lyrics"}
 
     @tool()
     async def get_song(song_id: SongId) -> str:

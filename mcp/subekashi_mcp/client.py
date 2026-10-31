@@ -1,5 +1,6 @@
 import asyncio
 import json
+import math
 import os
 import time
 import urllib.error
@@ -33,7 +34,11 @@ def _retry_after(headers):
     try:
         wait = float(headers.get("Retry-After", 1))
     except ValueError:
-        wait = 1
+        # HTTP-date形式など、秒数でない値
+        return 1
+    # float()はnanも受け付けるが、待つ時間にできない
+    if math.isnan(wait):
+        return 1
     return min(max(wait, 0), MAX_RETRY_WAIT)
 
 
@@ -96,8 +101,9 @@ class Client:
             if data is None:
                 raise ApiError("サイトの応答を読み取れませんでした（JSONではありません）。", status)
             return data
-        if status == 400 and isinstance(data, dict):
-            raise ApiError(f"リクエストが正しくありません: {data.get('error') or data.get('detail')}", status)
+        if status == 400:
+            message = (data.get("error") or data.get("detail")) if isinstance(data, dict) else None
+            raise ApiError(f"リクエストが正しくありません: {message or '詳細不明'}", status)
         if status == 404:
             raise ApiError("見つかりません。", status)
         raise ApiError(f"サイトがエラーを返しました（HTTP {status}）。しばらくしてから再試行してください。", status)

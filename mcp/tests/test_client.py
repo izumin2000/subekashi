@@ -10,6 +10,10 @@ from unittest.mock import patch
 
 from subekashi_mcp.client import BASE_URL_ENV, DEFAULT_BASE_URL, MAX_RETRY_WAIT, ApiError, Client, _retry_after
 
+# Windowsのtime.monotonic()は分解能が約15.6msで、asyncio.sleepが経過時間の測定より数ms早く戻ることがある。
+# 間隔を空けていなければ、手元の偽サイトへの3回のリクエストは0.4秒よりずっと早く終わるため、この誤差があっても間隔を空けているかは確かめられる
+CLOCK_TOLERANCE = 0.05
+
 
 class FakeSite:
     """決めた応答を順に返すHTTPサーバー。最後の応答は繰り返す"""
@@ -113,6 +117,24 @@ class ClientErrorTest(ClientTestBase):
         self.assertEqual(caught.exception.status, 400)
         self.assertIn("view_gte: 値は1以上である必要があります: -1", str(caught.exception))
 
+    async def test_bad_request_falls_back_to_detail(self):
+        self.site.respond(json_response({"detail": "入力が正しくありません"}, 400))
+        with self.assertRaises(ApiError) as caught:
+            await self.client().get("/api/song/")
+        self.assertIn("入力が正しくありません", str(caught.exception))
+
+    async def test_bad_request_without_a_message(self):
+        """errorもdetailも無い400（空のJSON・空の文字列・JSONではない本文）は、「None」ではなく「詳細不明」と伝える"""
+        bodies = [json_response({}, 400), json_response({"error": ""}, 400), json_response([], 400), (400, {}, b"<h1>Bad Request</h1>")]
+        for body in bodies:
+            with self.subTest(body=body[2]):
+                self.site.respond(body)
+                with self.assertRaises(ApiError) as caught:
+                    await self.client().get("/api/song/")
+                self.assertEqual(caught.exception.status, 400)
+                self.assertIn("詳細不明", str(caught.exception))
+                self.assertNotIn("None", str(caught.exception))
+
     async def test_not_found(self):
         self.site.respond(json_response({"detail": "No Song matches the given query."}, 404))
         with self.assertRaises(ApiError) as caught:
@@ -167,39 +189,63 @@ class ClientRateLimitTest(ClientTestBase):
         self.assertIn("1秒に2回", str(caught.exception))
         self.assertEqual(len(self.site.requests), 3)
 
+    async def test_negative_retry_after_retries_without_waiting(self):
+        self.site.respond(json_response({"detail": "throttled"}, 429, {"Retry-After": "-5"}), json_response({"count": 1}))
+        started = time.monotonic()
+        self.assertEqual(await self.client().get("/api/song/"), {"count": 1})
+        self.assertLess(time.monotonic() - started, 1)
+        self.assertEqual(len(self.site.requests), 2)
+
     async def test_waits_for_retry_after(self):
         self.site.respond(json_response({"detail": "throttled"}, 429, {"Retry-After": "0.3"}), json_response({}))
         started = time.monotonic()
         await self.client().get("/api/song/")
-        self.assertGreaterEqual(time.monotonic() - started, 0.3)
+        self.assertGreaterEqual(time.monotonic() - started, 0.3 - CLOCK_TOLERANCE)
 
     async def test_spaces_requests_by_min_interval(self):
         client = self.client(min_interval=0.2)
         started = time.monotonic()
         for _ in range(3):
             await client.get("/api/song/")
-        self.assertGreaterEqual(time.monotonic() - started, 0.4)
+        self.assertGreaterEqual(time.monotonic() - started, 0.4 - CLOCK_TOLERANCE)
 
     async def test_spaces_concurrent_requests(self):
         """AIが並行してツールを呼んでも、1秒に2回を超えないよう間隔を空ける"""
         client = self.client(min_interval=0.2)
         started = time.monotonic()
         await asyncio.gather(*[client.get("/api/song/") for _ in range(3)])
-        self.assertGreaterEqual(time.monotonic() - started, 0.4)
+        self.assertGreaterEqual(time.monotonic() - started, 0.4 - CLOCK_TOLERANCE)
         self.assertEqual(len(self.site.requests), 3)
 
 
 class RetryAfterTest(unittest.TestCase):
     def test_uses_header_value(self):
-        self.assertEqual(_retry_after({"Retry-After": "3"}), 3)
+        for value, expected in [("3", 3), ("0", 0), ("0.5", 0.5), ("1e1", 10)]:
+            with self.subTest(value=value):
+                self.assertEqual(_retry_after({"Retry-After": value}), expected)
 
-    def test_defaults_to_one_second(self):
+    def test_defaults_to_one_second_when_missing(self):
         self.assertEqual(_retry_after({}), 1)
+
+    def test_http_date_is_treated_as_one_second(self):
+        """HTTP-date形式は秒数として読めないため、1秒とみなす"""
         self.assertEqual(_retry_after({"Retry-After": "Wed, 21 Oct 2026 07:28:00 GMT"}), 1)
 
+    def test_invalid_values_are_treated_as_one_second(self):
+        """秒数でない値や、float()が受け付けるが待つ時間にできないnanは1秒とみなす"""
+        for value in ["abc", "", " ", "1s", "nan", "NaN"]:
+            with self.subTest(value=value):
+                self.assertEqual(_retry_after({"Retry-After": value}), 1)
+
+    def test_negative_values_are_zero(self):
+        for value in ["-5", "-0.1", "-inf"]:
+            with self.subTest(value=value):
+                self.assertEqual(_retry_after({"Retry-After": value}), 0)
+
     def test_is_capped(self):
-        self.assertEqual(_retry_after({"Retry-After": "100"}), MAX_RETRY_WAIT)
-        self.assertEqual(_retry_after({"Retry-After": "-5"}), 0)
+        for value in ["100", "11", "inf"]:
+            with self.subTest(value=value):
+                self.assertEqual(_retry_after({"Retry-After": value}), MAX_RETRY_WAIT)
 
 
 class ClientBaseUrlTest(unittest.TestCase):

@@ -74,7 +74,9 @@ cd mcp
 .venv/bin/python -m unittest discover -s tests
 ```
 
-`search_songs` の引数が曲の検索（`SongFilter`）のパラメータと食い違っていないかは、Django のテスト（`subekashi/tests/test_mcp.py`）で確かめています。
+`search_songs` が API に送るパラメータが曲の検索（`SongFilter`）と食い違っていないかは、Django のテスト（`subekashi/tests/test_mcp.py`）で確かめています。
+
+CI（`.github/workflows/test.yml`）では、Django のテストとは別のジョブ `mcp-test` が、`pip install -r mcp/requirements.txt` のあとにこのテストを実行します。
 
 ## 注意
 

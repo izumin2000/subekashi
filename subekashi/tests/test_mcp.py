@@ -28,10 +28,11 @@ class McpServerSourceTest(TestCase):
         assign = next(node for node in self.tree.body if isinstance(node, ast.Assign) and node.targets[0].id == name)
         return [element.value for element in assign.value.slice.elts]
 
-    def test_search_songs_params_match_song_filter(self):
-        """search_songsの引数は、曲の検索（SongFilter）のパラメータと page・size、MCPサーバーだけの引数に過不足なく一致する（#1311）"""
-        expected = set(SongFilter.base_filters) | {"page", "size"} | MCP_ONLY_PARAMS
-        self.assertEqual(self._function_params("search_songs"), expected)
+    def test_search_songs_sends_exactly_the_song_filter_params(self):
+        """search_songsがAPIに送る名前は、曲の検索（SongFilter）のパラメータと page・size に過不足なく一致する（#1311）。
+        送る名前は、引数からMCPサーバーだけの引数を除いたもの（mcp/tests/test_server.py が、実際に送る名前がそれと一致することを確かめる）"""
+        sent = self._function_params("search_songs") - MCP_ONLY_PARAMS
+        self.assertEqual(sent, set(SongFilter.base_filters) | {"page", "size"})
 
     def test_sort_choices_are_accepted_by_the_api(self):
         """search_songsのsortの選択肢は、すべて曲のAPIが受け付ける（#1311）"""

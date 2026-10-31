@@ -81,6 +81,18 @@ class SearchSongsTest(ServerTestBase):
         self.assertNotIn("include_lyrics", params)
         self.assertNotIn("client", params)
 
+    async def test_sends_exactly_the_documented_params(self):
+        """送るクエリの名前は、ツールの引数（include_lyricsを除く）と過不足なく一致する。
+        localsで組み立てるため、関数内に変数を足したときにAPIへ余計なパラメータが送られる回帰を防ぐ"""
+        client = FakeClient(page([song()]))
+        server = create_server(client)
+        await server.call_tool("search_songs", {})
+        tools = {tool.name: tool for tool in await server.list_tools()}
+        documented = set(tools["search_songs"].input_schema["properties"]) - {"include_lyrics"}
+        _, params = client.calls[0]
+        self.assertEqual(set(params), documented)
+        self.assertTrue({"title", "author_exact", "imitate", "is_collab", "upload_time_lte", "sort", "page", "size"} <= documented)
+
     async def test_summarizes_songs_without_lyrics(self):
         data = await self.call(FakeClient(page([song()], count=57, max_page=3)), "search_songs")
         self.assertEqual((data["count"], data["page"], data["size"], data["max_page"]), (57, 1, 20, 3))
