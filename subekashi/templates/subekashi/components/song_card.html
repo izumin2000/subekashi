@@ -3,7 +3,7 @@
 <a class="song-card{% if song|is_subeana_author %} song-card-subeana-author{% endif %}" href="{% url 'subekashi:song' song.id %}">
     <table>
         <tr>
-            <td class="song-card-col1 sansfont" title="{{ song.title }}"><i class="fas fa-music"></i>{{ song.title }}</td>
+            <td class="song-card-col1 sansfont" title="{{ song.title }}"><i class="fas fa-music"></i><span class="song-card-title">{{ song.title }}</span></td>
             <td class="song-card-like">{% get_like song %}</td>
             <td class="song-card-urls">{% get_url song %}</td>
         </tr>

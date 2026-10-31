@@ -51,6 +51,11 @@
     padding-left: 5px;
 }
 
+.song-card-title {
+    text-decoration: underline 2px #fff;
+    text-underline-offset: 0.3ex;
+}
+
 .song-card-urls {
     text-align: right;
     padding-right: 0 !important;
