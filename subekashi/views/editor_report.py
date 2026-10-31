@@ -41,10 +41,10 @@ class BaseEditorReportView(View):
         lines = [
             "荒らしの報告",
             f"理由：{reason}",
-            f"報告された編集者：{ROOT_URL}/admin/subekashi/editor/{self.editor.id}/change/",
+            f"報告された編集者：{ROOT_URL}{reverse('admin:subekashi_editor_change', args=[self.editor.id])}",
         ]
         if self.history:
-            lines.append(f"報告された編集：{ROOT_URL}/admin/subekashi/history/{self.history.id}/change/")
+            lines.append(f"報告された編集：{ROOT_URL}{reverse('admin:subekashi_history_change', args=[self.history.id])}")
         lines.append(f"報告した人のIP：{self.reporter_ip}")
         return "\n".join(lines) + "\n"
 

@@ -3389,6 +3389,22 @@ class HistoryReportViewTest(TestCase):
                 self.assertEqual(response.status_code, 302)
                 self.assertEqual(response.url, expected)
 
+    @patch("subekashi.views.editor_report.send_discord", return_value=True)
+    def test_post_keeps_query_and_fragment_of_next(self, mock_send_discord):
+        # toast=reportを足しても、nextのほかのクエリ（複数・空の値・同じキーの繰り返し）とフラグメントは変えない
+        cases = (
+            ("/histories/?q=a&page=2#top", "/histories/?q=a&page=2&toast=report#top"),
+            ("/histories/?q=&page=2", "/histories/?q=&page=2&toast=report"),
+            ("/histories/?tag=a&tag=b&page=2", "/histories/?tag=a&tag=b&page=2&toast=report"),
+            ("/histories/?toast=old&q=a&toast=older#top", "/histories/?q=a&toast=report#top"),
+            ("/histories/#top", "/histories/?toast=report#top"),
+        )
+        for next_url, expected in cases:
+            with self.subTest(next_url=next_url):
+                response = self._post(next_url=next_url)
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(response.url, expected)
+
     def test_get_with_unsafe_next_goes_back_to_histories(self):
         response = self._get(next_url="https://evil.example/")
 

@@ -1380,6 +1380,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 報告した人のIPはX-Real-IP（#1189） | `X-Real-IP`と、別のIPの`X-Forwarded-For` | 文面の報告した人のIPは`X-Real-IP`のもの |
 | 公開の編集者の履歴も報告できる | `is_open=True`の編集者の履歴にPOST | 非公開の場合と同じく`next`へ`toast=report`を付けてリダイレクトし、その編集者の管理画面のURLを送る |
 | `next`はこのサイトのURLだけ | `/songs/5/history/?page=2`・`/histories/?toast=report&q=a`・`/histories/?q=報告`・`http://testserver/histories/`・`https://evil.example/`・`//evil.example/`・`javascript:alert(1)`・空 | このサイトのURLは、`toast`を置き換えて（`/histories/?q=a&toast=report`）元のクエリを残す。他のサイト・不正なURL・空は`/histories/?toast=report`へ戻す |
+| `next`のほかのクエリ・フラグメントは変えない | `/histories/?q=a&page=2#top`・`?q=&page=2`（空の値）・`?tag=a&tag=b`（同じキーの繰り返し）・`?toast=old&q=a&toast=older#top`・`/histories/#top` | `toast=report`を末尾に1つだけ付け、元のクエリの順・空の値・繰り返しとフラグメントを残す。元の`toast`は全て置き換える（`/histories/?q=a&toast=report#top`） |
 | GET: 安全でない`next` | `?next=https://evil.example/` | 「戻る」リンクと`next`のhiddenは`/histories/` |
 | POST: DBは変えない | 正常な報告 | `Editor`・`History`が増えない |
 | POST: 報告理由が空・長すぎる | `reason=""`・`"あ" * 1001` | HTTP 200、`context["error"]`にエラーメッセージ。`next`のhiddenを残し、Discordに送らない |
