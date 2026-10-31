@@ -8,7 +8,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.cache import never_cache
 from config.local_settings import NEW_DISCORD_URL
-from subekashi.converters import SQLITE_INT_MAX
+from subekashi.converters import parse_sqlite_id
 from subekashi.models import Author, AuthorAlias, AuthorLink, Editor, History, Song
 from subekashi.forms import AuthorAliasForm, AuthorUnifyNameForm
 from subekashi.lib.ip import get_ip
@@ -34,29 +34,39 @@ UNIFY_CONFLICT_DISPLAY_LIMIT = 5
 def unify_conflict_redirect(base_url, conflict_authors):
     """旧名を統一先の以前の名称として登録できないときの、別名一覧画面へのリダイレクト（#1290）
 
-    原因の作者は、別名一覧画面で理由を表示するためにクエリで渡す
+    原因の作者は、別名一覧画面で理由を表示するためにクエリで渡す。表示する件数の上限を
+    超える分は、idではなく件数（conflict_more）だけを渡す
     """
-    query = urlencode([("toast", "unify_conflict")] + [("conflict", a.id) for a in conflict_authors])
-    return redirect(f"{base_url}?{query}")
+    shown = conflict_authors[:UNIFY_CONFLICT_DISPLAY_LIMIT]
+    params = [("toast", "unify_conflict")] + [("conflict", a.id) for a in shown]
+    if len(conflict_authors) > len(shown):
+        params.append(("conflict_more", len(conflict_authors) - len(shown)))
+    return redirect(f"{base_url}?{urlencode(params)}")
 
 
 def get_unify_conflict_authors(request, author):
-    """別名一覧画面に表示する、名義を統一できない原因の作者を返す（#1290）
+    """別名一覧画面に表示する、名義を統一できない原因の作者と、表示しきれなかった作者の数を返す（#1290）
 
-    クエリのidをそのまま信用せず、実際にauthorの名前と同名の別名を持つ作者だけに絞る
+    クエリのidをそのまま信用せず、実際にauthorの名前と同名の別名を持つ作者だけに絞る。
+    表示しきれなかった数は、上限まで表示できたときだけ使う
     """
     if request.GET.get("toast") != "unify_conflict":
-        return []
-    conflict_ids = []
-    for value in request.GET.getlist("conflict")[:UNIFY_CONFLICT_DISPLAY_LIMIT]:
-        if value.isascii() and value.isdigit() and len(value) <= len(str(SQLITE_INT_MAX)) and int(value) <= SQLITE_INT_MAX:
-            conflict_ids.append(int(value))
-    return list(
+        return [], 0
+    conflict_ids = [
+        conflict_id
+        for conflict_id in map(parse_sqlite_id, request.GET.getlist("conflict")[:UNIFY_CONFLICT_DISPLAY_LIMIT])
+        if conflict_id is not None
+    ]
+    conflict_authors = list(
         Author.objects.filter(pk__in=conflict_ids, aliases__name=author.name)
         .exclude(pk=author.pk)
         .distinct()
         .order_by("pk")
     )
+    more_count = 0
+    if len(conflict_authors) == UNIFY_CONFLICT_DISPLAY_LIMIT:
+        more_count = parse_sqlite_id(request.GET.get("conflict_more", "")) or 0
+    return conflict_authors, more_count
 
 CHANNEL_LINK_NOTE = "対応する名義が存在する場合、一覧画面でチャンネルページへのリンクが表示されます。"
 
@@ -143,6 +153,8 @@ class AuthorAliasesView(View):
             None,
         )
 
+        unify_conflict_authors, unify_conflict_more = get_unify_conflict_authors(request, author)
+
         context = {
             "metatitle": f"{author.name}の別名一覧",
             "author": author,
@@ -152,7 +164,8 @@ class AuthorAliasesView(View):
             "ununified_song_count": ununified_song_count,
             "unify_name_successor": unify_name_successor,
             "successor_ununified_song_count": author.songs.count() if unify_name_successor else 0,
-            "unify_conflict_authors": get_unify_conflict_authors(request, author),
+            "unify_conflict_authors": unify_conflict_authors,
+            "unify_conflict_more": unify_conflict_more,
         }
         return render(request, 'subekashi/author_aliases.html', context)
 

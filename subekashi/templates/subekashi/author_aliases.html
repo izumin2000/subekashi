@@ -57,7 +57,7 @@
             <p class="unify-name-status ok" id="unify-name-status"><i class="fas fa-check-circle ok"></i>名義は統一されています</p>
         {% endif %}
         {% if unify_conflict_authors %}
-            <p class="unify-name-status error" id="unify-name-conflict"><i class="fas fa-ban error"></i>統一すると『{{ author.name }}』は統一後の名前の以前の名称として登録されますが、{% for conflict_author in unify_conflict_authors %}『<a href="{% url 'subekashi:author_aliases' conflict_author.id %}">{{ conflict_author.name }}</a>』{% if not forloop.last %}・{% endif %}{% endfor %}の別名に同じ名前が登録されており、別名の名前は重複して登録できないため、統一できませんでした。<br>その作者の別名一覧から『{{ author.name }}』の別名を削除するか別の名前に変更してから、もう一度統一してください。つながりを残したい場合は、統一した後に、統一後の名前を別名として登録し直してください。</p>
+            <p class="unify-name-status error" id="unify-name-conflict"><i class="fas fa-ban error"></i>統一すると『{{ author.name }}』は統一後の名前の以前の名称として登録されますが、{% for conflict_author in unify_conflict_authors %}『<a href="{% url 'subekashi:author_aliases' conflict_author.id %}">{{ conflict_author.name }}</a>』{% if not forloop.last %}・{% endif %}{% endfor %}{% if unify_conflict_more %}ほか{{ unify_conflict_more }}件{% endif %}の別名に同じ名前が登録されており、別名の名前は重複して登録できないため、統一できませんでした。<br>その作者の別名一覧から『{{ author.name }}』の別名を削除するか別の名前に変更してから、もう一度統一してください。つながりを残したい場合は、統一した後に、統一後の名前を別名として登録し直してください。</p>
         {% endif %}
         <form method="GET" action="{% url 'subekashi:author_unify_name_confirm' author.id %}" id="unify-name-form">
             <div id="unify-name-sources">

@@ -38,6 +38,7 @@ from subekashi.lib.song_service import restore_song
 from subekashi.lib.youtube import YoutubeApiError
 from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Prush, Song, SongLink, SongTimeline, Stats, Word
 from subekashi.models.author import TransitiveAlias
+from subekashi.views.author_alias import UNIFY_CONFLICT_DISPLAY_LIMIT
 from subekashi.views.songs import COOKIE_FORMS, SEARCH_FORM_QUERIES, TEXT_FORMS
 
 
@@ -4934,6 +4935,97 @@ class AuthorUnifyNameSetViewTest(TestCase):
         self.assertTrue(AuthorAlias.objects.filter(pk=self.past_alias.pk).exists())
         self.assertEqual(History.objects.count(), 0)
 
+    def _create_conflict_authors(self, count):
+        # group種別は同名を複数のauthorが登録できるため、衝突する作者を何人でも作れる
+        authors = [Author.objects.create(name=f"衝突する作者{i}") for i in range(count)]
+        for conflict_author in authors:
+            AuthorAlias.objects.create(name=self.author.name, author=conflict_author, alias_type="group")
+        return authors
+
+    def _conflict_paragraph(self, response):
+        # 別名一覧の上部にも、衝突する作者の行（所属している名義）が表示されるため、理由の段落の中だけを見る
+        return BeautifulSoup(response.content, "html.parser").select_one("#unify-name-conflict")
+
+    def _conflict_link_names(self, response):
+        return [a.get_text() for a in self._conflict_paragraph(response).select("a")]
+
+    def test_conflict_at_display_limit_has_no_more_count(self):
+        authors = self._create_conflict_authors(UNIFY_CONFLICT_DISPLAY_LIMIT)
+
+        response = self._post("以前の名義")
+
+        query = "&".join(f"conflict={a.id}" for a in authors)
+        self.assertRedirects(response, self._aliases_url(self.author, "unify_conflict") + f"&{query}")
+
+    def test_conflict_over_display_limit_redirects_with_limited_ids_and_more_count(self):
+        # 上限を超える分はidをクエリに載せず、件数だけを渡す
+        authors = self._create_conflict_authors(UNIFY_CONFLICT_DISPLAY_LIMIT + 2)
+
+        response = self._post("以前の名義")
+
+        shown = authors[:UNIFY_CONFLICT_DISPLAY_LIMIT]
+        query = "&".join(f"conflict={a.id}" for a in shown)
+        self.assertRedirects(
+            response, self._aliases_url(self.author, "unify_conflict") + f"&{query}&conflict_more=2"
+        )
+
+    def test_alias_list_page_shows_more_count_when_conflicts_exceed_display_limit(self):
+        authors = self._create_conflict_authors(UNIFY_CONFLICT_DISPLAY_LIMIT)
+
+        response = self.client.get(
+            reverse("subekashi:author_aliases", args=[self.author.id]),
+            {"toast": "unify_conflict", "conflict": [a.id for a in authors], "conflict_more": 3},
+        )
+
+        self.assertEqual(self._conflict_link_names(response), [a.name for a in authors])
+        self.assertContains(response, "ほか3件の別名に同じ名前が登録されており、")
+
+    def test_alias_list_page_hides_more_count_without_conflict_more(self):
+        authors = self._create_conflict_authors(UNIFY_CONFLICT_DISPLAY_LIMIT)
+
+        response = self.client.get(
+            reverse("subekashi:author_aliases", args=[self.author.id]),
+            {"toast": "unify_conflict", "conflict": [a.id for a in authors]},
+        )
+
+        self.assertNotIn("ほか", self._conflict_paragraph(response).get_text())
+
+    def test_alias_list_page_ignores_more_count_below_display_limit(self):
+        # 上限まで表示していないときは、クエリを書き換えて件数だけを出せないようにする
+        authors = self._create_conflict_authors(UNIFY_CONFLICT_DISPLAY_LIMIT - 1)
+
+        response = self.client.get(
+            reverse("subekashi:author_aliases", args=[self.author.id]),
+            {"toast": "unify_conflict", "conflict": [a.id for a in authors], "conflict_more": 3},
+        )
+
+        self.assertNotIn("ほか", self._conflict_paragraph(response).get_text())
+
+    def test_alias_list_page_ignores_invalid_more_count(self):
+        authors = self._create_conflict_authors(UNIFY_CONFLICT_DISPLAY_LIMIT)
+
+        for value in ["abc", "-1", "1.5", "99999999999999999999999", "１２", ""]:
+            with self.subTest(value=value):
+                response = self.client.get(
+                    reverse("subekashi:author_aliases", args=[self.author.id]),
+                    {"toast": "unify_conflict", "conflict": [a.id for a in authors], "conflict_more": value},
+                )
+                self.assertEqual(response.status_code, 200)
+                self.assertNotIn("ほか", self._conflict_paragraph(response).get_text())
+
+    def test_alias_list_page_limits_conflict_authors_to_display_limit(self):
+        # 上限を超えるidをクエリに並べても、表示するのは上限までにする
+        authors = self._create_conflict_authors(UNIFY_CONFLICT_DISPLAY_LIMIT + 1)
+
+        response = self.client.get(
+            reverse("subekashi:author_aliases", args=[self.author.id]),
+            {"toast": "unify_conflict", "conflict": [a.id for a in authors]},
+        )
+
+        self.assertEqual(
+            self._conflict_link_names(response), [a.name for a in authors[:UNIFY_CONFLICT_DISPLAY_LIMIT]]
+        )
+
     def test_old_name_alias_owned_by_target_author_is_not_a_conflict(self):
         # 統一先自身が旧名と同名の別名を持つ場合は、統一後もそのまま再利用するため衝突ではない
         target = Author.objects.create(name="以前の名義")
@@ -4972,7 +5064,7 @@ class AuthorUnifyNameSetViewTest(TestCase):
         self.assertNotContains(response, "無関係な作者")
 
     def test_alias_list_page_ignores_invalid_conflict_values(self):
-        for value in ["abc", "-1", "1.5", "99999999999999999999999", "1" * 5000, "１２"]:
+        for value in ["abc", "-1", "1.5", "99999999999999999999999", "1" * 5000, "１２", "²"]:
             with self.subTest(value=value):
                 response = self.client.get(
                     reverse("subekashi:author_aliases", args=[self.author.id]),
@@ -5252,6 +5344,20 @@ class AuthorUnifyNameConfirmViewTest(TestCase):
             response,
             reverse("subekashi:author_aliases", args=[self.author.id])
             + f"?toast=unify_conflict&conflict={other.id}",
+        )
+
+    def test_old_name_conflict_over_display_limit_redirects_with_more_count(self):
+        conflict_authors = [Author.objects.create(name=f"衝突する作者{i}") for i in range(UNIFY_CONFLICT_DISPLAY_LIMIT + 1)]
+        for conflict_author in conflict_authors:
+            AuthorAlias.objects.create(name=self.author.name, author=conflict_author, alias_type="group")
+
+        response = self._get("以前の名義")
+
+        query = "&".join(f"conflict={a.id}" for a in conflict_authors[:UNIFY_CONFLICT_DISPLAY_LIMIT])
+        self.assertRedirects(
+            response,
+            reverse("subekashi:author_aliases", args=[self.author.id])
+            + f"?toast=unify_conflict&{query}&conflict_more=1",
         )
 
     def test_old_name_conflict_reason_is_shown_on_aliases_page_after_redirect(self):
