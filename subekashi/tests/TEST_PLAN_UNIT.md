@@ -1304,6 +1304,9 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 削除を取り消した曲のHistory（#1264） | 曲を削除してから取り消す | 「<タイトル>の削除を取り消し」が表示され、削除・取り消しの両方の履歴から曲のページへリンクする。「この曲または作者は削除されました」は表示されない |
 | 検索欄のラベル（#954） | 正常アクセス | 検索欄（`input[name="q"]`）に`aria-label="編集履歴の概要で検索"`が付く（編集者のページと共通の`history_search_form.html`） |
 | ページ送りで検索語を引き継ぐ（#954） | `?q=別名`で検索結果が`HISTORIES_PER_PAGE`件を超える | 「次へ」が`?page=2&q=<URLエンコードした検索語>`、2ページ目の「前へ」が`?page=1&q=<同>`へのリンクになる（共通の`pagination.html`） |
+| 非公開の編集者の履歴に報告リンク（#1294） | `is_open=False`の編集者の履歴、`?q=報告&page=1` | 「編集者: 非公開」の横に`a#history-report-<履歴のid>`（`rel="nofollow"`）があり、`/histories/<履歴のid>/report/?next=<今のページのパスとクエリ>`へ遷移する。編集者のIDは、画面にもリンクにも出さない（`/editor/<id>/`・編集者の表示名を含まない） |
+| 公開・強制公開・自分の編集者の履歴に報告リンクは無い（#1294） | `is_open=True`・`is_open=False`かつ`is_forced_open=True`・自分のIPで`is_open=False`の編集者の履歴 | `class="history-report"`も「編集者: 非公開」も含まない（編集者のページへリンクする） |
+| 報告後のトースト（#1294） | `?toast=report` | 「報告しました。ご協力ありがとうございます。」を表示するスクリプトを含む。`toast`が無ければ含まない |
 
 #### 7-10-1. `EditorView` (`/editor/<id>/`)（#991でauthor向けHistory表示を追加、#954で履歴の検索を追加）
 
@@ -1337,6 +1340,8 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 編集の差分の表示（#608） | 編集（`changes`の見出しが`["種類", "編集前", "編集後"]`）と新規作成（見出しが`["種類", "内容"]`）のHistoryが存在 | `<table class="diff-table">`が編集のHistoryの分だけ（1つ）含まれ、差分を表示する`subekashi/js/editor.js`が読み込まれる |
 | 削除の取り消しの履歴（#1264、#1275） | 曲を削除してから、理由を入力して取り消す | HTTP 200で「<タイトル>の削除を取り消し」が表示される。変更内容の表（`change-table-wrapper`）は、削除と取り消しの理由の表（`delete-table`）の2つで、どちらの理由も表示する |
 | 理由なしの取り消しの履歴（#1275） | 理由を入力しなかった頃の取り消しのHistory（`history_type="restore"`・`changes=None`） | HTTP 200で「<タイトル>の削除を取り消し」が表示され、変更内容の表（`change-table-wrapper`）は表示しない |
+| 非公開の編集者の履歴に報告リンク（#1294） | `is_open=False`の編集者の履歴 | `/histories/<履歴のid>/report/?next=<曲の履歴のパス>`へ遷移する`a#history-report-<履歴のid>`がある。編集者のIDは、画面にもリンクにも出さない |
+| 報告後のトースト（#1294） | `?toast=report` | 「報告しました。ご協力ありがとうございます。」を表示するスクリプトを含む。`toast`が無ければ含まない |
 
 #### 7-10-3. `EditorReportView` (`/editor/<id>/report/`)（#1291）
 
@@ -1359,6 +1364,28 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | POST: 報告理由が長すぎる | `reason="あ" * 1001` | HTTP 200、`context["error"] == "報告理由は1000文字以内で入力してください。"`で、入力した理由を残す。Discordに送らない |
 | POST: Discordに送信できない | `send_discord`が`False`を返す | 報告はDiscordにしか残らないため、完了にせずHTTP 200で「報告を送信できませんでした。時間をおいて再度お試しください。」のトーストを表示し、入力した理由を`textarea`に残す |
 | 報告理由のエスケープ | `reason="</textarea><script>alert(1)</script>"`でDiscordに送信できない | `<script>alert(1)</script>`はそのまま出力されず、エスケープして`textarea`に戻る |
+
+#### 7-10-4. `HistoryReportView` (`/histories/<id>/report/`)（#1294）
+
+履歴一覧・曲の履歴の「編集者: 非公開」の「報告」から、その履歴の編集者を報告する。編集者のIDが画面・URLに出ると、同じIDの履歴どうしが同じ非公開の編集者のものだと分かってしまう（APIが非公開の編集者を`null`にするのはこれを防ぐため）ため、履歴から編集者を引き、編集者のIDを出さない。報告のフォーム・理由の検証・Discordへの送信は`EditorReportView`（7-10-3）と共通（`BaseEditorReportView`）。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| GET: 報告のフォーム | `is_open=False`の編集者の履歴、`?next=/histories/?page=2` | HTTP 200。`form#editor-report-form`（`action`は履歴の報告のURL、`POST`）に、`next`のhidden・必須の`textarea[name=reason]`・CSRFトークン・無効の送信ボタンがあり、対象の編集（履歴のタイトル）を表示する。「戻る」リンクは`next`へ遷移する。`noindex` |
+| 編集者のIDを出さない | GET、理由が空・1001文字・Discordに送信できないPOST | どの画面も、`/editor/<id>`・編集者の表示名（`全て<id>の所為です。`）を含まない |
+| 存在しない履歴 | `history_id=99999`にGET・POST | どちらもHTTP 404で、Discordに送らない |
+| 自分の履歴は報告できない | 自分のIPの編集者の履歴にGET・POST | どちらも`next`へリダイレクトし、Discordに送らない |
+| POST: 正常な報告理由 | `reason="..."`、`next=/histories/?page=2`（`send_discord`をモック） | `/histories/?page=2&toast=report`へリダイレクト |
+| POST: Discordへの通知 | 同上 | `CONTACT_DISCORD_URL`宛に、理由・報告された編集者の管理画面のURL（`admin:subekashi_editor_change`）・報告された編集の管理画面のURL（`admin:subekashi_history_change`）・報告した人の暗号化したIP（`encrypt(IP)`）を含む文面を1回送る。暗号化していないIPは含まない |
+| 報告した人のIPはX-Real-IP（#1189） | `X-Real-IP`と、別のIPの`X-Forwarded-For` | 文面の報告した人のIPは`X-Real-IP`のもの |
+| 公開の編集者の履歴も報告できる | `is_open=True`の編集者の履歴にPOST | 非公開の場合と同じく`next`へ`toast=report`を付けてリダイレクトし、その編集者の管理画面のURLを送る |
+| `next`はこのサイトのURLだけ | `/songs/5/history/?page=2`・`/histories/?toast=report&q=a`・`/histories/?q=報告`・`http://testserver/histories/`・`https://evil.example/`・`//evil.example/`・`javascript:alert(1)`・空 | このサイトのURLは、`toast`を置き換えて（`/histories/?q=a&toast=report`）元のクエリを残す。他のサイト・不正なURL・空は`/histories/?toast=report`へ戻す |
+| `next`のほかのクエリ・フラグメントは変えない | `/histories/?q=a&page=2#top`・`?q=&page=2`（空の値）・`?tag=a&tag=b`（同じキーの繰り返し）・`?toast=old&q=a&toast=older#top`・`/histories/#top` | `toast=report`を末尾に1つだけ付け、元のクエリの順・空の値・繰り返しとフラグメントを残す。元の`toast`は全て置き換える（`/histories/?q=a&toast=report#top`） |
+| GET: 安全でない`next` | `?next=https://evil.example/` | 「戻る」リンクと`next`のhiddenは`/histories/` |
+| POST: DBは変えない | 正常な報告 | `Editor`・`History`が増えない |
+| POST: 報告理由が空・長すぎる | `reason=""`・`"あ" * 1001` | HTTP 200、`context["error"]`にエラーメッセージ。`next`のhiddenを残し、Discordに送らない |
+| POST: Discordに送信できない | `send_discord`が`False`を返す | HTTP 200でエラーを表示し、入力した理由と`next`を残す |
+| BANされた報告者は報告できない（#1281） | `is_banned=True`の編集者のIPで、`Referer`付きでPOST | `BannedEditorMiddleware`が止め、`?toast=banned`を付けて303でリダイレクトする。Discordに送らない |
 
 #### 7-11. `SongCardsView` (`/api/html/song_cards`)
 
