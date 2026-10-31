@@ -1584,6 +1584,20 @@ sitemap.xmlは本番で`const`コマンド（`sitemap`コマンドと`collectsta
 | --- | --- | --- |
 | ハッシュなしのURLへリダイレクト | manifestに`subekashi/sitemap.xml`のハッシュ付きのファイル名がある状態で`/sitemap.xml`にGET | `{ROOT_URL}/static/subekashi/sitemap.xml`へリダイレクト |
 
+#### 7-19-2. `llms` (`/llms.txt`)（#1310）
+
+`subekashi/static/subekashi/llms.txt`の内容を、AIが公開APIの使い方を知るための文書として`/llms.txt`で直接返す（`robots`と同じく`/static/`へリダイレクトしない）。文書は「公開API（読み取り専用）」と「使わないAPI」の2つの節に分ける。APIを追加・変更したときに文書が古くならないよう、`defaultRouter`に登録されたAPI・シリアライザの項目・絞り込みのパラメータ・曲の検索で指定できる値が、文書に載っていることを確かめる。載っていることは「`` `名前` ``」の形で探す。文書の内容そのものが実際のAPIの挙動と合っているかは、開発DBに対して実際にAPIを呼んで確かめた（Djangoテストでは確認しない）。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| llms.txtを直接返す | GETリクエスト | HTTP 200、`Content-Type`が`text/plain; charset=utf-8`で、`# 全て歌詞の所為です。`で始まり、「公開API（読み取り専用）」「使わないAPI」の節がある |
+| routerのAPIを正しい節に載せる | `defaultRouter`に登録された`ReadOnlyModelViewSet`・それ以外（`ai`・`ad`は更新を受け付ける） | 読み取り専用のものは「公開API」にだけ、それ以外は「使わないAPI」にだけ`` `/api/<prefix>/` ``が載る |
+| router以外の/api/のURLを「使わないAPI」に載せる | `urlpatterns`のうち`api/`で始まるURL（`api/ai/swap/`・`api/news/`・`api/html/toast`など） | いずれも「使わないAPI」に載り、「公開API」には載らない |
+| 返す項目をすべて載せる | 公開APIそれぞれのシリアライザの項目 | そのAPIの説明に、全ての項目名が載る |
+| 絞り込みのパラメータをすべて載せる | 公開APIの`filterset_fields`・`filterset_class`のパラメータ（`song`・`author`・`editor`・`word`・`hinshi`・`katsuyou`・`songrange`・`tag`） | そのAPIの説明の「絞り込み」の行に載る（`tag`のようにレスポンスの項目と同じ名前でも、項目の一覧だけでは通らない） |
+| 曲の検索のパラメータをすべて載せる | `SongFilter.base_filters`の全てと`page`・`size` | 曲のAPIの説明に載る |
+| 曲の検索で指定できる値をすべて載せる | `SONG_CATEGORIES`のカテゴリ、`ALLOW_MEDIAS`のメディアのidと`other`、`SORT_CHOICES`の並び替えの値（先頭の`-`を除く） | 曲のAPIの説明に載る |
+
 #### 7-20. OGPのメタタグ（#1058）
 
 全ページが継承する`base/base.html`のOGPのメタタグを確認する。OGPの画像はページごとに`/ogp/<token>.png`（`ogp_image`ビュー）で生成し、`token`は`metatitle`を署名したもの（`lib/ogp.py`の`make_ogp_token`）。SNS側で読み込めるよう、URLはcontext processorの`root_url`（`django.conf.settings.ROOT_URL`）を付けた絶対URLにする。OGPのタグは`{% block ogp %}`にまとめ、404・500ページでは出さない。SNSで実際にカードが表示されるかはDjangoテストでは確認できないため、デプロイ後にX・Discordで確認する。

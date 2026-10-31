@@ -1,0 +1,165 @@
+# 全て歌詞の所為です。
+
+> 「界隈曲」と呼ばれる音楽ジャンルの曲を集めたデータベースサイト。曲のタイトル・歌詞・作者・動画のURL・模倣関係（どの曲がどの曲を模倣したか）・編集履歴を載せている。データは利用者が登録・編集していて、日本語。読み取り専用の公開APIを、認証なしで使える。
+
+- サイトのURL: https://lyrics.imicomweb.com
+- 「すべあな」は作者「全てあなたの所為です。」（作者ID 1）の略称。「すべあな界隈曲」はすべあなの曲とそれを模倣した曲の界隈で、曲の `is_subeana` で区別する
+- 界隈曲とは: https://dic.nicovideo.jp/a/界隈曲
+- データの追加・編集・削除はサイトの画面から利用者が行うもので、APIではできない。AIから行わない
+
+## ページ
+
+- [曲の検索](https://lyrics.imicomweb.com/songs/): 検索画面。`is_joke=only` や `is_subeana=xx` のような、検索画面だけで使える値がある（APIでは使えない）
+- [曲のページ](https://lyrics.imicomweb.com/songs/1/): `/songs/<曲のid>/`
+- [曲の編集履歴](https://lyrics.imicomweb.com/songs/1/history/): `/songs/<曲のid>/history/`
+- [作者のページ](https://lyrics.imicomweb.com/authors/1/): `/authors/<作者のid>/`
+- [編集履歴の一覧](https://lyrics.imicomweb.com/histories/)
+- [統計](https://lyrics.imicomweb.com/stats/)
+- [記事の一覧](https://lyrics.imicomweb.com/articles/): お知らせ・アップデート内容・使い方・ブログなど
+
+## 公開API（読み取り専用）
+
+すべて `GET` のみ。JSONを返す。認証は不要で、`/api/` 以下はどのオリジンからも読み取れる。
+
+### 共通の決まり
+
+- レート制限: IPごとに1秒あたり2回まで。超えると HTTP 429 と `{"detail": "..."}` を返すので、1秒以上待って再試行する。続けて呼ぶときは1秒に2回を超えないよう間隔を空ける
+- エラーの形: 曲の検索（`/api/song/`）で入力が不正なときは HTTP 400 と `{"error": "..."}`。存在しないidは HTTP 404 と `{"detail": "..."}`
+- 一覧は `page`（1から、既定1）と `size`（既定50）で範囲を指定し、`{"count": 全件数, "page": ..., "size": ..., "max_page": ..., "result": [...]}` を返す。`page` が最終ページを超えると `result` は空。`size` が1未満や数字でないと既定値になる。`/api/author/` `/api/prush/` `/api/history/` `/api/word/` `/api/stats/` `/api/article/` `/api/contact/` は `size` の上限が1000
+- 日時は ISO 8601（例: `2026-10-31T18:06:24+09:00`）
+- 絞り込みの値は、対応していない名前のパラメータや、真偽値で `true` `false` 以外の値を渡してもエラーにならず、無視されて絞り込まれない。件数（`count`）が全件のままなら、絞り込めていない
+
+### `/api/song/` 曲
+
+`/api/song/` は曲を検索する一覧、`/api/song/<id>/` は1曲の詳細。ユーザーが削除した曲は返さない。何も絞り込まなければ、動画が非公開・削除済み（`is_deleted`）の曲やネタ曲、すべあな界隈曲以外の曲も含めた全曲を返す。
+
+返す項目:
+
+- `id`: 曲のid
+- `title`: タイトル
+- `authors`: 作者の一覧 `[{"id": ..., "name": ...}]`
+- `url`: 登録されている動画などのURLの一覧
+- `lyrics`: 歌詞（改行は `\n`）。歌詞がない曲は空文字
+- `imitates`: この曲が模倣している曲（模倣元）のidの一覧
+- `imitateds`: この曲を模倣している曲（模倣曲）のidの一覧
+- `prush`: プレミアラッシュ（プレラ）の名前。無ければ `null`
+- `post_time`: サイト上での最終更新日時
+- `upload_time`: YouTubeの投稿日時。YouTubeの動画が無ければ `null`
+- `view` `like`: YouTubeの再生回数・高評価数。YouTubeの動画が無ければ `null` か `0`
+- `category`: カテゴリ。`song`（曲）`arrange`（アレンジ）`otomad`（音MAD）`medley`（メドレー）`omnibus`（総集編）`notice`（予告）`offv`（オフボ）`cover`（カバー）`meme`（ネタ動画）
+- 真偽値: `is_subeana`（すべあな界隈曲か）`is_original`（オリジナル模倣曲か）`is_joke`（ネタ曲）`is_inst`（インスト曲）`is_draft`（下書き）`is_deleted`（動画が非公開・削除済み）`is_limited`（限定公開）`is_questionable`（界隈曲かどうか議論の余地があり、人によって認識が異なる）`is_special`（スペシャルデザイン）`is_lock`（編集・削除できないよう固定された曲）
+
+歌詞を含むため1曲あたりの応答が大きい。`size` は10〜50程度にして、必要なときだけ増やす。
+
+絞り込みのパラメータ（すべて任意。複数指定するとすべてを満たす曲になる）:
+
+- 文字列（部分一致）
+  - `title`: タイトル
+  - `author`: 作者名。作者の別名義・略称も含めて探す
+  - `lyrics`: 歌詞
+  - `url`: 動画などのURL。`https://` や `www.` の有無は問わない
+  - `keyword`: タイトル・作者名（別名義を含む）・歌詞・URLのいずれか
+  - `guesser`: タイトル・作者名（別名義を含む）・URLのいずれか。模倣元を探すときに使う
+- 文字列（完全一致）
+  - `title_exact`: タイトル
+  - `author_exact`: 作者名。作者の別名義・略称も含めて探す
+  - `prush`: プレラの名前（`/api/prush/` の `name`）
+- 模倣関係
+  - `imitate`: 曲のidを渡すと、その曲を模倣している曲（模倣曲）を返す
+  - `imitated`: 曲のidを渡すと、その曲が模倣している曲（模倣元）を返す
+- 分類
+  - `categorys`: カテゴリをカンマ区切りで渡す。先頭に `~` を付けたカテゴリは除く（例: `arrange,cover` はアレンジかカバー、`~meme` はネタ動画以外）
+  - `mediatypes`: 動画などの置き場所をカンマ区切りで渡す。`youtube` `x` `nicovideo` `soundcloud` `vimesis` `scratch` `bandcamp` `drive` `bilibili` `imicom` `linkcore` `bandlab` `newgrounds` `note` `TikTok` `vidlii` `bluesky` `bowlroll` `misskey` `booth` `piapro` `rechord` `dropbox`、URLが未登録の曲は `other`
+- 真偽値（`true` / `false`。`True` / `False` も可）: `is_subeana` `is_original` `is_joke` `is_inst` `is_draft` `is_deleted` `is_limited` `is_questionable` `is_special`、`is_lack`（情報が不足している曲。URL・模倣元・歌詞のいずれかが未登録）、`is_collab`（作者が2人以上の合作）
+  - ネタ曲だけなら `is_joke=true`、ネタ曲を除くなら `is_joke=false`、すべあな界隈曲以外なら `is_subeana=false`
+- 数値と日時（YouTubeの値）: `view_gte` `view_lte` `like_gte` `like_lte`（1以上の整数）、`upload_time_gte` `upload_time_lte`（`2024-01-01` や `2024-01-01T00:00:00` の形式）。これらや、これらでの並び替えを使うと、`mediatypes` を指定していなくてもYouTubeの動画がある曲だけに絞り込まれる
+- 並び替え `sort`: `id` `title` `author` `post_time`（更新日）`upload_time`（YouTubeの投稿日）`view`（再生回数）`like`（高評価数）`imitate_count`（模倣元の数）`imitated_count`（模倣曲の数）。先頭に `-` を付けると降順（例: `-view`）。`random` はランダム。`sort` を省略したときの順序は決まっていないので、`page` で順に取得するときは必ず `sort` を指定する（例: `sort=id`）
+- `page` `size`: 共通の決まりのとおり。曲では `size` の上限が無いが、上のとおり小さくする
+
+例:
+
+- `/api/song/?author_exact=全てあなたの所為です。&sort=id&size=20`: すべあなの曲を古い順に20件
+- `/api/song/?keyword=針&is_deleted=false&sort=-view&size=10`: 「針」を含む、公開されている曲を再生回数の多い順に10件
+- `/api/song/?imitate=1&sort=-id`: 曲1を模倣している曲を新しい順に
+- `/api/song/?url=nicovideo.jp/watch/sm33837379`: このURLの動画に結び付いた曲
+
+### `/api/songlink/` 動画などのURLと曲の対応
+
+`/api/songlink/?url=<URL>` で、そのURLが登録されている曲を調べる。ページ分割は無く、`{"result": [...]}` を返す。`url` を省略すると全件を返してしまうので、必ず `url` を付ける。
+
+- `id`: URLのid
+- `url`: URL
+- `is_removed` `allow_dup`: 内部の状態
+- `songs`: このURLを持つ曲の一覧 `[{"id": ..., "title": ..., "authors": [...], "is_lack": ...}]`
+
+### `/api/author/` 作者
+
+`/api/author/` は一覧、`/api/author/<id>/` は1人の詳細。名前で絞り込む機能は無い。作者のidは、曲の `authors` から得るか、`/api/song/?author_exact=<名前>` で探す。
+
+- `id`: 作者のid
+- `name`: 名前
+- `aliases`: 別名の一覧 `[{"name": ..., "alias_type": ...}]`。`alias_type` は `id`（ID）`abbr`（略称）`common`（通称）`past`（以前の名称）`sns`（SNSでの名称）`spell`（表記揺れ）`another`（別名義）`group`（グループ）
+- `links`: 作者のリンク（URL）の一覧
+
+### `/api/history/` 編集履歴
+
+`/api/history/` は新しい順の一覧、`/api/history/<id>/` は1件の詳細。曲の履歴は `song`、作者の履歴は `author` に、どちらか一方だけが入る。
+
+- 絞り込み: `song`（曲のid）`author`（作者のid）`editor`（編集者のid。編集履歴を公開している編集者のみ）。いずれも整数
+- `id` `song` `author` `title`（履歴の見出し）
+- `history_type`: `new`（新規作成）`edit`（編集）`delete`（削除）`restore`（削除の取り消し）
+- `create_time`: 編集した日時
+- `changes`: 編集内容の表。先頭の行が見出し（`["種類", "編集前", "編集後"]`）で、以降が変更点。無ければ `null`
+- `editor`: 編集者のid。編集履歴を非公開にしている編集者は `null`
+
+### `/api/prush/` プレミアラッシュ（プレラ）
+
+`/api/prush/` と `/api/prush/<id>/`。
+
+- `id` `name`（名前。曲の `prush` や `/api/song/?prush=` に使う）`date`（日付）
+
+### `/api/stats/` 統計
+
+月ごとの統計の記録。`/api/stats/` と `/api/stats/<id>/`。古い月から並ぶ。
+
+- 絞り込み: `songrange`（`all` 全て / `subeana` すべあな界隈曲のみ / `xx` すべあな界隈曲以外）
+- `id` `year` `month` `songrange`
+- `song_count`（曲数）`total_view`（再生回数の合計）`total_like`（高評価数の合計）`total_authors`（作者数）`total_imitated_authors`（1度でも模倣された曲を持つ作者の数）`total_imitateds`（各曲の模倣曲の数の合計）
+- `create_time`: 記録した日時
+
+### `/api/article/` 記事
+
+公開済みの記事を新しい順に返す。`/api/article/` と `/api/article/<article_id>/`。
+
+- 絞り込み: `tag`（`news` ニュース / `release` リリースノート / `howto` 使い方 / `blog` ブログ / `tool` ツール / `tech` 技術 / `other` その他）
+- `article_id`（記事のid。記事のページは `/articles/<article_id>/`）`title`（HTML）`author` `tag`
+- `text`: 本文。`is_md` が `true` ならMarkdown、`false` ならHTML
+- `post_time`: 公開日時
+- `handle_as_news`: ニュースとして扱う記事か
+
+### `/api/contact/` 問い合わせと回答
+
+回答済みの問い合わせだけを返す。`/api/contact/` と `/api/contact/<id>/`。
+
+- `id` `detail`（問い合わせの内容）`post_time`（日付）`answer`（回答）
+
+### `/api/word/` 模倣単語
+
+歌詞を作る機能（全て蛇の目の所為です。）が使う、単語ごとの置き換え候補。全体で20万件を超えるので、全件を取得しない。`/api/word/` と `/api/word/<id>/`。
+
+- 絞り込み: `word`（元の単語）`hinshi`（品詞）`katsuyou`（活用形）
+- `id` `word` `hinshi` `katsuyou` `candidate`（置き換え候補）
+
+## 使わないAPI
+
+次のAPIは、サイトの画面が使うためのもの。更新を受け付けるものもあるので、AIから呼ばない。
+
+- `/api/ai/` `/api/ai/<id>/`: 作成歌詞の評価（`score`）を更新する。`PATCH` を受け付ける
+- `/api/ad/` `/api/ad/<id>/`: 広告の表示数・クリック数を更新する。`PATCH` を受け付ける
+- `/api/ai/swap/`（`POST`）: 作成歌詞の単語の入れ替え
+- `/api/setting/save/`（`POST`）: 設定の保存
+- `/api/editor/is_open`（`PUT`）: 編集者が編集履歴を公開するかの設定の変更
+- `/api/news/`（`POST`）: トップに表示するニュースの登録。管理者用で、APIキーが必要
+- `/api/song_edit_init/`: 曲の編集画面が使う、入力内容に合わせた曲の取得
+- `/api/word/candidates/`: 歌詞を作る機能が使う、置き換え候補の取得
+- `/api/html/song_cards` `/api/html/song_guessers` `/api/html/toast`: 画面の部品のHTML
