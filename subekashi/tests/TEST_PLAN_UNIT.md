@@ -1777,17 +1777,40 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | 制限的なディレクティブ | - | `default-src 'self'`・`object-src 'none'`・`base-uri 'self'`・`form-action 'self'`・`frame-ancestors 'none'` |
 | 埋め込みプレイヤーのiframeの許可（#1254） | YouTube・ニコニコ動画・SoundCloud（曲・プレイリスト）・ビリビリ動画・Google Drive・ScratchのURLの`get_embed()`の`src` | `src`のオリジン（`scheme://host`）が`frame-src`に含まれる（無いとCSPでブロックされる） |
 
-#### 9-4. `RestrictIPMiddleware` — BAN の判定（#1189）
+#### 9-4. `BannedEditorMiddleware`（#1281）
 
-`BAN_LIST` の判定には、`lib/ip.py` の `get_ip`（`X-Real-IP`、無ければ `REMOTE_ADDR`）を使う。`X-Forwarded-For` はクライアントが自由に付けられるため使わない。テストでは `BAN_LIST` を `["203.0.113.1"]` にし、`REMOTE_ADDR` は `10.0.0.1` にする。
+`Editor.is_banned`がTrueの編集者（`Editor.ip`が`get_ip`の値と一致する）は、ページの読み取り（GET・HEAD・OPTIONS）以外のリクエストができない。サイトの閲覧はできる。以前の`RestrictIPMiddleware`（`ban.py`の`BAN_LIST`にあるIPからのアクセスをすべて500にしていた）の代わりで、`BAN_LIST`から`is_banned`への移行は「11-11」に記載している。ビューごとではなくミドルウェアで判定するため、POSTなどを持つビューが増えても漏れない。止めるときの返し方は、JSからのリクエスト（`/api/`、`Sec-Fetch-Mode`が`navigate`以外のfetch・XHR、`X-Requested-With`、`Accept: application/json`、JSONの`Content-Type`）はJSONの403（HTMLにリダイレクトするとfetchが成功に見えるため）、ブラウザのフォーム送信は送信したフォームのあるページ（`Referer`）に`?toast=banned`を付けて戻す（`base.js`がトーストを表示する）。戻れないときは500のページを表示する。管理サイト（`/admin/`）は止めない（管理者のIPをBANしても、ログインしてBANを解除できるように）。編集者が存在しないIPはBANされていない扱いで、判定のために`Editor`を作らない。テストは`test_middleware.py`の`BannedEditorMiddlewareTest`。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
-| BANされたX-Real-IP | `X-Real-IP: 203.0.113.1` | HTTP 500 |
-| BANされていないX-Real-IP | `X-Real-IP: 203.0.113.2` | HTTP 200 |
-| X-Forwarded-ForではBANを回避できない | `X-Real-IP: 203.0.113.1`、`X-Forwarded-For: 198.51.100.1` | HTTP 500 |
-| X-Forwarded-ForでBANされたIPを名乗っても制限されない | `X-Real-IP: 198.51.100.1`、`X-Forwarded-For: 203.0.113.1` | HTTP 200 |
-| X-Real-IPが無ければREMOTE_ADDRで判定 | `REMOTE_ADDR: 203.0.113.1`、`X-Real-IP` なし | HTTP 500 |
+| フォームのPOST | BANされた編集者が、曲の登録・編集・削除・削除の取り消し、別名の追加・編集・削除、名義の統一、お問い合わせ、宣伝のフォームのあるページを`Referer`にしてPOST | HTTP 303で`<Refererのパス>?toast=banned`に戻す。曲・作者・別名・`Ai`・`Ad`・`History`・`Contact`・`SongLink`・`Editor`が変わらず、Discordに送信されない |
+| 戻した先のページ | 上記を`follow=True`でPOST | HTTP 200 |
+| `Referer`のクエリとフラグメント | 名義の統一の確認ページの`Referer`が`?name=…&toast=unified&name_unified=1&empty=#top`付き | HTTP 303で、戻し先は`name`・`empty`のクエリを残して`toast=banned`を付け、`toast`・`name_unified`・フラグメントは外す |
+| クエリが必要なページに戻せる | 名義の統一の確認ページ（`?name=…`が必要）の`Referer`でPOST、`follow=True` | 戻し先の確認ページがHTTP 200（クエリが無いと別名一覧にリダイレクトされてしまう） |
+| `Referer`が無い | 上記のフォームを`Referer`なしでPOST | HTTP 500、`500.html`を表示。何も変わらず、Discordに送信されない |
+| 他のサイトの`Referer` | `https://example.com/…`・`http://testserver.example.com/…`・`http://testserver@example.com/…`・`//example.com/…`・`javascript:alert(1)` | HTTP 500、`500.html`を表示（外部へリダイレクトしない） |
+| 管理サイトの`Referer` | `/admin/…`を`Referer`にしてPOST | HTTP 500、`500.html`を表示（管理サイトのページにはトーストが無い） |
+| 管理サイトのPOSTは止めない | BANされた編集者が`/admin/login/`にPOSTしてログインし、管理サイトの編集者の変更画面で`is_banned`を外す | ログインは302、編集者の変更も302で`is_banned`が`False`になる（BANを解除できる） |
+| 管理サイトのパスワードの間違い | `/admin/login/`に誤ったパスワードでPOST | HTTP 200（ログイン画面）。`500.html`にはならない |
+| JSからのリクエスト | フォームのURLに、`Sec-Fetch-Mode: same-origin`・`Sec-Fetch-Mode: cors`・`X-Requested-With: XMLHttpRequest`・`Accept: application/json`・`Accept: text/plain, application/json;q=0.9`のいずれかを付け、`Referer`付きでPOST | HTTP 403、`{"detail": BANNED_ERROR}`。`Location`は付かず、DBは変わらない |
+| JSONのPOST | `Content-Type: application/json`でフォームのURLにPOST | HTTP 403、`{"detail": BANNED_ERROR}` |
+| JSからの`Referer`なしのPOST | `Sec-Fetch-Mode: same-origin`で、`Referer`なしでPOST | HTTP 403のJSON（500のページではない） |
+| ブラウザのフォーム送信 | `Sec-Fetch-Mode: navigate`・`Accept: text/html,…`で、`Referer`付きと`Referer`なしのそれぞれでPOST | `Referer`付きは303で`?toast=banned`に戻し、`Referer`なしは500のページ |
+| APIのPOST・PUT・PATCH・DELETE | 単語の入れ替え、作成歌詞の評価（PUT・PATCH）、宣伝のクリック、設定の保存、公開の設定、ニュースの登録、曲の削除・作成（API）、お問い合わせ（API） | HTTP 403、`{"detail": BANNED_ERROR}`。Cookieを設定せず、DBが変わらず、Discordに送信されない |
+| 閲覧はできる | トップ・曲のページ・曲の登録・曲の編集・別名一覧・お問い合わせ・宣伝をGET・HEAD | いずれもHTTP 200 |
+| APIのGET・OPTIONS | `/api/song/<id>/`をGET、`/api/song/`をOPTIONS | いずれもHTTP 200 |
+| 検索のPOST | `/songs/`にPOST | HTTP 200（検索条件のCookieを保存して検索結果を返すだけで、DBに保存しないため止めない） |
+| BANの解除 | `is_banned`を`False`にして曲の登録をPOST | HTTP 302で曲が登録される |
+| 別の編集者のBAN | 別のIPの編集者だけがBANされている状態で曲の登録をPOST | HTTP 302で曲が登録される |
+| 編集者が無いIP | `Editor`が存在しないIPからPOST | ビューを呼び出し、`Editor`を作らない |
+| ビューを呼ばない | BANされた編集者のPOST・PUT・PATCH・DELETE・TRACE（`RequestFactory`） | `get_response`を呼ばず、HTTP 303を返す |
+| 読み取りはビューを呼ぶ | BANされた編集者のGET・HEAD・OPTIONS（`RequestFactory`） | `get_response`を呼ぶ |
+| トーストの文言をdata属性で渡す | トップ・曲の登録・存在しないページをGET、`base.js` | `<body>`に`data-banned-message="<BANNED_ERROR>"`が出る。`base.js`は`document.body.dataset.bannedMessage`を読み、文言を直書きしない（`BANNED_ERROR`と二重管理しない） |
+| CSRFトークンが無くてもBANとして止める | CSRFの検証を有効（`enforce_csrf_checks=True`）にして、BANされた編集者がトークン無し・誤ったトークン・正しいトークンでPOST | どれも`Referer`付きは303、JS（`Sec-Fetch-Mode: same-origin`）は403のBANのJSON、`Referer`なしは500のページ。CSRFの失敗（403のHTML）にならない（`CsrfViewMiddleware`の検証は`process_view`で、ミドルウェアの`__call__`より後に動くため） |
+| BANされていない編集者のCSRFの検証は変わらない | 同じ設定で、BANされていない編集者がトークン無し・正しいトークンでPOST | トークン無しは403のCSRFの失敗（BANの応答ではなく、`Location`も付かない）、正しいトークンは302で曲が登録される |
+| X-Real-IPで判定 | `REMOTE_ADDR`は未BAN、`X-Real-IP`はBANされたIP | HTTP 303 |
+| X-Forwarded-ForではBANを回避できない | `X-Real-IP`は無く`REMOTE_ADDR`がBANされたIP、`X-Forwarded-For`は別のIP | HTTP 303（#1189） |
+| X-Forwarded-ForでBANされたIPを名乗っても制限されない | `REMOTE_ADDR`は未BANのIP、`X-Forwarded-For`がBANされたIP | HTTP 302で曲が登録される（#1189） |
 
 ---
 
@@ -2139,6 +2162,29 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | `__str__` | `year=2024`・`row=45` | `"2024年45行目"` |
 | `is_lyrics_blank` のデフォルト値 | 指定せずに作成 | `False` |
 | 曲の削除 | 年表の行がある曲を削除 | 年表の行も削除される（`CASCADE`） |
+
+#### 11-11. `Editor` モデル（#1281）
+
+曲や作者を編集したユーザーのIP（`encrypt`した値）の情報。`is_banned`（デフォルト`False`）が`True`の編集者は、ページの読み取り（GET・HEAD・OPTIONS）以外のリクエストができない（9-4）。以前の`ban.py`の`BAN_LIST`（IPそのもの）の代わりで、管理サイトの編集者の一覧から変更できる。
+
+| テストケース | 操作 | 期待結果 |
+| --- | --- | --- |
+| `is_banned`のデフォルト値 | 指定せずに作成 | `False` |
+| `is_banned_ip(ip)` | `is_banned=True`の編集者・BANされていない編集者・編集者がいないIPを指定 | BANされた編集者のIPのみ`True`。編集者は作られない |
+
+##### 11-11-1. `0057_editor_is_banned`のデータ移行（`ban_listed_editors`）
+
+廃止した`subekashi/constants/dynamic/ban.py`（gitignore対象。本番のサーバーにある）の`BAN_LIST`のIPを`encrypt`し、`Editor.ip`が一致する編集者を`is_banned=True`にする。`ban.py`は`import`せずファイルとして読み、`encrypt`もマイグレーションにコピーしている（`lib/security.py`を後から変えても移行の挙動が変わらないように）。編集者が見つからないIPと、IPとして読めない値は、手作業で確認できるよう`migrate`の出力に出す。編集者は作らない。テストでは`BAN_LIST_PATH`を一時ファイルに差し替える。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| `encrypt`のコピーが本体と同じ | IPv4・`0.0.0.0`・IPv6・`::1`と`SYMBOLS` | `lib/security.py`の`encrypt`・`SYMBOLS`と一致する |
+| `BAN_LIST`の編集者をBANにする | IPv4・IPv6の編集者と、`BAN_LIST`にない編集者 | `BAN_LIST`のIPの編集者のみ`is_banned=True`。出力に「BAN_LIST 2件のうち2件の編集者をis_bannedにしました。」 |
+| 編集者を特定できないIPとIPとして読めない値の報告 | `BAN_LIST`に、編集者のいるIP・編集者のいないIP・`"not-an-ip"` | 編集者のいるIPのみBAN。出力に「編集者を特定できないIP: …」「IPとして読めない値: not-an-ip」。`Editor`は増えない |
+| 重複と空白 | `BAN_LIST`に同じIP（前後に空白あり）・空文字 | 重複と空白を除いて1件として扱う |
+| 編集者が1件もない | 編集者なしで`ban.py`あり | 何もせず、何も出力しない（新規構築・テストのDB） |
+| `ban.py`がない | 編集者ありで`ban.py`なし | `is_banned`は変わらず、「が無いため」を含むメッセージを出力する |
+| `BAN_LIST`が空 | 編集者ありで`BAN_LIST = []` | 何も出力せず、`is_banned`は変わらない |
 
 ### 12. `article` アプリ
 
@@ -2981,7 +3027,7 @@ YouTube Data API（`build`）はモック化する。「動画が存在しない
 
 #### 24-2. `get_ip(request, raw=False)`（#1189）
 
-編集者（`Editor`）の識別・お問い合わせのIP・BANの判定に使うIP。`get_client_ip`と同じIPを使い、`raw=False`の場合は`encrypt`した値を返す。以前は`X-Forwarded-For`の先頭を使っており、他人のIPを名乗ってその人の編集者として編集できた。
+編集者（`Editor`）の識別・お問い合わせのIP・BANされた編集者（`Editor.is_banned`）の判定に使うIP。`get_client_ip`と同じIPを使い、`raw=False`の場合は`encrypt`した値を返す。以前は`X-Forwarded-For`の先頭を使っており、他人のIPを名乗ってその人の編集者として編集できた。
 
 | テストケース | 入力 | 期待結果 |
 | --- | --- | --- |

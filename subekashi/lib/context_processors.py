@@ -1,5 +1,5 @@
 from django.conf import settings
-from subekashi.constants.constants import CONST_ERROR, ASIDE_PAGES, FONT_CHOICES, FONT_DEFAULT
+from subekashi.constants.constants import BANNED_ERROR, CONST_ERROR, ASIDE_PAGES, FONT_CHOICES, FONT_DEFAULT
 import json
 import os
 
@@ -31,6 +31,7 @@ def context_processors(request):
         "pc_menu_position": request.COOKIES.get("pc_menu_position", "header"),
         "font": font if font in FONT_CHOICES else FONT_DEFAULT,
         "csp_nonce": getattr(request, "csp_nonce", ""),
+        "banned_message": BANNED_ERROR,
     }
 
     return context

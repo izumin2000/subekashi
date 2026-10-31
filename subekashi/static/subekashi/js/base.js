@@ -450,6 +450,13 @@ function deleteToastUrlQuery() {
     }
 }
 
+// BANされた編集者の操作が止められ、フォームのあったページに戻されたときのトースト（BannedEditorMiddleware、#1281）
+// 文言はconstants.pyのBANNED_ERRORを、base.htmlのdata-banned-messageで受け取る
+if (new URLSearchParams(window.location.search).get('toast') === 'banned') {
+    showToast("error", document.body.dataset.bannedMessage);
+    deleteToastUrlQuery();
+}
+
 // 重複曲情報のHTMLを生成（song_new/song_edit共通）
 function makeSongInfoRowsHTML(songs) {
     return songs.map(song => {

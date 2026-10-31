@@ -1093,6 +1093,44 @@ iframeの読み込み・CSP違反・cookieの保存はDjangoテストでは確�
 
 ---
 
+### 27. BANされた編集者の操作の制限フロー（#1281）
+
+**テストファイル**: `tests/test_middleware.py`（`BannedEditorMiddlewareTest`）
+
+`Editor.is_banned`がTrueの編集者が、ページの読み取り以外のリクエストをすると、`BannedEditorMiddleware`が各ビューの処理の前に止める。JSからのリクエスト（`/api/`、fetch・XHR）はJSONの403、ブラウザのフォーム送信は送信したフォームのあるページに`?toast=banned`を付けて戻し、`base.js`がトーストを表示する。戻れないときは500のページを表示する。管理サイトは止めない。
+
+#### 27-1. 止められたリクエストが、DBにもDiscordにも何も残さない
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `127.0.0.1`の`Editor`が`is_banned=True`。曲・削除済みの曲・作者・別名・`Ai`・`Ad`がある |
+| 操作 | 曲の登録・編集・削除・削除の取り消し、別名の追加・編集・削除、名義の統一、お問い合わせ、宣伝のフォームのあるページを`Referer`にしてPOST。続けて`/api/`の単語の入れ替え・作成歌詞の評価・宣伝のクリック・設定の保存・公開の設定・ニュースの登録・曲の削除と作成・お問い合わせをPOST・PUT・PATCH・DELETE |
+| 検証1 | フォームは`<Refererのパス>?toast=banned`への303、`/api/`はJSONの403（`{"detail": "処理を完了できませんでした。"}`）。どちらも曲・作者・別名・`Ai`・`Ad`・`History`・`Contact`・`SongLink`・`Editor`が変わらず、Discordに送信されない |
+| 検証2 | ブラウザのフォーム送信（`Sec-Fetch-Mode: navigate`）を`Referer`なし、または他のサイト・管理サイトの`Referer`で行うと、500のページを表示する。fetch・XHRなど（`Sec-Fetch-Mode`が`navigate`以外、`X-Requested-With`、`Accept: application/json`、JSONの`Content-Type`）からフォームのURLにPOSTすると、リダイレクトせず（`Location`なし）JSONの403を返す |
+| 検証3 | 同じIPのGET・HEADで、トップ・曲・登録・編集・別名一覧・お問い合わせ・宣伝が開ける。検索のPOST（`/songs/`）もできる |
+| 検証4 | 同じIPで管理サイトにログインでき、編集者の変更画面で`is_banned`を外せる。`is_banned`を`False`にすると、曲の登録のPOSTが通り、曲が登録される |
+| 検証5 | CSRFの検証を有効にしても、BANされた編集者のPOSTはトークンの有無にかかわらずBANとして止まる（CSRFの失敗にならない）。BANされていない編集者はトークンが必要なまま（トークン無しは403のCSRFの失敗、正しいトークンは302） |
+
+#### 27-2. 戻したページでのトースト表示（Playwrightで確認）
+
+トーストの表示とCSP違反はDjangoテストでは確認できないため、開発サーバーとPlaywright（Chrome）で確認する。
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | 開発DBのコピーで、自分の`Editor`を`is_banned=True`にする |
+| 操作1 | 曲の登録・編集・削除、別名の追加・編集・削除、名義の統一、お問い合わせの送信ボタンを押す |
+| 検証1 | いずれも元のページに戻り、「処理を完了できませんでした。」のトースト（文言は`<body data-banned-message>`から読む）が出る。URLから`toast=banned`が消え、CSP違反・JSのエラーが出ない |
+| 操作2 | `Referer`付きで、フォームのURL（`/songs/new/`）に`fetch`でPOSTする |
+| 検証2 | リダイレクトされず、403のJSON（`{"detail": "処理を完了できませんでした。"}`）が返り、`response.ok`が`false`になる |
+| 操作3 | `rel="noreferrer"`を付けたフォームをブラウザで送信する（`Referer`が付かないフォーム送信） |
+| 検証3 | 500のページ（「内部エラーが発生した為…」）が表示される |
+| 操作4 | `/admin/login/`で管理者がログインする |
+| 検証4 | BANされた編集者のIPでもログインでき、管理サイトの操作ができる |
+| 操作5 | 曲の閲覧・検索条件の変更をする |
+| 検証5 | 閲覧と検索はできる |
+
+---
+
 ## テスト実装の方針
 
 ### ディレクトリ構成（案）

@@ -42,7 +42,7 @@
         <link rel="apple-touch-icon" href="{% static 'subekashi/image/apple-touch-icon.png' %}" sizes="180x180">
         <link rel="manifest" href="{% static 'subekashi/site.webmanifest' %}">
     </head>
-    <body data-pc-menu="{{ pc_menu_position }}">
+    <body data-pc-menu="{{ pc_menu_position }}" data-banned-message="{{ banned_message }}">
         {% include './header.html' %}
         {% if pc_menu_position == "aside" %}
             {% include './aside.html' %}
