@@ -6,6 +6,7 @@ get_url(): 曲のフラグのアイコンと、URLのアイコン・URL未登録
 PC幅で隠すインスト曲のアイコンと、スマホ幅で三点リーダーにまとめるアイコンのクラスも検証する（#1229）。
 get_lyrics(): 歌詞・インスト曲・歌詞未登録の表示分岐と、歌詞の登録が不要な曲に「歌詞未登録」を出さないことを検証する（#1253）。
 is_subeana_author(): 全てあなたの所為です。の曲（合作を含む）の判定と、曲カードの背景色のクラスを検証する（#1219）。
+曲カードのタイトルが下線を引く span に入り、アイコンが入らないことと、HTMLエスケープされることを検証する（#1301）。
 SEND_DISCORD=False のためDiscordへの実送信は発生しない。
 """
 from django.test import TestCase
@@ -320,3 +321,18 @@ class IsSubeanaAuthorTest(TestCase):
     def test_song_card_class(self):
         self.assertIn('class="song-card song-card-subeana-author"', render_song_card(self._create_song(self.subeana)))
         self.assertIn('class="song-card"', render_song_card(self._create_song(self.other)))
+
+
+class SongCardTitleTest(TestCase):
+    """曲カードのタイトルの下線のマークアップのテスト（#1301）"""
+
+    def test_title_is_wrapped_in_underline_span_after_icon(self):
+        song = Song.objects.create(title="テスト曲")
+        result = render_song_card(song)
+        self.assertIn('<i class="fas fa-music"></i><span class="song-card-title">テスト曲</span></td>', result)
+
+    def test_title_is_escaped(self):
+        song = Song.objects.create(title="<b>曲</b>")
+        result = render_song_card(song)
+        self.assertIn('<span class="song-card-title">&lt;b&gt;曲&lt;/b&gt;</span>', result)
+        self.assertNotIn("<b>曲</b>", result)

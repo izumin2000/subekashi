@@ -2630,6 +2630,13 @@ URL生成は`get_urls()`に分離しており、ファイル出力・`collectsta
 | prefetch済みの作者 | `prefetch_related("authors")` で取得した作者ID 1 の曲 | クエリを発行せずに `True` を返す |
 | 曲カードのクラス | 作者ID 1 の曲とほかの作者の曲を `render_song_card` で描画 | 作者ID 1 の曲のカードだけ、半透明の青色の背景にする `song-card-subeana-author` のクラスが付く |
 
+#### 15-5. 曲カードのタイトルの下線のマークアップ（#1301）
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 下線の範囲 | 曲を `render_song_card` で描画 | 曲のアイコンの後ろのタイトルだけが `song-card-title`（下線を引くクラス）の `span` に入り、アイコンは入らない |
+| タイトルの特殊文字 | `title="<b>曲</b>"` | `span` の中でHTMLエスケープされ、`<b>` のタグはそのまま出力されない |
+
 ---
 
 ### 16. `lib/author_alias_service.py` — 別名Discord通知・名義の統一サービス（#992、#1137、#1230）
