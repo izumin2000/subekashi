@@ -1798,7 +1798,7 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 
 #### 9-4. `BannedEditorMiddleware`（#1281）
 
-`Editor.is_banned`がTrueの編集者（`Editor.ip`が`get_ip`の値と一致する）は、ページの読み取り（GET・HEAD・OPTIONS）以外のリクエストができない。サイトの閲覧はできる。以前の`RestrictIPMiddleware`（`ban.py`の`BAN_LIST`にあるIPからのアクセスをすべて500にしていた）の代わりで、`BAN_LIST`から`is_banned`への移行は「11-11」に記載している。ビューごとではなくミドルウェアで判定するため、POSTなどを持つビューが増えても漏れない。止めるときの返し方は、`/api/`はJSONの403、フォームは送信したフォームのあるページ（`Referer`）に`?toast=banned`を付けて戻す（`base.js`がトーストを表示する）。戻れないときは500のページを表示する。編集者が存在しないIPはBANされていない扱いで、判定のために`Editor`を作らない。テストは`test_middleware.py`の`BannedEditorMiddlewareTest`。
+`Editor.is_banned`がTrueの編集者（`Editor.ip`が`get_ip`の値と一致する）は、ページの読み取り（GET・HEAD・OPTIONS）以外のリクエストができない。サイトの閲覧はできる。以前の`RestrictIPMiddleware`（`ban.py`の`BAN_LIST`にあるIPからのアクセスをすべて500にしていた）の代わりで、`BAN_LIST`から`is_banned`への移行は「11-11」に記載している。ビューごとではなくミドルウェアで判定するため、POSTなどを持つビューが増えても漏れない。止めるときの返し方は、JSからのリクエスト（`/api/`、`Sec-Fetch-Mode`が`navigate`以外のfetch・XHR、`X-Requested-With`、`Accept: application/json`、JSONの`Content-Type`）はJSONの403（HTMLにリダイレクトするとfetchが成功に見えるため）、ブラウザのフォーム送信は送信したフォームのあるページ（`Referer`）に`?toast=banned`を付けて戻す（`base.js`がトーストを表示する）。戻れないときは500のページを表示する。管理サイト（`/admin/`）は止めない（管理者のIPをBANしても、ログインしてBANを解除できるように）。編集者が存在しないIPはBANされていない扱いで、判定のために`Editor`を作らない。テストは`test_middleware.py`の`BannedEditorMiddlewareTest`。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
@@ -1809,7 +1809,12 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | `Referer`が無い | 上記のフォームを`Referer`なしでPOST | HTTP 500、`500.html`を表示。何も変わらず、Discordに送信されない |
 | 他のサイトの`Referer` | `https://example.com/…`・`http://testserver.example.com/…`・`http://testserver@example.com/…`・`//example.com/…`・`javascript:alert(1)` | HTTP 500、`500.html`を表示（外部へリダイレクトしない） |
 | 管理サイトの`Referer` | `/admin/…`を`Referer`にしてPOST | HTTP 500、`500.html`を表示（管理サイトのページにはトーストが無い） |
-| 管理サイトへのPOST | `/admin/login/`にPOST | HTTP 500、`500.html`を表示 |
+| 管理サイトのPOSTは止めない | BANされた編集者が`/admin/login/`にPOSTしてログインし、管理サイトの編集者の変更画面で`is_banned`を外す | ログインは302、編集者の変更も302で`is_banned`が`False`になる（BANを解除できる） |
+| 管理サイトのパスワードの間違い | `/admin/login/`に誤ったパスワードでPOST | HTTP 200（ログイン画面）。`500.html`にはならない |
+| JSからのリクエスト | フォームのURLに、`Sec-Fetch-Mode: same-origin`・`Sec-Fetch-Mode: cors`・`X-Requested-With: XMLHttpRequest`・`Accept: application/json`・`Accept: text/plain, application/json;q=0.9`のいずれかを付け、`Referer`付きでPOST | HTTP 403、`{"detail": BANNED_ERROR}`。`Location`は付かず、DBは変わらない |
+| JSONのPOST | `Content-Type: application/json`でフォームのURLにPOST | HTTP 403、`{"detail": BANNED_ERROR}` |
+| JSからの`Referer`なしのPOST | `Sec-Fetch-Mode: same-origin`で、`Referer`なしでPOST | HTTP 403のJSON（500のページではない） |
+| ブラウザのフォーム送信 | `Sec-Fetch-Mode: navigate`・`Accept: text/html,…`で、`Referer`付きと`Referer`なしのそれぞれでPOST | `Referer`付きは303で`?toast=banned`に戻し、`Referer`なしは500のページ |
 | APIのPOST・PUT・PATCH・DELETE | 単語の入れ替え、作成歌詞の評価（PUT・PATCH）、宣伝のクリック、設定の保存、公開の設定、ニュースの登録、曲の削除・作成（API）、お問い合わせ（API） | HTTP 403、`{"detail": BANNED_ERROR}`。Cookieを設定せず、DBが変わらず、Discordに送信されない |
 | 閲覧はできる | トップ・曲のページ・曲の登録・曲の編集・別名一覧・お問い合わせ・宣伝をGET・HEAD | いずれもHTTP 200 |
 | APIのGET・OPTIONS | `/api/song/<id>/`をGET、`/api/song/`をOPTIONS | いずれもHTTP 200 |
@@ -2176,7 +2181,7 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 
 #### 11-11. `Editor` モデル（#1281）
 
-曲や作者を編集したユーザーのIP（`encrypt`した値）の情報。`is_banned`（デフォルト`False`）が`True`の編集者は、`History`に保存される操作ができない（9-4）。以前の`ban.py`の`BAN_LIST`（IPそのもの）の代わりで、管理サイトの編集者の一覧から変更できる。
+曲や作者を編集したユーザーのIP（`encrypt`した値）の情報。`is_banned`（デフォルト`False`）が`True`の編集者は、ページの読み取り（GET・HEAD・OPTIONS）以外のリクエストができない（9-4）。以前の`ban.py`の`BAN_LIST`（IPそのもの）の代わりで、管理サイトの編集者の一覧から変更できる。
 
 | テストケース | 操作 | 期待結果 |
 | --- | --- | --- |

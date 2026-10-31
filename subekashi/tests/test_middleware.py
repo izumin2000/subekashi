@@ -6,6 +6,7 @@ RatelimitMiddleware・CacheControlMiddleware・ContentSecurityPolicyMiddleware�
 import json
 from unittest.mock import MagicMock, patch
 from urllib.parse import parse_qsl, quote, urlparse, urlsplit
+from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, JsonResponse
@@ -397,8 +398,78 @@ class BannedEditorMiddlewareTest(TestCase):
         self.assertEqual(response.status_code, 500)
         self.assertTemplateUsed(response, "subekashi/500.html")
 
-    def test_admin_site_post_is_blocked(self):
+    def test_admin_site_post_is_allowed(self):
+        """管理者のIPをBANしても、管理サイトにログインしてBANを解除できる"""
+        User.objects.create_superuser("banadmin", password="banadmin-password")
+
+        response = self.client.post(
+            "/admin/login/", {"username": "banadmin", "password": "banadmin-password", "next": "/admin/"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], "/admin/")
+
+        response = self.client.post(
+            reverse("admin:subekashi_editor_change", args=[self.editor.id]),
+            {"ip": self.editor.ip, "is_open": "on"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.editor.refresh_from_db()
+        self.assertFalse(self.editor.is_banned)
+
+    def test_admin_site_post_with_wrong_password_is_not_blocked(self):
         response = self.client.post("/admin/login/", {"username": "admin", "password": "password"})
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateNotUsed(response, "subekashi/500.html")
+
+    def script_request_kwargs(self):
+        return [
+            ("fetch", {"HTTP_SEC_FETCH_MODE": "same-origin"}),
+            ("CORSのfetch", {"HTTP_SEC_FETCH_MODE": "cors"}),
+            ("XMLHttpRequest", {"HTTP_X_REQUESTED_WITH": "XMLHttpRequest"}),
+            ("Accept: application/json", {"HTTP_ACCEPT": "application/json"}),
+            ("Accept: application/jsonを含む", {"HTTP_ACCEPT": "text/plain, application/json;q=0.9"}),
+        ]
+
+    def test_script_request_to_form_url_returns_403_json_instead_of_redirect(self):
+        """fetch・XHRにHTMLへのリダイレクトを返すと、成功したように見えてしまう"""
+        for name, headers in self.script_request_kwargs():
+            with self.subTest(name=name):
+                before = self.snapshot()
+                response = self.client.post(
+                    self.song_new_url, {"url": "", "authors": "BAN新規作者", "title": "BAN新規曲"},
+                    HTTP_REFERER=self.referer(self.song_new_url), **headers,
+                )
+                self.assertEqual(response.status_code, 403)
+                self.assertEqual(response.json(), {"detail": BANNED_ERROR})
+                self.assertNotIn("Location", response)
+                self.assertEqual(self.snapshot(), before)
+
+    def test_json_request_to_form_url_returns_403_json(self):
+        response = self.client.post(
+            self.song_new_url, json.dumps({"title": "BAN新規曲"}), content_type="application/json",
+            HTTP_REFERER=self.referer(self.song_new_url),
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json(), {"detail": BANNED_ERROR})
+
+    def test_script_request_without_referer_returns_403_json_not_500_page(self):
+        response = self.client.post(self.song_new_url, {"title": "BAN新規曲"}, HTTP_SEC_FETCH_MODE="same-origin")
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json(), {"detail": BANNED_ERROR})
+
+    def test_form_navigation_is_redirected(self):
+        """ブラウザのフォーム送信は、Sec-Fetch-Modeがnavigate・Acceptがtext/html"""
+        headers = {
+            "HTTP_SEC_FETCH_MODE": "navigate",
+            "HTTP_ACCEPT": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        }
+        response = self.client.post(
+            self.song_new_url, {"title": "BAN新規曲"}, HTTP_REFERER=self.referer(self.song_new_url), **headers,
+        )
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response["Location"], f"{self.song_new_url}?toast=banned")
+
+        response = self.client.post(self.song_new_url, {"title": "BAN新規曲"}, **headers)
         self.assertEqual(response.status_code, 500)
         self.assertTemplateUsed(response, "subekashi/500.html")
 
