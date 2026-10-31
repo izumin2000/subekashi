@@ -3429,6 +3429,79 @@ URLから、公式がiframeでの埋め込みに対応しているサービス�
 | 対応していないサービス | X・Bandcamp・Bluesky・ピアプロ・BOOTH | `None` |
 | 空文字・URLではない文字列・`javascript:`のURL | `""`・`"not a url"`・`javascript:alert(1)//youtu.be/dQw4w9WgXcQ` | `None` |
 
+### 29. `mcp/` — 読み取り専用のMCPサーバー（#1311）
+
+公開APIを呼び、AIに曲・作者・編集履歴を返すMCPサーバー。Djangoとは独立したプロジェクト（`mcp/`）で、依存は`mcp/requirements.txt`に分けてある。Djangoのテスト（`python manage.py test subekashi.tests article.tests`）には`mcp/tests/`は含まれず、`mcp/`で`python -m unittest discover -s tests`として実行する。`mcp`のSDKをルートの`requirements.txt`に入れないため、CI（`.github/workflows/test.yml`）では専用のジョブ`mcp-test`（`pip install -r mcp/requirements.txt`のあとに実行）で動かす。外部のサイトには接続しない。`test_client.py`は手元に立てた偽のHTTPサーバーに対して、`test_server.py`は応答を差し替えた偽のクライアントに対して確かめる。
+
+#### 29-1. `tests/test_mcp.py`（Django側）
+
+**テストファイル**: `tests/test_mcp.py`
+
+`mcp/subekashi_mcp/server.py`をastで読む（Djangoの環境にはMCPのSDKが無い）。`search_songs`の引数が曲のAPIの仕様と食い違うと、AIに間違った検索の方法を伝えてしまう。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| search_songsが送る名前がSongFilterと一致 | `search_songs`の引数の名前から、MCPサーバーだけの引数（`include_lyrics`）を除いたもの（APIに送る名前。実際に送る名前がそれと一致することは29-3で確かめる） | `SongFilter.base_filters`の全てと`page`・`size`に過不足なく一致する。曲の検索のパラメータを増減したときのMCPサーバーの更新漏れと、SongFilterに無い引数の追加を検出する |
+| sortの選択肢をAPIが受け付ける | `SongSort`の全ての値（`random`を含む）を`song_search`に渡す | 全て`ValidationError`にならない |
+
+#### 29-2. `mcp/tests/test_client.py`（APIクライアント）
+
+`subekashi_mcp/client.py`の`Client`。公開APIはIPごとに1秒に2回までのため、呼ぶ間隔を空け、429が返ったら待って再試行する。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| JSONを返す | 200でJSON | パースした値を返す |
+| クエリのエンコード | 日本語・`False`・`True`・`None`・数値のパラメータ | 日本語はURLエンコード、真偽値は`true`/`false`、`None`は送らない |
+| クエリ無し | パラメータ無し | `?`を付けない |
+| User-AgentとAccept | 任意のリクエスト | `subekashi-mcp/<version>`と`application/json`を送る |
+| `*.localhost`の接続先 | `http://subekashi.localhost:<port>` | 127.0.0.1に接続し、`Host`ヘッダーに`subekashi.localhost:<port>`を送る |
+| 400 | `{"error": ...}` | `ApiError`（status 400）で、メッセージにAPIのエラーを含む |
+| 400で`error`が無く`detail`がある | `{"detail": "入力が正しくありません"}` | メッセージに`detail`を含む |
+| 400でメッセージが無い | `{}`・`{"error": ""}`・`[]`・JSONではないHTML | `ApiError`（status 400）で、メッセージは「詳細不明」。「None」は含まない |
+| 404 | `{"detail": ...}` | `ApiError`（status 404） |
+| 5xx | 500 | `ApiError`（status 500、「HTTP 500」を含む） |
+| 200でJSONではない | HTMLの本文 | `ApiError`（「JSONではありません」を含む） |
+| 接続できない・タイムアウト | `urlopen`が`URLError`・`TimeoutError` | `ApiError`（statusは`None`、接続先を含む）。Windowsでは閉じたポートへの接続の失敗に約2.5秒かかるため、`urlopen`を差し替える |
+| 429のあと成功 | 429（`Retry-After: 0`）が2回のあと200 | 3回目の結果を返す |
+| 429が続く | 常に429、`max_retries=2` | `ApiError`（status 429、「1秒に2回」を含む）。リクエストは3回 |
+| `Retry-After`を待つ | `Retry-After: 0.3`の429のあと200 | 0.3秒以上待つ |
+| 呼ぶ間隔を空ける | `min_interval=0.2`で3回呼ぶ・`asyncio.gather`で3つ並行して呼ぶ | どちらも0.4秒以上かかる |
+| 負の`Retry-After` | `Retry-After: -5`の429のあと200 | 待たずに再試行して成功する |
+| `Retry-After`の値（秒数） | `3`・`0`・`0.5`・`1e1` | そのままの秒数（`1e1`は10） |
+| `Retry-After`が無い・日付形式 | ヘッダー無し・`Wed, 21 Oct 2026 07:28:00 GMT` | どちらも1秒 |
+| `Retry-After`が不正 | `abc`・空文字・空白・`1s`・`nan`・`NaN` | 1秒（`float()`が受け付けるnanも、待つ時間にできないため1秒にする） |
+| `Retry-After`が負 | `-5`・`-0.1`・`-inf` | 0秒 |
+| `Retry-After`が大きい | `100`・`11`・`inf` | 上限の10秒 |
+| 接続先 | 環境変数なし・`SUBEKASHI_BASE_URL`・引数・`file://`など | 既定は本番。環境変数を使い末尾の`/`は除く。引数が環境変数より優先。`http(s)`以外は`ValueError` |
+
+間隔を空けるテストは、`time.monotonic()`の分解能（Windowsでは約15.6ms）で`asyncio.sleep`が数ms早く戻ることがあるため、期待する秒数から0.05秒の誤差を許す。
+
+#### 29-3. `mcp/tests/test_server.py`（ツール）
+
+`subekashi_mcp/server.py`の`create_server`。応答は1つのJSONの文字列で返す（構造化出力にすると同じ内容が二重に送られる）。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| ツールの一覧 | `list_tools` | `search_songs`・`get_song`・`get_author`・`get_song_history`の4つで、全て説明があり読み取り専用（`readOnlyHint`、`destructiveHint=False`） |
+| 引数の説明 | `search_songs`のスキーマ | 全ての引数に説明がある。`sort`の既定は`id`で`random`を含み、`size`の上限は100 |
+| 検索の引数 | `author_exact`・`is_joke=False`・`imitate` | `/api/song/`に、指定した引数と`sort=id`・`page=1`・`size=20`が渡る |
+| MCPサーバーだけの引数 | `include_lyrics` | APIには送らない（クロージャで参照する`client`もクエリに入らない） |
+| 送るクエリの名前 | 引数無しで`search_songs`を呼ぶ | APIに渡る名前の集合が、ツールのスキーマの引数から`include_lyrics`を除いたものと過不足なく一致する。クエリは`locals()`から引数の名前で絞って組み立てるため、関数内に変数を足しても余計なパラメータが送られないことと、引数を足してクエリに入れ忘れないことを確かめる |
+| 検索結果の要約 | 曲の応答 | `count`・`page`・`size`・`max_page`を保ち、各曲は歌詞を除き、`True`の真偽値だけを`flags`に並べる |
+| 歌詞 | `include_lyrics=True` | 歌詞が付く |
+| 模倣曲の数 | `imitateds`が1463件の曲 | `imitateds`は返さず、`imitated_count`が1463 |
+| 出力の形 | 日本語を含む結果 | 日本語を`\uXXXX`にせず、改行を含まない1行のJSON |
+| APIのエラー | 400・429の`ApiError` | `ToolError`でメッセージをAIに伝える |
+| 不正な引数 | `size`が0・101、`page`が0、不正な`sort`、`imitate`が0、`view_gte`が-1 | `ToolError`になり、APIは呼ばない |
+| 曲の詳細 | `get_song(5)` | `/api/song/5/`を呼び、歌詞を含み、`imitateds`は`imitated_count`にする |
+| 曲が無い | 404 | 「曲 5 は見つかりません」 |
+| 曲の他のエラー・不正なid | 500・id が0、-1、2147483648 | メッセージをそのまま伝える・`ToolError` |
+| 作者の詳細 | `get_author(1)` | `/api/author/1/`の応答をそのまま返す。404は「作者 9 は見つかりません」 |
+| 編集履歴 | `get_song_history(5, page=2)` | `/api/history/`に`song=5`・`page=2`・`size=10`を渡し、`changes`を保つ |
+| 長い欄の切り詰め | `changes`の欄が1500文字・ちょうど1000文字 | 1500文字は先頭1000文字に`…（省略。全1500文字）`を付ける。1000文字は切らない。短い欄はそのまま |
+| `changes`が無い履歴 | `changes`が`null` | そのまま`null` |
+| 履歴の不正な件数 | `size`が0・51 | `ToolError` |
+
 ---
 
 ## テスト優先度
@@ -3487,6 +3560,7 @@ subekashi/tests/
 ├── test_lib_ogp.py                 # 実装済み: ページごとのOGP画像
 ├── test_lib_ip.py                  # 実装済み: クライアントのIP
 ├── test_lib_embed.py               # 実装済み: 曲ページの埋め込みプレイヤー
+├── test_mcp.py                     # 実装済み: MCPサーバーと公開APIの食い違い（#1311）
 ├── test_management_commands.py     # 実装済み: 管理コマンド
 ├── test_templatetags_song_card.py  # 実装済み: song_card テンプレートタグ
 ├── test_templatetags_ogp.py        # 実装済み: ogp テンプレートタグ
@@ -3494,6 +3568,10 @@ subekashi/tests/
 
 article/
 └── tests.py                        # 実装済み: ArticlesView・DefaultArticleView
+
+mcp/tests/                          # Djangoとは別に実行する（#1311）
+├── test_client.py                  # 実装済み: APIクライアント
+└── test_server.py                  # 実装済み: ツール
 ```
 
 ## 今後の課題
