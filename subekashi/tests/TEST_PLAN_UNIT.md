@@ -3472,9 +3472,9 @@ URLから、公式がiframeでの埋め込みに対応しているサービス�
 | `Retry-After`が不正 | `abc`・空文字・空白・`1s`・`nan`・`NaN` | 1秒（`float()`が受け付けるnanも、待つ時間にできないため1秒にする） |
 | `Retry-After`が負 | `-5`・`-0.1`・`-inf` | 0秒 |
 | `Retry-After`が大きい | `100`・`11`・`inf` | 上限の10秒 |
+| 接続先 | 環境変数なし・`SUBEKASHI_BASE_URL`・引数・`file://`など | 既定は本番。環境変数を使い末尾の`/`は除く。引数が環境変数より優先。`http(s)`以外は`ValueError` |
 
 間隔を空けるテストは、`time.monotonic()`の分解能（Windowsでは約15.6ms）で`asyncio.sleep`が数ms早く戻ることがあるため、期待する秒数から0.05秒の誤差を許す。
-| 接続先 | 環境変数なし・`SUBEKASHI_BASE_URL`・引数・`file://`など | 既定は本番。環境変数を使い末尾の`/`は除く。引数が環境変数より優先。`http(s)`以外は`ValueError` |
 
 #### 29-3. `mcp/tests/test_server.py`（ツール）
 
