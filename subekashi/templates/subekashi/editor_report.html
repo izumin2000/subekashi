@@ -7,9 +7,10 @@
 
 {% block content %}
 <section>
-    <h1>{{ editor }}を報告</h1>
-    <form action="{% url 'subekashi:editor_report' editor.id %}" method="POST" id="editor-report-form">{% csrf_token %}
-        <p id="report-info">荒らし行為をしている編集者を管理者に報告します。</p>
+    <h1>{{ heading }}</h1>
+    <form action="{{ form_action }}" method="POST" id="editor-report-form">{% csrf_token %}
+        {% if history %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+        <p id="report-info">荒らし行為をしている編集者を管理者に報告します。{% if history %}<br>対象の編集：{{ history.create_time }}　{{ history.title }}{% endif %}</p>
         <div class="form-col">
             <label for="reason">報告理由<sup>*</sup></label>
             <textarea id="reason" name="reason" maxlength="1000" required>{{ reason }}</textarea>
@@ -18,7 +19,7 @@
         <p><sup>*</sup>は入力必須です。</p>
     </form>
     <div class="action-buttons">
-        <a href="{% url 'subekashi:editor' editor.id %}" class="action-button black-action-button"><i class="fas fa-arrow-left"></i><span class="icon-p-big">戻る</span></a>
+        <a href="{{ back_url }}" class="action-button black-action-button"><i class="fas fa-arrow-left"></i><span class="icon-p-big">戻る</span></a>
     </div>
 </section>
 {% endblock %}

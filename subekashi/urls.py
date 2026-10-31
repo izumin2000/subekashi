@@ -43,6 +43,7 @@ urlpatterns = [
     path('editor/<sqliteint:editor_id>/', EditorView.as_view(), name='editor'),
     path('editor/<sqliteint:editor_id>/report/', EditorReportView.as_view(), name='editor_report'),
     path('histories/', HistoriesView.as_view(), name='histories'),
+    path('histories/<sqliteint:history_id>/report/', HistoryReportView.as_view(), name='history_report'),
     path('ai/', AiView.as_view(), name='ai'),
     path('ai/result/', AiResultView.as_view(), name='ai_result'),
     path('setting/', SettingView.as_view(), name='setting'),

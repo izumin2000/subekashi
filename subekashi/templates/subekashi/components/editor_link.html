@@ -4,5 +4,5 @@
         {% if history.editor.ip == ip %}(あなた){% endif %}
     </a></p>
 {% else %}
-    <p>編集者: 非公開</p>
+    <p>編集者: 非公開 <a href="{% url 'subekashi:history_report' history.id %}?next={{ request.get_full_path|urlencode }}" id="history-report-{{ history.id }}" class="history-report" rel="nofollow"><i class="fas fa-flag"></i>報告</a></p>
 {% endif %}

@@ -40,4 +40,11 @@
 
 {% block js %}
     <script src="{% static 'subekashi/js/editor.js' %}" defer></script>
+    <script defer nonce="{{ csp_nonce }}">
+        {% if request.GET.toast == "report" %}
+            showToast("ok", "報告しました。ご協力ありがとうございます。");
+        {% endif %}
+
+        deleteToastUrlQuery()
+    </script>
 {% endblock %}

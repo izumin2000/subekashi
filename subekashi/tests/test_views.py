@@ -11,7 +11,7 @@ import re
 import socket
 import tempfile
 import threading
-from urllib.parse import quote, urlparse
+from urllib.parse import parse_qs, quote, urlparse
 from contextlib import contextmanager
 from datetime import date, datetime, timedelta, timezone as dt_timezone
 from unittest.mock import patch, MagicMock
@@ -2375,6 +2375,29 @@ class SongHistoryViewTest(TestCase):
         response = self.client.get(reverse("subekashi:song_history", args=[99999]))
         self.assertEqual(response.status_code, 404)
 
+    def test_private_editor_history_has_report_link_back_to_song_history(self):
+        # 非公開の編集者の履歴の報告リンクは、報告したあとに曲の履歴へ戻る（#1294）
+        editor = Editor.objects.create(ip="127.0.0.63", is_open=False)
+        history = History.create_for_song(
+            song=self.song, title="履歴テスト曲を編集", history_type="edit", changes=[["種類", "内容"], ["報告", "テスト"]], editor=editor,
+        )
+        song_history_url = reverse("subekashi:song_history", args=[self.song.id])
+
+        response = self.client.get(song_history_url, HTTP_X_REAL_IP="203.0.113.5")
+
+        soup = BeautifulSoup(response.content, "html.parser")
+        url = urlparse(soup.select_one(f"a#history-report-{history.id}")["href"])
+        self.assertEqual(url.path, reverse("subekashi:history_report", args=[history.id]))
+        self.assertEqual(parse_qs(url.query), {"next": [song_history_url]})
+        self.assertNotContains(response, f"/editor/{editor.id}/")
+        self.assertNotContains(response, str(editor))
+
+    def test_report_toast_is_shown_only_after_reporting(self):
+        url = reverse("subekashi:song_history", args=[self.song.id])
+
+        self.assertContains(self.client.get(url, {"toast": "report"}), "報告しました。ご協力ありがとうございます。")
+        self.assertNotContains(self.client.get(url), "報告しました。ご協力ありがとうございます。")
+
     def test_removed_song_shows_removed_page(self):
         # ユーザーが削除した曲（#1239）の編集履歴のページは表示せず、削除を取り消すボタンのあるページを表示する。履歴は編集履歴の一覧で見られる
         self.song.is_removed = True
@@ -3220,6 +3243,197 @@ class EditorReportViewTest(TestCase):
 
         self.assertNotContains(response, "<script>alert(1)</script>")
         self.assertContains(response, "&lt;/textarea&gt;&lt;script&gt;alert(1)&lt;/script&gt;")
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+@patch("subekashi.views.editor_report.CONTACT_DISCORD_URL", "https://discord.example/contact")
+class HistoryReportViewTest(TestCase):
+    """HistoryReportView (/histories/<id>/report/) のテスト（#1294）
+
+    履歴の編集者を報告する。編集者のIDが画面・URLに出ると、同じIDの履歴どうしが同じ非公開の編集者のものだと分かってしまうため、
+    報告のページは編集者のIDを含まない
+    """
+
+    def setUp(self):
+        self.client = Client()
+        self.editor = Editor.objects.create(ip="127.0.0.50", is_open=False)
+        author = Author.objects.create(name="履歴の報告テスト作者")
+        self.history = History.create_for_author(
+            author=author, title="履歴の報告テストの編集", history_type="edit", changes=None, editor=self.editor,
+        )
+        self.url = reverse("subekashi:history_report", args=[self.history.id])
+        self.next_url = "/histories/?page=2"
+        self.reporter_ip = "203.0.113.5"
+
+    def _get(self, next_url="/histories/?page=2"):
+        return self.client.get(self.url, {"next": next_url}, HTTP_X_REAL_IP=self.reporter_ip)
+
+    def _post(self, reason="履歴を非公開にして荒らしています", next_url="/histories/?page=2", **extra):
+        return self.client.post(self.url, {"reason": reason, "next": next_url}, HTTP_X_REAL_IP=self.reporter_ip, **extra)
+
+    def test_get_returns_form_for_the_history(self):
+        response = self._get()
+
+        self.assertEqual(response.status_code, 200)
+        soup = BeautifulSoup(response.content, "html.parser")
+        form = soup.select_one("form#editor-report-form")
+        self.assertEqual(form["action"], self.url)
+        self.assertEqual(form["method"].lower(), "post")
+        self.assertEqual(form.select_one('input[name="next"]')["value"], self.next_url)
+        self.assertTrue(form.select_one('textarea[name="reason"][required]'))
+        self.assertTrue(form.select_one('input[name="csrfmiddlewaretoken"]'))
+        self.assertTrue(form.select_one("input#report-submit[disabled]"))
+        self.assertEqual(soup.select_one(".action-buttons a")["href"], self.next_url)
+        self.assertContains(response, "履歴の報告テストの編集")
+        self.assertContains(response, '<meta name="robots" content="noindex, nofollow">')
+
+    def test_pages_do_not_show_editor_id(self):
+        # 報告のページから、同じ非公開の編集者の履歴だと分かってはいけない
+        responses = [
+            self._get(),
+            self._post(reason=""),
+            self._post(reason="あ" * 1001),
+        ]
+        with patch("subekashi.views.editor_report.send_discord", return_value=False):
+            responses.append(self._post())
+
+        for response in responses:
+            with self.subTest(status=response.status_code):
+                self.assertEqual(response.status_code, 200)
+                self.assertNotContains(response, f"/editor/{self.editor.id}")
+                self.assertNotContains(response, str(self.editor))
+
+    def test_nonexistent_history_returns_404(self):
+        url = reverse("subekashi:history_report", args=[99999])
+        with patch("subekashi.views.editor_report.send_discord") as mock_send_discord:
+            get_response = self.client.get(url)
+            post_response = self.client.post(url, {"reason": "理由"})
+
+        self.assertEqual(get_response.status_code, 404)
+        self.assertEqual(post_response.status_code, 404)
+        mock_send_discord.assert_not_called()
+
+    @patch("subekashi.views.editor_report.send_discord", return_value=True)
+    def test_cannot_report_my_own_history(self, mock_send_discord):
+        # 自分の履歴は報告できないため、報告を始めたページに戻す
+        editor = Editor.objects.create(ip=encrypt(self.reporter_ip), is_open=False)
+        author = Author.objects.create(name="自分の履歴の報告テスト作者")
+        history = History.create_for_author(author=author, title="自分の編集", history_type="edit", changes=None, editor=editor)
+        url = reverse("subekashi:history_report", args=[history.id])
+
+        get_response = self.client.get(url, {"next": self.next_url}, HTTP_X_REAL_IP=self.reporter_ip)
+        post_response = self.client.post(url, {"reason": "理由", "next": self.next_url}, HTTP_X_REAL_IP=self.reporter_ip)
+
+        self.assertRedirects(get_response, self.next_url, fetch_redirect_response=False)
+        self.assertRedirects(post_response, self.next_url, fetch_redirect_response=False)
+        mock_send_discord.assert_not_called()
+
+    @patch("subekashi.views.editor_report.send_discord", return_value=True)
+    def test_post_redirects_back_with_toast(self, mock_send_discord):
+        response = self._post()
+        self.assertRedirects(response, "/histories/?page=2&toast=report", fetch_redirect_response=False)
+
+    @patch("subekashi.views.editor_report.send_discord", return_value=True)
+    def test_post_sends_reason_editor_history_and_encrypted_ip_to_contact_discord(self, mock_send_discord):
+        self._post(reason="履歴を非公開にして荒らしています")
+
+        mock_send_discord.assert_called_once()
+        url, text = mock_send_discord.call_args.args
+        self.assertEqual(url, "https://discord.example/contact")
+        self.assertIn("履歴を非公開にして荒らしています", text)
+        self.assertIn(f"{settings.ROOT_URL}{reverse('admin:subekashi_editor_change', args=[self.editor.id])}", text)
+        self.assertIn(f"{settings.ROOT_URL}{reverse('admin:subekashi_history_change', args=[self.history.id])}", text)
+        self.assertIn(encrypt(self.reporter_ip), text)
+        self.assertNotIn(self.reporter_ip, text)
+
+    @patch("subekashi.views.editor_report.send_discord", return_value=True)
+    def test_post_reporter_ip_uses_x_real_ip(self, mock_send_discord):
+        # X-Forwarded-Forで報告した人のIPを偽れない（#1189）
+        self._post(HTTP_X_FORWARDED_FOR="198.51.100.1")
+
+        text = mock_send_discord.call_args.args[1]
+        self.assertIn(encrypt(self.reporter_ip), text)
+        self.assertNotIn(encrypt("198.51.100.1"), text)
+
+    @patch("subekashi.views.editor_report.send_discord", return_value=True)
+    def test_visible_editor_history_can_be_reported(self, mock_send_discord):
+        # 公開の編集者の履歴も、同じように報告できる（非公開かどうかで動作を変えない）
+        editor = Editor.objects.create(ip="127.0.0.51", is_open=True)
+        author = Author.objects.create(name="公開の編集者の報告テスト作者")
+        history = History.create_for_author(author=author, title="公開の編集", history_type="edit", changes=None, editor=editor)
+
+        response = self.client.post(
+            reverse("subekashi:history_report", args=[history.id]),
+            {"reason": "理由", "next": self.next_url}, HTTP_X_REAL_IP=self.reporter_ip,
+        )
+
+        self.assertRedirects(response, "/histories/?page=2&toast=report", fetch_redirect_response=False)
+        self.assertIn(reverse("admin:subekashi_editor_change", args=[editor.id]), mock_send_discord.call_args.args[1])
+
+    @patch("subekashi.views.editor_report.send_discord", return_value=True)
+    def test_post_redirects_only_to_this_site(self, mock_send_discord):
+        # nextは利用者が書き換えられるため、他のサイトなどには飛ばさず、編集履歴の一覧に戻す
+        cases = (
+            ("/songs/5/history/?page=2", "/songs/5/history/?page=2&toast=report"),
+            ("/histories/?toast=report&q=a", "/histories/?q=a&toast=report"),
+            (f"/histories/?q={quote('報告')}", f"/histories/?q={quote('報告')}&toast=report"),
+            ("http://testserver/histories/", "http://testserver/histories/?toast=report"),
+            ("https://evil.example/", "/histories/?toast=report"),
+            ("//evil.example/", "/histories/?toast=report"),
+            ("javascript:alert(1)", "/histories/?toast=report"),
+            ("", "/histories/?toast=report"),
+        )
+        for next_url, expected in cases:
+            with self.subTest(next_url=next_url):
+                response = self._post(next_url=next_url)
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(response.url, expected)
+
+    def test_get_with_unsafe_next_goes_back_to_histories(self):
+        response = self._get(next_url="https://evil.example/")
+
+        soup = BeautifulSoup(response.content, "html.parser")
+        self.assertEqual(soup.select_one(".action-buttons a")["href"], "/histories/")
+        self.assertEqual(soup.select_one('input[name="next"]')["value"], "/histories/")
+
+    @patch("subekashi.views.editor_report.send_discord", return_value=True)
+    def test_post_does_not_change_editor_or_histories(self, mock_send_discord):
+        self._post()
+
+        self.assertEqual(Editor.objects.count(), 1)
+        self.assertEqual(History.objects.count(), 1)
+
+    @patch("subekashi.views.editor_report.send_discord", return_value=True)
+    def test_post_invalid_reason_shows_error_keeps_next_and_does_not_send(self, mock_send_discord):
+        for reason, message in (("", "報告理由を入力してください。"), ("あ" * 1001, "報告理由は1000文字以内で入力してください。")):
+            with self.subTest(reason_length=len(reason)):
+                response = self._post(reason=reason)
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.context["error"], message)
+                soup = BeautifulSoup(response.content, "html.parser")
+                self.assertEqual(soup.select_one('input[name="next"]')["value"], self.next_url)
+        mock_send_discord.assert_not_called()
+
+    @patch("subekashi.views.editor_report.send_discord", return_value=False)
+    def test_post_discord_failure_shows_error_and_keeps_reason_and_next(self, mock_send_discord):
+        response = self._post(reason="送信に失敗する報告")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["error"], "報告を送信できませんでした。時間をおいて再度お試しください。")
+        soup = BeautifulSoup(response.content, "html.parser")
+        self.assertEqual(soup.select_one("textarea[name=reason]").get_text(), "送信に失敗する報告")
+        self.assertEqual(soup.select_one('input[name="next"]')["value"], self.next_url)
+
+    @patch("subekashi.views.editor_report.send_discord", return_value=True)
+    def test_banned_reporter_cannot_report(self, mock_send_discord):
+        # BANされた編集者（#1281）は、ページの読み取り以外ができないため、報告もできない
+        Editor.objects.create(ip=encrypt(self.reporter_ip), is_banned=True)
+
+        response = self._post(HTTP_REFERER=f"http://testserver{self.url}")
+
+        self.assertRedirects(response, f"{self.url}?toast=banned", status_code=303, fetch_redirect_response=False)
+        mock_send_discord.assert_not_called()
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
@@ -5839,6 +6053,48 @@ class HistoriesViewTest(TestCase):
         self.assertContains(response, "この曲または作者は削除されました")
         self.assertContains(response, "重複")
         self.assertNotContains(response, f'href="{reverse("subekashi:song", args=[song.id])}"')
+
+    def _create_author_history(self, editor, title="履歴一覧の報告テストの編集"):
+        author = Author.objects.create(name=f"履歴一覧報告テスト作者{Author.objects.count()}")
+        return History.create_for_author(author=author, title=title, history_type="edit", changes=None, editor=editor)
+
+    def test_private_editor_history_has_report_link_without_editor_id(self):
+        # 非公開の編集者の履歴には、履歴単位の報告リンクを表示する（#1294）
+        editor = Editor.objects.create(ip="127.0.0.60", is_open=False)
+        history = self._create_author_history(editor)
+
+        response = self.client.get(reverse("subekashi:histories"), {"q": "報告", "page": 1}, HTTP_X_REAL_IP="203.0.113.5")
+
+        soup = BeautifulSoup(response.content, "html.parser")
+        link = soup.select_one(f"a#history-report-{history.id}")
+        url = urlparse(link["href"])
+        self.assertEqual(url.path, reverse("subekashi:history_report", args=[history.id]))
+        self.assertEqual(parse_qs(url.query), {"next": [f"/histories/?q={quote('報告')}&page=1"]})
+        self.assertEqual(link["rel"], ["nofollow"])
+        self.assertContains(response, "編集者: 非公開")
+        # 同じ編集者の履歴だと分からないよう、編集者のIDは画面にもリンクにも出さない
+        self.assertNotContains(response, f"/editor/{editor.id}/")
+        self.assertNotContains(response, str(editor))
+
+    def test_visible_editor_history_has_no_report_link(self):
+        # 公開・強制公開・自分の編集者は編集者のページへリンクするため、履歴単位の報告リンクは付けない
+        for name, editor in (
+            ("公開", Editor.objects.create(ip="127.0.0.61", is_open=True)),
+            ("強制公開", Editor.objects.create(ip="127.0.0.62", is_open=False, is_forced_open=True)),
+            ("自分", Editor.objects.create(ip=encrypt("203.0.113.6"), is_open=False)),
+        ):
+            self._create_author_history(editor, title=f"{name}の編集者の編集")
+
+        response = self.client.get(reverse("subekashi:histories"), HTTP_X_REAL_IP="203.0.113.6")
+
+        self.assertNotContains(response, 'class="history-report"')
+        self.assertNotContains(response, "編集者: 非公開")
+
+    def test_report_toast_is_shown_only_after_reporting(self):
+        url = reverse("subekashi:histories")
+
+        self.assertContains(self.client.get(url, {"toast": "report"}), "報告しました。ご協力ありがとうございます。")
+        self.assertNotContains(self.client.get(url), "報告しました。ご協力ありがとうございます。")
 
     def test_search_input_has_aria_label(self):
         # 編集者のページと共通のコンポーネント（history_search_form.html）で、aria-labelを付ける（#954）
