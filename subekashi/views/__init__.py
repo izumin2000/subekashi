@@ -18,6 +18,7 @@ from subekashi.views.author_alias import (
 from subekashi.views.channel import ChannelView
 from subekashi.views.contact import ContactView
 from subekashi.views.editor import EditorView
+from subekashi.views.editor_report import EditorReportView
 from subekashi.views.histories import HistoriesView
 from subekashi.views.api.editor import EditorIsOpenView
 from subekashi.views.api.news import NewsAPIView

@@ -26,6 +26,17 @@ class ContactForm(forms.Form):
     )
 
 
+class EditorReportForm(forms.Form):
+    reason = forms.CharField(
+        widget=forms.Textarea,
+        max_length=1000,
+        error_messages={
+            'required': '報告理由を入力してください。',
+            'max_length': '報告理由は1000文字以内で入力してください。',
+        },
+    )
+
+
 class SongDeleteForm(forms.Form):
     reason = forms.CharField(
         widget=forms.Textarea,

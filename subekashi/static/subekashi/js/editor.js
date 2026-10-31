@@ -220,5 +220,6 @@ function showDiff(details) {
 }
 
 
-document.getElementById("history-reload").addEventListener("click", reloadPage);
-document.getElementById("history-open-all").addEventListener("click", openAll);
+// 非公開の編集者のページには、履歴の操作ボタンが無い
+document.getElementById("history-reload")?.addEventListener("click", reloadPage);
+document.getElementById("history-open-all")?.addEventListener("click", openAll);

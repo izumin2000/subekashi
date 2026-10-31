@@ -1,0 +1,33 @@
+{% extends "subekashi/base/base.html" %}
+
+
+{% load static %}
+{% block noindex %}<meta name="robots" content="noindex, nofollow">{% endblock %}
+{% block css %}{% static 'subekashi/css/editor_report.css'%}{% endblock %}
+
+{% block content %}
+<section>
+    <h1>{{ editor }}を報告</h1>
+    <form action="{% url 'subekashi:editor_report' editor.id %}" method="POST" id="editor-report-form">{% csrf_token %}
+        <p id="report-info">荒らし行為をしている編集者を管理者に報告します。</p>
+        <div class="form-col">
+            <label for="reason">報告理由<sup>*</sup></label>
+            <textarea id="reason" name="reason" maxlength="1000" required>{{ reason }}</textarea>
+        </div>
+        <input type="submit" value="報告" id="report-submit" disabled>
+        <p><sup>*</sup>は入力必須です。</p>
+    </form>
+    <div class="action-buttons">
+        <a href="{% url 'subekashi:editor' editor.id %}" class="action-button black-action-button"><i class="fas fa-arrow-left"></i><span class="icon-p-big">戻る</span></a>
+    </div>
+</section>
+{% endblock %}
+
+{% block js %}
+<script src="{% static 'subekashi/js/editor_report.js' %}" defer></script>
+<script defer nonce="{{ csp_nonce }}">
+    {% if error %}
+        showToast("error", "{{ error }}");
+    {% endif %}
+</script>
+{% endblock %}

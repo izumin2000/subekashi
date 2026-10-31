@@ -15,6 +15,9 @@
         {% endif %}
         <div class="action-buttons">
             {% include "subekashi/components/history_action_buttons.html" %}
+            {% if not is_me %}
+                <a href="{% url 'subekashi:editor_report' editor.id %}" id="editor-report" class="action-button"><i class="fas fa-flag"></i><span class="icon-p-big">報告</span></a>
+            {% endif %}
         </div>
         {% include "subekashi/components/history_search_form.html" %}
         <p id="history-count">{{ total_count }}件</p>
@@ -35,10 +38,20 @@
         {% include "subekashi/components/pagination.html" %}
     {% else %}
         <p id="secret-info">この編集者の情報は非公開です。</p>
+        <div class="action-buttons">
+            <a href="{% url 'subekashi:editor_report' editor.id %}" id="editor-report" class="action-button"><i class="fas fa-flag"></i><span class="icon-p-big">報告</span></a>
+        </div>
     {% endif %}
 </section>
 {% endblock %}
 
 {% block js %}
     <script src="{% static 'subekashi/js/editor.js' %}" defer></script>
+    <script defer nonce="{{ csp_nonce }}">
+        {% if request.GET.toast == "report" %}
+            showToast("ok", "報告しました。ご協力ありがとうございます。");
+        {% endif %}
+
+        deleteToastUrlQuery()
+    </script>
 {% endblock %}
