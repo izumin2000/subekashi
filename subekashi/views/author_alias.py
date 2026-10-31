@@ -1,3 +1,4 @@
+from urllib.parse import urlencode
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.shortcuts import render, redirect
@@ -7,6 +8,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.cache import never_cache
 from config.local_settings import NEW_DISCORD_URL
+from subekashi.converters import SQLITE_INT_MAX
 from subekashi.models import Author, AuthorAlias, AuthorLink, Editor, History, Song
 from subekashi.forms import AuthorAliasForm, AuthorUnifyNameForm
 from subekashi.lib.ip import get_ip
@@ -17,12 +19,44 @@ from subekashi.lib.author_alias_service import (
     build_delete_alias_discord_text,
     build_unify_name_discord_text,
     build_unify_name_plan,
+    find_unify_name_conflict_authors,
     get_ununified_source_authors,
 )
 
 
 LINKABLE_ALIAS_TYPES = ("past", "another", "group")
 DUPLICATE_NAME_ERROR = "その別名は既に登録されています。"
+
+# 名義を統一できない原因の作者として、別名一覧画面に表示する最大件数（#1290）
+UNIFY_CONFLICT_DISPLAY_LIMIT = 5
+
+
+def unify_conflict_redirect(base_url, conflict_authors):
+    """旧名を統一先の以前の名称として登録できないときの、別名一覧画面へのリダイレクト（#1290）
+
+    原因の作者は、別名一覧画面で理由を表示するためにクエリで渡す
+    """
+    query = urlencode([("toast", "unify_conflict")] + [("conflict", a.id) for a in conflict_authors])
+    return redirect(f"{base_url}?{query}")
+
+
+def get_unify_conflict_authors(request, author):
+    """別名一覧画面に表示する、名義を統一できない原因の作者を返す（#1290）
+
+    クエリのidをそのまま信用せず、実際にauthorの名前と同名の別名を持つ作者だけに絞る
+    """
+    if request.GET.get("toast") != "unify_conflict":
+        return []
+    conflict_ids = []
+    for value in request.GET.getlist("conflict")[:UNIFY_CONFLICT_DISPLAY_LIMIT]:
+        if value.isascii() and value.isdigit() and len(value) <= len(str(SQLITE_INT_MAX)) and int(value) <= SQLITE_INT_MAX:
+            conflict_ids.append(int(value))
+    return list(
+        Author.objects.filter(pk__in=conflict_ids, aliases__name=author.name)
+        .exclude(pk=author.pk)
+        .distinct()
+        .order_by("pk")
+    )
 
 CHANNEL_LINK_NOTE = "対応する名義が存在する場合、一覧画面でチャンネルページへのリンクが表示されます。"
 
@@ -118,6 +152,7 @@ class AuthorAliasesView(View):
             "ununified_song_count": ununified_song_count,
             "unify_name_successor": unify_name_successor,
             "successor_ununified_song_count": author.songs.count() if unify_name_successor else 0,
+            "unify_conflict_authors": get_unify_conflict_authors(request, author),
         }
         return render(request, 'subekashi/author_aliases.html', context)
 
@@ -318,12 +353,17 @@ class AuthorUnifyNameConfirmView(View):
         form = AuthorUnifyNameForm(request.GET, author=self.author)
 
         if not form.is_valid():
-            return redirect(f"{base_url}?toast=unify_error")
+            return redirect(f"{base_url}?toast=unify_invalid")
 
         plan = build_unify_name_plan(self.author, form.cleaned_data['name'])
         song_author_pairs = plan.song_author_pairs()
         if not plan.renames_author and not plan.moves_to_existing_author and not song_author_pairs:
             return redirect(f"{base_url}?toast=unify_noop")
+
+        # 確認して確定した後に失敗がわかるのではなく、確認画面に進む前に理由を伝える（#1290）
+        conflict_authors = find_unify_name_conflict_authors(plan)
+        if conflict_authors:
+            return unify_conflict_redirect(base_url, conflict_authors)
 
         # 統一によって表示上の作者名が変わる曲を一覧できるようにする。曲を移すAuthorの曲に加え、
         # authorの名前を変更する場合は元々authorに紐づく曲も対象になる。同じ曲が複数の
@@ -370,7 +410,7 @@ class AuthorUnifyNameSetView(View):
         form = AuthorUnifyNameForm(request.POST, author=self.author)
 
         if not form.is_valid():
-            return redirect(f"{base_url}?toast=unify_error")
+            return redirect(f"{base_url}?toast=unify_invalid")
 
         new_name = form.cleaned_data['name']
         old_name = self.author.name
@@ -385,11 +425,11 @@ class AuthorUnifyNameSetView(View):
         # 関係は正常な状態としてありうる）なため、衝突している場合は登録できない。
         # ただしauthor・統一先自身が持つ別名は、統一後は統一先のものとして再利用するため対象外とする。
         # これは同時実行のレースではなく既存データ次第で毎回決定的に失敗するため、
-        # Discord通知を送る前に弾く（通知だけ成功してDBが更新されない不整合を避ける）
-        if old_name != new_name and AuthorAlias.objects.filter(name=old_name).exclude(
-            author__in=[self.author, plan.target_author]
-        ).exists():
-            return redirect(f"{base_url}?toast=unify_error")
+        # Discord通知を送る前に弾く（通知だけ成功してDBが更新されない不整合を避ける）。
+        # 待っても直らないため、原因の作者を別名一覧画面で伝える（#1290）
+        conflict_authors = find_unify_name_conflict_authors(plan)
+        if conflict_authors:
+            return unify_conflict_redirect(base_url, conflict_authors)
 
         editor = Editor.get_or_create_from_ip(get_ip(request))
 

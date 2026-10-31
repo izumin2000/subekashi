@@ -439,7 +439,7 @@ document.addEventListener('click', (event) => {
 function deleteToastUrlQuery() {
     const url = new URL(window.location.href);
     let changed = false;
-    for (const key of ['toast', 'name_unified']) {
+    for (const key of ['toast', 'name_unified', 'conflict']) {
         if (url.searchParams.has(key)) {
             url.searchParams.delete(key);
             changed = true;
