@@ -13,6 +13,7 @@ from subekashi.lib.author_alias_service import (
     build_delete_alias_discord_text,
     build_unify_name_discord_text,
     build_unify_name_plan,
+    find_unify_name_conflict_authors,
     get_ununified_source_authors,
 )
 
@@ -142,6 +143,56 @@ class BuildUnifyNamePlanTest(TestCase):
         Author.objects.create(name="以前の名義")
         plan = build_unify_name_plan(self.author, "以前の名義")
         self.assertEqual(plan.affected_source_authors(plan.song_author_pairs()), [self.author])
+
+
+class FindUnifyNameConflictAuthorsTest(TestCase):
+    """find_unify_name_conflict_authors() のテスト（#1290）"""
+
+    def setUp(self):
+        self.author = Author.objects.create(name="現在の名義")
+        AuthorAlias.objects.create(name="以前の名義", author=self.author, alias_type="past")
+        self.other = Author.objects.create(name="別の作者")
+
+    def test_no_conflict_returns_empty(self):
+        plan = build_unify_name_plan(self.author, "以前の名義")
+        self.assertEqual(find_unify_name_conflict_authors(plan), [])
+
+    def test_author_with_alias_matching_old_name_is_returned(self):
+        AuthorAlias.objects.create(name="現在の名義", author=self.other, alias_type="another")
+        plan = build_unify_name_plan(self.author, "以前の名義")
+        self.assertEqual(find_unify_name_conflict_authors(plan), [self.other])
+
+    def test_conflict_is_returned_when_target_is_existing_author(self):
+        Author.objects.create(name="以前の名義")
+        AuthorAlias.objects.create(name="現在の名義", author=self.other, alias_type="another")
+        plan = build_unify_name_plan(self.author, "以前の名義")
+        self.assertEqual(find_unify_name_conflict_authors(plan), [self.other])
+
+    def test_alias_owned_by_author_itself_is_not_a_conflict(self):
+        AuthorAlias.objects.create(name="現在の名義", author=self.author, alias_type="spell")
+        plan = build_unify_name_plan(self.author, "以前の名義")
+        self.assertEqual(find_unify_name_conflict_authors(plan), [])
+
+    def test_alias_owned_by_target_author_is_not_a_conflict(self):
+        target = Author.objects.create(name="以前の名義")
+        AuthorAlias.objects.create(name="現在の名義", author=target, alias_type="past")
+        plan = build_unify_name_plan(self.author, "以前の名義")
+        self.assertEqual(find_unify_name_conflict_authors(plan), [])
+
+    def test_selecting_current_name_is_never_a_conflict(self):
+        # 旧名と新名が同じ場合、旧名の再登録は起きない
+        AuthorAlias.objects.create(name="現在の名義", author=self.other, alias_type="another")
+        plan = build_unify_name_plan(self.author, "現在の名義")
+        self.assertEqual(find_unify_name_conflict_authors(plan), [])
+
+    def test_multiple_authors_are_returned_once_each_in_id_order(self):
+        # group種別は同名を複数のauthorが登録でき、同じauthorが複数の同名の別名を持つこともある
+        third = Author.objects.create(name="さらに別の作者")
+        AuthorAlias.objects.create(name="現在の名義", author=third, alias_type="group")
+        AuthorAlias.objects.create(name="現在の名義", author=self.other, alias_type="group")
+        AuthorAlias.objects.create(name="現在の名義", author=self.other, alias_type="spell")
+        plan = build_unify_name_plan(self.author, "以前の名義")
+        self.assertEqual(find_unify_name_conflict_authors(plan), [self.other, third])
 
 
 class GetUnunifiedSourceAuthorsTest(TestCase):

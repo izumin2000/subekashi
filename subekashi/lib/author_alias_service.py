@@ -102,6 +102,23 @@ def build_unify_name_plan(author, new_name):
     )
 
 
+def find_unify_name_conflict_authors(plan):
+    """旧名を統一先の以前の名称として登録し直せない原因になるAuthorを返す（#1290）
+
+    統一では旧名を統一先の新たな「以前の名称」として登録し直すが、AuthorAlias.nameは
+    グローバルにuniqueなため、author・統一先以外のAuthorが旧名と同名の別名を持っていると
+    登録できない。これは既存データ次第で毎回決定的に失敗する
+    """
+    if plan.old_name == plan.new_name:
+        return []
+    return list(
+        Author.objects.filter(aliases__name=plan.old_name)
+        .exclude(pk__in=[plan.author.pk, plan.target_author.pk])
+        .distinct()
+        .order_by("pk")
+    )
+
+
 def get_ununified_source_authors(author):
     """以前の名称と同名で、まだ曲が残っている別のAuthorと、その曲数を返す（#1230）
 

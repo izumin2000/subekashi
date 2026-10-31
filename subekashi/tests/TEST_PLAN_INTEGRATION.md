@@ -611,7 +611,7 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 | 操作 | `AuthorAliasForm.clean_name` の重複チェックをモックでバイパスした状態で、同じ `name="foo_sub"` を新規登録POST |
 | 検証 | DB制約(`IntegrityError`)を`AuthorAliasNewView`が捕捉し、500エラーにならずHTTP 200のままフォームエラーが表示される。`AuthorAlias`は重複作成されない |
 
-#### 11-9. 名義の統一から曲登録正規化まで（#1008、#1029、#1137、#1230）
+#### 11-9. 名義の統一から曲登録正規化まで（#1008、#1029、#1137、#1230、#1290）
 
 **テストファイル**: `tests/test_views.py`（`AuthorUnifyNameSetViewTest`、`AuthorUnifyNameConfirmViewTest`、`AuthorAliasesUnifyNameStatusTest`）、`tests/test_lib_author_helpers.py`
 
@@ -631,6 +631,8 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 | 検証 | 統一前は「名義を統一する」の下に「名義が統一されていません」、統一後は「名義は統一されています」と表示される（統一するボタンが`unify_noop`になる条件と同じ） |
 | 操作（既存Authorとの衝突ケース、#1029・#1137で仕様変更） | 選択したpast別名の名前と完全一致する別Authorが既に存在する状態で `POST /authors/<foo.id>/aliases/unify` に `name="foo_old"` |
 | 検証 | かつては選択自体をブロックし（#1008）、次に衝突するAuthorを`foo`へ統合して削除していた（#1029）。#1137でAuthorの削除を廃止したため、`Author.name`のunique制約上`foo`を`foo_old`に変更できず、代わりに既存の`Author(name="foo_old")`を統一先とする。`foo`のSong・AuthorLink・AuthorAliasが統一先に付け替わり、旧名`"foo"`が統一先の`past`別名になる。`foo`は削除されず曲数0で残り、統一先の別名一覧へ`?toast=unify`付きでリダイレクトされる |
+| 操作（旧名が別authorの別名と衝突するケース、#1290） | 別Author(`name="bar"`)が`foo`と同名の別名(`alias_type="another"`)を持つ状態で、`GET /authors/<foo.id>/aliases/unify/confirm/` に `name="foo_old"`（リダイレクトを辿る） |
+| 検証 | 旧名`"foo"`を`foo_old`側の`past`別名として登録し直せない（別名の名前は全体でunique）ため、確認画面ではなく別名一覧(`?toast=unify_conflict&conflict=<bar.id>`)に移る。一覧には「別名の名前が重複しているため、名義を統一できませんでした。」のトーストと、`bar`の別名一覧へのリンクを含む理由(`#unify-name-conflict`)が表示される。`POST /authors/<foo.id>/aliases/unify`に直接送っても、`send_discord()`・DB・`History`に変更はなく同じ結果になる |
 
 ---
 

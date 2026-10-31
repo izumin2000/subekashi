@@ -5,7 +5,7 @@ SQLiteIntConverter のテスト
 """
 from django.test import TestCase, Client, override_settings
 
-from subekashi.converters import SQLiteIntConverter
+from subekashi.converters import SQLiteIntConverter, parse_sqlite_id
 from subekashi.models import Song
 
 
@@ -40,6 +40,38 @@ class SQLiteIntConverterTest(TestCase):
 
     def test_to_url_returns_str(self):
         self.assertEqual(self.converter.to_url(123), "123")
+
+
+class ParseSqliteIdTest(TestCase):
+    """parse_sqlite_id() のテスト（#1290）"""
+
+    def test_normal_value_returns_int(self):
+        self.assertEqual(parse_sqlite_id("123"), 123)
+
+    def test_zero_is_accepted(self):
+        self.assertEqual(parse_sqlite_id("0"), 0)
+
+    def test_max_value_is_accepted(self):
+        self.assertEqual(parse_sqlite_id(str(SQLITE_INT_MAX)), SQLITE_INT_MAX)
+
+    def test_over_max_value_returns_none(self):
+        self.assertIsNone(parse_sqlite_id(str(SQLITE_INT_MAX + 1)))
+
+    def test_too_many_digits_returns_none(self):
+        # Python 3.11以降のint()の桁数の上限（4300桁）を超える文字列でも例外にならない
+        self.assertIsNone(parse_sqlite_id("9" * 30))
+        self.assertIsNone(parse_sqlite_id("1" * 5000))
+
+    def test_non_digit_values_return_none(self):
+        for value in ["", " ", "abc", "-1", "+1", "1.5", "1e3", " 12", "12 "]:
+            with self.subTest(value=value):
+                self.assertIsNone(parse_sqlite_id(value))
+
+    def test_non_ascii_digits_return_none(self):
+        # "²"はisdigit()がTrueになるがint()で変換できず、"１２"は全角の数字
+        for value in ["²", "１２"]:
+            with self.subTest(value=value):
+                self.assertIsNone(parse_sqlite_id(value))
 
 
 @override_settings(STORAGES=STATIC_STORAGE)

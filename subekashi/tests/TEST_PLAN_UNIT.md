@@ -1212,7 +1212,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | past別名を選択 | `name=`past別名のname（同名のAuthorは不在） | `Author.name`が入れ替わる。選ばれた側のAuthorAlias行は削除され、旧名が新たな`past`別名として再登録される。`?toast=unify`付きでリダイレクト |
 | 他の以前の名称のAuthorの曲も統一 | 選択していない別のpast別名と同名のAuthorがSongを持つ | そのSongも統一先に付け替わり、そのAuthorは曲数0で残る |
 | past以外の種別の別名と同名のAuthorは対象外 | `another`別名と同名のAuthorがSongを持つ | そのSongは付け替えられない（意図的に区別すべき名義のため） |
-| `alias_type`がpast以外の別名を選択 | `name=`another等の別名のname | 変更されず、`?toast=unify_error`付きでリダイレクト |
+| `alias_type`がpast以外の別名を選択 | `name=`another等の別名のname | 変更されず、`?toast=unify_invalid`付きでリダイレクト（候補にない名義はページの再読み込みで直るため、「時間をおいて」の文言を使う`unify_error`ではない、#1290） |
 | 既存のAuthorと同名のpast別名を選択 | 別Author（統一先）が同名で実在し、author側もSong・AuthorLink・AuthorAliasを持つ | authorのSong・AuthorLink・AuthorAliasが全て統一先に付け替わる。選択したpast別名は削除され、旧名が統一先の`past`別名として登録される。authorは削除されず（名前もそのまま）曲数0で残る。統一先の別名一覧へ`?toast=unify`付きでリダイレクト |
 | 統一先が旧名と同名の別名を既に保有 | 統一先のAuthorAlias.name == old_name | その別名をそのまま活かし、`old_name`のAuthorAliasが重複登録（IntegrityError）されない。他のpast別名と同様に選択候補になるよう`alias_type`が`"past"`へ更新される |
 | 統一先が同じグループ名を既に保有 | author・統一先の双方が同名の`group`別名を持つ | `(name, author)`のunique制約に抵触しないよう、author側のものは移さずに削除され、統一に成功する |
@@ -1230,7 +1230,21 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | Discord通知待機中の並行削除（TOCTOU、選択した別名） | `send_discord()`の完了待ち中に対象のpast別名が別リクエストで削除されたと仮定 | `AuthorAlias.DoesNotExist`が未処理の例外(500)にならず、`?toast=unify_error`へ穏当にリダイレクトされる。`Author.name`は変更されない |
 | Discord通知待機中の並行削除（TOCTOU、統一先の既存Author） | `send_discord()`の完了待ち中に統一先の既存Authorが別リクエストで削除されたと仮定 | 統一先を再取得し、author自身の名前を変更する通常の統一として`?toast=unify`付きで成立する |
 | Discord通知待機中の無関係な別名作成（TOCTOU） | `send_discord()`の完了待ち中に、無関係な別authorがold_nameと同名の`AuthorAlias`を新規作成したと仮定 | 所有者を確認できないため再利用せず安全側に倒し、曲の付け替え・別名の移動を含む統一全体をロールバックして`?toast=unify_error`へリダイレクトする。無関係な別名のalias_typeは書き換えられない |
-| 旧名(old_name)が既存の別名と衝突 | old_nameと同名の`AuthorAlias`をauthor・統一先以外の別authorが既に保有（「逆方向」の関係として正常にありうる状態） | `AuthorAlias.name`のグローバルなunique制約により再登録が決定的に失敗するため、Discord通知を送る前に検知して`?toast=unify_error`へリダイレクトする。`send_discord()`は呼ばれない |
+| 旧名(old_name)が既存の別名と衝突 | old_nameと同名の`AuthorAlias`をauthor・統一先以外の別authorが既に保有（「逆方向」の関係として正常にありうる状態） | `AuthorAlias.name`のグローバルなunique制約により再登録が決定的に失敗するため、Discord通知を送る前に検知して`?toast=unify_conflict&conflict=<別authorのid>`へリダイレクトする（待っても直らないため、原因の作者を別名一覧画面で伝える、#1290）。`send_discord()`は呼ばれない。DB・Historyも変更されない |
+| 旧名の衝突・統一先が既存の別Author（#1290） | 統一先が既存の別Authorで、old_nameと同名の別名を第三者のauthorが保有（本番で起きたケース） | 同じく`?toast=unify_conflict&conflict=<第三者のid>`へリダイレクトし、`send_discord()`は呼ばれず、Historyも作成されない |
+| 旧名と同名の別名を統一先自身が保有（#1290） | 統一先のAuthorがold_nameと同名の`past`別名を持つ | 衝突ではなく、その別名を再利用して統一に成功する（`?toast=unify`） |
+| 別名一覧画面の衝突理由の表示（#1290） | `?toast=unify_conflict&conflict=<id>`で、そのauthorがauthor名と同名の別名を持つ | `#unify-name-conflict`に「『現在の名義』は統一後の名前の以前の名称として登録されますが、」と、衝突している作者の別名一覧へのリンクが表示される |
+| 衝突理由は実在する衝突のみ表示（#1290） | `conflict`に、author名と同名の別名を持たない作者のidを指定 | `#unify-name-conflict`も、その作者の名前も表示されない（クエリを書き換えた偽の理由を出さない） |
+| 衝突理由の不正なクエリ（#1290） | `conflict`が`abc`・`-1`・`1.5`・SQLiteの整数の上限を超える値・5000桁の数字・全角数字・`²` | HTTP 200のまま`#unify-name-conflict`は表示されない（500にならない）。idの検証は`parse_sqlite_id()`（13-2） |
+| 衝突する作者が表示件数の上限ちょうど（#1290） | `group`別名で旧名と同名を持つ作者が`UNIFY_CONFLICT_DISPLAY_LIMIT`（5）人 | `?toast=unify_conflict&conflict=<id>`を5件付けてリダイレクトし、`conflict_more`は付けない |
+| 衝突する作者が表示件数の上限を超える（#1290） | 上と同じ作者が上限+2人（確認画面は上限+1人） | idは先頭の上限までの5件だけをクエリに載せ、超えた分は`conflict_more=<件数>`で渡す（受け取り側が切り捨てるidを渡さない）。確認画面でも同じ |
+| 超過分を「ほかN件」で表示（#1290） | `conflict`に上限と同じ5人分のid、`conflict_more=3` | `#unify-name-conflict`に5人へのリンクが並び、「ほか3件の別名に同じ名前が登録されており、」と表示される |
+| `conflict_more`なし（#1290） | `conflict`に5人分のidのみ | 「ほか」を表示しない |
+| 上限まで表示していないときは`conflict_more`を使わない（#1290） | `conflict`に実在する4人分のid、`conflict_more=3` | 「ほか」を表示しない（クエリを書き換えて件数だけを出せないようにする） |
+| `conflict_more`の不正な値（#1290） | `abc`・`-1`・`1.5`・SQLiteの整数の上限を超える値・全角数字・空文字 | HTTP 200のまま「ほか」を表示しない（500にならない） |
+| クエリのidが上限を超えて並ぶ（#1290） | `conflict`に上限+1人分のid | リンクとして表示するのは先頭の上限（5人）まで。判定は、別名一覧の上部にも衝突する作者の行が表示されるため、`#unify-name-conflict`の中だけを見る |
+| `toast`なしでは衝突理由を出さない（#1290） | `conflict`のみ指定し、`toast=unify_conflict`は無い | `#unify-name-conflict`は表示されない |
+| 統一の失敗ごとのトースト文言（#1290） | `toast=unify_conflict`・`unify_invalid`・`unify_error` | それぞれ「別名の名前が重複しているため、名義を統一できませんでした。」「選択された名義は統一できません。ページを再読み込みして、もう一度お試しください。」「名義を統一できませんでした。時間をおいて再度お試しください。」が表示される。待っても直らない失敗には「時間をおいて」を使わない |
 | 別名一覧画面のフォーム表示 | authorが`alias_type="past"`の別名を持つ | フォーム（`#unify-name-form`）と「名義を統一する」の見出し、チュートリアルアイコン（`data-tutorial="unify-name"`、#1126でインラインのonclickから変更）が表示される。フォームの送信先は確認画面（`AuthorUnifyNameConfirmView`） |
 | 別名一覧画面のフォーム非表示 | authorが`alias_type="past"`の別名を持たない | フォームは表示されない（選択肢が現在の名前1件のみのため） |
 | フォームの並び（#1137） | authorが`alias_type="past"`の別名を持つ | 「[ ] 以前の名称 ↓ [x] 現在の名義」の順に、past別名・矢印（`#unify-name-arrow`）・現在の名義が並び、初期状態では現在の名義のみが`checked`になる。選択を変えると、選択した名義が矢印の下へ移動する（JSによるDOM操作のため手動確認） |
@@ -1243,8 +1257,12 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | 存在しないauthor_id | 無効なauthor_id | HTTP 404 |
-| 無効な名義 | 候補にない`name` | 確認画面を表示せず`?toast=unify_error`付きで別名一覧へリダイレクト |
+| 無効な名義 | 候補にない`name` | 確認画面を表示せず`?toast=unify_invalid`付きで別名一覧へリダイレクト（#1290） |
 | 現在の名前を選択し、移す曲もない | `name=author.name`、移す曲がない | 確認画面を表示せず`?toast=unify_noop`付きで別名一覧へリダイレクト |
+| 旧名が別authorの別名と衝突（#1290） | old_nameと同名の`AuthorAlias`をauthor・統一先以外の別authorが保有し、past別名を選択 | 確認画面を表示せず`?toast=unify_conflict&conflict=<別authorのid>`付きで別名一覧へリダイレクト。確認して確定した後ではなく、確認画面に進む前に理由を伝えるため |
+| 旧名の衝突・統一先が既存の別Author（#1290） | 上記で、選択したpast別名と同名の既存Authorが統一先になる | 同じく`?toast=unify_conflict&conflict=<別authorのid>`付きでリダイレクト |
+| 衝突する作者が表示件数の上限を超える（#1290） | `group`別名で旧名と同名を持つ作者が上限+1人 | 先頭の上限（5人）までのidと`conflict_more=1`を付けて別名一覧へリダイレクト |
+| 現在の名前を選択した場合は衝突しない（#1290） | 別authorがold_nameと同名の別名を持つが、`name=author.name`で移す曲がある | 旧名の再登録が起きないため、HTTP 200で確認画面が表示される |
 | 現在の名前を選択し、移す曲がある（#1137） | `name=author.name`、以前の名称と同名の別AuthorがSongを持つ | そのSongのタイトルが箇条書きで表示された上で「の作者が『現在の名義』に統一されます」と続き、「作者『<名前>』の曲は全て『現在の名義』に移動します」が表示される。作者のidと「作者自体は削除されません」は表示されない |
 | 統一先が既存のAuthorでない確認画面 | 選択したpast別名と同名のAuthorが存在しない | 「既存の作者」「に移動します」の文言は表示されない |
 | 統一先が既存のAuthorの確認画面 | 選択したpast別名と同名のAuthorが存在 | 「既存の作者『<名前>』が統一先となり、この作者の曲・別名・作者リンクは全てそちらに移動します」が表示される。統一先のidと「この作者自体は削除されません」は表示されない |
@@ -2278,6 +2296,20 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | 巨大な数値 | `"9" * 30` | `ValueError` が発生 |
 | `/songs/<id>/` への巨大なID | `"9" * 30` | HTTP 404（500エラーにならない） |
 
+#### 13-2. `parse_sqlite_id(value)`（#1290）
+
+ASCIIの数字だけで、SQLiteの整数の範囲に収まる文字列を整数にする。変換できなければ`None`を返す（例外にしない）。`SQLiteIntConverter.to_python()`が使うほか、クエリ文字列のidを検証する別名一覧画面（`get_unify_conflict_authors()`）が使う。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 通常の整数 | `"123"` | `123` を返す |
+| 0 | `"0"` | `0` を返す |
+| SQLite INT最大値 | `str(9223372036854775807)` | そのまま返す |
+| 最大値超過 | `str(9223372036854775808)` | `None` |
+| 桁数が多すぎる | `"9" * 30`・`"1" * 5000` | `None`（`int()`の桁数の上限を超える文字列でも例外にならない） |
+| 数字以外 | 空文字・空白・`"abc"`・`"-1"`・`"+1"`・`"1.5"`・`"1e3"`・前後に空白のある数字 | `None` |
+| ASCII以外の数字 | `"²"`・`"１２"`（全角） | `None`（`isdigit()`は`"²"`もTrueになり`int()`で変換できないため） |
+
 ---
 
 ### 14. `management/commands` — 管理コマンド
@@ -2560,6 +2592,20 @@ URL生成は`get_urls()`に分離しており、ファイル出力・`collectsta
 | past以外の別名と同名のAuthorは対象外 | `another`別名と同名のAuthorがSongを持つ | `([], 0)` |
 | 曲を1曲ずつ取得しない | past別名と同名のAuthorが5曲を持つ | `([そのAuthor], 5)`。曲と作者の中間テーブルへのクエリは2件で、どちらも`DISTINCT`による集計（曲を1行ずつ取得するクエリを発行しない） |
 | 統一済みなら曲数を集計しない | past別名と同名のAuthorが曲を持たない | `([], 0)`。`COUNT`のクエリを発行しない |
+
+#### 16-4-3. `find_unify_name_conflict_authors(plan)`（#1290）
+
+旧名を統一先の新たな`past`別名として登録し直せない原因になるAuthorを、id順に返す。`AuthorAlias.name`はグローバルにuniqueなため、author・統一先以外のAuthorが旧名と同名の別名を持っていると登録できない。`AuthorUnifyNameSetView`・`AuthorUnifyNameConfirmView`が、原因の作者を別名一覧画面で伝えるために使う。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 衝突なし | 旧名と同名の別名を誰も持たない | `[]` |
+| 別authorが旧名と同名の別名を持つ | 別authorが`another`別名で旧名を保有 | `[その別author]` |
+| 統一先が既存Author | 同上で、選択したpast別名と同名のAuthorが統一先になる | `[その別author]` |
+| author自身が保有 | author自身が旧名と同名の別名を持つ | `[]` |
+| 統一先が保有 | 統一先のAuthorが旧名と同名の別名を持つ | `[]`（統一後はそのまま再利用するため衝突ではない） |
+| 現在の名前を選択 | `new_name=author.name`で、別authorが旧名と同名の別名を持つ | `[]`（旧名の再登録が起きないため） |
+| 複数のAuthor | `group`別名を2つのauthorが保有し、うち1人は`spell`別名でも同名を持つ | 各authorを1回ずつ、id順に返す |
 
 #### 16-5. `build_unify_name_discord_text(target_author, old_name, new_name, editor, source_authors=())`（#1137）
 
