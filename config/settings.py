@@ -50,6 +50,7 @@ MIDDLEWARE = [
     'django_hosts.middleware.HostsResponseMiddleware',
     'subekashi.middleware.cache.CacheControlMiddleware',
     'subekashi.middleware.rate_limit.RatelimitMiddleware',
+    'subekashi.middleware.banned_editor.BannedEditorMiddleware',
     'subekashi.middleware.normalize_post_middleware.NormalizePostDataMiddleware',
     'subekashi.middleware.maintenance.MaintenanceMiddleware',
 ]

@@ -7,7 +7,6 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.cache import never_cache
 from config.local_settings import NEW_DISCORD_URL
-from subekashi.constants.constants import BANNED_ERROR
 from subekashi.models import Author, AuthorAlias, AuthorLink, Editor, History, Song
 from subekashi.forms import AuthorAliasForm, AuthorUnifyNameForm
 from subekashi.lib.ip import get_ip
@@ -142,10 +141,6 @@ class AuthorAliasNewView(View):
 
     def post(self, request, author_id):
         context = self.get_base_context()
-        if Editor.is_banned_ip(get_ip(request)):
-            context["error"] = BANNED_ERROR
-            return render(request, 'subekashi/author_alias_new.html', context)
-
         form = AuthorAliasForm(request.POST, author=self.author)
 
         if not form.is_valid():
@@ -210,10 +205,6 @@ class AuthorAliasEditView(View):
 
     def post(self, request, author_id, alias_id):
         context = self.get_base_context()
-        if Editor.is_banned_ip(get_ip(request)):
-            context["error"] = BANNED_ERROR
-            return render(request, 'subekashi/author_alias_edit.html', context)
-
         form = AuthorAliasForm(request.POST, author=self.author, editing_alias=self.alias)
 
         if not form.is_valid():
@@ -286,9 +277,6 @@ class AuthorAliasDeleteView(View):
         return render(request, 'subekashi/author_alias_delete.html', context)
 
     def post(self, request, author_id, alias_id):
-        if Editor.is_banned_ip(get_ip(request)):
-            return redirect(f"{reverse('subekashi:author_aliases', args=[self.author.id])}?toast=banned")
-
         editor = Editor.get_or_create_from_ip(get_ip(request))
         alias_name = self.alias.name
 
@@ -379,9 +367,6 @@ class AuthorUnifyNameSetView(View):
 
     def post(self, request, author_id):
         base_url = reverse('subekashi:author_aliases', args=[self.author.id])
-        if Editor.is_banned_ip(get_ip(request)):
-            return redirect(f"{base_url}?toast=banned")
-
         form = AuthorUnifyNameForm(request.POST, author=self.author)
 
         if not form.is_valid():

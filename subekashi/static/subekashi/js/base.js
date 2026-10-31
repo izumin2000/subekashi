@@ -450,6 +450,12 @@ function deleteToastUrlQuery() {
     }
 }
 
+// BANされた編集者の操作が止められ、フォームのあったページに戻されたときのトースト（BannedEditorMiddleware、#1281）
+if (new URLSearchParams(window.location.search).get('toast') === 'banned') {
+    showToast("error", "処理を完了できませんでした。");
+    deleteToastUrlQuery();
+}
+
 // 重複曲情報のHTMLを生成（song_new/song_edit共通）
 function makeSongInfoRowsHTML(songs) {
     return songs.map(song => {

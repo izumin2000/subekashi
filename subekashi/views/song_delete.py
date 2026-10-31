@@ -1,7 +1,6 @@
 from django.db import transaction
 from django.shortcuts import render, redirect
 from django.views import View
-from subekashi.constants.constants import BANNED_ERROR
 from subekashi.forms import SongDeleteForm
 from subekashi.models import Song, Editor, History
 from subekashi.lib.ip import get_ip
@@ -31,11 +30,6 @@ class SongDeleteView(View):
 
     def post(self, request, song_id):
         context = self.get_base_context()
-        ip = get_ip(request)
-        if Editor.is_banned_ip(ip):
-            context["error"] = BANNED_ERROR
-            return render(request, "subekashi/song_edit.html", context)
-
         form = SongDeleteForm(request.POST)
 
         if not form.is_valid():
@@ -44,6 +38,7 @@ class SongDeleteView(View):
 
         reason = form.cleaned_data['reason']
 
+        ip = get_ip(request)
         editor = Editor.get_or_create_from_ip(ip)
 
         # 曲を論理削除し、編集履歴を保存（#1239）

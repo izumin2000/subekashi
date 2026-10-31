@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.db import transaction
 from django.views import View
 from config.local_settings import CONTACT_DISCORD_URL, NEW_DISCORD_URL
-from subekashi.constants.constants import BANNED_ERROR, SONG_CATEGORIES
+from subekashi.constants.constants import SONG_CATEGORIES
 from subekashi.models import Editor, History, Song, SongFields
 from subekashi.lib.url import clean_url, is_youtube_url, get_youtube_id
 from subekashi.lib.ip import get_ip
@@ -28,10 +28,6 @@ class SongNewView(View):
 
     def post(self, request):
         context = self.get_base_context()
-        if Editor.is_banned_ip(get_ip(request)):
-            context["error"] = BANNED_ERROR
-            return render(request, 'subekashi/song_new.html', context)
-
         title = request.POST.get("title", "")
         authors_input = request.POST.get("authors", "")
         url = request.POST.get("url", "")

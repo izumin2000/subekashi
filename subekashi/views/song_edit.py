@@ -7,7 +7,7 @@ from django.utils.html import escape
 from django.views import View
 from django.views.decorators.cache import never_cache
 from config.local_settings import NEW_DISCORD_URL, CONTACT_DISCORD_URL
-from subekashi.constants.constants import BANNED_ERROR, SONG_CATEGORIES
+from subekashi.constants.constants import SONG_CATEGORIES
 from subekashi.forms import SongEditForm
 from subekashi.models import Song, Editor, History, SongFields
 from subekashi.lib.url import clean_url, get_allow_media
@@ -50,10 +50,6 @@ class SongEditView(View):
 
     def post(self, request, song_id):
         context = self.get_base_context()
-        if Editor.is_banned_ip(get_ip(request)):
-            context["error"] = BANNED_ERROR
-            return render(request, 'subekashi/song_edit.html', context)
-
         form = SongEditForm(request.POST)
 
         if not form.is_valid():
