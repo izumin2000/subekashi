@@ -745,6 +745,58 @@ class AiWordSwapViewTest(TestCase):
         self.assertEqual(Ai.objects.filter(lyrics="私は駆ける").count(), 2)
 
 
+@patch("subekashi.views.api.ai.AiAPI.throttle_classes", [])
+class AiAPIUpdateTest(TestCase):
+    """AiAPI PUT /api/ai/<id>/ のテスト（ai_result.jsの評価の送信）"""
+
+    def setUp(self):
+        self.client = APIClient()
+
+    def test_put_score_updates_only_score(self):
+        ai = Ai.objects.create(lyrics="私は走る", score=0, genetype="janome")
+
+        response = self.client.put(f"/api/ai/{ai.id}/", data={"score": 5}, format="json")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["lyrics"], "私は走る")
+        ai.refresh_from_db()
+        self.assertEqual(ai.score, 5)
+        self.assertEqual(ai.lyrics, "私は走る")
+        self.assertEqual(ai.genetype, "janome")
+
+    def test_put_score_with_same_lyrics_in_other_genetype(self):
+        # 一意制約はgenetype="janome"のみが対象のため、レガシーのgenetype="model"に同じ歌詞があっても評価できる
+        Ai.objects.create(lyrics="私は走る", score=5, genetype="model")
+        ai = Ai.objects.create(lyrics="私は走る", score=0, genetype="janome")
+
+        response = self.client.put(f"/api/ai/{ai.id}/", data={"score": 3}, format="json")
+
+        self.assertEqual(response.status_code, 200)
+        ai.refresh_from_db()
+        self.assertEqual(ai.score, 3)
+
+    def test_put_score_on_duplicated_legacy_record(self):
+        # レガシーのgenetype="model"には同じ歌詞のレコードが既に複数ある
+        Ai.objects.create(lyrics="レガシー歌詞", score=0, genetype="model")
+        ai = Ai.objects.create(lyrics="レガシー歌詞", score=0, genetype="model")
+
+        response = self.client.put(f"/api/ai/{ai.id}/", data={"score": 4}, format="json")
+
+        self.assertEqual(response.status_code, 200)
+        ai.refresh_from_db()
+        self.assertEqual(ai.score, 4)
+
+    def test_put_other_field_returns_400(self):
+        ai = Ai.objects.create(lyrics="私は走る", score=0, genetype="janome")
+
+        response = self.client.put(f"/api/ai/{ai.id}/", data={"score": 5, "lyrics": "書き換え"}, format="json")
+
+        self.assertEqual(response.status_code, 400)
+        ai.refresh_from_db()
+        self.assertEqual(ai.lyrics, "私は走る")
+        self.assertEqual(ai.score, 0)
+
+
 @override_settings(STORAGES=STATIC_STORAGE)
 @patch("rest_framework.throttling.SimpleRateThrottle.timer", return_value=1_800_000_000)
 class ApiThrottleClientIPTest(TestCase):

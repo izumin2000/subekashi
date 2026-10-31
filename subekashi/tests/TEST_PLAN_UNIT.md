@@ -1712,6 +1712,19 @@ faviconの画像は`icon_large.png`（800×800）から生成する。`site.webm
 | レスポンスステータスの正確性 | 同一の`base_id`・`token_index`・`candidate`で2回POST | 1回目はHTTP 201（新規作成）、2回目はHTTP 200（既存レコードの再利用） |
 | レスポンスに再トークナイズ済みのtokensを含める | 正常な入れ替え後 | 入れ替え後の歌詞を実際に再トークナイズした`surface`・`hinshi`・`katsuyou`・`index`・`is_replaceable`を含む。janomeは文脈依存のトークナイザのため、クライアント側が古い`token_index`を使い回すと同じ行での連続入れ替え時にズレる可能性があり、それを防ぐためクライアント側でその行のDOMを丸ごと作り直せるようにする |
 
+#### 8-4-1. `AiAPI` (`PUT /api/ai/<id>/`)（#1256）
+
+**テストクラス**: `AiAPIUpdateTest`（`tests/test_api.py`）
+
+`ai_result.js`は評価した点数を`{"score": n}`だけのPUTで送る。`lyrics`・`genetype`は条件付きの一意制約（`unique_janome_lyrics`）に含まれるため、`AiSerializer`で書き込み可能にしているとDRF 3.18.2以降はモデルの既定値（空文字）が補われ、PUTで上書きされる。`AiSerializer`では読み取り専用にしている。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| scoreだけのPUT | `genetype="janome"`の`Ai`に`{"score": 5}` | HTTP 200、`score`のみ変わり、`lyrics`・`genetype`は変わらない。レスポンスにも`lyrics`が含まれる |
+| 同じ歌詞のレガシーレコードがある | 同じ`lyrics`の`genetype="model"`がある状態で、`genetype="janome"`の`Ai`に`{"score": 3}` | HTTP 200、`score`が変わる（一意制約の対象は`genetype="janome"`のみ） |
+| 重複したレガシーレコード | 同じ`lyrics`の`genetype="model"`が2件ある状態で、片方に`{"score": 4}` | HTTP 200、`score`が変わる |
+| score以外のフィールドを含む | `{"score": 5, "lyrics": "書き換え"}` | HTTP 400、`lyrics`・`score`とも変わらない |
+
 #### 8-5. `SongEditInitView` (`/api/song_edit_init/`)（#1135）
 
 `song_edit.js`は模倣一覧の表示と送信する模倣曲IDのどちらも`imitate_songs`を元にするため、模倣元が1件でも欠けると保存時にその模倣情報が消える。

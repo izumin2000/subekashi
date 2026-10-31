@@ -54,6 +54,9 @@ class AiSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ai
         fields = '__all__'
+        # AiAPIで変更できるのはscoreのみ。lyrics・genetypeは条件付きの一意制約に含まれるため、
+        # 書き込み可能だとDRF（3.18.2以降）がモデルの既定値（空文字）を補い、scoreだけのPUTで上書きされる
+        read_only_fields = ['lyrics', 'genetype']
 
     
 class AdSerializer(serializers.ModelSerializer):
