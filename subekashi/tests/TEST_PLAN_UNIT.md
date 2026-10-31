@@ -2310,6 +2310,7 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | 画像の後の本文の保持（#1167） | `is_md=True`で画像2つの後に本文が続く | 各画像が`span.article-image`で囲まれ、画像の後の本文はそのまま出力される |
 | HTMLで書かれた画像は囲まない（#1167） | `is_md=True`で本文に`<img>`タグを直接含む | `<img>`はそのまま出力され、`span.article-image`で囲まれない |
 | HTML記事の画像は囲まない（#1167） | `is_md=False`で本文に`<img>`タグを含む | `<img>`はそのまま出力され、`span.article-image`で囲まれない |
+| 画像の拡大表示（#1303） | `is_md=True`で本文に`![画像](...)`を含む | 拡大表示用の`<dialog id="image-viewer">`（`#image-viewer-img`・`#image-viewer-close`を含む）と、`article/js/default_article.js`の`<script defer>`が出力される。クリック（タップ）で開く動作はJSのため、Playwrightで確認する |
 
 #### 12-3. `is_pinned_article` Cookie による並び替え (`ArticlesView`)
 

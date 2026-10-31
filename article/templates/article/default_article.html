@@ -17,4 +17,12 @@
     </p>
     <div id="article-text">{{ text|safe }}</div>
 </section>
+<dialog id="image-viewer" aria-label="画像の拡大表示">
+    <button type="button" id="image-viewer-close" aria-label="閉じる"><i class="fas fa-times"></i></button>
+    <img id="image-viewer-img" alt="">
+</dialog>
+{% endblock %}
+
+{% block js %}
+<script defer src="{% static 'article/js/default_article.js' %}"></script>
 {% endblock %}

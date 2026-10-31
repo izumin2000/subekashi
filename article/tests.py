@@ -409,6 +409,17 @@ class DefaultArticleViewTest(TestCase):
         self.assertContains(response, '<p><img src="/static/article/image/test.png"></p>')
         self.assertNotContains(response, 'class="article-image"')
 
+    def test_image_viewer_and_script_are_rendered(self):
+        # 本文の画像をクリックで画面いっぱいに表示するため、拡大表示用のdialogとJSを出力する（#1303）
+        image_article = self._create_image_article("test-default-011", "![画像](/static/article/image/test.png)")
+
+        response = self.client.get(f"/articles/{image_article.article_id}/")
+
+        self.assertContains(response, '<dialog id="image-viewer"')
+        self.assertContains(response, 'id="image-viewer-img"')
+        self.assertContains(response, 'id="image-viewer-close"')
+        self.assertContains(response, '<script defer src="/static/article/js/default_article.js"></script>')
+
     def test_nonexistent_article_returns_404(self):
         response = self.client.get("/articles/nonexistent-id-xyz/")
         self.assertEqual(response.status_code, 404)
