@@ -7,6 +7,7 @@ import requests
 RELOAD_TIMEOUT = 30
 RELOAD_MAX_ATTEMPTS = 4
 RELOAD_RETRY_INTERVAL = 10
+RELOAD_ERROR_BODY_MAX_LENGTH = 200
 
 
 class Command(BaseCommand) :
@@ -67,7 +68,11 @@ class Command(BaseCommand) :
             else:
                 if response.status_code == 200:
                     return
-                reason = '{}: {!r}'.format(response.status_code, response.content)
+                # 502/503などはHTMLのエラーページが返るため、先頭だけを出す
+                body = response.text
+                if len(body) > RELOAD_ERROR_BODY_MAX_LENGTH:
+                    body = body[:RELOAD_ERROR_BODY_MAX_LENGTH] + "…"
+                reason = '{}: {!r}'.format(response.status_code, body)
                 if response.status_code < 500:
                     raise self.reload_error(reason, completed_commands)
 

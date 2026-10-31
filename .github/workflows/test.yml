@@ -31,6 +31,7 @@ jobs:
           DSP_DISCORD_URL = ""
           PYTHONANYWHERE_USERNAME = ""
           PYTHONANYWHERE_TOKEN = ""
+          VENV_PATH = ""
           YOUTUBE_API_KEY = ""
           GOOGLE_SHEETS_SPREADSHEET_ID = ""
           GOOGLE_SHEETS_API_KEY = ""

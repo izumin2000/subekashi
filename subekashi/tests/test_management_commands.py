@@ -31,7 +31,9 @@ from subekashi.lib.timeline import TimelineError, TimelineRow
 from subekashi.lib.youtube import YoutubeApiError, YoutubeApiUnavailableError
 from article.models import Article
 from subekashi.management.commands.backup import Command
-from subekashi.management.commands.deploy import RELOAD_MAX_ATTEMPTS, RELOAD_RETRY_INTERVAL, RELOAD_TIMEOUT
+from subekashi.management.commands.deploy import (
+    RELOAD_ERROR_BODY_MAX_LENGTH, RELOAD_MAX_ATTEMPTS, RELOAD_RETRY_INTERVAL, RELOAD_TIMEOUT,
+)
 from subekashi.management.commands.sitemap import Command as SitemapCommand
 from config.settings import ROOT_URL
 from subekashi.models import Ai, Author, Editor, History, Song, SongLink, SongTimeline, Stats, Word
@@ -1488,8 +1490,8 @@ class DeployCommandTest(TestCase):
         call_command("deploy", *extra_args, stdout=out, stderr=err)
         return out.getvalue(), err.getvalue()
 
-    def _response(self, status_code, content=b""):
-        return MagicMock(status_code=status_code, content=content)
+    def _response(self, status_code, text=""):
+        return MagicMock(status_code=status_code, text=text)
 
     def _executed_commands(self, mock_check_output):
         return [c.args[0] for c in mock_check_output.call_args_list]
@@ -1562,7 +1564,7 @@ class DeployCommandTest(TestCase):
         self.assertIn("デプロイが完了しました。", out)
 
     def test_retries_after_server_error(self, mock_check_output, mock_post, mock_sleep):
-        mock_post.side_effect = [self._response(503, b"unavailable"), self._response(200)]
+        mock_post.side_effect = [self._response(503, "unavailable"), self._response(200)]
         out, err = self._run()
 
         self.assertEqual(mock_post.call_count, 2)
@@ -1575,7 +1577,7 @@ class DeployCommandTest(TestCase):
         failures = {
             "接続エラー": requests.ConnectionError("Connection refused"),
             "タイムアウト": requests.Timeout("timed out"),
-            "5xx": self._response(502, b"bad gateway"),
+            "5xx": self._response(502, "bad gateway"),
         }
         for name, failure in failures.items():
             with self.subTest(failure=name):
@@ -1612,7 +1614,7 @@ class DeployCommandTest(TestCase):
         for status_code in (401, 404):
             with self.subTest(status_code=status_code):
                 mock_post.reset_mock()
-                mock_post.return_value = self._response(status_code, b'{"detail":"Invalid token."}')
+                mock_post.return_value = self._response(status_code, '{"detail":"Invalid token."}')
                 with self.assertRaises(CommandError) as cm:
                     self._run()
 
@@ -1620,6 +1622,30 @@ class DeployCommandTest(TestCase):
                 self.assertIn("Invalid token.", str(cm.exception))
                 mock_post.assert_called_once()
                 mock_sleep.assert_not_called()
+
+    def test_long_response_body_is_truncated_in_error(self, mock_check_output, mock_post, mock_sleep):
+        # HTMLのエラーページ（502/503など）が返っても、メッセージが長くならないよう先頭だけを出す
+        mock_post.return_value = self._response(502, "x" * 1000)
+        with self.assertRaises(CommandError) as cm:
+            self._run()
+
+        message = str(cm.exception)
+        self.assertIn("x" * RELOAD_ERROR_BODY_MAX_LENGTH + "…", message)
+        self.assertNotIn("x" * (RELOAD_ERROR_BODY_MAX_LENGTH + 1), message)
+
+        # 上限ちょうどの本文は切り詰めない
+        mock_post.return_value = self._response(401, "x" * RELOAD_ERROR_BODY_MAX_LENGTH)
+        with self.assertRaises(CommandError) as cm:
+            self._run()
+        self.assertIn("x" * RELOAD_ERROR_BODY_MAX_LENGTH, str(cm.exception))
+        self.assertNotIn("…", str(cm.exception))
+
+    def test_long_response_body_is_truncated_in_retry_warning(self, mock_check_output, mock_post, mock_sleep):
+        mock_post.side_effect = [self._response(503, "<html>" + "x" * 1000), self._response(200)]
+        _, err = self._run()
+
+        self.assertIn("503", err)
+        self.assertNotIn("x" * RELOAD_ERROR_BODY_MAX_LENGTH, err)
 
     def test_other_request_exception_is_not_retried(self, mock_check_output, mock_post, mock_sleep):
         mock_post.side_effect = requests.exceptions.InvalidURL("invalid url")
