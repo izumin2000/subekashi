@@ -133,6 +133,8 @@ class SongEditForm(forms.Form):
         error_messages={'required': '作者は空白にできません。'},
     )
     url = forms.CharField(required=False)
+    # urlのうち、重複を許可して登録するURL（#1285）
+    allow_dup_url = forms.CharField(required=False)
     imitate = forms.CharField(required=False)
     lyrics = forms.CharField(required=False, max_length=10000, widget=forms.Textarea)
     is_original = forms.BooleanField(required=False)

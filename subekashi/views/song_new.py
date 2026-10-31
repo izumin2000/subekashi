@@ -1,7 +1,6 @@
 from django.shortcuts import render, redirect
 from django.db import transaction
 from django.views import View
-from config.settings import ROOT_URL
 from config.local_settings import CONTACT_DISCORD_URL, NEW_DISCORD_URL
 from subekashi.constants.constants import BANNED_ERROR, SONG_CATEGORIES
 from subekashi.models import Editor, History, Song, SongFields
@@ -16,6 +15,7 @@ from subekashi.lib.song_service import (
     allow_song_url_dup,
     create_song_with_relations,
     build_new_song_discord_text,
+    build_allow_dup_discord_text,
 )
 
 
@@ -24,21 +24,6 @@ class SongNewView(View):
         return {"metatitle": "曲の登録", "SONG_CATEGORIES": SONG_CATEGORIES}
 
     def get(self, request):
-        allow_dup_url = request.GET.get('allow_dup_url', '')
-        if allow_dup_url:
-            if Editor.is_banned_ip(get_ip(request)):
-                return render(request, 'subekashi/song_new.html', {**self.get_base_context(), "error": BANNED_ERROR})
-            cleaned = clean_url(allow_dup_url) or allow_dup_url
-            link = allow_song_url_dup(cleaned, get_ip(request))
-            if link:
-                content = f"\
-                    重複許可したURL：\n\
-                    {allow_dup_url}\n\
-                    {ROOT_URL}/songs/?url={allow_dup_url}\n\
-                    {ROOT_URL}/admin/subekashi/songlink/{link.id}\n\
-                    IP：{get_ip(request)}\n\
-                "
-                send_discord(CONTACT_DISCORD_URL, content)
         return render(request, 'subekashi/song_new.html', self.get_base_context())
 
     def post(self, request):
@@ -78,9 +63,11 @@ class SongNewView(View):
             return render(request, 'subekashi/song_new.html', context)
 
         # 既に登録されているURLの場合はエラー（allow_dup=Falseのみ）
+        # 重複を許可して登録する場合は、曲を保存するときに重複を許可する（#1285）
         cleaned_url = clean_url(url)
+        allow_dup = bool(cleaned_url) and clean_url(request.POST.get("allow_dup_url", "")) == cleaned_url
         if cleaned_url:
-            error = validate_song_url(cleaned_url)
+            error = validate_song_url(cleaned_url, allow_dup=allow_dup)
             if error:
                 context["error"] = error
                 return render(request, 'subekashi/song_new.html', context)
@@ -156,9 +143,11 @@ class SongNewView(View):
             view=youtube_res.get("view", None),
             like=youtube_res.get("like", None),
         )
-        # Song・Editor・Historyをトランザクションでまとめて保存し、
+        # URLの重複の許可・Song・Editor・Historyをトランザクションでまとめて保存し、
         # 全て成功した場合のみDiscordに送信する
         with transaction.atomic():
+            # 新しい曲を紐づける前に許可し、そのURLを元から持つ曲の編集履歴に残す
+            dup_link = allow_song_url_dup(cleaned_url, ip) if allow_dup else None
             song = create_song_with_relations(fields, authors, cleaned_url)
             song_id = song.id
             editor = Editor.get_or_create_from_ip(ip)
@@ -170,6 +159,9 @@ class SongNewView(View):
                 changes=changes,
                 editor=editor,
             )
+
+        if dup_link:
+            send_discord(CONTACT_DISCORD_URL, build_allow_dup_discord_text(dup_link, ip))
 
         # Discordに送信し、送信できなければ削除し500ページに遷移
         is_ok = send_discord(NEW_DISCORD_URL, discord_text)

@@ -194,18 +194,23 @@
 | 検証: SongLink | `https://bilibili.com/video/BV1qV411J7Kq`・`https://bilibili.com/video/BV1in4y1Q7qw?p=2` で保存される（av番号はBV番号に変換し、2パート目以降の `p` のみ残す） |
 | 検証: 重複 | 別の曲に `https://bilibili.com/video/BV1qV411J7Kq` が紐付いているとき、`https://www.bilibili.com/video/av417727107/` を送ると HTTP 200、"既に登録されています" のエラーでURLは追加されない。画面のJSが重複の判定に使う `GET /api/songlink/?url=` も、av番号・`www.`・`m.`・末尾の `/`・クエリの違うURLで同じ `SongLink` を返し、`?p=2` のURLでは返さない |
 
-#### 2-12. URLの重複を許可したとき、そのURLを元から持つ曲の編集履歴に残す（#1282）
+#### 2-12. URLの重複を許可して曲を保存したとき、そのURLを元から持つ曲の編集履歴に残す（#1282、#1285）
+
+URLの重複を許可するのは、曲を保存するPOSTのときだけにする。GETで開いただけでは許可しない（#1285）。
 
 | 項目 | 内容 |
 | --- | --- |
 | 前提 | 曲Aに `SongLink(url="https://youtu.be/dupallow123")`（`allow_dup=False`）が紐付いている。曲Bがある |
-| 操作 | `GET /songs/new/?allow_dup_url=https://youtu.be/dupallow123`、または `GET /songs/<曲Bのid>/edit/?allow_dup_url=...` |
-| 検証: レスポンス | HTTP 200 |
-| 検証: SongLink | `allow_dup == True` |
-| 検証: History | 曲Aに `history_type="edit"` のHistoryが1件でき、タイトルは「<曲Aのタイトル>のURLの重複を許可」、`changes` は `[["種類", "内容"], ["重複許可したURL", "https://youtu.be/dupallow123"]]`、編集者はリクエストのIPのEditor。曲Bにはできない |
-| 検証: 再読み込み | 同じURLをもう一度開いても、Historyは増えない |
-| 検証: 登録されていないURL | 登録されていないURLを `allow_dup_url` に付けると、HTTP 200でHistoryはできない |
-| 検証: Discord | 重複許可したURLの通知を `CONTACT_DISCORD_URL` に送る（これまでと同じ） |
+| 操作 | `POST /songs/new/` `{url="https://youtu.be/dupallow123", allow_dup_url="https://youtu.be/dupallow123"}`（`get_youtube_api` はモック）、または `POST /songs/<曲Bのid>/edit/` `{title=..., authors=..., url="https://youtu.be/dupallow123", allow_dup_url="https://youtu.be/dupallow123"}` |
+| 検証: レスポンス | 302 |
+| 検証: SongLink | `allow_dup == True` で、曲Aと保存した曲（新しい曲または曲B）の両方が紐付く |
+| 検証: History | 曲Aに `history_type="edit"` のHistoryが1件でき、タイトルは「<曲Aのタイトル>のURLの重複を許可」、`changes` は `[["種類", "内容"], ["重複許可したURL", "https://youtu.be/dupallow123"]]`、編集者はリクエストのIPのEditor。保存した曲には「重複を許可」のHistoryはできない |
+| 検証: 既に許可したURL | `allow_dup=True` のURLでは、Historyは増えない |
+| 検証: 編集している曲だけのURL | `POST /songs/<曲Bのid>/edit/` で、曲Bにしか紐付いていない `allow_dup=False` のURLを `allow_dup_url` に付けても、`allow_dup == False` のままで、「重複を許可」のHistoryもDiscordへの通知もできない（重複していないURLは許可しない） |
+| 検証: Discord | 重複許可したURLの通知を `CONTACT_DISCORD_URL` に1回送る（曲を保存した後） |
+| 検証: GET | `GET /songs/new/?allow_dup_url=...`・`GET /songs/<曲Bのid>/edit/?allow_dup_url=...` は HTTP 200で、`allow_dup`・History・Discordは変わらない |
+| 検証: `allow_dup_url` なし | `allow_dup_url` を送らないと HTTP 200で "既に登録されています" のエラー。`allow_dup` も History も変わらない |
+| 検証: 保存できなかったとき | 曲を保存できずエラーになったときは、`allow_dup_url` を送っていても `allow_dup == False` のままで、HistoryもDiscordへの通知もできない |
 
 ---
 
