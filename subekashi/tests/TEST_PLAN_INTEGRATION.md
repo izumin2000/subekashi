@@ -1212,6 +1212,25 @@ CSP違反・JSのエラー・トーストの表示はDjangoテストでは確認
 
 ---
 
+### 30. APIでの曲の登録・変更・削除フロー（#973）
+
+**テストファイル**: `tests/test_api_song_write.py`（`SongWriteAPIFlowTest`）
+
+管理サイトで発行した`ApiKey`の`X-API-Key`ヘッダー付きで、`POST /api/song/`・`PATCH`・`DELETE /api/song/<id>/`した曲が、画面（曲ページ・編集履歴）と公開API（`GET /api/song/<id>/`）に反映される流れを検証する。`send_discord`はモックする。
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `ApiKey`を1つ作成 |
+| 操作1 | `POST /api/song/` `{"title": "流れの曲", "authors": "流れの作者", "lyrics": "無視される"}` |
+| 検証1 | HTTP 201。`GET /songs/<id>/`に「流れの曲」が表示され、`GET /api/song/<id>/`の`title`が「流れの曲」。登録時の`lyrics`は画面と同じく無視される |
+| 操作2 | `PATCH /api/song/<id>/` `{"title": "変更後の流れの曲", "lyrics": "流れの歌詞"}` |
+| 検証2 | HTTP 200。`GET /api/song/<id>/`の`title`・`lyrics`が変わり、指定しなかった`authors`は「流れの作者」のまま |
+| 操作3 | `DELETE /api/song/<id>/` `{"reason": "流れの削除"}` |
+| 検証3 | HTTP 204。`GET /api/song/<id>/`はHTTP 404、`GET /songs/<id>/`はHTTP 410 |
+| 検証4 | 曲の編集履歴が`new`・`edit`・`delete`の順で3件あり、編集者は同じ（APIのリクエスト元のIP） |
+
+---
+
 ## テスト実装の方針
 
 ### ディレクトリ構成（案）

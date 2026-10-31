@@ -12,14 +12,15 @@ from contextlib import redirect_stdout
 from datetime import datetime
 from unittest.mock import patch
 from django.apps import apps
+from django.contrib.auth.models import User
 from django.db import IntegrityError, connection
 from django.db.utils import DataError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 from subekashi.constants.constants import SONG_CATEGORIES, SONG_FLAGS
 from subekashi.lib.security import encrypt
 from subekashi.lib.stats_service import compute_common_stats
-from subekashi.models import Ai, Author, AuthorAlias, Contact, Editor, History, Prush, Song, SongLink, SongTimeline, Stats, Word
+from subekashi.models import Ai, ApiKey, Author, AuthorAlias, Contact, Editor, History, Prush, Song, SongLink, SongTimeline, Stats, Word
 from subekashi.models.author import EffectiveAlias, TransitiveAlias
 
 
@@ -1344,3 +1345,88 @@ class StatsModelTest(TestCase):
 
         self.assertEqual(len(series), 1)
         self.assertEqual(series[0].songrange, "subeana")
+
+
+class ApiKeyModelTest(TestCase):
+    """ApiKey モデルのテスト（#973）"""
+
+    def test_key_is_generated_on_create(self):
+        api_key = ApiKey.objects.create(name="テスト用のAPIキー")
+        self.assertGreaterEqual(len(api_key.key), 32)
+        self.assertLessEqual(len(api_key.key), ApiKey._meta.get_field("key").max_length)
+
+    def test_keys_are_different_for_each_api_key(self):
+        first = ApiKey.objects.create(name="1つ目")
+        second = ApiKey.objects.create(name="2つ目")
+        self.assertNotEqual(first.key, second.key)
+
+    def test_key_does_not_change_on_save(self):
+        api_key = ApiKey.objects.create(name="テスト用のAPIキー")
+        key = api_key.key
+        api_key.name = "名前を変えたAPIキー"
+        api_key.save()
+        api_key.refresh_from_db()
+        self.assertEqual(api_key.key, key)
+
+    def test_is_active_defaults_to_true(self):
+        self.assertTrue(ApiKey.objects.create(name="テスト用のAPIキー").is_active)
+
+    def test_created_at_is_set_on_create(self):
+        before = timezone.now()
+        api_key = ApiKey.objects.create(name="テスト用のAPIキー")
+        self.assertGreaterEqual(api_key.created_at, before)
+
+    def test_name_must_be_unique(self):
+        ApiKey.objects.create(name="同じ名前")
+        with self.assertRaises(IntegrityError):
+            ApiKey.objects.create(name="同じ名前")
+
+    def test_str_returns_name(self):
+        self.assertEqual(str(ApiKey(name="テスト用のAPIキー")), "テスト用のAPIキー")
+
+
+@override_settings(STORAGES={
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+})
+class ApiKeyAdminTest(TestCase):
+    """管理サイトでのAPIキーの発行のテスト（#973）"""
+
+    def setUp(self):
+        User.objects.create_superuser("admin", "admin@example.com", "password")
+        self.client.login(username="admin", password="password")
+
+    def test_add_page_issues_api_key(self):
+        response = self.client.post("/admin/subekashi/apikey/add/", {"name": "管理サイトで発行", "is_active": "on"})
+
+        self.assertEqual(response.status_code, 302)
+        api_key = ApiKey.objects.get(name="管理サイトで発行")
+        self.assertTrue(api_key.is_active)
+        self.assertTrue(api_key.key)
+
+    def test_change_page_shows_key_as_read_only(self):
+        api_key = ApiKey.objects.create(name="表示するAPIキー")
+
+        response = self.client.get(f"/admin/subekashi/apikey/{api_key.id}/change/")
+
+        self.assertContains(response, api_key.key)
+        self.assertNotContains(response, 'name="key"')
+
+    def test_change_page_cannot_change_key(self):
+        api_key = ApiKey.objects.create(name="変更するAPIキー")
+        key = api_key.key
+
+        self.client.post(
+            f"/admin/subekashi/apikey/{api_key.id}/change/",
+            {"name": "変更するAPIキー", "key": "changed-key"},
+        )
+
+        api_key.refresh_from_db()
+        self.assertEqual(api_key.key, key)
+
+    def test_list_page_shows_api_keys(self):
+        ApiKey.objects.create(name="一覧のAPIキー")
+
+        response = self.client.get("/admin/subekashi/apikey/")
+
+        self.assertContains(response, "一覧のAPIキー")
