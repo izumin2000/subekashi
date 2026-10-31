@@ -1846,6 +1846,62 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | 記事の項目 | 個別取得 | `is_open`は含まれない（常にTrueのため）。`article_id`・`title`・`author`・`tag`・`text`・`post_time`・`is_md`・`handle_as_news`を含む |
 | 記事のタグで絞り込み | `?tag=news` | ニュースの記事のみ |
 
+#### 8-9. `SongAPI` の登録・変更・削除（`views/api/song.py`・`views/api/song_write.py`・`lib/permissions.py`）（#973）
+
+**テストクラス**: `SongWriteAPIAuthTest`・`SongCreateAPITest`・`SongUpdateAPITest`・`SongDeleteAPITest`（`tests/test_api_song_write.py`）
+
+曲の登録（`POST /api/song/`）・変更（`PUT`・`PATCH /api/song/<id>/`）・削除（`DELETE /api/song/<id>/`）は、管理サイトで発行した`ApiKey`（11-12）の`X-API-Key`ヘッダーがあるリクエストだけ受け付ける（`HasIssuedAPIKey`。#925のニュースの`API_KEY`とは別）。GETは今までどおり誰でもできる。Cookieのセッションでは認証しないため、管理サイトにログインしていてもAPIキーが無ければ実行できず、APIキーがあればCSRFトークンは要らない。
+
+画面と同じビュー（`SongNewView`・`SongEditView`・`SongDeleteView`）を継承したクラスを、フォームを送信したリクエストとして実行する。バリデーション・保存・編集履歴・Discordへの通知・編集者（`get_ip`）はビューに任せ、APIのリクエストをビューのPOSTに、ビューの応答をJSONに変換するだけにする。ビューのエラー（`context["error"]`）は`400 {"error": 文章}`、ロックされた曲は403、曲が無ければ404、削除された曲は410、ビューが500のページを返したときは500にする。テストでは3つのビューの`send_discord`と`get_youtube_api`をモックする。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| APIキーなし・空・間違い | 3つのエンドポイントに、`X-API-Key`なし・空文字列・`wrong-api-key` | HTTP 403 `{"detail": "APIキーが正しくありません"}`。曲・編集履歴は変わらず、Discordに送らない |
+| 無効・削除したAPIキー | `is_active=False`にしたAPIキー・削除したAPIキー | HTTP 403 |
+| 大文字小文字の違うAPIキー | 発行したキーの大文字小文字を入れ替える | HTTP 403（MySQLの照合順序が区別しなくても、取得したキーと比べ直す） |
+| ニュースのAPIキー | `API_KEY="news-api-key"`の値 | HTTP 403（`/api/news/`のキーでは曲を変更できない） |
+| 管理画面にログイン済み | スーパーユーザーでログインし、`X-API-Key`なし | HTTP 403 |
+| 発行したどのAPIキーでも | 別に発行したAPIキー | HTTP 201 |
+| CSRFトークンなし | `enforce_csrf_checks=True`・スーパーユーザーでログイン済みで、正しいAPIキー | 登録201・変更200・削除204 |
+| GETはAPIキー不要 | `X-API-Key`なしで`GET /api/song/`・`GET /api/song/<id>/` | HTTP 200 |
+| 許可しないメソッド | `PUT`・`DELETE /api/song/`、`POST /api/song/<id>/` | HTTP 405 |
+| BANされた編集者 | `Editor.is_banned=True`のIPで3つのエンドポイント | HTTP 403 `{"detail": "処理を完了できませんでした。"}`（9-4）。曲は変わらない |
+| 登録 | `{"title", "authors": "A,B"}` | HTTP 201、`SongSerializer`の形式（`id`・`title`・`authors`・`url`…）の曲。作者が2人。Discordに1回送る |
+| 作者の配列 | `"authors": ["A", "B"]` | 文字列と同じく登録される |
+| 登録の初期値 | `title`・`authors`のみ | `category="song"`・`is_subeana=True`（画面の初期値）。他のフラグは`False` |
+| フラグ・カテゴリ | `category="cover"`・`is_original`・`is_deleted`・`is_joke`・`is_inst`をtrue、`is_subeana`をfalse | 指定どおりに保存される |
+| 界隈曲? | `is_questionable`とtrueの`is_original` | `is_original`は`False`（画面と同じ） |
+| 文字列の真偽値 | `"is_joke": "false"`・`"is_inst": "true"` | `False`・`True`（`"false"`を真として扱わない） |
+| フォーム形式のリクエスト | `multipart/form-data`で登録 | HTTP 201 |
+| 濁点・半濁点の正規化 | `title`・`authors`をNFD（分解した濁点）で送る | NFCに正規化して保存（JSONのリクエストには`NormalizePostDataMiddleware`が届かないため、APIで行う） |
+| YouTubeのURLで登録 | `url`がYouTubeのURL（`get_youtube_api`はモック） | `title`・`authors`はYouTubeの値（リクエストの値は無視）、`view`を保存、`url`がレスポンスに含まれる |
+| 編集履歴と編集者 | 登録 | `history_type="new"`・タイトル「…を新規作成」。編集者のIPは`X-Real-IP`（なければ`REMOTE_ADDR`）の`encrypt`した値 |
+| 登録のエラー | `authors`なし・`title`なし・不正な`category`・YouTube以外のURL・登録済みのURL | HTTP 400 `{"error": ビューのエラー文}`（「作者は空白にできません。」「タイトルが未入力です。」「カテゴリが不正です。」「URLがYouTubeのURLではありません。」「URLは既に登録されています。」）。曲は作られない |
+| 重複を許可して登録 | 登録済みのURLと同じ`url`・`allow_dup_url` | HTTP 201、`SongLink.allow_dup=True`で2曲に紐づく |
+| 掲載拒否の作者 | `check_reject_list`が`<b>拒否</b>さんの…`を返す | HTTP 400。登録の画面のエラーはテンプレートがエスケープして表示するため、文字列をそのまま返す |
+| Discordへの通知に失敗 | `send_discord`がFalse | HTTP 500 `{"error": "処理中にエラーが発生しました。"}`、登録した曲は削除される（画面と同じ） |
+| JSONのオブジェクトでない | 配列のリクエスト | HTTP 400 `{"error": "リクエストはJSONのオブジェクトで指定してください。"}` |
+| 不正な真偽値 | `"is_joke": "yes"`・`1` | HTTP 400 `{"error": "is_jokeは真偽値で指定してください。"}`。曲は変わらない |
+| 変更（PUT） | 全項目（`authors`・`url`・`imitate`は配列）、フラグをfalse・`is_draft`をtrue | HTTP 200、変更後の曲を返す。作者・URL・歌詞・カテゴリ・フラグが変わる。Discordに1回送る |
+| 指定しなかった項目は今の値のまま | PUT・PATCHで`title`のみ | `title`だけ変わり、歌詞・カテゴリ・作者・模倣元・URL・フラグ・`is_subeana`は今のまま（画面のフォームは送らなかった項目を空にするため、APIが今の値で補う） |
+| フラグをfalseにする | PATCH `{"is_original": false}` | `is_original`だけ`False`になる |
+| 界隈曲?への変更 | PATCH `{"is_questionable": true}` | 歌詞・模倣元・`is_original`が空・`False`になる（画面と同じ） |
+| 本文なしのPATCH | PATCH（本文なし） | HTTP 200、曲は変わらず、編集履歴は作られない |
+| 編集履歴と編集者（変更） | PATCH `{"lyrics": …}`、`X-Real-IP: 203.0.113.8` | `history_type="edit"`、編集者のIPは`encrypt("203.0.113.8")` |
+| 濁点・半濁点の正規化（変更） | `title`をNFDで送る | NFCに正規化して保存 |
+| 変更のエラー | `authors`が空・不正な`category`・他の曲が持つURL | HTTP 400 `{"error": ビューのエラー文}`。曲・編集履歴は変わらない |
+| 信頼されていないURL | `url`が許可されていないメディアのURL | HTTP 400。編集の画面のエラーはお問い合わせへのリンクを含むHTMLのため、タグを除き文字参照を元に戻した文章（`<`・`&`を含まない）を返す |
+| 掲載拒否の作者（変更） | `check_reject_list`が`<b>拒否</b>さんの…`を返す | HTTP 400。編集の画面はビューで`escape`して`\|safe`で表示するため、エスケープを元に戻した文字列を返す |
+| ロックされた曲 | `is_lock=True`の曲を変更・削除 | HTTP 403 `{"error": "この曲はロックされているため、変更できません。"}`。曲は変わらない |
+| 存在しない曲 | `/api/song/99999/`・`/api/song/abc/`・30桁のid | HTTP 404 `{"error": "曲が見つかりません。"}`（SQLiteで扱えない大きさの整数でクエリを実行しない） |
+| 削除された曲 | `is_removed=True`の曲を変更・削除 | HTTP 410 `{"error": "この曲は削除されています。"}` |
+| Discordへの通知に失敗（変更） | `send_discord`がFalse | HTTP 500（画面と同じ） |
+| 削除 | `{"reason": "APIから削除"}`、`X-Real-IP: 203.0.113.9` | HTTP 204（本文なし）。曲は論理削除（`is_removed=True`）、`history_type="delete"`・`changes=["理由", "APIから削除"]`、編集者のIPは`encrypt("203.0.113.9")`。Discordに1回送る |
+| 削除した曲のGET | 削除後に`GET /api/song/<id>/` | HTTP 404 |
+| 削除の理由なし | 本文なし・`{}`・`{"reason": ""}` | HTTP 400 `{"error": "削除理由を入力してください。"}`。曲は削除されず、編集履歴は作られない |
+| 削除済みの曲を再び削除 | 2回続けて削除 | 2回目はHTTP 410、編集履歴は1件のまま |
+| Discordへの通知に失敗（削除） | `send_discord`がFalse | HTTP 204（画面と同じく、通知に失敗しても曲は削除されている） |
+
 ---
 
 ### 9. ミドルウェア
@@ -2293,6 +2349,26 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | 編集者が1件もない | 編集者なしで`ban.py`あり | 何もせず、何も出力しない（新規構築・テストのDB） |
 | `ban.py`がない | 編集者ありで`ban.py`なし | `is_banned`は変わらず、「が無いため」を含むメッセージを出力する |
 | `BAN_LIST`が空 | 編集者ありで`BAN_LIST = []` | 何も出力せず、`is_banned`は変わらない |
+
+#### 11-12. `ApiKey` モデル（#973）
+
+曲のAPIの登録・変更・削除（8-9）を使うためのAPIキー。管理サイトでだけ発行し、`name`は誰に発行したかを区別する任意の名前、`key`は作成時に自動で作る推測できない文字列（管理サイトでは読み取り専用）、`is_active`を`False`にするとキーを削除せずに利用を止められる。
+
+**テストクラス**: `ApiKeyModelTest`・`ApiKeyAdminTest`（`tests/test_models.py`）
+
+| テストケース | 操作 | 期待結果 |
+| --- | --- | --- |
+| `key`の自動生成 | `name`のみで作成 | 32文字以上、`max_length`以内の`key`が入る |
+| `key`は発行ごとに別 | 2つ作成 | `key`が異なる |
+| 保存しても`key`は変わらない | `name`を変えて`save()` | `key`はそのまま |
+| `is_active`のデフォルト値 | 指定せずに作成 | `True` |
+| `created_at` | 作成 | 作成時刻が入る |
+| `name`の一意制約 | 同じ`name`で2つ作成 | `IntegrityError` |
+| `__str__` | `ApiKey(name="テスト用のAPIキー")` | `name`を返す |
+| 管理サイトで発行 | スーパーユーザーで`/admin/subekashi/apikey/add/`に`name`・`is_active`をPOST | `ApiKey`が作られ、`key`が入る |
+| 管理サイトで`key`を表示 | `/admin/subekashi/apikey/<id>/change/` | `key`を表示するが、入力欄（`name="key"`）は無い |
+| 管理サイトで`key`は変更できない | `key`をPOST | `key`は変わらない |
+| 管理サイトの一覧 | `/admin/subekashi/apikey/` | `name`を表示する |
 
 ### 12. `article` アプリ
 
@@ -3477,6 +3553,7 @@ subekashi/tests/
 ├── test_forms.py                   # 実装済み: フォームバリデーション
 ├── test_views.py                   # 実装済み: ビュー（GET・POST）
 ├── test_api.py                     # 実装済み: REST API
+├── test_api_song_write.py          # 実装済み: 曲のAPIの登録・変更・削除（APIキー、#973）
 ├── test_middleware.py              # 実装済み: ミドルウェア
 ├── test_security.py                # 実装済み: CSP・CORS・CSRFトークン・SRI（結合、#1126）
 ├── test_models.py                  # 実装済み: モデル基本動作
