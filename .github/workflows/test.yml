@@ -50,7 +50,6 @@ jobs:
           {"IS_MAINTENANCE": false, "MAINTENANCE_MESSAGE": "<p>メンテナンス中です</p>"}
           EOF
           echo 'REJECT_LIST = []' > subekashi/constants/dynamic/reject.py
-          echo 'BAN_LIST = []'    > subekashi/constants/dynamic/ban.py
           echo '{"VERSION": "dev"}' > subekashi/constants/dynamic/version.json
           echo '[]' > subekashi/constants/dynamic/word.json
 

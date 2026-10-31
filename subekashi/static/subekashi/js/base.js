@@ -439,7 +439,7 @@ document.addEventListener('click', (event) => {
 function deleteToastUrlQuery() {
     const url = new URL(window.location.href);
     let changed = false;
-    for (const key of ['toast', 'name_unified']) {
+    for (const key of ['toast', 'name_unified', 'conflict', 'conflict_more']) {
         if (url.searchParams.has(key)) {
             url.searchParams.delete(key);
             changed = true;
@@ -448,6 +448,13 @@ function deleteToastUrlQuery() {
     if (changed) {
         window.history.replaceState({}, '', url.toString());
     }
+}
+
+// BANされた編集者の操作が止められ、フォームのあったページに戻されたときのトースト（BannedEditorMiddleware、#1281）
+// 文言はconstants.pyのBANNED_ERRORを、base.htmlのdata-banned-messageで受け取る
+if (new URLSearchParams(window.location.search).get('toast') === 'banned') {
+    showToast("error", document.body.dataset.bannedMessage);
+    deleteToastUrlQuery();
 }
 
 // 重複曲情報のHTMLを生成（song_new/song_edit共通）

@@ -21,7 +21,8 @@ admin.site.register(Contact, ContentAdmin)
 
 
 class EditorAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('id', 'is_open', 'is_forced_open', 'is_banned')
+    list_filter = ('is_banned',)
 
 admin.site.register(Editor, EditorAdmin)
 

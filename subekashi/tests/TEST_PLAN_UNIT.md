@@ -1222,7 +1222,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | past別名を選択 | `name=`past別名のname（同名のAuthorは不在） | `Author.name`が入れ替わる。選ばれた側のAuthorAlias行は削除され、旧名が新たな`past`別名として再登録される。`?toast=unify`付きでリダイレクト |
 | 他の以前の名称のAuthorの曲も統一 | 選択していない別のpast別名と同名のAuthorがSongを持つ | そのSongも統一先に付け替わり、そのAuthorは曲数0で残る |
 | past以外の種別の別名と同名のAuthorは対象外 | `another`別名と同名のAuthorがSongを持つ | そのSongは付け替えられない（意図的に区別すべき名義のため） |
-| `alias_type`がpast以外の別名を選択 | `name=`another等の別名のname | 変更されず、`?toast=unify_error`付きでリダイレクト |
+| `alias_type`がpast以外の別名を選択 | `name=`another等の別名のname | 変更されず、`?toast=unify_invalid`付きでリダイレクト（候補にない名義はページの再読み込みで直るため、「時間をおいて」の文言を使う`unify_error`ではない、#1290） |
 | 既存のAuthorと同名のpast別名を選択 | 別Author（統一先）が同名で実在し、author側もSong・AuthorLink・AuthorAliasを持つ | authorのSong・AuthorLink・AuthorAliasが全て統一先に付け替わる。選択したpast別名は削除され、旧名が統一先の`past`別名として登録される。authorは削除されず（名前もそのまま）曲数0で残る。統一先の別名一覧へ`?toast=unify`付きでリダイレクト |
 | 統一先が旧名と同名の別名を既に保有 | 統一先のAuthorAlias.name == old_name | その別名をそのまま活かし、`old_name`のAuthorAliasが重複登録（IntegrityError）されない。他のpast別名と同様に選択候補になるよう`alias_type`が`"past"`へ更新される |
 | 統一先が同じグループ名を既に保有 | author・統一先の双方が同名の`group`別名を持つ | `(name, author)`のunique制約に抵触しないよう、author側のものは移さずに削除され、統一に成功する |
@@ -1240,7 +1240,21 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | Discord通知待機中の並行削除（TOCTOU、選択した別名） | `send_discord()`の完了待ち中に対象のpast別名が別リクエストで削除されたと仮定 | `AuthorAlias.DoesNotExist`が未処理の例外(500)にならず、`?toast=unify_error`へ穏当にリダイレクトされる。`Author.name`は変更されない |
 | Discord通知待機中の並行削除（TOCTOU、統一先の既存Author） | `send_discord()`の完了待ち中に統一先の既存Authorが別リクエストで削除されたと仮定 | 統一先を再取得し、author自身の名前を変更する通常の統一として`?toast=unify`付きで成立する |
 | Discord通知待機中の無関係な別名作成（TOCTOU） | `send_discord()`の完了待ち中に、無関係な別authorがold_nameと同名の`AuthorAlias`を新規作成したと仮定 | 所有者を確認できないため再利用せず安全側に倒し、曲の付け替え・別名の移動を含む統一全体をロールバックして`?toast=unify_error`へリダイレクトする。無関係な別名のalias_typeは書き換えられない |
-| 旧名(old_name)が既存の別名と衝突 | old_nameと同名の`AuthorAlias`をauthor・統一先以外の別authorが既に保有（「逆方向」の関係として正常にありうる状態） | `AuthorAlias.name`のグローバルなunique制約により再登録が決定的に失敗するため、Discord通知を送る前に検知して`?toast=unify_error`へリダイレクトする。`send_discord()`は呼ばれない |
+| 旧名(old_name)が既存の別名と衝突 | old_nameと同名の`AuthorAlias`をauthor・統一先以外の別authorが既に保有（「逆方向」の関係として正常にありうる状態） | `AuthorAlias.name`のグローバルなunique制約により再登録が決定的に失敗するため、Discord通知を送る前に検知して`?toast=unify_conflict&conflict=<別authorのid>`へリダイレクトする（待っても直らないため、原因の作者を別名一覧画面で伝える、#1290）。`send_discord()`は呼ばれない。DB・Historyも変更されない |
+| 旧名の衝突・統一先が既存の別Author（#1290） | 統一先が既存の別Authorで、old_nameと同名の別名を第三者のauthorが保有（本番で起きたケース） | 同じく`?toast=unify_conflict&conflict=<第三者のid>`へリダイレクトし、`send_discord()`は呼ばれず、Historyも作成されない |
+| 旧名と同名の別名を統一先自身が保有（#1290） | 統一先のAuthorがold_nameと同名の`past`別名を持つ | 衝突ではなく、その別名を再利用して統一に成功する（`?toast=unify`） |
+| 別名一覧画面の衝突理由の表示（#1290） | `?toast=unify_conflict&conflict=<id>`で、そのauthorがauthor名と同名の別名を持つ | `#unify-name-conflict`に「『現在の名義』は統一後の名前の以前の名称として登録されますが、」と、衝突している作者の別名一覧へのリンクが表示される |
+| 衝突理由は実在する衝突のみ表示（#1290） | `conflict`に、author名と同名の別名を持たない作者のidを指定 | `#unify-name-conflict`も、その作者の名前も表示されない（クエリを書き換えた偽の理由を出さない） |
+| 衝突理由の不正なクエリ（#1290） | `conflict`が`abc`・`-1`・`1.5`・SQLiteの整数の上限を超える値・5000桁の数字・全角数字・`²` | HTTP 200のまま`#unify-name-conflict`は表示されない（500にならない）。idの検証は`parse_sqlite_id()`（13-2） |
+| 衝突する作者が表示件数の上限ちょうど（#1290） | `group`別名で旧名と同名を持つ作者が`UNIFY_CONFLICT_DISPLAY_LIMIT`（5）人 | `?toast=unify_conflict&conflict=<id>`を5件付けてリダイレクトし、`conflict_more`は付けない |
+| 衝突する作者が表示件数の上限を超える（#1290） | 上と同じ作者が上限+2人（確認画面は上限+1人） | idは先頭の上限までの5件だけをクエリに載せ、超えた分は`conflict_more=<件数>`で渡す（受け取り側が切り捨てるidを渡さない）。確認画面でも同じ |
+| 超過分を「ほかN件」で表示（#1290） | `conflict`に上限と同じ5人分のid、`conflict_more=3` | `#unify-name-conflict`に5人へのリンクが並び、「ほか3件の別名に同じ名前が登録されており、」と表示される |
+| `conflict_more`なし（#1290） | `conflict`に5人分のidのみ | 「ほか」を表示しない |
+| 上限まで表示していないときは`conflict_more`を使わない（#1290） | `conflict`に実在する4人分のid、`conflict_more=3` | 「ほか」を表示しない（クエリを書き換えて件数だけを出せないようにする） |
+| `conflict_more`の不正な値（#1290） | `abc`・`-1`・`1.5`・SQLiteの整数の上限を超える値・全角数字・空文字 | HTTP 200のまま「ほか」を表示しない（500にならない） |
+| クエリのidが上限を超えて並ぶ（#1290） | `conflict`に上限+1人分のid | リンクとして表示するのは先頭の上限（5人）まで。判定は、別名一覧の上部にも衝突する作者の行が表示されるため、`#unify-name-conflict`の中だけを見る |
+| `toast`なしでは衝突理由を出さない（#1290） | `conflict`のみ指定し、`toast=unify_conflict`は無い | `#unify-name-conflict`は表示されない |
+| 統一の失敗ごとのトースト文言（#1290） | `toast=unify_conflict`・`unify_invalid`・`unify_error` | それぞれ「別名の名前が重複しているため、名義を統一できませんでした。」「選択された名義は統一できません。ページを再読み込みして、もう一度お試しください。」「名義を統一できませんでした。時間をおいて再度お試しください。」が表示される。待っても直らない失敗には「時間をおいて」を使わない |
 | 別名一覧画面のフォーム表示 | authorが`alias_type="past"`の別名を持つ | フォーム（`#unify-name-form`）と「名義を統一する」の見出し、チュートリアルアイコン（`data-tutorial="unify-name"`、#1126でインラインのonclickから変更）が表示される。フォームの送信先は確認画面（`AuthorUnifyNameConfirmView`） |
 | 別名一覧画面のフォーム非表示 | authorが`alias_type="past"`の別名を持たない | フォームは表示されない（選択肢が現在の名前1件のみのため） |
 | フォームの並び（#1137） | authorが`alias_type="past"`の別名を持つ | 「[ ] 以前の名称 ↓ [x] 現在の名義」の順に、past別名・矢印（`#unify-name-arrow`）・現在の名義が並び、初期状態では現在の名義のみが`checked`になる。選択を変えると、選択した名義が矢印の下へ移動する（JSによるDOM操作のため手動確認） |
@@ -1253,8 +1267,12 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | 存在しないauthor_id | 無効なauthor_id | HTTP 404 |
-| 無効な名義 | 候補にない`name` | 確認画面を表示せず`?toast=unify_error`付きで別名一覧へリダイレクト |
+| 無効な名義 | 候補にない`name` | 確認画面を表示せず`?toast=unify_invalid`付きで別名一覧へリダイレクト（#1290） |
 | 現在の名前を選択し、移す曲もない | `name=author.name`、移す曲がない | 確認画面を表示せず`?toast=unify_noop`付きで別名一覧へリダイレクト |
+| 旧名が別authorの別名と衝突（#1290） | old_nameと同名の`AuthorAlias`をauthor・統一先以外の別authorが保有し、past別名を選択 | 確認画面を表示せず`?toast=unify_conflict&conflict=<別authorのid>`付きで別名一覧へリダイレクト。確認して確定した後ではなく、確認画面に進む前に理由を伝えるため |
+| 旧名の衝突・統一先が既存の別Author（#1290） | 上記で、選択したpast別名と同名の既存Authorが統一先になる | 同じく`?toast=unify_conflict&conflict=<別authorのid>`付きでリダイレクト |
+| 衝突する作者が表示件数の上限を超える（#1290） | `group`別名で旧名と同名を持つ作者が上限+1人 | 先頭の上限（5人）までのidと`conflict_more=1`を付けて別名一覧へリダイレクト |
+| 現在の名前を選択した場合は衝突しない（#1290） | 別authorがold_nameと同名の別名を持つが、`name=author.name`で移す曲がある | 旧名の再登録が起きないため、HTTP 200で確認画面が表示される |
 | 現在の名前を選択し、移す曲がある（#1137） | `name=author.name`、以前の名称と同名の別AuthorがSongを持つ | そのSongのタイトルが箇条書きで表示された上で「の作者が『現在の名義』に統一されます」と続き、「作者『<名前>』の曲は全て『現在の名義』に移動します」が表示される。作者のidと「作者自体は削除されません」は表示されない |
 | 統一先が既存のAuthorでない確認画面 | 選択したpast別名と同名のAuthorが存在しない | 「既存の作者」「に移動します」の文言は表示されない |
 | 統一先が既存のAuthorの確認画面 | 選択したpast別名と同名のAuthorが存在 | 「既存の作者『<名前>』が統一先となり、この作者の曲・別名・作者リンクは全てそちらに移動します」が表示される。統一先のidと「この作者自体は削除されません」は表示されない |
@@ -1331,6 +1349,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 送信ボタンは報告理由が空の間は無効 | GET | `input#report-submit`（`type="submit"`）に`disabled`が付き、入力に合わせて有効にする`subekashi/js/editor_report.js`を読み込む（空白だけの間も無効。送信に失敗して理由が残っているときは、開いたときに有効にする） |
 | 存在しない編集者 | `editor_id=99999`にGET・POST | どちらもHTTP 404で、Discordに送らない |
 | 非公開の編集者も報告できる | `is_open=False`の編集者にGET・POST | GETはHTTP 200、POSTは`/editor/<id>/?toast=report`へリダイレクトし、Discordに管理画面のURLを送る。戻った非公開のページでもトーストを表示する |
+| BANされた報告者は報告できない（#1281、#1291） | `is_banned=True`の編集者のIPで、`Referer`付きで報告のページにPOST | `BannedEditorMiddleware`が止め、報告のページへ`?toast=banned`を付けて303でリダイレクトする。Discordに送らない |
 | 自分自身は報告できない | 自分の編集者（`ip`が`encrypt(自分のIP)`）にGET・POST | どちらも編集者のページへリダイレクトし、Discordに送らない |
 | POST: 正常な報告理由 | `reason="..."`（`send_discord`をモック） | `/editor/<id>/?toast=report`へリダイレクト |
 | POST: Discordへの通知 | 同上 | `CONTACT_DISCORD_URL`宛に、理由・報告された編集者の管理画面のURL（`ROOT_URL` + `admin:subekashi_editor_change`）・報告した人の暗号化したIP（`encrypt(IP)`）を含む文面を1回送る。暗号化していないIPは含まない |
@@ -1812,17 +1831,40 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | 制限的なディレクティブ | - | `default-src 'self'`・`object-src 'none'`・`base-uri 'self'`・`form-action 'self'`・`frame-ancestors 'none'` |
 | 埋め込みプレイヤーのiframeの許可（#1254） | YouTube・ニコニコ動画・SoundCloud（曲・プレイリスト）・ビリビリ動画・Google Drive・ScratchのURLの`get_embed()`の`src` | `src`のオリジン（`scheme://host`）が`frame-src`に含まれる（無いとCSPでブロックされる） |
 
-#### 9-4. `RestrictIPMiddleware` — BAN の判定（#1189）
+#### 9-4. `BannedEditorMiddleware`（#1281）
 
-`BAN_LIST` の判定には、`lib/ip.py` の `get_ip`（`X-Real-IP`、無ければ `REMOTE_ADDR`）を使う。`X-Forwarded-For` はクライアントが自由に付けられるため使わない。テストでは `BAN_LIST` を `["203.0.113.1"]` にし、`REMOTE_ADDR` は `10.0.0.1` にする。
+`Editor.is_banned`がTrueの編集者（`Editor.ip`が`get_ip`の値と一致する）は、ページの読み取り（GET・HEAD・OPTIONS）以外のリクエストができない。サイトの閲覧はできる。以前の`RestrictIPMiddleware`（`ban.py`の`BAN_LIST`にあるIPからのアクセスをすべて500にしていた）の代わりで、`BAN_LIST`から`is_banned`への移行は「11-11」に記載している。ビューごとではなくミドルウェアで判定するため、POSTなどを持つビューが増えても漏れない。止めるときの返し方は、JSからのリクエスト（`/api/`、`Sec-Fetch-Mode`が`navigate`以外のfetch・XHR、`X-Requested-With`、`Accept: application/json`、JSONの`Content-Type`）はJSONの403（HTMLにリダイレクトするとfetchが成功に見えるため）、ブラウザのフォーム送信は送信したフォームのあるページ（`Referer`）に`?toast=banned`を付けて戻す（`base.js`がトーストを表示する）。戻れないときは500のページを表示する。管理サイト（`/admin/`）は止めない（管理者のIPをBANしても、ログインしてBANを解除できるように）。編集者が存在しないIPはBANされていない扱いで、判定のために`Editor`を作らない。テストは`test_middleware.py`の`BannedEditorMiddlewareTest`。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
-| BANされたX-Real-IP | `X-Real-IP: 203.0.113.1` | HTTP 500 |
-| BANされていないX-Real-IP | `X-Real-IP: 203.0.113.2` | HTTP 200 |
-| X-Forwarded-ForではBANを回避できない | `X-Real-IP: 203.0.113.1`、`X-Forwarded-For: 198.51.100.1` | HTTP 500 |
-| X-Forwarded-ForでBANされたIPを名乗っても制限されない | `X-Real-IP: 198.51.100.1`、`X-Forwarded-For: 203.0.113.1` | HTTP 200 |
-| X-Real-IPが無ければREMOTE_ADDRで判定 | `REMOTE_ADDR: 203.0.113.1`、`X-Real-IP` なし | HTTP 500 |
+| フォームのPOST | BANされた編集者が、曲の登録・編集・削除・削除の取り消し、別名の追加・編集・削除、名義の統一、お問い合わせ、宣伝のフォームのあるページを`Referer`にしてPOST | HTTP 303で`<Refererのパス>?toast=banned`に戻す。曲・作者・別名・`Ai`・`Ad`・`History`・`Contact`・`SongLink`・`Editor`が変わらず、Discordに送信されない |
+| 戻した先のページ | 上記を`follow=True`でPOST | HTTP 200 |
+| `Referer`のクエリとフラグメント | 名義の統一の確認ページの`Referer`が`?name=…&toast=unified&name_unified=1&empty=#top`付き | HTTP 303で、戻し先は`name`・`empty`のクエリを残して`toast=banned`を付け、`toast`・`name_unified`・フラグメントは外す |
+| クエリが必要なページに戻せる | 名義の統一の確認ページ（`?name=…`が必要）の`Referer`でPOST、`follow=True` | 戻し先の確認ページがHTTP 200（クエリが無いと別名一覧にリダイレクトされてしまう） |
+| `Referer`が無い | 上記のフォームを`Referer`なしでPOST | HTTP 500、`500.html`を表示。何も変わらず、Discordに送信されない |
+| 他のサイトの`Referer` | `https://example.com/…`・`http://testserver.example.com/…`・`http://testserver@example.com/…`・`//example.com/…`・`javascript:alert(1)` | HTTP 500、`500.html`を表示（外部へリダイレクトしない） |
+| 管理サイトの`Referer` | `/admin/…`を`Referer`にしてPOST | HTTP 500、`500.html`を表示（管理サイトのページにはトーストが無い） |
+| 管理サイトのPOSTは止めない | BANされた編集者が`/admin/login/`にPOSTしてログインし、管理サイトの編集者の変更画面で`is_banned`を外す | ログインは302、編集者の変更も302で`is_banned`が`False`になる（BANを解除できる） |
+| 管理サイトのパスワードの間違い | `/admin/login/`に誤ったパスワードでPOST | HTTP 200（ログイン画面）。`500.html`にはならない |
+| JSからのリクエスト | フォームのURLに、`Sec-Fetch-Mode: same-origin`・`Sec-Fetch-Mode: cors`・`X-Requested-With: XMLHttpRequest`・`Accept: application/json`・`Accept: text/plain, application/json;q=0.9`のいずれかを付け、`Referer`付きでPOST | HTTP 403、`{"detail": BANNED_ERROR}`。`Location`は付かず、DBは変わらない |
+| JSONのPOST | `Content-Type: application/json`でフォームのURLにPOST | HTTP 403、`{"detail": BANNED_ERROR}` |
+| JSからの`Referer`なしのPOST | `Sec-Fetch-Mode: same-origin`で、`Referer`なしでPOST | HTTP 403のJSON（500のページではない） |
+| ブラウザのフォーム送信 | `Sec-Fetch-Mode: navigate`・`Accept: text/html,…`で、`Referer`付きと`Referer`なしのそれぞれでPOST | `Referer`付きは303で`?toast=banned`に戻し、`Referer`なしは500のページ |
+| APIのPOST・PUT・PATCH・DELETE | 単語の入れ替え、作成歌詞の評価（PUT・PATCH）、宣伝のクリック、設定の保存、公開の設定、ニュースの登録、曲の削除・作成（API）、お問い合わせ（API） | HTTP 403、`{"detail": BANNED_ERROR}`。Cookieを設定せず、DBが変わらず、Discordに送信されない |
+| 閲覧はできる | トップ・曲のページ・曲の登録・曲の編集・別名一覧・お問い合わせ・宣伝をGET・HEAD | いずれもHTTP 200 |
+| APIのGET・OPTIONS | `/api/song/<id>/`をGET、`/api/song/`をOPTIONS | いずれもHTTP 200 |
+| 検索のPOST | `/songs/`にPOST | HTTP 200（検索条件のCookieを保存して検索結果を返すだけで、DBに保存しないため止めない） |
+| BANの解除 | `is_banned`を`False`にして曲の登録をPOST | HTTP 302で曲が登録される |
+| 別の編集者のBAN | 別のIPの編集者だけがBANされている状態で曲の登録をPOST | HTTP 302で曲が登録される |
+| 編集者が無いIP | `Editor`が存在しないIPからPOST | ビューを呼び出し、`Editor`を作らない |
+| ビューを呼ばない | BANされた編集者のPOST・PUT・PATCH・DELETE・TRACE（`RequestFactory`） | `get_response`を呼ばず、HTTP 303を返す |
+| 読み取りはビューを呼ぶ | BANされた編集者のGET・HEAD・OPTIONS（`RequestFactory`） | `get_response`を呼ぶ |
+| トーストの文言をdata属性で渡す | トップ・曲の登録・存在しないページをGET、`base.js` | `<body>`に`data-banned-message="<BANNED_ERROR>"`が出る。`base.js`は`document.body.dataset.bannedMessage`を読み、文言を直書きしない（`BANNED_ERROR`と二重管理しない） |
+| CSRFトークンが無くてもBANとして止める | CSRFの検証を有効（`enforce_csrf_checks=True`）にして、BANされた編集者がトークン無し・誤ったトークン・正しいトークンでPOST | どれも`Referer`付きは303、JS（`Sec-Fetch-Mode: same-origin`）は403のBANのJSON、`Referer`なしは500のページ。CSRFの失敗（403のHTML）にならない（`CsrfViewMiddleware`の検証は`process_view`で、ミドルウェアの`__call__`より後に動くため） |
+| BANされていない編集者のCSRFの検証は変わらない | 同じ設定で、BANされていない編集者がトークン無し・正しいトークンでPOST | トークン無しは403のCSRFの失敗（BANの応答ではなく、`Location`も付かない）、正しいトークンは302で曲が登録される |
+| X-Real-IPで判定 | `REMOTE_ADDR`は未BAN、`X-Real-IP`はBANされたIP | HTTP 303 |
+| X-Forwarded-ForではBANを回避できない | `X-Real-IP`は無く`REMOTE_ADDR`がBANされたIP、`X-Forwarded-For`は別のIP | HTTP 303（#1189） |
+| X-Forwarded-ForでBANされたIPを名乗っても制限されない | `REMOTE_ADDR`は未BANのIP、`X-Forwarded-For`がBANされたIP | HTTP 302で曲が登録される（#1189） |
 
 ---
 
@@ -2175,6 +2217,29 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | `is_lyrics_blank` のデフォルト値 | 指定せずに作成 | `False` |
 | 曲の削除 | 年表の行がある曲を削除 | 年表の行も削除される（`CASCADE`） |
 
+#### 11-11. `Editor` モデル（#1281）
+
+曲や作者を編集したユーザーのIP（`encrypt`した値）の情報。`is_banned`（デフォルト`False`）が`True`の編集者は、ページの読み取り（GET・HEAD・OPTIONS）以外のリクエストができない（9-4）。以前の`ban.py`の`BAN_LIST`（IPそのもの）の代わりで、管理サイトの編集者の一覧から変更できる。
+
+| テストケース | 操作 | 期待結果 |
+| --- | --- | --- |
+| `is_banned`のデフォルト値 | 指定せずに作成 | `False` |
+| `is_banned_ip(ip)` | `is_banned=True`の編集者・BANされていない編集者・編集者がいないIPを指定 | BANされた編集者のIPのみ`True`。編集者は作られない |
+
+##### 11-11-1. `0057_editor_is_banned`のデータ移行（`ban_listed_editors`）
+
+廃止した`subekashi/constants/dynamic/ban.py`（gitignore対象。本番のサーバーにある）の`BAN_LIST`のIPを`encrypt`し、`Editor.ip`が一致する編集者を`is_banned=True`にする。`ban.py`は`import`せずファイルとして読み、`encrypt`もマイグレーションにコピーしている（`lib/security.py`を後から変えても移行の挙動が変わらないように）。編集者が見つからないIPと、IPとして読めない値は、手作業で確認できるよう`migrate`の出力に出す。編集者は作らない。テストでは`BAN_LIST_PATH`を一時ファイルに差し替える。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| `encrypt`のコピーが本体と同じ | IPv4・`0.0.0.0`・IPv6・`::1`と`SYMBOLS` | `lib/security.py`の`encrypt`・`SYMBOLS`と一致する |
+| `BAN_LIST`の編集者をBANにする | IPv4・IPv6の編集者と、`BAN_LIST`にない編集者 | `BAN_LIST`のIPの編集者のみ`is_banned=True`。出力に「BAN_LIST 2件のうち2件の編集者をis_bannedにしました。」 |
+| 編集者を特定できないIPとIPとして読めない値の報告 | `BAN_LIST`に、編集者のいるIP・編集者のいないIP・`"not-an-ip"` | 編集者のいるIPのみBAN。出力に「編集者を特定できないIP: …」「IPとして読めない値: not-an-ip」。`Editor`は増えない |
+| 重複と空白 | `BAN_LIST`に同じIP（前後に空白あり）・空文字 | 重複と空白を除いて1件として扱う |
+| 編集者が1件もない | 編集者なしで`ban.py`あり | 何もせず、何も出力しない（新規構築・テストのDB） |
+| `ban.py`がない | 編集者ありで`ban.py`なし | `is_banned`は変わらず、「が無いため」を含むメッセージを出力する |
+| `BAN_LIST`が空 | 編集者ありで`BAN_LIST = []` | 何も出力せず、`is_banned`は変わらない |
+
 ### 12. `article` アプリ
 
 **テストファイル**: `article/tests.py`
@@ -2266,6 +2331,20 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | 最大値超過 | `str(9223372036854775808)` | `ValueError` が発生 |
 | 巨大な数値 | `"9" * 30` | `ValueError` が発生 |
 | `/songs/<id>/` への巨大なID | `"9" * 30` | HTTP 404（500エラーにならない） |
+
+#### 13-2. `parse_sqlite_id(value)`（#1290）
+
+ASCIIの数字だけで、SQLiteの整数の範囲に収まる文字列を整数にする。変換できなければ`None`を返す（例外にしない）。`SQLiteIntConverter.to_python()`が使うほか、クエリ文字列のidを検証する別名一覧画面（`get_unify_conflict_authors()`）が使う。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 通常の整数 | `"123"` | `123` を返す |
+| 0 | `"0"` | `0` を返す |
+| SQLite INT最大値 | `str(9223372036854775807)` | そのまま返す |
+| 最大値超過 | `str(9223372036854775808)` | `None` |
+| 桁数が多すぎる | `"9" * 30`・`"1" * 5000` | `None`（`int()`の桁数の上限を超える文字列でも例外にならない） |
+| 数字以外 | 空文字・空白・`"abc"`・`"-1"`・`"+1"`・`"1.5"`・`"1e3"`・前後に空白のある数字 | `None` |
+| ASCII以外の数字 | `"²"`・`"１２"`（全角） | `None`（`isdigit()`は`"²"`もTrueになり`int()`で変換できないため） |
 
 ---
 
@@ -2549,6 +2628,20 @@ URL生成は`get_urls()`に分離しており、ファイル出力・`collectsta
 | past以外の別名と同名のAuthorは対象外 | `another`別名と同名のAuthorがSongを持つ | `([], 0)` |
 | 曲を1曲ずつ取得しない | past別名と同名のAuthorが5曲を持つ | `([そのAuthor], 5)`。曲と作者の中間テーブルへのクエリは2件で、どちらも`DISTINCT`による集計（曲を1行ずつ取得するクエリを発行しない） |
 | 統一済みなら曲数を集計しない | past別名と同名のAuthorが曲を持たない | `([], 0)`。`COUNT`のクエリを発行しない |
+
+#### 16-4-3. `find_unify_name_conflict_authors(plan)`（#1290）
+
+旧名を統一先の新たな`past`別名として登録し直せない原因になるAuthorを、id順に返す。`AuthorAlias.name`はグローバルにuniqueなため、author・統一先以外のAuthorが旧名と同名の別名を持っていると登録できない。`AuthorUnifyNameSetView`・`AuthorUnifyNameConfirmView`が、原因の作者を別名一覧画面で伝えるために使う。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 衝突なし | 旧名と同名の別名を誰も持たない | `[]` |
+| 別authorが旧名と同名の別名を持つ | 別authorが`another`別名で旧名を保有 | `[その別author]` |
+| 統一先が既存Author | 同上で、選択したpast別名と同名のAuthorが統一先になる | `[その別author]` |
+| author自身が保有 | author自身が旧名と同名の別名を持つ | `[]` |
+| 統一先が保有 | 統一先のAuthorが旧名と同名の別名を持つ | `[]`（統一後はそのまま再利用するため衝突ではない） |
+| 現在の名前を選択 | `new_name=author.name`で、別authorが旧名と同名の別名を持つ | `[]`（旧名の再登録が起きないため） |
+| 複数のAuthor | `group`別名を2つのauthorが保有し、うち1人は`spell`別名でも同名を持つ | 各authorを1回ずつ、id順に返す |
 
 #### 16-5. `build_unify_name_discord_text(target_author, old_name, new_name, editor, source_authors=())`（#1137）
 
@@ -3016,7 +3109,7 @@ YouTube Data API（`build`）はモック化する。「動画が存在しない
 
 #### 24-2. `get_ip(request, raw=False)`（#1189）
 
-編集者（`Editor`）の識別・お問い合わせのIP・BANの判定に使うIP。`get_client_ip`と同じIPを使い、`raw=False`の場合は`encrypt`した値を返す。以前は`X-Forwarded-For`の先頭を使っており、他人のIPを名乗ってその人の編集者として編集できた。
+編集者（`Editor`）の識別・お問い合わせのIP・BANされた編集者（`Editor.is_banned`）の判定に使うIP。`get_client_ip`と同じIPを使い、`raw=False`の場合は`encrypt`した値を返す。以前は`X-Forwarded-For`の先頭を使っており、他人のIPを名乗ってその人の編集者として編集できた。
 
 | テストケース | 入力 | 期待結果 |
 | --- | --- | --- |

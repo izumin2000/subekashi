@@ -611,7 +611,7 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 | 操作 | `AuthorAliasForm.clean_name` の重複チェックをモックでバイパスした状態で、同じ `name="foo_sub"` を新規登録POST |
 | 検証 | DB制約(`IntegrityError`)を`AuthorAliasNewView`が捕捉し、500エラーにならずHTTP 200のままフォームエラーが表示される。`AuthorAlias`は重複作成されない |
 
-#### 11-9. 名義の統一から曲登録正規化まで（#1008、#1029、#1137、#1230）
+#### 11-9. 名義の統一から曲登録正規化まで（#1008、#1029、#1137、#1230、#1290）
 
 **テストファイル**: `tests/test_views.py`（`AuthorUnifyNameSetViewTest`、`AuthorUnifyNameConfirmViewTest`、`AuthorAliasesUnifyNameStatusTest`）、`tests/test_lib_author_helpers.py`
 
@@ -631,6 +631,8 @@ YouTube Data API は外部サービスのため、`unittest.mock.patch` でモ�
 | 検証 | 統一前は「名義を統一する」の下に「名義が統一されていません」、統一後は「名義は統一されています」と表示される（統一するボタンが`unify_noop`になる条件と同じ） |
 | 操作（既存Authorとの衝突ケース、#1029・#1137で仕様変更） | 選択したpast別名の名前と完全一致する別Authorが既に存在する状態で `POST /authors/<foo.id>/aliases/unify` に `name="foo_old"` |
 | 検証 | かつては選択自体をブロックし（#1008）、次に衝突するAuthorを`foo`へ統合して削除していた（#1029）。#1137でAuthorの削除を廃止したため、`Author.name`のunique制約上`foo`を`foo_old`に変更できず、代わりに既存の`Author(name="foo_old")`を統一先とする。`foo`のSong・AuthorLink・AuthorAliasが統一先に付け替わり、旧名`"foo"`が統一先の`past`別名になる。`foo`は削除されず曲数0で残り、統一先の別名一覧へ`?toast=unify`付きでリダイレクトされる |
+| 操作（旧名が別authorの別名と衝突するケース、#1290） | 別Author(`name="bar"`)が`foo`と同名の別名(`alias_type="another"`)を持つ状態で、`GET /authors/<foo.id>/aliases/unify/confirm/` に `name="foo_old"`（リダイレクトを辿る） |
+| 検証 | 旧名`"foo"`を`foo_old`側の`past`別名として登録し直せない（別名の名前は全体でunique）ため、確認画面ではなく別名一覧(`?toast=unify_conflict&conflict=<bar.id>`)に移る。一覧には「別名の名前が重複しているため、名義を統一できませんでした。」のトーストと、`bar`の別名一覧へのリンクを含む理由(`#unify-name-conflict`)が表示される。`POST /authors/<foo.id>/aliases/unify`に直接送っても、`send_discord()`・DB・`History`に変更はなく同じ結果になる |
 
 ---
 
@@ -1093,13 +1095,51 @@ iframeの読み込み・CSP違反・cookieの保存はDjangoテストでは確�
 
 ---
 
-### 27. 編集者の荒らし報告フロー（#1291）
+### 27. BANされた編集者の操作の制限フロー（#1281）
+
+**テストファイル**: `tests/test_middleware.py`（`BannedEditorMiddlewareTest`）
+
+`Editor.is_banned`がTrueの編集者が、ページの読み取り以外のリクエストをすると、`BannedEditorMiddleware`が各ビューの処理の前に止める。JSからのリクエスト（`/api/`、fetch・XHR）はJSONの403、ブラウザのフォーム送信は送信したフォームのあるページに`?toast=banned`を付けて戻し、`base.js`がトーストを表示する。戻れないときは500のページを表示する。管理サイトは止めない。
+
+#### 27-1. 止められたリクエストが、DBにもDiscordにも何も残さない
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | `127.0.0.1`の`Editor`が`is_banned=True`。曲・削除済みの曲・作者・別名・`Ai`・`Ad`がある |
+| 操作 | 曲の登録・編集・削除・削除の取り消し、別名の追加・編集・削除、名義の統一、お問い合わせ、宣伝のフォームのあるページを`Referer`にしてPOST。続けて`/api/`の単語の入れ替え・作成歌詞の評価・宣伝のクリック・設定の保存・公開の設定・ニュースの登録・曲の削除と作成・お問い合わせをPOST・PUT・PATCH・DELETE |
+| 検証1 | フォームは`<Refererのパス>?toast=banned`への303、`/api/`はJSONの403（`{"detail": "処理を完了できませんでした。"}`）。どちらも曲・作者・別名・`Ai`・`Ad`・`History`・`Contact`・`SongLink`・`Editor`が変わらず、Discordに送信されない |
+| 検証2 | ブラウザのフォーム送信（`Sec-Fetch-Mode: navigate`）を`Referer`なし、または他のサイト・管理サイトの`Referer`で行うと、500のページを表示する。fetch・XHRなど（`Sec-Fetch-Mode`が`navigate`以外、`X-Requested-With`、`Accept: application/json`、JSONの`Content-Type`）からフォームのURLにPOSTすると、リダイレクトせず（`Location`なし）JSONの403を返す |
+| 検証3 | 同じIPのGET・HEADで、トップ・曲・登録・編集・別名一覧・お問い合わせ・宣伝が開ける。検索のPOST（`/songs/`）もできる |
+| 検証4 | 同じIPで管理サイトにログインでき、編集者の変更画面で`is_banned`を外せる。`is_banned`を`False`にすると、曲の登録のPOSTが通り、曲が登録される |
+| 検証5 | CSRFの検証を有効にしても、BANされた編集者のPOSTはトークンの有無にかかわらずBANとして止まる（CSRFの失敗にならない）。BANされていない編集者はトークンが必要なまま（トークン無しは403のCSRFの失敗、正しいトークンは302） |
+
+#### 27-2. 戻したページでのトースト表示（Playwrightで確認）
+
+トーストの表示とCSP違反はDjangoテストでは確認できないため、開発サーバーとPlaywright（Chrome）で確認する。
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | 開発DBのコピーで、自分の`Editor`を`is_banned=True`にする |
+| 操作1 | 曲の登録・編集・削除、別名の追加・編集・削除、名義の統一、お問い合わせの送信ボタンを押す |
+| 検証1 | いずれも元のページに戻り、「処理を完了できませんでした。」のトースト（文言は`<body data-banned-message>`から読む）が出る。URLから`toast=banned`が消え、CSP違反・JSのエラーが出ない |
+| 操作2 | `Referer`付きで、フォームのURL（`/songs/new/`）に`fetch`でPOSTする |
+| 検証2 | リダイレクトされず、403のJSON（`{"detail": "処理を完了できませんでした。"}`）が返り、`response.ok`が`false`になる |
+| 操作3 | `rel="noreferrer"`を付けたフォームをブラウザで送信する（`Referer`が付かないフォーム送信） |
+| 検証3 | 500のページ（「内部エラーが発生した為…」）が表示される |
+| 操作4 | `/admin/login/`で管理者がログインする |
+| 検証4 | BANされた編集者のIPでもログインでき、管理サイトの操作ができる |
+| 操作5 | 曲の閲覧・検索条件の変更をする |
+| 検証5 | 閲覧と検索はできる |
+
+---
+
+### 28. 編集者の荒らし報告フロー（#1291）
 
 **テストファイル**: `tests/test_views.py`（`EditorViewTest`・`EditorReportViewTest`）、`tests/test_forms.py`（`EditorReportFormTest`）
 
 編集者のページの「報告」ボタンから報告のフォームを開き、理由を送信すると、`CONTACT_DISCORD_URL`のDiscordに「理由・報告された編集者の管理画面のURL・報告した人の暗号化したIP」を送り、編集者のページに戻ってトーストを表示する。報告はDBに保存しない。
 
-#### 27-1. 報告ボタンから報告の送信まで
+#### 28-1. 報告ボタンから報告の送信まで
 
 | 項目 | 内容 |
 | --- | --- |
@@ -1115,7 +1155,7 @@ iframeの読み込み・CSP違反・cookieの保存はDjangoテストでは確�
 | 操作5 | 自分の編集者・存在しない編集者に`GET`・`POST` |
 | 検証5 | 自分の編集者は編集者のページへリダイレクト、存在しない編集者はHTTP 404。どちらもDiscordに送らない |
 
-#### 27-2. 報告の画面とトースト（Playwrightで確認）
+#### 28-2. 報告の画面とトースト（Playwrightで確認）
 
 CSP違反・JSのエラー・トーストの表示はDjangoテストでは確認できないため、開発サーバーとPlaywright（Chrome）で確認する。
 

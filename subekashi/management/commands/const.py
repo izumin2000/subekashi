@@ -8,7 +8,6 @@ class Command(BaseCommand):
     
     def handle(self, *args, **options) :
         CONST_INFO = {
-            'ban.py': 'BAN_LIST = []',
             'word.json': '[]',
             'version.json': '{\n\t"VERSION": "dev"\n}',
             'reject.py': 'REJECT_LIST = []',
