@@ -1105,7 +1105,7 @@ iframeの読み込み・CSP違反・cookieの保存はDjangoテストでは確�
 | --- | --- |
 | 前提 | 公開の編集者（他人）。`send_discord`はモック |
 | 操作1 | `GET /editor/<id>/` |
-| 検証1 | `.action-buttons`内に「報告」ボタン（`#editor-report`、`/editor/<id>/report/`へのリンク）がある。自分の編集者のページ・非公開の編集者のページには無い |
+| 検証1 | `.action-buttons`内に「報告」ボタン（`#editor-report`、`/editor/<id>/report/`へのリンク）がある。自分の編集者のページには無い。非公開の編集者のページには、履歴は出さず、報告ボタンだけがある |
 | 操作2 | `GET /editor/<id>/report/`、続けて`POST /editor/<id>/report/` `{reason="..."}`（`X-Real-IP`付き） |
 | 検証2 | フォームを表示し、POSTは`/editor/<id>/?toast=report`へリダイレクトする。`CONTACT_DISCORD_URL`宛に、理由・`ROOT_URL`+管理画面の編集者の編集画面・報告した人の`encrypt(X-Real-IP)`を含む文面を1回送る。`Editor`・`History`は増えない |
 | 操作3 | `GET /editor/<id>/?toast=report` |

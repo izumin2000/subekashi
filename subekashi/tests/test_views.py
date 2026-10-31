@@ -3018,7 +3018,19 @@ class EditorViewTest(TestCase):
         self.assertContains(response, "この編集者の情報は非公開です。")
         self.assertNotContains(response, 'name="q"')
         self.assertNotContains(response, "別名を追加")
-        self.assertNotContains(response, "/report/")
+
+    def test_private_editor_shows_only_report_button(self):
+        # 非公開の編集者は履歴を見られないが、荒らしを報告できるよう報告ボタンだけ表示する（#1291）
+        private_editor = Editor.objects.create(ip="127.0.0.16", is_open=False)
+
+        response = self.client.get(reverse("subekashi:editor", args=[private_editor.id]), HTTP_X_REAL_IP="203.0.113.5")
+
+        soup = BeautifulSoup(response.content, "html.parser")
+        button = soup.select_one(".action-buttons a#editor-report")
+        self.assertEqual(button["href"], reverse("subekashi:editor_report", args=[private_editor.id]))
+        self.assertEqual(len(soup.select(".action-buttons > *")), 1)
+        self.assertContains(response, "この編集者の情報は非公開です。")
+        self.assertNotContains(response, 'id="history-reload"')
 
     def test_report_button_links_to_report_page(self):
         # 荒らしの報告（#1291）。他人の編集者のページには、報告のフォームへのボタンがある
@@ -3132,6 +3144,25 @@ class EditorReportViewTest(TestCase):
         text = mock_send_discord.call_args.args[1]
         self.assertIn(encrypt(self.reporter_ip), text)
         self.assertNotIn(encrypt("198.51.100.1"), text)
+
+    @patch("subekashi.views.editor_report.send_discord", return_value=True)
+    def test_private_editor_can_be_reported(self, mock_send_discord):
+        # 荒らしが履歴を非公開にしていても報告できる
+        private_editor = Editor.objects.create(ip="127.0.0.41", is_open=False)
+        url = reverse("subekashi:editor_report", args=[private_editor.id])
+
+        get_response = self.client.get(url, HTTP_X_REAL_IP=self.reporter_ip)
+        post_response = self.client.post(url, {"reason": "履歴を非公開にして荒らしています"}, HTTP_X_REAL_IP=self.reporter_ip)
+
+        self.assertEqual(get_response.status_code, 200)
+        self.assertRedirects(
+            post_response, f"{reverse('subekashi:editor', args=[private_editor.id])}?toast=report", fetch_redirect_response=False,
+        )
+        text = mock_send_discord.call_args.args[1]
+        self.assertIn(reverse("admin:subekashi_editor_change", args=[private_editor.id]), text)
+        # 報告後に戻る非公開のページでも、トーストを表示する
+        landing = self.client.get(post_response.url, HTTP_X_REAL_IP=self.reporter_ip)
+        self.assertContains(landing, "報告しました。ご協力ありがとうございます。")
 
     @patch("subekashi.views.editor_report.send_discord", return_value=True)
     def test_post_does_not_change_editor_or_histories(self, mock_send_discord):

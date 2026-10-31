@@ -38,6 +38,9 @@
         {% include "subekashi/components/pagination.html" %}
     {% else %}
         <p id="secret-info">この編集者の情報は非公開です。</p>
+        <div class="action-buttons">
+            <a href="{% url 'subekashi:editor_report' editor.id %}" id="editor-report" class="action-button"><i class="fas fa-flag"></i><span class="icon-p-big">報告</span></a>
+        </div>
     {% endif %}
 </section>
 {% endblock %}

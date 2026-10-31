@@ -1304,7 +1304,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | ページ送りで検索語を引き継ぐ（#954） | `?q=別名&追加`（`&`を含む）で検索結果が`HISTORIES_PER_PAGE`件を超える | 「次へ」が`?page=2&q=<URLエンコードした検索語>`、2ページ目の「前へ」が`?page=1&q=<同>`へのリンクになる。検索結果の件数（`total_count`）は一致したHistoryのみ |
 | 検索語が無いときのページ送り（#954） | `HISTORIES_PER_PAGE`件を超える履歴、`q`なし | リンクは`?page=2`のみで`q`を付けない |
 | 非公開の編集者（#954） | `is_open=False`で本人以外のアクセス、`?q=別名` | 「この編集者の情報は非公開です。」を表示し、検索フォームも履歴も表示しない |
-| 非公開の編集者に報告ボタンは無い（#1291） | `is_open=False`で本人以外のアクセス | 報告のページへのリンク（`/report/`）を含まない |
+| 非公開の編集者には報告ボタンだけある（#1291） | `is_open=False`で本人以外のアクセス | 履歴の操作ボタン（再読み込み等）は無く、`.action-buttons`内に報告のページへ遷移する`id="editor-report"`の「報告」リンクだけがある。「この編集者の情報は非公開です。」は表示したまま |
 | 報告ボタン（#1291） | 他人の編集者のページ | `.action-buttons`内に`id="editor-report"`の「報告」リンクがあり、`/editor/<id>/report/`へ遷移する |
 | 自分のページに報告ボタンは無い（#1291） | `is_me`がTrue | `id="editor-report"`が無い |
 | 報告後のトースト（#1291） | `?toast=report` | 「報告しました。ご協力ありがとうございます。」を表示するスクリプトを含む。`toast`が無ければ含まない |
@@ -1330,6 +1330,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | noindex | GET | `<meta name="robots" content="noindex, nofollow">`を含む |
 | 送信ボタンは報告理由が空の間は無効 | GET | `input#report-submit`（`type="submit"`）に`disabled`が付き、入力に合わせて有効にする`subekashi/js/editor_report.js`を読み込む（空白だけの間も無効。送信に失敗して理由が残っているときは、開いたときに有効にする） |
 | 存在しない編集者 | `editor_id=99999`にGET・POST | どちらもHTTP 404で、Discordに送らない |
+| 非公開の編集者も報告できる | `is_open=False`の編集者にGET・POST | GETはHTTP 200、POSTは`/editor/<id>/?toast=report`へリダイレクトし、Discordに管理画面のURLを送る。戻った非公開のページでもトーストを表示する |
 | 自分自身は報告できない | 自分の編集者（`ip`が`encrypt(自分のIP)`）にGET・POST | どちらも編集者のページへリダイレクトし、Discordに送らない |
 | POST: 正常な報告理由 | `reason="..."`（`send_discord`をモック） | `/editor/<id>/?toast=report`へリダイレクト |
 | POST: Discordへの通知 | 同上 | `CONTACT_DISCORD_URL`宛に、理由・報告された編集者の管理画面のURL（`ROOT_URL` + `admin:subekashi_editor_change`）・報告した人の暗号化したIP（`encrypt(IP)`）を含む文面を1回送る。暗号化していないIPは含まない |
