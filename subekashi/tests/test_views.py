@@ -3262,6 +3262,7 @@ class HistoryReportViewTest(TestCase):
             author=author, title="履歴の報告テストの編集", history_type="edit", changes=None, editor=self.editor,
         )
         self.url = reverse("subekashi:history_report", args=[self.history.id])
+        self.histories_url = reverse("subekashi:histories")
         self.next_url = "/histories/?page=2"
         self.reporter_ip = "203.0.113.5"
 
@@ -3378,10 +3379,10 @@ class HistoryReportViewTest(TestCase):
             ("/histories/?toast=report&q=a", "/histories/?q=a&toast=report"),
             (f"/histories/?q={quote('報告')}", f"/histories/?q={quote('報告')}&toast=report"),
             ("http://testserver/histories/", "http://testserver/histories/?toast=report"),
-            ("https://evil.example/", "/histories/?toast=report"),
-            ("//evil.example/", "/histories/?toast=report"),
-            ("javascript:alert(1)", "/histories/?toast=report"),
-            ("", "/histories/?toast=report"),
+            ("https://evil.example/", f"{self.histories_url}?toast=report"),
+            ("//evil.example/", f"{self.histories_url}?toast=report"),
+            ("javascript:alert(1)", f"{self.histories_url}?toast=report"),
+            ("", f"{self.histories_url}?toast=report"),
         )
         for next_url, expected in cases:
             with self.subTest(next_url=next_url):
@@ -3409,8 +3410,8 @@ class HistoryReportViewTest(TestCase):
         response = self._get(next_url="https://evil.example/")
 
         soup = BeautifulSoup(response.content, "html.parser")
-        self.assertEqual(soup.select_one(".action-buttons a")["href"], "/histories/")
-        self.assertEqual(soup.select_one('input[name="next"]')["value"], "/histories/")
+        self.assertEqual(soup.select_one(".action-buttons a")["href"], self.histories_url)
+        self.assertEqual(soup.select_one('input[name="next"]')["value"], self.histories_url)
 
     @patch("subekashi.views.editor_report.send_discord", return_value=True)
     def test_post_does_not_change_editor_or_histories(self, mock_send_discord):
@@ -6482,11 +6483,12 @@ class RobotsViewTest(TestCase):
             self.assertTrue(disallow.startswith("/"), disallow)
 
     def test_disallow_matches_target_pages(self):
-        """曲の編集・削除、編集者、設定のページは巡回を制限し、曲のページは制限しない（#1172）"""
+        """曲の編集・削除、編集者、履歴の報告、設定のページは巡回を制限し、曲のページ・編集履歴の一覧は制限しない（#1172、#1294）"""
         for path in [
             reverse("subekashi:song_edit", args=[1]),
             reverse("subekashi:song_delete", args=[1]),
             reverse("subekashi:editor", args=[1]),
+            reverse("subekashi:history_report", args=[1]),
             reverse("subekashi:setting"),
         ]:
             self.assertTrue(self._is_disallowed(path), path)
@@ -6496,6 +6498,7 @@ class RobotsViewTest(TestCase):
             reverse("subekashi:songs"),
             reverse("subekashi:song", args=[1]),
             reverse("subekashi:song_history", args=[1]),
+            reverse("subekashi:histories"),
         ]:
             self.assertFalse(self._is_disallowed(path), path)
 

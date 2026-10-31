@@ -2,6 +2,7 @@ User-agent: *
 Disallow: /songs/*/edit
 Disallow: /songs/*/delete
 Disallow: /editor/
+Disallow: /histories/*/report/
 Disallow: /setting/
 
 Sitemap: https://lyrics.imicomweb.com/static/subekashi/sitemap.xml
