@@ -2540,6 +2540,27 @@ URL生成は`get_urls()`に分離しており、ファイル出力・`collectsta
 | 読み取りに失敗 | `get_timeline`が`TimelineError`を送出 | PythonAnywhereのtasksで失敗を検知できるよう、`CommandError`を送出する（0以外の終了コードで終わる）。Discord（`ERROR_DISCORD_URL`）にエラーを通知し、曲は登録しない |
 | 取り込み中の想定外のエラー | `import_timeline`が`RuntimeError("DBの詳細")`を送出 | 例外をそのまま送出する（トレースバックはtasksのログに残る）。`ERROR_DISCORD_URL`は公開チャンネルのため、Discordには例外のクラス名（`RuntimeError`）のみを通知し、「DBの詳細」は含めない |
 
+#### 14-9. `deploy` コマンド（リロードの再試行と、失敗を終了コードで伝える処理、#1300）
+
+`git pull`・`pip install`・`migrate`・`collectstatic`・`appversion` を順に実行したあと、PythonAnywhereのAPIでアプリをリロードする。2026-10-31のデプロイで、リロードのPOSTが一時的な`Connection refused`で失敗したのに、1回しか試さず終了コード0で終わっていたため、一時的な失敗は再試行し、最後まで失敗したら`CommandError`で0以外の終了コードで終える（`timeline`コマンドと同じ方針）。`subprocess.check_output`・`requests.post`・`time.sleep`はモック化し、`PYTHONANYWHERE_USERNAME`・`PYTHONANYWHERE_TOKEN`・`VENV_PATH`は実行環境の`local_settings`に依存しないよう差し替える。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| リロードが成功 | `requests.post`が200を返す | `git pull origin main`・`pip install -r requirements.txt`・`migrate`・`collectstatic --noinput --clear`・`appversion`の順に実行し、`timeout`を付けたPOSTを1回だけ送る。待機はせず、標準出力に「デプロイが完了しました。」が出て、標準エラー出力は空 |
+| `-m` / `--no-migrate` | どちらかを指定 | `migrate`だけが実行されず、残りの手順とリロードは通常どおり行われる |
+| `VENV_PATH`の指定 | `VENV_PATH="/venv"` | `pip`・`python`が`/venv/bin/pip`・`/venv/bin/python`になる（`git pull`は変わらない） |
+| 接続エラーの後に成功 | POSTが`ConnectionError`を2回送出した後、200を返す | 3回目で成功して正常終了し、`RELOAD_RETRY_INTERVAL`秒の待機を2回行う。標準エラー出力に失敗の理由（`Connection refused`）と再試行する旨が出る |
+| タイムアウトの後に成功 | POSTが`Timeout`を送出した後、200を返す | 2回目で成功して正常終了する |
+| 5xxの後に成功 | POSTが503を返した後、200を返す | 2回目で成功して正常終了する。標準エラー出力にステータスコード（503）が出る |
+| 上限まで失敗 | POSTが`RELOAD_MAX_ATTEMPTS`回続けて`ConnectionError`・`Timeout`・502のいずれかになる | `CommandError`（「リロードに失敗しました」）を送出する。POSTは`RELOAD_MAX_ATTEMPTS`回で、待機はその1回少ない回数（最後の試行の後は待たない） |
+| 失敗時のメッセージ | 上限まで失敗（通常と`-m`の2通り） | 失敗の理由、「アプリは再起動されていません」、完了した手順の一覧、復旧方法（PythonAnywhereのWebタブのReload、または`python manage.py deploy -m`の再実行）を含む。`-m`のときは実行していない`migrate`を完了した手順に含めない |
+| 4xx | POSTが401・404を返す | 再試行せず（POSTは1回、待機なし）、ステータスコードとレスポンスの内容を含む`CommandError`を送出する |
+| レスポンスの内容が長い | 502のレスポンスが1000文字（HTMLのエラーページを想定） | `CommandError`のメッセージには、先頭`RELOAD_ERROR_BODY_MAX_LENGTH`（200）文字と「…」だけを含める。ちょうど200文字のときは切り詰めず「…」を付けない |
+| 再試行中の警告でもレスポンスの内容を切り詰める | 503の長いレスポンスの後に200 | 標準エラー出力の警告にステータスコード（503）は出るが、レスポンスの内容は200文字を超えない |
+| 再試行できない通信の例外 | POSTが`InvalidURL`を送出 | 再試行せず（POSTは1回、待機なし）、`CommandError`を送出する |
+| コマンドの失敗 | 2つ目の`check_output`が`CalledProcessError`（終了コード2）を送出 | 失敗したコマンドと終了コードを含む`CommandError`を送出し、後続のコマンドとリロードは実行しない |
+| 設定が空 | `PYTHONANYWHERE_USERNAME`または`PYTHONANYWHERE_TOKEN`が空文字列 | `CommandError`を送出し、コマンドの実行もリロードも行わない |
+
 ---
 
 ### 15. `templatetags/song_card.py` — テンプレートタグ

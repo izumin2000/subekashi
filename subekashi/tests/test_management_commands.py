@@ -9,6 +9,7 @@ word: word.jsonから模倣単語候補をWordに一括登録する処理（#105
 ai: Song.lyricsの単語をランダムに入れ替えてgenetype="janome"のAiレコードをシードする処理を検証する。
 stats: 月次統計(Stats)を最古のSongの月〜今月まで再計算する処理（#334）を検証する。
 timeline: すべあな界隈年表の2018年〜今年（日本時間）のシートを読み取り、曲を登録・更新する処理（#52）を検証する。
+deploy: リロードの再試行と、失敗を終了コード（CommandError）で伝える処理（#1300）を検証する。
 """
 import json
 import os
@@ -17,8 +18,9 @@ import subprocess
 import tempfile
 from datetime import date, datetime, timedelta, timezone as dt_timezone
 from io import StringIO
-from unittest.mock import MagicMock, mock_open, patch
+from unittest.mock import MagicMock, call, mock_open, patch
 
+import requests
 from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase, override_settings
@@ -29,6 +31,9 @@ from subekashi.lib.timeline import TimelineError, TimelineRow
 from subekashi.lib.youtube import YoutubeApiError, YoutubeApiUnavailableError
 from article.models import Article
 from subekashi.management.commands.backup import Command
+from subekashi.management.commands.deploy import (
+    RELOAD_ERROR_BODY_MAX_LENGTH, RELOAD_MAX_ATTEMPTS, RELOAD_RETRY_INTERVAL, RELOAD_TIMEOUT,
+)
 from subekashi.management.commands.sitemap import Command as SitemapCommand
 from config.settings import ROOT_URL
 from subekashi.models import Ai, Author, Editor, History, Song, SongLink, SongTimeline, Stats, Word
@@ -1466,3 +1471,206 @@ class TimelineCommandTest(TestCase):
         mock_send_discord.assert_called_once()
         self.assertIn("RuntimeError", mock_send_discord.call_args.args[1])
         self.assertNotIn("DBの詳細", mock_send_discord.call_args.args[1])
+
+
+@patch("subekashi.management.commands.deploy.VENV_PATH", "")
+@patch("subekashi.management.commands.deploy.PYTHONANYWHERE_TOKEN", "token")
+@patch("subekashi.management.commands.deploy.PYTHONANYWHERE_USERNAME", "user")
+@patch("subekashi.management.commands.deploy.time.sleep")
+@patch("subekashi.management.commands.deploy.requests.post")
+@patch("subekashi.management.commands.deploy.subprocess.check_output", return_value=b"")
+class DeployCommandTest(TestCase):
+    """deploy コマンドのテスト（リロードの再試行と、失敗を終了コードで伝える処理、#1300）"""
+
+    RELOAD_URL = "https://www.pythonanywhere.com/api/v0/user/user/webapps/lyrics.imicomweb.com/reload/"
+
+    def _run(self, *extra_args):
+        out = StringIO()
+        err = StringIO()
+        call_command("deploy", *extra_args, stdout=out, stderr=err)
+        return out.getvalue(), err.getvalue()
+
+    def _response(self, status_code, text=""):
+        return MagicMock(status_code=status_code, text=text)
+
+    def _executed_commands(self, mock_check_output):
+        return [c.args[0] for c in mock_check_output.call_args_list]
+
+    def test_success_runs_commands_and_reloads(self, mock_check_output, mock_post, mock_sleep):
+        mock_post.return_value = self._response(200)
+        out, err = self._run()
+
+        self.assertEqual(self._executed_commands(mock_check_output), [
+            ["git", "pull", "origin", "main"],
+            ["pip", "install", "-r", "requirements.txt"],
+            ["python", "manage.py", "migrate"],
+            ["python", "manage.py", "collectstatic", "--noinput", "--clear"],
+            ["python", "manage.py", "appversion"],
+        ])
+        mock_post.assert_called_once_with(self.RELOAD_URL, headers={"Authorization": "Token token"}, timeout=RELOAD_TIMEOUT)
+        mock_sleep.assert_not_called()
+        self.assertIn("デプロイが完了しました。", out)
+        self.assertEqual(err, "")
+
+    def test_no_migrate_option_skips_migrate(self, mock_check_output, mock_post, mock_sleep):
+        mock_post.return_value = self._response(200)
+        for option in ("-m", "--no-migrate"):
+            with self.subTest(option=option):
+                mock_check_output.reset_mock()
+                out, _ = self._run(option)
+
+                self.assertEqual(self._executed_commands(mock_check_output), [
+                    ["git", "pull", "origin", "main"],
+                    ["pip", "install", "-r", "requirements.txt"],
+                    ["python", "manage.py", "collectstatic", "--noinput", "--clear"],
+                    ["python", "manage.py", "appversion"],
+                ])
+                self.assertIn("デプロイが完了しました。", out)
+
+    def test_venv_path_is_used_for_pip_and_python(self, mock_check_output, mock_post, mock_sleep):
+        mock_post.return_value = self._response(200)
+        with patch("subekashi.management.commands.deploy.VENV_PATH", "/venv"):
+            self._run()
+
+        self.assertEqual(self._executed_commands(mock_check_output), [
+            ["git", "pull", "origin", "main"],
+            ["/venv/bin/pip", "install", "-r", "requirements.txt"],
+            ["/venv/bin/python", "manage.py", "migrate"],
+            ["/venv/bin/python", "manage.py", "collectstatic", "--noinput", "--clear"],
+            ["/venv/bin/python", "manage.py", "appversion"],
+        ])
+
+    def test_retries_after_connection_error(self, mock_check_output, mock_post, mock_sleep):
+        # #1300: 一時的な接続失敗（Connection refused）では、間隔を空けて再試行して成功させる
+        mock_post.side_effect = [
+            requests.ConnectionError("Connection refused"),
+            requests.ConnectionError("Connection refused"),
+            self._response(200),
+        ]
+        out, err = self._run()
+
+        self.assertEqual(mock_post.call_count, 3)
+        self.assertEqual(mock_sleep.call_args_list, [call(RELOAD_RETRY_INTERVAL)] * 2)
+        self.assertIn("デプロイが完了しました。", out)
+        self.assertIn("Connection refused", err)
+        self.assertIn("再試行します", err)
+
+    def test_retries_after_timeout(self, mock_check_output, mock_post, mock_sleep):
+        mock_post.side_effect = [requests.Timeout("timed out"), self._response(200)]
+        out, _ = self._run()
+
+        self.assertEqual(mock_post.call_count, 2)
+        mock_sleep.assert_called_once_with(RELOAD_RETRY_INTERVAL)
+        self.assertIn("デプロイが完了しました。", out)
+
+    def test_retries_after_server_error(self, mock_check_output, mock_post, mock_sleep):
+        mock_post.side_effect = [self._response(503, "unavailable"), self._response(200)]
+        out, err = self._run()
+
+        self.assertEqual(mock_post.call_count, 2)
+        mock_sleep.assert_called_once_with(RELOAD_RETRY_INTERVAL)
+        self.assertIn("デプロイが完了しました。", out)
+        self.assertIn("503", err)
+
+    def test_raises_command_error_after_max_attempts(self, mock_check_output, mock_post, mock_sleep):
+        # 0以外の終了コードで終わる。最後の試行の後は待たない
+        failures = {
+            "接続エラー": requests.ConnectionError("Connection refused"),
+            "タイムアウト": requests.Timeout("timed out"),
+            "5xx": self._response(502, "bad gateway"),
+        }
+        for name, failure in failures.items():
+            with self.subTest(failure=name):
+                mock_post.reset_mock()
+                mock_sleep.reset_mock()
+                mock_post.side_effect = [failure] * RELOAD_MAX_ATTEMPTS
+                with self.assertRaisesMessage(CommandError, "リロードに失敗しました"):
+                    self._run()
+
+                self.assertEqual(mock_post.call_count, RELOAD_MAX_ATTEMPTS)
+                self.assertEqual(mock_sleep.call_count, RELOAD_MAX_ATTEMPTS - 1)
+
+    def test_error_message_tells_completed_steps_and_how_to_recover(self, mock_check_output, mock_post, mock_sleep):
+        mock_post.side_effect = requests.ConnectionError("Connection refused")
+        with self.assertRaises(CommandError) as cm:
+            self._run()
+
+        message = str(cm.exception)
+        self.assertIn("Connection refused", message)
+        self.assertIn("アプリは再起動されていません", message)
+        for command in ("git pull origin main", "pip install -r requirements.txt", "python manage.py migrate",
+                        "python manage.py collectstatic --noinput --clear", "python manage.py appversion"):
+            self.assertIn(f"- {command}", message)
+        self.assertIn("Webタブ", message)
+        self.assertIn("python manage.py deploy -m", message)
+
+        # -m で実行したときは、実行していないmigrateを完了した手順に含めない
+        with self.assertRaises(CommandError) as cm:
+            self._run("-m")
+        self.assertNotIn("migrate", str(cm.exception).split("PythonAnywhereのWebタブ")[0])
+
+    def test_client_error_is_not_retried(self, mock_check_output, mock_post, mock_sleep):
+        # 4xxなど、再試行しても直らないものはすぐに失敗させる
+        for status_code in (401, 404):
+            with self.subTest(status_code=status_code):
+                mock_post.reset_mock()
+                mock_post.return_value = self._response(status_code, '{"detail":"Invalid token."}')
+                with self.assertRaises(CommandError) as cm:
+                    self._run()
+
+                self.assertIn(f"{status_code}: ", str(cm.exception))
+                self.assertIn("Invalid token.", str(cm.exception))
+                mock_post.assert_called_once()
+                mock_sleep.assert_not_called()
+
+    def test_long_response_body_is_truncated_in_error(self, mock_check_output, mock_post, mock_sleep):
+        # HTMLのエラーページ（502/503など）が返っても、メッセージが長くならないよう先頭だけを出す
+        mock_post.return_value = self._response(502, "x" * 1000)
+        with self.assertRaises(CommandError) as cm:
+            self._run()
+
+        message = str(cm.exception)
+        self.assertIn("x" * RELOAD_ERROR_BODY_MAX_LENGTH + "…", message)
+        self.assertNotIn("x" * (RELOAD_ERROR_BODY_MAX_LENGTH + 1), message)
+
+        # 上限ちょうどの本文は切り詰めない
+        mock_post.return_value = self._response(401, "x" * RELOAD_ERROR_BODY_MAX_LENGTH)
+        with self.assertRaises(CommandError) as cm:
+            self._run()
+        self.assertIn("x" * RELOAD_ERROR_BODY_MAX_LENGTH, str(cm.exception))
+        self.assertNotIn("…", str(cm.exception))
+
+    def test_long_response_body_is_truncated_in_retry_warning(self, mock_check_output, mock_post, mock_sleep):
+        mock_post.side_effect = [self._response(503, "<html>" + "x" * 1000), self._response(200)]
+        _, err = self._run()
+
+        self.assertIn("503", err)
+        self.assertNotIn("x" * RELOAD_ERROR_BODY_MAX_LENGTH, err)
+
+    def test_other_request_exception_is_not_retried(self, mock_check_output, mock_post, mock_sleep):
+        mock_post.side_effect = requests.exceptions.InvalidURL("invalid url")
+        with self.assertRaisesMessage(CommandError, "invalid url"):
+            self._run()
+
+        mock_post.assert_called_once()
+        mock_sleep.assert_not_called()
+
+    def test_command_failure_raises_command_error_without_reload(self, mock_check_output, mock_post, mock_sleep):
+        mock_check_output.side_effect = [b"", subprocess.CalledProcessError(2, ["pip", "install", "-r", "requirements.txt"])]
+        with self.assertRaises(CommandError) as cm:
+            self._run()
+
+        self.assertIn("pip install -r requirements.txt", str(cm.exception))
+        self.assertIn("終了コード2", str(cm.exception))
+        self.assertEqual(mock_check_output.call_count, 2)
+        mock_post.assert_not_called()
+
+    def test_empty_settings_raise_command_error_without_running(self, mock_check_output, mock_post, mock_sleep):
+        for name in ("PYTHONANYWHERE_USERNAME", "PYTHONANYWHERE_TOKEN"):
+            with self.subTest(name=name):
+                with patch(f"subekashi.management.commands.deploy.{name}", ""):
+                    with self.assertRaisesMessage(CommandError, "PYTHONANYWHERE_USERNAMEかPYTHONANYWHERE_TOKENが空です。"):
+                        self._run()
+
+                mock_check_output.assert_not_called()
+                mock_post.assert_not_called()
