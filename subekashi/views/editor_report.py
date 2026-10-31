@@ -10,10 +10,6 @@ from subekashi.lib.discord import send_discord
 from subekashi.lib.ip import get_ip
 from subekashi.models import Editor, History
 
-# 履歴から報告したあとに戻るページ（next）が無い・安全でないときに戻るページ
-DEFAULT_NEXT_URL = "/histories/"
-
-
 # 戻り先のURLに、報告したことを伝えるトーストのクエリを付ける。既にあるtoastは置き換える
 def add_report_toast(url):
     parts = urlsplit(url)
@@ -96,11 +92,12 @@ class HistoryReportView(BaseEditorReportView):
         self.history = History.objects.select_related("editor").filter(pk=history_id).first()
         return self.history.editor if self.history else None
 
-    # 報告を始めたページ。他のサイトなどへ飛ばされないよう、このサイトのURLだけを受け付ける
+    # 報告を始めたページ。他のサイトなどへ飛ばされないよう、このサイトのURLだけを受け付ける。
+    # nextが無い・安全でないときは、編集履歴の一覧に戻る
     def get_back_url(self, request):
         next_url = request.POST.get("next") or request.GET.get("next") or ""
         allowed = url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure())
-        return next_url if allowed else DEFAULT_NEXT_URL
+        return next_url if allowed else reverse('subekashi:histories')
 
     def get_context(self, request):
         back_url = self.get_back_url(request)
