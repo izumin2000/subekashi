@@ -1567,25 +1567,6 @@ faviconの画像は`icon_large.png`（800×800）から生成する。`site.webm
 | manifestの内容 | `site.webmanifest` | `name`が`全て歌詞の所為です。`、`short_name`が`すべかし`、`theme_color`が`#000000`、`background_color`が`#111111`で、`icons`の`sizes`が`192x192`・`512x512` |
 | manifestのアイコンの画像 | `icons`の各要素 | `src`の画像があり、実際のサイズと形式が`sizes`・`type`と一致する |
 
---- | --- | --- |
-| 曲の登録（`SongNewView`のPOST） | BANされた編集者が正しい内容でPOST | HTTP 200、`context["error"]`が`BANNED_ERROR`。曲・作者・`History`が作られず、Discordに送信されない |
-| 曲の登録での重複許可（`SongNewView`のPOST） | BANされた編集者が、曲に紐付くSongLinkのURLを`url`と`allow_dup_url`に付けてPOST | HTTP 200、`context["error"]`が`BANNED_ERROR`。`SongLink.allow_dup`は`False`のまま、`History`が作られず、Discordに送信されない（重複の許可は曲の保存で行う、#1285） |
-| 曲の編集（`SongEditView`のPOST） | BANされた編集者がタイトルを変えてPOST | HTTP 200、`context["error"]`が`BANNED_ERROR`。曲のタイトルは変わらず、`History`が作られず、Discordに送信されない |
-| 曲の編集での重複許可（`SongEditView`のPOST） | BANされた編集者が、別の曲に紐付くSongLinkのURLを`url`と`allow_dup_url`に付けてPOST | 曲の登録での重複許可と同じ。URLは編集している曲に紐付かない |
-| 曲の削除（`SongDeleteView`のPOST） | BANされた編集者が理由付きでPOST | HTTP 200、`context["error"]`が`BANNED_ERROR`。曲は削除されず、`History`が作られず、Discordに送信されない |
-| 曲の削除の取り消し（`SongRestoreView`のPOST） | 削除した曲に対して、BANされた編集者が理由付きでPOST | HTTP 410（削除した曲のページ）、`context["error"]`が`BANNED_ERROR`。曲は削除されたまま、`History`が作られず、Discordに送信されない |
-| 別名の追加（`AuthorAliasNewView`のPOST） | BANされた編集者がPOST | HTTP 200、`context["error"]`が`BANNED_ERROR`。別名・`History`が作られず、Discordに送信されない |
-| 別名の編集（`AuthorAliasEditView`のPOST） | BANされた編集者が名前を変えてPOST | HTTP 200、`context["error"]`が`BANNED_ERROR`。別名は変わらず、`History`が作られず、Discordに送信されない |
-| 別名の削除（`AuthorAliasDeleteView`のPOST） | BANされた編集者がPOST | 別名一覧に`?toast=banned`でリダイレクト。別名は削除されず、`History`が作られず、Discordに送信されない |
-| 名義の統一（`AuthorUnifyNameSetView`のPOST） | BANされた編集者がPOST | 別名一覧に`?toast=banned`でリダイレクト。作者名は変わらず、`History`が作られず、Discordに送信されない |
-| 別名一覧の`toast=banned` | 別名一覧に`?toast=banned`でGET | `showToast("error", "処理を完了できませんでした。")`を出力する |
-| 閲覧はできる | BANされた編集者が、トップ・曲のページ・曲の登録画面・曲の編集画面・別名一覧にGET | いずれもHTTP 200 |
-| BANの解除 | `is_banned`を`False`にして曲の登録をPOST | HTTP 302で曲が登録される |
-| 別の編集者のBAN | 別のIPの編集者だけがBANされている状態で曲の登録をPOST | HTTP 302で曲が登録される |
-| X-Real-IPで判定 | `REMOTE_ADDR`は未BAN、`X-Real-IP`はBANされたIP | `BANNED_ERROR` |
-| X-Forwarded-ForではBANを回避できない | `X-Real-IP`がBANされたIP、`X-Forwarded-For`は別のIP | `BANNED_ERROR`（#1189） |
-| X-Forwarded-ForでBANされたIPを名乗っても制限されない | `X-Real-IP`は未BANのIP、`X-Forwarded-For`がBANされたIP | HTTP 302で曲が登録される（#1189） |
-
 ---
 
 ### 8. REST API ビュー
@@ -1822,8 +1803,9 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | BANの解除 | `is_banned`を`False`にして曲の登録をPOST | HTTP 302で曲が登録される |
 | 別の編集者のBAN | 別のIPの編集者だけがBANされている状態で曲の登録をPOST | HTTP 302で曲が登録される |
 | 編集者が無いIP | `Editor`が存在しないIPからPOST | ビューを呼び出し、`Editor`を作らない |
-| ビューを呼ばない | BANされた編集者のPOST・PUT・PATCH・DELETE（`RequestFactory`） | `get_response`を呼ばず、HTTP 303を返す |
+| ビューを呼ばない | BANされた編集者のPOST・PUT・PATCH・DELETE・TRACE（`RequestFactory`） | `get_response`を呼ばず、HTTP 303を返す |
 | 読み取りはビューを呼ぶ | BANされた編集者のGET・HEAD・OPTIONS（`RequestFactory`） | `get_response`を呼ぶ |
+| トーストの文言が揃っている | `base.js`の`showToast("error", …)` | JSON（403）の`BANNED_ERROR`と同じ文言（`?toast=banned`のトーストは`base.js`に直書きのため） |
 | X-Real-IPで判定 | `REMOTE_ADDR`は未BAN、`X-Real-IP`はBANされたIP | HTTP 303 |
 | X-Forwarded-ForではBANを回避できない | `X-Real-IP`は無く`REMOTE_ADDR`がBANされたIP、`X-Forwarded-For`は別のIP | HTTP 303（#1189） |
 | X-Forwarded-ForでBANされたIPを名乗っても制限されない | `REMOTE_ADDR`は未BANのIP、`X-Forwarded-For`がBANされたIP | HTTP 302で曲が登録される（#1189） |

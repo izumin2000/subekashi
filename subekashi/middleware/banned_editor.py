@@ -7,7 +7,7 @@ from subekashi.lib.ip import get_ip
 from subekashi.models import Editor
 
 # ページの読み取りは、BANされた編集者もできる
-READ_METHODS = ("GET", "HEAD", "OPTIONS", "TRACE")
+READ_METHODS = ("GET", "HEAD", "OPTIONS")
 
 # 検索条件のCookieを保存するだけで、DBに保存せず、検索結果のページを返すPOST。ページの読み取りとして許可する
 READ_ONLY_POSTS = ("/songs/",)

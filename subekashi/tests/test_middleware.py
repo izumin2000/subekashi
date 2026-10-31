@@ -7,6 +7,7 @@ import json
 from unittest.mock import MagicMock, patch
 from urllib.parse import parse_qsl, quote, urlparse, urlsplit
 from django.contrib.auth.models import User
+from django.contrib.staticfiles import finders
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, JsonResponse
@@ -551,7 +552,7 @@ class BannedEditorMiddlewareTest(TestCase):
         self.assertEqual(Editor.objects.count(), count)
 
     def test_view_is_not_called_when_blocked(self):
-        for method in ("post", "put", "patch", "delete"):
+        for method in ("post", "put", "patch", "delete", "trace"):
             with self.subTest(method=method):
                 get_response = MagicMock()
                 middleware = BannedEditorMiddleware(get_response)
@@ -570,6 +571,12 @@ class BannedEditorMiddlewareTest(TestCase):
                 request = getattr(self.factory, method)("/songs/new/", REMOTE_ADDR="127.0.0.1")
                 self.assertEqual(middleware(request).content, b"OK")
                 get_response.assert_called_once()
+
+    def test_toast_text_of_base_js_matches_banned_error(self):
+        """フォームの送信ではbase.jsがトーストを表示する。JSON（403）のBANNED_ERRORと文言を揃える"""
+        with open(finders.find("subekashi/js/base.js"), encoding="utf-8") as f:
+            base_js = f.read()
+        self.assertIn(f'showToast("error", "{BANNED_ERROR}");', base_js)
 
     def test_x_real_ip_of_banned_editor_is_blocked(self):
         self.editor.ip = encrypt("203.0.113.1")
