@@ -4,6 +4,7 @@
 RatelimitMiddleware・CacheControlMiddleware・ContentSecurityPolicyMiddleware・BannedEditorMiddleware の動作を検証する。
 """
 import json
+import re
 from unittest.mock import MagicMock, patch
 from urllib.parse import parse_qsl, quote, urlparse, urlsplit
 from django.contrib.auth.models import User
@@ -572,11 +573,17 @@ class BannedEditorMiddlewareTest(TestCase):
                 self.assertEqual(middleware(request).content, b"OK")
                 get_response.assert_called_once()
 
-    def test_toast_text_of_base_js_matches_banned_error(self):
-        """フォームの送信ではbase.jsがトーストを表示する。JSON（403）のBANNED_ERRORと文言を揃える"""
+    def test_banned_message_is_passed_to_base_js_by_data_attribute(self):
+        """フォームの送信ではbase.jsがトーストを表示する。文言をJSに書かず、BANNED_ERRORをdata-banned-messageで受け取る"""
+        for url in [reverse("subekashi:top"), self.song_new_url, "/not-found-page/"]:
+            with self.subTest(url=url):
+                content = self.client.get(url).content.decode()
+                self.assertIn(f'data-banned-message="{BANNED_ERROR}"', content)
+
         with open(finders.find("subekashi/js/base.js"), encoding="utf-8") as f:
             base_js = f.read()
-        self.assertIn(f'showToast("error", "{BANNED_ERROR}");', base_js)
+        self.assertIn("document.body.dataset.bannedMessage", base_js)
+        self.assertNotIn(BANNED_ERROR, base_js)
 
     def test_x_real_ip_of_banned_editor_is_blocked(self):
         self.editor.ip = encrypt("203.0.113.1")
@@ -600,3 +607,72 @@ class BannedEditorMiddlewareTest(TestCase):
             self.song_new_url, {"url": "", "authors": "XFF作者", "title": "XFF曲"}, HTTP_X_FORWARDED_FOR="203.0.113.1",
         )
         self.assertEqual(response.status_code, 302)
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+class BannedEditorMiddlewareCsrfTest(TestCase):
+    """BANされた編集者のPOSTは、CSRFの検証より先にBANとして止める（#1281）
+
+    CsrfViewMiddlewareの検証はprocess_view（ビューの直前）で行われ、各ミドルウェアの__call__より後に動く。
+    そのため、CSRFトークンが無くても、CSRFの失敗（403のHTML）ではなくBANの応答になる。
+    BANされていない編集者のCSRFの検証は、このミドルウェアがあっても変わらない。
+    """
+
+    BANNED_IP = "127.0.0.1"
+    NORMAL_IP = "203.0.113.5"
+    SONG_DATA = {"url": "", "authors": "CSRF作者", "title": "CSRF曲"}
+
+    def setUp(self):
+        Editor.objects.create(ip=encrypt(self.BANNED_IP), is_banned=True)
+        self.banned_client = Client(enforce_csrf_checks=True, REMOTE_ADDR=self.BANNED_IP)
+        self.normal_client = Client(enforce_csrf_checks=True, REMOTE_ADDR=self.NORMAL_IP)
+        self.song_new_url = reverse("subekashi:song_new")
+
+    def get_csrf_token(self, client):
+        response = client.get(self.song_new_url)
+        return re.search(r'name="csrfmiddlewaretoken" value="([^"]+)"', response.content.decode()).group(1)
+
+    def test_banned_editor_without_csrf_token_is_redirected_not_csrf_failure(self):
+        response = self.banned_client.post(self.song_new_url, self.SONG_DATA, HTTP_REFERER=f"http://testserver{self.song_new_url}")
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response["Location"], f"{self.song_new_url}?toast=banned")
+
+    def test_banned_editor_without_csrf_token_gets_ban_json_not_csrf_failure(self):
+        response = self.banned_client.post(self.song_new_url, self.SONG_DATA, HTTP_SEC_FETCH_MODE="same-origin")
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json(), {"detail": BANNED_ERROR})
+
+    def test_banned_editor_without_csrf_token_and_referer_gets_500_page(self):
+        response = self.banned_client.post(self.song_new_url, self.SONG_DATA)
+        self.assertEqual(response.status_code, 500)
+        self.assertTemplateUsed(response, "subekashi/500.html")
+
+    def test_banned_editor_with_wrong_csrf_token_is_blocked_as_banned(self):
+        response = self.banned_client.post(
+            self.song_new_url, {**self.SONG_DATA, "csrfmiddlewaretoken": "wrong-token"},
+            HTTP_REFERER=f"http://testserver{self.song_new_url}",
+        )
+        self.assertEqual(response.status_code, 303)
+
+    def test_banned_editor_with_valid_csrf_token_is_blocked(self):
+        token = self.get_csrf_token(self.banned_client)
+        response = self.banned_client.post(
+            self.song_new_url, {**self.SONG_DATA, "csrfmiddlewaretoken": token},
+            HTTP_REFERER=f"http://testserver{self.song_new_url}",
+        )
+        self.assertEqual(response.status_code, 303)
+        self.assertFalse(Song.objects.filter(title="CSRF曲").exists())
+
+    def test_normal_editor_without_csrf_token_still_gets_csrf_failure(self):
+        response = self.normal_client.post(self.song_new_url, self.SONG_DATA, HTTP_REFERER=f"http://testserver{self.song_new_url}")
+        self.assertEqual(response.status_code, 403)
+        self.assertIn("CSRF", response.content.decode())
+        self.assertNotIn(BANNED_ERROR, response.content.decode())
+        self.assertNotIn("Location", response)
+        self.assertFalse(Song.objects.filter(title="CSRF曲").exists())
+
+    def test_normal_editor_with_valid_csrf_token_can_post(self):
+        token = self.get_csrf_token(self.normal_client)
+        response = self.normal_client.post(self.song_new_url, {**self.SONG_DATA, "csrfmiddlewaretoken": token})
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Song.objects.filter(title="CSRF曲").exists())

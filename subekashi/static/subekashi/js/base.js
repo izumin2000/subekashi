@@ -451,9 +451,9 @@ function deleteToastUrlQuery() {
 }
 
 // BANされた編集者の操作が止められ、フォームのあったページに戻されたときのトースト（BannedEditorMiddleware、#1281）
-// 文言はconstants.pyのBANNED_ERRORと同じにする（テストで確認している）
+// 文言はconstants.pyのBANNED_ERRORを、base.htmlのdata-banned-messageで受け取る
 if (new URLSearchParams(window.location.search).get('toast') === 'banned') {
-    showToast("error", "処理を完了できませんでした。");
+    showToast("error", document.body.dataset.bannedMessage);
     deleteToastUrlQuery();
 }
 

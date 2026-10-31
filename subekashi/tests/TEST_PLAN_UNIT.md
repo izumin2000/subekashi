@@ -1805,7 +1805,9 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | 編集者が無いIP | `Editor`が存在しないIPからPOST | ビューを呼び出し、`Editor`を作らない |
 | ビューを呼ばない | BANされた編集者のPOST・PUT・PATCH・DELETE・TRACE（`RequestFactory`） | `get_response`を呼ばず、HTTP 303を返す |
 | 読み取りはビューを呼ぶ | BANされた編集者のGET・HEAD・OPTIONS（`RequestFactory`） | `get_response`を呼ぶ |
-| トーストの文言が揃っている | `base.js`の`showToast("error", …)` | JSON（403）の`BANNED_ERROR`と同じ文言（`?toast=banned`のトーストは`base.js`に直書きのため） |
+| トーストの文言をdata属性で渡す | トップ・曲の登録・存在しないページをGET、`base.js` | `<body>`に`data-banned-message="<BANNED_ERROR>"`が出る。`base.js`は`document.body.dataset.bannedMessage`を読み、文言を直書きしない（`BANNED_ERROR`と二重管理しない） |
+| CSRFトークンが無くてもBANとして止める | CSRFの検証を有効（`enforce_csrf_checks=True`）にして、BANされた編集者がトークン無し・誤ったトークン・正しいトークンでPOST | どれも`Referer`付きは303、JS（`Sec-Fetch-Mode: same-origin`）は403のBANのJSON、`Referer`なしは500のページ。CSRFの失敗（403のHTML）にならない（`CsrfViewMiddleware`の検証は`process_view`で、ミドルウェアの`__call__`より後に動くため） |
+| BANされていない編集者のCSRFの検証は変わらない | 同じ設定で、BANされていない編集者がトークン無し・正しいトークンでPOST | トークン無しは403のCSRFの失敗（BANの応答ではなく、`Location`も付かない）、正しいトークンは302で曲が登録される |
 | X-Real-IPで判定 | `REMOTE_ADDR`は未BAN、`X-Real-IP`はBANされたIP | HTTP 303 |
 | X-Forwarded-ForではBANを回避できない | `X-Real-IP`は無く`REMOTE_ADDR`がBANされたIP、`X-Forwarded-For`は別のIP | HTTP 303（#1189） |
 | X-Forwarded-ForでBANされたIPを名乗っても制限されない | `REMOTE_ADDR`は未BANのIP、`X-Forwarded-For`がBANされたIP | HTTP 302で曲が登録される（#1189） |

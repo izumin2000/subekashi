@@ -23,6 +23,8 @@ TOAST_QUERY_KEYS = ("toast", "name_unified")
 # ビューごとに判定すると新しいビューで漏れるため、ミドルウェアでまとめて判定する
 # - JSからのリクエスト（/api/、fetch・XHR）: JSONで403を返す。303でHTMLに戻すと、fetchが成功に見えてしまう
 # - フォーム: 送信したフォームのあるページ（Referer）に戻してトーストを表示する（base.js）。戻れない場合は500のページを表示する
+# CsrfViewMiddlewareの検証はprocess_view（ビューの直前）で行われ、各ミドルウェアの__call__より後に動く。
+# そのためBANされた編集者には、CSRFトークンの有無にかかわらず上の応答を返す（BANされていない編集者のCSRFの検証は変わらない）
 class BannedEditorMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
