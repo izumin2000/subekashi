@@ -26,18 +26,21 @@ from django.db import connection
 from django.template.loader import render_to_string
 from django.test import TestCase, TransactionTestCase, Client, RequestFactory, override_settings, skipUnlessDBFeature
 from django.test.utils import CaptureQueriesContext
-from django.urls import reverse
+from django.urls import URLPattern, reverse
 from django.utils import timezone
+from rest_framework.viewsets import ReadOnlyModelViewSet
 from article.models import Article
 from subekashi.forms import AuthorAliasForm
-from subekashi.constants.constants import HISTORIES_PER_PAGE, LONG_TERM_COOKIE_AGE, SHORT_TERM_COOKIE_AGE, SORT_CHOICES
+from subekashi.constants.constants import ALLOW_MEDIAS, HISTORIES_PER_PAGE, LONG_TERM_COOKIE_AGE, SHORT_TERM_COOKIE_AGE, SONG_CATEGORIES, SORT_CHOICES
 from subekashi.lib.ogp import OGP_SALT, OGP_VERSION, load_ogp_token, make_ogp_token, render_ogp_image
 from subekashi.lib.query_utils import YOUTUBE_FILTERS, YOUTUBE_SORTS
 from subekashi.lib.security import encrypt
+from subekashi.lib.song_filterset import SongFilter
 from subekashi.lib.song_service import restore_song
 from subekashi.lib.youtube import YoutubeApiError
 from subekashi.models import Ad, Ai, Author, AuthorAlias, AuthorLink, Contact, Editor, History, Prush, Song, SongLink, SongTimeline, Stats, Word
 from subekashi.models.author import TransitiveAlias
+from subekashi.urls import defaultRouter, urlpatterns
 from subekashi.views.author_alias import UNIFY_CONFLICT_DISPLAY_LIMIT
 from subekashi.views.songs import COOKIE_FORMS, SEARCH_FORM_QUERIES, TEXT_FORMS
 
@@ -6501,6 +6504,95 @@ class RobotsViewTest(TestCase):
             reverse("subekashi:histories"),
         ]:
             self.assertFalse(self._is_disallowed(path), path)
+
+
+class LlmsViewTest(TestCase):
+    """llms (/llms.txt) のテスト"""
+
+    def setUp(self):
+        self.client = Client()
+        self.text = self.client.get("/llms.txt").content.decode()
+
+    # "## 見出し" の本文（次の"## "の前まで）
+    def _section(self, heading):
+        return re.split(r"\n## ", self.text.split(f"\n## {heading}\n")[1])[0]
+
+    # "### `/api/<prefix>/`" から始まるAPIの説明（次の"### "または"## "の前まで）
+    def _endpoint(self, prefix):
+        for block in self.text.split("\n### ")[1:]:
+            if block.startswith(f"`/api/{prefix}/`"):
+                return re.split(r"\n## ", block)[0]
+        self.fail(f"/api/{prefix}/ の説明がありません")
+
+    def _public_viewsets(self):
+        return [(prefix, viewset) for prefix, viewset, _ in defaultRouter.registry if issubclass(viewset, ReadOnlyModelViewSet)]
+
+    def _internal_viewsets(self):
+        return [(prefix, viewset) for prefix, viewset, _ in defaultRouter.registry if not issubclass(viewset, ReadOnlyModelViewSet)]
+
+    def test_returns_llms_txt(self):
+        """/llms.txtでstaticのllms.txtの内容をtext/plainで返す（#1310）"""
+        response = self.client.get("/llms.txt")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "text/plain; charset=utf-8")
+        self.assertTrue(self.text.startswith("# 全て歌詞の所為です。"))
+        self.assertIn("\n## 公開API（読み取り専用）\n", self.text)
+        self.assertIn("\n## 使わないAPI\n", self.text)
+
+    def test_router_apis_are_listed_in_the_matching_section(self):
+        """routerに登録した読み取り専用のAPIは「公開API」に、更新できるAPIは「使わないAPI」に載せる（#1310）"""
+        public = self._section("公開API（読み取り専用）")
+        internal = self._section("使わないAPI")
+        self.assertTrue(self._public_viewsets())
+        self.assertTrue(self._internal_viewsets())
+        for prefix, _ in self._public_viewsets():
+            self.assertIn(f"`/api/{prefix}/`", public, prefix)
+            self.assertNotIn(f"`/api/{prefix}/`", internal, prefix)
+        for prefix, _ in self._internal_viewsets():
+            self.assertIn(f"`/api/{prefix}/`", internal, prefix)
+            self.assertNotIn(f"`/api/{prefix}/`", public, prefix)
+
+    def test_other_api_routes_are_listed_as_not_to_use(self):
+        """router以外の/api/のURLは、公開APIではないので「使わないAPI」に載せる（#1310）"""
+        public = self._section("公開API（読み取り専用）")
+        internal = self._section("使わないAPI")
+        routes = [str(pattern.pattern) for pattern in urlpatterns if isinstance(pattern, URLPattern) and str(pattern.pattern).startswith("api/")]
+        self.assertTrue(routes)
+        for route in routes:
+            self.assertIn(f"/{route}", internal, route)
+            self.assertNotIn(f"/{route}", public, route)
+
+    def test_response_fields_are_listed(self):
+        """公開APIが返す項目は、そのAPIの説明にすべて載せる（#1310）"""
+        for prefix, viewset in self._public_viewsets():
+            endpoint = self._endpoint(prefix)
+            for field in viewset.serializer_class().fields:
+                self.assertIn(f"`{field}`", endpoint, f"{prefix}: {field}")
+
+    def test_filter_params_are_listed(self):
+        """公開APIの絞り込みのパラメータは、そのAPIの説明の「絞り込み」の行にすべて載せる（#1310）"""
+        for prefix, viewset in self._public_viewsets():
+            filterset_class = getattr(viewset, "filterset_class", None)
+            names = list(getattr(viewset, "filterset_fields", None) or []) + (list(filterset_class.base_filters) if filterset_class else [])
+            # tag等、レスポンスの項目と同じ名前のパラメータが、項目の一覧だけに載っていて通らないよう、絞り込みの行だけを見る
+            filter_lines = "\n".join(line for line in self._endpoint(prefix).splitlines() if line.startswith("- 絞り込み:"))
+            for name in names:
+                self.assertIn(f"`{name}`", filter_lines, f"{prefix}: {name}")
+
+    def test_song_search_params_are_listed(self):
+        """曲の検索（SongFilter）のパラメータ・page・sizeは、曲のAPIの説明にすべて載せる（#1310）"""
+        endpoint = self._endpoint("song")
+        for name in [*SongFilter.base_filters, "page", "size"]:
+            self.assertIn(f"`{name}`", endpoint, name)
+
+    def test_song_search_values_are_listed(self):
+        """曲の検索で指定できるカテゴリ・メディア・並び替えの値は、曲のAPIの説明にすべて載せる（#1310）"""
+        endpoint = self._endpoint("song")
+        values = [category["value"] for category in SONG_CATEGORIES]
+        values += [media["id"] for media in ALLOW_MEDIAS] + ["other"]
+        values += [choice["value"].lstrip("-") for choice in SORT_CHOICES]
+        for value in values:
+            self.assertIn(f"`{value}`", endpoint, value)
 
 
 def assert_song_removed_page(test, response):

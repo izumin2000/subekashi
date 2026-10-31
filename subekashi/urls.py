@@ -51,6 +51,7 @@ urlpatterns = [
     path('ad/', ad, name='ad'),
     path('ad/complete/', AdCompleteView.as_view(), name='ad_complete'),
     path('robots.txt', robots, name='robots'),
+    path('llms.txt', llms, name='llms'),
     path('sitemap.xml', sitemap, name='sitemap'),
     path('favicon.ico', favicon, name='favicon'),
     path('ogp/<str:token>.png', ogp_image, name='ogp_image'),
