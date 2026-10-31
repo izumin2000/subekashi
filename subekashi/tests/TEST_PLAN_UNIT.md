@@ -652,6 +652,16 @@ A -`past`-> B -`spell`-> C -`abbr`-> D とつながり、DとEは`another`での
 | 正常な入力 | `reason="削除理由の詳細"` | `is_valid() == True` |
 | reasonが空 | `reason=""` | `is_valid() == False`、`"削除理由を入力してください。"` |
 
+#### 6-2-1. `EditorReportForm`（#1291）
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 正常な入力 | `reason="他の曲のタイトルを繰り返し書き換えています"` | `is_valid() == True` |
+| reasonが空 | `reason=""` | `is_valid() == False`、`"報告理由を入力してください。"` |
+| reasonが空白のみ | `reason=" \n　"` | `is_valid() == False`、`"報告理由を入力してください。"` |
+| reasonが1000文字丁度 | `reason="あ" * 1000` | `is_valid() == True` |
+| reasonが1000文字超 | `reason="あ" * 1001` | `is_valid() == False`、`"報告理由は1000文字以内で入力してください。"`（Discordは2000文字ごとに分割して1秒待つため、長い報告で処理を遅くできないようにする） |
+
 #### 6-3. `SongEditForm`
 
 | テストケース | 入力 | 期待結果 |
@@ -1294,6 +1304,10 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | ページ送りで検索語を引き継ぐ（#954） | `?q=別名&追加`（`&`を含む）で検索結果が`HISTORIES_PER_PAGE`件を超える | 「次へ」が`?page=2&q=<URLエンコードした検索語>`、2ページ目の「前へ」が`?page=1&q=<同>`へのリンクになる。検索結果の件数（`total_count`）は一致したHistoryのみ |
 | 検索語が無いときのページ送り（#954） | `HISTORIES_PER_PAGE`件を超える履歴、`q`なし | リンクは`?page=2`のみで`q`を付けない |
 | 非公開の編集者（#954） | `is_open=False`で本人以外のアクセス、`?q=別名` | 「この編集者の情報は非公開です。」を表示し、検索フォームも履歴も表示しない |
+| 非公開の編集者に報告ボタンは無い（#1291） | `is_open=False`で本人以外のアクセス | 報告のページへのリンク（`/report/`）を含まない |
+| 報告ボタン（#1291） | 他人の編集者のページ | `.action-buttons`内に`id="editor-report"`の「報告」リンクがあり、`/editor/<id>/report/`へ遷移する |
+| 自分のページに報告ボタンは無い（#1291） | `is_me`がTrue | `id="editor-report"`が無い |
+| 報告後のトースト（#1291） | `?toast=report` | 「報告しました。ご協力ありがとうございます。」を表示するスクリプトを含む。`toast`が無ければ含まない |
 
 #### 7-10-2. `SongHistoryView` (`/songs/<id>/history/`)
 
@@ -1305,6 +1319,26 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 編集の差分の表示（#608） | 編集（`changes`の見出しが`["種類", "編集前", "編集後"]`）と新規作成（見出しが`["種類", "内容"]`）のHistoryが存在 | `<table class="diff-table">`が編集のHistoryの分だけ（1つ）含まれ、差分を表示する`subekashi/js/editor.js`が読み込まれる |
 | 削除の取り消しの履歴（#1264、#1275） | 曲を削除してから、理由を入力して取り消す | HTTP 200で「<タイトル>の削除を取り消し」が表示される。変更内容の表（`change-table-wrapper`）は、削除と取り消しの理由の表（`delete-table`）の2つで、どちらの理由も表示する |
 | 理由なしの取り消しの履歴（#1275） | 理由を入力しなかった頃の取り消しのHistory（`history_type="restore"`・`changes=None`） | HTTP 200で「<タイトル>の削除を取り消し」が表示され、変更内容の表（`change-table-wrapper`）は表示しない |
+
+#### 7-10-3. `EditorReportView` (`/editor/<id>/report/`)（#1291）
+
+編集者のページの「報告」ボタンから、荒らしを管理者に報告する。報告はDBに保存せず、`CONTACT_DISCORD_URL`のDiscordに送る。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| GET: 報告のフォーム | 他人の編集者のGET | HTTP 200。`form#editor-report-form`（`action`は報告のURL、`POST`）に、必須の`textarea[name=reason]`とCSRFトークンがあり、「戻る」リンクは編集者のページへ遷移する |
+| noindex | GET | `<meta name="robots" content="noindex, nofollow">`を含む |
+| 送信ボタンは報告理由が空の間は無効 | GET | `input#report-submit`（`type="submit"`）に`disabled`が付き、入力に合わせて有効にする`subekashi/js/editor_report.js`を読み込む（空白だけの間も無効。送信に失敗して理由が残っているときは、開いたときに有効にする） |
+| 存在しない編集者 | `editor_id=99999`にGET・POST | どちらもHTTP 404で、Discordに送らない |
+| 自分自身は報告できない | 自分の編集者（`ip`が`encrypt(自分のIP)`）にGET・POST | どちらも編集者のページへリダイレクトし、Discordに送らない |
+| POST: 正常な報告理由 | `reason="..."`（`send_discord`をモック） | `/editor/<id>/?toast=report`へリダイレクト |
+| POST: Discordへの通知 | 同上 | `CONTACT_DISCORD_URL`宛に、理由・報告された編集者の管理画面のURL（`ROOT_URL` + `admin:subekashi_editor_change`）・報告した人の暗号化したIP（`encrypt(IP)`）を含む文面を1回送る。暗号化していないIPは含まない |
+| 報告した人のIPはX-Real-IP（#1189） | `X-Real-IP`と、別のIPの`X-Forwarded-For` | 文面の報告した人のIPは`X-Real-IP`のもの（`X-Forwarded-For`のIPでなりすませない） |
+| POST: DBは変えない | 正常な報告 | `Editor`が増えず、`History`も作らない |
+| POST: 報告理由が空 | `reason=""`・`"  "`・`reason`なし | HTTP 200、`context["error"] == "報告理由を入力してください。"`で、エラーのトーストを表示する。Discordに送らない |
+| POST: 報告理由が長すぎる | `reason="あ" * 1001` | HTTP 200、`context["error"] == "報告理由は1000文字以内で入力してください。"`で、入力した理由を残す。Discordに送らない |
+| POST: Discordに送信できない | `send_discord`が`False`を返す | 報告はDiscordにしか残らないため、完了にせずHTTP 200で「報告を送信できませんでした。時間をおいて再度お試しください。」のトーストを表示し、入力した理由を`textarea`に残す |
+| 報告理由のエスケープ | `reason="</textarea><script>alert(1)</script>"`でDiscordに送信できない | `<script>alert(1)</script>`はそのまま出力されず、エスケープして`textarea`に戻る |
 
 #### 7-11. `SongCardsView` (`/api/html/song_cards`)
 

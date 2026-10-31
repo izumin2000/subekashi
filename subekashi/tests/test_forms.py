@@ -1,12 +1,12 @@
 """
 forms.py のテスト
 
-ContactForm, SongDeleteForm, SongEditForm, AuthorAliasForm のバリデーションを検証する。
-ContactForm/SongDeleteForm/SongEditFormはDBアクセスしないため SimpleTestCase を使用するが、
+ContactForm, EditorReportForm, SongDeleteForm, SongEditForm, AuthorAliasForm のバリデーションを検証する。
+ContactForm/EditorReportForm/SongDeleteForm/SongEditFormはDBアクセスしないため SimpleTestCase を使用するが、
 AuthorAliasFormはclean_name()で重複チェックのためDBアクセスするため TestCase を使用する。
 """
 from django.test import SimpleTestCase, TestCase
-from subekashi.forms import AuthorAliasForm, AuthorUnifyNameForm, ContactForm, SongDeleteForm, SongEditForm
+from subekashi.forms import AuthorAliasForm, AuthorUnifyNameForm, ContactForm, EditorReportForm, SongDeleteForm, SongEditForm
 from subekashi.models import Author, AuthorAlias
 
 
@@ -58,6 +58,33 @@ class ContactFormTest(SimpleTestCase):
         form = ContactForm(data=self._make_data(detail="あ" * 10001))
         self.assertFalse(form.is_valid())
         self.assertIn("detail", form.errors)
+
+
+class EditorReportFormTest(SimpleTestCase):
+    """EditorReportForm のテスト"""
+
+    def test_valid_form(self):
+        form = EditorReportForm(data={"reason": "他の曲のタイトルを繰り返し書き換えています"})
+        self.assertTrue(form.is_valid())
+
+    def test_empty_reason_is_invalid(self):
+        form = EditorReportForm(data={"reason": ""})
+        self.assertFalse(form.is_valid())
+        self.assertEqual(form.errors["reason"], ["報告理由を入力してください。"])
+
+    def test_whitespace_only_reason_is_invalid(self):
+        form = EditorReportForm(data={"reason": " \n　"})
+        self.assertFalse(form.is_valid())
+        self.assertEqual(form.errors["reason"], ["報告理由を入力してください。"])
+
+    def test_reason_of_exactly_1000_chars_is_valid(self):
+        form = EditorReportForm(data={"reason": "あ" * 1000})
+        self.assertTrue(form.is_valid())
+
+    def test_reason_over_1000_chars_is_invalid(self):
+        form = EditorReportForm(data={"reason": "あ" * 1001})
+        self.assertFalse(form.is_valid())
+        self.assertEqual(form.errors["reason"], ["報告理由は1000文字以内で入力してください。"])
 
 
 class SongDeleteFormTest(SimpleTestCase):

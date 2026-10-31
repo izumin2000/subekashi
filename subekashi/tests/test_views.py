@@ -3018,6 +3018,164 @@ class EditorViewTest(TestCase):
         self.assertContains(response, "この編集者の情報は非公開です。")
         self.assertNotContains(response, 'name="q"')
         self.assertNotContains(response, "別名を追加")
+        self.assertNotContains(response, "/report/")
+
+    def test_report_button_links_to_report_page(self):
+        # 荒らしの報告（#1291）。他人の編集者のページには、報告のフォームへのボタンがある
+        response = self.client.get(reverse("subekashi:editor", args=[self.editor.id]), HTTP_X_REAL_IP="203.0.113.5")
+
+        soup = BeautifulSoup(response.content, "html.parser")
+        button = soup.select_one(".action-buttons a#editor-report")
+        self.assertEqual(button["href"], reverse("subekashi:editor_report", args=[self.editor.id]))
+        self.assertEqual(button.get_text(strip=True), "報告")
+
+    def test_report_button_is_hidden_for_me(self):
+        editor = Editor.objects.create(ip=encrypt("203.0.113.1"))
+
+        response = self.client.get(reverse("subekashi:editor", args=[editor.id]), HTTP_X_REAL_IP="203.0.113.1")
+
+        self.assertTrue(response.context["is_me"])
+        self.assertNotContains(response, 'id="editor-report"')
+
+    def test_report_toast_is_shown_only_after_reporting(self):
+        url = reverse("subekashi:editor", args=[self.editor.id])
+
+        self.assertContains(self.client.get(url, {"toast": "report"}), "報告しました。ご協力ありがとうございます。")
+        self.assertNotContains(self.client.get(url), "報告しました。ご協力ありがとうございます。")
+
+
+@override_settings(STORAGES=STATIC_STORAGE)
+@patch("subekashi.views.editor_report.CONTACT_DISCORD_URL", "https://discord.example/contact")
+class EditorReportViewTest(TestCase):
+    """EditorReportView (/editor/<id>/report/) のテスト（#1291）"""
+
+    def setUp(self):
+        self.client = Client()
+        self.editor = Editor.objects.create(ip="127.0.0.40")
+        self.url = reverse("subekashi:editor_report", args=[self.editor.id])
+        self.editor_url = reverse("subekashi:editor", args=[self.editor.id])
+        self.reporter_ip = "203.0.113.5"
+
+    def _post(self, reason="他の曲のタイトルを繰り返し書き換えています", **extra):
+        return self.client.post(self.url, {"reason": reason}, HTTP_X_REAL_IP=self.reporter_ip, **extra)
+
+    def test_get_returns_form(self):
+        response = self.client.get(self.url, HTTP_X_REAL_IP=self.reporter_ip)
+
+        self.assertEqual(response.status_code, 200)
+        soup = BeautifulSoup(response.content, "html.parser")
+        form = soup.select_one("form#editor-report-form")
+        self.assertEqual(form["action"], self.url)
+        self.assertEqual(form["method"].lower(), "post")
+        self.assertTrue(form.select_one('textarea[name="reason"][required]'))
+        self.assertTrue(form.select_one('input[name="csrfmiddlewaretoken"]'))
+        self.assertEqual(soup.select_one(".action-buttons a")["href"], self.editor_url)
+
+    def test_get_submit_is_disabled_until_reason_is_entered(self):
+        # 報告理由が空の間は送信できない。入力に合わせて有効にするのはJSで行う
+        response = self.client.get(self.url, HTTP_X_REAL_IP=self.reporter_ip)
+
+        soup = BeautifulSoup(response.content, "html.parser")
+        submit = soup.select_one("form#editor-report-form input#report-submit")
+        self.assertEqual(submit["type"], "submit")
+        self.assertTrue(submit.has_attr("disabled"))
+        self.assertTrue(soup.select_one('script[src$="subekashi/js/editor_report.js"]'))
+
+    def test_get_is_noindex(self):
+        response = self.client.get(self.url, HTTP_X_REAL_IP=self.reporter_ip)
+        self.assertContains(response, '<meta name="robots" content="noindex, nofollow">')
+
+    def test_nonexistent_editor_returns_404(self):
+        with patch("subekashi.views.editor_report.send_discord") as mock_send_discord:
+            get_response = self.client.get(reverse("subekashi:editor_report", args=[99999]))
+            post_response = self.client.post(reverse("subekashi:editor_report", args=[99999]), {"reason": "理由"})
+
+        self.assertEqual(get_response.status_code, 404)
+        self.assertEqual(post_response.status_code, 404)
+        mock_send_discord.assert_not_called()
+
+    @patch("subekashi.views.editor_report.send_discord", return_value=True)
+    def test_cannot_report_myself(self, mock_send_discord):
+        # 自分自身は報告できないため、編集者のページに戻す
+        editor = Editor.objects.create(ip=encrypt(self.reporter_ip))
+        url = reverse("subekashi:editor_report", args=[editor.id])
+
+        get_response = self.client.get(url, HTTP_X_REAL_IP=self.reporter_ip)
+        post_response = self.client.post(url, {"reason": "理由"}, HTTP_X_REAL_IP=self.reporter_ip)
+
+        self.assertRedirects(get_response, reverse("subekashi:editor", args=[editor.id]), fetch_redirect_response=False)
+        self.assertRedirects(post_response, reverse("subekashi:editor", args=[editor.id]), fetch_redirect_response=False)
+        mock_send_discord.assert_not_called()
+
+    @patch("subekashi.views.editor_report.send_discord", return_value=True)
+    def test_post_redirects_to_editor_with_toast(self, mock_send_discord):
+        response = self._post()
+        self.assertRedirects(response, f"{self.editor_url}?toast=report", fetch_redirect_response=False)
+
+    @patch("subekashi.views.editor_report.send_discord", return_value=True)
+    def test_post_sends_reason_admin_url_and_encrypted_ip_to_contact_discord(self, mock_send_discord):
+        self._post(reason="他の曲のタイトルを繰り返し書き換えています")
+
+        mock_send_discord.assert_called_once()
+        url, text = mock_send_discord.call_args.args
+        self.assertEqual(url, "https://discord.example/contact")
+        self.assertIn("他の曲のタイトルを繰り返し書き換えています", text)
+        self.assertIn(f"{settings.ROOT_URL}{reverse('admin:subekashi_editor_change', args=[self.editor.id])}", text)
+        self.assertIn(encrypt(self.reporter_ip), text)
+        self.assertNotIn(self.reporter_ip, text)
+
+    @patch("subekashi.views.editor_report.send_discord", return_value=True)
+    def test_post_reporter_ip_uses_x_real_ip(self, mock_send_discord):
+        # X-Forwarded-Forで報告した人のIPを偽れない（#1189）
+        self._post(HTTP_X_FORWARDED_FOR="198.51.100.1")
+
+        text = mock_send_discord.call_args.args[1]
+        self.assertIn(encrypt(self.reporter_ip), text)
+        self.assertNotIn(encrypt("198.51.100.1"), text)
+
+    @patch("subekashi.views.editor_report.send_discord", return_value=True)
+    def test_post_does_not_change_editor_or_histories(self, mock_send_discord):
+        self._post()
+
+        self.assertEqual(Editor.objects.count(), 1)
+        self.assertEqual(History.objects.count(), 0)
+
+    @patch("subekashi.views.editor_report.send_discord", return_value=True)
+    def test_post_empty_reason_shows_error_and_does_not_send(self, mock_send_discord):
+        for data in ({"reason": ""}, {"reason": "  "}, {}):
+            with self.subTest(data=data):
+                response = self.client.post(self.url, data, HTTP_X_REAL_IP=self.reporter_ip)
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.context["error"], "報告理由を入力してください。")
+                self.assertContains(response, 'showToast("error", "報告理由を入力してください。")')
+        mock_send_discord.assert_not_called()
+
+    @patch("subekashi.views.editor_report.send_discord", return_value=True)
+    def test_post_too_long_reason_shows_error_and_keeps_reason(self, mock_send_discord):
+        response = self._post(reason="あ" * 1001)
+
+        self.assertEqual(response.context["error"], "報告理由は1000文字以内で入力してください。")
+        self.assertContains(response, "あ" * 1001)
+        mock_send_discord.assert_not_called()
+
+    @patch("subekashi.views.editor_report.send_discord", return_value=False)
+    def test_post_discord_failure_shows_error_and_keeps_reason(self, mock_send_discord):
+        # 報告はDiscordにしか残らないため、送れなかったときは完了にせず、入力した理由を残したままフォームに戻す
+        response = self._post(reason="送信に失敗する報告")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["error"], "報告を送信できませんでした。時間をおいて再度お試しください。")
+        self.assertContains(response, 'showToast("error", "報告を送信できませんでした。時間をおいて再度お試しください。")')
+        soup = BeautifulSoup(response.content, "html.parser")
+        self.assertEqual(soup.select_one("textarea[name=reason]").get_text(), "送信に失敗する報告")
+
+    @patch("subekashi.views.editor_report.send_discord", return_value=False)
+    def test_reason_is_escaped_in_form(self, mock_send_discord):
+        response = self._post(reason='</textarea><script>alert(1)</script>')
+
+        self.assertNotContains(response, "<script>alert(1)</script>")
+        self.assertContains(response, "&lt;/textarea&gt;&lt;script&gt;alert(1)&lt;/script&gt;")
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
