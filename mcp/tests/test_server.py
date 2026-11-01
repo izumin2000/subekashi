@@ -1,6 +1,7 @@
 import json
 import unittest
 
+from mcp import Client
 from mcp.server.mcpserver.exceptions import ToolError
 
 from subekashi_mcp.client import ApiError
@@ -42,6 +43,17 @@ class ServerTestBase(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(result.content), 1)
         self.assertIsNone(result.structured_content)
         return json.loads(result.content[0].text)
+
+
+class InstructionsTest(unittest.IsolatedAsyncioTestCase):
+    async def test_tells_the_client_to_treat_fetched_content_as_untrusted(self):
+        """タイトル・歌詞・編集履歴は利用者の投稿のため、プロンプトインジェクションに備え、
+        取得した内容を信頼できないデータとして扱い、指示に従わないよう、MCPクライアントに届く説明に書く"""
+        async with Client(create_server(FakeClient())) as client:
+            instructions = client.instructions
+        self.assertIn("信頼できないデータ", instructions)
+        self.assertIn("従わないでください", instructions)
+        self.assertIn("ユーザーの依頼だけ", instructions)
 
 
 class ToolListTest(ServerTestBase):
