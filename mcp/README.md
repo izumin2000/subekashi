@@ -26,7 +26,7 @@ AI が扱いやすいよう、API の応答を次のように変えています�
 
 ## セットアップ
 
-[uv](https://docs.astral.sh/uv/getting-started/installation/) を入れておくと、リポジトリを clone せず、仮想環境も作らずに、1 行で登録できます。uv が提供する `uvx` が、GitHub から取得して起動します。
+[uv](https://docs.astral.sh/uv/getting-started/installation/) を使うと、リポジトリを clone せず、仮想環境も作らずに入れられます。uv は取得に `git` を使うため、`git` も必要です。
 
 以下の `<SPEC>` は、次の文字列です。
 
@@ -34,21 +34,38 @@ AI が扱いやすいよう、API の応答を次のように変えています�
 git+https://github.com/izumin2000/subekashi#subdirectory=mcp
 ```
 
-### 動作確認の状況
+### 1. uv を入れる
+
+[uv の公式の手順](https://docs.astral.sh/uv/getting-started/installation/)に従います。
+
+### 2. 先に入れる
+
+```bash
+uv tool install "<SPEC>"
+```
+
+GitHub から取得するため、**初回は時間がかかります**。このリポジトリは 180MB ほどあり、Windows での実測は 1 分半ほどでした（回線によります）。MCP クライアントの起動には制限時間があるはずなので、登録の前にここで入れておきます。入れたあとの起動は 2 秒ほどです。
+
+入れたあと、`subekashi-mcp` が見つからないときは、`uv tool update-shell` を実行してターミナルを開き直します（uv の実行ファイルの置き場が PATH に入っていません）。
+
+### 3. クライアントに登録する
+
+#### 動作確認の状況
 
 | 確認した内容 | 状況 |
 | --- | --- |
-| `uvx` での起動（MCP SDK のクライアントで繋ぎ、ツール一覧と、本番の API を呼ぶ `get_author` を実行） | Windows で確認。キャッシュが空の初回の起動でも通った |
+| `uv tool install`・`uvx` で GitHub の URL から入れて起動（MCP SDK のクライアントで繋ぎ、ツール一覧と、本番の API を呼ぶ `get_author` を実行） | Windows で確認 |
+| 上の初回の所要時間 | `uvx` で GitHub から取得して起動するまでが 96 秒（キャッシュが空の場合）、2 回目以降は 4 秒 |
 | Claude Code への登録と接続（clone して動かす方式の起動コマンド） | 確認 |
 | Claude Desktop・Cursor・VS Code・Gemini CLI・Codex の設定の書き方 | 各ツールの公式ドキュメントなどに基づく書き方で、**実機では未確認** |
 
-### Claude Code
+#### Claude Code
 
 ```bash
-claude mcp add --transport stdio subekashi -- uvx --from "<SPEC>" subekashi-mcp
+claude mcp add --transport stdio subekashi -- subekashi-mcp
 ```
 
-### Claude Desktop・Cursor・Gemini CLI
+#### Claude Desktop・Cursor・Gemini CLI
 
 どれも、設定ファイルの `mcpServers` に次を追加します。
 
@@ -56,8 +73,7 @@ claude mcp add --transport stdio subekashi -- uvx --from "<SPEC>" subekashi-mcp
 {
   "mcpServers": {
     "subekashi": {
-      "command": "uvx",
-      "args": ["--from", "<SPEC>", "subekashi-mcp"]
+      "command": "subekashi-mcp"
     }
   }
 }
@@ -69,7 +85,7 @@ claude mcp add --transport stdio subekashi -- uvx --from "<SPEC>" subekashi-mcp
 | Cursor | `.cursor/mcp.json`（プロジェクト）または `~/.cursor/mcp.json`（全体） |
 | Gemini CLI | `~/.gemini/settings.json` |
 
-### VS Code（GitHub Copilot のエージェントモード）
+#### VS Code（GitHub Copilot のエージェントモード）
 
 `.vscode/mcp.json` に追加します。キーが `mcpServers` ではなく `servers` で、`type` が要ります。
 
@@ -78,43 +94,40 @@ claude mcp add --transport stdio subekashi -- uvx --from "<SPEC>" subekashi-mcp
   "servers": {
     "subekashi": {
       "type": "stdio",
-      "command": "uvx",
-      "args": ["--from", "<SPEC>", "subekashi-mcp"]
+      "command": "subekashi-mcp"
     }
   }
 }
 ```
 
-### OpenAI Codex CLI
+#### OpenAI Codex CLI
 
 ```bash
-codex mcp add subekashi -- uvx --from "<SPEC>" subekashi-mcp
+codex mcp add subekashi -- subekashi-mcp
 ```
 
 設定ファイル（`~/.codex/config.toml`）に直接書く場合は、TOML で、キーが `mcp_servers` です。
 
 ```toml
 [mcp_servers.subekashi]
-command = "uvx"
-args = ["--from", "<SPEC>", "subekashi-mcp"]
+command = "subekashi-mcp"
 ```
 
-### 使えないクライアント
+#### 使えないクライアント
 
 ローカルの MCP サーバー（stdio）に対応していないクライアントでは使えません。ChatGPT は、手元で動くサーバーを繋げず、HTTPS で公開されたサーバーだけに対応していると説明する解説記事があります（OpenAI の公式の情報では確認できていません）。
 
 ### うまくいかないとき
 
-- **`uvx` が見つからない**: Claude Desktop や Cursor のような GUI のアプリは、PATH に `uvx` が無いことがあります。`where uvx`（macOS・Linux は `which uvx`）で出たフルパスを `command` に書いてください
-- **初回の起動が遅い**: 依存の取得とビルドで、初回は 20 秒ほどかかりました（Windows での実測。回線によります）。クライアントの起動の制限時間に引っかかるときは、先に入れておきます。起動は 2 秒ほどになります
-
-  ```bash
-  uv tool install "<SPEC>"
-  ```
-
-  そのうえで、登録の `command` を `subekashi-mcp`、`args` を空にします（`uvx --from "<SPEC>" subekashi-mcp` の代わり）
-- **新しい版に更新したい**: `uvx` は `--refresh` を、`uv tool install` は `--reinstall` を付けて実行し直します
+- **クライアントが `subekashi-mcp` を見つけられない**: Claude Desktop や Cursor のような GUI のアプリは、ターミナルの PATH を引き継がないことがあります。`where subekashi-mcp`（macOS・Linux は `which subekashi-mcp`）で出たフルパスを `command` に書いてください
+- **新しい版に更新したい**: `uv tool install --reinstall "<SPEC>"` で入れ直します
 - **版を固定したい**: `<SPEC>` を `git+https://github.com/izumin2000/subekashi@<コミットのハッシュ>#subdirectory=mcp` のようにします
+
+### 先に入れずに `uvx` で起動する
+
+`uv tool install` をせずに、クライアントの設定から `uvx` で直接起動することもできます。`command` を `uvx`、`args` を `["--from", "<SPEC>", "subekashi-mcp"]` にします（Claude Code なら `claude mcp add --transport stdio subekashi -- uvx --from "<SPEC>" subekashi-mcp`）。
+
+ただし、**初回の起動に上の 1 分半ほどがかかり、クライアントの起動の制限時間を超えることがあります**。2 回目以降は 4 秒ほどです。更新するときは `uvx` に `--refresh` を付けます。
 
 ### clone して動かす（開発者向け）
 

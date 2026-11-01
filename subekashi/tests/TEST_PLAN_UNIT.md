@@ -3537,7 +3537,7 @@ URLから、公式がiframeでの埋め込みに対応しているサービス�
 
 #### 29-4. `mcp/tests/test_packaging.py`・`test_entrypoint.py`（パッケージ化、#1324）
 
-`uvx`や`uv tool install`で入れられるよう、`mcp/pyproject.toml`でパッケージ化している（`subekashi-mcp`、起動コマンド`subekashi-mcp`、`packages = ["subekashi_mcp"]`で`tests/`と`run.py`は含めない）。`uvx --from "git+https://github.com/izumin2000/subekashi#subdirectory=mcp" subekashi-mcp`での起動は、GitHubへ出す前に、作業用のgitリポジトリの`#subdirectory=mcp`で、MCP SDKのクライアントから繋いで確かめた（キャッシュが空の初回の起動を含む。Djangoテストでは確認しない）。
+`uvx`や`uv tool install`で入れられるよう、`mcp/pyproject.toml`でパッケージ化している（`subekashi-mcp`、起動コマンド`subekashi-mcp`、`packages = ["subekashi_mcp"]`で`tests/`と`run.py`は含めない）。`uvx --from "git+https://github.com/izumin2000/subekashi#subdirectory=mcp" subekashi-mcp`と`uv tool install`での起動は、作業用のgitリポジトリの`#subdirectory=mcp`と、GitHubに出したブランチのURLで、MCP SDKのクライアントから繋いで確かめた（Djangoテストでは確認しない）。GitHubから取得する初回（キャッシュが空）は、リポジトリが約180MBあるため96秒かかり、2回目以降は4秒だった。MCPクライアントの起動の制限時間を超えるおそれがあるため、READMEは`uv tool install`で先に入れる手順を案内する。uvの`git+`の指定は`git`コマンドを使い、PATHに`git`が無いと「Git executable not found」で失敗する。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
