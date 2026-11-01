@@ -94,16 +94,21 @@ YOUTUBE_INFO = {"view": 50, "like": 5, "upload_time": None}
 YOUTUBE_API_ERROR_MESSAGE = "YouTube Data APIの呼び出しに失敗しました"
 
 
-def batch_api(default, overrides=None):
+def batch_api(default, overrides=None, video_errors=None):
     """get_youtube_api_batchのモックのside_effectを作る。動画IDごとにdefaultかoverridesの値を返す。
-    overridesは{動画ID: 情報かエラー}で、エラーの動画を含む呼び出しはそのエラーを送出する"""
+    overridesは{動画ID: 情報かエラー}で、エラーの動画を含む呼び出しはそのエラーを送出する。
+    video_errorsは{動画ID: YoutubeApiError}で、その動画だけ情報の解析に失敗した扱いにする"""
     overrides = overrides or {}
+    video_errors = video_errors or {}
 
     def api(video_ids):
         for video_id in video_ids:
             if isinstance(overrides.get(video_id), Exception):
                 raise overrides[video_id]
-        return {video_id: overrides.get(video_id, default) for video_id in video_ids}
+        video_infos = {
+            video_id: overrides.get(video_id, default) for video_id in video_ids if video_id not in video_errors
+        }
+        return video_infos, {video_id: video_errors[video_id] for video_id in video_ids if video_id in video_errors}
 
     return api
 
@@ -474,6 +479,60 @@ class YoutubeCommandTest(TestCase):
         self.assertIn(f"song_id：{self.song1.id}", stderr.getvalue())
         self.assertIn(f"song_id：{self.song2.id}", stderr.getvalue())
 
+    @patch("subekashi.management.commands.youtube.sleep")
+    @patch("subekashi.management.commands.youtube.get_youtube_api_batch")
+    def test_unparsable_video_skips_only_songs_with_that_video(self, mock_api, mock_sleep):
+        # 特定の動画の情報が解析できなくても、同じ呼び出しにまとめた他の動画の曲は更新する。
+        # 呼び出し全体を失敗にすると、毎日同じ動画が同じ呼び出しに入り、他の曲も更新され続けなくなる（#1321）
+        upload_time = self.set_previous_values(self.song1)
+        mock_api.side_effect = batch_api(
+            YOUTUBE_INFO, video_errors={"aaaaaaaaaaa": YoutubeApiError("YouTube Data APIのレスポンスを解析できませんでした")},
+        )
+        stderr = StringIO()
+        call_command("youtube", stderr=stderr)
+
+        self.assertEqual(mock_api.call_count, 1)
+        self.assertEqual(mock_api.call_args.args[0], ["aaaaaaaaaaa", "bbbbbbbbbbb"])
+        self.assert_not_updated(self.song1, upload_time)
+        self.song2.refresh_from_db()
+        self.assertEqual(self.song2.view, 50)
+        self.assertIn(f"song_id：{self.song1.id}", stderr.getvalue())
+        self.assertNotIn(f"song_id：{self.song2.id}", stderr.getvalue())
+
+    @patch("subekashi.management.commands.youtube.sleep")
+    @patch("subekashi.management.commands.youtube.get_youtube_api_batch")
+    def test_unparsable_video_among_multiple_does_not_update_song(self, mock_api, mock_sleep):
+        # 解析できない動画が1本でもある曲は、再生回数などの総和が不正確になるため更新しない。他の動画が削除済みでも削除済みにしない
+        upload_time = self.set_previous_values(self.song1)
+        self.link2.songs.add(self.song1)
+        mock_api.side_effect = batch_api(
+            {}, video_errors={"bbbbbbbbbbb": YoutubeApiError("YouTube Data APIのレスポンスを解析できませんでした")},
+        )
+        call_command("youtube", id=self.song1.id, stderr=StringIO())
+
+        self.assert_not_updated(self.song1, upload_time)
+
+    @patch("subekashi.lib.youtube.YOUTUBE_API_KEY", "dummy-key")
+    @patch("subekashi.lib.youtube.build")
+    @patch("subekashi.management.commands.youtube.sleep")
+    def test_unparsable_item_in_api_response_skips_only_that_song(self, mock_sleep, mock_build):
+        # get_youtube_api_batchをモックせず、APIのレスポンスの1件が解析できなくても他の曲を更新する（#1321）
+        upload_time = self.set_previous_values(self.song1)
+        snippet = {"title": "テスト動画", "channelTitle": "テストチャンネル", "publishedAt": "2024-01-01T00:00:00Z"}
+        broken_item = {"id": "aaaaaaaaaaa", "snippet": snippet}
+        item = {"id": "bbbbbbbbbbb", "snippet": snippet, "statistics": {"viewCount": "1000", "likeCount": "100"}}
+        execute = mock_build.return_value.videos.return_value.list.return_value.execute
+        execute.return_value = {"items": [broken_item, item]}
+        stderr = StringIO()
+        call_command("youtube", stderr=stderr)
+
+        self.assertEqual(execute.call_count, 1)
+        self.assert_not_updated(self.song1, upload_time)
+        self.song2.refresh_from_db()
+        self.assertEqual(self.song2.view, 1000)
+        self.assertIn(f"song_id：{self.song1.id}", stderr.getvalue())
+        self.assertIn("KeyError", stderr.getvalue())
+
     @patch("subekashi.management.commands.youtube.send_discord")
     @patch("subekashi.management.commands.youtube.sleep")
     @patch("subekashi.management.commands.youtube.get_youtube_api_batch")
@@ -541,7 +600,7 @@ class YoutubeCommandTest(TestCase):
         # 全件処理は時間がかかるため、動画の取得中に削除された曲があっても残りの処理を続ける
         def get_youtube_api_batch(video_ids):
             Song.objects.filter(pk=self.song2.pk).delete()
-            return {video_id: YOUTUBE_INFO for video_id in video_ids}
+            return {video_id: YOUTUBE_INFO for video_id in video_ids}, {}
 
         mock_api.side_effect = get_youtube_api_batch
         call_command("youtube")

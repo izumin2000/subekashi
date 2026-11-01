@@ -20,6 +20,8 @@ class Command(BaseCommand):
 
     # 動画をYOUTUBE_API_MAX_IDS件ずつまとめて取得する
     # 取得できた動画の情報・取得に失敗した動画のエラー・以降の呼び出しも全て失敗するエラー（無ければNone）を返す
+    # 呼び出しが失敗したときは、その呼び出しの動画の全てが取得に失敗した扱いになる
+    # 動画の情報の解析に失敗したときは、その動画だけが取得に失敗した扱いになる
     def fetch_video_infos(self, video_ids):
         video_infos = {}
         failed_errors = {}
@@ -29,7 +31,9 @@ class Command(BaseCommand):
             sleep(2)
 
             try:
-                video_infos.update(get_youtube_api_batch(chunk))
+                chunk_infos, chunk_errors = get_youtube_api_batch(chunk)
+                video_infos.update(chunk_infos)
+                failed_errors.update(chunk_errors)
 
             # 以降の呼び出しも全て失敗するため、残りの動画の取得を打ち切る
             except YoutubeApiUnavailableError as e:

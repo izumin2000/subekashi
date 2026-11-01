@@ -40,11 +40,16 @@ def get_error_reasons(error):
 
 # 動画が削除・非公開なら{}を返し、APIの呼び出しに失敗したらYoutubeApiErrorを送出する
 def get_youtube_api(video_id):
-    return get_youtube_api_batch([video_id])[video_id]
+    video_infos, errors = get_youtube_api_batch([video_id])
+    if video_id in errors:
+        raise errors[video_id]
+    return video_infos[video_id]
 
 
-# 動画IDごとの{動画ID: 動画の情報}を返す。動画が削除・非公開なら、その動画の情報は{}にする
-# 呼び出しに失敗したらYoutubeApiErrorを送出する
+# 取得できた動画の{動画ID: 動画の情報}と、動画の情報を解析できなかった動画の{動画ID: YoutubeApiError}を返す
+# 動画が削除・非公開なら、その動画の情報は{}にする
+# 1本の動画の解析の失敗でまとめた他の動画が取得できなくならないよう、解析の失敗は動画ごとに分けて返す
+# 呼び出しに失敗したり、レスポンスを動画に対応づけられなかったりしたらYoutubeApiErrorを送出する
 # 1回の呼び出しで1ユニットのクォータを消費するため、YOUTUBE_API_MAX_IDS件までの動画をまとめて取得できる
 # 元の例外の文字列にはAPIキーを含むURLが入り、トレースバックにも出力されるため、
 # 例外は連鎖させず（from None）、メッセージにはAPIキーを含まない情報のみを入れる
@@ -54,7 +59,7 @@ def get_youtube_api_batch(video_ids):
         raise YoutubeApiUnavailableError("YOUTUBE_API_KEYが設定されていません")
 
     if not video_ids:
-        return {}
+        return {}, {}
 
     try:
         # YouTubeからデータを取得
@@ -79,14 +84,25 @@ def get_youtube_api_batch(video_ids):
     try:
         item_by_id = {item["id"]: item for item in response.get("items", [])}
 
-        # 動画が削除・非公開ならレスポンスのitemsに含まれない
-        return {
-            video_id: parse_youtube_item(item_by_id[video_id]) if video_id in item_by_id else {}
-            for video_id in video_ids
-        }
-
     except Exception as e:
         raise YoutubeApiError(f"YouTube Data APIのレスポンスを解析できませんでした（{type(e).__name__}）") from None
+
+    video_infos = {}
+    errors = {}
+    for video_id in video_ids:
+        # 動画が削除・非公開ならレスポンスのitemsに含まれない
+        if video_id not in item_by_id:
+            video_infos[video_id] = {}
+            continue
+
+        try:
+            video_infos[video_id] = parse_youtube_item(item_by_id[video_id])
+
+        # 動画は存在するため、削除・非公開として{}にしない
+        except Exception as e:
+            errors[video_id] = YoutubeApiError(f"YouTube Data APIのレスポンスを解析できませんでした（{type(e).__name__}）")
+
+    return video_infos, errors
 
 
 # レスポンスのitemsの1件から、動画の情報を取得する
