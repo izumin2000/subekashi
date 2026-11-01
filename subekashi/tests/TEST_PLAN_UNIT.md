@@ -3431,6 +3431,38 @@ URLから、公式がiframeでの埋め込みに対応しているサービス�
 
 ---
 
+### 29. `data.json` — 開発用の初期データ（#1286）
+
+**テストファイル**: `tests/test_data_json.py`（`DataJsonCoverageTest`）
+
+`python manage.py loaddata data.json`で入れる開発用の初期データのテスト。`setUpTestData`で`data.json`を`loaddata`した状態を検証する（このテストのみfixtureを使う）。モデルや曲のカテゴリ・フラグ、各モデルの種別を追加したときに`data.json`へのサンプルの追加を忘れないよう、データが無いとテストが失敗する。`stats`・`word`・`ai`・`timeline`・`delete`・`youtube`コマンドを実行した後のデータを含むため、`stats`コマンドの結果とも突き合わせる。
+
+#### 29-1. データの網羅
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 読み込み | `loaddata data.json` | エラーなく読み込める |
+| 全てのモデル | `subekashi`・`article`アプリの全てのモデル | どのモデルにも1件以上ある |
+| 曲のカテゴリ | `SONG_CATEGORIES`の全てのカテゴリ | どのカテゴリの曲も1件以上ある |
+| 曲のフラグ | `SONG_FLAGS`の全てのフラグ（未完成・非すべあな模倣曲は条件から求める）と`is_lock`・`is_removed` | どのフラグの曲も1件以上ある |
+| 曲の関係 | すべあな模倣曲・作者ID1の曲・模倣元のある曲・模倣されている曲・プレラのある曲・アップロード日時や再生数の無い曲・URLの無い曲・複数の作者の曲・複数のURLの曲 | いずれも1件以上ある |
+| 作者 | `AuthorAlias.CHOICES`の全ての種別、URLのある作者 | どの種別の別名も1件以上ある。URLのある作者がいる |
+| 曲のURL | `delete`コマンドで削除されたURL（`is_removed=True`で曲に紐づかない）、複数の曲で共有しているURL（`allow_dup=True`） | いずれも1件以上ある |
+| 年表・プレラ | `is_lyrics_blank`が`True`・`False`の年表の行、日付のあるプレラ | いずれも1件以上ある |
+| 編集者・編集履歴 | 公開・非公開・強制公開・BANされた編集者、ID1の編集者、`History.CHOICES`の全ての種別の曲の編集履歴、作者の編集履歴 | いずれも1件以上ある |
+| お問い合わせ・宣伝 | 回答済み・未回答のお問い合わせ、`Ad.CHOICES`の全ての状態の宣伝 | いずれも1件以上ある |
+| 記事 | `Article.TAGS`の全てのタグ、非公開・公開前・ニュースとして扱う記事、トップ画面のニュース・リリースの記事、`howToArticle` | いずれも1件以上ある |
+| AiとWord | 高評価（5点）・未採点（0点）・途中の点数のAi | いずれも1件以上ある |
+| 月次統計 | `SONGRANGE_CHOICES`の全てのsongrange | どのsongrangeも1件以上ある |
+
+#### 29-2. `stats`コマンドとの一致
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 再実行しても変わらない | `data.json`を読み込んで`stats`コマンドを実行 | `data.json`にある月・songrangeの統計の値（曲数・再生数・高評価数・作者数・模倣された作者数・模倣された数）が変わらない（月が替わって増える月は対象外）。変わる場合は`data.json`の月次統計を更新する |
+
+---
+
 ## テスト優先度
 
 | 優先度 | 対象 | 理由 |
@@ -3443,6 +3475,7 @@ URLから、公式がiframeでの埋め込みに対応しているサービス�
 | **中** | `lib/song_search.py` | ページネーションロジックのエッジケース |
 | **中** | ビュー (`test_views.py`) | HTTP レスポンスの基本確認 |
 | **中** | REST API (`test_api.py`) | APIレスポンス形式の確認 |
+| **中** | `data.json` | モデルやカテゴリ・フラグの追加で開発用の初期データが古くなるのを防ぐ。`stats`コマンドの結果ともずれない |
 | **低** | `lib/author_helpers.py` | `test_author_migration.py` に既に類似テストあり |
 | **低** | ミドルウェア | 結合テストに近く、設定依存 |
 | **低** | `article` アプリ | 機能がシンプルで変更頻度が低い |
@@ -3455,7 +3488,7 @@ URLから、公式がiframeでの埋め込みに対応しているサービス�
 2. **DBテスト**: `TestCase` がトランザクションを自動ロールバックするため、各テストは独立
 3. **外部API依存の排除**: Discord通知・外部URLアクセスは `unittest.mock.patch` でモック化
 4. **純粋関数のテスト**: `lib/url.py`, `lib/query_utils.py` など副作用のない関数は `SimpleTestCase` で十分
-5. **テストデータ**: `setUp` メソッドでモデルオブジェクトを直接作成（fixtureは使わない）
+5. **テストデータ**: `setUp` メソッドでモデルオブジェクトを直接作成（fixtureは使わない。`data.json`のテスト（`test_data_json.py`）のみ`loaddata`で読み込む）
 
 ---
 
@@ -3488,6 +3521,7 @@ subekashi/tests/
 ├── test_lib_ip.py                  # 実装済み: クライアントのIP
 ├── test_lib_embed.py               # 実装済み: 曲ページの埋め込みプレイヤー
 ├── test_management_commands.py     # 実装済み: 管理コマンド
+├── test_data_json.py               # 実装済み: 開発用の初期データ（data.json）の網羅・statsコマンドとの一致・主要画面の表示
 ├── test_templatetags_song_card.py  # 実装済み: song_card テンプレートタグ
 ├── test_templatetags_ogp.py        # 実装済み: ogp テンプレートタグ
 └── test_templatetags_changes.py    # 実装済み: changes テンプレートタグ
