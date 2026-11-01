@@ -2419,31 +2419,38 @@ ASCIIの数字だけで、SQLiteの整数の範囲に収まる文字列を整数
 
 #### 14-2. `youtube` コマンド
 
-DBロックエラー対策で全件処理時に先にID一覧を取得する方式に変更したことに対応（YouTube APIはモック化）。YouTube以外のURL（ニコニコ動画・SoundCloud等）は公開状況を確認できないため、それらを持つ曲はYouTubeの動画が全て取得不可でも`is_deleted`を変更しない（#1136）。また、YouTubeの動画が全て取得不可の場合、`view`・`like`・`upload_time`は前回の値を引き継ぐ（#1136）。APIの呼び出しに失敗した（`YoutubeApiError`）動画が1本でもある曲は、削除と区別して`is_deleted`・`view`・`like`・`upload_time`を更新しない。クォータ超過・APIキーの問題など以降の呼び出しも全て失敗する場合（`YoutubeApiUnavailableError`）は、残りの曲の処理を打ち切りDiscordにエラー通知する。存在しない`-id`を指定した場合は`CommandError`を送出し、全件処理中に削除された曲はスキップする（#1146）。YouTube Data APIのクォータ枯渇対策として、`-id`未指定の全件処理は偶数日（日本時間）に`id`が偶数の曲、奇数日に`id`が奇数の曲のみを対象にする（#1319）。テストでは`timezone`をモック化して日付を固定し、`setUp`で偶数日に固定したうえで`song1`・`song2`の`id`を偶数にして既存の全件処理のケースを対象にしている。
+DBロックエラー対策で全件処理時に先にID一覧を取得する方式に変更したことに対応（YouTube APIは`get_youtube_api_batch`をモック化）。YouTube以外のURL（ニコニコ動画・SoundCloud等）は公開状況を確認できないため、それらを持つ曲はYouTubeの動画が全て取得不可でも`is_deleted`を変更しない（#1136）。また、YouTubeの動画が全て取得不可の場合、`view`・`like`・`upload_time`は前回の値を引き継ぐ（#1136）。APIの呼び出しに失敗した（`YoutubeApiError`）動画が1本でもある曲は、削除と区別して`is_deleted`・`view`・`like`・`upload_time`を更新しない。クォータ超過・APIキーの問題など以降の呼び出しも全て失敗する場合（`YoutubeApiUnavailableError`）は、残りの動画の取得を打ち切りDiscordにエラー通知する。YouTube Data APIのクォータの消費を減らすため、対象の曲の動画は先にまとめて集め、重複を除いて`YOUTUBE_API_MAX_IDS`（50）件ずつ1回の呼び出しで取得する（#1321）。1回の呼び出しが失敗すると、その呼び出しに含まれる動画は全て取得できない。クォータ超過で取得を打ち切ったときは、それまでに全ての動画を取得できた曲は更新し、取得できていない動画がある曲は更新しない。テストでは1回に取得する件数を小さくするため`YOUTUBE_API_MAX_IDS`をモックで差し替え、少ない曲で複数回の呼び出しを再現している。存在しない`-id`を指定した場合は`CommandError`を送出し、全件処理中に削除された曲はスキップする（#1146）。YouTube Data APIのクォータ枯渇対策として、`-id`未指定の全件処理は偶数日（日本時間）に`id`が偶数の曲、奇数日に`id`が奇数の曲のみを対象にする（#1319）。テストでは`timezone`をモック化して日付を固定し、`setUp`で偶数日に固定したうえで`song1`・`song2`の`id`を偶数にして既存の全件処理のケースを対象にしている。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | `-id` 指定 | 特定のSongのみ対象 | 指定Songのみ`view`等が更新される |
 | `-id` 未指定 | 偶数日・SongLinkが紐づく`id`が偶数の全Song | 該当する全Songが更新される |
-| `-id` 未指定・偶数日（#1319） | 偶数日・`id`が偶数のSong2曲と`id`が奇数のSong1曲にSongLinkが紐づく | `id`が偶数のSongのみ更新され、`id`が奇数のSongは更新されない。APIの呼び出しは2回 |
-| `-id` 未指定・奇数日（#1319） | 奇数日・`id`が偶数のSong2曲と`id`が奇数のSong1曲にSongLinkが紐づく | `id`が奇数のSongのみ更新され、`id`が偶数のSongは更新されない。APIの呼び出しは1回 |
+| `-id` 未指定・偶数日（#1319） | 偶数日・`id`が偶数のSong2曲と`id`が奇数のSong1曲にSongLinkが紐づく | `id`が偶数のSongのみ更新され、`id`が奇数のSongは更新されない。APIの呼び出しは1回で、`id`が偶数のSong2曲の動画だけを取得する |
+| `-id` 未指定・奇数日（#1319） | 奇数日・`id`が偶数のSong2曲と`id`が奇数のSong1曲にSongLinkが紐づく | `id`が奇数のSongのみ更新され、`id`が偶数のSongは更新されない。APIの呼び出しは1回で、`id`が奇数のSongの動画だけを取得する |
 | 日付は日本時間で判定（#1319） | UTCでは1月1日（奇数日）・日本時間では1月2日（偶数日）の時刻 | 偶数日として`id`が偶数のSongのみ更新される |
 | `-id` 指定時は分割しない（#1319） | 偶数日・`id`が奇数のSongを`-id`で指定 | 日付に関係なく指定Songが更新される |
 | SongLinkが無いSong | 対象外 | 更新されない（スキップ） |
-| 全動画が取得不可 | `view`・`like`・`upload_time`が設定済み・`get_youtube_api` が `{}` を返す | `is_deleted=True` で保存され、`view`・`like`・`upload_time`は前回の値のまま |
-| 全YouTube動画が取得不可＋YouTube以外のURLあり（#1136） | `view`・`like`・`upload_time`が設定済み・ニコニコ動画のURLも紐づく・`get_youtube_api` が `{}` を返す | `is_deleted=False` のまま、`view`・`like`・`upload_time`は前回の値のまま |
-| 全YouTube動画が取得不可＋YouTube以外のURLあり＋手動で削除済み（#1136） | `is_deleted=True`・SoundCloudのURLも紐づく・`get_youtube_api` が `{}` を返す | `is_deleted=True` のまま |
-| 複数YouTube動画のうち1つのみ取得可 | 1件目は `{}`、2件目は情報を返す | `is_deleted=False`、`view`は取得できた動画の値 |
-| YouTube動画が取得可＋YouTube以外のURLあり（#1136） | ニコニコ動画のURLも紐づく・`get_youtube_api` が情報を返す | `is_deleted=False`、`view`は取得できた動画の値 |
-| 手動で削除済み＋YouTube動画が取得可＋YouTube以外のURLあり（#1136） | `is_deleted=True`・ニコニコ動画のURLも紐づく・`get_youtube_api` が情報を返す | `is_deleted=False` に戻る |
-| APIの呼び出しに失敗（#1146） | `view`・`like`・`upload_time`が設定済み・`get_youtube_api` が `YoutubeApiError` を送出 | `is_deleted=False` のまま、`view`・`like`・`upload_time`は前回の値のまま |
-| 複数YouTube動画のうち1つが取得可・1つが呼び出し失敗（#1146） | 1件目は情報を返し、2件目は `YoutubeApiError` を送出 | 取得できた動画の値だけで更新せず、`view`・`like`・`upload_time`・`is_deleted`は前回の値のまま |
-| 複数YouTube動画のうち1つが削除済み・1つが呼び出し失敗（#1146） | 1件目は `{}`、2件目は `YoutubeApiError` を送出 | 失敗した動画が公開されている可能性があるため、`is_deleted=False` のまま |
-| 全件処理中に1曲だけ呼び出し失敗（#1146） | `-id` 未指定・1曲目の動画のみ `YoutubeApiError` を送出 | 処理を打ち切らず、失敗した曲のみ更新されず残りの曲は更新される。標準エラー出力に失敗した曲のIDが出る |
-| クォータ超過（#1146） | `-id` 未指定・`get_youtube_api` が `YoutubeApiUnavailableError` を送出 | APIの呼び出しは1回で打ち切られ、どの曲も更新されない。Discord（`ERROR_DISCORD_URL`）と標準エラー出力に通知される |
-| 2本目の動画でクォータ超過（#1146） | 1件目は情報を返し、2件目は `YoutubeApiUnavailableError` を送出 | 取得できた動画の値だけで更新せず、Discordに通知される |
+| 複数の曲の動画をまとめて取得（#1321） | `-id` 未指定・偶数日・`id`が偶数のSong2曲 | APIの呼び出しは1回で、2曲の動画IDをまとめて渡す。`sleep`も1回 |
+| 動画の数が1回の上限を超える（#1321） | `YOUTUBE_API_MAX_IDS`を2に差し替え・3曲の動画 | 呼び出しは2回（2件・1件）に分かれ、3曲とも更新される。`sleep`は2回 |
+| 複数の曲に紐づく動画（#1321） | 曲1の動画が曲2にも紐づく | 動画は1回だけ取得し、曲1の`view`は1本分・曲2の`view`は2本分になる |
+| `-id` 指定で複数の動画（#1321） | 1曲に動画が2本紐づく | APIの呼び出しは1回で、2本をまとめて取得し、`view`は2本の総和 |
+| YouTubeのURLが無い曲（#1321） | ニコニコ動画のURLのみの曲を`-id`で指定 | APIは呼び出さず（クォータを消費せず）、曲は更新されない |
+| 全動画が取得不可 | `view`・`like`・`upload_time`が設定済み・`get_youtube_api_batch` が全ての動画に `{}` を返す | `is_deleted=True` で保存され、`view`・`like`・`upload_time`は前回の値のまま |
+| 全YouTube動画が取得不可＋YouTube以外のURLあり（#1136） | `view`・`like`・`upload_time`が設定済み・ニコニコ動画のURLも紐づく・`get_youtube_api_batch` が全ての動画に `{}` を返す | `is_deleted=False` のまま、`view`・`like`・`upload_time`は前回の値のまま |
+| 全YouTube動画が取得不可＋YouTube以外のURLあり＋手動で削除済み（#1136） | `is_deleted=True`・SoundCloudのURLも紐づく・`get_youtube_api_batch` が全ての動画に `{}` を返す | `is_deleted=True` のまま |
+| 複数YouTube動画のうち1つのみ取得可 | 1本目は `{}`、2本目は情報を返す | `is_deleted=False`、`view`は取得できた動画の値 |
+| YouTube動画が取得可＋YouTube以外のURLあり（#1136） | ニコニコ動画のURLも紐づく・`get_youtube_api_batch` が情報を返す | `is_deleted=False`、`view`は取得できた動画の値 |
+| 手動で削除済み＋YouTube動画が取得可＋YouTube以外のURLあり（#1136） | `is_deleted=True`・ニコニコ動画のURLも紐づく・`get_youtube_api_batch` が情報を返す | `is_deleted=False` に戻る |
+| APIの呼び出しに失敗（#1146） | `view`・`like`・`upload_time`が設定済み・`get_youtube_api_batch` が `YoutubeApiError` を送出 | `is_deleted=False` のまま、`view`・`like`・`upload_time`は前回の値のまま |
+| 複数YouTube動画のうち1つが取得可・1つが呼び出し失敗（#1146） | `YOUTUBE_API_MAX_IDS`を1に差し替え・1本目は情報を返し、2本目を含む呼び出しは `YoutubeApiError` を送出 | 取得できた動画の値だけで更新せず、`view`・`like`・`upload_time`・`is_deleted`は前回の値のまま |
+| 複数YouTube動画のうち1つが削除済み・1つが呼び出し失敗（#1146） | `YOUTUBE_API_MAX_IDS`を1に差し替え・1本目は `{}`、2本目を含む呼び出しは `YoutubeApiError` を送出 | 失敗した動画が公開されている可能性があるため、`is_deleted=False` のまま |
+| 全件処理中に1曲だけ呼び出し失敗（#1146） | `YOUTUBE_API_MAX_IDS`を1に差し替え・`-id` 未指定・1曲目の動画を含む呼び出しのみ `YoutubeApiError` を送出 | 処理を打ち切らず、失敗した曲のみ更新されず残りの曲は更新される。標準エラー出力に失敗した曲のIDだけが出る |
+| 同じ呼び出しにまとめた曲が全て失敗（#1321） | `-id` 未指定・2曲の動画をまとめた1回の呼び出しが `YoutubeApiError` を送出 | 2曲とも更新されず、標準エラー出力に2曲のIDが出る |
+| クォータ超過（#1146） | `-id` 未指定・`get_youtube_api_batch` が `YoutubeApiUnavailableError` を送出 | APIの呼び出しは1回で打ち切られ、どの曲も更新されない。Discord（`ERROR_DISCORD_URL`）と標準エラー出力に通知される |
+| 途中の呼び出しでクォータ超過（#1321） | `YOUTUBE_API_MAX_IDS`を1に差し替え・`-id` 未指定・1曲目の動画は取得でき、2曲目の動画の呼び出しが `YoutubeApiUnavailableError` を送出 | 呼び出しは2回で打ち切られ、取得済みの1曲目は更新され、2曲目は更新されない。Discordに「1件を取得済み」を含む内容で通知される |
+| 2本目の動画でクォータ超過（#1146） | `YOUTUBE_API_MAX_IDS`を1に差し替え・1本目は情報を返し、2本目を含む呼び出しは `YoutubeApiUnavailableError` を送出 | 取得できた動画の値だけで更新せず、Discordに通知される |
 | 存在しない `-id` 指定（#1146） | `-id 999999` | `CommandError` を送出し、APIは呼び出さない |
-| 処理中に削除された曲（#1146） | `-id` 未指定・1曲目の処理中にもう1曲が削除される | 削除された曲はスキップし、例外を出さずに処理を終える |
+| 処理中に削除された曲（#1146、#1321） | `-id` 未指定・動画の取得中にもう1曲が削除される | 削除された曲はスキップし、残りの曲は更新され、例外を出さずに処理を終える |
 
 #### 14-3. `backup` コマンド（バックアップ先をサーバーストレージからGoogle Driveに変更、#1050。MySQL移行対応でmysqldump方式を追加、#1086。ファイル名のJST化と`--now`オプションを追加、#1096）
 
@@ -3071,6 +3078,8 @@ YouTube Data API（`build`）はモック化する。「動画が存在しない
 
 #### 21-1. `get_youtube_api(video_id)`
 
+動画1件の情報を返す。`get_youtube_api_batch([video_id])`を呼んでいる（動画の登録画面から使う）ため、エラーの扱いは21-2と共通。
+
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | 動画の情報を取得 | `items`に動画が1件 | `view`・`like`・`title`・`author`・`upload_time`（日本標準時）を返す |
@@ -3087,6 +3096,21 @@ YouTube Data API（`build`）はモック化する。「動画が存在しない
 | 通信エラー・タイムアウト | `socket.timeout` | `YoutubeApiError`を送出する（`YoutubeApiUnavailableError`ではない）。メッセージに元の例外のクラス名が含まれる |
 | 想定外のレスポンス | `items`に動画はあるが`statistics`が無い | `YoutubeApiError`を送出する（動画は存在するため`{}`は返さない）。メッセージに元の例外のクラス名（`KeyError`）が含まれる |
 | APIキーを漏らさない | `HttpError`のURLにAPIキーが含まれる（`quotaExceeded`・`keyInvalid`・`forbidden`） | 例外のメッセージにAPIキーが含まれない（Discordの公開チャンネルに通知されるため）。例外が連鎖していない（`__cause__`が`None`・`__suppress_context__`が`True`。トレースバックにAPIキーが出力されないため） |
+| APIキー未設定 | `YOUTUBE_API_KEY=""` | `YoutubeApiUnavailableError`を送出し、APIは呼び出さない |
+
+#### 21-2. `get_youtube_api_batch(video_ids)`（#1321）
+
+`videos.list`は1回の呼び出しで1ユニットのクォータを消費し、`id`に最大`YOUTUBE_API_MAX_IDS`（50）件の動画IDを渡せる。動画をまとめて取得してクォータの消費を減らすため、動画IDごとの情報を`{動画ID: 情報}`で返す。`HttpError`などの扱いは21-1と同じで、1回の呼び出しに含まれる動画は全て同じエラーになる。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 複数の動画を1回で取得 | 動画ID2件・レスポンスの`items`は渡した順序と逆 | 渡した順序の`{動画ID: 情報}`を返し、情報は動画IDごとに正しい動画のもの。`videos().list()`は1回で、`id`は`"aaaaaaaaaaa,bbbbbbbbbbb"` |
+| 一部の動画が削除・非公開 | 動画ID2件・`items`には1件のみ | `items`に無い動画は`{}`、ある動画は情報を返す |
+| 全ての動画が削除・非公開 | `items`が無いレスポンス | 全ての動画が`{}` |
+| 動画IDが空 | `[]` | `{}`を返し、APIは呼び出さない（クォータを消費しない） |
+| 呼び出しに失敗 | `HttpError` 403・`quotaExceeded`、`HttpError` 500 | それぞれ`YoutubeApiUnavailableError`・`YoutubeApiError`（`YoutubeApiUnavailableError`ではない） |
+| 1件でも解析できない | `items`の1件に`statistics`が無い | `YoutubeApiError`を送出する（存在する動画を`{}`にしない）。メッセージに`KeyError`が含まれる |
+| `items`の`id`が無い | `items`の1件に`id`が無い | `YoutubeApiError`を送出する |
 | APIキー未設定 | `YOUTUBE_API_KEY=""` | `YoutubeApiUnavailableError`を送出し、APIは呼び出さない |
 
 ---
