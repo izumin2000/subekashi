@@ -1,4 +1,5 @@
 import asyncio
+import http.client
 import json
 import os
 import threading
@@ -31,7 +32,9 @@ class FakeSite:
                 self.send_response(status)
                 for name, value in headers.items():
                     self.send_header(name, value)
-                self.send_header("Content-Length", str(len(body)))
+                # 本文より大きいContent-Lengthを指定すると、本文を送ったところで切断し、読み込み中の切断を再現できる
+                if "Content-Length" not in headers:
+                    self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
 
@@ -162,6 +165,31 @@ class ClientErrorTest(ClientTestBase):
         self.assertIsNone(caught.exception.status)
         self.assertIn("接続できませんでした", str(caught.exception))
         self.assertIn(self.site.url, str(caught.exception))
+
+    async def test_connection_closed_while_reading_the_body(self):
+        """本文を読んでいる途中の切断（IncompleteRead）は、OSErrorではなくHTTPException系のため別に捕まえる"""
+        self.site.respond((200, {"Content-Length": "100"}, b'{"count": 1'))
+        with self.assertRaises(ApiError) as caught:
+            await self.client().get("/api/song/")
+        self.assertIsNone(caught.exception.status)
+        self.assertIn("接続できませんでした", str(caught.exception))
+        self.assertIsInstance(caught.exception.__cause__, http.client.IncompleteRead)
+
+    async def test_connection_closed_while_reading_an_error_body(self):
+        """エラー応答（HTTPError）の本文を読んでいる途中の切断も同じ"""
+        self.site.respond((500, {"Content-Length": "100"}, b"<h1>Server"))
+        with self.assertRaises(ApiError) as caught:
+            await self.client().get("/api/song/")
+        self.assertIsNone(caught.exception.status)
+        self.assertIn("接続できませんでした", str(caught.exception))
+        self.assertIsInstance(caught.exception.__cause__, http.client.IncompleteRead)
+
+    async def test_invalid_status_line(self):
+        with patch("urllib.request.urlopen", side_effect=http.client.BadStatusLine("garbage")):
+            with self.assertRaises(ApiError) as caught:
+                await self.client().get("/api/song/")
+        self.assertIsNone(caught.exception.status)
+        self.assertIn("接続できませんでした", str(caught.exception))
 
     async def test_timeout(self):
         with patch("urllib.request.urlopen", side_effect=TimeoutError("timed out")):

@@ -1,4 +1,5 @@
 import asyncio
+import http.client
 import json
 import math
 import os
@@ -83,13 +84,16 @@ class Client:
 
     def _fetch(self, url):
         request = urllib.request.Request(url, headers=self._headers)
+        # 本文を読んでいる途中の切断（IncompleteRead）や不正な応答（BadStatusLine）はOSErrorではなくHTTPException系で、
+        # HTTPErrorの本文を読むe.read()でも起きるため、内側のtryの外で捕まえる
         try:
-            with urllib.request.urlopen(request, timeout=self.timeout) as response:
-                return response.status, response.headers, response.read()
-        except urllib.error.HTTPError as e:
-            with e:
-                return e.code, e.headers, e.read()
-        except OSError as e:
+            try:
+                with urllib.request.urlopen(request, timeout=self.timeout) as response:
+                    return response.status, response.headers, response.read()
+            except urllib.error.HTTPError as e:
+                with e:
+                    return e.code, e.headers, e.read()
+        except (OSError, http.client.HTTPException) as e:
             raise ApiError(f"サイトに接続できませんでした（{self.base_url}）: {e}") from e
 
     def _parse(self, status, body):

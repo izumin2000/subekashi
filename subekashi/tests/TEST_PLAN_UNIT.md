@@ -3461,6 +3461,7 @@ URLから、公式がiframeでの埋め込みに対応しているサービス�
 | 404 | `{"detail": ...}` | `ApiError`（status 404） |
 | 5xx | 500 | `ApiError`（status 500、「HTTP 500」を含む） |
 | 200でJSONではない | HTMLの本文 | `ApiError`（「JSONではありません」を含む） |
+| 本文を読んでいる途中の切断 | `Content-Length`より短い本文で切断する200・500の応答（`IncompleteRead`）、`urlopen`が`BadStatusLine`を送出 | どちらも`ApiError`（statusは`None`、「接続できませんでした」を含む）。`IncompleteRead`・`BadStatusLine`は`OSError`ではなく`http.client.HTTPException`系のため、`OSError`だけを捕まえると生の例外がAIに渡る。200の本文を読む`response.read()`と、エラー応答の本文を読む`e.read()`の両方が対象 |
 | 接続できない・タイムアウト | `urlopen`が`URLError`・`TimeoutError` | `ApiError`（statusは`None`、接続先を含む）。Windowsでは閉じたポートへの接続の失敗に約2.5秒かかるため、`urlopen`を差し替える |
 | 429のあと成功 | 429（`Retry-After: 0`）が2回のあと200 | 3回目の結果を返す |
 | 429が続く | 常に429、`max_retries=2` | `ApiError`（status 429、「1秒に2回」を含む）。リクエストは3回 |
