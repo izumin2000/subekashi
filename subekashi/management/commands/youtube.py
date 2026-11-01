@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
+from django.utils import timezone
 from config.local_settings import ERROR_DISCORD_URL
 from subekashi.lib.discord import send_discord
 from subekashi.lib.url import *
@@ -8,7 +9,10 @@ from time import sleep
 
 
 class Command(BaseCommand):
-    help = "YouTube API関連。idオプションを加えることでそのidのみのsongレコードを更新する"
+    help = (
+        "YouTube API関連。idオプションを加えることでそのidのみのsongレコードを更新する。"
+        "idオプションが無い場合は、偶数日はidが偶数、奇数日はidが奇数のsongレコードのみを更新する"
+    )
     
     # 複数のYouTubeの動画の再生回数・高評価数の総和を求める
     # アップロード日時は最も新しい日時を取得する
@@ -76,9 +80,13 @@ class Command(BaseCommand):
                 raise CommandError(f"song_id：{id}の曲は存在しません")
             song_ids = [id]
         else:
-            song_ids = list(
+            all_song_ids = list(
                 Song.objects.filter(links__isnull=False).distinct().values_list('pk', flat=True)
             )
+
+            # YouTube Data APIのクォータ枯渇対策として、偶数日はidが偶数、奇数日はidが奇数のsongのみを対象にする
+            parity = timezone.localtime(timezone.now()).day % 2
+            song_ids = [song_id for song_id in all_song_ids if song_id % 2 == parity]
 
         for song_id in song_ids:
             # 全件処理は時間がかかるため、処理中に削除された曲はスキップする

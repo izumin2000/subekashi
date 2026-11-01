@@ -3,7 +3,8 @@
 
 delete: is_removedをfalseのままにする--keep-linksオプションと、ユーザーが削除した曲（#1239）も完全に削除できることを検証する。
 youtube: DBロック対策で処理方式を変更した後の挙動（id指定・全件処理・リンク無しスキップ・動画削除時の扱い）と、YouTube以外のURLがある曲を削除済みにしない挙動（#1136）、
-APIの呼び出しに失敗した曲を更新しない挙動・クォータ超過時に処理を打ち切る挙動（#1146）を検証する。
+APIの呼び出しに失敗した曲を更新しない挙動・クォータ超過時に処理を打ち切る挙動（#1146）、
+全件処理を偶数日はidが偶数・奇数日はidが奇数の曲に分割する挙動（#1319）を検証する。
 backup: バックアップ先をサーバーストレージからGoogle Driveに変更した挙動（#1050）を検証する。
 word: word.jsonから模倣単語候補をWordに一括登録する処理（#1053）を検証する。
 ai: Song.lyricsの単語をランダムに入れ替えてgenetype="janome"のAiレコードをシードする処理を検証する。
@@ -92,15 +93,30 @@ class YoutubeCommandTest(TestCase):
     """youtube コマンドのテスト"""
 
     def setUp(self):
-        self.song1 = Song.objects.create(title="YouTube曲1")
+        # 全件処理は偶数日にidが偶数の曲のみを対象にする（#1319）ため、日付を偶数日に固定し、song1・song2のidを偶数にする
+        patcher = patch("subekashi.management.commands.youtube.timezone")
+        self.mock_timezone = patcher.start()
+        self.addCleanup(patcher.stop)
+        self.set_today(2)
+
+        self.song1 = Song.objects.create(id=2, title="YouTube曲1")
         self.link1 = SongLink.objects.create(url="https://youtu.be/aaaaaaaaaaa")
         self.link1.songs.add(self.song1)
 
-        self.song2 = Song.objects.create(title="YouTube曲2")
+        self.song2 = Song.objects.create(id=4, title="YouTube曲2")
         self.link2 = SongLink.objects.create(url="https://youtu.be/bbbbbbbbbbb")
         self.link2.songs.add(self.song2)
 
         self.song_without_link = Song.objects.create(title="リンク無し曲")
+
+    def set_today(self, day):
+        self.mock_timezone.localtime.return_value = timezone_aware(2026, 1, day)
+
+    def create_odd_id_song(self):
+        song = Song.objects.create(id=3, title="YouTube曲3")
+        link = SongLink.objects.create(url="https://youtu.be/ccccccccccc")
+        link.songs.add(song)
+        return song
 
     @patch("subekashi.management.commands.youtube.sleep")
     @patch("subekashi.management.commands.youtube.get_youtube_api")
@@ -123,6 +139,68 @@ class YoutubeCommandTest(TestCase):
         self.song2.refresh_from_db()
         self.assertEqual(self.song1.view, 50)
         self.assertEqual(self.song2.view, 50)
+
+    @patch("subekashi.management.commands.youtube.sleep")
+    @patch("subekashi.management.commands.youtube.get_youtube_api")
+    def test_without_id_updates_only_even_id_songs_on_even_day(self, mock_api, mock_sleep):
+        # クォータ枯渇対策として、偶数日はidが偶数の曲のみを更新する（#1319）
+        odd_id_song = self.create_odd_id_song()
+        mock_api.return_value = {"view": 50, "like": 5, "upload_time": None}
+        self.set_today(2)
+        call_command("youtube")
+
+        self.song1.refresh_from_db()
+        self.song2.refresh_from_db()
+        odd_id_song.refresh_from_db()
+        self.assertEqual(self.song1.view, 50)
+        self.assertEqual(self.song2.view, 50)
+        self.assertIsNone(odd_id_song.view)
+        self.assertEqual(mock_api.call_count, 2)
+
+    @patch("subekashi.management.commands.youtube.sleep")
+    @patch("subekashi.management.commands.youtube.get_youtube_api")
+    def test_without_id_updates_only_odd_id_songs_on_odd_day(self, mock_api, mock_sleep):
+        # クォータ枯渇対策として、奇数日はidが奇数の曲のみを更新する（#1319）
+        odd_id_song = self.create_odd_id_song()
+        mock_api.return_value = {"view": 50, "like": 5, "upload_time": None}
+        self.set_today(3)
+        call_command("youtube")
+
+        self.song1.refresh_from_db()
+        self.song2.refresh_from_db()
+        odd_id_song.refresh_from_db()
+        self.assertIsNone(self.song1.view)
+        self.assertIsNone(self.song2.view)
+        self.assertEqual(odd_id_song.view, 50)
+        self.assertEqual(mock_api.call_count, 1)
+
+    @patch("subekashi.management.commands.youtube.sleep")
+    @patch("subekashi.management.commands.youtube.get_youtube_api")
+    def test_day_split_uses_japan_time(self, mock_api, mock_sleep):
+        # 本番サーバーのOSはUTCのため、偶数日・奇数日はUTCではなく日本時間（TIME_ZONE）で判定する（#1319）
+        # UTCでは1月1日（奇数日）だが、日本時間では1月2日（偶数日）
+        odd_id_song = self.create_odd_id_song()
+        mock_api.return_value = {"view": 50, "like": 5, "upload_time": None}
+        self.mock_timezone.now.return_value = datetime(2026, 1, 1, 16, 0, tzinfo=dt_timezone.utc)
+        self.mock_timezone.localtime.side_effect = timezone.localtime
+        call_command("youtube")
+
+        self.song1.refresh_from_db()
+        odd_id_song.refresh_from_db()
+        self.assertEqual(self.song1.view, 50)
+        self.assertIsNone(odd_id_song.view)
+
+    @patch("subekashi.management.commands.youtube.sleep")
+    @patch("subekashi.management.commands.youtube.get_youtube_api")
+    def test_id_option_ignores_day_split(self, mock_api, mock_sleep):
+        # -id を指定したときは、偶数日・奇数日に関係なくそのidの曲を更新する（#1319）
+        odd_id_song = self.create_odd_id_song()
+        mock_api.return_value = {"view": 50, "like": 5, "upload_time": None}
+        self.set_today(2)
+        call_command("youtube", id=odd_id_song.id)
+
+        odd_id_song.refresh_from_db()
+        self.assertEqual(odd_id_song.view, 50)
 
     @patch("subekashi.management.commands.youtube.sleep")
     @patch("subekashi.management.commands.youtube.get_youtube_api")
