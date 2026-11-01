@@ -6,6 +6,8 @@ statsコマンドを再実行しても月次統計が変わらないこと、初
 モデルや曲のカテゴリ・フラグを追加したときにdata.jsonへのサンプルの追加を忘れないよう、データが無いとテストが失敗する。
 """
 import os
+from datetime import datetime
+from unittest.mock import patch
 
 from django.apps import apps
 from django.core.management import call_command
@@ -133,27 +135,49 @@ class DataJsonCoverageTest(DataJsonTestCase):
         for songrange, label in SONGRANGE_CHOICES:
             self.assertExists(Stats.objects.filter(songrange=songrange), f"月次統計「{label}」")
 
-    def test_statsコマンドを再実行しても月次統計が変わらない(self):
+    def run_stats_command(self, now=None):
+        """statsコマンドを実行し、実行前後の月次統計（(年, 月, songrange)ごとの値）を返す。nowを指定すると、その時刻に実行したことにする"""
         fields = ["total_authors", "total_imitated_authors", "total_imitateds", "total_like", "total_view", "song_count"]
 
         def snapshot():
             return {(s.year, s.month, s.songrange): tuple(getattr(s, f) for f in fields) for s in Stats.objects.all()}
 
+        before = snapshot()
+        if now is None:
+            call_command("stats", verbosity=0)
+        else:
+            with patch("subekashi.management.commands.stats.now_local", return_value=now):
+                call_command("stats", verbosity=0)
+        return before, snapshot()
+
+    def assertStatsUnchanged(self, before, after):
         # statsコマンドは曲のデータから統計を求めるため、data.jsonに曲を追加・変更すると統計も変わる
         # そのときは、data.jsonを読み込んだDBで python manage.py stats を実行し、Statsを書き出し直す
         how_to_fix = "data.jsonを読み込んだDBで python manage.py stats を実行し、月次統計を書き出し直してください"
-
-        before = snapshot()
-        call_command("stats", verbosity=0)
-        after = snapshot()
-
         self.assertEqual(set(before) - set(after), set(), f"statsコマンドで無くなった月次統計があります。{how_to_fix}")
-        # 月が替わると、data.jsonより新しい月の統計が増える
         for key, values in before.items():
             self.assertEqual(
                 after[key], values,
                 f"{key}の月次統計がstatsコマンドの結果と違います。{how_to_fix}",
             )
+
+    def test_statsコマンドを再実行しても月次統計が変わらない(self):
+        before, after = self.run_stats_command()
+
+        # 月が替わると、data.jsonより新しい月の統計が増える
+        self.assertStatsUnchanged(before, after)
+
+    def test_月が替わってもstatsコマンドは既存の月の統計を変えず新しい月を増やす(self):
+        # テストを実行する月によらず、data.jsonの最後の月より後の月に実行した場合を確かめる
+        last_key = max((year, month) for year, month, _ in Stats.objects.values_list("year", "month", "songrange"))
+        now = timezone.make_aware(datetime(last_key[0] + 3, 1, 15, 12, 0))
+
+        before, after = self.run_stats_command(now)
+
+        self.assertStatsUnchanged(before, after)
+        for songrange, _ in SONGRANGE_CHOICES:
+            # 曲が増えていないため、新しい月の累積値は最後の月と同じになる
+            self.assertEqual(after[(now.year, 1, songrange)], before[(*last_key, songrange)])
 
 
 @override_settings(STORAGES=STATIC_STORAGE, RATELIMIT_ENABLE=False)
