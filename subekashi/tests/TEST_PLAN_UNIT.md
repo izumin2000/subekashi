@@ -2419,12 +2419,16 @@ ASCIIの数字だけで、SQLiteの整数の範囲に収まる文字列を整数
 
 #### 14-2. `youtube` コマンド
 
-DBロックエラー対策で全件処理時に先にID一覧を取得する方式に変更したことに対応（YouTube APIはモック化）。YouTube以外のURL（ニコニコ動画・SoundCloud等）は公開状況を確認できないため、それらを持つ曲はYouTubeの動画が全て取得不可でも`is_deleted`を変更しない（#1136）。また、YouTubeの動画が全て取得不可の場合、`view`・`like`・`upload_time`は前回の値を引き継ぐ（#1136）。APIの呼び出しに失敗した（`YoutubeApiError`）動画が1本でもある曲は、削除と区別して`is_deleted`・`view`・`like`・`upload_time`を更新しない。クォータ超過・APIキーの問題など以降の呼び出しも全て失敗する場合（`YoutubeApiUnavailableError`）は、残りの曲の処理を打ち切りDiscordにエラー通知する。存在しない`-id`を指定した場合は`CommandError`を送出し、全件処理中に削除された曲はスキップする（#1146）。
+DBロックエラー対策で全件処理時に先にID一覧を取得する方式に変更したことに対応（YouTube APIはモック化）。YouTube以外のURL（ニコニコ動画・SoundCloud等）は公開状況を確認できないため、それらを持つ曲はYouTubeの動画が全て取得不可でも`is_deleted`を変更しない（#1136）。また、YouTubeの動画が全て取得不可の場合、`view`・`like`・`upload_time`は前回の値を引き継ぐ（#1136）。APIの呼び出しに失敗した（`YoutubeApiError`）動画が1本でもある曲は、削除と区別して`is_deleted`・`view`・`like`・`upload_time`を更新しない。クォータ超過・APIキーの問題など以降の呼び出しも全て失敗する場合（`YoutubeApiUnavailableError`）は、残りの曲の処理を打ち切りDiscordにエラー通知する。存在しない`-id`を指定した場合は`CommandError`を送出し、全件処理中に削除された曲はスキップする（#1146）。YouTube Data APIのクォータ枯渇対策として、`-id`未指定の全件処理は偶数日（日本時間）に`id`が偶数の曲、奇数日に`id`が奇数の曲のみを対象にする（#1319）。テストでは`timezone`をモック化して日付を固定し、`setUp`で偶数日に固定したうえで`song1`・`song2`の`id`を偶数にして既存の全件処理のケースを対象にしている。
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
 | `-id` 指定 | 特定のSongのみ対象 | 指定Songのみ`view`等が更新される |
-| `-id` 未指定 | SongLinkが紐づく全Song | 該当する全Songが更新される |
+| `-id` 未指定 | 偶数日・SongLinkが紐づく`id`が偶数の全Song | 該当する全Songが更新される |
+| `-id` 未指定・偶数日（#1319） | 偶数日・`id`が偶数のSong2曲と`id`が奇数のSong1曲にSongLinkが紐づく | `id`が偶数のSongのみ更新され、`id`が奇数のSongは更新されない。APIの呼び出しは2回 |
+| `-id` 未指定・奇数日（#1319） | 奇数日・`id`が偶数のSong2曲と`id`が奇数のSong1曲にSongLinkが紐づく | `id`が奇数のSongのみ更新され、`id`が偶数のSongは更新されない。APIの呼び出しは1回 |
+| 日付は日本時間で判定（#1319） | UTCでは1月1日（奇数日）・日本時間では1月2日（偶数日）の時刻 | 偶数日として`id`が偶数のSongのみ更新される |
+| `-id` 指定時は分割しない（#1319） | 偶数日・`id`が奇数のSongを`-id`で指定 | 日付に関係なく指定Songが更新される |
 | SongLinkが無いSong | 対象外 | 更新されない（スキップ） |
 | 全動画が取得不可 | `view`・`like`・`upload_time`が設定済み・`get_youtube_api` が `{}` を返す | `is_deleted=True` で保存され、`view`・`like`・`upload_time`は前回の値のまま |
 | 全YouTube動画が取得不可＋YouTube以外のURLあり（#1136） | `view`・`like`・`upload_time`が設定済み・ニコニコ動画のURLも紐づく・`get_youtube_api` が `{}` を返す | `is_deleted=False` のまま、`view`・`like`・`upload_time`は前回の値のまま |
