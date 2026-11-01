@@ -5,6 +5,7 @@ get_youtube_api: 動画の情報の取得と、「動画が存在しない（削
 区別して扱うこと（前者は{}を返し、後者はYoutubeApiErrorを送出する）を検証する。
 クォータ超過・APIキーの問題（未設定・無効・失効など）は以降の呼び出しも全て失敗するため、YoutubeApiUnavailableErrorを
 送出することを検証する。また、元の例外の文字列にはAPIキーが入るため、例外を連鎖させないことを検証する。
+get_youtube_api_batch: 複数の動画IDを1回の呼び出しでまとめて取得し、{動画ID: 動画の情報}を返すこと（#1321）を検証する。
 """
 import json
 import socket
@@ -15,10 +16,10 @@ import pytz
 from django.test import SimpleTestCase
 from googleapiclient.errors import HttpError
 
-from subekashi.lib.youtube import YoutubeApiError, YoutubeApiUnavailableError, get_youtube_api
+from subekashi.lib.youtube import YoutubeApiError, YoutubeApiUnavailableError, get_youtube_api, get_youtube_api_batch
 
 
-def make_item(**snippet_overrides):
+def make_item(video_id="aaaaaaaaaaa", **snippet_overrides):
     snippet = {
         "title": "テスト動画",
         "channelTitle": "テストチャンネル",
@@ -27,6 +28,7 @@ def make_item(**snippet_overrides):
     }
     snippet.update(snippet_overrides)
     return {
+        "id": video_id,
         "snippet": snippet,
         "statistics": {"viewCount": "1000", "likeCount": "100"},
     }
@@ -199,4 +201,98 @@ class GetYoutubeApiTest(SimpleTestCase):
         with patch("subekashi.lib.youtube.YOUTUBE_API_KEY", ""):
             with self.assertRaises(YoutubeApiUnavailableError):
                 get_youtube_api("aaaaaaaaaaa")
+        mock_build.assert_not_called()
+
+
+@patch("subekashi.lib.youtube.YOUTUBE_API_KEY", "dummy-key")
+@patch("subekashi.lib.youtube.build")
+class GetYoutubeApiBatchTest(SimpleTestCase):
+    """get_youtube_api_batch のテスト（複数の動画を1回の呼び出しで取得してクォータを節約する、#1321）"""
+
+    def set_response(self, mock_build, response=None, error=None):
+        execute = mock_build.return_value.videos.return_value.list.return_value.execute
+        if error:
+            execute.side_effect = error
+        else:
+            execute.return_value = response
+
+    def test_returns_info_by_video_id_in_one_call(self, mock_build):
+        # レスポンスのitemsの順序は、渡した動画IDの順序と一致するとは限らない
+        items = [make_item("bbbbbbbbbbb", title="動画B"), make_item("aaaaaaaaaaa", title="動画A")]
+        self.set_response(mock_build, {"items": items})
+        res, errors = get_youtube_api_batch(["aaaaaaaaaaa", "bbbbbbbbbbb"])
+
+        self.assertEqual(errors, {})
+        self.assertEqual(list(res), ["aaaaaaaaaaa", "bbbbbbbbbbb"])
+        self.assertEqual(res["aaaaaaaaaaa"]["title"], "動画A")
+        self.assertEqual(res["bbbbbbbbbbb"]["title"], "動画B")
+        videos_list = mock_build.return_value.videos.return_value.list
+        videos_list.assert_called_once()
+        self.assertEqual(videos_list.call_args.kwargs["id"], "aaaaaaaaaaa,bbbbbbbbbbb")
+
+    def test_deleted_or_private_video_is_empty_dict(self, mock_build):
+        # 削除・非公開の動画はレスポンスのitemsに含まれない。他の動画の取得には影響しない
+        self.set_response(mock_build, {"items": [make_item("bbbbbbbbbbb")]})
+        res, errors = get_youtube_api_batch(["aaaaaaaaaaa", "bbbbbbbbbbb"])
+
+        self.assertEqual(errors, {})
+        self.assertEqual(res["aaaaaaaaaaa"], {})
+        self.assertEqual(res["bbbbbbbbbbb"]["view"], 1000)
+
+    def test_all_videos_deleted_or_private(self, mock_build):
+        self.set_response(mock_build, {})
+
+        self.assertEqual(
+            get_youtube_api_batch(["aaaaaaaaaaa", "bbbbbbbbbbb"]),
+            ({"aaaaaaaaaaa": {}, "bbbbbbbbbbb": {}}, {}),
+        )
+
+    def test_empty_video_ids_does_not_call_api(self, mock_build):
+        # 取得する動画が無いのにクォータを消費しない
+        self.assertEqual(get_youtube_api_batch([]), ({}, {}))
+        mock_build.assert_not_called()
+
+    def test_error_fails_whole_call(self, mock_build):
+        # 1回の呼び出しに含まれる動画は、全て同じエラーになる
+        self.set_response(mock_build, error=make_http_error(403, ["quotaExceeded"]))
+        with self.assertRaises(YoutubeApiUnavailableError):
+            get_youtube_api_batch(["aaaaaaaaaaa", "bbbbbbbbbbb"])
+
+        self.set_response(mock_build, error=make_http_error(500, ["backendError"]))
+        with self.assertRaises(YoutubeApiError) as cm:
+            get_youtube_api_batch(["aaaaaaaaaaa", "bbbbbbbbbbb"])
+        self.assertNotIsInstance(cm.exception, YoutubeApiUnavailableError)
+
+    def test_unparsable_item_fails_only_that_video(self, mock_build):
+        # 特定の動画の情報が解析できないために、まとめた他の動画まで取得できなくならない。
+        # 動画は存在するため{}（削除・非公開）にはせず、その動画だけをエラーにする
+        broken_item_b = make_item("bbbbbbbbbbb")
+        del broken_item_b["statistics"]
+        broken_item_d = make_item("ddddddddddd", publishedAt="2024/01/01")
+        items = [make_item("aaaaaaaaaaa"), broken_item_b, make_item("ccccccccccc"), broken_item_d]
+        self.set_response(mock_build, {"items": items})
+        res, errors = get_youtube_api_batch(["aaaaaaaaaaa", "bbbbbbbbbbb", "ccccccccccc", "ddddddddddd"])
+
+        self.assertEqual(list(res), ["aaaaaaaaaaa", "ccccccccccc"])
+        self.assertEqual(res["aaaaaaaaaaa"]["view"], 1000)
+        self.assertEqual(res["ccccccccccc"]["view"], 1000)
+        self.assertEqual(list(errors), ["bbbbbbbbbbb", "ddddddddddd"])
+        self.assertIsInstance(errors["bbbbbbbbbbb"], YoutubeApiError)
+        self.assertNotIsInstance(errors["bbbbbbbbbbb"], YoutubeApiUnavailableError)
+        self.assertIn("KeyError", str(errors["bbbbbbbbbbb"]))
+        self.assertIn("ValueError", str(errors["ddddddddddd"]))
+
+    def test_item_without_id_raises_api_error(self, mock_build):
+        # 動画に対応づけられないため、どの動画の情報かが分からず、呼び出し全体を失敗にする
+        item = make_item()
+        del item["id"]
+        self.set_response(mock_build, {"items": [item]})
+
+        with self.assertRaises(YoutubeApiError):
+            get_youtube_api_batch(["aaaaaaaaaaa"])
+
+    def test_empty_api_key_raises_unavailable_error(self, mock_build):
+        with patch("subekashi.lib.youtube.YOUTUBE_API_KEY", ""):
+            with self.assertRaises(YoutubeApiUnavailableError):
+                get_youtube_api_batch(["aaaaaaaaaaa", "bbbbbbbbbbb"])
         mock_build.assert_not_called()
