@@ -139,15 +139,20 @@ class DataJsonCoverageTest(DataJsonTestCase):
         def snapshot():
             return {(s.year, s.month, s.songrange): tuple(getattr(s, f) for f in fields) for s in Stats.objects.all()}
 
+        # statsコマンドは曲のデータから統計を求めるため、data.jsonに曲を追加・変更すると統計も変わる
+        # そのときは、data.jsonを読み込んだDBで python manage.py stats を実行し、Statsを書き出し直す
+        how_to_fix = "data.jsonを読み込んだDBで python manage.py stats を実行し、月次統計を書き出し直してください"
+
         before = snapshot()
         call_command("stats", verbosity=0)
         after = snapshot()
 
+        self.assertEqual(set(before) - set(after), set(), f"statsコマンドで無くなった月次統計があります。{how_to_fix}")
         # 月が替わると、data.jsonより新しい月の統計が増える
         for key, values in before.items():
             self.assertEqual(
                 after[key], values,
-                f"{key}の月次統計がstatsコマンドの結果と違います。data.jsonの月次統計を更新してください",
+                f"{key}の月次統計がstatsコマンドの結果と違います。{how_to_fix}",
             )
 
 
@@ -169,7 +174,13 @@ class DataJsonPagesTest(DataJsonTestCase):
     def test_ユーザーが削除した曲のページは削除の理由つきで410になる(self):
         for song in Song.all_objects.filter(is_removed=True):
             with self.subTest(song=song.id):
-                reason = History.get_for_song(song).first().changes[1]
+                history = History.get_for_song(song).first()
+                self.assertIsNotNone(history, f"data.jsonに曲{song.id}の編集履歴がありません")
+                self.assertEqual(history.history_type, "delete")
+                # 削除の履歴のchangesは["理由", 削除の理由]。changes[1]が、410のページに表示する削除の理由
+                self.assertIsInstance(history.changes, list)
+                self.assertEqual(len(history.changes), 2)
+                reason = history.changes[1]
                 response = self.client.get(reverse("subekashi:song", args=[song.id]))
                 self.assertContains(response, reason, status_code=410)
 
