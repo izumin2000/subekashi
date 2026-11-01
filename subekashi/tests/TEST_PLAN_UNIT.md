@@ -3537,13 +3537,13 @@ URLから、公式がiframeでの埋め込みに対応しているサービス�
 
 ---
 
-### 29. `data.json` — 開発用の初期データ（#1286）
+### 30. `data.json` — 開発用の初期データ（#1286）
 
 **テストファイル**: `tests/test_data_json.py`（`DataJsonCoverageTest`）
 
 `python manage.py loaddata data.json`で入れる開発用の初期データのテスト。`setUpTestData`で`data.json`を`loaddata`した状態を検証する（このテストのみfixtureを使う）。モデルや曲のカテゴリ・フラグ、各モデルの種別を追加したときに`data.json`へのサンプルの追加を忘れないよう、データが無いとテストが失敗する。`stats`・`word`・`ai`・`timeline`・`delete`・`youtube`コマンドを実行した後のデータを含むため、`stats`コマンドの結果とも突き合わせる。
 
-#### 29-1. データの網羅
+#### 30-1. データの網羅
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
@@ -3561,7 +3561,7 @@ URLから、公式がiframeでの埋め込みに対応しているサービス�
 | AiとWord | 高評価（5点）・未採点（0点）・途中の点数のAi | いずれも1件以上ある |
 | 月次統計 | `SONGRANGE_CHOICES`の全てのsongrange | どのsongrangeも1件以上ある |
 
-#### 29-2. `stats`コマンドとの一致
+#### 30-2. `stats`コマンドとの一致
 
 | テストケース | 条件 | 期待結果 |
 | --- | --- | --- |
