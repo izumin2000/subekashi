@@ -1,6 +1,6 @@
 # 全て歌詞の所為です。 MCP サーバー
 
-AI（Claude Desktop・Claude Code など）から「全て歌詞の所為です。」の曲・作者・編集履歴を調べるための、**読み取り専用**の [MCP](https://modelcontextprotocol.io/) サーバーです。サイトの公開 API（[`/llms.txt`](https://lyrics.imicomweb.com/llms.txt) に仕様があります）を呼ぶだけで、Django 側には何も変更を加えていません。
+AI（Claude・Cursor・VS Code・Gemini CLI・Codex など、MCP に対応したクライアント）から「全て歌詞の所為です。」の曲・作者・編集履歴を調べるための、**読み取り専用**の [MCP](https://modelcontextprotocol.io/) サーバーです。サイトの公開 API（[`/llms.txt`](https://lyrics.imicomweb.com/llms.txt) に仕様があります）を呼ぶだけで、Django 側には何も変更を加えていません。
 
 利用者のマシンで動かす stdio 型です。サーバー側に常駐させる形にしていないのは、公開 API の制限（IP ごとに 1 秒に 2 回）が全利用者で共有されてしまうためです。
 
@@ -26,7 +26,99 @@ AI が扱いやすいよう、API の応答を次のように変えています�
 
 ## セットアップ
 
-Python 3.10 以上が必要です。
+[uv](https://docs.astral.sh/uv/getting-started/installation/) を入れておくと、リポジトリを clone せず、仮想環境も作らずに、1 行で登録できます。uv が提供する `uvx` が、GitHub から取得して起動します。
+
+以下の `<SPEC>` は、次の文字列です。
+
+```
+git+https://github.com/izumin2000/subekashi#subdirectory=mcp
+```
+
+### 動作確認の状況
+
+| 確認した内容 | 状況 |
+| --- | --- |
+| `uvx` での起動（MCP SDK のクライアントで繋ぎ、ツール一覧と、本番の API を呼ぶ `get_author` を実行） | Windows で確認。キャッシュが空の初回の起動でも通った |
+| Claude Code への登録と接続（clone して動かす方式の起動コマンド） | 確認 |
+| Claude Desktop・Cursor・VS Code・Gemini CLI・Codex の設定の書き方 | 各ツールの公式ドキュメントなどに基づく書き方で、**実機では未確認** |
+
+### Claude Code
+
+```bash
+claude mcp add --transport stdio subekashi -- uvx --from "<SPEC>" subekashi-mcp
+```
+
+### Claude Desktop・Cursor・Gemini CLI
+
+どれも、設定ファイルの `mcpServers` に次を追加します。
+
+```json
+{
+  "mcpServers": {
+    "subekashi": {
+      "command": "uvx",
+      "args": ["--from", "<SPEC>", "subekashi-mcp"]
+    }
+  }
+}
+```
+
+| クライアント | 設定ファイル |
+| --- | --- |
+| Claude Desktop | `claude_desktop_config.json` |
+| Cursor | `.cursor/mcp.json`（プロジェクト）または `~/.cursor/mcp.json`（全体） |
+| Gemini CLI | `~/.gemini/settings.json` |
+
+### VS Code（GitHub Copilot のエージェントモード）
+
+`.vscode/mcp.json` に追加します。キーが `mcpServers` ではなく `servers` で、`type` が要ります。
+
+```json
+{
+  "servers": {
+    "subekashi": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["--from", "<SPEC>", "subekashi-mcp"]
+    }
+  }
+}
+```
+
+### OpenAI Codex CLI
+
+```bash
+codex mcp add subekashi -- uvx --from "<SPEC>" subekashi-mcp
+```
+
+設定ファイル（`~/.codex/config.toml`）に直接書く場合は、TOML で、キーが `mcp_servers` です。
+
+```toml
+[mcp_servers.subekashi]
+command = "uvx"
+args = ["--from", "<SPEC>", "subekashi-mcp"]
+```
+
+### 使えないクライアント
+
+ローカルの MCP サーバー（stdio）に対応していないクライアントでは使えません。ChatGPT は、手元で動くサーバーを繋げず、HTTPS で公開されたサーバーだけに対応していると説明する解説記事があります（OpenAI の公式の情報では確認できていません）。
+
+### うまくいかないとき
+
+- **`uvx` が見つからない**: Claude Desktop や Cursor のような GUI のアプリは、PATH に `uvx` が無いことがあります。`where uvx`（macOS・Linux は `which uvx`）で出たフルパスを `command` に書いてください
+- **初回の起動が遅い**: 依存の取得とビルドで、初回は 20 秒ほどかかりました（Windows での実測。回線によります）。クライアントの起動の制限時間に引っかかるときは、先に入れておきます。起動は 2 秒ほどになります
+
+  ```bash
+  uv tool install "<SPEC>"
+  ```
+
+  そのうえで、登録の `command` を `subekashi-mcp`、`args` を空にします（`uvx --from "<SPEC>" subekashi-mcp` の代わり）
+- **新しい版に更新したい**: `uvx` は `--refresh` を、`uv tool install` は `--reinstall` を付けて実行し直します
+- **版を固定したい**: `<SPEC>` を `git+https://github.com/izumin2000/subekashi@<コミットのハッシュ>#subdirectory=mcp` のようにします
+
+### clone して動かす（開発者向け）
+
+リポジトリを clone して、仮想環境に入れる方法です。Python 3.10 以上が必要です。
 
 ```bash
 cd mcp
@@ -34,28 +126,13 @@ python -m venv .venv
 .venv/bin/pip install -r requirements.txt          # Windows: .venv\Scripts\pip install -r requirements.txt
 ```
 
-### Claude Code
+Claude Code への登録は次のとおりです。Windows では `python` に `...\mcp\.venv\Scripts\python.exe` を指定します。
 
 ```bash
 claude mcp add --transport stdio subekashi -- /path/to/subekashi/mcp/.venv/bin/python /path/to/subekashi/mcp/run.py
 ```
 
-Windows では `python` に `...\mcp\.venv\Scripts\python.exe` を指定します。
-
-### Claude Desktop
-
-設定ファイル（`claude_desktop_config.json`）の `mcpServers` に追加します。
-
-```json
-{
-  "mcpServers": {
-    "subekashi": {
-      "command": "/path/to/subekashi/mcp/.venv/bin/python",
-      "args": ["/path/to/subekashi/mcp/run.py"]
-    }
-  }
-}
-```
+他のクライアントも、上の `command` と `args` を、この `python` と `run.py` のフルパスに置き換えれば同じです。
 
 ## 環境変数
 
@@ -78,7 +155,9 @@ cd mcp
 
 `search_songs` が API に送るパラメータが曲の検索（`SongFilter`）と食い違っていないかは、Django のテスト（`subekashi/tests/test_mcp.py`）で確かめています。
 
-CI（`.github/workflows/test.yml`）では、Django のテストとは別のジョブ `mcp-test` が、`pip install -r mcp/requirements.txt` のあとにこのテストを実行します。
+CI（`.github/workflows/test.yml`）では、Django のテストとは別のジョブ `mcp-test` が、`pip install -r mcp/requirements.txt` のあとにこのテストを実行します。さらに、`pip install ./mcp` でパッケージとして入れ、ソースツリーの外から `subekashi-mcp` を起動して `initialize` に応答することも確かめます（`packages` の足し忘れなど、インストールした環境でだけ起きる問題に気づくため）。
+
+`tests/test_packaging.py` は `pyproject.toml` の整合性（起動コマンドの指す先、依存が `requirements.txt` と一致すること、バージョンの取得元、サブパッケージの足し忘れ）を、`tests/test_entrypoint.py` は `python -m subekashi_mcp` と、別のディレクトリからの `run.py` を、実際に起動して MCP クライアントで繋いで確かめます。
 
 ## 取得した内容の扱い
 

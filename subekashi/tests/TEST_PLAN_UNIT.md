@@ -3462,7 +3462,7 @@ URLから、公式がiframeでの埋め込みに対応しているサービス�
 
 ### 29. `mcp/` — 読み取り専用のMCPサーバー（#1311）
 
-公開APIを呼び、AIに曲・作者・編集履歴を返すMCPサーバー。Djangoとは独立したプロジェクト（`mcp/`）で、依存は`mcp/requirements.txt`に分けてある。Djangoのテスト（`python manage.py test subekashi.tests article.tests`）には`mcp/tests/`は含まれず、`mcp/`で`python -m unittest discover -s tests`として実行する。`mcp`のSDKをルートの`requirements.txt`に入れないため、CI（`.github/workflows/test.yml`）では専用のジョブ`mcp-test`（`pip install -r mcp/requirements.txt`のあとに実行）で動かす。外部のサイトには接続しない。`test_client.py`は手元に立てた偽のHTTPサーバーに対して、`test_server.py`は応答を差し替えた偽のクライアントに対して確かめる。
+公開APIを呼び、AIに曲・作者・編集履歴を返すMCPサーバー。Djangoとは独立したプロジェクト（`mcp/`）で、依存は`mcp/requirements.txt`に分けてある。Djangoのテスト（`python manage.py test subekashi.tests article.tests`）には`mcp/tests/`は含まれず、`mcp/`で`python -m unittest discover -s tests`として実行する。`mcp`のSDKをルートの`requirements.txt`に入れないため、CI（`.github/workflows/test.yml`）では専用のジョブ`mcp-test`（`pip install -r mcp/requirements.txt`のあとに実行）で動かし、続けて`pip install ./mcp`でパッケージとして入れ、ソースツリーの外（`runner.temp`）から`subekashi-mcp`を起動して`initialize`に応答すること（`"name":"subekashi"`）を確かめる（`packages`の足し忘れなど、インストールした環境でだけ起きる問題に気づくため。#1324）。外部のサイトには接続しない。`test_client.py`は手元に立てた偽のHTTPサーバーに対して、`test_server.py`は応答を差し替えた偽のクライアントに対して確かめる。
 
 #### 29-1. `tests/test_mcp.py`（Django側）
 
@@ -3535,6 +3535,19 @@ URLから、公式がiframeでの埋め込みに対応しているサービス�
 | `changes`が無い履歴 | `changes`が`null` | そのまま`null` |
 | 履歴の不正な件数 | `size`が0・51 | `ToolError` |
 
+#### 29-4. `mcp/tests/test_packaging.py`・`test_entrypoint.py`（パッケージ化、#1324）
+
+`uvx`や`uv tool install`で入れられるよう、`mcp/pyproject.toml`でパッケージ化している（`subekashi-mcp`、起動コマンド`subekashi-mcp`、`packages = ["subekashi_mcp"]`で`tests/`と`run.py`は含めない）。`uvx --from "git+https://github.com/izumin2000/subekashi#subdirectory=mcp" subekashi-mcp`での起動は、GitHubへ出す前に、作業用のgitリポジトリの`#subdirectory=mcp`で、MCP SDKのクライアントから繋いで確かめた（キャッシュが空の初回の起動を含む。Djangoテストでは確認しない）。
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 起動コマンドの指す先が実在 | `[project.scripts]` | `subekashi-mcp`だけで、`subekashi_mcp.server:main`をimportすると呼び出せる。Python 3.10では`tomllib`が無いためスキップ（CIは3.12） |
+| 依存が`requirements.txt`と一致 | `[project].dependencies` | `requirements.txt`の行と一致する（CIや開発で入れるSDKの版と、パッケージが要求する版が食い違わない） |
+| バージョンの取得元 | `dynamic = ["version"]` | `subekashi_mcp.__version__`から読む。setuptoolsがimportせずに読めるよう、`__version__`は`"x.y.z"`の文字列リテラル |
+| サブパッケージの足し忘れ | `subekashi_mcp/`の中の`__init__.py`のあるディレクトリ | 全て`packages`に載っている（足し忘れると、インストールした環境でだけimportできない） |
+| `python -m subekashi_mcp`で起動 | cwdが`mcp/`。実際にプロセスを起動し、MCP SDKの`Client`で繋ぐ | ツールが4つ見え、`instructions`に「信頼できないデータ」を含む |
+| 別のディレクトリからの`run.py` | cwdが一時ディレクトリ。`run.py`の絶対パスで起動する | 同様にツールが4つ見える（READMEのcloneして動かす方式の登録と同じ形）。接続先は使えないURLにして、外部に接続しない |
+
 ---
 
 ## テスト優先度
@@ -3604,7 +3617,9 @@ article/
 
 mcp/tests/                          # Djangoとは別に実行する（#1311）
 ├── test_client.py                  # 実装済み: APIクライアント
-└── test_server.py                  # 実装済み: ツール
+├── test_server.py                  # 実装済み: ツール
+├── test_packaging.py               # 実装済み: pyproject.tomlの整合性（#1324）
+└── test_entrypoint.py              # 実装済み: 起動方法（#1324）
 ```
 
 ## 今後の課題

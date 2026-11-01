@@ -78,3 +78,16 @@ jobs:
       - name: Run tests
         working-directory: mcp
         run: python -m unittest discover -s tests --verbose
+
+      # ソースツリーのテストでは、packagesの足し忘れなど、インストールした環境でだけ起きる問題に気づけない。
+      # ソースツリーの外から、インストールしたコマンドを起動してinitializeに応答することを確かめる
+      - name: Install the package
+        run: pip install ./mcp
+
+      - name: Start the installed command
+        working-directory: ${{ runner.temp }}
+        run: |
+          echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"0"}}}' \
+            | timeout 30 subekashi-mcp \
+            | tee /dev/stderr \
+            | grep -q '"name":"subekashi"'

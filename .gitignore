@@ -9,6 +9,8 @@ wordcloud.py
 sitemap.xml
 .env
 .venv
+mcp/build/
+*.egg-info
 sandbox
 private/*
 dynamic/*

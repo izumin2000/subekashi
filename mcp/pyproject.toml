@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "subekashi-mcp"
+dynamic = ["version"]
+description = "「全て歌詞の所為です。」の曲・作者・編集履歴を調べる、読み取り専用のMCPサーバー"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = ["mcp==2.3.0"]
+
+[project.urls]
+Homepage = "https://github.com/izumin2000/subekashi/tree/main/mcp"
+Repository = "https://github.com/izumin2000/subekashi"
+
+[project.scripts]
+subekashi-mcp = "subekashi_mcp.server:main"
+
+# tests/ と run.py をパッケージに含めない
+[tool.setuptools]
+packages = ["subekashi_mcp"]
+
+[tool.setuptools.dynamic]
+version = { attr = "subekashi_mcp.__version__" }
