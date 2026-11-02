@@ -168,7 +168,7 @@ cd mcp
 
 `search_songs` が API に送るパラメータが曲の検索（`SongFilter`）と食い違っていないかは、Django のテスト（`subekashi/tests/test_mcp.py`）で確かめています。
 
-CI（`.github/workflows/test.yml`）では、Django のテストとは別のジョブ `mcp-test` が、`pip install -r mcp/requirements.txt` のあとにこのテストを実行します。さらに、`pip install ./mcp` でパッケージとして入れ、ソースツリーの外から `subekashi-mcp` を起動して `initialize` に応答することも確かめます（`packages` の足し忘れなど、インストールした環境でだけ起きる問題に気づくため）。
+CI（`.github/workflows/test.yml`）では、Django のテストとは別のジョブ `mcp-test` が、`pip install -r mcp/requirements.txt` のあとにこのテストを実行します。さらに、`pip install ./mcp` でパッケージとして入れ、ソースツリーの外から、インストールした `subekashi-mcp` を MCP クライアントで繋いで確かめます（環境変数 `SUBEKASHI_MCP_COMMAND` に、インストールしたコマンドを指定したときだけ実行される `test_entrypoint.py` の `test_installed_command` です。`packages` の足し忘れなど、インストールした環境でだけ起きる問題に気づくため）。
 
 `tests/test_packaging.py` は `pyproject.toml` の整合性（起動コマンドの指す先、依存が `requirements.txt` と一致すること、バージョンの取得元、サブパッケージの足し忘れ）を、`tests/test_entrypoint.py` は `python -m subekashi_mcp` と、別のディレクトリからの `run.py` を、実際に起動して MCP クライアントで繋いで確かめます。
 

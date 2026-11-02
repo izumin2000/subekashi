@@ -3462,7 +3462,7 @@ URLから、公式がiframeでの埋め込みに対応しているサービス�
 
 ### 29. `mcp/` — 読み取り専用のMCPサーバー（#1311）
 
-公開APIを呼び、AIに曲・作者・編集履歴を返すMCPサーバー。Djangoとは独立したプロジェクト（`mcp/`）で、依存は`mcp/requirements.txt`に分けてある。Djangoのテスト（`python manage.py test subekashi.tests article.tests`）には`mcp/tests/`は含まれず、`mcp/`で`python -m unittest discover -s tests`として実行する。`mcp`のSDKをルートの`requirements.txt`に入れないため、CI（`.github/workflows/test.yml`）では専用のジョブ`mcp-test`（`pip install -r mcp/requirements.txt`のあとに実行）で動かし、続けて`pip install ./mcp`でパッケージとして入れ、ソースツリーの外（`runner.temp`）から`subekashi-mcp`を起動して`initialize`に応答すること（`"name":"subekashi"`）を確かめる（`packages`の足し忘れなど、インストールした環境でだけ起きる問題に気づくため。#1324）。外部のサイトには接続しない。`test_client.py`は手元に立てた偽のHTTPサーバーに対して、`test_server.py`は応答を差し替えた偽のクライアントに対して確かめる。
+公開APIを呼び、AIに曲・作者・編集履歴を返すMCPサーバー。Djangoとは独立したプロジェクト（`mcp/`）で、依存は`mcp/requirements.txt`に分けてある。Djangoのテスト（`python manage.py test subekashi.tests article.tests`）には`mcp/tests/`は含まれず、`mcp/`で`python -m unittest discover -s tests`として実行する。`mcp`のSDKをルートの`requirements.txt`に入れないため、CI（`.github/workflows/test.yml`）では専用のジョブ`mcp-test`（`pip install -r mcp/requirements.txt`のあとに実行）で動かし、続けて`pip install ./mcp`でパッケージとして入れ、ソースツリーの外（`runner.temp`）から、`SUBEKASHI_MCP_COMMAND=subekashi-mcp`を指定して`test_entrypoint.py`の`test_installed_command`だけを実行し、インストールしたコマンドをMCPクライアントで繋いで確かめる（`packages`の足し忘れなど、インストールした環境でだけ起きる問題に気づくため。標準入力へ1行だけ送って閉じるパイプは、サーバーが応答を書く前に終了する競合があり、flakyの原因になるため使わない。#1324）。外部のサイトには接続しない。`test_client.py`は手元に立てた偽のHTTPサーバーに対して、`test_server.py`は応答を差し替えた偽のクライアントに対して確かめる。
 
 #### 29-1. `tests/test_mcp.py`（Django側）
 
@@ -3547,6 +3547,7 @@ URLから、公式がiframeでの埋め込みに対応しているサービス�
 | サブパッケージの足し忘れ | `subekashi_mcp/`の中の`__init__.py`のあるディレクトリ | 全て`packages`に載っている（足し忘れると、インストールした環境でだけimportできない） |
 | `python -m subekashi_mcp`で起動 | cwdが`mcp/`。実際にプロセスを起動し、MCP SDKの`Client`で繋ぐ | ツールが4つ見え、`instructions`に「信頼できないデータ」を含む |
 | 別のディレクトリからの`run.py` | cwdが一時ディレクトリ。`run.py`の絶対パスで起動する | 同様にツールが4つ見える（READMEのcloneして動かす方式の登録と同じ形）。接続先は使えないURLにして、外部に接続しない |
+| インストールしたコマンドで起動 | 環境変数`SUBEKASHI_MCP_COMMAND`にインストールしたコマンド（CIでは`subekashi-mcp`）を指定したときだけ実行（指定が無ければスキップ）。cwdは一時ディレクトリで、ソースツリーの外 | ツールが4つ見え、`instructions`に「信頼できないデータ」を含む。`packages = []`にした壊れたパッケージ（コマンドはあるがモジュールが無い）をインストールすると、`ModuleNotFoundError`で`Connection closed`になり失敗することを確かめた |
 
 ---
 

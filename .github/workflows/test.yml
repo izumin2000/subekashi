@@ -80,14 +80,13 @@ jobs:
         run: python -m unittest discover -s tests --verbose
 
       # ソースツリーのテストでは、packagesの足し忘れなど、インストールした環境でだけ起きる問題に気づけない。
-      # ソースツリーの外から、インストールしたコマンドを起動してinitializeに応答することを確かめる
+      # インストールしたコマンドを、ソースツリーの外（runner.temp）から起動し、MCPクライアントで繋ぐ。
+      # 標準入力へ1行を送って閉じるパイプは、サーバーが応答を書く前に終了する競合があるため使わない
       - name: Install the package
         run: pip install ./mcp
 
       - name: Start the installed command
         working-directory: ${{ runner.temp }}
-        run: |
-          echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"0"}}}' \
-            | timeout 30 subekashi-mcp \
-            | tee /dev/stderr \
-            | grep -q '"name":"subekashi"'
+        env:
+          SUBEKASHI_MCP_COMMAND: subekashi-mcp
+        run: python -m unittest discover -s "$GITHUB_WORKSPACE/mcp/tests" -p test_entrypoint.py -k test_installed_command --verbose
