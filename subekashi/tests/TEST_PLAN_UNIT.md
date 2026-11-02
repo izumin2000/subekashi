@@ -476,6 +476,7 @@ A -`past`-> B -`spell`-> C -`abbr`-> D とつながり、DとEは`another`での
 | `is_questionable=True` かつURLなし・削除されていない曲 | `is_questionable=True`, `is_deleted=False`, SongLink なし | 結果に含まれる（URLなし条件は `is_questionable` を問わない） |
 | `is_questionable=True` かつ歌詞なし/模倣なし等の曲 | `is_questionable=True`, URLあり、歌詞なし等 | 結果に含まれない（歌詞なし・模倣なし条件は `is_questionable=False` が必須） |
 | カテゴリが曲以外で歌詞なしの曲（#423） | `category="arrange"`, `is_inst=False`, `lyrics=""`, URLあり, `is_original=True` | 結果に含まれない（歌詞なし条件は `category="song"` が必須。歌詞を入力するのは曲の場合のみ） |
+| カテゴリが曲以外で模倣元なしの曲（#1324） | `category="arrange"`, `is_original=False`, `is_subeana=True`, `lyrics="歌詞あり"`, URLあり, 模倣元・特殊作者なし | 結果に含まれる（模倣元なし条件はカテゴリを問わない。`category="song"` が必須なのは歌詞なし条件だけ。MCPサーバーの`is_lack`の説明もこれに合わせている） |
 | ユーザーが削除した曲だけを模倣する曲（#1239） | 模倣元が`is_removed=True`の曲のみ、URL・歌詞あり | 結果に含まれる（削除した曲は模倣元として数えない）。`exclude()`の結果には含まれない |
 | 削除した曲と削除していない曲を模倣する曲（#1239） | 模倣元の一方が`is_removed=True`、URL・歌詞あり | 結果に含まれない。`exclude()`の結果に含まれる |
 

@@ -591,6 +591,15 @@ class FilterByLackTest(TestCase):
         qs = Song.objects.filter(filter_by_lack()).distinct()
         self.assertNotIn(song, qs)
 
+    def test_non_song_category_without_imitates_is_lack(self):
+        # 歌詞の条件(C)と違い、模倣元の条件(B)はカテゴリを問わない。MCPサーバーのis_lackの説明（mcp/subekashi_mcp/server.py）もこれに合わせている
+        # URLあり(条件A除外)・歌詞あり(条件C除外)・カテゴリがアレンジ・すべあな界隈曲・模倣元なし・特殊作者なし
+        song = Song.objects.create(title="アレンジ模倣元なしテスト", category="arrange", is_original=False, is_subeana=True, lyrics="歌詞あり")
+        link = SongLink.objects.create(url="https://youtu.be/arrangenoimit01")
+        link.songs.add(song)
+        qs = Song.objects.filter(filter_by_lack()).distinct()
+        self.assertIn(song, qs)
+
     def test_non_song_category_without_lyrics_is_not_lack(self):
         # #423: 歌詞を入力するのはカテゴリが曲の場合のみのため、曲以外は歌詞がなくても条件(C)に該当しない
         # URLあり(条件A除外)・is_original=True(条件B除外)
