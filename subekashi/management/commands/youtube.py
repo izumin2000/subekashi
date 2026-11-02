@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
+from django.utils import timezone
 from config.local_settings import ERROR_DISCORD_URL
 from subekashi.lib.discord import send_discord
 from subekashi.lib.url import *
@@ -8,14 +9,46 @@ from time import sleep
 
 
 class Command(BaseCommand):
-    help = "YouTube API関連。idオプションを加えることでそのidのみのsongレコードを更新する"
+    help = (
+        "YouTube API関連。idオプションを加えることでそのidのみのsongレコードを更新する。"
+        "idオプションが無い場合は、偶数日はidが偶数、奇数日はidが奇数のsongレコードのみを更新する"
+    )
     
+    # URLの中からYouTubeの動画IDを取得する
+    def get_video_ids(self, urls):
+        return [get_youtube_id(url) for url in urls if is_youtube_url(url)]
+
+    # 動画をYOUTUBE_API_MAX_IDS件ずつまとめて取得する
+    # 取得できた動画の情報・取得に失敗した動画のエラー・以降の呼び出しも全て失敗するエラー（無ければNone）を返す
+    # 呼び出しが失敗したときは、その呼び出しの動画の全てが取得に失敗した扱いになる
+    # 動画の情報の解析に失敗したときは、その動画だけが取得に失敗した扱いになる
+    def fetch_video_infos(self, video_ids):
+        video_infos = {}
+        failed_errors = {}
+
+        for i in range(0, len(video_ids), YOUTUBE_API_MAX_IDS):
+            chunk = video_ids[i:i + YOUTUBE_API_MAX_IDS]
+            sleep(2)
+
+            try:
+                chunk_infos, chunk_errors = get_youtube_api_batch(chunk)
+                video_infos.update(chunk_infos)
+                failed_errors.update(chunk_errors)
+
+            # 以降の呼び出しも全て失敗するため、残りの動画の取得を打ち切る
+            except YoutubeApiUnavailableError as e:
+                return video_infos, failed_errors, e
+
+            except YoutubeApiError as e:
+                failed_errors.update({video_id: e for video_id in chunk})
+
+        return video_infos, failed_errors, None
+
     # 複数のYouTubeの動画の再生回数・高評価数の総和を求める
     # アップロード日時は最も新しい日時を取得する
-    def get_youtube_info_sum(self, song):
+    def get_youtube_info_sum(self, urls, video_infos):
         is_deleted = True
-        urls = list(song.links.values_list('url', flat=True))
-        video_ids = [get_youtube_id(url) for url in urls if is_youtube_url(url)]
+        video_ids = self.get_video_ids(urls)
         has_other_url = any(not is_youtube_url(url) for url in urls)
         upload_time_list = []
         info = {
@@ -29,9 +62,8 @@ class Command(BaseCommand):
 
         # 複数のYouTubeの動画を1つずつ確認する
         for video_id in video_ids:
-            sleep(2)
-            res = get_youtube_api(video_id)
-            
+            res = video_infos[video_id]
+
             # 動画が削除・非公開なら
             if res == {}:
                 continue
@@ -76,31 +108,53 @@ class Command(BaseCommand):
                 raise CommandError(f"song_id：{id}の曲は存在しません")
             song_ids = [id]
         else:
-            song_ids = list(
-                Song.objects.filter(links__isnull=False).distinct().values_list('pk', flat=True)
+            all_song_ids = list(
+                Song.objects.filter(links__isnull=False).distinct().order_by('pk').values_list('pk', flat=True)
             )
 
+            # YouTube Data APIのクォータ枯渇対策として、偶数日はidが偶数、奇数日はidが奇数のsongのみを対象にする
+            parity = timezone.localtime(timezone.now()).day % 2
+            song_ids = [song_id for song_id in all_song_ids if song_id % 2 == parity]
+
+        # 動画をまとめて取得するため、先に全てのsongのURLを取得する
+        urls_by_song_id = {}
         for song_id in song_ids:
+            song = Song.objects.filter(pk=song_id).first()
+            if song is None:
+                continue
+            urls_by_song_id[song_id] = list(song.links.values_list('url', flat=True))
+
+        # 複数のsongに紐づく動画は1回だけ取得する
+        video_ids = list(dict.fromkeys(
+            video_id for urls in urls_by_song_id.values() for video_id in self.get_video_ids(urls)
+        ))
+        video_infos, failed_errors, unavailable_error = self.fetch_video_infos(video_ids)
+
+        # 取得できた動画の分だけsongを更新するため、通知してもここでは終了しない
+        if unavailable_error:
+            message = f"{unavailable_error}。youtubeコマンドの処理を打ち切りました（動画{len(video_ids)}件のうち{len(video_infos)}件を取得済み）"
+            self.stderr.write(self.style.ERROR(message))
+            send_discord(ERROR_DISCORD_URL, message)
+
+        for song_id, urls in urls_by_song_id.items():
             # 全件処理は時間がかかるため、処理中に削除された曲はスキップする
             song = Song.objects.filter(pk=song_id).first()
             if song is None:
                 continue
 
-            try:
-                info = self.get_youtube_info_sum(song)
-
-            # 以降の呼び出しも全て失敗するため、残りの曲の処理を打ち切る
-            except YoutubeApiUnavailableError as e:
-                message = f"{e}。youtubeコマンドの処理を打ち切りました（song_id：{song_id}）"
-                self.stderr.write(self.style.ERROR(message))
-                send_discord(ERROR_DISCORD_URL, message)
-                return
+            song_video_ids = self.get_video_ids(urls)
 
             # 1本でも取得に失敗した曲は、公開状況・再生回数などが不正確になるため更新しない
-            except YoutubeApiError as e:
-                self.stderr.write(self.style.WARNING(f"{e}。更新をスキップしました（song_id：{song_id}）"))
+            errors = [failed_errors[video_id] for video_id in song_video_ids if video_id in failed_errors]
+            if errors:
+                self.stderr.write(self.style.WARNING(f"{errors[0]}。更新をスキップしました（song_id：{song_id}）"))
                 continue
 
+            # 取得を打ち切ったため1本でも取得できていない曲も、同様に更新しない
+            if any(video_id not in video_infos for video_id in song_video_ids):
+                continue
+
+            info = self.get_youtube_info_sum(urls, video_infos)
             if not info:
                 continue
             self.save_song(song, info)

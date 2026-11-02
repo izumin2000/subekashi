@@ -8,6 +8,7 @@ mycommand.py
 wordcloud.py
 sitemap.xml
 .env
+.venv
 sandbox
 private/*
 dynamic/*
