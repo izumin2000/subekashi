@@ -476,6 +476,8 @@ A -`past`-> B -`spell`-> C -`abbr`-> D とつながり、DとEは`another`での
 | `is_questionable=True` かつURLなし・削除されていない曲 | `is_questionable=True`, `is_deleted=False`, SongLink なし | 結果に含まれる（URLなし条件は `is_questionable` を問わない） |
 | `is_questionable=True` かつ歌詞なし/模倣なし等の曲 | `is_questionable=True`, URLあり、歌詞なし等 | 結果に含まれない（歌詞なし・模倣なし条件は `is_questionable=False` が必須） |
 | カテゴリが曲以外で歌詞なしの曲（#423） | `category="arrange"`, `is_inst=False`, `lyrics=""`, URLあり, `is_original=True` | 結果に含まれない（歌詞なし条件は `category="song"` が必須。歌詞を入力するのは曲の場合のみ） |
+| カテゴリが曲以外で模倣元なしの曲（#1326） | 曲以外の全カテゴリ（`SONG_CATEGORIES`）、`is_original=False`, `is_subeana=True`, `imitates`なし, URLあり, 歌詞なし | 結果に含まれない。`exclude()`の結果に含まれる（模倣元なし条件は `category="song"` が必須。模倣元を登録するのは曲の場合のみ） |
+| カテゴリが曲以外でURLなしの曲（#1326） | `category="offv"`, `is_deleted=False`, SongLink なし | 結果に含まれる（URLなし条件はカテゴリを問わない） |
 | ユーザーが削除した曲だけを模倣する曲（#1239） | 模倣元が`is_removed=True`の曲のみ、URL・歌詞あり | 結果に含まれる（削除した曲は模倣元として数えない）。`exclude()`の結果には含まれない |
 | 削除した曲と削除していない曲を模倣する曲（#1239） | 模倣元の一方が`is_removed=True`、URL・歌詞あり | 結果に含まれない。`exclude()`の結果に含まれる |
 
@@ -520,6 +522,8 @@ A -`past`-> B -`spell`-> C -`abbr`-> D とつながり、DとEは`another`での
 | `is_questionable=True` かつURLなし・削除されていない曲に annotate | `is_questionable=True`, SongLink なし | `is_lack=True` がアノテートされる（URLなし条件は `is_questionable` を問わない） |
 | `is_questionable=True` かつ歌詞なし等の曲に annotate | `is_questionable=True`, URLあり、歌詞なし等 | `is_lack=False` がアノテートされる（歌詞なし条件は `is_questionable=False` が必須） |
 | カテゴリが曲以外で歌詞なしの曲に annotate（#423） | `category="notice"`, URLあり、歌詞なし | `is_lack=False` がアノテートされる（歌詞なし条件は `category="song"` が必須） |
+| カテゴリが曲以外で模倣元なしの曲に annotate（#1326） | 曲以外の全カテゴリ、`is_original=False`, `is_subeana=True`, `imitates`なし, URLあり, 歌詞なし | `is_lack=False` がアノテートされる（模倣元なし条件は `category="song"` が必須） |
+| カテゴリが曲以外でURLなしの曲に annotate（#1326） | `category="offv"`, SongLink なし | `is_lack=True` がアノテートされる（URLなし条件はカテゴリを問わない） |
 | ユーザーが削除した曲だけを模倣する曲に annotate（#1239） | 模倣元が`is_removed=True`の曲のみ、URL・歌詞あり | `is_lack=True` がアノテートされる（`filter_by_lack()`と同じ判定） |
 
 #### 3-5. `filter_by_collab()`（#943）
@@ -876,6 +880,7 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | タグの順番（#1228） | `is_questionable=True`・`is_draft=True`・`is_limited=True`・URL未登録 | 界隈曲?・未完成・下書き・限定公開の順に並ぶ |
 | カテゴリのタグ（#423） | `category="arrange"`・`is_questionable=True` | `?categorys=arrange` の検索へのリンクのタグ（カテゴリのアイコン `fas fa-sliders-h`、「アレンジ」）が、界隈曲?のタグより前に出る |
 | プレラのタグ（#1064） | プレラ「端午プレラ6 / 端午クソ動画投稿祭6」の曲 | `?prush=<URLエンコードした名前>` の検索へのリンク（「＞＞」のような `fas fa-angle-double-right` のアイコンと名前）をタグに表示する |
+| カテゴリが曲以外で模倣元・歌詞がない曲のタグ（#1326） | `category="offv"`, URLあり, 模倣元・歌詞なし | カテゴリのタグ（`?categorys=offv`）は出て、未完成のタグは出ない |
 | カテゴリだけの曲のタグ欄（#423） | 未完成でなく、`category="meme"` だけ | タグ欄が表示され、`?categorys=meme` のリンクのタグ（`far fa-laugh-squint`、「ネタ動画」）が出る |
 | カテゴリが曲の曲（#423） | `category="song"`（既定値）・URL未登録 | カテゴリのタグは出ない（未完成のタグは出る） |
 | 模倣元のdetails（#423） | 模倣元にカテゴリが曲の曲・ネタ曲・カバー・ネタ曲のアレンジ | 模倣元のdetailsの直下にカテゴリが曲の曲を並べ、ネタ曲（`far fa-meh-rolling-eyes`）・アレンジ（`fas fa-sliders-h`）・カバー（`fas fa-microphone`）の順に、それぞれのdetailsにまとめる。ネタ曲のアレンジはアレンジの方に入る |

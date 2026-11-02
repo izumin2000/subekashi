@@ -436,10 +436,10 @@ function checkButton() {
 
     // 界隈曲?の場合、歌詞・模倣元は非表示かつ強制的に空になるため未完成の案内は不要
     if (!isQuestionable) {
-        // 模倣元の未完成
+        // 模倣元の未完成（模倣元を登録するのはカテゴリが曲の場合のみ）
         const is_original = document.getElementById("is-original").checked;
         const is_subeana = document.getElementById("is-subeana").checked;
-        if (!is_original && is_subeana && (imitateEle.value == "") && (authorsEle.value != "全てあなたの所為です。")) {
+        if (!is_original && is_subeana && (categoryEle.value === "song") && (imitateEle.value == "") && (authorsEle.value != "全てあなたの所為です。")) {
             message += "<li>「オリジナル模倣」にチェックをつけるか、模倣元を1曲以上登録してください。</li>"
             is_lack = true;
         }
