@@ -70,8 +70,13 @@
 - 分類
   - `categorys`: カテゴリをカンマ区切りで渡す。先頭に `~` を付けたカテゴリは除く（例: `arrange,cover` はアレンジかカバー、`~meme` はネタ動画以外）
   - `mediatypes`: 動画などの置き場所をカンマ区切りで渡す。`youtube` `x` `nicovideo` `soundcloud` `vimesis` `scratch` `bandcamp` `drive` `bilibili` `imicom` `linkcore` `bandlab` `newgrounds` `note` `TikTok` `vidlii` `bluesky` `bowlroll` `misskey` `booth` `piapro` `rechord` `dropbox`、URLが未登録の曲は `other`
-- 真偽値（`true` / `false`。`True` / `False` も可）: `is_subeana` `is_original` `is_joke` `is_inst` `is_draft` `is_deleted` `is_limited` `is_questionable` `is_special`、`is_lack`（情報が不足している曲。URL・模倣元・歌詞のいずれかが未登録）、`is_collab`（作者が2人以上の合作）
+- 真偽値（`true` / `false`。`True` / `False` も可）: `is_subeana` `is_original` `is_joke` `is_inst` `is_draft` `is_deleted` `is_limited` `is_questionable` `is_special`、`is_lack`（未完成の曲。下の条件を参照）、`is_collab`（作者が2人以上の合作）
   - ネタ曲だけなら `is_joke=true`、ネタ曲を除くなら `is_joke=false`、すべあな界隈曲以外なら `is_subeana=false`
+  - `is_lack`（未完成）は、次のいずれかに当てはまる曲。
+    - URL未登録: カテゴリは問わない。動画が非公開・削除済み（`is_deleted`）の曲を除く
+    - 模倣元未登録: カテゴリが曲（`song`）の曲のみ。すべあな界隈曲（`is_subeana`）に限る。オリジナル模倣曲（`is_original`）と、作者がすべあな本人（作者ID 1）の曲を除く。サイトから削除された曲は模倣元に数えないので、模倣元が削除された曲だけの曲も模倣元未登録になる
+    - 歌詞未登録: カテゴリが曲（`song`）の曲のみ。インスト曲（`is_inst`）を除く
+    - `is_questionable` の曲は、模倣元と歌詞の判定の対象外。カテゴリが曲以外の曲は、URL未登録のときだけ未完成になる
 - 数値と日時（YouTubeの値）: `view_gte` `view_lte` `like_gte` `like_lte`（1以上の整数）、`upload_time_gte` `upload_time_lte`（`2024-01-01` や `2024-01-01T00:00:00` の形式）。これらや、これらでの並び替えを使うと、`mediatypes` を指定していなくてもYouTubeの動画がある曲だけに絞り込まれる
 - 並び替え `sort`: `id` `title` `author` `post_time`（更新日）`upload_time`（YouTubeの投稿日）`view`（再生回数）`like`（高評価数）`imitate_count`（模倣元の数）`imitated_count`（模倣曲の数）。先頭に `-` を付けると降順（例: `-view`）。`random` はランダム。`sort` を省略したときの順序は決まっていないので、`page` で順に取得するときは必ず `sort` を指定する（例: `sort=id`）
 - `page` `size`: 共通の決まりのとおり。曲では `size` の上限が無いが、上のとおり小さくする

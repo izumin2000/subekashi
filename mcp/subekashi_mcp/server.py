@@ -127,7 +127,16 @@ def create_server(client):
         is_limited: _flag("限定公開か") = None,
         is_questionable: _flag("界隈曲かどうか議論の余地があり、人によって認識が異なる曲か") = None,
         is_special: _flag("スペシャルデザインか") = None,
-        is_lack: _flag("情報が不足している曲か（URL・模倣元・歌詞のいずれかが未登録）") = None,
+        # is_lackの説明は、サイトの判定（subekashi/lib/query_filters.py の filter_by_lack）に合わせる
+        is_lack: _flag(
+            "未完成の曲か。次のいずれかに当てはまる曲。"
+            "URL未登録（カテゴリは問わない。動画が非公開・削除済みの曲を除く）、"
+            "模倣元未登録（カテゴリが曲 song の曲のみ。すべあな界隈曲に限る。オリジナル模倣曲と、作者がすべあな本人（ID 1）の曲を除く。"
+            "サイトから削除された曲は模倣元に数えないので、模倣元が削除された曲だけの曲も模倣元未登録になる）、"
+            "歌詞未登録（カテゴリが曲 song の曲のみ。インスト曲を除く）。"
+            "界隈曲かどうか議論の余地がある曲（is_questionable）は、模倣元と歌詞の判定の対象外。"
+            "カテゴリが曲以外の曲は、URL未登録のときだけ未完成になる"
+        ) = None,
         is_collab: _flag("作者が2人以上の合作か") = None,
         view_gte: _integer("YouTubeの再生回数がこれ以上。指定するとYouTubeの動画がある曲だけになる") = None,
         view_lte: _integer("YouTubeの再生回数がこれ以下。指定するとYouTubeの動画がある曲だけになる") = None,
