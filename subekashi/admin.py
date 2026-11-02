@@ -27,6 +27,16 @@ class EditorAdmin(admin.ModelAdmin):
 admin.site.register(Editor, EditorAdmin)
 
 
+class ApiKeyAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'is_active', 'created_at')
+    list_filter = ('is_active',)
+    search_fields = ('name',)
+    # keyは作成時に自動で発行する。管理サイトでは読み取り専用で表示してコピーできるようにする
+    readonly_fields = ('key', 'created_at')
+
+admin.site.register(ApiKey, ApiKeyAdmin)
+
+
 class HistoryAdmin(admin.ModelAdmin):
     pass
 

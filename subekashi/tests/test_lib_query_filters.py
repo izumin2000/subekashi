@@ -4,6 +4,7 @@ lib/query_filters.py のテスト
 楽曲検索フィルター関数の Q オブジェクト生成・適用結果を検証する。
 """
 from django.test import TestCase
+from subekashi.constants.constants import SONG_CATEGORIES
 from subekashi.models import Author, AuthorAlias, Song, SongLink
 from subekashi.lib.query_filters import (
     filter_by_keyword,
@@ -493,7 +494,7 @@ class FilterByLackTest(TestCase):
 
     filter_by_lack() は以下の3条件のいずれかを満たす曲を「未完成」と判定する:
       (A) is_deleted=False かつ SongLink が存在しない（is_questionable は問わない）
-      (B) is_questionable=False かつ is_original=False かつ is_subeana=True かつ imitates が空 かつ author_id=1 なし
+      (B) is_questionable=False かつ is_original=False かつ is_subeana=True かつ category="song" かつ imitates が空 かつ author_id=1 なし（#1326）
       (C) is_questionable=False かつ is_inst=False かつ lyrics が空文字列 かつ category="song"（#423）
 
     各テストで「意図しない条件」に引っかからないよう、検証したい条件以外は
@@ -591,15 +592,6 @@ class FilterByLackTest(TestCase):
         qs = Song.objects.filter(filter_by_lack()).distinct()
         self.assertNotIn(song, qs)
 
-    def test_non_song_category_without_imitates_is_lack(self):
-        # 歌詞の条件(C)と違い、模倣元の条件(B)はカテゴリを問わない。MCPサーバーのis_lackの説明（mcp/subekashi_mcp/server.py）もこれに合わせている
-        # URLあり(条件A除外)・歌詞あり(条件C除外)・カテゴリがアレンジ・すべあな界隈曲・模倣元なし・特殊作者なし
-        song = Song.objects.create(title="アレンジ模倣元なしテスト", category="arrange", is_original=False, is_subeana=True, lyrics="歌詞あり")
-        link = SongLink.objects.create(url="https://youtu.be/arrangenoimit01")
-        link.songs.add(song)
-        qs = Song.objects.filter(filter_by_lack()).distinct()
-        self.assertIn(song, qs)
-
     def test_non_song_category_without_lyrics_is_not_lack(self):
         # #423: 歌詞を入力するのはカテゴリが曲の場合のみのため、曲以外は歌詞がなくても条件(C)に該当しない
         # URLあり(条件A除外)・is_original=True(条件B除外)
@@ -608,6 +600,21 @@ class FilterByLackTest(TestCase):
         link.songs.add(song)
         qs = Song.objects.filter(filter_by_lack()).distinct()
         self.assertNotIn(song, qs)
+
+    def test_non_song_category_without_imitates_is_not_lack(self):
+        # #1326: 模倣元を登録するのはカテゴリが曲の場合のみのため、曲以外は模倣元がなくても条件(B)に該当しない
+        # URLあり(条件A除外)・歌詞なしは曲以外のカテゴリのため条件(C)に該当しない
+        for category in [category["value"] for category in SONG_CATEGORIES if category["value"] != "song"]:
+            with self.subTest(category=category):
+                song = Song.objects.create(title=f"{category}模倣元なしテスト", category=category, is_original=False, is_subeana=True, lyrics="")
+                SongLink.objects.create(url=f"https://youtu.be/{category}noimitate").songs.add(song)
+                self.assertNotIn(song, Song.objects.filter(filter_by_lack()))
+                self.assertIn(song, Song.objects.exclude(filter_by_lack()))
+
+    def test_non_song_category_without_url_is_lack(self):
+        # 条件(A)はカテゴリを問わないため、曲以外でもURLなし・削除されていなければ未完成
+        song = Song.objects.create(title="オフボURLなしテスト", category="offv", lyrics="", is_original=True)
+        self.assertIn(song, Song.objects.filter(filter_by_lack()))
 
     def test_song_imitating_only_removed_song_is_lack(self):
         # 条件(B): 模倣元がユーザーが削除した曲（#1239）だけなら、模倣元が空とみなす
@@ -828,6 +835,21 @@ class MakeIsLackAnnotationTest(TestCase):
         qs = Song.objects.annotate(is_lack=make_is_lack_annotation())
         annotated = qs.get(pk=song.pk)
         self.assertFalse(annotated.is_lack)
+
+    def test_non_song_category_without_imitates_annotated_false(self):
+        # #1326: カテゴリが曲以外なら、模倣元がなくても条件(B)に該当しない（filter_by_lack()と同じ判定）
+        for category in [category["value"] for category in SONG_CATEGORIES if category["value"] != "song"]:
+            with self.subTest(category=category):
+                song = Song.objects.create(title=f"{category}模倣元なしアノテーションテスト", category=category, is_original=False, is_subeana=True, lyrics="")
+                SongLink.objects.create(url=f"https://youtu.be/{category}annimitate").songs.add(song)
+                annotated = Song.objects.annotate(is_lack=make_is_lack_annotation()).get(pk=song.pk)
+                self.assertFalse(annotated.is_lack)
+
+    def test_non_song_category_without_url_annotated_true(self):
+        # 条件(A)はカテゴリを問わないため、曲以外でもURLなし・削除されていなければ is_lack=True
+        song = Song.objects.create(title="オフボURLなしアノテーションテスト", category="offv", lyrics="", is_original=True)
+        annotated = Song.objects.annotate(is_lack=make_is_lack_annotation()).get(pk=song.pk)
+        self.assertTrue(annotated.is_lack)
 
 
 class FilterByCollabTest(TestCase):

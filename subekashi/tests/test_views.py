@@ -1397,6 +1397,13 @@ class SongViewTest(TestCase):
             tags,
         )
 
+    def test_non_song_category_without_imitates_has_no_lack_tag(self):
+        """#1326: カテゴリが曲以外の曲は、URLがあれば模倣元・歌詞がなくても未完成のタグを表示しないこと"""
+        SongLink.objects.create(url="https://youtu.be/offvnoimitate").songs.add(self.song)
+        tags = self._get_tags_html(category="offv", lyrics="")
+        self.assertIn("?categorys=offv", tags)
+        self.assertNotIn("未完成", tags)
+
     def test_song_category_tag_not_shown(self):
         """#423: カテゴリが曲の曲には、カテゴリのタグを表示しないこと"""
         tags = self._get_tags_html()

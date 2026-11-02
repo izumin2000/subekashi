@@ -108,7 +108,12 @@ python manage.py migrate
 python manage.py loaddata data.json
 ```
 
-初期値には全てあなたの所為です。の全曲と『12』・『15』・『17』が登録されています。  
+初期値には全てあなたの所為です。の全曲と『12』・『15』・『17』のほか、開発用のサンプルデータが登録されています。  
+サンプルデータは「サンプル」から始まる名前の作者・曲・記事などで、曲のカテゴリやフラグ、別名の種別、編集履歴、お問い合わせ、宣伝、年表、記事など、モデルごとの様々なデータを含みます。  
+`stats`・`word`・`ai`・`timeline`・`delete`・`youtube`コマンドを実行した後のデータも含むため、これらのコマンドを実行しなくても、統計・歌詞作成・プレラ・削除済みのURLなどの画面を確認できます。  
+月次統計は2026年11月分までです。最新の月まで反映するには`python manage.py stats`を実行してください。  
+APIキー（曲のAPIの登録・変更・削除用）のサンプルは、`is_active`が`false`の無効なダミーのため使えません。使うときは管理サイトで発行してください。  
+編集者のIPアドレスはダミーのため、`python manage.py ip`では復号できません。曲のURLのうち「sAmPlE」から始まる動画IDはダミーのため、サムネイルは表示されません。  
   
 13\. 定数ファイルの作成（必要に応じて）  
 全て歌詞の所為です。では高頻度で変わる定数ファイルを.gitignore対象で`subekashi/constants/dynamic`に保存しております。  
@@ -146,11 +151,12 @@ python manage.py runserver
   
 ## 全て歌詞の所為です。APIについて
 全て歌詞の所為です。上で登録された情報はRESTfulなAPIで提供しています。  
-APIは全てのオリジンから利用できます（`Access-Control-Allow-Origin: *`）。Cookie等の認証情報を付けたクロスオリジンリクエストには対応していません。
+APIは全てのオリジンから利用できます（`Access-Control-Allow-Origin: *`）。Cookie等の認証情報を付けたクロスオリジンリクエストには対応していません。  
+ただし、曲の登録・変更・削除（取得以外）のAPIは、管理者が発行したAPIキーが必要です。利用したい場合は開発者に問い合わせてください（詳しくは「Song API（登録・変更・削除）」を参照）。
 
 ### Song API
 **エンドポイント**: [https://lyrics.imicomweb.com/api/song](https://lyrics.imicomweb.com/api/song)
-**メソッド**: GET, HEAD, OPTIONS
+**メソッド**: GET, HEAD, OPTIONS（登録・変更・削除は「Song API（登録・変更・削除）」を参照）
 **レート制限**: 2リクエスト/秒
 
 全て歌詞の所為です。に登録された曲の情報を取得できます。  
@@ -283,6 +289,66 @@ APIは全てのオリジンから利用できます（`Access-Control-Allow-Orig
 
 **`imitates` / `imitateds`フィールドについて**
 `imitates`はこの曲が模倣している曲のsong IDの整数配列です。`imitateds`はこの曲を模倣している曲のsong IDの整数配列（`imitates`の逆参照）です。いずれも模倣関係がない場合は空配列`[]`が返されます。
+
+### Song API（登録・変更・削除）
+**エンドポイント**: `POST /api/song/`（登録）、`PUT`・`PATCH /api/song/{song_id}/`（変更）、`DELETE /api/song/{song_id}/`（削除）  
+**認証**: `X-API-Key`ヘッダーにAPIキーを指定  
+**レート制限**: 2リクエスト/秒（曲の取得と共通）
+
+> **利用したい場合は、開発者に問い合わせてください。** 曲の登録・変更・削除（取得以外）のAPIは、管理者が発行したAPIキーを持つ利用者だけが使えます。APIキーは公開しておらず、誰でも使えるものではありません。利用したい場合は、[お問い合わせ](https://lyrics.imicomweb.com/contact/)から開発者に連絡してください。
+
+サイトの画面の「新規登録」「編集」「削除」と同じ処理を実行します。入力のチェック（作者・タイトル・URLの重複・掲載拒否の作者など）・編集履歴・Discordへの通知は画面と同じで、編集者はリクエストを送ったIPアドレスから決まります。
+
+- Cookieのセッションでは認証しないため、管理サイトにログインしていてもAPIキーが必要です。APIキーがあればCSRFトークンは不要です
+- APIキーが無い・間違っている場合は403が返ります
+- ブラウザ上の他のサイトのJavaScriptからは呼び出せません（CORSで`X-API-Key`ヘッダーを許可していません）。サーバーやスクリプトから呼び出してください
+- リクエストの本文はJSON（`Content-Type: application/json`）です。フォーム形式も受け付けます
+- 真偽値はJSONの`true`/`false`で指定します（文字列の`"true"`/`"false"`も可）。それ以外の値は400になります
+
+**登録（`POST /api/song/`）**
+
+| フィールド | 型 | 内容 |
+| --- | --- | --- |
+| `title` | 文字列 | タイトル。`url`を指定しない場合は必須 |
+| `authors` | 文字列または配列 | 作者。カンマ区切りの文字列か配列。`url`を指定しない場合は必須 |
+| `url` | 文字列 | YouTubeのURL（1つだけ）。指定すると、`title`と`authors`は動画から取得し、リクエストの値は使いません。それ以外のURLは、登録後に変更で追加してください |
+| `allow_dup_url` | 文字列 | 登録済みのURLと重複して登録するとき、`url`と同じURLを指定 |
+| `category` | 文字列 | `song`（既定）・`arrange`・`otomad`・`medley`・`omnibus`・`notice`・`offv`・`cover`・`meme` |
+| `is_original` `is_deleted` `is_joke` `is_inst` `is_questionable` | 真偽値 | 既定は`false` |
+| `is_subeana` | 真偽値 | 既定は`true` |
+
+成功すると201と、登録した曲の情報（`GET /api/song/{song_id}`と同じ形）を返します。`is_questionable`が`true`のときは、`is_original`は`false`になります。
+
+**変更（`PUT`・`PATCH /api/song/{song_id}/`）**
+
+登録のフィールドに、`imitate`（模倣元のsong IDの配列またはカンマ区切り）・`lyrics`（歌詞）・`is_draft`（下書き）を加えたものです。`url`は配列またはカンマ区切りで、指定した一覧に置き換わります（含まれないURLは外れます）。`PUT`と`PATCH`は同じ動きで、**指定しなかったフィールドは今の値のまま**です。成功すると200と、変更後の曲の情報を返します。
+
+**削除（`DELETE /api/song/{song_id}/`）**
+
+本文に`{"reason": "削除の理由"}`を指定します（必須）。曲は論理削除され、検索・API等に表示されなくなります。成功すると204（本文なし）を返します。
+
+**エラー**
+
+| ステータス | 内容 |
+| --- | --- |
+| 400 | 入力の誤り。`{"error": "..."}`（画面と同じメッセージ） |
+| 403 | APIキーが無い・間違っている、BANされた編集者（`{"detail": "..."}`）。ロックされた曲の変更・削除（`{"error": "..."}`） |
+| 404 | 曲が見つからない。`{"error": "..."}` |
+| 410 | 削除された曲の変更・削除。`{"error": "..."}` |
+| 429 | レート制限（2リクエスト/秒）を超えた |
+| 500 | 処理中のエラー（Discordへの通知の失敗など）。`{"error": "..."}` |
+
+```bash
+curl -X POST https://lyrics.imicomweb.com/api/song/ \
+  -H "X-API-Key: <APIキー>" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "曲名", "authors": "作者A,作者B"}'
+
+curl -X PATCH https://lyrics.imicomweb.com/api/song/{song_id}/ \
+  -H "X-API-Key: <APIキー>" \
+  -H "Content-Type: application/json" \
+  -d '{"lyrics": "歌詞"}'
+```
 
 ### Ad API
 **エンドポイント**: [https://lyrics.imicomweb.com/api/ad](https://lyrics.imicomweb.com/api/ad)
