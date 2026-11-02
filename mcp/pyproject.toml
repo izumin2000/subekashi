@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "subekashi-mcp"
+dynamic = ["version"]
+description = "「全て歌詞の所為です。」の曲・作者・編集履歴を調べる、読み取り専用のMCPサーバー"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+# mcp SDK 2.x は新しく、1.x から API が変わった（FastMCP が MCPServer に改名されるなど）ため、動作確認した版に固定する。
+# CI が requirements.txt で検証した版と、利用者に入る版を同じにするため、requirements.txt と揃える（tests/test_packaging.py が一致を確かめる）。
+# uv tool install・uvx は専用の環境に入れるので、固定しても他のパッケージとは衝突しない。
+# pip で他のパッケージと同じ環境に入れる使い方が増えたら、範囲指定（例: "mcp>=2.3,<3"）にして、CI で最新の版も検証する
+dependencies = ["mcp==2.3.0"]
+
+[project.urls]
+Homepage = "https://github.com/izumin2000/subekashi/tree/main/mcp"
+Repository = "https://github.com/izumin2000/subekashi"
+
+[project.scripts]
+subekashi-mcp = "subekashi_mcp.server:main"
+
+# tests/ と run.py をパッケージに含めない
+[tool.setuptools]
+packages = ["subekashi_mcp"]
+
+[tool.setuptools.dynamic]
+version = { attr = "subekashi_mcp.__version__" }
