@@ -1848,7 +1848,7 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 
 #### 8-9. `SongAPI` の登録・変更・削除（`views/api/song.py`・`views/api/song_write.py`・`lib/permissions.py`）（#973）
 
-**テストクラス**: `SongWriteAPIAuthTest`・`SongCreateAPITest`・`SongUpdateAPITest`・`SongDeleteAPITest`（`tests/test_api_song_write.py`）
+**テストクラス**: `SongWriteAPIAuthTest`・`SongCreateAPITest`・`SongUpdateAPITest`・`SongDeleteAPITest`・`GetCreatedSongIdTest`（`tests/test_api_song_write.py`）
 
 曲の登録（`POST /api/song/`）・変更（`PUT`・`PATCH /api/song/<id>/`）・削除（`DELETE /api/song/<id>/`）は、管理サイトで発行した`ApiKey`（11-12）の`X-API-Key`ヘッダーがあるリクエストだけ受け付ける（`HasIssuedAPIKey`。#925のニュースの`API_KEY`とは別）。GETは今までどおり誰でもできる。Cookieのセッションでは認証しないため、管理サイトにログインしていてもAPIキーが無ければ実行できず、APIキーがあればCSRFトークンは要らない。
 
@@ -1880,6 +1880,9 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | 重複を許可して登録 | 登録済みのURLと同じ`url`・`allow_dup_url` | HTTP 201、`SongLink.allow_dup=True`で2曲に紐づく |
 | 掲載拒否の作者 | `check_reject_list`が`<b>拒否</b>さんの…`を返す | HTTP 400。登録の画面のエラーはテンプレートがエスケープして表示するため、文字列をそのまま返す |
 | Discordへの通知に失敗 | `send_discord`がFalse | HTTP 500 `{"error": "処理中にエラーが発生しました。"}`、登録した曲は削除される（画面と同じ） |
+| 新規登録のビューのリダイレクト先が想定外 | `SongNewView`が曲の編集画面以外（`/unexpected/`）へリダイレクトする（`redirect`をモック） | HTTP 500 `{"error": "処理中にエラーが発生しました。"}`。`subekashi.views.api.song_write`のロガーにERRORを1件出す（`AttributeError`で素の500にしない） |
+| 登録した曲のidの読み取り（`get_created_song_id`） | リダイレクト先が`/songs/123/edit?toast=new`・`/songs/123/edit?toast=new&name_unified=1`・`/songs/123/edit/` | いずれも`123` |
+| 曲のidを読み取れないリダイレクト先 | `/`・`/songs/new/`・`/songs/abc/edit`・`/songs//edit`・`/unexpected/songs/123/edit` | `None`を返し、リダイレクト先を含むERRORをログに出す |
 | JSONのオブジェクトでない | 配列のリクエスト | HTTP 400 `{"error": "リクエストはJSONのオブジェクトで指定してください。"}` |
 | 不正な真偽値 | `"is_joke": "yes"`・`1` | HTTP 400 `{"error": "is_jokeは真偽値で指定してください。"}`。曲は変わらない |
 | 変更（PUT） | 全項目（`authors`・`url`・`imitate`は配列）、フラグをfalse・`is_draft`をtrue | HTTP 200、変更後の曲を返す。作者・URL・歌詞・カテゴリ・フラグが変わる。Discordに1回送る |
@@ -1890,6 +1893,8 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | 編集履歴と編集者（変更） | PATCH `{"lyrics": …}`、`X-Real-IP: 203.0.113.8` | `history_type="edit"`、編集者のIPは`encrypt("203.0.113.8")` |
 | 濁点・半濁点の正規化（変更） | `title`をNFDで送る | NFCに正規化して保存 |
 | 変更のエラー | `authors`が空・不正な`category`・他の曲が持つURL | HTTP 400 `{"error": ビューのエラー文}`。曲・編集履歴は変わらない |
+| 重複を許可して共有しているURLを持つ曲 | 他の曲と`allow_dup=True`のURLを共有している曲に、`allow_dup_url`なしで`PATCH {"title": …}`、URLを全て指定した`PUT` | HTTP 200。`allow_dup`は`True`のまま、他の曲の編集履歴は増えず、「重複許可したURL」のDiscord通知も送らない（`allow_dup_url`を今の値で補うと、変更のたびに通知してしまう） |
+| `allow_dup_url`で他の曲のURLを追加 | 他の曲が持つURLを`url`に加え、同じURLを`allow_dup_url`に指定して`PATCH` | HTTP 200。`allow_dup=True`になり2曲に紐づく。元の曲の編集履歴に「重複許可したURL」が残り、Discordに1回通知する |
 | 信頼されていないURL | `url`が許可されていないメディアのURL | HTTP 400。編集の画面のエラーはお問い合わせへのリンクを含むHTMLのため、タグを除き文字参照を元に戻した文章（`<`・`&`を含まない）を返す |
 | 掲載拒否の作者（変更） | `check_reject_list`が`<b>拒否</b>さんの…`を返す | HTTP 400。編集の画面はビューで`escape`して`\|safe`で表示するため、エスケープを元に戻した文字列を返す |
 | ロックされた曲 | `is_lock=True`の曲を変更・削除 | HTTP 403 `{"error": "この曲はロックされているため、変更できません。"}`。曲は変わらない |
@@ -3633,6 +3638,7 @@ URLから、公式がiframeでの埋め込みに対応しているサービス�
 | 年表・プレラ | `is_lyrics_blank`が`True`・`False`の年表の行、日付のあるプレラ | いずれも1件以上ある |
 | 編集者・編集履歴 | 公開・非公開・強制公開・BANされた編集者、ID1の編集者、`History.CHOICES`の全ての種別の曲の編集履歴、作者の編集履歴 | いずれも1件以上ある |
 | お問い合わせ・宣伝 | 回答済み・未回答のお問い合わせ、`Ad.CHOICES`の全ての状態の宣伝 | いずれも1件以上ある |
+| APIキー | `ApiKey`のサンプル（#973） | 1件以上あり、全て無効（`is_active=False`）。リポジトリに載っているキーなので、`data.json`を本番に読み込んでも曲を書き換えられないようにする |
 | 記事 | `Article.TAGS`の全てのタグ、非公開・公開前・ニュースとして扱う記事、トップ画面のニュース・リリースの記事、`howToArticle` | いずれも1件以上ある |
 | AiとWord | 高評価（5点）・未採点（0点）・途中の点数のAi | いずれも1件以上ある |
 | 月次統計 | `SONGRANGE_CHOICES`の全てのsongrange | どのsongrangeも1件以上ある |

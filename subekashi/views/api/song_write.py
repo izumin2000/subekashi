@@ -1,4 +1,5 @@
 import copy
+import logging
 import re
 import unicodedata
 from collections.abc import Mapping
@@ -25,6 +26,8 @@ LOCK_ERROR = "この曲はロックされているため、変更できません
 NOT_FOUND_ERROR = "曲が見つかりません。"
 REMOVED_ERROR = "この曲は削除されています。"
 SERVER_ERROR = "処理中にエラーが発生しました。"
+
+logger = logging.getLogger(__name__)
 
 
 # 画面用のビューはエラーをcontext["error"]に入れてHTMLを返す。APIではビューの実行後にそのエラーを取り出してJSONで返す
@@ -152,6 +155,11 @@ def build_error_response(view, response):
 
 
 # 新規登録の成功は、登録した曲の編集画面（/songs/<id>/edit）へのリダイレクトになる
+# ビューのリダイレクト先が変わって曲のidを読み取れないときは、変わったことに気づけるようログに残してNoneを返す
 def get_created_song_id(response):
-    match = re.match(r"^/songs/(\d+)/edit", response["Location"])
+    location = response["Location"]
+    match = re.match(r"^/songs/(\d+)/edit", location)
+    if match is None:
+        logger.error("新規登録のビューのリダイレクト先から、登録した曲のidを読み取れません: %s", location)
+        return None
     return int(match.group(1))

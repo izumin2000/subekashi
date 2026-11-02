@@ -21,7 +21,7 @@ from config.settings import BASE_DIR
 from subekashi.constants.constants import SONG_CATEGORIES, SONG_FLAGS
 from subekashi.lib.query_filters import filter_by_lack
 from subekashi.models import (
-    Ad, Ai, Author, AuthorAlias, Contact, Editor, History, Prush, Song, SongLink, SongTimeline, Stats,
+    Ad, Ai, ApiKey, Author, AuthorAlias, Contact, Editor, History, Prush, Song, SongLink, SongTimeline, Stats,
 )
 from subekashi.models.stats import SONGRANGE_CHOICES
 
@@ -116,6 +116,14 @@ class DataJsonCoverageTest(DataJsonTestCase):
         self.assertExists(Contact.objects.filter(answer__isnull=True), "未回答のお問い合わせ")
         for status, label in Ad.CHOICES:
             self.assertExists(Ad.objects.filter(status=status), f"宣伝の状態「{label}」")
+
+    def test_APIキーのサンプルは全て無効である(self):
+        """data.jsonを本番に読み込んでも、リポジトリに載っているキーで曲を書き換えられないようにする（#973）"""
+        self.assertExists(ApiKey.objects.all(), "APIキー")
+        self.assertFalse(
+            ApiKey.objects.filter(is_active=True).exists(),
+            "data.jsonのAPIキーは公開されているため、is_activeをfalseにしてください",
+        )
 
     def test_記事の種別ごとのデータがある(self):
         for tag, label in Article.TAGS:

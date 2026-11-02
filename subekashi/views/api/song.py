@@ -13,6 +13,7 @@ from subekashi.views.api.song_write import (
     SongEditAPIView,
     SongDeleteAPIView,
     NOT_FOUND_ERROR,
+    SERVER_ERROR,
     build_delete_post_data,
     build_edit_post_data,
     build_error_response,
@@ -77,7 +78,11 @@ class SongAPI(viewsets.ReadOnlyModelViewSet):
         if error_response:
             return error_response
 
-        song = self.queryset.get(pk=get_created_song_id(response))
+        song_id = get_created_song_id(response)
+        if song_id is None:
+            return Response({"error": SERVER_ERROR}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        song = self.queryset.get(pk=song_id)
         return Response(self.get_serializer(song).data, status=status.HTTP_201_CREATED)
 
     # PUTもPATCHも、指定しなかった項目は今の曲の値のままにする

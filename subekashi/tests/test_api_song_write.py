@@ -8,12 +8,13 @@ Discordへの通知（send_discord）とYouTube Data APIは、ビューのモジ
 import unicodedata
 from unittest.mock import patch
 from django.contrib.auth.models import User
-from django.test import TestCase, override_settings
+from django.http import HttpResponseRedirect
+from django.test import SimpleTestCase, TestCase, override_settings
 from rest_framework.test import APIClient
 from subekashi.constants.constants import BANNED_ERROR
 from subekashi.lib.security import encrypt
 from subekashi.models import ApiKey, Author, Editor, History, Song, SongLink
-from subekashi.views.api.song_write import LOCK_ERROR, NOT_FOUND_ERROR, REMOVED_ERROR, SERVER_ERROR
+from subekashi.views.api.song_write import LOCK_ERROR, NOT_FOUND_ERROR, REMOVED_ERROR, SERVER_ERROR, get_created_song_id
 
 STATIC_STORAGE = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
@@ -336,6 +337,17 @@ class SongCreateAPITest(SongWriteAPITestCase):
         self.assertEqual(response.json(), {"error": SERVER_ERROR})
         self.assertFalse(Song.objects.filter(title="通知に失敗する曲").exists())
 
+    def test_unexpected_redirect_of_view_returns_500_and_logs_error(self):
+        """新規登録のビューのリダイレクト先が変わって曲のidを読み取れないときは、AttributeErrorで落とさず、500とログにすること"""
+        with patch("subekashi.views.song_new.redirect", return_value=HttpResponseRedirect("/unexpected/")):
+            with self.assertLogs("subekashi.views.api.song_write", level="ERROR") as logs:
+                response = self._post({"title": "リダイレクト先が変わる曲", "authors": "リダイレクト作者"})
+
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.json(), {"error": SERVER_ERROR})
+        self.assertEqual(len(logs.records), 1)
+        self.assertIn("/unexpected/", logs.output[0])
+
     def test_non_object_body_returns_400(self):
         response = self._post([{"title": "配列", "authors": "作者"}])
 
@@ -490,6 +502,53 @@ class SongUpdateAPITest(SongWriteAPITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"error": "URLは既に登録されています。"})
         self._assert_unchanged()
+
+    def _share_url_with_other_song(self):
+        other = Song.objects.create(title="URLを共有する曲")
+        link = SongLink.objects.create(url="https://youtu.be/shared00001", allow_dup=True)
+        link.songs.add(self.song, other)
+        return other, link
+
+    def _allow_dup_notifications(self):
+        return [call.args[1] for call in self.discord["song_edit"].call_args_list if call.args[1].startswith("重複許可したURL")]
+
+    def test_song_sharing_url_with_allow_dup_can_be_updated_without_allow_dup_url(self):
+        """重複を許可して他の曲と共有しているURLを持つ曲は、allow_dup_urlを送らなくても、他の項目だけを変更できること"""
+        other, link = self._share_url_with_other_song()
+        shared_urls = ["https://youtu.be/original001", "https://youtu.be/shared00001"]
+
+        for name, request, data in (
+            ("PATCH", self._patch, {"title": "PATCHで変更"}),
+            ("PUT", self._put, {"title": "PUTで変更", "url": shared_urls}),
+        ):
+            with self.subTest(name):
+                response = request(self.song.id, data)
+
+                self.assertEqual(response.status_code, 200, response.content)
+                self.assertEqual(Song.objects.get(pk=self.song.pk).title, data["title"])
+                link.refresh_from_db()
+                self.assertTrue(link.allow_dup)
+                self.assertCountEqual(link.songs.all(), [self.song, other])
+                self.assertCountEqual(response.json()["url"], shared_urls)
+                self.assertEqual(History.objects.filter(song=other).count(), 0)
+                self.assertEqual(self._allow_dup_notifications(), [])
+
+    def test_allow_dup_url_adds_registered_url_to_song(self):
+        """他の曲が持つURLは、allow_dup_urlで指定すれば重複を許可して追加できること。重複を許可したことが、元の曲の編集履歴に残る"""
+        owner = Song.objects.create(title="URLの元の曲")
+        link = SongLink.objects.create(url="https://youtu.be/regist00004")
+        link.songs.add(owner)
+        urls = ["https://youtu.be/original001", "https://youtu.be/regist00004"]
+
+        response = self._patch(self.song.id, {"url": urls, "allow_dup_url": "https://youtu.be/regist00004"})
+
+        self.assertEqual(response.status_code, 200, response.content)
+        link.refresh_from_db()
+        self.assertTrue(link.allow_dup)
+        self.assertCountEqual(link.songs.all(), [owner, self.song])
+        history = History.objects.get(song=owner)
+        self.assertEqual(history.changes, [["種類", "内容"], ["重複許可したURL", "https://youtu.be/regist00004"]])
+        self.assertEqual(len(self._allow_dup_notifications()), 1)
 
     def test_untrusted_url_error_is_plain_text(self):
         """編集の画面はエラーをHTML（お問い合わせへのリンク）で表示するため、APIはタグを除いた文章を返すこと"""
@@ -659,3 +718,19 @@ class SongWriteAPIFlowTest(SongWriteAPITestCase):
         histories = History.objects.filter(song_id=song_id).order_by("id")
         self.assertEqual([history.history_type for history in histories], ["new", "edit", "delete"])
         self.assertEqual(len({history.editor_id for history in histories}), 1)
+
+
+class GetCreatedSongIdTest(SimpleTestCase):
+    """get_created_song_id のテスト。新規登録のビューの成功時のリダイレクト先から、登録した曲のidを読み取る"""
+
+    def test_reads_id_from_edit_page_location(self):
+        for location in ("/songs/123/edit?toast=new", "/songs/123/edit?toast=new&name_unified=1", "/songs/123/edit/"):
+            with self.subTest(location):
+                self.assertEqual(get_created_song_id(HttpResponseRedirect(location)), 123)
+
+    def test_unexpected_location_returns_none_and_logs_error(self):
+        for location in ("/", "/songs/new/", "/songs/abc/edit", "/songs//edit", "/unexpected/songs/123/edit"):
+            with self.subTest(location):
+                with self.assertLogs("subekashi.views.api.song_write", level="ERROR") as logs:
+                    self.assertIsNone(get_created_song_id(HttpResponseRedirect(location)))
+                self.assertIn(location, logs.output[0])

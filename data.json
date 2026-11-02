@@ -1970,6 +1970,16 @@
     }
   },
   {
+    "model": "subekashi.apikey",
+    "pk": 1,
+    "fields": {
+      "name": "サンプルのAPIキー",
+      "key": "sample-api-key-not-for-production",
+      "is_active": false,
+      "created_at": "2026-10-31T00:00:00Z"
+    }
+  },
+  {
     "model": "subekashi.history",
     "pk": 1,
     "fields": {
