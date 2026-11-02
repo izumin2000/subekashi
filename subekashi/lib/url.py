@@ -1,8 +1,9 @@
 from subekashi.constants.constants import ALLOW_MEDIAS, ALL_MEDIAS
 from config.local_settings import ERROR_DISCORD_URL
 from subekashi.lib.discord import send_discord
-from urllib.parse import urlparse, urlunparse, parse_qs
+from urllib.parse import urlparse, urlunparse, urlencode, parse_qs
 import re
+import requests
 
 _YOUTUBE_RE = re.compile(
     r'https?://(?:www\.|m\.)?(?:youtube\.com/(?:.*[?&]v=|shorts/|live/)|youtu\.be/)([a-zA-Z0-9_-]{11})'
@@ -12,6 +13,10 @@ _YOUTUBE_RE = re.compile(
 _BILIBILI_VIDEO_PATH_RE = re.compile(r'/video/(?:(BV1[0-9A-Za-z]{9})|av([1-9][0-9]{0,14}))/?')
 _BILIBILI_BV_ALPHABET = "FcwAPNKTMug3GV5Lj7EJnHpWsx4tb8haYeviqBz6rkCy12mUSDQX9RdoZf"
 _BILIBILI_BV_ORDER = (8, 7, 0, 5, 1, 3, 2, 4, 6)
+
+_SOUNDCLOUD_HOSTS = ('soundcloud.com', 'www.soundcloud.com', 'm.soundcloud.com')
+_SOUNDCLOUD_SHORT_HOST = 'on.soundcloud.com'
+_SOUNDCLOUD_RESOLVE_TIMEOUT = 3
 
 _ALLOW_MEDIA_RES = [(re.compile(m["regex"]), m) for m in ALLOW_MEDIAS]
 _ALL_MEDIA_RES = [(re.compile(m["regex"]), m) for m in ALL_MEDIAS]
@@ -74,6 +79,48 @@ def format_bilibili_url(url):
     return urlunparse(('https', 'bilibili.com', f'/video/{bvid}', '', query, ''))
 
 
+# SoundCloudの曲のURLを「https://soundcloud.com/<ユーザー>/<曲>」に揃える（#1329）
+# 「?in=」（開いたセット）・「?si=」・「?utm_*」などは曲の特定に要らないため消す。非公開の曲を指す「secret_token」のみ残す
+# 短縮URL（on.soundcloud.com）は、転送先を取得しないと曲が分からないため、https・クエリの違いのみ揃える
+def format_soundcloud_url(url):
+    parsed_url = urlparse(url)
+    path = parsed_url.path.rstrip('/')
+
+    if parsed_url.netloc == _SOUNDCLOUD_SHORT_HOST:
+        return urlunparse(('https', _SOUNDCLOUD_SHORT_HOST, path, '', '', ''))
+
+    if parsed_url.netloc not in _SOUNDCLOUD_HOSTS:
+        return url
+
+    secret_token = parse_qs(parsed_url.query).get('secret_token', [''])[0]
+    query = urlencode({'secret_token': secret_token}) if secret_token else ''
+    return urlunparse(('https', 'soundcloud.com', path, '', query, ''))
+
+
+# SoundCloudの短縮URL（on.soundcloud.com）の転送先を取得し、format_soundcloud_urlで揃えたURLを返す（#1329）
+# 短縮URLでない場合や、転送先を取得できなかった場合・転送先が曲などのSoundCloudのURLでない場合は、元のURLを返す
+# 通信するのはon.soundcloud.comのみで、リダイレクトは追わずLocationだけを読む
+def resolve_soundcloud_short_url(url):
+    parsed_url = urlparse(url)
+    if parsed_url.netloc != _SOUNDCLOUD_SHORT_HOST or not parsed_url.path.strip('/'):
+        return url
+
+    try:
+        response = requests.get(
+            f"https://{_SOUNDCLOUD_SHORT_HOST}{parsed_url.path}",
+            allow_redirects=False,
+            timeout=_SOUNDCLOUD_RESOLVE_TIMEOUT,
+        )
+    except requests.RequestException:
+        return url
+
+    resolved_url = format_soundcloud_url(response.headers.get('Location', ''))
+    resolved = urlparse(resolved_url)
+    if resolved.netloc != 'soundcloud.com' or not resolved.path.strip('/'):
+        return url
+    return resolved_url
+
+
 # URLを短縮しフォーマットする
 def clean_url(urls):
     urls = urls.replace(" ,", ",").replace(", ", ",")
@@ -83,6 +130,7 @@ def clean_url(urls):
     url_list = list(map(format_youtube_url, url_list))
     url_list = list(map(format_x_url, url_list))
     url_list = list(map(format_bilibili_url, url_list))
+    url_list = list(map(format_soundcloud_url, url_list))
     url_list = [u.rstrip('/') for u in url_list]
     return ",".join(url_list)
 

@@ -76,6 +76,8 @@
 | ライブのURL（#52） | `"https://www.youtube.com/live/dQw4w9WgXcQ?si=xxxx"` | `"https://youtu.be/dQw4w9WgXcQ"`（編集画面などで許可されているURLとして扱われる） |
 | 複数URL | `"https://youtu.be/abc1234abcd,https://x.com/u/1"` | 各URLが正規化されたカンマ区切り |
 | ビリビリ動画のURL（#1246） | `"https://www.bilibili.com/video/av417727107/,https://www.bilibili.com/video/BV1in4y1Q7qw/?p=2"` | `"https://bilibili.com/video/BV1qV411J7Kq,https://bilibili.com/video/BV1in4y1Q7qw?p=2"`（`format_bilibili_url` で揃える） |
+| SoundCloudのスマホ版・開いたセットのクエリ・http・末尾の`/`（#1329） | `"https://m.soundcloud.com/somnolence052/somnolence_7?in=somnolence052%2Fsets%2Fsomnolence,http://soundcloud.com/q4vgovlwwmsh/remix-wav/"` | `"https://soundcloud.com/somnolence052/somnolence_7,https://soundcloud.com/q4vgovlwwmsh/remix-wav"`（`format_soundcloud_url` で揃える） |
+| SoundCloudの短縮URL（#1329） | `"https://on.soundcloud.com/wlGn73KGoAXKoRFn6S/"` | `"https://on.soundcloud.com/wlGn73KGoAXKoRFn6S"`（`clean_url` は外部と通信しないため、転送先は取得しない） |
 
 #### 1-6. `get_allow_media(url)`
 
@@ -125,6 +127,35 @@
 | av番号 | `https://www.bilibili.com/video/av417727107/` | `"https://bilibili.com/video/BV1qV411J7Kq"` |
 | パートの指定 | `?p=1` / `?p=2` / `?p=3&vd_source=...` / av番号のURLの`?spm_id_from=...&p=02` / `?p=abc` | `p` を消す / `?p=2` / `?p=3` / BV番号のURLに`?p=2` / `p` を消す（1つの動画のパートごとに別の曲のことがあるため、2パート目以降のみ残す） |
 | 動画のURLではない・動画IDが不正 | 桁数の多いBV番号（`BV1bcvtezEAcc`、年表にある誤記）・2^51以上のav番号・`/audio/au...`・`space.bilibili.com`・`bilibili.com.attacker.example`・ニコニコ動画のURL | そのまま返す |
+
+#### 1-10. `format_soundcloud_url(url)`（#1329）
+
+SoundCloudの曲のURLを `https://soundcloud.com/<ユーザー>/<曲>` に揃える。短縮URL（`on.soundcloud.com`）は転送先を取得しないと曲が分からないため、`https`・クエリ・末尾の`/`のみ揃える。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| スマホ版・開いたセットのクエリ（お問い合わせの曲9413のURL） | `https://m.soundcloud.com/somnolence052/somnolence_7?in=somnolence052%2Fsets%2Fsomnolence` | `"https://soundcloud.com/somnolence052/somnolence_7"` |
+| 揃えたURL | `https://soundcloud.com/somnolence052/somnolence_7` | そのまま返す |
+| http・`www.`・末尾の`/`・フラグメント | `http://soundcloud.com/...`・`https://www.soundcloud.com/.../`・`...#comments` | `"https://soundcloud.com/somnolence052/somnolence_7"` |
+| トラッキング系のクエリ | `?utm_source=...&utm_medium=...&utm_campaign=...`・`?si=...&utm_source=...`・`/?in=...` | クエリを消す |
+| 非公開の曲の`secret_token` | `https://m.soundcloud.com/user/private-track/?secret_token=s-AbCdE&in=user/sets/x&utm_source=clipboard` | `"https://soundcloud.com/user/private-track?secret_token=s-AbCdE"`（`secret_token`のみ残す） |
+| パスの大文字小文字 | `https://soundcloud.com/User_Name/Track-1?in=...` | パスは変えない |
+| セット・ユーザーのURL | `https://m.soundcloud.com/somnolence052/sets/somnolence?utm_source=clipboard`・`https://soundcloud.com/somnolence052/` | `"https://soundcloud.com/somnolence052/sets/somnolence"`・`"https://soundcloud.com/somnolence052"` |
+| 短縮URL | `http://on.soundcloud.com/wlGn73KGoAXKoRFn6S/?utm_source=clipboard` | `"https://on.soundcloud.com/wlGn73KGoAXKoRFn6S"` |
+| SoundCloudの曲のURLではない | YouTubeのURL・ニコニコ動画のURL・`soundcloud.com.attacker.example`・`attacker.example/soundcloud.com/...`・`api.soundcloud.com/tracks/123`・空文字 | そのまま返す |
+
+#### 1-11. `resolve_soundcloud_short_url(url)`（#1329）
+
+SoundCloudの短縮URL（`on.soundcloud.com`）の転送先を取得し、`format_soundcloud_url` で揃えたURLを返す。リダイレクトは追わず `Location` だけを読み、通信するのは `https://on.soundcloud.com/<パス>` のみ。`requests.get` はモックする。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 転送先を取得できる | `https://on.soundcloud.com/wlGn73KGoAXKoRFn6S`（`Location` は `https://soundcloud.com/somnolence052/somnolence_7?utm_source=clipboard&...`） | `"https://soundcloud.com/somnolence052/somnolence_7"`。`allow_redirects=False`・`timeout`付きで1回だけ呼ぶ |
+| http・クエリ付きの短縮URL | `http://on.soundcloud.com/wlGn73KGoAXKoRFn6S?x=https://attacker.example/` | `https://on.soundcloud.com/wlGn73KGoAXKoRFn6S` にのみ通信する |
+| 短縮URLではない・パスが無い | 通常のSoundCloudのURL・スマホ版・`on.soundcloud.com.attacker.example`・`attacker.example/on.soundcloud.com/...`・YouTubeのURL・`https://on.soundcloud.com`・`https://on.soundcloud.com/`・空文字 | そのまま返す。通信しない |
+| 通信に失敗する | `requests.ConnectionError`・`requests.Timeout` | 元のURLを返す |
+| 存在しない短縮URL | `Location` の無い404 | 元のURLを返す |
+| 転送先がSoundCloudの曲などではない | 他のサイト・`soundcloud.com.attacker.example`・`https://soundcloud.com/`・別の短縮URLへの`Location` | 元のURLを返す |
 
 ---
 
@@ -970,6 +1001,12 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | POST: 正規化が発生しない | `authors=`通常の作者名 | redirect先URLに`name_unified`は付与されない |
 | POST: ビリビリ動画のURL（#1246） | `url="https://www.bilibili.com/video/av417727107/?spm_id_from=...,https://www.bilibili.com/video/BV1in4y1Q7qw?p=2&vd_source=..."` | 302、`https://bilibili.com/video/BV1qV411J7Kq`・`https://bilibili.com/video/BV1in4y1Q7qw?p=2` で保存される |
 | POST: 登録済みのBV番号のURLと同じ動画のav番号のURL（#1246） | 別の曲に `https://bilibili.com/video/BV1qV411J7Kq` が紐付いている状態で `url="https://www.bilibili.com/video/av417727107/"` | HTTP 200、"既に登録されています" を含むエラー、URLは追加されない |
+| POST: SoundCloudのURL（#1329） | `url="https://m.soundcloud.com/somnolence052/somnolence_7?in=somnolence052%2Fsets%2Fsomnolence,http://soundcloud.com/q4vgovlwwmsh/remix-wav?utm_source=clipboard"` | 302、`https://soundcloud.com/somnolence052/somnolence_7`・`https://soundcloud.com/q4vgovlwwmsh/remix-wav` で保存される |
+| POST: 登録済みのURLと同じ曲のスマホ版・開いたセットのクエリ付きのURL（#1329） | 別の曲に `https://soundcloud.com/somnolence052/somnolence_7` が紐付いている状態で `url="https://m.soundcloud.com/somnolence052/somnolence_7?in=somnolence052%2Fsets%2Fsomnolence"` | HTTP 200、"既に登録されています" を含むエラー、URLは追加されない |
+| POST: 新しく追加したSoundCloudの短縮URL（#1329） | `url="https://on.soundcloud.com/wlGn73KGoAXKoRFn6S"`（`requests.get` をモックし、`Location` は `https://soundcloud.com/somnolence052/somnolence_7?utm_source=clipboard&...`） | 302、`https://soundcloud.com/somnolence052/somnolence_7` で保存される。通信は1回 |
+| POST: 短縮URLの転送先が登録済みのURLと同じ（#1329） | 別の曲に `https://soundcloud.com/somnolence052/somnolence_7` が紐付いている状態で上の短縮URL | HTTP 200、"既に登録されています" を含むエラー、URLは追加されない |
+| POST: 短縮URLの転送先を取得できない（#1329） | `requests.get` が `requests.ConnectionError` | 302、入力された短縮URLのまま保存される |
+| POST: この曲に既にある短縮URL（#1329） | 曲に `https://on.soundcloud.com/wlGn73KGoAXKoRFn6S` が紐付いている状態で同じURLを送る | 302、通信しない。URLは短縮URLのまま変わらない（他の項目の編集のたびに解決しない） |
 
 #### 7-6. `ContactView` (`/contact/`)
 
@@ -1770,6 +1807,7 @@ faviconの画像は`icon_large.png`（800×800）から生成する。`site.webm
 | --- | --- | --- |
 | 表記の違うビリビリ動画のURL | `https://bilibili.com/video/BV1qV411J7Kq` の`SongLink`がある状態で、同じURL・`https://www.bilibili.com/video/av417727107/`・`https://m.bilibili.com/video/BV1qV411J7Kq/?spm_id_from=...&p=1` | いずれもその`SongLink`のみを返す |
 | 2パート目以降のURL | `https://www.bilibili.com/video/BV1qV411J7Kq?p=2` | 空（別の曲のことがあるため別のURLとして扱う） |
+| 表記の違うSoundCloudのURL（#1329） | `https://soundcloud.com/somnolence052/somnolence_7` の`SongLink`がある状態で、同じURL・`https://m.soundcloud.com/somnolence052/somnolence_7?in=somnolence052%2Fsets%2Fsomnolence`・`http://soundcloud.com/somnolence052/somnolence_7/?utm_source=clipboard` | いずれもその`SongLink`のみを返す（短縮URLは、公開APIが外部へ通信しないよう、このAPIでは解決しない） |
 | URLに紐づく曲 | 曲に紐づくURLを`?url=`で指定 | `songs`にその曲が含まれる |
 | ユーザーが削除した曲（#1239） | 削除した曲と通常の曲に紐づくURL | `songs`に削除した曲は含まれない |
 | 削除した曲だけに紐づくURL（#1239） | 削除した曲だけに紐づくURL | `songs`が空（登録できるURLとして扱われる） |

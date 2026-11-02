@@ -212,6 +212,18 @@ URLの重複を許可するのは、曲を保存するPOSTのときだけにす�
 | 検証: `allow_dup_url` なし | `allow_dup_url` を送らないと HTTP 200で "既に登録されています" のエラー。`allow_dup` も History も変わらない |
 | 検証: 保存できなかったとき | 曲を保存できずエラーになったときは、`allow_dup_url` を送っていても `allow_dup == False` のままで、HistoryもDiscordへの通知もできない |
 
+#### 2-13. SoundCloudのURLを揃えて保存し、短縮URLは転送先に解決して重複を判定する（#1329）
+
+| 項目 | 内容 |
+| --- | --- |
+| 前提 | 曲Aに `SongLink(url="https://soundcloud.com/somnolence052/somnolence_7")` が紐付いている。曲Bがある。`requests.get` はモックする |
+| 操作1 | `POST /songs/<曲Bのid>/edit/` `{url="https://m.soundcloud.com/somnolence052/somnolence_7?in=somnolence052%2Fsets%2Fsomnolence", ...}` |
+| 検証1 | HTTP 200、"既に登録されています" のエラーでURLは追加されない。画面のJSが重複の判定に使う `GET /api/songlink/?url=` も、同じURLで曲Aの `SongLink` を返す |
+| 操作2 | `POST /songs/<曲Bのid>/edit/` `{url="https://on.soundcloud.com/wlGn73KGoAXKoRFn6S", ...}`（`Location` は `https://soundcloud.com/somnolence052/somnolence_7?utm_source=clipboard&...`） |
+| 検証2 | 検証1と同じエラー。曲Aが無いときは、`https://soundcloud.com/somnolence052/somnolence_7` で保存される（短縮URLのままにはならない） |
+| 検証: 通信できないとき | `requests.get` が `requests.ConnectionError` なら、入力された短縮URLのまま保存される |
+| 検証: 既にある短縮URL | 曲Bに短縮URLが紐付いているとき、同じURLを送っても通信せず、短縮URLのまま変わらない |
+
 ---
 
 ### 3. 削除フロー

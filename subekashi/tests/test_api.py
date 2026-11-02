@@ -368,6 +368,17 @@ class SongLinkAPITest(TestCase):
         # #1246: 2パート目以降は別の曲のことがあるため、別のURLとして扱う
         self.assertEqual(self._get_link_ids("https://www.bilibili.com/video/BV1qV411J7Kq?p=2"), [])
 
+    def test_soundcloud_url_is_found_by_mobile_and_unformatted_url(self):
+        # #1329: スマホ版・開いたセットのクエリ・http・末尾の/の付いたURLでも、同じ曲のURLが見つかる
+        link = SongLink.objects.create(url="https://soundcloud.com/somnolence052/somnolence_7")
+        for url in [
+            "https://soundcloud.com/somnolence052/somnolence_7",
+            "https://m.soundcloud.com/somnolence052/somnolence_7?in=somnolence052%2Fsets%2Fsomnolence",
+            "http://soundcloud.com/somnolence052/somnolence_7/?utm_source=clipboard",
+        ]:
+            with self.subTest(url=url):
+                self.assertEqual(self._get_link_ids(url), [link.id])
+
     def test_songs_contains_linked_song(self):
         self.assertEqual(self._get_song_ids(self.link.url), [self.song.id])
 

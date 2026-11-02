@@ -10,7 +10,7 @@ from config.local_settings import NEW_DISCORD_URL, CONTACT_DISCORD_URL
 from subekashi.constants.constants import SONG_CATEGORIES
 from subekashi.forms import SongEditForm
 from subekashi.models import Song, Editor, History, SongFields
-from subekashi.lib.url import clean_url, get_allow_media
+from subekashi.lib.url import clean_url, get_allow_media, resolve_soundcloud_short_url
 from subekashi.lib.ip import get_ip
 from subekashi.lib.discord import send_discord
 from subekashi.lib.author_helpers import get_or_create_authors, author_names_were_normalized, validate_author_name_lengths
@@ -80,6 +80,10 @@ class SongEditView(View):
         # URLのバリデーション
         cleaned_url = clean_url(url)
         cleaned_url_list = cleaned_url.split(",") if cleaned_url else []
+        # 新しく追加されたSoundCloudの短縮URLは、転送先のURLに解決して保存する（#1329）。この曲に既にあるURLは、編集のたびに通信しないよう解決しない
+        current_urls = set(self.song.links.values_list('url', flat=True))
+        cleaned_url_list = [u if u in current_urls else resolve_soundcloud_short_url(u) for u in cleaned_url_list]
+        cleaned_url = ",".join(cleaned_url_list)
         # 重複を許可して登録するURL。曲を保存するときに重複を許可する（#1285）
         allow_dup_url_set = set(clean_url(form.cleaned_data['allow_dup_url']).split(","))
         allow_dup_url_list = [u for u in cleaned_url_list if u in allow_dup_url_set]
