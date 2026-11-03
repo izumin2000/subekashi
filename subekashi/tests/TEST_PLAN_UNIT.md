@@ -946,6 +946,20 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 閉じた埋め込みプレイヤー（#1254） | `is_shown_embed=off` | `context["is_shown_embed"] = False`で、`open`が付かない（`<iframe>`は出力し、`loading="lazy"`により閉じている間は読み込まれない） |
 | `is_shown_embed`の不正な値（#1254） | `on`・`OFF`・`<script>` | `off`以外は開く。`is_shown_embed = True`で`open`が付く |
 | 埋め込みプレイヤーの開閉の保存（#1254） | YouTubeのURLがある曲 | nonce付きのscriptの`embedEle.addEventListener('toggle'`で、開閉時に`is_shown_embed=on`・`off`を`path=/`・`max-age`（`data-cookie-age`）・`samesite=lax`のcookieに保存する。`onclick`は使わない。ブラウザの動作はPlaywrightで確認（結合テスト26章） |
+| スペシャルデザインの曲のスクリプト（#1258） | `is_special=True`の曲（ID 5472） | 共通の`/static/subekashi/special/util.js`と、曲IDの`/static/subekashi/special/5472.js`を`<script src>`で読み込む |
+| スペシャルデザインでない曲のスクリプト（#1258） | `is_special=False`の曲 | `subekashi/special/`のスクリプトを読み込まない |
+
+#### 7-3-1. 曲5472のスペシャルデザインの静的ファイル（MIDIキーボードで遊ぶロールピアノ、#1258）
+
+**テストファイル**: `tests/test_views.py`（`SpecialDesign5472AssetTest`）
+
+ゲームの動作（JS）はDjangoテストでは確認できないため、結合テスト32章のとおりPlaywrightで確認する。ここでは、ゲームが読み込むファイルの存在と形式だけを確認する
+
+| テストケース | 条件 | 期待結果 |
+| --- | --- | --- |
+| 静的ファイルの存在 | `special/5472.js`・`5472.css`・`5472.mid`・`5472.mp3`・`5472.pdf` | いずれも静的ファイルの検索（`finders.find`）で見つかる |
+| MIDIファイルの形式 | `5472.mid`の先頭14バイト（ヘッダーチャンク） | `MThd`で、チャンクの長さが6、format 0または1、トラックが1つ以上、時間の単位がtick（PPQ。SMPTEは`5472.js`が読めない） |
+| ダウンロードするファイルの形式 | `5472.pdf`・`5472.mp3`の先頭 | PDFは`%PDF-`で始まる。mp3は`ID3`、またはMPEGオーディオのフレーム同期（先頭バイトが`0xFF`で、2バイト目の上位3ビットが1）で始まる（ゲーム画面の下のダウンロードボタンで配るファイルが、別の形式に差し替わっていない） |
 
 #### 7-4. `SongNewView` (`/songs/new/`)
 
