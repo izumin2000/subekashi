@@ -2455,6 +2455,54 @@ class SongEditViewTest(TestCase):
         mock_get.assert_not_called()
         self.assertEqual(list(self.song.links.values_list("url", flat=True)), ["https://on.soundcloud.com/wlGn73KGoAXKoRFn6S"])
 
+    def _resolve_short_url_by_path(self, url, **kwargs):
+        return self._mock_short_url_response(f"https://soundcloud.com/user/{url.rsplit('/', 1)[1]}?utm_source=clipboard")
+
+    def test_post_soundcloud_short_urls_over_limit_are_saved_as_is(self):
+        """#1329: 1回の保存で解決する短縮URLは5件までにし、超えた分は入力された短縮URLのまま保存すること"""
+        short_urls = [f"https://on.soundcloud.com/s{i}" for i in range(7)]
+        with patch("subekashi.lib.url.requests.get", side_effect=self._resolve_short_url_by_path) as mock_get:
+            response = self.client.post(
+                reverse("subekashi:song_edit", args=[self.song.id]),
+                {"title": "編集テスト曲", "authors": "編集テスト作者", "url": ",".join(short_urls)},
+            )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(mock_get.call_count, 5)
+        self.assertCountEqual(
+            self.song.links.values_list("url", flat=True),
+            [f"https://soundcloud.com/user/s{i}" for i in range(5)] + short_urls[5:],
+        )
+
+    def test_post_same_soundcloud_short_url_is_resolved_once(self):
+        """#1329: 同じ短縮URLを何度入力しても、転送先の取得は1回だけにすること"""
+        short_url = "https://on.soundcloud.com/wlGn73KGoAXKoRFn6S"
+        with patch("subekashi.lib.url.requests.get", side_effect=self._resolve_short_url_by_path) as mock_get:
+            response = self.client.post(
+                reverse("subekashi:song_edit", args=[self.song.id]),
+                {"title": "編集テスト曲", "authors": "編集テスト作者", "url": f"{short_url},{short_url}"},
+            )
+        self.assertEqual(response.status_code, 302)
+        mock_get.assert_called_once()
+        self.assertEqual(list(self.song.links.values_list("url", flat=True)), ["https://soundcloud.com/user/wlGn73KGoAXKoRFn6S"])
+
+    @patch("subekashi.views.song_edit.send_discord", return_value=True)
+    def test_post_allow_dup_url_of_soundcloud_short_url_is_resolved_like_saved_url(self, mock_send_discord):
+        """#1329: 短縮URLの転送先が登録済みのURLでも、重複を許可するURLに短縮URLを付ければ、転送先のURLの重複を許可して保存できること"""
+        short_url = "https://on.soundcloud.com/wlGn73KGoAXKoRFn6S"
+        owner = Song.objects.create(title="重複許可の元の曲")
+        link = SongLink.objects.create(url="https://soundcloud.com/user/wlGn73KGoAXKoRFn6S")
+        link.songs.add(owner)
+        with patch("subekashi.lib.url.requests.get", side_effect=self._resolve_short_url_by_path) as mock_get:
+            response = self.client.post(
+                reverse("subekashi:song_edit", args=[self.song.id]),
+                {"title": "編集テスト曲", "authors": "編集テスト作者", "url": short_url, "allow_dup_url": short_url},
+            )
+        self.assertEqual(response.status_code, 302)
+        mock_get.assert_called_once()
+        link.refresh_from_db()
+        self.assertTrue(link.allow_dup)
+        self.assertCountEqual(link.songs.all(), [owner, self.song])
+
 
 @override_settings(STORAGES=STATIC_STORAGE)
 class SongHistoryViewTest(TestCase):

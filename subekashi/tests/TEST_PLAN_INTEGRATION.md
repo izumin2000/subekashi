@@ -223,6 +223,8 @@ URLの重複を許可するのは、曲を保存するPOSTのときだけにす�
 | 検証2 | 検証1と同じエラー。曲Aが無いときは、`https://soundcloud.com/somnolence052/somnolence_7` で保存される（短縮URLのままにはならない） |
 | 検証: 通信できないとき | `requests.get` が `requests.ConnectionError` なら、入力された短縮URLのまま保存される |
 | 検証: 既にある短縮URL | 曲Bに短縮URLが紐付いているとき、同じURLを送っても通信せず、短縮URLのまま変わらない |
+| 検証: 通信の回数 | 同じ短縮URLを何度送っても通信は1回。異なる短縮URLは5件までしか解決せず、超えた分は短縮URLのまま保存される |
+| 検証: 重複を許可 | `allow_dup_url` に短縮URLを送ると、保存するURLと同じ転送先に解決される。転送先のURLが曲Aに紐付いていれば、`allow_dup == True` になり曲Aと曲Bの両方が紐付く |
 
 ---
 

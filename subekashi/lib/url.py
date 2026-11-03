@@ -17,6 +17,7 @@ _BILIBILI_BV_ORDER = (8, 7, 0, 5, 1, 3, 2, 4, 6)
 _SOUNDCLOUD_HOSTS = ('soundcloud.com', 'www.soundcloud.com', 'm.soundcloud.com')
 _SOUNDCLOUD_SHORT_HOST = 'on.soundcloud.com'
 _SOUNDCLOUD_RESOLVE_TIMEOUT = 3
+_SOUNDCLOUD_RESOLVE_LIMIT = 5
 
 _ALLOW_MEDIA_RES = [(re.compile(m["regex"]), m) for m in ALLOW_MEDIAS]
 _ALL_MEDIA_RES = [(re.compile(m["regex"]), m) for m in ALL_MEDIAS]
@@ -119,6 +120,22 @@ def resolve_soundcloud_short_url(url):
     if resolved.netloc != 'soundcloud.com' or not resolved.path.strip('/'):
         return url
     return resolved_url
+
+
+# urlsの短縮URLを、resolve_soundcloud_short_urlで転送先に解決したリストを返す（#1329）
+# skip_urlsにあるURLは解決しない。同じ短縮URLは1回だけ解決する
+# 1回の保存で多数の短縮URLを渡されても長く待たされないよう、異なる短縮URLは_SOUNDCLOUD_RESOLVE_LIMIT件までしか解決しない（超えた分は元のURLのまま返す）
+def resolve_soundcloud_short_urls(urls, skip_urls=()):
+    resolved_urls = {}
+    result = []
+    for url in urls:
+        if url in skip_urls or urlparse(url).netloc != _SOUNDCLOUD_SHORT_HOST:
+            result.append(url)
+            continue
+        if url not in resolved_urls:
+            resolved_urls[url] = resolve_soundcloud_short_url(url) if len(resolved_urls) < _SOUNDCLOUD_RESOLVE_LIMIT else url
+        result.append(resolved_urls[url])
+    return result
 
 
 # URLを短縮しフォーマットする

@@ -16,6 +16,7 @@ from subekashi.lib.url import (
     format_bilibili_url,
     format_soundcloud_url,
     resolve_soundcloud_short_url,
+    resolve_soundcloud_short_urls,
     clean_url,
     get_allow_media,
     get_all_media,
@@ -368,6 +369,68 @@ class ResolveSoundcloudShortUrlTest(SimpleTestCase):
             with self.subTest(location=location):
                 with patch("subekashi.lib.url.requests.get", return_value=self._response(location)):
                     self.assertEqual(resolve_soundcloud_short_url(url), url)
+
+
+class ResolveSoundcloudShortUrlsTest(SimpleTestCase):
+    """resolve_soundcloud_short_urls() のテスト（#1329）。外部通信はモックする"""
+
+    @staticmethod
+    def _resolve_by_path(url, **kwargs):
+        response = MagicMock()
+        response.headers = {"Location": f"https://soundcloud.com/user/{url.rsplit('/', 1)[1]}?utm_source=clipboard"}
+        return response
+
+    def test_short_urls_are_resolved_and_order_is_kept(self):
+        urls = [
+            "https://youtu.be/dQw4w9WgXcQ",
+            "https://on.soundcloud.com/aaa",
+            "https://soundcloud.com/user/bbb",
+            "https://on.soundcloud.com/ccc",
+        ]
+        with patch("subekashi.lib.url.requests.get", side_effect=self._resolve_by_path) as mock_get:
+            result = resolve_soundcloud_short_urls(urls)
+        self.assertEqual(result, [
+            "https://youtu.be/dQw4w9WgXcQ",
+            "https://soundcloud.com/user/aaa",
+            "https://soundcloud.com/user/bbb",
+            "https://soundcloud.com/user/ccc",
+        ])
+        self.assertEqual(mock_get.call_count, 2)
+
+    def test_skip_urls_are_not_resolved(self):
+        with patch("subekashi.lib.url.requests.get", side_effect=self._resolve_by_path) as mock_get:
+            result = resolve_soundcloud_short_urls(
+                ["https://on.soundcloud.com/aaa", "https://on.soundcloud.com/bbb"],
+                skip_urls={"https://on.soundcloud.com/aaa"},
+            )
+        self.assertEqual(result, ["https://on.soundcloud.com/aaa", "https://soundcloud.com/user/bbb"])
+        self.assertEqual(mock_get.call_count, 1)
+
+    def test_same_short_url_is_resolved_once(self):
+        with patch("subekashi.lib.url.requests.get", side_effect=self._resolve_by_path) as mock_get:
+            result = resolve_soundcloud_short_urls(["https://on.soundcloud.com/aaa"] * 3)
+        self.assertEqual(result, ["https://soundcloud.com/user/aaa"] * 3)
+        mock_get.assert_called_once()
+
+    def test_short_urls_over_limit_are_returned_as_is(self):
+        urls = [f"https://on.soundcloud.com/s{i}" for i in range(8)]
+        with patch("subekashi.lib.url.requests.get", side_effect=self._resolve_by_path) as mock_get:
+            result = resolve_soundcloud_short_urls(urls)
+        self.assertEqual(mock_get.call_count, 5)
+        self.assertEqual(result[:5], [f"https://soundcloud.com/user/s{i}" for i in range(5)])
+        self.assertEqual(result[5:], urls[5:])
+
+    def test_repeated_short_urls_do_not_use_up_the_limit(self):
+        urls = [f"https://on.soundcloud.com/s{i}" for i in range(5)] * 2
+        with patch("subekashi.lib.url.requests.get", side_effect=self._resolve_by_path) as mock_get:
+            result = resolve_soundcloud_short_urls(urls)
+        self.assertEqual(mock_get.call_count, 5)
+        self.assertEqual(result, [f"https://soundcloud.com/user/s{i}" for i in range(5)] * 2)
+
+    def test_empty_list_returns_empty_list(self):
+        with patch("subekashi.lib.url.requests.get") as mock_get:
+            self.assertEqual(resolve_soundcloud_short_urls([]), [])
+        mock_get.assert_not_called()
 
 
 class CleanUrlTest(SimpleTestCase):

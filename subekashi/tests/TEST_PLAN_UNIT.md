@@ -157,6 +157,19 @@ SoundCloudの短縮URL（`on.soundcloud.com`）の転送先を取得し、`forma
 | 存在しない短縮URL | `Location` の無い404 | 元のURLを返す |
 | 転送先がSoundCloudの曲などではない | 他のサイト・`soundcloud.com.attacker.example`・`https://soundcloud.com/`・別の短縮URLへの`Location` | 元のURLを返す |
 
+#### 1-12. `resolve_soundcloud_short_urls(urls, skip_urls=())`（#1329）
+
+URLのリストの短縮URLを `resolve_soundcloud_short_url` で解決したリストを返す。1回の保存で多数の短縮URLを渡されても長く待たされないよう、解決する件数に上限（5件）を設ける。`requests.get` はモックする。
+
+| テストケース | 入力 | 期待結果 |
+| --- | --- | --- |
+| 短縮URLだけ解決し、順序は変えない | YouTubeのURL・短縮URL・通常のSoundCloudのURL・短縮URL | 短縮URLだけ転送先になる。通信は2回 |
+| `skip_urls` にあるURL | `skip_urls` に1つ目の短縮URLを渡した2つの短縮URL | 1つ目はそのまま、2つ目は転送先になる。通信は1回 |
+| 同じ短縮URL | 同じ短縮URLが3つ | 3つとも同じ転送先になる。通信は1回 |
+| 上限を超える短縮URL | 異なる短縮URLが8つ | 先頭の5つだけ転送先になり、残りの3つは元のURLのまま。通信は5回 |
+| 繰り返しは上限に数えない | 異なる短縮URL5つを2回ずつ | 10個とも転送先になる。通信は5回 |
+| 空のリスト | `[]` | `[]`。通信しない |
+
 ---
 
 ### 2. `lib/song_service.py` — 曲サービス
@@ -1007,6 +1020,9 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | POST: 短縮URLの転送先が登録済みのURLと同じ（#1329） | 別の曲に `https://soundcloud.com/somnolence052/somnolence_7` が紐付いている状態で上の短縮URL | HTTP 200、"既に登録されています" を含むエラー、URLは追加されない |
 | POST: 短縮URLの転送先を取得できない（#1329） | `requests.get` が `requests.ConnectionError` | 302、入力された短縮URLのまま保存される |
 | POST: この曲に既にある短縮URL（#1329） | 曲に `https://on.soundcloud.com/wlGn73KGoAXKoRFn6S` が紐付いている状態で同じURLを送る | 302、通信しない。URLは短縮URLのまま変わらない（他の項目の編集のたびに解決しない） |
+| POST: 解決する短縮URLの上限（#1329） | 異なる短縮URLを7つ送る | 302、通信は5回。先頭の5つは転送先のURLで、残りの2つは短縮URLのまま保存される |
+| POST: 同じ短縮URLを複数回送る（#1329） | `url="<短縮URL>,<同じ短縮URL>"` | 302、通信は1回。転送先のURLが1つだけ保存される |
+| POST: 重複を許可するURLが短縮URL（#1329） | 別の曲に転送先のURLが紐付いている状態で `url=allow_dup_url=<短縮URL>` | 302、通信は1回。転送先のURLの `allow_dup == True` で、元の曲と編集した曲の両方が紐付く（保存するURLと同じ解決をするため一致する） |
 
 #### 7-6. `ContactView` (`/contact/`)
 
