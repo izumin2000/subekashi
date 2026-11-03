@@ -17,8 +17,8 @@ class Ai(models.Model):
         # SQLite・PostgreSQLではサポートされるが、MySQLではDjangoが未サポートのため
         # 実際のDB制約としては作成されない（`python manage.py check`でmodels.W036の
         # system check warningが出るのみで、例外にはならず静かにスキップされる。
-        # この警告自体は無害で、実害はsubekashi/migrations/0049で別途対応済み）。
-        # MySQL上では、subekashi/migrations/0049_mysql_partial_unique_workaround.py
+        # この警告自体は無害で、実害はマイグレーションで別途対応済み）。
+        # MySQL上では、subekashi/migrations/0001_squashed_0058_apikey.py
         # で生成列（Generated Column）＋通常のユニークインデックスによる代替実装を
         # 追加しており、AiWordSwapView/manage.py aiのTOCTOU対策もSQLite・
         # PostgreSQL・MySQLいずれでも機能する。詳細は

@@ -4826,7 +4826,7 @@ class AuthorAliasNewViewTest(TestCase):
         # フォームのclean_name()での重複チェックをすり抜けた場合でも、
         # DB制約(IntegrityError)を捕捉してフォームエラーに変換されることを確認する
         # unique_authoralias_name_except_groupは条件付きUniqueConstraintのため、
-        # 未サポートのMySQLでは0049マイグレーションの生成列ワークアラウンドで
+        # 未サポートのMySQLでは0001_squashed_0058_apikeyの生成列ワークアラウンドで
         # 同等のDB制約を代替している（#593）
         AuthorAlias.objects.create(name="競合別名", author=self.author)
         with patch.object(AuthorAliasForm, "clean_name", return_value="競合別名"):
@@ -5004,7 +5004,7 @@ class AuthorAliasEditViewTest(TestCase):
 
     def test_toctou_duplicate_name_shows_friendly_error_not_500(self):
         # unique_authoralias_name_except_groupは条件付きUniqueConstraintのため、
-        # 未サポートのMySQLでは0049マイグレーションの生成列ワークアラウンドで
+        # 未サポートのMySQLでは0001_squashed_0058_apikeyの生成列ワークアラウンドで
         # 同等のDB制約を代替している（#593）
         AuthorAlias.objects.create(name="編集競合別名", author=self.author)
         with patch.object(AuthorAliasForm, "clean_name", return_value="編集競合別名"):
