@@ -4,6 +4,8 @@ lib/url.py のテスト
 URL正規化・判定・メディア情報取得のユーティリティ関数を対象とする。
 外部通信は SEND_DISCORD=False のため実際には送信されない。
 """
+from unittest.mock import patch, MagicMock
+import requests
 from django.test import SimpleTestCase
 from subekashi.lib.url import (
     is_youtube_url,
@@ -12,6 +14,9 @@ from subekashi.lib.url import (
     format_x_url,
     convert_av_to_bv,
     format_bilibili_url,
+    format_soundcloud_url,
+    resolve_soundcloud_short_url,
+    resolve_soundcloud_short_urls,
     clean_url,
     get_allow_media,
     get_all_media,
@@ -226,6 +231,208 @@ class FormatBilibiliUrlTest(SimpleTestCase):
                 self.assertEqual(format_bilibili_url(url), url)
 
 
+class FormatSoundcloudUrlTest(SimpleTestCase):
+    """format_soundcloud_url() のテスト（#1329）"""
+
+    def test_mobile_url_with_set_query_is_formatted(self):
+        self.assertEqual(
+            format_soundcloud_url("https://m.soundcloud.com/somnolence052/somnolence_7?in=somnolence052%2Fsets%2Fsomnolence"),
+            "https://soundcloud.com/somnolence052/somnolence_7",
+        )
+
+    def test_formatted_url_is_returned_as_is(self):
+        url = "https://soundcloud.com/somnolence052/somnolence_7"
+        self.assertEqual(format_soundcloud_url(url), url)
+
+    def test_www_http_trailing_slash_and_fragment_are_formatted(self):
+        for url in [
+            "http://soundcloud.com/somnolence052/somnolence_7",
+            "https://www.soundcloud.com/somnolence052/somnolence_7/",
+            "https://soundcloud.com/somnolence052/somnolence_7#comments",
+        ]:
+            with self.subTest(url=url):
+                self.assertEqual(format_soundcloud_url(url), "https://soundcloud.com/somnolence052/somnolence_7")
+
+    def test_tracking_queries_are_removed(self):
+        for url in [
+            "https://soundcloud.com/q4vgovlwwmsh/remix-wav?utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing",
+            "https://soundcloud.com/q4vgovlwwmsh/remix-wav?si=abcdef0123456789&utm_source=clipboard",
+            "https://soundcloud.com/q4vgovlwwmsh/remix-wav/?in=q4vgovlwwmsh/sets/remix",
+        ]:
+            with self.subTest(url=url):
+                self.assertEqual(format_soundcloud_url(url), "https://soundcloud.com/q4vgovlwwmsh/remix-wav")
+
+    def test_secret_token_is_kept_and_other_queries_are_removed(self):
+        self.assertEqual(
+            format_soundcloud_url("https://m.soundcloud.com/user/private-track/?secret_token=s-AbCdE&in=user/sets/x&utm_source=clipboard"),
+            "https://soundcloud.com/user/private-track?secret_token=s-AbCdE",
+        )
+
+    def test_path_case_is_kept(self):
+        self.assertEqual(
+            format_soundcloud_url("https://soundcloud.com/User_Name/Track-1?in=User_Name/sets/Set"),
+            "https://soundcloud.com/User_Name/Track-1",
+        )
+
+    def test_set_and_profile_urls_are_formatted(self):
+        self.assertEqual(
+            format_soundcloud_url("https://m.soundcloud.com/somnolence052/sets/somnolence?utm_source=clipboard"),
+            "https://soundcloud.com/somnolence052/sets/somnolence",
+        )
+        self.assertEqual(
+            format_soundcloud_url("https://soundcloud.com/somnolence052/"),
+            "https://soundcloud.com/somnolence052",
+        )
+
+    def test_short_url_keeps_host_and_drops_query_and_trailing_slash(self):
+        self.assertEqual(
+            format_soundcloud_url("http://on.soundcloud.com/wlGn73KGoAXKoRFn6S/?utm_source=clipboard"),
+            "https://on.soundcloud.com/wlGn73KGoAXKoRFn6S",
+        )
+
+    def test_other_urls_are_returned_as_is(self):
+        for url in [
+            "https://youtu.be/dQw4w9WgXcQ",
+            "https://nicovideo.jp/watch/sm12345678?ref=x",
+            "https://soundcloud.com.attacker.example/user/track?in=x",
+            "https://attacker.example/soundcloud.com/user/track?in=x",
+            "https://api.soundcloud.com/tracks/123?in=x",
+            "",
+        ]:
+            with self.subTest(url=url):
+                self.assertEqual(format_soundcloud_url(url), url)
+
+
+class ResolveSoundcloudShortUrlTest(SimpleTestCase):
+    """resolve_soundcloud_short_url() のテスト（#1329）。外部通信はモックする"""
+
+    @staticmethod
+    def _response(location=None, status_code=302):
+        response = MagicMock()
+        response.status_code = status_code
+        response.headers = {"Location": location} if location else {}
+        return response
+
+    def test_short_url_is_resolved_to_formatted_url(self):
+        location = "https://soundcloud.com/somnolence052/somnolence_7?utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing"
+        with patch("subekashi.lib.url.requests.get", return_value=self._response(location)) as mock_get:
+            result = resolve_soundcloud_short_url("https://on.soundcloud.com/wlGn73KGoAXKoRFn6S")
+        self.assertEqual(result, "https://soundcloud.com/somnolence052/somnolence_7")
+        # リダイレクトは追わず、Locationだけを読む
+        mock_get.assert_called_once()
+        self.assertEqual(mock_get.call_args.args[0], "https://on.soundcloud.com/wlGn73KGoAXKoRFn6S")
+        self.assertIs(mock_get.call_args.kwargs["allow_redirects"], False)
+        self.assertIn("timeout", mock_get.call_args.kwargs)
+
+    def test_request_goes_only_to_short_host_even_if_url_has_query_or_http(self):
+        location = "https://soundcloud.com/somnolence052/somnolence_7"
+        with patch("subekashi.lib.url.requests.get", return_value=self._response(location)) as mock_get:
+            resolve_soundcloud_short_url("http://on.soundcloud.com/wlGn73KGoAXKoRFn6S?x=https://attacker.example/")
+        self.assertEqual(mock_get.call_args.args[0], "https://on.soundcloud.com/wlGn73KGoAXKoRFn6S")
+
+    def test_not_short_url_is_returned_without_request(self):
+        for url in [
+            "https://soundcloud.com/somnolence052/somnolence_7",
+            "https://m.soundcloud.com/somnolence052/somnolence_7",
+            "https://on.soundcloud.com.attacker.example/abc",
+            "https://attacker.example/on.soundcloud.com/abc",
+            "https://youtu.be/dQw4w9WgXcQ",
+            "https://on.soundcloud.com",
+            "https://on.soundcloud.com/",
+            "",
+        ]:
+            with self.subTest(url=url):
+                with patch("subekashi.lib.url.requests.get") as mock_get:
+                    self.assertEqual(resolve_soundcloud_short_url(url), url)
+                mock_get.assert_not_called()
+
+    def test_connection_error_and_timeout_return_original_url(self):
+        url = "https://on.soundcloud.com/wlGn73KGoAXKoRFn6S"
+        for error in [requests.ConnectionError(), requests.Timeout()]:
+            with self.subTest(error=type(error).__name__):
+                with patch("subekashi.lib.url.requests.get", side_effect=error):
+                    self.assertEqual(resolve_soundcloud_short_url(url), url)
+
+    def test_missing_short_url_without_location_returns_original_url(self):
+        url = "https://on.soundcloud.com/doesnotexist0000"
+        with patch("subekashi.lib.url.requests.get", return_value=self._response(None, status_code=404)):
+            self.assertEqual(resolve_soundcloud_short_url(url), url)
+
+    def test_location_to_other_site_or_top_page_returns_original_url(self):
+        url = "https://on.soundcloud.com/wlGn73KGoAXKoRFn6S"
+        for location in [
+            "https://attacker.example/somnolence052/somnolence_7",
+            "https://soundcloud.com.attacker.example/somnolence052/somnolence_7",
+            "https://soundcloud.com/",
+            "https://on.soundcloud.com/another",
+        ]:
+            with self.subTest(location=location):
+                with patch("subekashi.lib.url.requests.get", return_value=self._response(location)):
+                    self.assertEqual(resolve_soundcloud_short_url(url), url)
+
+
+class ResolveSoundcloudShortUrlsTest(SimpleTestCase):
+    """resolve_soundcloud_short_urls() のテスト（#1329）。外部通信はモックする"""
+
+    @staticmethod
+    def _resolve_by_path(url, **kwargs):
+        response = MagicMock()
+        response.headers = {"Location": f"https://soundcloud.com/user/{url.rsplit('/', 1)[1]}?utm_source=clipboard"}
+        return response
+
+    def test_short_urls_are_resolved_and_order_is_kept(self):
+        urls = [
+            "https://youtu.be/dQw4w9WgXcQ",
+            "https://on.soundcloud.com/aaa",
+            "https://soundcloud.com/user/bbb",
+            "https://on.soundcloud.com/ccc",
+        ]
+        with patch("subekashi.lib.url.requests.get", side_effect=self._resolve_by_path) as mock_get:
+            result = resolve_soundcloud_short_urls(urls)
+        self.assertEqual(result, [
+            "https://youtu.be/dQw4w9WgXcQ",
+            "https://soundcloud.com/user/aaa",
+            "https://soundcloud.com/user/bbb",
+            "https://soundcloud.com/user/ccc",
+        ])
+        self.assertEqual(mock_get.call_count, 2)
+
+    def test_skip_urls_are_not_resolved(self):
+        with patch("subekashi.lib.url.requests.get", side_effect=self._resolve_by_path) as mock_get:
+            result = resolve_soundcloud_short_urls(
+                ["https://on.soundcloud.com/aaa", "https://on.soundcloud.com/bbb"],
+                skip_urls={"https://on.soundcloud.com/aaa"},
+            )
+        self.assertEqual(result, ["https://on.soundcloud.com/aaa", "https://soundcloud.com/user/bbb"])
+        self.assertEqual(mock_get.call_count, 1)
+
+    def test_same_short_url_is_resolved_once(self):
+        with patch("subekashi.lib.url.requests.get", side_effect=self._resolve_by_path) as mock_get:
+            result = resolve_soundcloud_short_urls(["https://on.soundcloud.com/aaa"] * 3)
+        self.assertEqual(result, ["https://soundcloud.com/user/aaa"] * 3)
+        mock_get.assert_called_once()
+
+    def test_short_urls_over_limit_are_returned_as_is(self):
+        urls = [f"https://on.soundcloud.com/s{i}" for i in range(8)]
+        with patch("subekashi.lib.url.requests.get", side_effect=self._resolve_by_path) as mock_get:
+            result = resolve_soundcloud_short_urls(urls)
+        self.assertEqual(mock_get.call_count, 5)
+        self.assertEqual(result[:5], [f"https://soundcloud.com/user/s{i}" for i in range(5)])
+        self.assertEqual(result[5:], urls[5:])
+
+    def test_repeated_short_urls_do_not_use_up_the_limit(self):
+        urls = [f"https://on.soundcloud.com/s{i}" for i in range(5)] * 2
+        with patch("subekashi.lib.url.requests.get", side_effect=self._resolve_by_path) as mock_get:
+            result = resolve_soundcloud_short_urls(urls)
+        self.assertEqual(mock_get.call_count, 5)
+        self.assertEqual(result, [f"https://soundcloud.com/user/s{i}" for i in range(5)] * 2)
+
+    def test_empty_list_returns_empty_list(self):
+        with patch("subekashi.lib.url.requests.get") as mock_get:
+            self.assertEqual(resolve_soundcloud_short_urls([]), [])
+        mock_get.assert_not_called()
+
+
 class CleanUrlTest(SimpleTestCase):
     """clean_url() のテスト"""
 
@@ -267,6 +474,18 @@ class CleanUrlTest(SimpleTestCase):
     def test_bilibili_url_is_formatted(self):
         result = clean_url("https://www.bilibili.com/video/av417727107/,https://www.bilibili.com/video/BV1in4y1Q7qw/?p=2")
         self.assertEqual(result, "https://bilibili.com/video/BV1qV411J7Kq,https://bilibili.com/video/BV1in4y1Q7qw?p=2")
+
+    def test_soundcloud_url_is_formatted(self):
+        # #1329: スマホ版・開いたセットのクエリ・http・末尾の/を揃える
+        result = clean_url("https://m.soundcloud.com/somnolence052/somnolence_7?in=somnolence052%2Fsets%2Fsomnolence,http://soundcloud.com/q4vgovlwwmsh/remix-wav/")
+        self.assertEqual(result, "https://soundcloud.com/somnolence052/somnolence_7,https://soundcloud.com/q4vgovlwwmsh/remix-wav")
+
+    def test_soundcloud_short_url_is_not_resolved(self):
+        # clean_urlは外部と通信しないため、短縮URLの転送先は取得しない
+        with patch("subekashi.lib.url.requests.get") as mock_get:
+            result = clean_url("https://on.soundcloud.com/wlGn73KGoAXKoRFn6S/")
+        self.assertEqual(result, "https://on.soundcloud.com/wlGn73KGoAXKoRFn6S")
+        mock_get.assert_not_called()
 
     def test_trailing_slash_is_removed(self):
         result = clean_url("https://nicovideo.jp/watch/sm12345678/")

@@ -12,6 +12,7 @@ import socket
 import tempfile
 import threading
 from urllib.parse import parse_qs, quote, urlparse
+import requests
 from contextlib import contextmanager
 from datetime import date, datetime, timedelta, timezone as dt_timezone
 from unittest.mock import patch, MagicMock
@@ -2367,6 +2368,140 @@ class SongEditViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("既に登録されています", response.context["error"])
         self.assertFalse(self.song.links.exists())
+
+    def test_post_soundcloud_url_is_saved_in_formatted_form(self):
+        """#1329: SoundCloudのURLは、スマホ版・開いたセットのクエリ・httpを揃えて保存すること"""
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {
+                "title": "編集テスト曲",
+                "authors": "編集テスト作者",
+                "url": "https://m.soundcloud.com/somnolence052/somnolence_7?in=somnolence052%2Fsets%2Fsomnolence,http://soundcloud.com/q4vgovlwwmsh/remix-wav?utm_source=clipboard",
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertCountEqual(
+            self.song.links.values_list("url", flat=True),
+            ["https://soundcloud.com/somnolence052/somnolence_7", "https://soundcloud.com/q4vgovlwwmsh/remix-wav"],
+        )
+
+    def test_post_soundcloud_mobile_url_of_registered_url_returns_error(self):
+        """#1329: スマホ版・開いたセットのクエリ付きのURLは、登録済みのURLと同じURLとして重複を判定すること"""
+        link = SongLink.objects.create(url="https://soundcloud.com/somnolence052/somnolence_7")
+        link.songs.add(Song.objects.create(title="既存曲"))
+        response = self.client.post(
+            reverse("subekashi:song_edit", args=[self.song.id]),
+            {
+                "title": "編集テスト曲",
+                "authors": "編集テスト作者",
+                "url": "https://m.soundcloud.com/somnolence052/somnolence_7?in=somnolence052%2Fsets%2Fsomnolence",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("既に登録されています", response.context["error"])
+        self.assertFalse(self.song.links.exists())
+
+    def _mock_short_url_response(self, location):
+        response = MagicMock()
+        response.headers = {"Location": location}
+        return response
+
+    def test_post_soundcloud_short_url_is_saved_as_resolved_url(self):
+        """#1329: 新しく追加したSoundCloudの短縮URLは、転送先のURLに解決して保存すること"""
+        location = "https://soundcloud.com/somnolence052/somnolence_7?utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing"
+        with patch("subekashi.lib.url.requests.get", return_value=self._mock_short_url_response(location)) as mock_get:
+            response = self.client.post(
+                reverse("subekashi:song_edit", args=[self.song.id]),
+                {"title": "編集テスト曲", "authors": "編集テスト作者", "url": "https://on.soundcloud.com/wlGn73KGoAXKoRFn6S"},
+            )
+        self.assertEqual(response.status_code, 302)
+        mock_get.assert_called_once()
+        self.assertEqual(list(self.song.links.values_list("url", flat=True)), ["https://soundcloud.com/somnolence052/somnolence_7"])
+
+    def test_post_soundcloud_short_url_of_registered_url_returns_error(self):
+        """#1329: 短縮URLの転送先が登録済みのURLと同じなら、重複として登録できないこと"""
+        link = SongLink.objects.create(url="https://soundcloud.com/somnolence052/somnolence_7")
+        link.songs.add(Song.objects.create(title="既存曲"))
+        location = "https://soundcloud.com/somnolence052/somnolence_7?utm_source=clipboard"
+        with patch("subekashi.lib.url.requests.get", return_value=self._mock_short_url_response(location)):
+            response = self.client.post(
+                reverse("subekashi:song_edit", args=[self.song.id]),
+                {"title": "編集テスト曲", "authors": "編集テスト作者", "url": "https://on.soundcloud.com/wlGn73KGoAXKoRFn6S"},
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("既に登録されています", response.context["error"])
+        self.assertFalse(self.song.links.exists())
+
+    def test_post_soundcloud_short_url_is_saved_as_is_when_resolving_fails(self):
+        """#1329: 転送先を取得できなかったときは、入力された短縮URLのまま保存すること"""
+        with patch("subekashi.lib.url.requests.get", side_effect=requests.ConnectionError()):
+            response = self.client.post(
+                reverse("subekashi:song_edit", args=[self.song.id]),
+                {"title": "編集テスト曲", "authors": "編集テスト作者", "url": "https://on.soundcloud.com/wlGn73KGoAXKoRFn6S"},
+            )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(list(self.song.links.values_list("url", flat=True)), ["https://on.soundcloud.com/wlGn73KGoAXKoRFn6S"])
+
+    def test_post_soundcloud_short_url_already_on_song_is_not_resolved(self):
+        """#1329: この曲に既にある短縮URLは、他の項目を編集したときに通信して解決しないこと"""
+        link = SongLink.objects.create(url="https://on.soundcloud.com/wlGn73KGoAXKoRFn6S")
+        link.songs.add(self.song)
+        with patch("subekashi.lib.url.requests.get") as mock_get:
+            response = self.client.post(
+                reverse("subekashi:song_edit", args=[self.song.id]),
+                {"title": "編集テスト曲", "authors": "編集テスト作者", "url": "https://on.soundcloud.com/wlGn73KGoAXKoRFn6S"},
+            )
+        self.assertEqual(response.status_code, 302)
+        mock_get.assert_not_called()
+        self.assertEqual(list(self.song.links.values_list("url", flat=True)), ["https://on.soundcloud.com/wlGn73KGoAXKoRFn6S"])
+
+    def _resolve_short_url_by_path(self, url, **kwargs):
+        return self._mock_short_url_response(f"https://soundcloud.com/user/{url.rsplit('/', 1)[1]}?utm_source=clipboard")
+
+    def test_post_soundcloud_short_urls_over_limit_are_saved_as_is(self):
+        """#1329: 1回の保存で解決する短縮URLは5件までにし、超えた分は入力された短縮URLのまま保存すること"""
+        short_urls = [f"https://on.soundcloud.com/s{i}" for i in range(7)]
+        with patch("subekashi.lib.url.requests.get", side_effect=self._resolve_short_url_by_path) as mock_get:
+            response = self.client.post(
+                reverse("subekashi:song_edit", args=[self.song.id]),
+                {"title": "編集テスト曲", "authors": "編集テスト作者", "url": ",".join(short_urls)},
+            )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(mock_get.call_count, 5)
+        self.assertCountEqual(
+            self.song.links.values_list("url", flat=True),
+            [f"https://soundcloud.com/user/s{i}" for i in range(5)] + short_urls[5:],
+        )
+
+    def test_post_same_soundcloud_short_url_is_resolved_once(self):
+        """#1329: 同じ短縮URLを何度入力しても、転送先の取得は1回だけにすること"""
+        short_url = "https://on.soundcloud.com/wlGn73KGoAXKoRFn6S"
+        with patch("subekashi.lib.url.requests.get", side_effect=self._resolve_short_url_by_path) as mock_get:
+            response = self.client.post(
+                reverse("subekashi:song_edit", args=[self.song.id]),
+                {"title": "編集テスト曲", "authors": "編集テスト作者", "url": f"{short_url},{short_url}"},
+            )
+        self.assertEqual(response.status_code, 302)
+        mock_get.assert_called_once()
+        self.assertEqual(list(self.song.links.values_list("url", flat=True)), ["https://soundcloud.com/user/wlGn73KGoAXKoRFn6S"])
+
+    @patch("subekashi.views.song_edit.send_discord", return_value=True)
+    def test_post_allow_dup_url_of_soundcloud_short_url_is_resolved_like_saved_url(self, mock_send_discord):
+        """#1329: 短縮URLの転送先が登録済みのURLでも、重複を許可するURLに短縮URLを付ければ、転送先のURLの重複を許可して保存できること"""
+        short_url = "https://on.soundcloud.com/wlGn73KGoAXKoRFn6S"
+        owner = Song.objects.create(title="重複許可の元の曲")
+        link = SongLink.objects.create(url="https://soundcloud.com/user/wlGn73KGoAXKoRFn6S")
+        link.songs.add(owner)
+        with patch("subekashi.lib.url.requests.get", side_effect=self._resolve_short_url_by_path) as mock_get:
+            response = self.client.post(
+                reverse("subekashi:song_edit", args=[self.song.id]),
+                {"title": "編集テスト曲", "authors": "編集テスト作者", "url": short_url, "allow_dup_url": short_url},
+            )
+        self.assertEqual(response.status_code, 302)
+        mock_get.assert_called_once()
+        link.refresh_from_db()
+        self.assertTrue(link.allow_dup)
+        self.assertCountEqual(link.songs.all(), [owner, self.song])
 
 
 @override_settings(STORAGES=STATIC_STORAGE)
