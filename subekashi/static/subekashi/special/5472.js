@@ -48,11 +48,13 @@
     let audioContext = null;
     let audioBuffer = null;
     let audioSource = null;
-    const pressedNotes = new Set();
+    // 機器のid → その機器で押している音。機器が抜かれても離したことは伝わらないため、抜かれた機器の分だけ戻せるよう、機器ごとに持つ
+    const pressedByInput = new Map();
     const keyElements = new Map();
     let els = {};
     let ctx = null;
 
+    const isPressed = (note) => [...pressedByInput.values()].some((notes) => notes.has(note));
     const isBlackKey = (note) => BLACK_PITCH_CLASSES.includes(note % 12);
     const noteName = (note) => NOTE_NAMES[note % 12] + (Math.floor(note / 12) - 1);
 
@@ -66,7 +68,8 @@
         const data = new Uint8Array(buffer);
         const view = new DataView(buffer);
         const readText = (pos) => String.fromCharCode(...data.slice(pos, pos + 4));
-        if (readText(0) !== "MThd") throw new Error("MIDIファイルではありません");
+        const truncated = () => new Error("MIDIファイルが途中で切れています");
+        if (data.length < 14 || readText(0) !== "MThd") throw new Error("MIDIファイルではありません");
         const trackCount = view.getUint16(10);
         const division = view.getUint16(12);
         if (division & 0x8000) throw new Error("SMPTE形式のMIDIには対応していません");
@@ -75,20 +78,31 @@
         const rawNotes = [];
         let pos = 8 + view.getUint32(4);
         for (let track = 0; track < trackCount; track++) {
+            // トラックの長さが壊れていても、ファイルの外を読み続けないよう、読み始める前に確かめる
+            if (pos + 8 > data.length) throw truncated();
             const trackEnd = pos + 8 + view.getUint32(pos + 4);
+            if (trackEnd > data.length) throw truncated();
             const isTrack = readText(pos) === "MTrk";
             let i = pos + 8;
             pos = trackEnd;
             if (!isTrack) continue;
 
+            const readByte = () => {
+                if (i >= trackEnd) throw truncated();
+                return data[i++];
+            };
             const readVlq = () => {
                 let value = 0;
                 let byte;
                 do {
-                    byte = data[i++];
+                    byte = readByte();
                     value = (value << 7) | (byte & 0x7f);
                 } while (byte & 0x80);
                 return value;
+            };
+            const skip = (length) => {
+                if (i + length > trackEnd) throw truncated();
+                i += length;
             };
 
             const openNotes = new Map();
@@ -96,34 +110,37 @@
             let status = 0;
             while (i < trackEnd) {
                 tick += readVlq();
-                const first = data[i];
+                const first = readByte();
+                // メタイベントとSysExは、ランニングステータスを解除する
                 if (first === 0xff) {
-                    const type = data[i + 1];
-                    i += 2;
+                    const type = readByte();
                     const length = readVlq();
                     if (type === 0x51 && length === 3) {
+                        if (i + 3 > trackEnd) throw truncated();
                         tempos.push({ tick, usPerBeat: (data[i] << 16) | (data[i + 1] << 8) | data[i + 2] });
                     }
-                    i += length;
+                    skip(length);
+                    status = 0;
                     continue;
                 }
                 if (first === 0xf0 || first === 0xf7) {
-                    i++;
-                    i += readVlq();
+                    skip(readVlq());
+                    status = 0;
                     continue;
                 }
+                if (first >= 0xf0) throw new Error("MIDIファイルの形式が正しくありません");
+                let note;
                 if (first & 0x80) {
                     status = first;
-                    i++;
+                    note = readByte();
+                } else {
+                    // ステータスバイトを省いた（ランニングステータス）データだが、直前に引き継ぐステータスが無い
+                    if (status === 0) throw new Error("MIDIファイルの形式が正しくありません");
+                    note = first;
                 }
                 const type = status & 0xf0;
-                if (type === 0xc0 || type === 0xd0) {
-                    i += 1;
-                    continue;
-                }
-                const note = data[i];
-                const velocity = data[i + 1];
-                i += 2;
+                if (type === 0xc0 || type === 0xd0) continue;
+                const velocity = readByte();
                 const key = `${status & 0x0f}:${note}`;
                 if (type === 0x90 && velocity > 0) {
                     if (!openNotes.has(key)) openNotes.set(key, []);
@@ -240,7 +257,7 @@
                 }
                 els.keyboard.appendChild(element);
             }
-            element.classList.toggle("is-pressed", pressedNotes.has(note));
+            element.classList.toggle("is-pressed", isPressed(note));
         }
         blackKeys.forEach((element) => els.keyboard.appendChild(element));
         draw(songTime);
@@ -460,19 +477,27 @@
         keyElements.get(note)?.classList.toggle("is-pressed", pressed);
     }
 
+    function releaseInput(id) {
+        const notes = pressedByInput.get(id);
+        pressedByInput.delete(id);
+        notes?.forEach((note) => setKeyPressed(note, isPressed(note)));
+    }
+
     function onMidiMessage(event) {
         const [status, note, velocity] = event.data;
         const type = status & 0xf0;
+        const id = event.target?.id ?? "";
         if (type === 0x90 && velocity > 0) {
-            pressedNotes.add(note);
+            if (!pressedByInput.has(id)) pressedByInput.set(id, new Set());
+            pressedByInput.get(id).add(note);
             setKeyPressed(note, true);
             if (state === "playing") {
                 judge(note, pressedTime(event));
                 updateHud();
             }
         } else if (type === 0x80 || type === 0x90) {
-            pressedNotes.delete(note);
-            setKeyPressed(note, false);
+            pressedByInput.get(id)?.delete(note);
+            setKeyPressed(note, isPressed(note));
         }
     }
 
@@ -485,9 +510,17 @@
             const access = await navigator.requestMIDIAccess();
             const refresh = () => {
                 const names = [];
+                const connectedIds = new Set();
                 for (const input of access.inputs.values()) {
                     input.onmidimessage = onMidiMessage;
-                    if (input.state === "connected") names.push(input.name);
+                    if (input.state === "connected") {
+                        names.push(input.name);
+                        connectedIds.add(input.id);
+                    }
+                }
+                // 抜かれた機器で押していた音は、離したことが伝わらないため、ここで戻す（機器が分からない打鍵は対象にしない）
+                for (const id of [...pressedByInput.keys()]) {
+                    if (id !== "" && !connectedIds.has(id)) releaseInput(id);
                 }
                 setStatus(names.length ? `接続中のMIDIキーボード: ${names.join("、")}` : "MIDIキーボードが見つかりません。接続してください。");
             };
