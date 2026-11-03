@@ -1,0 +1,124 @@
+#piano-stage {
+    margin: 0 auto 50px auto;
+}
+
+#piano-stage .action-buttons {
+    margin: 0 0 20px 0;
+}
+
+#piano-stage .action-button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+#piano-status, #piano-help {
+    text-align: center;
+    color: #aaa;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+#piano-hud {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 24px;
+    margin-bottom: 12px;
+    color: #fff;
+    font-size: 16px;
+}
+
+#piano-hud b {
+    color: #09F;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 狭い画面では、ロールと鍵盤を同じ幅のまま横スクロールで見る */
+#piano-scroll {
+    overflow-x: auto;
+}
+
+#piano-board {
+    position: relative;
+    margin: 0 auto;
+}
+
+#piano-roll-wrap {
+    position: relative;
+}
+
+/* song.css の canvas（18.js の雨の背景用）は画面の背面に固定されるため、ロールでは打ち消す */
+#piano-roll {
+    position: static;
+    z-index: auto;
+    display: block;
+    background-color: #181818;
+}
+
+#piano-result {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    text-align: center;
+}
+
+#piano-result.is-visible {
+    display: flex;
+}
+
+#piano-result-accuracy {
+    font-size: 48px;
+    font-weight: bold;
+    color: #09F;
+}
+
+/* 鍵盤の見た目は鍵歴（author_stats.css の .kenreki-*）に合わせ、押している間の色だけを足している */
+#piano-keyboard {
+    position: relative;
+    display: flex;
+    height: 120px;
+}
+
+.piano-white-key {
+    position: relative;
+    flex: 0 0 var(--white-key-width);
+    height: 100%;
+    background-color: #dcdcdc;
+    border-right: 1px solid #404040;
+    box-sizing: border-box;
+}
+
+.piano-black-key {
+    position: absolute;
+    top: 0;
+    width: var(--black-key-width);
+    height: 60%;
+    background-color: #606060;
+    z-index: 2;
+}
+
+.piano-white-key.is-pressed {
+    background-color: #09F;
+}
+
+.piano-black-key.is-pressed {
+    background-color: #09F;
+    box-shadow: 0 0 0 1px #111;
+}
+
+.piano-key-label {
+    position: absolute;
+    bottom: 4px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 10px;
+    color: #404040;
+    pointer-events: none;
+}

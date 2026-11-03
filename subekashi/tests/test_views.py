@@ -9,6 +9,7 @@ import json
 import os
 import re
 import socket
+import struct
 import tempfile
 import threading
 from urllib.parse import parse_qs, quote, urlparse
@@ -1085,6 +1086,25 @@ class SongsViewTest(TestCase):
         self.assertLess(content.index("subekashi/js/search_form.js"), content.index("subekashi/js/songs.js"))
 
 
+class SpecialDesign5472AssetTest(TestCase):
+    """曲5472のスペシャルデザイン（MIDIキーボードで遊ぶロールピアノ、#1258）の静的ファイルのテスト"""
+
+    def test_assets_exist(self):
+        for name in ["5472.js", "5472.css", "5472.mid", "5472.mp3"]:
+            self.assertIsNotNone(finders.find(f"subekashi/special/{name}"), name)
+
+    def test_midi_is_standard_midi_file_with_ppq_division(self):
+        # 5472.jsが読めるのは、format 0/1で、tick単位（PPQ）のSMFだけ
+        with open(finders.find("subekashi/special/5472.mid"), "rb") as f:
+            chunk_id, length, midi_format, track_count, division = struct.unpack(">4sIHHH", f.read(14))
+
+        self.assertEqual(chunk_id, b"MThd")
+        self.assertEqual(length, 6)
+        self.assertIn(midi_format, (0, 1))
+        self.assertGreater(track_count, 0)
+        self.assertEqual(division & 0x8000, 0)
+
+
 @override_settings(STORAGES=STATIC_STORAGE)
 class SongViewTest(TestCase):
     """SongView (/songs/<id>/) のテスト"""
@@ -1092,6 +1112,19 @@ class SongViewTest(TestCase):
     def setUp(self):
         self.client = Client()
         self.song = Song.objects.create(title="詳細テスト曲", lyrics="歌詞")
+
+    def test_special_song_loads_special_scripts(self):
+        # #1258: スペシャルデザインの曲は、共通のutil.jsと曲IDのJSを読み込む
+        song = Song.objects.create(id=5472, title="スペシャルデザインテスト曲", is_special=True)
+        response = self.client.get(reverse("subekashi:song", args=[song.id]))
+
+        self.assertContains(response, 'src="/static/subekashi/special/util.js"')
+        self.assertContains(response, 'src="/static/subekashi/special/5472.js"')
+
+    def test_normal_song_does_not_load_special_scripts(self):
+        response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
+
+        self.assertNotContains(response, "subekashi/special/")
 
     def test_existing_song_returns_200(self):
         response = self.client.get(reverse("subekashi:song", args=[self.song.id]))
