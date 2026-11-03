@@ -1090,8 +1090,17 @@ class SpecialDesign5472AssetTest(TestCase):
     """曲5472のスペシャルデザイン（MIDIキーボードで遊ぶロールピアノ、#1258）の静的ファイルのテスト"""
 
     def test_assets_exist(self):
-        for name in ["5472.js", "5472.css", "5472.mid", "5472.mp3"]:
+        for name in ["5472.js", "5472.css", "5472.mid", "5472.mp3", "5472.pdf"]:
             self.assertIsNotNone(finders.find(f"subekashi/special/{name}"), name)
+
+    def test_download_files_have_expected_formats(self):
+        # ゲーム画面の下のダウンロードボタンで配る楽譜（PDF）とmp3が、別の形式のファイルに差し替わっていないこと
+        with open(finders.find("subekashi/special/5472.pdf"), "rb") as f:
+            self.assertEqual(f.read(5), b"%PDF-")
+        with open(finders.find("subekashi/special/5472.mp3"), "rb") as f:
+            header = f.read(3)
+        # ID3タグ、またはMPEGオーディオのフレーム同期（11ビットの1）で始まる
+        self.assertTrue(header == b"ID3" or (header[0] == 0xFF and header[1] & 0xE0 == 0xE0), header)
 
     def test_midi_is_standard_midi_file_with_ppq_division(self):
         # 5472.jsが読めるのは、format 0/1で、tick単位（PPQ）のSMFだけ

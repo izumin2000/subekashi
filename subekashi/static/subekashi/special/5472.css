@@ -6,6 +6,10 @@
     margin: 0 0 20px 0;
 }
 
+#piano-stage #piano-downloads {
+    margin: 30px 0 0 0;
+}
+
 #piano-stage .action-button:disabled {
     opacity: 0.4;
     cursor: default;

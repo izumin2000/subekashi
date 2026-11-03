@@ -3,11 +3,11 @@
     const MIDI_URL = `${baseURL()}/static/subekashi/special/5472.mid`;
     const CSS_URL = `${baseURL()}/static/subekashi/special/5472.css`;
     const AUDIO_URL = `${baseURL()}/static/subekashi/special/5472.mp3`;
+    const SCORE_URL = `${baseURL()}/static/subekashi/special/5472.pdf`;
 
-    // mp3の音は、MIDIのノートの開始より遅れて立ち上がる（mp3の音量の立ち上がりとノートの開始の相互相関で測ると、全体で0.06〜0.09秒遅れていた）。
-    // その分だけ音を早く始めて、ノートが鍵盤に届く瞬間に音が聞こえるようにする
-    const AUDIO_OFFSET_SEC = 0.06;
-    const AUDIO_LOAD_TIMEOUT_MS = 8000;
+    // mp3の音は、MIDIのノートの開始より遅れて立ち上がる。ノートごとに、開始の近くで音量が最も増える位置を探すと、中央値は曲の始めで0.062秒、終わりで0.082秒だった。
+    // その平均の分だけ音を早く始めて、ノートが鍵盤に届く瞬間に音が聞こえるようにする
+    const AUDIO_OFFSET_SEC = 0.07;
     const LEAD_IN_SEC = 2;
     const TAIL_SEC = 1;
     const HIT_WINDOW_SEC = 0.15;
@@ -21,6 +21,7 @@
     const BLACK_PITCH_CLASSES = [1, 3, 6, 8, 10];
     const NOTE_COLORS = { pending: "#09F", hit: "#3c3", missed: "#733" };
     const PLAY_BUTTONS = {
+        loading: ["fa-spinner fa-spin", "読み込み中"],
         idle: ["fa-play", "再生"],
         playing: ["fa-pause", "一時停止"],
         paused: ["fa-play", "再開"],
@@ -39,8 +40,9 @@
     let hits = 0;
     let wrong = 0;
     let missCursor = 0;
-    let audio = null;
-    let isAudioPlaying = false;
+    let audioContext = null;
+    let audioBuffer = null;
+    let audioSource = null;
     const pressedNotes = new Set();
     const keyElements = new Map();
     let els = {};
@@ -287,38 +289,29 @@
         return state === "playing" ? songTime + (perfNow - lastPerf) / 1000 : songTime;
     }
 
-    function loadAudio() {
-        return new Promise((resolve) => {
-            // 読み込みが終わらなくても、遊べるようにタイムアウトで先へ進める
-            const timer = setTimeout(() => resolve(els.audio), AUDIO_LOAD_TIMEOUT_MS);
-            els.audio.addEventListener("canplaythrough", () => {
-                clearTimeout(timer);
-                resolve(els.audio);
-            }, { once: true });
-            els.audio.addEventListener("error", () => {
-                clearTimeout(timer);
-                resolve(null);
-            }, { once: true });
-            els.audio.src = AUDIO_URL;
-        });
+    // <audio>の再生位置の変更（シーク）は、サーバーがRangeリクエストに対応していないと先頭に戻るため、音声はメモリにデコードしてWeb Audioで鳴らす
+    async function loadAudio() {
+        if (!audioContext) throw new Error("Web Audioに対応していません");
+        const response = await fetch(AUDIO_URL);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return audioContext.decodeAudioData(await response.arrayBuffer());
     }
 
-    // 曲の時間が音の始まりに届いたら、そのときの位置から再生する（再開のときも同じ）
-    function startAudioIfDue() {
-        if (!audio || isAudioPlaying) return;
+    // 再生・再開のたびに、曲の時間に合う位置から新しく鳴らす。音の始まりより前（カウントダウン中）は、そこまで待ってから鳴らす
+    function startAudio() {
+        if (!audioBuffer) return;
         const position = songTime + AUDIO_OFFSET_SEC;
-        if (position < 0) return;
-        isAudioPlaying = true;
-        audio.currentTime = position;
-        audio.play().catch((e) => {
-            console.error("音声を再生できませんでした:", e);
-            showToast("warning", "音声を再生できませんでした。");
-        });
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+        audioContext.resume();
+        source.start(audioContext.currentTime + Math.max(0, -position), Math.max(0, position));
+        audioSource = source;
     }
 
     function stopAudio() {
-        isAudioPlaying = false;
-        audio?.pause();
+        audioSource?.stop();
+        audioSource = null;
     }
 
     function setStatus(text) {
@@ -370,7 +363,6 @@
         const now = performance.now();
         songTime = currentTime(now);
         lastPerf = now;
-        startAudioIfDue();
         settleMisses(songTime - HIT_WINDOW_SEC);
         draw(songTime);
         updateHud();
@@ -386,6 +378,7 @@
         if (state === "finished") reset();
         state = "playing";
         lastPerf = performance.now();
+        startAudio();
         rafId = requestAnimationFrame(frame);
         updateControls();
     }
@@ -404,7 +397,6 @@
     function reset() {
         cancelAnimationFrame(rafId);
         stopAudio();
-        if (audio) audio.currentTime = 0;
         state = "idle";
         songTime = -LEAD_IN_SEC;
         score = 0;
@@ -504,11 +496,14 @@
                     <div id="piano-keyboard"></div>
                 </div>
             </div>
-            <audio id="piano-audio" preload="auto"></audio>
+            <div id="piano-downloads" class="action-buttons">
+                <a href="${SCORE_URL}" download="朝.pdf" class="action-button"><i class="fas fa-file-pdf"></i><span class="icon-p-big">楽譜（PDF）</span></a>
+                <a href="${AUDIO_URL}" download="朝.mp3" class="action-button"><i class="fas fa-music"></i><span class="icon-p-big">mp3</span></a>
+                <a href="${MIDI_URL}" download="朝.mid" class="action-button"><i class="fas fa-file-audio"></i><span class="icon-p-big">MIDI</span></a>
+            </div>
         `;
         document.querySelector("#mainarticle section").prepend(stage);
         els = {
-            audio: stage.querySelector("#piano-audio"),
             playButton: stage.querySelector("#piano-play"),
             resetButton: stage.querySelector("#piano-reset"),
             status: stage.querySelector("#piano-status"),
@@ -523,6 +518,7 @@
             resultAccuracy: stage.querySelector("#piano-result-accuracy"),
             resultDetail: stage.querySelector("#piano-result-detail"),
         };
+        state = "loading";
         updateControls();
         els.playButton.addEventListener("click", () => (state === "playing" ? pause() : play()));
         els.resetButton.addEventListener("click", reset);
@@ -530,9 +526,14 @@
 
     async function special() {
         document.querySelector(".action-buttons")?.remove();
+        // ユーザーの操作（このボタンのクリック）の中で作らないと、ブラウザが音の再生を止める
+        audioContext = window.AudioContext ? new AudioContext() : null;
         buildStage();
         setupMidi();
-        const audioLoading = loadAudio();
+        const audioLoading = loadAudio().catch((e) => {
+            console.error("音声の読み込みに失敗しました:", e);
+            return null;
+        });
 
         try {
             const response = await fetch(MIDI_URL);
@@ -549,10 +550,10 @@
             if (!notesByPitch.has(note.note)) notesByPitch.set(note.note, []);
             notesByPitch.get(note.note).push(note);
         }
-        audio = await audioLoading;
-        if (!audio) showToast("warning", "音声の読み込みに失敗しました。音なしで遊べます。");
+        audioBuffer = await audioLoading;
+        if (!audioBuffer) showToast("warning", "音声の読み込みに失敗しました。音なしで遊べます。");
         // 最後のノートの余韻が途切れないよう、音声の終わりまでを曲の時間にする
-        const audioEnd = audio && Number.isFinite(audio.duration) ? audio.duration - AUDIO_OFFSET_SEC : 0;
+        const audioEnd = audioBuffer ? audioBuffer.duration - AUDIO_OFFSET_SEC : 0;
         endTime = Math.max(Math.max(...notes.map((note) => note.end)) + TAIL_SEC, audioEnd);
 
         renderBoard();
@@ -560,6 +561,8 @@
         document.addEventListener("visibilitychange", () => {
             if (document.hidden) pause();
         });
+        state = "idle";
+        updateControls();
         els.playButton.disabled = false;
         els.resetButton.disabled = false;
         updateHud();
