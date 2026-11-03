@@ -2182,7 +2182,6 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | ネタ動画のアイコン（#423） | `SONG_CATEGORIES` のネタ動画・`SONG_FLAGS` のネタ曲 | アイコンが異なる |
 | カテゴリの選択肢は `SONG_CATEGORIES` から作る（#423） | `Song.CHOICES` | `SONG_CATEGORIES` の順・表示名と一致し、先頭は `("song", "曲")`。全てのカテゴリにFont Awesomeのアイコンがある |
 | `get_category()`（#423） | `category="meme"` の曲 / `category="joke"`（変更前の値）の曲 | `{"value": "meme", "label": "ネタ動画", "icon": "far fa-laugh-squint"}` / `None` |
-| マイグレーション `0050_song_category_meme`（#423） | `category="joke"` の曲と `category="song"` の曲に `joke_to_meme` を実行 / `category="meme"` の曲に `meme_to_joke` を実行 | `"joke"` は `"meme"` に変わり、`"song"` は変わらない / `"meme"` は `"joke"` に戻る |
 | `is_deleted=True` の曲 | 削除フラグを立てる | DBに残るが削除済みとして扱われる |
 | ManyToMany: authors | `song.authors.add(author)` | 作者が曲に紐付く |
 | ManyToMany: imitates (自己参照) | `song.imitates.add(other_song)` | 模倣関係が成立する |
@@ -2295,14 +2294,6 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | `url` のユニーク制約 | 同じURLで2件作成 | `IntegrityError` が発生 |
 | `url__iexact`検索 (#1092) | `url="https://youtu.be/AbCdEfGhIjK"`のlinkに対し小文字化した値で`iexact`検索 | 一致する |
 | 曲との多対多関係 | `link.songs.add(song)` | 関係が成立する |
-| マイグレーション `0051_songlink_bilibili_url`: URLを揃える（#1246） | `?spm_id_from=` の付いたビリビリ動画のURL・揃えたビリビリ動画のURL・末尾に`/`の付いたニコニコ動画のURLに `normalize_bilibili_urls` を実行 | 1つ目は `https://bilibili.com/video/BV<id>` になり曲の紐付けは残る。2つ目・ニコニコ動画のURLは変わらない |
-| マイグレーション `0051_songlink_bilibili_url`: 同じ動画のURLを1つにまとめる（#1246） | BV番号のURL・同じ動画のav番号のURL（`allow_dup=True`）・末尾に`/`の付いたBV番号のURLにそれぞれ別の曲が紐付いている | BV番号のURLの1件だけが残り、3曲とも紐付き、`allow_dup=True`（どちらかがTrueならTrue） |
-| マイグレーション `0051_songlink_bilibili_url`: 揃えたURLが無い場合（#1246） | av番号のURL（曲なし）と、末尾に`/`の付いた同じ動画のBV番号のURL（曲あり） | 先に登録したav番号のURLがBV番号のURLになり、もう一方の曲が紐付く。`SongLink`は1件になる |
-| マイグレーション `0056_stats_total_imitated_authors`: songrangeごとの累積値（#1163） | 1月にすべあな界隈曲・界隈外曲、2月にすべあな界隈曲（いずれも作者あり）と、2月の模倣曲（上の3曲を模倣）が存在し、1月・2月のall/subeana/xxの`Stats`に `fill_total_imitated_authors` を実行 | 各月の末日までに投稿された曲の作者のうち、模倣された作者数が入る（all: 1月2・2月3、subeana: 1月1・2月2、xx: 1月1・2月1）。模倣曲の投稿が月末より後でも数える |
-| マイグレーション `0056_stats_total_imitated_authors`: 12月の月末（#1163） | 12月の曲とその模倣曲が存在し、`year`が12月の`Stats`に `fill_total_imitated_authors` を実行 | 翌年1月1日未満の曲まで含め、1になる |
-| マイグレーション `0056_stats_total_imitated_authors`: 削除した曲（#1163） | 削除した曲にのみ模倣されている曲と、削除した曲を模倣している通常の曲が存在 | どちらの作者も数えず、0になる |
-| マイグレーション `0056_stats_total_imitated_authors`: lib側と同じ結果（#1163） | 共作曲とその模倣曲2曲が存在 | `compute_common_stats`の`total_imitated_authors`と同じ値になる（`compute_imitated_author_count`をコピーした処理のずれを防ぐ） |
-| マイグレーション `0051_songlink_bilibili_url`: `is_removed`（#1246） | 削除された曲のURL（`is_removed=True`）と、同じ動画の曲に紐付くURL / 両方とも削除された曲のURL | `is_removed=False`（曲に紐付くURLが「削除された曲のURL」として編集できなくならないように） / `is_removed=True` |
 
 #### 11-5. `Contact` モデル
 
@@ -2399,20 +2390,6 @@ DRFの既定の`get_ident`は`X-Forwarded-For`の全体を識別子にするた�
 | --- | --- | --- |
 | `is_banned`のデフォルト値 | 指定せずに作成 | `False` |
 | `is_banned_ip(ip)` | `is_banned=True`の編集者・BANされていない編集者・編集者がいないIPを指定 | BANされた編集者のIPのみ`True`。編集者は作られない |
-
-##### 11-11-1. `0057_editor_is_banned`のデータ移行（`ban_listed_editors`）
-
-廃止した`subekashi/constants/dynamic/ban.py`（gitignore対象。本番のサーバーにある）の`BAN_LIST`のIPを`encrypt`し、`Editor.ip`が一致する編集者を`is_banned=True`にする。`ban.py`は`import`せずファイルとして読み、`encrypt`もマイグレーションにコピーしている（`lib/security.py`を後から変えても移行の挙動が変わらないように）。編集者が見つからないIPと、IPとして読めない値は、手作業で確認できるよう`migrate`の出力に出す。編集者は作らない。テストでは`BAN_LIST_PATH`を一時ファイルに差し替える。
-
-| テストケース | 条件 | 期待結果 |
-| --- | --- | --- |
-| `encrypt`のコピーが本体と同じ | IPv4・`0.0.0.0`・IPv6・`::1`と`SYMBOLS` | `lib/security.py`の`encrypt`・`SYMBOLS`と一致する |
-| `BAN_LIST`の編集者をBANにする | IPv4・IPv6の編集者と、`BAN_LIST`にない編集者 | `BAN_LIST`のIPの編集者のみ`is_banned=True`。出力に「BAN_LIST 2件のうち2件の編集者をis_bannedにしました。」 |
-| 編集者を特定できないIPとIPとして読めない値の報告 | `BAN_LIST`に、編集者のいるIP・編集者のいないIP・`"not-an-ip"` | 編集者のいるIPのみBAN。出力に「編集者を特定できないIP: …」「IPとして読めない値: not-an-ip」。`Editor`は増えない |
-| 重複と空白 | `BAN_LIST`に同じIP（前後に空白あり）・空文字 | 重複と空白を除いて1件として扱う |
-| 編集者が1件もない | 編集者なしで`ban.py`あり | 何もせず、何も出力しない（新規構築・テストのDB） |
-| `ban.py`がない | 編集者ありで`ban.py`なし | `is_banned`は変わらず、「が無いため」を含むメッセージを出力する |
-| `BAN_LIST`が空 | 編集者ありで`BAN_LIST = []` | 何も出力せず、`is_banned`は変わらない |
 
 #### 11-12. `ApiKey` モデル（#973）
 

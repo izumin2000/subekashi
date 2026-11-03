@@ -3,23 +3,13 @@
 
 Song, Author, AuthorAlias, SongLink の CRUD・制約・メソッドを検証する。
 """
-import importlib
-import io
-import os
-import tempfile
 import unittest
-from contextlib import redirect_stdout
-from datetime import datetime
-from unittest.mock import patch
-from django.apps import apps
 from django.contrib.auth.models import User
 from django.db import IntegrityError, connection
 from django.db.utils import DataError
 from django.test import TestCase, override_settings
 from django.utils import timezone
 from subekashi.constants.constants import SONG_CATEGORIES, SONG_FLAGS
-from subekashi.lib.security import encrypt
-from subekashi.lib.stats_service import compute_common_stats
 from subekashi.models import Ai, ApiKey, Author, AuthorAlias, Contact, Editor, History, Prush, Song, SongLink, SongTimeline, Stats, Word
 from subekashi.models.author import EffectiveAlias, TransitiveAlias
 
@@ -128,7 +118,7 @@ class AuthorAliasModelTest(TestCase):
 
     def test_name_unique_constraint(self):
         # unique_authoralias_name_except_groupは条件付きUniqueConstraint（部分インデックス）
-        # のため、未サポートのMySQLでは0049マイグレーションの生成列ワークアラウンドで
+        # のため、未サポートのMySQLでは0001_squashed_0058_apikeyの生成列ワークアラウンドで
         # 同等のDB制約を代替している（#593）
         AuthorAlias.objects.create(name="重複別名", author=self.author)
         author2 = Author.objects.create(name="別の作者")
@@ -161,7 +151,7 @@ class AuthorAliasModelTest(TestCase):
     def test_same_author_cannot_create_duplicate_group_name(self):
         # 同じauthorによる同じグループ名の重複作成はDB制約でも防がれる（#1044）
         # unique_authoralias_name_author_for_groupは条件付きUniqueConstraintのため、
-        # 未サポートのMySQLでは0049マイグレーションの生成列ワークアラウンドで代替している（#593）
+        # 未サポートのMySQLでは0001_squashed_0058_apikeyの生成列ワークアラウンドで代替している（#593）
         AuthorAlias.objects.create(name="重複グループ", author=self.author, alias_type="group")
         with self.assertRaises(IntegrityError):
             AuthorAlias.objects.create(name="重複グループ", author=self.author, alias_type="group")
@@ -169,7 +159,7 @@ class AuthorAliasModelTest(TestCase):
     def test_non_group_name_still_globally_unique(self):
         # group以外の種別は、DB制約レベルでも従来通りグローバルにユニークのまま（#1044）
         # unique_authoralias_name_except_groupは条件付きUniqueConstraintのため、
-        # 未サポートのMySQLでは0049マイグレーションの生成列ワークアラウンドで代替している（#593）
+        # 未サポートのMySQLでは0001_squashed_0058_apikeyの生成列ワークアラウンドで代替している（#593）
         author2 = Author.objects.create(name="別の作者(非group)")
         AuthorAlias.objects.create(name="通常別名", author=self.author, alias_type="spell")
         with self.assertRaises(IntegrityError):
@@ -651,90 +641,6 @@ class SongRemovedManagerTest(TestCase):
         self.assertEqual(Song._default_manager.name, "objects")
 
 
-class SongCategoryMigrationTest(TestCase):
-    """0050_song_category_meme のデータ移行のテスト（#423）"""
-
-    def setUp(self):
-        self.migration = importlib.import_module("subekashi.migrations.0050_song_category_meme")
-
-    def test_joke_to_meme(self):
-        joke = Song.objects.create(title="ネタ動画", category="joke")
-        song = Song.objects.create(title="曲")
-        self.migration.joke_to_meme(apps, None)
-        joke.refresh_from_db()
-        song.refresh_from_db()
-        self.assertEqual(joke.category, "meme")
-        self.assertEqual(song.category, "song")
-
-    def test_meme_to_joke(self):
-        meme = Song.objects.create(title="ネタ動画", category="meme")
-        self.migration.meme_to_joke(apps, None)
-        meme.refresh_from_db()
-        self.assertEqual(meme.category, "joke")
-
-
-class SongLinkBilibiliUrlMigrationTest(TestCase):
-    """0051_songlink_bilibili_url のデータ移行のテスト（#1246）"""
-
-    def setUp(self):
-        self.migration = importlib.import_module("subekashi.migrations.0051_songlink_bilibili_url")
-
-    def create_link(self, url, songs=(), **kwargs):
-        link = SongLink.objects.create(url=url, **kwargs)
-        link.songs.set(songs)
-        return link
-
-    def test_url_is_formatted(self):
-        song = Song.objects.create(title="曲")
-        link = self.create_link("https://bilibili.com/video/BV11ar4YcEyF/?spm_id_from=333.1387.homepage.video_card.click", [song])
-        formatted = self.create_link("https://bilibili.com/video/BV1aN411R7QU")
-        other = self.create_link("https://nicovideo.jp/watch/sm12345678/")
-        self.migration.normalize_bilibili_urls(apps, None)
-        link.refresh_from_db()
-        formatted.refresh_from_db()
-        other.refresh_from_db()
-        self.assertEqual(link.url, "https://bilibili.com/video/BV11ar4YcEyF")
-        self.assertEqual(list(link.songs.all()), [song])
-        self.assertEqual(formatted.url, "https://bilibili.com/video/BV1aN411R7QU")
-        self.assertEqual(other.url, "https://nicovideo.jp/watch/sm12345678/")
-
-    def test_same_video_urls_are_merged(self):
-        bv_song = Song.objects.create(title="BV番号で登録した曲")
-        av_song = Song.objects.create(title="av番号で登録した曲")
-        slash_song = Song.objects.create(title="末尾に/を付けて登録した曲")
-        bv_link = self.create_link("https://bilibili.com/video/BV1qV411J7Kq", [bv_song])
-        self.create_link("https://bilibili.com/video/av417727107/", [av_song], allow_dup=True)
-        self.create_link("https://bilibili.com/video/BV1qV411J7Kq/", [slash_song])
-        self.migration.normalize_bilibili_urls(apps, None)
-        self.assertEqual(list(SongLink.objects.filter(url__icontains="bilibili").values_list("id", flat=True)), [bv_link.id])
-        bv_link.refresh_from_db()
-        self.assertCountEqual(bv_link.songs.all(), [bv_song, av_song, slash_song])
-        self.assertTrue(bv_link.allow_dup)
-
-    def test_unformatted_urls_are_merged_into_first_link(self):
-        song = Song.objects.create(title="曲")
-        first = self.create_link("https://bilibili.com/video/av417727107")
-        self.create_link("https://bilibili.com/video/BV1qV411J7Kq/", [song])
-        self.migration.normalize_bilibili_urls(apps, None)
-        first.refresh_from_db()
-        self.assertEqual(first.url, "https://bilibili.com/video/BV1qV411J7Kq")
-        self.assertEqual(list(first.songs.all()), [song])
-        self.assertEqual(SongLink.objects.count(), 1)
-
-    def test_merged_link_is_removed_only_if_both_are_removed(self):
-        song = Song.objects.create(title="曲")
-        removed = self.create_link("https://bilibili.com/video/BV1qV411J7Kq", is_removed=True)
-        self.create_link("https://bilibili.com/video/av417727107", [song])
-        both_removed = self.create_link("https://bilibili.com/video/BV11ar4YcEyF", is_removed=True)
-        self.create_link("https://bilibili.com/video/BV11ar4YcEyF/", is_removed=True)
-        self.migration.normalize_bilibili_urls(apps, None)
-        removed.refresh_from_db()
-        both_removed.refresh_from_db()
-        self.assertFalse(removed.is_removed)
-        self.assertEqual(list(removed.songs.all()), [song])
-        self.assertTrue(both_removed.is_removed)
-
-
 class SongGetFlagsTest(TestCase):
     """Song.get_flags() のテスト（#1228）"""
 
@@ -963,7 +869,7 @@ class AiModelTest(TestCase):
     def test_duplicate_janome_lyrics_raises_integrity_error(self):
         # genetype="janome"は(lyrics)がユニーク（#593、MySQL移行時は要注意）
         # unique_janome_lyricsは条件付きUniqueConstraintのため、未サポートのMySQLでは
-        # 0049マイグレーションの生成列ワークアラウンドで同等のDB制約を代替している（#593）
+        # 0001_squashed_0058_apikeyの生成列ワークアラウンドで同等のDB制約を代替している（#593）
         Ai.objects.create(lyrics="私は走る", score=0, genetype="janome")
 
         with self.assertRaises(IntegrityError):
@@ -985,7 +891,7 @@ class AiModelTest(TestCase):
         # 制約に抵触する行があっても、bulk_create全体が失敗せず、その1件だけが
         # スキップされ他の正当な行は作成されることを確認する
         # unique_janome_lyricsは条件付きUniqueConstraintのため、未サポートのMySQLでは
-        # 0049マイグレーションの生成列ワークアラウンドで同等のDB制約を代替している（#593）
+        # 0001_squashed_0058_apikeyの生成列ワークアラウンドで同等のDB制約を代替している（#593）
         Ai.objects.create(lyrics="既に存在する歌詞", score=3, genetype="janome")
 
         Ai.objects.bulk_create(
@@ -1118,78 +1024,6 @@ class WordModelTest(TestCase):
             Word.objects.create(word="走る", hinshi="動詞", candidate="走る")
 
 
-class StatsImitatedAuthorsMigrationTest(TestCase):
-    """0056_stats_total_imitated_authors のデータ移行のテスト（#1163）"""
-
-    def setUp(self):
-        self.migration = importlib.import_module("subekashi.migrations.0056_stats_total_imitated_authors")
-
-    def create_song(self, title, year, month, authors=(), **kwargs):
-        song = Song.objects.create(title=title, upload_time=timezone.make_aware(datetime(year, month, 15)), **kwargs)
-        song.authors.set(authors)
-        return song
-
-    def test_fills_values_cumulatively_per_songrange(self):
-        subeana_author = Author.objects.create(name="すべあなの作者")
-        xx_author = Author.objects.create(name="界隈外の作者")
-        late_author = Author.objects.create(name="2月の作者")
-        subeana_song = self.create_song("1月のすべあな曲", 2026, 1, [subeana_author], is_subeana=True)
-        xx_song = self.create_song("1月の界隈外曲", 2026, 1, [xx_author], is_subeana=False)
-        late_song = self.create_song("2月の曲", 2026, 2, [late_author], is_subeana=True)
-        # 模倣曲の投稿が2月でも、1月末時点の統計に1月の曲の作者として含める（total_imitatedsと同じ扱い）
-        self.create_song("2月の模倣曲", 2026, 2, is_subeana=True).imitates.add(subeana_song, xx_song, late_song)
-        for songrange in ("all", "subeana", "xx"):
-            for month in (1, 2):
-                Stats.objects.create(year=2026, month=month, songrange=songrange)
-
-        self.migration.fill_total_imitated_authors(apps, None)
-
-        values = {(stats.month, stats.songrange): stats.total_imitated_authors for stats in Stats.objects.all()}
-        self.assertEqual(values, {
-            (1, "all"): 2, (2, "all"): 3,
-            (1, "subeana"): 1, (2, "subeana"): 2,
-            (1, "xx"): 1, (2, "xx"): 1,
-        })
-
-    def test_december_includes_songs_until_end_of_month(self):
-        author = Author.objects.create(name="作者")
-        original = self.create_song("12月の曲", 2025, 12, [author])
-        self.create_song("模倣曲", 2025, 12).imitates.add(original)
-        Stats.objects.create(year=2025, month=12, songrange="all")
-
-        self.migration.fill_total_imitated_authors(apps, None)
-
-        self.assertEqual(Stats.objects.get().total_imitated_authors, 1)
-
-    def test_removed_songs_are_not_counted(self):
-        # 削除した曲（#1239）は、模倣された曲としても模倣曲としても数えない
-        author = Author.objects.create(name="作者")
-        removed_author = Author.objects.create(name="削除した曲の作者")
-        original = self.create_song("原曲", 2026, 1, [author])
-        self.create_song("削除した模倣曲", 2026, 1, is_removed=True).imitates.add(original)
-        removed_original = self.create_song("削除した原曲", 2026, 1, [removed_author], is_removed=True)
-        self.create_song("模倣曲", 2026, 1).imitates.add(removed_original)
-        Stats.objects.create(year=2026, month=1, songrange="all")
-
-        self.migration.fill_total_imitated_authors(apps, None)
-
-        self.assertEqual(Stats.objects.get().total_imitated_authors, 0)
-
-    def test_matches_compute_common_stats(self):
-        # lib側のcompute_imitated_author_countをコピーしたため、同じ結果になることを確認する
-        author_a = Author.objects.create(name="作者A")
-        author_b = Author.objects.create(name="作者B")
-        original = self.create_song("共作曲", 2026, 1, [author_a, author_b])
-        self.create_song("模倣曲1", 2026, 2).imitates.add(original)
-        self.create_song("模倣曲2", 2026, 2).imitates.add(original)
-        Stats.objects.create(year=2026, month=2, songrange="all")
-
-        self.migration.fill_total_imitated_authors(apps, None)
-
-        expected = compute_common_stats(Song.objects.all())["total_imitated_authors"]
-        self.assertEqual(Stats.objects.get().total_imitated_authors, expected)
-
-
 class EditorModelTest(TestCase):
     """Editor モデルのテスト"""
 
@@ -1204,91 +1038,6 @@ class EditorModelTest(TestCase):
         self.assertFalse(Editor.is_banned_ip("editor-not-banned"))
         self.assertFalse(Editor.is_banned_ip("editor-unknown"))
         self.assertEqual(Editor.objects.count(), 2)
-
-
-class EditorBannedMigrationTest(TestCase):
-    """0057_editor_is_banned のデータ移行のテスト（#1281）"""
-
-    def setUp(self):
-        self.migration = importlib.import_module("subekashi.migrations.0057_editor_is_banned")
-        self.tmp = tempfile.TemporaryDirectory()
-        self.addCleanup(self.tmp.cleanup)
-        self.ban_path = os.path.join(self.tmp.name, "ban.py")
-
-    def write_ban_list(self, ips):
-        with open(self.ban_path, "w", encoding="utf-8") as f:
-            f.write(f"BAN_LIST = {ips!r}\n")
-
-    def migrate(self):
-        """マイグレーションを実行し、出力を返す"""
-        output = io.StringIO()
-        with patch.object(self.migration, "BAN_LIST_PATH", self.ban_path), redirect_stdout(output):
-            self.migration.ban_listed_editors(apps, None)
-        return output.getvalue()
-
-    def create_editor(self, ip, **kwargs):
-        return Editor.objects.create(ip=encrypt(ip), **kwargs)
-
-    def test_encrypt_is_same_as_lib_security(self):
-        # lib/security.pyのコピーが、本体とずれていないこと
-        self.assertEqual(self.migration.SYMBOLS, importlib.import_module("subekashi.lib.security").SYMBOLS)
-        for ip in ["203.0.113.1", "0.0.0.0", "2400:2200:488:9395:6cee:52aa:b5c6:9629", "::1"]:
-            with self.subTest(ip=ip):
-                self.assertEqual(self.migration.encrypt(ip), encrypt(ip))
-
-    def test_editors_of_ban_list_are_banned(self):
-        banned_ipv4 = self.create_editor("203.0.113.1")
-        banned_ipv6 = self.create_editor("2400:2200:488:9395:6cee:52aa:b5c6:9629")
-        not_listed = self.create_editor("198.51.100.1")
-        self.write_ban_list(["203.0.113.1", "2400:2200:488:9395:6cee:52aa:b5c6:9629"])
-        output = self.migrate()
-        for editor in (banned_ipv4, banned_ipv6, not_listed):
-            editor.refresh_from_db()
-        self.assertTrue(banned_ipv4.is_banned)
-        self.assertTrue(banned_ipv6.is_banned)
-        self.assertFalse(not_listed.is_banned)
-        self.assertIn("BAN_LIST 2件のうち2件の編集者をis_bannedにしました。", output)
-        self.assertNotIn("特定できないIP", output)
-
-    def test_reports_ips_without_editor_and_unreadable_values(self):
-        listed = self.create_editor("203.0.113.1")
-        self.write_ban_list(["203.0.113.1", "203.0.113.9", "not-an-ip"])
-        output = self.migrate()
-        listed.refresh_from_db()
-        self.assertTrue(listed.is_banned)
-        self.assertIn("BAN_LIST 3件のうち1件の編集者をis_bannedにしました。", output)
-        self.assertIn("編集者を特定できないIP: 203.0.113.9", output)
-        self.assertIn("IPとして読めない値: not-an-ip", output)
-        self.assertNotIn("特定できないIP: 203.0.113.1\n", output)
-        # 編集者が見つからないIPのために、編集者を作らない
-        self.assertEqual(Editor.objects.count(), 1)
-
-    def test_duplicated_and_blank_values_are_ignored(self):
-        listed = self.create_editor("203.0.113.1")
-        self.write_ban_list(["203.0.113.1", " 203.0.113.1 ", "", "  "])
-        output = self.migrate()
-        listed.refresh_from_db()
-        self.assertTrue(listed.is_banned)
-        self.assertIn("BAN_LIST 1件のうち1件の編集者をis_bannedにしました。", output)
-
-    def test_does_nothing_without_editors(self):
-        # 編集者が1件もないDB（新規構築・テスト）では、ban.pyがあっても何も出力しない
-        self.write_ban_list(["203.0.113.1"])
-        self.assertEqual(self.migrate(), "")
-
-    def test_notifies_when_ban_file_does_not_exist(self):
-        editor = self.create_editor("203.0.113.1")
-        output = self.migrate()
-        editor.refresh_from_db()
-        self.assertFalse(editor.is_banned)
-        self.assertIn("が無いため", output)
-
-    def test_empty_ban_list_does_nothing(self):
-        editor = self.create_editor("203.0.113.1")
-        self.write_ban_list([])
-        self.assertEqual(self.migrate(), "")
-        editor.refresh_from_db()
-        self.assertFalse(editor.is_banned)
 
 
 class StatsModelTest(TestCase):
