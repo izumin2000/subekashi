@@ -946,7 +946,6 @@ DBアクセス（候補・衝突チェック）を伴うため `TestCase` を使
 | 閉じた埋め込みプレイヤー（#1254） | `is_shown_embed=off` | `context["is_shown_embed"] = False`で、`open`が付かない（`<iframe>`は出力し、`loading="lazy"`により閉じている間は読み込まれない） |
 | `is_shown_embed`の不正な値（#1254） | `on`・`OFF`・`<script>` | `off`以外は開く。`is_shown_embed = True`で`open`が付く |
 | 埋め込みプレイヤーの開閉の保存（#1254） | YouTubeのURLがある曲 | nonce付きのscriptの`embedEle.addEventListener('toggle'`で、開閉時に`is_shown_embed=on`・`off`を`path=/`・`max-age`（`data-cookie-age`）・`samesite=lax`のcookieに保存する。`onclick`は使わない。ブラウザの動作はPlaywrightで確認（結合テスト26章） |
-
 | スペシャルデザインの曲のスクリプト（#1258） | `is_special=True`の曲（ID 5472） | 共通の`/static/subekashi/special/util.js`と、曲IDの`/static/subekashi/special/5472.js`を`<script src>`で読み込む |
 | スペシャルデザインでない曲のスクリプト（#1258） | `is_special=False`の曲 | `subekashi/special/`のスクリプトを読み込まない |
 

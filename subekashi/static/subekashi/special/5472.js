@@ -8,6 +8,9 @@
     // mp3の音は、MIDIのノートの開始より遅れて立ち上がる。ノートごとに、開始の近くで音量が最も増える位置を探すと、中央値は曲の始めで0.062秒、終わりで0.082秒だった。
     // その平均の分だけ音を早く始めて、ノートが鍵盤に届く瞬間に音が聞こえるようにする
     const AUDIO_OFFSET_SEC = 0.07;
+    const AUDIO_RESUME_TIMEOUT_MS = 1000;
+    // 打鍵の通知が、キーを押してから処理されるまでに遅れた分を引いて判定する。これより大きい差は、時刻の基準が違うとみなして引かない
+    const MAX_MIDI_LAG_SEC = 0.5;
     const LEAD_IN_SEC = 2;
     const TAIL_SEC = 1;
     const HIT_WINDOW_SEC = 0.15;
@@ -34,7 +37,9 @@
     let layout = null;
     let state = "idle";
     let songTime = -LEAD_IN_SEC;
-    let lastPerf = 0;
+    let lastClock = 0;
+    let isStarting = false;
+    let useAudioClock = false;
     let rafId = 0;
     let score = 0;
     let hits = 0;
@@ -285,8 +290,21 @@
         }
     }
 
-    function currentTime(perfNow) {
-        return state === "playing" ? songTime + (perfNow - lastPerf) / 1000 : songTime;
+    // 曲の時間を進める時計（秒）。音声を鳴らすときは音声の時計（AudioContext）にそろえ、約3分の曲でも音声とロールがずれないようにする。
+    // 音声が無い、または鳴らせないときは performance.now() で進める
+    function clock() {
+        return useAudioClock ? audioContext.currentTime : performance.now() / 1000;
+    }
+
+    function currentTime(now) {
+        return state === "playing" ? songTime + (now - lastClock) : songTime;
+    }
+
+    // 打鍵を処理した時刻ではなく、キーを押した時刻で判定する。メインスレッドが詰まって処理が遅れても、判定がずれない
+    // （event.timeStamp は performance.now() と同じ基準。無い・基準が違う値のときは補正しない）
+    function pressedTime(event) {
+        const lag = (performance.now() - event.timeStamp) / 1000;
+        return currentTime(clock()) - (lag > 0 && lag < MAX_MIDI_LAG_SEC ? lag : 0);
     }
 
     // <audio>の再生位置の変更（シーク）は、サーバーがRangeリクエストに対応していないと先頭に戻るため、音声はメモリにデコードしてWeb Audioで鳴らす
@@ -297,15 +315,15 @@
         return audioContext.decodeAudioData(await response.arrayBuffer());
     }
 
-    // 再生・再開のたびに、曲の時間に合う位置から新しく鳴らす。音の始まりより前（カウントダウン中）は、そこまで待ってから鳴らす
-    function startAudio() {
-        if (!audioBuffer) return;
+    // 再生・再開のたびに、曲の時間に合う位置から新しく鳴らす。音の始まりより前（カウントダウン中）は、そこまで待ってから鳴らす。
+    // now は、曲の時間の基準にした時刻（音声の時計）
+    function startAudio(now) {
+        if (!useAudioClock) return;
         const position = songTime + AUDIO_OFFSET_SEC;
         const source = audioContext.createBufferSource();
         source.buffer = audioBuffer;
         source.connect(audioContext.destination);
-        audioContext.resume();
-        source.start(audioContext.currentTime + Math.max(0, -position), Math.max(0, position));
+        source.start(now + Math.max(0, -position), Math.max(0, position));
         audioSource = source;
     }
 
@@ -337,12 +355,13 @@
         }
     }
 
-    // 判定窓の中にある同じ音高のノートのうち、いちばん近いものを命中にする
+    // 判定窓の中にある同じ音高のノートのうち、いちばん近いものを命中にする。
+    // 打鍵の通知が遅れて届くと、押した時刻は窓の中でも、処理が窓を過ぎたあとになる。その間にミスにしたノートも、命中に直す
     function judge(pitch, time) {
         let best = null;
         let bestDiff = Infinity;
         for (const note of notesByPitch.get(pitch) ?? []) {
-            if (note.state !== "pending") continue;
+            if (note.state === "hit") continue;
             const diff = Math.abs(note.start - time);
             if (diff <= HIT_WINDOW_SEC && diff < bestDiff) {
                 best = note;
@@ -360,9 +379,9 @@
 
     function frame() {
         if (state !== "playing") return;
-        const now = performance.now();
+        const now = clock();
         songTime = currentTime(now);
-        lastPerf = now;
+        lastClock = now;
         settleMisses(songTime - HIT_WINDOW_SEC);
         draw(songTime);
         updateHud();
@@ -373,19 +392,29 @@
         rafId = requestAnimationFrame(frame);
     }
 
-    function play() {
-        if (!layout) return;
+    async function play() {
+        if (!layout || isStarting) return;
         if (state === "finished") reset();
+        // 音声の時計が止まっている（suspended）まま始めると、時計が進まず曲が動かない。動き出すのを待ってから、時計の基準を取り直して始める
+        if (audioBuffer && audioContext.state !== "running") {
+            isStarting = true;
+            await Promise.race([audioContext.resume().catch(() => {}), new Promise((resolve) => setTimeout(resolve, AUDIO_RESUME_TIMEOUT_MS))]);
+            isStarting = false;
+            if (document.hidden) return;
+        }
+        useAudioClock = Boolean(audioBuffer) && audioContext.state === "running";
+        if (audioBuffer && !useAudioClock) showToast("warning", "音声を再生できませんでした。音なしで遊べます。");
         state = "playing";
-        lastPerf = performance.now();
-        startAudio();
+        const now = clock();
+        lastClock = now;
+        startAudio(now);
         rafId = requestAnimationFrame(frame);
         updateControls();
     }
 
     function pause() {
         if (state !== "playing") return;
-        songTime = currentTime(performance.now());
+        songTime = currentTime(clock());
         state = "paused";
         cancelAnimationFrame(rafId);
         stopAudio();
@@ -395,6 +424,7 @@
     }
 
     function reset() {
+        if (isStarting) return;
         cancelAnimationFrame(rafId);
         stopAudio();
         state = "idle";
@@ -437,7 +467,7 @@
             pressedNotes.add(note);
             setKeyPressed(note, true);
             if (state === "playing") {
-                judge(note, currentTime(performance.now()));
+                judge(note, pressedTime(event));
                 updateHud();
             }
         } else if (type === 0x80 || type === 0x90) {
@@ -528,6 +558,10 @@
         document.querySelector(".action-buttons")?.remove();
         // ユーザーの操作（このボタンのクリック）の中で作らないと、ブラウザが音の再生を止める
         audioContext = window.AudioContext ? new AudioContext() : null;
+        // 音声の時計が止まると曲の時間も止まるため、再生中に止まったら一時停止する
+        audioContext?.addEventListener("statechange", () => {
+            if (useAudioClock && audioContext.state !== "running") pause();
+        });
         buildStage();
         setupMidi();
         const audioLoading = loadAudio().catch((e) => {
