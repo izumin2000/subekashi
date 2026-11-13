@@ -71,7 +71,8 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS(
             f"{'（dry-run）' if dry_run else ''}新規作成：{len(result.created)}件、更新：{len(result.updated)}件、"
-            f"変更なし：{result.unchanged}件、対象外のカテゴリ：{result.excluded}件、スキップ：{len(result.skipped)}件"
+            f"変更なし：{result.unchanged}件、ロックのためスキップ：{result.lock}件、"
+            f"対象外のカテゴリ：{result.excluded}件、スキップ：{len(result.skipped)}件"
         ))
         for reason, count in Counter(reason for _, reason in result.skipped).most_common():
             self.stdout.write(f"  {reason}：{count}件")
