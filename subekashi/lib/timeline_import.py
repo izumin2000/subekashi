@@ -70,6 +70,7 @@ class SongState:
     category: str
     is_questionable: bool
     prush_id: int | None
+    is_lock: bool
 
 
 @dataclass
@@ -77,6 +78,7 @@ class TimelineImportResult:
     created: list = field(default_factory=list)
     updated: list = field(default_factory=list)
     unchanged: int = 0
+    lock: int = 0
     excluded: int = 0
     unknown_categories: list = field(default_factory=list)
     skipped: list = field(default_factory=list)
@@ -205,9 +207,9 @@ class TimelineImporter:
         self.timeline_rows = {}
 
         self.songs = {
-            song_id: SongState(title, category, is_questionable, prush_id)
-            for song_id, title, category, is_questionable, prush_id
-            in Song.objects.values_list("id", "title", "category", "is_questionable", "prush_id")
+            song_id: SongState(title, category, is_questionable, prush_id, is_lock)
+            for song_id, title, category, is_questionable, prush_id, is_lock
+            in Song.objects.values_list("id", "title", "category", "is_questionable", "prush_id", "is_lock")
         }
         self.title_song_ids = defaultdict(set)
         for song_id, state in self.songs.items():
@@ -370,7 +372,7 @@ class TimelineImporter:
             editor=editor,
         )
 
-        self.songs[song.id] = SongState(song.title, song.category, song.is_questionable, song.prush_id)
+        self.songs[song.id] = SongState(song.title, song.category, song.is_questionable, song.prush_id, song.is_lock)
         self.title_song_ids[song.title].add(song.id)
         self.imitate_ids[song.id] |= imitate_ids
         self.author_names[song.id] = {author.name for author in authors}
@@ -385,6 +387,12 @@ class TimelineImporter:
 
     def update(self, song_id, row, urls, category, imitate_ids):
         state = self.songs[song_id]
+
+        # ロックされた曲は、年表からの更新対象にしない
+        # TimelineSkipにするとtimeline_rowsに入らず、曲の年表の行（SongTimeline）が削除されてしまうため、returnで抜ける
+        if state.is_lock:
+            self.result.lock += 1
+            return
 
         new_urls = [
             url for url in urls
