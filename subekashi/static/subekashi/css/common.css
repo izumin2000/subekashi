@@ -1316,8 +1316,9 @@ input::placeholder {
 
 .toast-close {
     position: absolute;
-    top: 6px;
+    top: 50%;
     right: 8px;
+    transform: translateY(-50%)
     background: none;
     border: none;
     font-size: 22px;
