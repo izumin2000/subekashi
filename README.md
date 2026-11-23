@@ -61,7 +61,7 @@ pip install -r requirements.txt
 
 ```bat
 @REM Windows用
-copy config/local_settings_sample.py config/local_settings.py
+copy config\local_settings_sample.py config\local_settings.py
 ```
 ```bash
 # Linux用
